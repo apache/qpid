@@ -21,8 +21,7 @@
 using System;
 using System.IO;
 using System.Text;
-using NetworkDelegate = org.apache.qpid.transport.network.NetworkDelegate;
-using NetworkEvent = org.apache.qpid.transport.network.NetworkEvent;
+using org.apache.qpid.transport.network;
 using Frame = org.apache.qpid.transport.network.Frame;
 
 namespace org.apache.qpid.transport
@@ -30,7 +29,7 @@ namespace org.apache.qpid.transport
     /// <summary> ProtocolHeader
     /// 
     /// </summary>
-    public sealed class ProtocolHeader : NetworkEvent, ProtocolEvent
+    public sealed class ProtocolHeader : INetworkEvent, IProtocolEvent
     {
         private readonly char[] AMQP = new char[] {'A', 'M', 'Q', 'P'};
         private const byte CLASS = 1;
@@ -51,16 +50,16 @@ namespace org.apache.qpid.transport
         {
         }
 
-        #region NetworkEvent Methods
+        #region INetworkEvent Methods
 
-        public void ProcessNetworkEvent(NetworkDelegate ndelegate)
+        public void ProcessNetworkEvent(INetworkDelegate ndelegate)
         {
             ndelegate.Init(this);
         }
 
         #endregion
 
-        #region ProtocolEvent Methods
+        #region IProtocolEvent Methods
 
         public int Channel
         {
@@ -83,7 +82,7 @@ namespace org.apache.qpid.transport
             set { throw new NotImplementedException(); }
         }
 
-        public void ProcessProtocolEvent<C>(C context, ProtocolDelegate<C> protocoldelegate)
+        public void ProcessProtocolEvent<C>(C context, IProtocolDelegate<C> protocoldelegate)
         {
             protocoldelegate.Init(context, this);
         }
@@ -117,7 +116,7 @@ namespace org.apache.qpid.transport
             return buf;
         }
 
-        public String toString()
+        public override String ToString()
         {
             return String.Format("AMQP.{0:d} {1:d}-{2:d}", instance, major, minor);
         }

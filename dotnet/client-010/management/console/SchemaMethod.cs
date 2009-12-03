@@ -40,9 +40,9 @@ namespace org.apache.qpid.console
 		public string Description {get;set;}
 		public List<SchemaArgument> Arguments = new List<SchemaArgument>();
 		
-		public SchemaMethod(Decoder dec)
+		public SchemaMethod(IDecoder dec)
 		{
-			Dictionary<string, Object> map = dec.readMap() ;
+			Dictionary<string, Object> map = dec.ReadMap() ;
 			Name = (string)  map["name"] ;
 			ArgCount = (int) map["argCount"] ;
 			if (map.ContainsKey("desc")) {

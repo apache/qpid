@@ -29,17 +29,17 @@ namespace org.apache.qpid.transport
     /// </summary>
     public class Connection
     {
-        private static readonly Logger log = Logger.get(typeof (Connection));
+        private static readonly Logger log = Logger.Get(typeof (Connection));
 
-        private readonly Sender<ProtocolEvent> _sender;
+        private readonly ISender<IProtocolEvent> _sender;
         private readonly ConnectionDelegate _connDdelegate;
         private  int _channelMax = 1;
         private int _connectionId;
-        private readonly Receiver<ReceivedPayload<ProtocolEvent>> _receiver;
+        private readonly IReceiver<ReceivedPayload<IProtocolEvent>> _receiver;
 
         private readonly Dictionary<int, Channel> _channels = new Dictionary<int, Channel>();
 
-        public Connection(Receiver<ReceivedPayload<ProtocolEvent>> receiver, Sender<ProtocolEvent> sender, ConnectionDelegate connDdelegate)
+        public Connection(IReceiver<ReceivedPayload<IProtocolEvent>> receiver, ISender<IProtocolEvent> sender, ConnectionDelegate connDdelegate)
         {
             _receiver = receiver;
             _sender = sender;
@@ -63,20 +63,20 @@ namespace org.apache.qpid.transport
             set { _channelMax = value; }
         }
 
-        public void send(ProtocolEvent pevent)
+        public void Send(IProtocolEvent pevent)
         {
-            log.debug("SEND: [{0}] {1}", this, pevent);
-            _sender.send(pevent);
+            log.Debug("SEND: [{0}] {1}", this, pevent);
+            _sender.Send(pevent);
         }
 
-        public void flush()
+        public void Flush()
         {
-            log.debug("FLUSH: [{0}]", this);
-            _sender.flush();
+            log.Debug("FLUSH: [{0}]", this);
+            _sender.Flush();
         }
 
 
-        public Channel getChannel()
+        public Channel GetChannel()
         {
             lock (_channels)
             {
@@ -84,14 +84,14 @@ namespace org.apache.qpid.transport
                 {
                     if (!_channels.ContainsKey(i))
                     {
-                        return getChannel(i);
+                        return GetChannel(i);
                     }
                 }
                 throw new Exception("no more _channels available");
             }
         }
 
-        public Channel getChannel(int number)
+        public Channel GetChannel(int number)
         {
             lock (_channels)
             {
@@ -103,7 +103,7 @@ namespace org.apache.qpid.transport
                 }
                 if (channel == null)
                 {
-                    channel = new Channel(this, number, _connDdelegate.getSessionDelegate());                   
+                    channel = new Channel(this, number, _connDdelegate.GetSessionDelegate());                   
                     _receiver.Received += channel.On_ReceivedEvent;                   
                     _channels.Add(number, channel);
                 }
@@ -111,7 +111,7 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public void removeChannel(int number)
+        public void RemoveChannel(int number)
         {
             lock (_channels)
             {
@@ -120,51 +120,51 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public void On_ReceivedEvent(object sender, ReceivedPayload<ProtocolEvent> payload)
+        public void On_ReceivedEvent(object sender, ReceivedPayload<IProtocolEvent> payload)
         {
-           log.debug("RECV: [{0}] {1}", this, payload.Payload);
+           log.Debug("RECV: [{0}] {1}", this, payload.Payload);
             if (_channels.ContainsKey(payload.Payload.Channel)) return;
-            Channel channel = getChannel(payload.Payload.Channel);
+            Channel channel = GetChannel(payload.Payload.Channel);
             channel.On_ReceivedEvent(sender, payload);
         }
 
         public void On_ReceivedException(Object sender, ExceptionArgs arg)
         {
-            _connDdelegate.exception(arg.Exception);
+            _connDdelegate.Exception(arg.Exception);
         }
 
         public void On_ReceivedClosed(Object sender, EventArgs arg)
         {
-            log.debug("Connection closed: {0}", this);
+            log.Debug("Connection Closed: {0}", this);
             lock (_channels)
             {
                 foreach (Channel ch in _channels.Values)
                 {
-                    ch.closedFromConnection();
+                    ch.ClosedFromConnection();
                 }
             }
             _channels.Clear();
-            _connDdelegate.closed();
+            _connDdelegate.Closed();
         }
 
 
-        public void closeCode(ConnectionClose close)
+        public void CloseCode(ConnectionClose close)
         {
             lock (_channels)
             {
                 foreach (Channel ch in _channels.Values)
                 {
-                    ch.closeCode(close);
+                    ch.CloseCode(close);
                 }
             }
         }
 
-        public void close()
+        public void Close()
         {
-            _sender.close();
+            _sender.Close();
         }
 
-        public String toString()
+        public override String ToString()
         {
             return String.Format("conn:{0}", this);
         }

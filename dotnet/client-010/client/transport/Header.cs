@@ -47,7 +47,7 @@ namespace org.apache.qpid.transport
         }
 
 
-        public Struct get(Struct klass)
+        public Struct Get(Struct klass)
         {
             foreach (Struct st in _mystructs)
             {
@@ -59,7 +59,7 @@ namespace org.apache.qpid.transport
             return null;
         }
 
-        public String toString()
+        public override String ToString()
         {
             StringBuilder str = new StringBuilder();
             str.Append(" Header(");

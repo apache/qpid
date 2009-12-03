@@ -201,8 +201,8 @@ namespace org.apache.qpid.console
 						}
 					}
 					
-					Encoder enc = broker.CreateEncoder('G', seq) ;
-					enc.writeMap(getParameters) ;
+					IEncoder enc = broker.CreateEncoder('G', seq) ;
+					enc.WriteMap(getParameters) ;
 					string routingKey = String.Format("agent.{0}.{1}", agent.BrokerBank, agent.AgentBank) ; 
 					Message msg = broker.CreateMessage(enc, routingKey) ;
 					log.Debug("Get Object Keys: ") ;
@@ -339,10 +339,10 @@ namespace org.apache.qpid.console
 			if (method != null) {
 				KeyValuePair<SchemaMethod, bool> pair = new KeyValuePair<SchemaMethod, bool>(method, synchronous) ;
 				seq = SequenceManager.Reserve(pair) ;
-				Encoder enc = aBroker.CreateEncoder('M', seq) ;
+				IEncoder enc = aBroker.CreateEncoder('M', seq) ;
 				obj.ObjectID.encode(enc) ;
 				obj.Schema.Key.encode(enc) ;
-				enc.writeStr8(name) ;
+				enc.WriteStr8(name) ;
 				
 				if (args.Count < method.InputArgCount) {
 					throw new Exception(String.Format("Incorrect number of arguments: expected {0}, got{1}", method.InputArgCount, args.Count)) ;
@@ -404,18 +404,18 @@ namespace org.apache.qpid.console
 			}		
 		}			
 	
-		public void HandleBrokerResponse(Broker broker, Decoder decoder, long sequence) {
+		public void HandleBrokerResponse(Broker broker, IDecoder decoder, long sequence) {
 			if (Console != null) {
 				Console.BrokerInformation(broker) ;
 			}				
 		
 		    long seq = SequenceManager.Reserve(CONTEXT_STARTUP) ;
-			Encoder endocder = broker.CreateEncoder('P', seq) ;
+			IEncoder endocder = broker.CreateEncoder('P', seq) ;
 			broker.Send(endocder) ;
 		}
 	
-		public void HandlePackageIndicator(Broker broker, Decoder decoder, long sequence) {
-			string packageName = decoder.readStr8() ;
+		public void HandlePackageIndicator(Broker broker, IDecoder decoder, long sequence) {
+			string packageName = decoder.ReadStr8() ;
 			bool notify = false ;
 			if (!Packages.ContainsKey(packageName)) {
 				lock (LockObject) {
@@ -430,15 +430,15 @@ namespace org.apache.qpid.console
 			
 			broker.IncrementOutstanding() ;
 			long seq = SequenceManager.Reserve(Session.CONTEXT_STARTUP) ; 
-			Encoder enc = broker.CreateEncoder('Q', seq) ;			
-			enc.writeStr8(packageName) ;	
+			IEncoder enc = broker.CreateEncoder('Q', seq) ;			
+			enc.WriteStr8(packageName) ;	
 			broker.Send(enc) ;
 		}		
 		
-		public void HandleCommandComplete(Broker broker, Decoder decoder, long sequence) {
+		public void HandleCommandComplete(Broker broker, IDecoder decoder, long sequence) {
 		
-			long code = decoder.readUint32() ;
-			string text = decoder.readStr8() ;
+			long code = decoder.ReadUint32() ;
+			string text = decoder.ReadStr8() ;
 			Object context = this.SequenceManager.Release(sequence) ;
 			
 			if (context.Equals(CONTEXT_STARTUP)) {
@@ -459,8 +459,8 @@ namespace org.apache.qpid.console
 			}
 		}	
 			
-		public void HandleClassIndicator(Broker broker, Decoder decoder, long sequence) {
-			short kind = decoder.readUint8() ;	
+		public void HandleClassIndicator(Broker broker, IDecoder decoder, long sequence) {
+			short kind = decoder.ReadUint8() ;	
 			ClassKey classKey = new ClassKey(decoder) ;
 			bool unknown = false ;
 			
@@ -476,15 +476,15 @@ namespace org.apache.qpid.console
 			if (unknown) {
 				broker.IncrementOutstanding() ;
 				long seq = SequenceManager.Reserve(Session.CONTEXT_STARTUP) ; 
-				Encoder enc = broker.CreateEncoder('S', seq) ;			
+				IEncoder enc = broker.CreateEncoder('S', seq) ;			
 				classKey.encode(enc) ;	
 				broker.Send(enc) ;				
 			}
 		}		
 		
-		public void HandleMethodResponse(Broker broker, Decoder decoder, long sequence) {	
-			long code = decoder.readUint32() ;
-			string text = decoder.readStr16() ;
+		public void HandleMethodResponse(Broker broker, IDecoder decoder, long sequence) {	
+			long code = decoder.ReadUint32() ;
+			string text = decoder.ReadStr16() ;
 			
 			Dictionary<string, object> outArgs = new Dictionary<string, object>() ;
 			object obj = SequenceManager.Release(sequence) ;
@@ -514,15 +514,15 @@ namespace org.apache.qpid.console
 			}	
 		}	
 			
-		public void HandleHeartbeatIndicator(Broker broker, Decoder decoder, long sequence, IMessage msg) {
+		public void HandleHeartbeatIndicator(Broker broker, IDecoder decoder, long sequence, IMessage msg) {
 			if (Console != null) {
 				long brokerBank = 1 ;
 				long agentBank = 0 ;
 				try {
-					string routingKey = msg.DeliveryProperties.getRoutingKey() ;
+					string routingKey = msg.DeliveryProperties.GetRoutingKey() ;
 					if (routingKey != null) {
-						agentBank = Agent.getBrokerBank(routingKey) ;
-						brokerBank = Agent.getBrokerBank(routingKey) ;				
+						agentBank = Agent.GetBrokerBank(routingKey) ;
+						brokerBank = Agent.GetBrokerBank(routingKey) ;				
 					}
 				}
 				catch (Exception e) {
@@ -530,7 +530,7 @@ namespace org.apache.qpid.console
 				}
 				
 				string agentKey = Agent.AgentKey(agentBank, brokerBank) ;
-				long timestamp = decoder.readUint64() ;
+				long timestamp = decoder.ReadUint64() ;
 				if (broker.Agents.ContainsKey(agentKey)) {
 					Agent agent = broker.Agents[agentKey] ;
 					Console.HearbeatRecieved(agent, timestamp) ;
@@ -539,15 +539,15 @@ namespace org.apache.qpid.console
 			
 		}		
 		
-		public void HandleEventIndicator(Broker broker, Decoder decoder, long sequence) {
+		public void HandleEventIndicator(Broker broker, IDecoder decoder, long sequence) {
 			if (Console != null) {
 				QMFEvent newEvent = new QMFEvent(this, decoder) ;
 				Console.EventRecieved(broker, newEvent) ;
 			}			
 		}		
 		
-		public void HandleSchemaResponse(Broker broker, Decoder decoder, long sequence) {
-			short kind = decoder.readUint8() ;	
+		public void HandleSchemaResponse(Broker broker, IDecoder decoder, long sequence) {
+			short kind = decoder.ReadUint8() ;	
 			ClassKey classKey = new ClassKey(decoder) ;
 			SchemaClass sClass = new SchemaClass(kind, classKey, decoder, this) ;				
 			lock(LockObject) {
@@ -563,7 +563,7 @@ namespace org.apache.qpid.console
 			}	
 		}	
 			
-		public void HandleContentIndicator(Broker broker, Decoder decoder, long sequence, bool hasProperties, bool hasStatistics) {
+		public void HandleContentIndicator(Broker broker, IDecoder decoder, long sequence, bool hasProperties, bool hasStatistics) {
 		
 			ClassKey key = new ClassKey(decoder) ;
 			SchemaClass sClass = null ;;
@@ -600,46 +600,46 @@ namespace org.apache.qpid.console
 			return true ;
 		}
 		
-		public object DecodeValue(Decoder dec, short type) {
+		public object DecodeValue(IDecoder dec, short type) {
 		
 		 	switch (type) {
-		 		case 1: return dec.readUint8() ;        // U8
-		 		case 2: return dec.readUint16() ;       // U16     
-		 		case 3: return dec.readUint32() ;       // U32
-		 		case 4: return dec.readUint64() ;       // U64 
-		 		case 6: return dec.readStr8() ;         // SSTR
-		 		case 7: return dec.readStr16() ;        // LSTR
-		 		case 8: return dec.readDatetime() ;	    // ABSTIME
-		 		case 9: return dec.readUint32() ;       // DELTATIME
+		 		case 1: return dec.ReadUint8() ;        // U8
+		 		case 2: return dec.ReadUint16() ;       // U16     
+		 		case 3: return dec.ReadUint32() ;       // U32
+		 		case 4: return dec.ReadUint64() ;       // U64 
+		 		case 6: return dec.ReadStr8() ;         // SSTR
+		 		case 7: return dec.ReadStr16() ;        // LSTR
+		 		case 8: return dec.ReadDatetime() ;	    // ABSTIME
+		 		case 9: return dec.ReadUint32() ;       // DELTATIME
 		 		case 10: return new ObjectID(dec) ;		// ref
-		 		case 11: return dec.readUint8() != 0 ;  // bool
-		 		case 12: return dec.readFloat() ;       // float		
-		 		case 13: return dec.readDouble() ;      // double		 
-		 		case 14: return dec.readUuid() ;	    // UUID			
+		 		case 11: return dec.ReadUint8() != 0 ;  // bool
+		 		case 12: return dec.ReadFloat() ;       // float		
+		 		case 13: return dec.ReadDouble() ;      // double		 
+		 		case 14: return dec.ReadUuid() ;	    // UUID			
 		 		case 15:	                            // Ftable
 		 			Dictionary<string, object> ftable = new Dictionary<string, object>() ;
 		 			MSDecoder sc = new MSDecoder() ;
-		 			sc.init(new MemoryStream(dec.readVbin32())) ;
-		 			if (sc.hasRemaining()) {
-		 				long count = sc.readUint32() ;
+		 			sc.Init(new MemoryStream(dec.ReadVbin32())) ;
+		 			if (sc.HasRemaining()) {
+		 				long count = sc.ReadUint32() ;
 		 				while (count > 0) {
-		 					string key = sc.readStr8() ;
-		 					short code = sc.readUint8() ;
+		 					string key = sc.ReadStr8() ;
+		 					short code = sc.ReadUint8() ;
 		 					object newValue = this.DecodeValue(sc, code) ;
 		 					ftable.Add(key, newValue) ;
 		 					count -= 1 ;
 		 				}
 		 			}
 		 			return ftable ;
-		 		case 16: return dec.readInt8() ;        // int8
-		 		case 17: return dec.readInt16() ;       // int16    
-		 		case 18: return dec.readInt32() ;       // int32
-		 		case 19: return dec.readInt64() ;       // int64 		 			
+		 		case 16: return dec.ReadInt8() ;        // int8
+		 		case 17: return dec.ReadInt16() ;       // int16    
+		 		case 18: return dec.ReadInt32() ;       // int32
+		 		case 19: return dec.ReadInt64() ;       // int64 		 			
 		 		case 20:                                // Object
 		 			// Peek into the inner type code, make sure 
 		 			// it is actually an object
 		 			object returnValue = null ;
-		 			short innerTypeCode = dec.readUint8() ;
+		 			short innerTypeCode = dec.ReadUint8() ;
 		 			if (innerTypeCode != 20) {
 		 				returnValue = this.DecodeValue(dec, innerTypeCode) ;
 		 			}
@@ -653,75 +653,81 @@ namespace org.apache.qpid.console
 		 				}
 		 			}
 		 			return returnValue;
-		 		case 21:                                 // List
-		 			MSDecoder lDec = new MSDecoder() ;
-		 			lDec.init(new MemoryStream(dec.readVbin32())) ;		 		
-		 			long count = lDec.readUint32() ;
-		 			List<object> newList = new List<object>() ;
-		 			while (count > 0){
-		 				short innerType = lDec.readUint8() ;
-		 				newList.Add(this.DecodeValue(lDec, innerType)) ;
-		 				count -= 1 ;
-		 			}
-		 			return newList ;
-		 		case 22:							    // Array
-		 			MSDecoder aDec = new MSDecoder() ;
-		 			aDec.init(new MemoryStream(dec.readVbin32())) ;		 		
-	 				long cnt = aDec.readUint32() ;
-	 				short innerType = aDec.readUint8() ;
-		 			List<object> aList = new List<object>() ;
-		 			while (cnt > 0){
-		 				aList.Add(this.DecodeValue(aDec, innerType)) ;
-		 				cnt -= 1 ;
-		 			}
-		 			return aList ;
-		 		default: 
+                case 21:                                 // List
+		 	        {
+		 	            MSDecoder lDec = new MSDecoder();
+		 	            lDec.Init(new MemoryStream(dec.ReadVbin32()));
+		 	            long count = lDec.ReadUint32();
+		 	            List<object> newList = new List<object>();
+		 	            while (count > 0)
+		 	            {
+		 	                short innerType = lDec.ReadUint8();
+		 	                newList.Add(this.DecodeValue(lDec, innerType));
+		 	                count -= 1;
+		 	            }
+		 	            return newList;
+		 	        }
+                case 22:							    // Array
+		 	        {
+		 	            MSDecoder aDec = new MSDecoder();
+		 	            aDec.Init(new MemoryStream(dec.ReadVbin32()));
+		 	            long cnt = aDec.ReadUint32();
+		 	            short innerType = aDec.ReadUint8();
+		 	            List<object> aList = new List<object>();
+		 	            while (cnt > 0)
+		 	            {
+		 	                aList.Add(this.DecodeValue(aDec, innerType));
+		 	                cnt -= 1;
+		 	            }
+		 	            return aList;
+		 	        }
+		 	    default: 
 		 			throw new Exception(String.Format("Invalid Type Code: {0}", type)) ;		
 		 	}	
 		 }		
 		 
 		 
-		public void EncodeValue(Encoder enc, short type, object val) {
+		public void EncodeValue(IEncoder enc, short type, object val) {
 			try {
 			 	switch ((int)type) {
-			 		case 1: enc.writeUint8((short) val) ; break;       // U8
-			 		case 2: enc.writeUint16((int) val) ;  break;       // U16     
-			 		case 3: enc.writeUint32((long) val) ; break;       // U32
-			 		case 4: enc.writeUint64((long) val) ; break;       // U64 
-			 		case 6: enc.writeStr8((string) val) ; break;       // SSTR
-			 		case 7: enc.writeStr16((string) val) ; break;      // LSTR
-			 		case 8: enc.writeDatetime((long) val); break;	   // ABSTIME
-			 		case 9: enc.writeUint32((long) val);   break;      // DELTATIME
+			 		case 1: enc.WriteUint8((short) val) ; break;       // U8
+			 		case 2: enc.WriteUint16((int) val) ;  break;       // U16     
+			 		case 3: enc.WriteUint32((long) val) ; break;       // U32
+			 		case 4: enc.WriteUint64((long) val) ; break;       // U64 
+			 		case 6: enc.WriteStr8((string) val) ; break;       // SSTR
+			 		case 7: enc.WriteStr16((string) val) ; break;      // LSTR
+			 		case 8: enc.WriteDatetime((long) val); break;	   // ABSTIME
+			 		case 9: enc.WriteUint32((long) val);   break;      // DELTATIME
 			 		case 10: ((ObjectID)val).encode(enc) ; break;	   // ref
 			 		case 11: 
 			 			if ((bool) val) {
-			 				enc.writeUint8(1) ;
+			 				enc.WriteUint8(1) ;
 			 			} else {
-			 				enc.writeUint8(0) ;
+			 				enc.WriteUint8(0) ;
 			 			}
 			 			break ;
-			 		case 12: enc.writeFloat((float) val); break;	   // FLOAT
-			 		case 13: enc.writeDouble((double) val);   break;   // DOUBLE			 			
-			 		case 14: enc.writeUuid((UUID) val) ; break ;	   // UUID		
+			 		case 12: enc.WriteFloat((float) val); break;	   // FLOAT
+			 		case 13: enc.WriteDouble((double) val);   break;   // DOUBLE			 			
+			 		case 14: enc.WriteUuid((UUID) val) ; break ;	   // UUID		
 			 		case 15:	                                       // Ftable
 			 			Dictionary<string, object> ftable = (Dictionary<string, object>) val ;
 			 			MSEncoder sc = new MSEncoder(1) ;
-			 			sc.init() ;
-			 			sc.writeUint32(ftable.Count) ;
+			 			sc.Init() ;
+			 			sc.WriteUint32(ftable.Count) ;
 			 			foreach (String key in ftable.Keys) {
 			 				object obj = ftable[key] ;
 			 				short innerType = Util.QMFType(obj) ;
-			 				sc.writeStr8(key) ;
-			 				sc.writeUint8(innerType) ;
+			 				sc.WriteStr8(key) ;
+			 				sc.WriteUint8(innerType) ;
 			 				this.EncodeValue(sc,innerType,obj) ;
 			 			}
-			 			byte[] bytes = sc.segment().ToArray() ;
-			 			enc.writeVbin32(bytes) ;
+			 			byte[] bytes = sc.Segment().ToArray() ;
+			 			enc.WriteVbin32(bytes) ;
 			 			break ;
-			 		case 16: enc.writeInt8((short) val) ; break;       // int8
-			 		case 17: enc.writeInt16((int) val) ;  break;       // int16     
-			 		case 18: enc.writeInt32(long.Parse(""+ val)) ; break;       // int32
-			 		case 19: enc.writeInt64(long.Parse("" + val)) ; break;       // int64 
+			 		case 16: enc.WriteInt8((short) val) ; break;       // int8
+			 		case 17: enc.WriteInt16((int) val) ;  break;       // int16     
+			 		case 18: enc.WriteInt32(long.Parse(""+ val)) ; break;       // int32
+			 		case 19: enc.WriteInt64(long.Parse("" + val)) ; break;       // int64 
 			 		case 20: 									       // Object
 			 			// Check that the object has a session, if not
 			 			// take ownership of it
@@ -734,30 +740,30 @@ namespace org.apache.qpid.console
 			 		case 21:                                             // List	
 			 			List<object> items = (List<object>) val ;
 			 			MSEncoder lEnc = new MSEncoder(1) ;
-			 			lEnc.init() ;			 			
-			 			lEnc.writeUint32(items.Count) ;
+			 			lEnc.Init() ;			 			
+			 			lEnc.WriteUint32(items.Count) ;
 			 			foreach (object obj in items) {
 			 				short innerType = Util.QMFType(obj) ;
-			 				lEnc.writeUint8(innerType) ;
+			 				lEnc.WriteUint8(innerType) ;
 			 				this.EncodeValue(lEnc,innerType,obj) ;		 				
 			 			}
-			 			enc.writeVbin32(lEnc.segment().ToArray()) ;
+			 			enc.WriteVbin32(lEnc.Segment().ToArray()) ;
 			 			break ;
 			 		case 22:							                 // Array
 			 			List<object> aItems = (List<object>) val ;
 			 			MSEncoder aEnc = new MSEncoder(1) ;
-			 			aEnc.init() ;			 						 			
+			 			aEnc.Init() ;			 						 			
 			 			long aCount = aItems.Count ;	 			
-			 			aEnc.writeUint32(aCount) ;
+			 			aEnc.WriteUint32(aCount) ;
 			 			if (aCount > 0) {
 			 				Object anObj = aItems[0] ;
 			 				short innerType = Util.QMFType(anObj) ;
-				 			aEnc.writeUint8(innerType) ;
+				 			aEnc.WriteUint8(innerType) ;
 				 			foreach (object obj in aItems) {
 				 				this.EncodeValue(aEnc,innerType,obj) ;		 				
 				 			}
 			 			}
-			 			enc.writeVbin32(aEnc.segment().ToArray()) ;			 			
+			 			enc.WriteVbin32(aEnc.Segment().ToArray()) ;			 			
 			 			break ;
 			 		default: 
 			 			throw new Exception(String.Format("Invalid Type Code: {0}", type)) ;			 			
@@ -804,12 +810,12 @@ namespace org.apache.qpid.console
 	    	return (QMFObject) ci.Invoke(args) ;
 	    }	
 	    
-	    protected QMFObject CreateQMFObject(SchemaClass schema, Decoder dec, bool hasProperties, bool hasStats , bool isManaged) {
+	    protected QMFObject CreateQMFObject(SchemaClass schema, IDecoder dec, bool hasProperties, bool hasStats , bool isManaged) {
 	    	Type realClass = typeof(QMFObject) ;	    	
 	    	if (Console != null) {
 	    		realClass = Console.TypeMapping(schema.Key) ;    		
 	    	}
-	    	Type[] types = new Type[] {typeof(Session), typeof(SchemaClass), typeof(Decoder), typeof(bool), typeof(bool),typeof(bool)} ;
+	    	Type[] types = new Type[] {typeof(Session), typeof(SchemaClass), typeof(IDecoder), typeof(bool), typeof(bool),typeof(bool)} ;
 	    	object[] args = new object[] {this, schema, dec, hasProperties, hasStats, isManaged} ;
 	    	ConstructorInfo ci = realClass.GetConstructor(types);	    
 	    	return (QMFObject) ci.Invoke(args) ;

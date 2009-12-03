@@ -23,31 +23,31 @@ namespace org.apache.qpid.client
 {
     public class ClientSessionDelegate : SessionDelegate
     {
-        private static readonly Logger _log = Logger.get(typeof (ClientSessionDelegate));
+        private static readonly Logger _log = Logger.Get(typeof (ClientSessionDelegate));
 
         //  --------------------------------------------
         //   Message methods
         // --------------------------------------------
-        public override void messageTransfer(Session session, MessageTransfer xfr)
+        public override void MessageTransfer(Session session, MessageTransfer xfr)
         {
-            if (((ClientSession) session).MessageListeners.ContainsKey(xfr.getDestination()))
+            if (((ClientSession) session).MessageListeners.ContainsKey(xfr.GetDestination()))
             {
-                IMessageListener listener = ((ClientSession)session).MessageListeners[xfr.getDestination()];
-                listener.messageTransfer( new Message(xfr));
+                IMessageListener listener = ((ClientSession)session).MessageListeners[xfr.GetDestination()];
+                listener.MessageTransfer( new Message(xfr));
             }
             else
             {
-                _log.warn("No listener set for: {0}", xfr);
+                _log.Warn("No listener set for: {0}", xfr);
             }
         }
 
-        public override void messageReject(Session session, MessageReject mstruct)
+        public override void MessageReject(Session session, MessageReject mstruct)
         {
-            foreach (Range range in mstruct.getTransfers())
+            foreach (Range range in mstruct.GetTransfers())
             {
                 for (long l = range.Lower; l <= range.Upper; l++)
                 {
-                    _log.warn("message rejected: " + session.getCommand((int) l));
+                    _log.Warn("message rejected: " + session.GetCommand((int) l));
                 }
             }
         }

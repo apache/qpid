@@ -26,7 +26,7 @@ namespace test.transport.util
     [TestFixture]
     public class SerialTest
     {
-        private static readonly Logger _log = Logger.get(typeof (SerialTest));
+        private static readonly Logger _log = Logger.Get(typeof (SerialTest));
 
         [Test]
         ///
@@ -34,11 +34,11 @@ namespace test.transport.util
         ///
         public void testBoundaries()
         {
-            Assert.IsTrue(Serial.gt(1, 0));
-            Assert.IsTrue(Serial.lt(0, 1));
+            Assert.IsTrue(Serial.Gt(1, 0));
+            Assert.IsTrue(Serial.Lt(0, 1));
 
-            Assert.IsTrue(Serial.gt(int.MaxValue, int.MaxValue - 1));
-            Assert.IsTrue(Serial.lt(int.MaxValue - 1, int.MaxValue));
+            Assert.IsTrue(Serial.Gt(int.MaxValue, int.MaxValue - 1));
+            Assert.IsTrue(Serial.Lt(int.MaxValue - 1, int.MaxValue));
         }
 
         ///
@@ -57,8 +57,8 @@ namespace test.transport.util
             {
                 for (int n = 1; n < 4096; n += 512)
                 {
-                    Assert.IsTrue(Serial.gt(s + n, s));
-                    Assert.IsTrue(Serial.lt(s, s + n));
+                    Assert.IsTrue(Serial.Gt(s + n, s));
+                    Assert.IsTrue(Serial.Lt(s, s + n));
                 }
 
                 s += 1024;

@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Configuration;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -43,34 +44,38 @@ namespace org.apache.qpid.example.direct
     {        
         private static void Main(string[] args)
         {
-            string host = args.Length > 0 ? args[0] : "localhost";
-            int port = args.Length > 1 ? Convert.ToInt32(args[1]) : 5672;
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
             Client connection = new Client();
             try
             {
-                connection.connect(host, port, "test", "guest", "guest");
-                ClientSession session = connection.createSession(50000);
+                connection.Connect(host, port, virtualhost, username, password);
+                IClientSession session = connection.CreateSession(50000);
 
                 //--------- Main body of program --------------------------------------------
                 // Create a queue named "message_queue", and route all messages whose
                 // routing key is "routing_key" to this newly created queue.
 
-                session.queueDeclare("message_queue");
-                session.exchangeBind("message_queue", "amq.direct", "routing_key");
+                session.QueueDeclare("message_queue");
+                session.ExchangeBind("message_queue", "amq.direct", "routing_key");
          
                 lock (session)
                 {
                     // Create a listener and subscribe it to the queue named "message_queue"
                     IMessageListener listener = new MessageListener(session);
-                    session.attachMessageListener(listener, "message_queue");                              
-                    session.messageSubscribe("message_queue");
+                    session.AttachMessageListener(listener, "message_queue");                              
+                    session.MessageSubscribe("message_queue");
                     // Receive messages until all messages are received
                     Monitor.Wait(session);
                 }
 
                 //---------------------------------------------------------------------------
 
-                connection.close();
+                connection.Close();
             }
             catch (Exception e)
             {
@@ -81,14 +86,14 @@ namespace org.apache.qpid.example.direct
 
     public class MessageListener : IMessageListener
     {
-        private readonly ClientSession _session;
+        private readonly IClientSession _session;
         private readonly RangeSet _range = new RangeSet();
-        public MessageListener(ClientSession session)
+        public MessageListener(IClientSession session)
         {            
             _session = session;
         }
 
-        public void messageTransfer(IMessage m)
+        public void MessageTransfer(IMessage m)
         {
             BinaryReader reader = new BinaryReader(m.Body, Encoding.UTF8);
             byte[] body = new byte[m.Body.Length - m.Body.Position];
@@ -97,11 +102,11 @@ namespace org.apache.qpid.example.direct
             string message = enc.GetString(body);
             Console.WriteLine("Message: " + message);
             // Add this message to the list of message to be acknowledged 
-            _range.add(m.Id);       
+            _range.Add(m.Id);       
             if( message.Equals("That's all, folks!") )
             {
                 // Acknowledge all the received messages 
-                _session.messageAccept(_range);     
+                _session.MessageAccept(_range);     
                 lock(_session)
                 {
                     Monitor.Pulse(_session);

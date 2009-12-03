@@ -33,17 +33,17 @@ namespace test.transport.util
     [TestFixture]
     public class ResultFutureTest
     {
-        private static readonly Logger _log = Logger.get(typeof (ByteEncoderTest));
+        private static readonly Logger _log = Logger.Get(typeof (ByteEncoderTest));
         private static ResultFuture _future;
 
         [Test]
         public void getFutureTimeout()
         {
-            _log.debug("Running: getFutureTimeout");                        
+            _log.Debug("Running: getFutureTimeout");                        
             _future = new ResultFuture();
             _future.Session = new Session(new byte[1]);
             DateTime start = DateTime.Now;
-            Struct result = _future.get(1000);
+            Struct result = _future.Get(1000);
             Assert.IsTrue(DateTime.Now.Subtract(start).TotalMilliseconds >= 1000);
             Assert.IsNull(result);           
         }
@@ -51,12 +51,12 @@ namespace test.transport.util
         [Test]
         public void getFuture()
         {
-            _log.debug("Running: getFuture");
+            _log.Debug("Running: getFuture");
             _future = new ResultFuture();
             _future.Session = new Session(new byte[1]);
             Thread t = new Thread(Go);
             t.Start();
-            Struct result = _future.get(2000);
+            Struct result = _future.Get(2000);
             Assert.IsNotNull(result);
         }
 
@@ -70,27 +70,27 @@ namespace test.transport.util
 
     public class myStruct:Struct
     {
-        public override int getStructType()
+        public override int GetStructType()
         {
             throw new System.NotImplementedException();
         }
 
-        public override int getSizeWidth()
+        public override int GetSizeWidth()
         {
             throw new System.NotImplementedException();
         }
 
-        public override int getPackWidth()
+        public override int GetPackWidth()
         {
             throw new System.NotImplementedException();
         }
 
-        public override void read(Decoder dec)
+        public override void Read(IDecoder dec)
         {
             throw new System.NotImplementedException();
         }
 
-        public override void write(Encoder enc)
+        public override void Write(IEncoder enc)
         {
             throw new System.NotImplementedException();
         }

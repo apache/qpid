@@ -20,7 +20,6 @@
  */
 
 using System;
-using System.Net ;
 
 namespace org.apache.qpid.console
 {

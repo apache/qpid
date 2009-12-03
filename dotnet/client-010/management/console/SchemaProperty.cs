@@ -35,9 +35,9 @@ namespace org.apache.qpid.console
 		public bool Index {get;set;}	
 		public bool Optional {get;set;}		
 				
-		public SchemaProperty(Decoder dec)
+		public SchemaProperty(IDecoder dec)
 		{
-			Dictionary<string, Object> map = dec.readMap() ;
+			Dictionary<string, Object> map = dec.ReadMap() ;
 			base.PopulateData(map) ;
 			Name = (string)  map["name"] ;
 			

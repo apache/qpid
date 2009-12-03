@@ -55,13 +55,13 @@ namespace org.apache.qpid.console
 			Hash[3] = long.Parse(bytes[3], NumberStyles.HexNumber) ;
 		}
 		
-		public ClassKey(Decoder dec) {
-			PackageName = dec.readStr8() ;
-			ClassName = dec.readStr8() ;
-			Hash[0] = dec.readUint32() ;
-			Hash[1] = dec.readUint32() ;	
-			Hash[2] = dec.readUint32() ;
-			Hash[3] = dec.readUint32() ;
+		public ClassKey(IDecoder dec) {
+			PackageName = dec.ReadStr8() ;
+			ClassName = dec.ReadStr8() ;
+			Hash[0] = dec.ReadUint32() ;
+			Hash[1] = dec.ReadUint32() ;	
+			Hash[2] = dec.ReadUint32() ;
+			Hash[3] = dec.ReadUint32() ;
 			
 		}
 		
@@ -74,13 +74,13 @@ namespace org.apache.qpid.console
 			return String.Format("{0:x8}-{1:x8}-{2:x8}-{3:x8}", (long) Hash[0],Hash[1], Hash[2],Hash[3]) ;
 		}
 		
-		public void encode(Encoder enc) {
-			enc.writeStr8(PackageName) ;
-			enc.writeStr8(ClassName) ;					
-			enc.writeUint32(Hash[0]) ;
-			enc.writeUint32(Hash[1]) ;
-			enc.writeUint32(Hash[2]) ;
-			enc.writeUint32(Hash[3]) ;			
+		public void encode(IEncoder enc) {
+			enc.WriteStr8(PackageName) ;
+			enc.WriteStr8(ClassName) ;					
+			enc.WriteUint32(Hash[0]) ;
+			enc.WriteUint32(Hash[1]) ;
+			enc.WriteUint32(Hash[2]) ;
+			enc.WriteUint32(Hash[3]) ;			
 		}
 		
 		override public string ToString() {

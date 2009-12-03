@@ -20,6 +20,7 @@
  */
 
 using System;
+using System.Configuration;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -36,35 +37,43 @@ namespace WindowsClient
         {
              XmlConfigurator.Configure(new FileInfo("..\\..\\log.xml"));
             // DOMConfigurator.Configure()            
+
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
             Client client = new Client();
             Console.WriteLine("Client created");
-            client.connect("192.168.1.14", 5673, "test", "guest", "guest");
+            client.Connect(host, port, virtualhost, username, password);
             Console.WriteLine("Connection established");
 
-            ClientSession ssn = client.createSession(50000);
+            IClientSession ssn = client.CreateSession(50000);
             Console.WriteLine("Session created");
-            ssn.queueDeclare("queue1", null, null);
-            ssn.exchangeBind("queue1", "amq.direct", "queue1", null);
+            ssn.QueueDeclare("queue1", null, null);
+            ssn.ExchangeBind("queue1", "amq.direct", "queue1", null);
 
 
             Object wl = new Object();
-            ssn.attachMessageListener(new MyListener(ssn, wl), "myDest");
+            ssn.AttachMessageListener(new MyListener(ssn, wl), "myDest");
 
-            ssn.messageSubscribe("queue1", "myDest", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED, null,
+            ssn.MessageSubscribe("queue1", "myDest", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED, null,
                                  0, null);
             DateTime start = DateTime.Now;
 
             // issue credits     
-            ssn.messageSetFlowMode("myDest", MessageFlowMode.WINDOW);
-            ssn.messageFlow("myDest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
-            ssn.messageFlow("myDest", MessageCreditUnit.MESSAGE, 10000);
-            ssn.sync();
+            ssn.MessageSetFlowMode("myDest", MessageFlowMode.WINDOW);
+            ssn.MessageFlow("myDest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
+            ssn.MessageFlow("myDest", MessageCreditUnit.MESSAGE, 10000);
+            ssn.Sync();
+
 
             for (int i = 0; i < 10000; i ++)
             {            
-            ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
-                                new Header(new DeliveryProperties().setRoutingKey("queue1"),
-                                           new MessageProperties().setMessageId(UUID.randomUUID())),
+            ssn.MessageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                                new Header(new DeliveryProperties().SetRoutingKey("queue1"),
+                                           new MessageProperties().SetMessageId(UUID.RandomUuid())),
                                 Encoding.UTF8.GetBytes("test: " + i));
             }
 
@@ -80,24 +89,24 @@ namespace WindowsClient
             {
                 Monitor.Wait(wl, 30000);
             }
-            client.close();
+            client.Close();
         }
     }
 
     class MyListener : IMessageListener
     {
         private readonly Object _wl;
-        private ClientSession _session;
+        private IClientSession _session;
         private int _count;
 
-        public MyListener(ClientSession session, object wl)
+        public MyListener(IClientSession session, object wl)
         {
             _wl = wl;
             _session = session;
             _count = 0;
         }
 
-        public void messageTransfer(IMessage m)
+        public void MessageTransfer(IMessage m)
         {
             BinaryReader reader = new BinaryReader(m.Body, Encoding.UTF8);
             byte[] body = new byte[m.Body.Length - m.Body.Position];

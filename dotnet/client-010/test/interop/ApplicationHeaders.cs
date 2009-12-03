@@ -28,23 +28,23 @@ namespace test.interop
 {
     public class ApplicationHeaders:TestCase
     {
-        private static readonly Logger _log = Logger.get(typeof(ApplicationHeaders));
+        private static readonly Logger _log = Logger.Get(typeof(ApplicationHeaders));
 
         [Test]
         public void setHeaders()
         {          
-            _log.debug("Running: setHeaders");
-            ClientSession ssn = Client.createSession(0);
-            ssn.queueDeclare("queue1");
-            ssn.exchangeBind("queue1", "amq.direct", "queue1");
-            ssn.sync();
+            _log.Debug("Running: setHeaders");
+            IClientSession ssn = Client.CreateSession(0);
+            ssn.QueueDeclare("queue1");
+            ssn.ExchangeBind("queue1", "amq.direct", "queue1");
+            ssn.Sync();
             CircularBuffer<IMessage> buff = new CircularBuffer<IMessage>(10); 
             SyncListener listener = new SyncListener(ssn, buff);
-            ssn.attachMessageListener(listener, "queue1");
-            ssn.messageSubscribe("queue1");
+            ssn.AttachMessageListener(listener, "queue1");
+            ssn.MessageSubscribe("queue1");
 
             IMessage message = new org.apache.qpid.client.Message();
-            message.DeliveryProperties.setRoutingKey("queue1");
+            message.DeliveryProperties.SetRoutingKey("queue1");
             const long someLong = 14444444;
             message.ApplicationHeaders.Add("someLong", someLong);
             const int someInt = 14;
@@ -63,7 +63,7 @@ namespace test.interop
             message.ApplicationHeaders.Add("someBoolean", someBoolean);
 
             // transfer the message 
-            ssn.messageTransfer("amq.direct", message); 
+            ssn.MessageTransfer("amq.direct", message); 
 
             // get the message and check the headers 
             IMessage messageBack = buff.Dequeue();

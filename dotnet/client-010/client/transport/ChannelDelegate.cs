@@ -26,16 +26,16 @@ namespace org.apache.qpid.transport
     /// </summary>
     internal class ChannelDelegate : MethodDelegate<Channel>
     {
-        public override void sessionDetached(Channel channel, SessionDetached closed)
+        public override void SessionDetached(Channel channel, SessionDetached closed)
         {
-            channel.closed();
+            channel.Closed();
         }
 
-        public override void sessionDetach(Channel channel, SessionDetach dtc)
+        public override void SessionDetach(Channel channel, SessionDetach dtc)
         {
-            channel.Session.closed();
-            channel.sessionDetached(dtc.getName(), SessionDetachCode.NORMAL);
-            channel.closed();
+            channel.Session.Closed();
+            channel.SessionDetached(dtc.GetName(), SessionDetachCode.NORMAL);
+            channel.Closed();
         }
     }
 }

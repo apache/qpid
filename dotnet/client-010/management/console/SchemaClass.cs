@@ -54,18 +54,18 @@ namespace org.apache.qpid.console
 		
 		protected Session Session {get;set;}				
 		
-		public SchemaClass(int kind, ClassKey key, Decoder dec, Session session)
+		public SchemaClass(int kind, ClassKey key, IDecoder dec, Session session)
 		{
 			log.Debug(String.Format("New schema class {0}", key)) ;
 		    Kind = kind ;
 		    Session = session ;
 		    this.Key = key ;   
-		    bool hasSupertype = !(dec.readUint8().Equals(0)) ;	
+		    bool hasSupertype = !(dec.ReadUint8().Equals(0)) ;	
 		 
 		 	if (kind == CLASS_KIND_TABLE) {
-				int propCount = dec.readUint16() ;
-				int statCount = dec.readUint16() ;
-				int methodCount = dec.readUint16() ;
+				int propCount = dec.ReadUint16() ;
+				int statCount = dec.ReadUint16() ;
+				int methodCount = dec.ReadUint16() ;
 				
 				if (hasSupertype) {		
 			 		SuperType = new ClassKey(dec) ;
@@ -83,7 +83,7 @@ namespace org.apache.qpid.console
 			}
 			
 			if (kind == CLASS_KIND_EVENT) {			
-				int argCount = dec.readUint16() ;		
+				int argCount = dec.ReadUint16() ;		
 				if (hasSupertype) {
 			 		SuperType = new ClassKey(dec) ;
 			 	}				

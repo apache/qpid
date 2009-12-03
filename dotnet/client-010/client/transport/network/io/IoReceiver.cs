@@ -29,9 +29,9 @@ namespace org.apache.qpid.transport.network.io
     /// <summary> 
     /// IoReceiver
     /// </summary>
-    public sealed class IoReceiver : Receiver<ReceivedPayload<MemoryStream>>
+    public sealed class IoReceiver : IReceiver<ReceivedPayload<MemoryStream>>
     {
-        private static readonly Logger log = Logger.get(typeof(IoReceiver));      
+        private static readonly Logger log = Logger.Get(typeof(IoReceiver));      
         private readonly int m_bufferSize;
         private readonly Stream m_bufStream;
         private readonly int m_timeout;
@@ -44,7 +44,7 @@ namespace org.apache.qpid.transport.network.io
         event EventHandler<ExceptionArgs> ExceptionReading;
         event EventHandler ReceiverClosed;
 
-        event EventHandler<ReceivedPayload<MemoryStream>> Receiver<ReceivedPayload<MemoryStream>>.Received
+        event EventHandler<ReceivedPayload<MemoryStream>> IReceiver<ReceivedPayload<MemoryStream>>.Received
         {
             add
             {
@@ -62,7 +62,7 @@ namespace org.apache.qpid.transport.network.io
             }
         }
 
-        event EventHandler<ExceptionArgs> Receiver<ReceivedPayload<MemoryStream>>.Exception
+        event EventHandler<ExceptionArgs> IReceiver<ReceivedPayload<MemoryStream>>.Exception
         {
             add
             {
@@ -80,7 +80,7 @@ namespace org.apache.qpid.transport.network.io
             }
         }
 
-        event EventHandler Receiver<ReceivedPayload<MemoryStream>>.Closed
+        event EventHandler IReceiver<ReceivedPayload<MemoryStream>>.Closed
         {
             add
             {
@@ -109,7 +109,7 @@ namespace org.apache.qpid.transport.network.io
             m_thread.Start();
         }
 
-        public void close()
+        public void Close()
         {
             Mutex mut = new Mutex();
             mut.WaitOne();
@@ -118,7 +118,7 @@ namespace org.apache.qpid.transport.network.io
                 m_closed = true;               
                 try
                 {
-                    log.debug("Receiver closing");
+                    log.Debug("Receiver closing");
                     m_bufStream.Close();
                     m_thread.Join(m_timeout);
                     if (m_thread.IsAlive)
@@ -164,11 +164,11 @@ namespace org.apache.qpid.transport.network.io
                         buffer = new byte[m_bufferSize];
                     }
                 }
-                log.debug("Receiver thread terminating");
+                log.Debug("Receiver thread terminating");
             }
-            catch (IOException e)
+            catch (IOException)
             {
-                // IOException is thrown when the socket is closed according to the docs
+                // IOException is thrown when the socket is Closed according to the docs
             }
             catch (Exception t)
             {

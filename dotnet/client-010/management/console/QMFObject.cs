@@ -92,7 +92,7 @@ namespace org.apache.qpid.console
  		
  		// This constructor is used by the session to create an object based on a data 
  		// stream by the agent.
-		public QMFObject(Session session, SchemaClass schema, Decoder dec, bool hasProperties, bool hasStats , bool isManaged)
+		public QMFObject(Session session, SchemaClass schema, IDecoder dec, bool hasProperties, bool hasStats , bool isManaged)
 		{
 			Session = session ;
 			Schema = schema ;
@@ -100,9 +100,9 @@ namespace org.apache.qpid.console
 			
 			if (Managed) {
 			    // FIXME DateTime or Uint64??
-				CurrentTime = new DateTime(dec.readDatetime()) ;
-				CreateTime = new DateTime(dec.readDatetime()) ;				
-				DeleteTime = new DateTime(dec.readDatetime()) ;				
+				CurrentTime = new DateTime(dec.ReadDatetime()) ;
+				CreateTime = new DateTime(dec.ReadDatetime()) ;				
+				DeleteTime = new DateTime(dec.ReadDatetime()) ;				
 				ObjectID = new ObjectID(dec) ;
 			}
 			
@@ -129,7 +129,7 @@ namespace org.apache.qpid.console
 			
 		}
 
-		protected List<string> ProcessPresenceMasks(Decoder dec, SchemaClass schema) {
+		protected List<string> ProcessPresenceMasks(IDecoder dec, SchemaClass schema) {
 			List<string> excludes = new List<string> () ;
 			short bit = 0 ;
 			short mask = 0 ;
@@ -137,7 +137,7 @@ namespace org.apache.qpid.console
 				if (prop.Optional) {
 					//log.Debug(String.Format("Property named {0} is optional", prop.Name)) ;				
 					if (bit == 0) {
-						mask=dec.readUint8() ;
+						mask=dec.ReadUint8() ;
 						bit = 1 ;
 					}
 
@@ -234,13 +234,13 @@ namespace org.apache.qpid.console
 			return Session.InvokeMethod(this, name, args, synchronous, timeToLive) ;
 		}
 		
-		public void Encode (Encoder enc) {
+		public void Encode (IEncoder enc) {
 			int mask = 0 ;
 			int bit = 0 ;
 			List<SchemaProperty> propsToEncode = new List<SchemaProperty>() ;
 			log.Debug(String.Format("Encoding class {0}:{1}", Schema.PackageName, Schema.ClassName)) ;
 					
-			enc.writeUint8(20) ;
+			enc.WriteUint8(20) ;
 			Schema.Key.encode(enc) ;
 			
 			foreach (SchemaProperty prop in Schema.GetAllProperties()) {
@@ -256,7 +256,7 @@ namespace org.apache.qpid.console
 					bit = bit << 1 ;
 					if (bit == 256) {
 						bit = 0 ;
-						enc.writeUint8((short)mask) ;
+						enc.WriteUint8((short)mask) ;
 						mask = 0 ;
 					}
 				} else {
@@ -264,7 +264,7 @@ namespace org.apache.qpid.console
 				}
 			}
 			if (bit != 0) {
-				enc.writeUint8((short)mask) ;
+				enc.WriteUint8((short)mask) ;
 			}		
 			
 			foreach (SchemaProperty prop in propsToEncode) {

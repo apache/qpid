@@ -32,7 +32,7 @@ namespace org.apache.qpid.transport.util
     {
         private readonly ILog log;
 
-        public static Logger get(Type type)
+        public static Logger Get(Type type)
         {
             return new Logger(LogManager.GetLogger(type));
         }
@@ -42,12 +42,12 @@ namespace org.apache.qpid.transport.util
             this.log = log;
         }
 
-        public bool isDebugEnabled()
+        public bool IsDebugEnabled()
         {
             return log.IsDebugEnabled;
         }
 
-        public void debug(String message, params Object[] args)
+        public void Debug(String message, params Object[] args)
         {
             if (log.IsDebugEnabled)
             {
@@ -55,7 +55,7 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public void debug(Exception t, String message, params Object[] args)
+        public void Debug(Exception t, String message, params Object[] args)
         {
             if (log.IsDebugEnabled)
             {
@@ -63,7 +63,7 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public void error(String message, params Object[] args)
+        public void Error(String message, params Object[] args)
         {
             if (log.IsErrorEnabled)
             {
@@ -71,7 +71,7 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public void error(Exception t, String message, params Object[] args)
+        public void Error(Exception t, String message, params Object[] args)
         {
             if (log.IsErrorEnabled)
             {
@@ -79,7 +79,7 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public void warn(String message, params Object[] args)
+        public void Warn(String message, params Object[] args)
         {
             if (log.IsWarnEnabled)
             {
@@ -87,7 +87,7 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public void warn(Exception t, String message, params Object[] args)
+        public void Warn(Exception t, String message, params Object[] args)
         {
             if (log.IsWarnEnabled)
             {
@@ -95,7 +95,7 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public void info(String message, params Object[] args)
+        public void Info(String message, params Object[] args)
         {
             if (log.IsInfoEnabled)
             {
@@ -103,7 +103,7 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public void info(Exception t, String message, params Object[] args)
+        public void Info(Exception t, String message, params Object[] args)
         {
             if (log.IsInfoEnabled)
             {

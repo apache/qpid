@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Configuration;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -42,28 +43,32 @@ namespace org.apache.qpid.example.requestresponse
     {
         static void Main(string[] args)
         {
-            string host = args.Length > 0 ? args[0] : "localhost";
-            int port = args.Length > 1 ? Convert.ToInt32(args[1]) : 5672;
-            client.Client connection = new client.Client();
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
+            Client connection = new Client();
             try
             {
-                connection.connect(host, port, "test", "guest", "guest");
-                ClientSession session = connection.createSession(50000);
+                connection.Connect(host, port, virtualhost, username, password);
+                IClientSession session = connection.CreateSession(50000);
 
                 //--------- Main body of program --------------------------------------------
                 // Create a request queue for clients to use when making
                 // requests.
                 const string request_queue = "request";
                 // Use the name of the request queue as the routing key
-                session.queueDeclare(request_queue);
-                session.exchangeBind(request_queue, "amq.direct", request_queue);
+                session.QueueDeclare(request_queue);
+                session.ExchangeBind(request_queue, "amq.direct", request_queue);
 
                 lock (session)
                 {
                     // Create a listener and subscribe it to the request_queue      
                     IMessageListener listener = new MessageListener(session);
-                    session.attachMessageListener(listener, request_queue);
-                    session.messageSubscribe(request_queue);
+                    session.AttachMessageListener(listener, request_queue);
+                    session.MessageSubscribe(request_queue);
                     // Receive messages until all messages are received
                     Console.WriteLine("Waiting for requests");
                     Monitor.Wait(session);
@@ -71,7 +76,7 @@ namespace org.apache.qpid.example.requestresponse
 
                 //---------------------------------------------------------------------------
 
-                connection.close();
+                connection.Close();
             }
             catch (Exception e)
             {
@@ -82,22 +87,22 @@ namespace org.apache.qpid.example.requestresponse
 
     public class MessageListener : IMessageListener
     {
-        private readonly ClientSession _session;
+        private readonly IClientSession _session;
         private readonly RangeSet _range = new RangeSet();
-        public MessageListener(ClientSession session)
+        public MessageListener(IClientSession session)
         {
             _session = session;
         }
 
-        public void messageTransfer(IMessage request)
+        public void MessageTransfer(IMessage request)
         {
             IMessage response = new Message();
 
             // Get routing key for response from the request's replyTo property
             string routingKey;
-            if( request.MessageProperties.hasReplyTo() )
+            if( request.MessageProperties.HasReplyTo() )
             {
-                routingKey = request.MessageProperties.getReplyTo().getRoutingKey();
+                routingKey = request.MessageProperties.GetReplyTo().GetRoutingKey();
             }
             else
             {
@@ -116,16 +121,16 @@ namespace org.apache.qpid.example.requestresponse
             string responseBody = message.ToUpper();
 
             // Send it back to the user
-            response.clearData();
-            response.appendData(Encoding.UTF8.GetBytes(responseBody));
-            _session.messageTransfer("amq.direct", routingKey, response);
+            response.ClearData();
+            response.AppendData(Encoding.UTF8.GetBytes(responseBody));
+            _session.MessageTransfer("amq.direct", routingKey, response);
 
             // Add this message to the list of message to be acknowledged 
-            _range.add(request.Id);
+            _range.Add(request.Id);
             if (message.Equals("That's all, folks!"))
             {
                 // Acknowledge all the received messages 
-                _session.messageAccept(_range);
+                _session.MessageAccept(_range);
                 lock (_session)
                 {
                     Monitor.Pulse(_session);

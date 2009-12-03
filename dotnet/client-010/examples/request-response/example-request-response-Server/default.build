@@ -40,7 +40,8 @@
          <references>
             <include name="${build.dir}/log4net.dll" />	
             <include name="${build.dir}/qpid.client.dll" />	
-         </references>
+	    <include name="System.Configuration.dll" />
+	 </references>
         </csc>
     </target>
 </project>

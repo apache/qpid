@@ -45,22 +45,22 @@ namespace org.apache.qpid.transport
         }
 
 
-        public int size()
+        public int Size()
         {
             return _ranges.Count;
         }
 
 
-        public Range getFirst()
+        public Range GetFirst()
         {
             return _ranges[0];
         }
 
-        public bool includes(Range range)
+        public bool Includes(Range range)
         {
             foreach (Range r in this)
             {
-                if (r.includes(range))
+                if (r.Includes(range))
                 {
                     return true;
                 }
@@ -69,11 +69,11 @@ namespace org.apache.qpid.transport
             return false;
         }
 
-        public bool includes(int n)
+        public bool Includes(int n)
         {
             foreach (Range r in this)
             {
-                if (r.includes(n))
+                if (r.Includes(n))
                 {
                     return true;
                 }
@@ -82,17 +82,17 @@ namespace org.apache.qpid.transport
             return false;
         }
 
-        public void add(Range range)
+        public void Add(Range range)
         {
             for (int i = 0; i < _ranges.Count; i++)
             {
                 Range r = _ranges[i];
-                if (range.touches(r))
+                if (range.Touches(r))
                 {
                     _ranges.Remove(r);
-                    range = range.span(r);
+                    range = range.Span(r);
                 }
-                else if (Serial.lt(range.Upper, r.Lower))
+                else if (Serial.Lt(range.Upper, r.Lower))
                 {
                     _ranges.Insert(i - 1 , range);
                     return;
@@ -101,22 +101,22 @@ namespace org.apache.qpid.transport
             _ranges.Add(range);
         }
 
-        public void add(int lower, int upper)
+        public void Add(int lower, int upper)
         {
-            add(new Range(lower, upper));
+            Add(new Range(lower, upper));
         }
 
-        public void add(int value)
+        public void Add(int value)
         {
-            add(value, value);
+            Add(value, value);
         }
 
-        public void clear()
+        public void Clear()
         {
             _ranges.Clear();
         }
 
-        public RangeSet copy()
+        public RangeSet Copy()
         {
             RangeSet copy = new RangeSet();
             foreach (Range r in _ranges)
@@ -126,7 +126,7 @@ namespace org.apache.qpid.transport
             return copy;
         }
 
-        public String toString()
+        public override String ToString()
         {
             StringBuilder str = new StringBuilder();
             str.Append("{");

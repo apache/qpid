@@ -52,49 +52,49 @@ namespace org.apache.qpid.transport
             set { _upper = value; }
         }
 
-        public bool includes(int value)
+        public bool Includes(int value)
         {
-            return Serial.le(_lower, value) && Serial.le(value, _upper);
+            return Serial.Le(_lower, value) && Serial.Le(value, _upper);
         }
 
-        public bool includes(Range range)
+        public bool Includes(Range range)
         {
-            return includes(range._lower) && includes(range._upper);
+            return Includes(range._lower) && Includes(range._upper);
         }
 
-        public bool intersects(Range range)
+        public bool Intersects(Range range)
         {
-            return (includes(range._lower) || includes(range._upper) ||
-                    range.includes(_lower) || range.includes(_upper));
+            return (Includes(range._lower) || Includes(range._upper) ||
+                    range.Includes(_lower) || range.Includes(_upper));
         }
 
-        public bool touches(Range range)
+        public bool Touches(Range range)
         {
-            return (intersects(range) ||
-                    includes(range._upper + 1) || includes(range._lower - 1) ||
-                    range.includes(_upper + 1) || range.includes(_lower - 1));
+            return (Intersects(range) ||
+                    Includes(range._upper + 1) || Includes(range._lower - 1) ||
+                    range.Includes(_upper + 1) || range.Includes(_lower - 1));
         }
 
-        public Range span(Range range)
+        public Range Span(Range range)
         {
-            return new Range(Serial.min(_lower, range._lower), Serial.max(_upper, range._upper));
+            return new Range(Serial.Min(_lower, range._lower), Serial.Max(_upper, range._upper));
         }
 
-        public List<Range> subtract(Range range)
+        public List<Range> Subtract(Range range)
         {
             List<Range> result = new List<Range>();
 
-            if (includes(range._lower) && Serial.le(_lower, range._lower - 1))
+            if (Includes(range._lower) && Serial.Le(_lower, range._lower - 1))
             {
                 result.Add(new Range(_lower, range._lower - 1));
             }
 
-            if (includes(range._upper) && Serial.le(range._upper + 1, _upper))
+            if (Includes(range._upper) && Serial.Le(range._upper + 1, _upper))
             {
                 result.Add(new Range(range._upper + 1, _upper));
             }
 
-            if (result.Count == 0 && !range.includes(this))
+            if (result.Count == 0 && !range.Includes(this))
             {
                 result.Add(this);
             }
@@ -102,14 +102,14 @@ namespace org.apache.qpid.transport
             return result;
         }
 
-        public Range intersect(Range range)
+        public Range Intersect(Range range)
         {
-            int l = Serial.max(_lower, range._lower);
-            int r = Serial.min(_upper, range._upper);
-            return Serial.gt(l, r) ? null : new Range(l, r);
+            int l = Serial.Max(_lower, range._lower);
+            int r = Serial.Min(_upper, range._upper);
+            return Serial.Gt(l, r) ? null : new Range(l, r);
         }
 
-        public String toString()
+        public override String ToString()
         {
             return "[" + _lower + ", " + _upper + "]";
         }

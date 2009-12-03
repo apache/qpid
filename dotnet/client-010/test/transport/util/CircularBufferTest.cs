@@ -32,12 +32,12 @@ namespace test.transport.util
     public class CircularBufferTest
     {
         private CircularBuffer<Object> _buf;
-        private static readonly Logger _log = Logger.get(typeof(CircularBufferTest));
+        private static readonly Logger _log = Logger.Get(typeof(CircularBufferTest));
 
         [Test]
         public void BlockingEnqueue()
         {
-            _log.debug("Running: BlockingEnqueue");
+            _log.Debug("Running: BlockingEnqueue");
             const int size = 10;
             _buf = new CircularBuffer<Object>(size);
             // add size element anc check that the size +1 add blocks 
@@ -60,7 +60,7 @@ namespace test.transport.util
         [Test]
         public void Close()
         {
-            _log.debug("Running: BlockingEnqueue");
+            _log.Debug("Running: BlockingEnqueue");
             const int size = 10;
             _buf = new CircularBuffer<Object>(size);
             // add size element anc check that the size +1 add blocks 
@@ -74,7 +74,7 @@ namespace test.transport.util
             Thread.Sleep(1000);
             // the trhead t should block until the buffer is closed             
             Assert.IsTrue(t.ThreadState == ThreadState.WaitSleepJoin);
-            _buf.close();
+            _buf.Close();
             Thread.Sleep(100);
             // t should now be stopped 
             Assert.IsTrue(t.ThreadState == ThreadState.Stopped);           

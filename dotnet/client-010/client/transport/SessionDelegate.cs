@@ -25,7 +25,7 @@ namespace org.apache.qpid.transport
     /// SessionDelegate
     /// 
     /// </summary>
-    public abstract class SessionDelegate : MethodDelegate<Session>, ProtocolDelegate<Session>
+    public abstract class SessionDelegate : MethodDelegate<Session>, IProtocolDelegate<Session>
     {
         public void Init(Session ssn, ProtocolHeader hdr)
         {
@@ -33,16 +33,16 @@ namespace org.apache.qpid.transport
 
         public void Control(Session ssn, Method method)
         {
-            method.dispatch(ssn, this);
+            method.Dispatch(ssn, this);
         }
 
         public void Command(Session ssn, Method method)
         {
-            ssn.identify(method);
-            method.dispatch(ssn, this);
-            if (!method.hasPayload())
+            ssn.Identify(method);
+            method.Dispatch(ssn, this);
+            if (!method.HasPayload())
             {
-                ssn.processed(method);
+                ssn.Processed(method);
             }
         }
 
@@ -50,21 +50,21 @@ namespace org.apache.qpid.transport
         {
         }
 
-        public override void executionResult(Session ssn, ExecutionResult result)
+        public override void ExecutionResult(Session ssn, ExecutionResult result)
         {
-            ssn.result(result.getCommandId(), result.getValue());
+            ssn.Result(result.GetCommandId(), result.GetValue());
         }
 
-        public override void executionException(Session ssn, ExecutionException exc)
+        public override void ExecutionException(Session ssn, ExecutionException exc)
         {
-            ssn.addException(exc);
+            ssn.AddException(exc);
         }
 
-        public override void sessionCompleted(Session ssn, SessionCompleted cmp)
+        public override void SessionCompleted(Session ssn, SessionCompleted cmp)
         {           
-                RangeSet ranges = cmp.getCommands();
+                RangeSet ranges = cmp.GetCommands();
                 RangeSet known = null;
-                if (cmp.getTimelyReply())
+                if (cmp.GetTimelyReply())
                 {
                     known = new RangeSet();
                 }
@@ -73,54 +73,54 @@ namespace org.apache.qpid.transport
                 {
                     foreach (Range range in ranges)
                     {
-                        bool advanced = ssn.complete(range.Lower, range.Upper);
+                        bool advanced = ssn.Complete(range.Lower, range.Upper);
                         if (advanced && known != null)
                         {
-                            known.add(range);
+                            known.Add(range);
                         }
                     }
                 }
 
                 if (known != null)
                 {
-                    ssn.sessionKnownCompleted(known);
+                    ssn.SessionKnownCompleted(known);
                 }           
         }
 
-        public override void sessionKnownCompleted(Session ssn, SessionKnownCompleted kcmp)
+        public override void SessionKnownCompleted(Session ssn, SessionKnownCompleted kcmp)
         {
-            RangeSet kc = kcmp.getCommands();
+            RangeSet kc = kcmp.GetCommands();
             if (kc != null)
             {
-                ssn.knownComplete(kc);
+                ssn.KnownComplete(kc);
             }
         }
 
-        public override void sessionFlush(Session ssn, SessionFlush flush)
+        public override void SessionFlush(Session ssn, SessionFlush flush)
         {
-            if (flush.getCompleted())
+            if (flush.GetCompleted())
             {
-                ssn.flushProcessed();
+                ssn.FlushProcessed();
             }
-            if (flush.getConfirmed())
+            if (flush.GetConfirmed())
             {
-                ssn.flushProcessed();
+                ssn.FlushProcessed();
             }
-            if (flush.getExpected())
+            if (flush.GetExpected())
             {
                // to be done
                 //throw new Exception("not implemented");
             }
         }
 
-        public override void sessionCommandPoint(Session ssn, SessionCommandPoint scp)
+        public override void SessionCommandPoint(Session ssn, SessionCommandPoint scp)
         {
-            ssn.CommandsIn = scp.getCommandId();
+            ssn.CommandsIn = scp.GetCommandId();
         }
 
-        public override void executionSync(Session ssn, ExecutionSync sync)
+        public override void ExecutionSync(Session ssn, ExecutionSync sync)
         {
-            ssn.syncPoint();
+            ssn.SyncPoint();
         }
     }
 }

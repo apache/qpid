@@ -29,133 +29,133 @@ namespace org.apache.qpid.transport.codec
     /// <summary> 
     /// AbstractDecoder
     /// </summary>
-    public abstract class AbstractDecoder : Decoder
+    public abstract class AbstractDecoder : IDecoder
     {
         private readonly Dictionary<Binary, String> str8cache = new Dictionary<Binary, String>();
 
-        protected abstract byte doGet();
+        protected abstract byte DoGet();
 
-        protected abstract void doGet(byte[] bytes);
-        public abstract bool hasRemaining();
+        protected abstract void DoGet(byte[] bytes);
+        public abstract bool HasRemaining();
 
-        protected byte get()
+        protected byte Get()
         {
-            return doGet();
+            return DoGet();
         }
 
-        protected void get(byte[] bytes)
+        protected void Get(byte[] bytes)
         {
-            doGet(bytes);
+            DoGet(bytes);
         }
 
-        protected Binary get(int size)
+        protected Binary Get(int size)
         {
             byte[] bytes = new byte[size];
-            get(bytes);
+            Get(bytes);
             return new Binary(bytes);
         }
 
-        protected short uget()
+        protected short Uget()
         {
-            return (short) (0xFF & get());
+            return (short) (0xFF & Get());
         }
 
-        public virtual short readUint8()
+        public virtual short ReadUint8()
         {
-            return uget();
+            return Uget();
         }
 
-        public abstract int readUint16();
+        public abstract int ReadUint16();
        
 
-        public abstract long readUint32();
+        public abstract long ReadUint32();
       
 
-        public int readSequenceNo()
+        public int ReadSequenceNo()
         {
-            return (int) readUint32();
+            return (int) ReadUint32();
         }
 
-        public virtual long readUint64()
+        public virtual long ReadUint64()
         {
             long l = 0;
             for (int i = 0; i < 8; i++)
             {
-                l |= ((long) (0xFF & get())) << (56 - i*8);
+                l |= ((long) (0xFF & Get())) << (56 - i*8);
             }
             return l;
         }
 
-        public abstract short readInt8();
-        public abstract int readInt16();       
-        public abstract long readInt32() ;
-        public abstract long readInt64();     
-        public abstract float readFloat() ;  
-        public abstract double readDouble() ;          
+        public abstract short ReadInt8();
+        public abstract int ReadInt16();       
+        public abstract long ReadInt32() ;
+        public abstract long ReadInt64();     
+        public abstract float ReadFloat() ;  
+        public abstract double ReadDouble() ;          
 
-        public long readDatetime()
+        public long ReadDatetime()
         {
-            return readUint64();
+            return ReadUint64();
         }
 
-        private static String decode(byte[] bytes, int offset, int length, Encoding encoding)
+        private static String Decode(byte[] bytes, int offset, int length, Encoding encoding)
         {
             return encoding.GetString(bytes, offset, length);
         }
 
-        private static String decode(byte[] bytes, Encoding encoding)
+        private static String Decode(byte[] bytes, Encoding encoding)
         {
-            return decode(bytes, 0, bytes.Length, encoding);
+            return Decode(bytes, 0, bytes.Length, encoding);
         }
 
-        public String readStr8()
+        public String ReadStr8()
         {
-            short size = readUint8();
-            Binary bin = get(size);
+            short size = ReadUint8();
+            Binary bin = Get(size);
             String str;
             if (! str8cache.TryGetValue(bin, out str))
             {
-                str = decode(bin.array(), bin.offset(), bin.size(), Encoding.UTF8);
+                str = Decode(bin.Array(), bin.Offset(), bin.Size(), Encoding.UTF8);
                 str8cache.Add(bin, str);
             }
             return str;
         }
 
-        public String readStr16()
+        public String ReadStr16()
         {
-            int size = readUint16();
+            int size = ReadUint16();
             byte[] bytes = new byte[size];
-            get(bytes);
-            return decode(bytes, Encoding.UTF8);
+            Get(bytes);
+            return Decode(bytes, Encoding.UTF8);
         }
 
-        public byte[] readVbin8()
+        public byte[] ReadVbin8()
         {
-            int size = readUint8();
+            int size = ReadUint8();
             byte[] bytes = new byte[size];
-            get(bytes);
+            Get(bytes);
             return bytes;
         }
 
-        public byte[] readVbin16()
+        public byte[] ReadVbin16()
         {
-            int size = readUint16();
+            int size = ReadUint16();
             byte[] bytes = new byte[size];
-            get(bytes);
+            Get(bytes);
             return bytes;
         }
 
-        public byte[] readVbin32()
+        public byte[] ReadVbin32()
         {
-            int size = (int) readUint32();
+            int size = (int) ReadUint32();
             byte[] bytes = new byte[size];
-            get(bytes);
+            Get(bytes);
             return bytes;
         }
 
-        public RangeSet readSequenceSet()
+        public RangeSet ReadSequenceSet()
         {
-            int count = readUint16()/8;
+            int count = ReadUint16()/8;
             if (count == 0)
             {
                 return null;
@@ -163,35 +163,35 @@ namespace org.apache.qpid.transport.codec
             RangeSet ranges = new RangeSet();
             for (int i = 0; i < count; i++)
             {
-                ranges.add(readSequenceNo(), readSequenceNo());
+                ranges.Add(ReadSequenceNo(), ReadSequenceNo());
             }
             return ranges;
         }
 
-        public RangeSet readByteRanges()
+        public RangeSet ReadByteRanges()
         {
             throw new Exception("not implemented");
         }
 
-        public UUID readUuid()
+        public UUID ReadUuid()
         {
-            long msb = readUint64();
-            long lsb = readUint64();
+            long msb = ReadUint64();
+            long lsb = ReadUint64();
             return new UUID(msb, lsb);
         }
 
-        public String readContent()
+        public String ReadContent()
         {
             throw new Exception("Deprecated");
         }
 
-        public Struct readStruct(int type)
+        public Struct ReadStruct(int type)
         {
-            Struct st = Struct.create(type);
-            int width = st.getSizeWidth();
+            Struct st = Struct.Create(type);
+            int width = st.GetSizeWidth();
             if (width > 0)
             {
-                long size = readSize(width);
+                long size = ReadSize(width);
                 if (size == 0)
                 {
                     return null;
@@ -199,200 +199,200 @@ namespace org.apache.qpid.transport.codec
             }
             if (type > 0)
             {
-                int code = readUint16();
+                int code = ReadUint16();
                 Debug.Assert(code == type);
             }
-            st.read(this);
+            st.Read(this);
             return st;
         }
 
-        public Struct readStruct32()
+        public Struct ReadStruct32()
         {
-            long size = readUint32();
+            long size = ReadUint32();
             if (size == 0)
             {
                 return null;
             }
-            int type = readUint16();
-            Struct result = Struct.create(type);
-            result.read(this);
+            int type = ReadUint16();
+            Struct result = Struct.Create(type);
+            result.Read(this);
             return result;
         }
 
-        public Dictionary<String, Object> readMap()
+        public Dictionary<String, Object> ReadMap()
         {
-            long size = readUint32();
+            long size = ReadUint32();
 
             if (size == 0)
             {
                 return null;
             }
 
-            long count = readUint32();
+            long count = ReadUint32();
 
             Dictionary<String, Object> result = new Dictionary<String, Object>();
             for (int i = 0; i < count; i++)
             {
-                String key = readStr8();
-                byte code = get();
-                QpidType t = getType(code);
-                Object value = read(t);
+                String key = ReadStr8();
+                byte code = Get();
+                QpidType t = GetType(code);
+                Object value = Read(t);
                 result.Add(key, value);
             }
 
             return result;
         }
 
-        public List<Object> readList()
+        public List<Object> ReadList()
         {
-            long size = readUint32();
+            long size = ReadUint32();
 
             if (size == 0)
             {
                 return null;
             }
 
-            long count = readUint32();
+            long count = ReadUint32();
 
             List<Object> result = new List<Object>();
             for (int i = 0; i < count; i++)
             {
-                byte code = get();
-                QpidType t = getType(code);
-                Object value = read(t);
+                byte code = Get();
+                QpidType t = GetType(code);
+                Object value = Read(t);
                 result.Add(value);
             }
             return result;
         }
 
-        public List<Object> readArray()
+        public List<Object> ReadArray()
         {
-            long size = readUint32();
+            long size = ReadUint32();
 
             if (size == 0)
             {
                 return null;
             }
 
-            byte code = get();
-            QpidType t = getType(code);
-            long count = readUint32();
+            byte code = Get();
+            QpidType t = GetType(code);
+            long count = ReadUint32();
 
             List<Object> result = new List<Object>();
             for (int i = 0; i < count; i++)
             {
-                Object value = read(t);
+                Object value = Read(t);
                 result.Add(value);
             }
             return result;
         }
 
-        private QpidType getType(byte code)
+        private QpidType GetType(byte code)
         {
             return QpidType.get(code);
         }
 
-        private long readSize(QpidType t)
+        private long ReadSize(QpidType t)
         {
-            return t.Fixed ? t.Width : readSize(t.Width);
+            return t.Fixed ? t.Width : ReadSize(t.Width);
         }
 
-        private long readSize(int width)
+        private long ReadSize(int width)
         {
             switch (width)
             {
                 case 1:
-                    return readUint8();
+                    return ReadUint8();
                 case 2:
-                    return readUint16();
+                    return ReadUint16();
                 case 4:
-                    return readUint32();
+                    return ReadUint32();
                 default:
                     throw new Exception("illegal width: " + width);
             }
         }
 
-        private byte[] readBytes(QpidType t)
+        private byte[] ReadBytes(QpidType t)
         {
-            long size = readSize(t);
+            long size = ReadSize(t);
             byte[] result = new byte[(int) size];
-            get(result);
+            Get(result);
             return result;
         }
 
-        private Object read(QpidType t)
+        private Object Read(QpidType t)
         {
             switch (t.Code)
             {
                 case Code.BIN8:
                 case Code.UINT8:
-                    return readUint8();
+                    return ReadUint8();
                 case Code.INT8:
-                    return get();
+                    return Get();
                 case Code.CHAR:
-                    return (char) get();
+                    return (char) Get();
                 case Code.BOOLEAN:
-                    return get() > 0;
+                    return Get() > 0;
 
                 case Code.BIN16:
                 case Code.UINT16:
-                    return readUint16();
+                    return ReadUint16();
                 case Code.INT16:
-                    return (short) readUint16();
+                    return (short) ReadUint16();
 
                 case Code.BIN32:
                 case Code.UINT32:
-                    return readUint32();
+                    return ReadUint32();
 
                 case Code.CHAR_UTF32:
                 case Code.INT32:
-                    return (int) readUint32();
+                    return (int) ReadUint32();
 
                 case Code.FLOAT:                    
-                    return  (float)BitConverter.Int64BitsToDouble(readUint32() << 32);
+                    return  (float)BitConverter.Int64BitsToDouble(ReadUint32() << 32);
                            
                 case Code.BIN64:
                 case Code.UINT64:
                 case Code.INT64:
                 case Code.DATETIME:
-                    return readUint64();
+                    return ReadUint64();
 
                 case Code.DOUBLE:                   
-                    return BitConverter.Int64BitsToDouble(readUint64());
+                    return BitConverter.Int64BitsToDouble(ReadUint64());
                 case Code.UUID:
-                    return readUuid();
+                    return ReadUuid();
                 case Code.STR8:
-                    return readStr8();
+                    return ReadStr8();
                 case Code.STR16:
-                    return readStr16();
+                    return ReadStr16();
                 case Code.STR8_LATIN:
                 case Code.STR8_UTF16:
                 case Code.STR16_LATIN:
                 case Code.STR16_UTF16:
                     // XXX: need to do character conversion
-                    return Encoding.UTF8.GetString(readBytes(t));
+                    return Encoding.UTF8.GetString(ReadBytes(t));
 
                 case Code.MAP:
-                    return readMap();
+                    return ReadMap();
                 case Code.LIST:
-                    return readList();
+                    return ReadList();
                 case Code.ARRAY:
-                    return readArray();
+                    return ReadArray();
                 case Code.STRUCT32:
-                    return readStruct32();
+                    return ReadStruct32();
 
                 case Code.BIN40:
                 case Code.DEC32:
                 case Code.BIN72:
                 case Code.DEC64:
                     // XXX: what types are we supposed to use here?
-                    return readBytes(t);
+                    return ReadBytes(t);
 
                 case Code.VOID:
                     return null;
 
                 default:
-                    return readBytes(t);
+                    return ReadBytes(t);
             }
         }
     }

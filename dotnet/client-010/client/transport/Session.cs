@@ -34,9 +34,9 @@ namespace org.apache.qpid.transport
     ///  Session
     /// 
     /// </summary>
-    public class Session : Invoker
+    public class Session : Invoker, ISession
     {
-        private static readonly Logger log = Logger.get(typeof (Session));
+        private static readonly Logger log = Logger.Get(typeof (Session));
         private static readonly bool ENABLE_REPLAY;
 
         static Session()
@@ -77,11 +77,11 @@ namespace org.apache.qpid.transport
         private int _maxComplete = - 1;
         private bool _needSync = false;
         private bool _closed;
-        private readonly Dictionary<int, Future> _results = new Dictionary<int, Future>();
+        private readonly Dictionary<int, IFuture> _results = new Dictionary<int, IFuture>();
         private readonly List<ExecutionException> _exceptions = new List<ExecutionException>();
 
 
-        public bool Closed
+        public bool IsClosed
         {
             get
             {
@@ -113,12 +113,12 @@ namespace org.apache.qpid.transport
             _name = name;
         }
 
-        public byte[] getName()
+        public byte[] GetName()
         {
             return _name;
         }
 
-        public void setAutoSync(bool value)
+        public void SetAutoSync(bool value)
         {
             lock (_commands)
             {
@@ -126,12 +126,12 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public Dictionary<int, Method> getOutstandingCommands()
+        public Dictionary<int, Method> GetOutstandingCommands()
         {
             return _commands;
         }
 
-        public int getCommandsOut()
+        public int GetCommandsOut()
         {
             return _commandsOut;
         }
@@ -142,79 +142,79 @@ namespace org.apache.qpid.transport
             set { _commandsIn = value; }
         }
 
-        public int nextCommandId()
+        public int NextCommandId()
         {
             return _commandsIn++;
         }
 
-        public void identify(Method cmd)
+        public void Identify(Method cmd)
         {
-            int id = nextCommandId();
+            int id = NextCommandId();
             cmd.Id = id;
 
-            if (log.isDebugEnabled())
+            if (log.IsDebugEnabled())
             {
-                log.debug("ID: [{0}] %{1}", _channel, id);
+                log.Debug("ID: [{0}] %{1}", _channel, id);
             }
 
             //if ((id % 65536) == 0)
             if ((id & 0xff) == 0)
             {
-                flushProcessed(Option.TIMELY_REPLY);
+                FlushProcessed(Option.TIMELY_REPLY);
             }
         }
 
-        public void processed(Method command)
+        public void Processed(Method command)
         {
-            processed(command.Id);
+            Processed(command.Id);
         }
 
-        public void processed(int command)
+        public void Processed(int command)
         {
-            processed(new Range(command, command));
+            Processed(new Range(command, command));
         }
 
-        public void processed(int lower, int upper)
+        public void Processed(int lower, int upper)
         {
-            processed(new Range(lower, upper));
+            Processed(new Range(lower, upper));
         }
 
-        public void processed(Range range)
+        public void Processed(Range range)
         {
-            log.debug("{0} processed({1})", this, range);
+            log.Debug("{0} processed({1})", this, range);
 
             bool flush;
             lock (_processedLock)
             {
-                _processed.add(range);
-                Range first = _processed.getFirst();
+                _processed.Add(range);
+                Range first = _processed.GetFirst();
                 int lower = first.Lower;
                 int upper = first.Upper;
                 int old = _maxProcessed;
-                if (Serial.le(lower, _maxProcessed + 1))
+                if (Serial.Le(lower, _maxProcessed + 1))
                 {
-                    _maxProcessed = Serial.max(_maxProcessed, upper);
+                    _maxProcessed = Serial.Max(_maxProcessed, upper);
                 }
-                flush = Serial.lt(old, _syncPoint) && Serial.ge(_maxProcessed, _syncPoint);
+                flush = Serial.Lt(old, _syncPoint) && Serial.Ge(_maxProcessed, _syncPoint);
                 _syncPoint = _maxProcessed;
             }
             if (flush)
             {
-                flushProcessed();
+                FlushProcessed();
             }
         }
 
-        public void flushProcessed(params Option[] options)
+        public void FlushProcessed(params Option[] options)
         {
             RangeSet copy;
             lock (_processedLock)
             {
-                copy = _processed.copy();
+                copy = _processed.Copy();
             }
-            sessionCompleted(copy, options);
+            SessionCompleted(copy, options);
         }
 
-        public void knownComplete(RangeSet kc)
+        public void KnownComplete(RangeSet kc)
         {
             lock (_processedLock)
             {
@@ -223,9 +223,9 @@ namespace org.apache.qpid.transport
                 {
                     foreach (Range kr in kc)
                     {
-                        foreach (Range r in pr.subtract(kr))
+                        foreach (Range r in pr.Subtract(kr))
                         {
-                            newProcessed.add(r);
+                            newProcessed.Add(r);
                         }
                     }
                 }
@@ -233,29 +233,29 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public void syncPoint()
+        public void SyncPoint()
         {
             int id = CommandsIn - 1;
-            log.debug("{0} synced to {1}", this, id);
+            log.Debug("{0} synced to {1}", this, id);
             bool flush;
             lock (_processedLock)
             {
                 _syncPoint = id;
-                flush = Serial.ge(_maxProcessed, _syncPoint);
+                flush = Serial.Ge(_maxProcessed, _syncPoint);
             }
             if (flush)
             {
-                flushProcessed();
+                FlushProcessed();
             }
         }
 
-        public void attach(Channel channel)
+        public void Attach(Channel channel)
         {
             _channel = channel;
             _channel.Session = this;
         }
 
-        public Method getCommand(int id)
+        public Method GetCommand(int id)
         {
             lock (_commands)
             {
@@ -263,35 +263,35 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public bool complete(int lower, int upper)
+        public bool Complete(int lower, int upper)
         {
             //avoid autoboxing
-            if (log.isDebugEnabled())
+            if (log.IsDebugEnabled())
             {
-                log.debug("{0} complete({1}, {2})", this, lower, upper);
+                log.Debug("{0} complete({1}, {2})", this, lower, upper);
             }
             lock (_commands)
             {
                 int old = _maxComplete;
-                for (int id = Serial.max(_maxComplete, lower); Serial.le(id, upper); id++)
+                for (int id = Serial.Max(_maxComplete, lower); Serial.Le(id, upper); id++)
                 {
                     _commands.Remove(id);
                 }
-                if (Serial.le(lower, _maxComplete + 1))
+                if (Serial.Le(lower, _maxComplete + 1))
                 {
-                    _maxComplete = Serial.max(_maxComplete, upper);
+                    _maxComplete = Serial.Max(_maxComplete, upper);
                 }
-                log.debug("{0} commands remaining: {1}", this, _commands);
+                log.Debug("{0} commands remaining: {1}", this, _commands);
                 Monitor.PulseAll(_commands);
-                return Serial.gt(_maxComplete, old);
+                return Serial.Gt(_maxComplete, old);
             }
         }
 
-        protected override void invoke(Method m)
+        protected override void Invoke(Method m)
         {
-            if (Closed)
+            if (IsClosed)
             {
-                List<ExecutionException> exc = getExceptions();
+                List<ExecutionException> exc = GetExceptions();
                 if (exc.Count > 0)
                 {
                     throw new SessionException(exc);
@@ -314,7 +314,7 @@ namespace org.apache.qpid.transport
                     m.Id = next;
                     if (next == 0)
                     {
-                        sessionCommandPoint(0, 0);
+                        SessionCommandPoint(0, 0);
                     }
                     if (ENABLE_REPLAY)
                     {
@@ -325,59 +325,59 @@ namespace org.apache.qpid.transport
                         m.Sync = true;
                     }
                     _needSync = ! m.Sync;
-                    _channel.method(m);
+                    _channel.Method(m);
                     if (_autoSync)
                     {
-                        sync();
+                        Sync();
                     }
 
                     // flush every 64K commands to avoid ambiguity on
                     // wraparound
                     if ((next%65536) == 0)
                     {
-                        sessionFlush(Option.COMPLETED);
+                        SessionFlush(Option.COMPLETED);
                     }
                 }
             }
             else
             {
-                _channel.method(m);
+                _channel.Method(m);
             }
         }
 
-        public void sync()
+        public void Sync()
         {
-            sync(_timeout);
+            Sync(_timeout);
         }
 
-        public void sync(long timeout)
+        public void Sync(long timeout)
         {
-            log.debug("{0} sync()", this);
+            log.Debug("{0} sync()", this);
             lock (_commands)
             {
                 int point = _commandsOut - 1;
 
-                if (_needSync && Serial.lt(_maxComplete, point))
+                if (_needSync && Serial.Lt(_maxComplete, point))
                 {
-                    executionSync(Option.SYNC);
+                    ExecutionSync(Option.SYNC);
                 }
 
                 DateTime start = DateTime.Now;
                 long elapsed = 0;
 
-                while (! Closed && elapsed < timeout && Serial.lt(_maxComplete, point))
+                while (!IsClosed && elapsed < timeout && Serial.Lt(_maxComplete, point))
                 {
-                    log.debug("{0}   waiting for[{1}]: {2}, {3}", this, point,
+                    log.Debug("{0}   waiting for[{1}]: {2}, {3}", this, point,
                               _maxComplete, _commands);
                     Monitor.Wait(_commands, (int) (timeout - elapsed));
                     elapsed = DateTime.Now.Subtract(start).Milliseconds;
                 }
 
-                if (Serial.lt(_maxComplete, point))
+                if (Serial.Lt(_maxComplete, point))
                 {
-                    if (Closed)
+                    if (IsClosed)
                     {
-                        throw new SessionException(getExceptions());
+                        throw new SessionException(GetExceptions());
                     }
                     else
                     {
@@ -390,9 +390,9 @@ namespace org.apache.qpid.transport
         }
 
 
-        public void result(int command, Struct result)
+        public void Result(int command, Struct result)
         {
-            Future future;
+            IFuture future;
             lock (_results)
             {
                 if (_results.ContainsKey(command))
@@ -408,7 +408,7 @@ namespace org.apache.qpid.transport
             future.Result = result;
         }
 
-        public void addException(ExecutionException exc)
+        public void AddException(ExecutionException exc)
         {
             lock (_exceptions)
             {
@@ -418,12 +418,12 @@ namespace org.apache.qpid.transport
 
         private ConnectionClose _close = null;
 
-        public void closeCode(ConnectionClose close)
+        public void CloseCode(ConnectionClose close)
         {
             _close = close;
         }
 
-        public List<ExecutionException> getExceptions()
+        public List<ExecutionException> GetExceptions()
         {
             lock (_exceptions)
             {
@@ -431,7 +431,7 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public override Future invoke(Method m, Future future)     
+        public override IFuture Invoke(Method m, IFuture future)     
         {
             lock (_commands)
             {
@@ -441,13 +441,13 @@ namespace org.apache.qpid.transport
                 {
                     _results.Add(command, future);
                 }
-                invoke(m);
+                Invoke(m);
             }
             return future;
         }
 
 
-        public void messageTransfer(String destination,
+        public void MessageTransfer(String destination,
                                     MessageAcceptMode acceptMode,
                                     MessageAcquireMode acquireMode,
                                     Header header,
@@ -456,31 +456,31 @@ namespace org.apache.qpid.transport
         {
             MemoryStream mbody = new MemoryStream();
             mbody.Write(body,0, body.Length);
-            messageTransfer(destination, acceptMode, acquireMode, header,
+            MessageTransfer(destination, acceptMode, acquireMode, header,
                             mbody, options);
         }
 
-        public void messageTransfer(String destination,
+        public void MessageTransfer(String destination,
                                     MessageAcceptMode acceptMode,
                                     MessageAcquireMode acquireMode,
                                     Header header,
                                     String body,
                                     params Option[] options)
         {
-            messageTransfer(destination, acceptMode, acquireMode, header,
+            MessageTransfer(destination, acceptMode, acquireMode, header,
                             new MemoryStream(Convert.ToByte(body)), options);
         }
 
-        public void close()
+        public void Close()
         {
-            sessionRequestTimeout(0);
-            sessionDetach(_name);
+            SessionRequestTimeout(0);
+            SessionDetach(_name);
             lock (_commands)
             {
                 DateTime start = DateTime.Now;
                 long elapsed = 0;
 
-                while (! Closed && elapsed < _timeout)
+                while (!IsClosed && elapsed < _timeout)
                 {
                     Monitor.Wait(_commands, (int) (_timeout - elapsed));
                     elapsed = DateTime.Now.Subtract(start).Milliseconds;
@@ -488,21 +488,21 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public void exception(Exception t)
+        public void Exception(Exception t)
         {
-            log.error(t, "Caught exception");
+            log.Error(t, "Caught exception");
         }
 
-        public void closed()
+        public void Closed()
         {
-            Closed = true;
+            IsClosed = true;
             lock (_commands)
             {
                 Monitor.PulseAll(_commands);
             }
             lock (_results)
             {
-                foreach (Future result in _results.Values)
+                foreach (IFuture result in _results.Values)
                 {
                     lock (result)
                     {
@@ -514,7 +514,7 @@ namespace org.apache.qpid.transport
             _channel = null;
         }
 
-        public String toString()
+        public override String ToString()
         {
             return String.Format("session:{0}", _name);
         }

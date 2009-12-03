@@ -37,10 +37,10 @@ namespace org.apache.qpid.console
 		public ObjectID() {
 		}
 		
-		public ObjectID(Decoder dec)
+		public ObjectID(IDecoder dec)
 		{
-			first = (long)dec.readUint64() ;
-			second = (long)dec.readUint64() ;			
+			first = (long)dec.ReadUint64() ;
+			second = (long)dec.ReadUint64() ;			
 		}
 		
 		public ObjectID(long first, long second) {
@@ -72,9 +72,9 @@ namespace org.apache.qpid.console
     		return Sequence() == 0 ;
     	}
 
-		public void encode(Encoder enc) {
-			enc.writeUint64((long)first) ;
-			enc.writeUint64((long)second) ;
+		public void encode(IEncoder enc) {
+			enc.WriteUint64((long)first) ;
+			enc.WriteUint64((long)second) ;
 		}
 
 		override public string ToString() {

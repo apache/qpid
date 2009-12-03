@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Configuration;
 using System.Text;
 using org.apache.qpid.client;
 
@@ -40,13 +41,17 @@ namespace org.apache.qpid.example.pubsub
     {
         private static void Main(string[] args)
         {
-            string host = args.Length > 0 ? args[0] : "localhost";
-            int port = args.Length > 1 ? Convert.ToInt32(args[1]) : 5672;
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
             Client connection = new Client();
             try
             {
-                connection.connect(host, port, "test", "guest", "guest");
-                ClientSession session = connection.createSession(50000);
+                connection.Connect(host, port, virtualhost, username, password);
+                IClientSession session = connection.CreateSession(50000);
 
                 //--------- Main body of program --------------------------------------------
 
@@ -59,7 +64,7 @@ namespace org.apache.qpid.example.pubsub
 
                 //-----------------------------------------------------------------------------
 
-                connection.close();
+                connection.Close();
             }
             catch (Exception e)
             {
@@ -67,27 +72,27 @@ namespace org.apache.qpid.example.pubsub
             }
         }
 
-        private static void publishMessages(ClientSession session, string routing_key)
+        private static void publishMessages(IClientSession session, string routing_key)
         {
             IMessage message = new Message();
             // Asynchronous transfer sends messages as quickly as
             // possible without waiting for confirmation.
             for (int i = 0; i < 10; i++)
             {
-                message.clearData();
-                message.appendData(Encoding.UTF8.GetBytes("Message " + i));
-                session.messageTransfer("amq.topic", routing_key, message);
+                message.ClearData();
+                message.AppendData(Encoding.UTF8.GetBytes("Message " + i));
+                session.MessageTransfer("amq.topic", routing_key, message);
             }
         }
 
-        private static void noMoreMessages(ClientSession session)
+        private static void noMoreMessages(IClientSession session)
         {
             IMessage message = new Message();
             // And send a syncrhonous final message to indicate termination.
-            message.clearData();
-            message.appendData(Encoding.UTF8.GetBytes("That's all, folks!"));
-            session.messageTransfer("amq.topic", "control", message);
-            session.sync();
+            message.ClearData();
+            message.AppendData(Encoding.UTF8.GetBytes("That's all, folks!"));
+            session.MessageTransfer("amq.topic", "control", message);
+            session.Sync();
         }
     }
 }

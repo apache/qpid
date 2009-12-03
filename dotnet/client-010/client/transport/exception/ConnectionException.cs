@@ -41,7 +41,7 @@ namespace org.apache.qpid.transport
 		
 		private ConnectionClose _close;
 		
-		public ConnectionException(ConnectionClose close):base(close.getReplyText())
+		public ConnectionException(ConnectionClose close):base(close.GetReplyText())
 		{
 			_close = close;
 		}

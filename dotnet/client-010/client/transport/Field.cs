@@ -19,8 +19,7 @@
 *
 */
 using System;
-using Decoder = org.apache.qpid.transport.codec.Decoder;
-using Encoder = org.apache.qpid.transport.codec.Encoder;
+using org.apache.qpid.transport.codec;
 
 namespace org.apache.qpid.transport
 {
@@ -62,14 +61,14 @@ namespace org.apache.qpid.transport
             get { return index; }
         }
 
-        public abstract bool has(Object mystruct);
+        public abstract bool Has(Object mystruct);
 
-        public abstract void has(Object mystruct, bool value);
+        public abstract void Has(Object mystruct, bool value);
 
-        public abstract T get(Object mystruct);
+        public abstract T Get(Object mystruct);
 
-        public abstract void read(Decoder dec, Object mystruct);
+        public abstract void Read(IDecoder dec, Object mystruct);
 
-        public abstract void write(Encoder enc, Object mystruct);
+        public abstract void Write(IEncoder enc, Object mystruct);
     }
 }

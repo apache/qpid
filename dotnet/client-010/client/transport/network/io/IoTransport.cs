@@ -38,14 +38,14 @@ namespace org.apache.qpid.transport.network.io
         private const int TIMEOUT = 60000;
         private const int QUEUE_SIZE = 1000;
         // props
-        private static readonly Logger log = Logger.get(typeof (IoTransport));
+        private static readonly Logger log = Logger.Get(typeof (IoTransport));
         private Stream  m_stream;
         private IoSender m_sender;
-        private Receiver<ReceivedPayload<MemoryStream>> m_receiver;
+        private IReceiver<ReceivedPayload<MemoryStream>> m_receiver;
         private TcpClient m_socket;
         private Connection m_con;
 
-        public static Connection connect(String host, int port, ConnectionDelegate conndel)
+        public static Connection Connect(String host, int port, ConnectionDelegate conndel)
         {
             IoTransport transport = new IoTransport(host, port, conndel);
             return transport.Connection;
@@ -53,7 +53,7 @@ namespace org.apache.qpid.transport.network.io
 
         public IoTransport(String host, int port, ConnectionDelegate conndel)
         {
-            createSocket(host, port);
+            CreateSocket(host, port);
             Sender = new IoSender(this, QUEUE_SIZE, TIMEOUT);
             Receiver = new IoReceiver(Stream, Socket.ReceiveBufferSize * 2, TIMEOUT);
             Assembler assembler = new Assembler();                 
@@ -79,7 +79,7 @@ namespace org.apache.qpid.transport.network.io
             set { m_con = value; }
         }
 
-        public Receiver<ReceivedPayload<MemoryStream>> Receiver
+        public IReceiver<ReceivedPayload<MemoryStream>> Receiver
         {
             get { return m_receiver; }
             set { m_receiver = value; }
@@ -106,7 +106,7 @@ namespace org.apache.qpid.transport.network.io
 
         #region Private Support Functions
 
-        private void createSocket(String host, int port)
+        private void CreateSocket(String host, int port)
         {
             try
             {
@@ -118,10 +118,10 @@ namespace org.apache.qpid.transport.network.io
                 socket.ReceiveBufferSize = readBufferSize == null ? DEFAULT_READ_WRITE_BUFFER_SIZE : int.Parse(readBufferSize);
                 socket.SendBufferSize = writeBufferSize == null ? DEFAULT_READ_WRITE_BUFFER_SIZE : int.Parse(writeBufferSize);
                 
-                log.debug("NoDelay : {0}", socket.NoDelay);
-                log.debug("ReceiveBufferSize : {0}", socket.ReceiveBufferSize);
-                log.debug("SendBufferSize : {0}", socket.SendBufferSize);
-                log.debug("Openning connection with host : {0}; port: {1}", host, port);
+                log.Debug("NoDelay : {0}", socket.NoDelay);
+                log.Debug("ReceiveBufferSize : {0}", socket.ReceiveBufferSize);
+                log.Debug("SendBufferSize : {0}", socket.SendBufferSize);
+                log.Debug("Openning connection with host : {0}; port: {1}", host, port);
 
                 socket.Connect(host, port);
                 Socket = socket;

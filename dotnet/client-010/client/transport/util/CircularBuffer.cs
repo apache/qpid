@@ -58,7 +58,7 @@ namespace common.org.apache.qpid.transport.util
                             Monitor.Wait(this);                    
                 }
                 bool notifyDequeue = countValue <= 0;
-                load(t);
+                Load(t);
                 if (notifyDequeue) //notifyDequeue)
                 {
                     Monitor.PulseAll(this);
@@ -76,7 +76,7 @@ namespace common.org.apache.qpid.transport.util
                         Monitor.Wait(this);                  
                 }
                 bool notifyEnqueue = countValue >= (len - 1);
-                T temp = get();
+                T temp = Get();
                 if (notifyEnqueue) //notifyEnqueue)
                 {
                         Monitor.PulseAll(this);               
@@ -85,7 +85,7 @@ namespace common.org.apache.qpid.transport.util
             }
         }
 
-        public void close()
+        public void Close()
         {
             nrp = 0;
             nwp = 0;
@@ -99,24 +99,24 @@ namespace common.org.apache.qpid.transport.util
 
         #region Private Support Functions
 
-        private void load(T t)
+        private void Load(T t)
         {
             Int32 i = nwp;
             buffer[i] = t;
             i += add;
             if (i < 0) i += len;
             nwp = i;
-            updateCount();
+            UpdateCount();
         }
 
-        private void updateCount()
+        private void UpdateCount()
         {
             countValue = nwp - nrp;
             if (countValue <= 0 )
                 countValue += len; // modulo buffer size			
         }
 
-        private T get()
+        private T Get()
         {
             Int32 i = nrp;
             T temp = buffer[i];           

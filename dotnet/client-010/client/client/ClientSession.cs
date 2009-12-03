@@ -24,14 +24,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using org.apache.qpid.transport;
 using org.apache.qpid.transport.util;
 
 namespace org.apache.qpid.client
 {
     /// <summary> Implements a Qpid Sesion.</summary>
-    public class ClientSession : Session
+    public class ClientSession : Session, IClientSession
     {
         public static short TRANSFER_ACQUIRE_MODE_NO_ACQUIRE = 1;
         public static short TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE = 0;
@@ -47,13 +46,13 @@ namespace org.apache.qpid.client
         public static short MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE = 0;
         public static short MESSAGE_ACQUIRE_MESSAGES_IF_ALL_ARE_AVAILABLE = 1;
 
-        private Dictionary<String, IMessageListener> _listeners = new Dictionary<String, IMessageListener>();
+        private readonly Dictionary<String, IMessageListener> _listeners = new Dictionary<String, IMessageListener>();
 
         public ClientSession(byte[] name) : base(name)
         {
         }
 
-        public void attachMessageListener(IMessageListener listener, string Destination)
+        public void AttachMessageListener(IMessageListener listener, string Destination)
         {
             _listeners.Add(Destination, listener);
         }
@@ -63,47 +62,47 @@ namespace org.apache.qpid.client
             get { return _listeners; }
         }
 
-        public void messageTransfer(String destination, string routingkey, IMessage message)
+        public void MessageTransfer(String destination, string routingkey, IMessage message)
         {           
-            message.DeliveryProperties.setRoutingKey(routingkey);
-            messageTransfer(destination, message);
+            message.DeliveryProperties.SetRoutingKey(routingkey);
+            MessageTransfer(destination, message);
         }
 
-        public void messageTransfer(String destination, IMessage message)
+        public void MessageTransfer(String destination, IMessage message)
         {           
             byte[] body = new byte[message.Body.Position];
             message.Body.Seek(0, SeekOrigin.Begin);
             message.Body.Read(body, 0, body.Length);
-            message.MessageProperties.setMessageId(UUID.randomUUID());
-            messageTransfer(destination,
+            message.MessageProperties.SetMessageId(UUID.RandomUuid());
+            MessageTransfer(destination,
                             MessageAcceptMode.NONE,
                             MessageAcquireMode.PRE_ACQUIRED,
                             message.Header,
                             body);
         }
 
-        public void queueDeclare(String queue)
+        public void QueueDeclare(String queue)
         {
-            queueDeclare(queue, null, null);
+            QueueDeclare(queue, null, null);
         }
 
-        public void queueDeclare(String queue, params Option[] options) 
+        public void QueueDeclare(String queue, params Option[] options) 
         {
-            queueDeclare(queue, null, null, options);
+            QueueDeclare(queue, null, null, options);
         }
 
-        public void exchangeBind(String queue, String exchange, String bindingKey)
+        public void ExchangeBind(String queue, String exchange, String bindingKey)
         {
-            exchangeBind(queue, exchange, bindingKey, null);
+            ExchangeBind(queue, exchange, bindingKey, null);
         }
 
-         public void messageSubscribe(String queue)
+         public void MessageSubscribe(String queue)
          {
-             messageSubscribe(queue, queue, MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED, null, 0, null);
+             MessageSubscribe(queue, queue, MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED, null, 0, null);
              // issue credits     
-             messageSetFlowMode(queue, MessageFlowMode.WINDOW);
-             messageFlow(queue, MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
-             messageFlow(queue, MessageCreditUnit.MESSAGE, 10000);                                
+             MessageSetFlowMode(queue, MessageFlowMode.WINDOW);
+             MessageFlow(queue, MessageCreditUnit.BYTE, MESSAGE_FLOW_MAX_BYTES);
+             MessageFlow(queue, MessageCreditUnit.MESSAGE, 10000);                                
          }
              
     }

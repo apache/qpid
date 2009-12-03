@@ -24,9 +24,9 @@ using org.apache.qpid.transport.util;
 
 namespace org.apache.qpid.transport.network.io
 {
-    public sealed class IoSender : IIOSender<MemoryStream>
+    public sealed class IoSender : IIoSender<MemoryStream>
     {
-        private static readonly Logger log = Logger.get(typeof (IoReceiver));
+        private static readonly Logger log = Logger.Get(typeof (IoReceiver));
         private readonly Stream bufStream;
         private bool closed;
         private readonly Mutex mutClosed = new Mutex();
@@ -40,25 +40,25 @@ namespace org.apache.qpid.transport.network.io
             bufStream = transport.Stream;
             queue = new CircularBuffer<byte[]>(queueSize);
             thread = new Thread(Go);
-            log.debug("Creating IoSender thread");
+            log.Debug("Creating IoSender thread");
             thread.Name = String.Format("IoSender - {0}", transport.Socket) ;
             thread.IsBackground = true;
             thread.Start();
         }
 
-        public void send(MemoryStream str)
+        public void Send(MemoryStream str)
         {
             int pos = (int) str.Position;
             str.Seek(0, SeekOrigin.Begin);
-            send(str, pos);
+            Send(str, pos);
         }
 
-        public void send(MemoryStream str, int size)
+        public void Send(MemoryStream str, int size)
         {
             mutClosed.WaitOne();
             if (closed)
             {
-                throw new TransportException("sender is closed");
+                throw new TransportException("sender is Closed");
             }
             mutClosed.ReleaseMutex();                    
             byte[] buf = new byte[size];
@@ -66,7 +66,7 @@ namespace org.apache.qpid.transport.network.io
             _tobeSent.Write(buf, 0, size);          
         }
 
-        public void flush()
+        public void Flush()
         {
             int length = (int)_tobeSent.Position;
             byte[] buf = new byte[length];
@@ -80,16 +80,16 @@ namespace org.apache.qpid.transport.network.io
             _tobeSent.Seek(0, SeekOrigin.Begin);
         }
 
-        public void close()
+        public void Close()
         {
-            log.debug("Closing Sender");
+            log.Debug("Closing Sender");
             mutClosed.WaitOne();
             if (!closed)
             {
                 try
                 {
                     closed = true;
-                    queue.close();
+                    queue.Close();
                     thread.Join(timeout);
                     if (thread.IsAlive)
                     {

@@ -61,12 +61,12 @@ namespace org.apache.qpid.console
 			return String.Format("agent.{0}.{1}", BrokerBank, AgentBank)  ;		
 		}		
 		
-		public static long getBrokerBank(string routingKey) {
+		public static long GetBrokerBank(string routingKey) {
 			string delim = "." ;
 			return long.Parse(routingKey.Split(delim.ToCharArray())[2]) ;
 		}
 		
-		public static long getAgentBank(string routingKey) {
+		public static long GetAgentBank(string routingKey) {
 			string delim = "." ;
 			return long.Parse(routingKey.Split(delim.ToCharArray())[3]) ;		
 		}		

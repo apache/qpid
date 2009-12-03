@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Configuration;
 using System.Text;
 using org.apache.qpid.client;
 
@@ -40,13 +41,17 @@ namespace org.apache.qpid.example.direct
     {
         static void Main(string[] args)
         {
-            string host = args.Length > 0 ? args[0] : "localhost";
-            int port = args.Length > 1 ? Convert.ToInt32(args[1]) : 5672;
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
             Client connection = new Client();
             try
             {
-                connection.connect(host, port, "test", "guest", "guest");
-                ClientSession session = connection.createSession(50000);
+                connection.Connect(host, port, virtualhost, username, password);
+                IClientSession session = connection.CreateSession(50000);
 
                 //--------- Main body of program --------------------------------------------
                 
@@ -57,26 +62,26 @@ namespace org.apache.qpid.example.direct
                 // just once. (In most simple cases, there is no need to set
                 // other message properties.)
 
-                message.DeliveryProperties.setRoutingKey("routing_key"); 
+                message.DeliveryProperties.SetRoutingKey("routing_key"); 
 
                 // Asynchronous transfer sends messages as quickly as
                 // possible without waiting for confirmation.
                 for (int i = 0; i < 10; i++)
                 {
-                    message.clearData();
-                    message.appendData(Encoding.UTF8.GetBytes("Message " + i));                  
-                    session.messageTransfer("amq.direct", message);                    
+                    message.ClearData();
+                    message.AppendData(Encoding.UTF8.GetBytes("Message " + i));                  
+                    session.MessageTransfer("amq.direct", message);                    
                 }
 
                 // And send a syncrhonous final message to indicate termination.
-                message.clearData();
-                message.appendData(Encoding.UTF8.GetBytes("That's all, folks!"));
-                session.messageTransfer("amq.direct", "routing_key", message); 
-                session.sync();
+                message.ClearData();
+                message.AppendData(Encoding.UTF8.GetBytes("That's all, folks!"));
+                session.MessageTransfer("amq.direct", "routing_key", message); 
+                session.Sync();
 
                 //-----------------------------------------------------------------------------
 
-                connection.close();
+                connection.Close();
             }
             catch (Exception e)
             {

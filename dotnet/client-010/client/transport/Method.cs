@@ -28,9 +28,9 @@ namespace org.apache.qpid.transport
     /// <summary> 
     /// Method
     /// </summary>
-    public abstract class Method : Struct, ProtocolEvent
+    public abstract class Method : Struct, IProtocolEvent
     {
-        public new static Method create(int type)
+        public new static Method Create(int type)
         {
             return (Method) StructFactory.createInstruction(type);
         }
@@ -65,7 +65,7 @@ namespace org.apache.qpid.transport
             set { batch = value; }
         }
 
-        public abstract bool hasPayload();
+        public abstract bool HasPayload();
 
         public virtual Header Header
         {
@@ -80,9 +80,9 @@ namespace org.apache.qpid.transport
         }
 
 
-        public abstract void dispatch<C>(C context, MethodDelegate<C> mdelegate );
+        public abstract void Dispatch<C>(C context, MethodDelegate<C> mdelegate );
 
-        #region ProtocolEvent
+        #region IProtocolEvent
 
         public int Channel
         {
@@ -92,7 +92,7 @@ namespace org.apache.qpid.transport
 
         public abstract byte EncodedTrack { get; set; }
 
-        public void ProcessProtocolEvent<C>(C context, ProtocolDelegate<C> protocoldelegate)
+        public void ProcessProtocolEvent<C>(C context, IProtocolDelegate<C> protocoldelegate)
         {
             if (EncodedTrack == Frame.L4)
             {
@@ -106,7 +106,7 @@ namespace org.apache.qpid.transport
 
         #endregion
 
-        public new String toString()
+        public override String ToString()
         {
             StringBuilder str = new StringBuilder();
 
@@ -134,10 +134,10 @@ namespace org.apache.qpid.transport
                 str.Append("]");
             }
             str.Append(" ");
-            str.Append(base.toString());
+            str.Append(base.ToString());
             if (Header != null)
             {
-                str.Append(Header.toString());
+                str.Append(Header.ToString());
             }
             if (Body != null)
             {

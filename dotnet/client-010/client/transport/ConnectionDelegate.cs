@@ -32,16 +32,16 @@ namespace org.apache.qpid.transport
     /// </summary>
     public abstract class ConnectionDelegate : MethodDelegate<Channel>
     {
-        private static readonly Logger log = Logger.get(typeof(ConnectionDelegate));
+        private static readonly Logger log = Logger.Get(typeof(ConnectionDelegate));
         private String _virtualHost;
 
         private ManualResetEvent _negotiationComplete;
 
-        public abstract SessionDelegate getSessionDelegate();
+        public abstract SessionDelegate GetSessionDelegate();
 
-        public abstract void exception(Exception t);
+        public abstract void Exception(Exception t);
 
-        public abstract void closed();
+        public abstract void Closed();
 
         public void setCondition(ManualResetEvent negotiationComplete)
         {
@@ -50,12 +50,12 @@ namespace org.apache.qpid.transport
 
         public virtual void init(Channel ch, ProtocolHeader hdr)
         {
-            ch.Connection.send(new ProtocolHeader((byte)1, hdr.Major, hdr.Minor));
+            ch.Connection.Send(new ProtocolHeader((byte)1, hdr.Major, hdr.Minor));
             List<Object> plain = new List<Object>();
             plain.Add("PLAIN");
             List<Object> utf8 = new List<Object>();
             utf8.Add("utf8");
-            ch.connectionStart(null, plain, utf8);
+            ch.ConnectionStart(null, plain, utf8);
         }
 
         public String VirtualHost
@@ -67,42 +67,42 @@ namespace org.apache.qpid.transport
         // ----------------------------------------------
         //           Client side
         //-----------------------------------------------
-        public override void connectionStart(Channel context, ConnectionStart mstruct)
+        public override void ConnectionStart(Channel context, ConnectionStart mstruct)
         {            
             Dictionary<String, Object> props = new Dictionary<String, Object>();
-            context.connectionStartOk(props, null, null, "utf8");
+            context.ConnectionStartOk(props, null, null, "utf8");
         }
 
-        public override void connectionSecure(Channel context, ConnectionSecure mstruct)
+        public override void ConnectionSecure(Channel context, ConnectionSecure mstruct)
         {      // todo SASL          
-            context.connectionSecureOk(new byte[0]);
+            context.ConnectionSecureOk(new byte[0]);
         }
 
-        public override void connectionTune(Channel context, ConnectionTune mstruct)
+        public override void ConnectionTune(Channel context, ConnectionTune mstruct)
         {
-            context.Connection.ChannelMax = mstruct.getChannelMax();
-            context.connectionTuneOk(mstruct.getChannelMax(), mstruct.getMaxFrameSize(), mstruct.getHeartbeatMax());
-            context.connectionOpen(_virtualHost, null, Option.INSIST);
+            context.Connection.ChannelMax = mstruct.GetChannelMax();
+            context.ConnectionTuneOk(mstruct.GetChannelMax(), mstruct.GetMaxFrameSize(), mstruct.GetHeartbeatMax());
+            context.ConnectionOpen(_virtualHost, null, Option.INSIST);
         }
 
-        public override void connectionOpenOk(Channel context, ConnectionOpenOk mstruct)
+        public override void ConnectionOpenOk(Channel context, ConnectionOpenOk mstruct)
         {
-            List<Object> knownHosts = mstruct.getKnownHosts();
+            List<Object> knownHosts = mstruct.GetKnownHosts();
             if (_negotiationComplete != null)
             {
                 _negotiationComplete.Set();
             }
         }
 
-        public override void connectionRedirect(Channel context, ConnectionRedirect mstruct)
+        public override void ConnectionRedirect(Channel context, ConnectionRedirect mstruct)
         {
             // not going to bother at the moment
         }
 
-        public override void connectionClose(Channel ch, ConnectionClose close)
+        public override void ConnectionClose(Channel ch, ConnectionClose close)
         {
-            ch.Connection.closeCode(close);
-            ch.connectionCloseOk();
+            ch.Connection.CloseCode(close);
+            ch.ConnectionCloseOk();
         }
     }
 }

@@ -30,22 +30,22 @@ namespace org.apache.qpid.transport.network
     /// <summary> 
     /// Assembler
     /// </summary>
-    public delegate void Processor(NetworkDelegate ndelegate);
+    public delegate void Processor(INetworkDelegate ndelegate);
 
-    public class Assembler : NetworkDelegate, Receiver<ReceivedPayload<ProtocolEvent>>
+    public class Assembler : INetworkDelegate, IReceiver<ReceivedPayload<IProtocolEvent>>
     {
-        private static readonly Logger log = Logger.get(typeof (Assembler));
+        private static readonly Logger log = Logger.Get(typeof (Assembler));
         private readonly Dictionary<int, List<byte[]>> segments;
         private readonly Method[] incomplete;
         [ThreadStatic] static MSDecoder _decoder;
         private readonly Object m_objectLock = new object();
 
         // the event raised when a buffer is read from the wire        
-        public event EventHandler<ReceivedPayload<ProtocolEvent>> ReceivedEvent;
+        public event EventHandler<ReceivedPayload<IProtocolEvent>> ReceivedEvent;
         public event EventHandler<ExceptionArgs> ExceptionProcessing;
         public event EventHandler HandlerClosed;
 
-        event EventHandler<ReceivedPayload<ProtocolEvent>> Receiver<ReceivedPayload<ProtocolEvent>>.Received
+        event EventHandler<ReceivedPayload<IProtocolEvent>> IReceiver<ReceivedPayload<IProtocolEvent>>.Received
         {
             add
             {
@@ -63,7 +63,7 @@ namespace org.apache.qpid.transport.network
             }
         }
 
-        event EventHandler<ExceptionArgs> Receiver<ReceivedPayload<ProtocolEvent>>.Exception
+        event EventHandler<ExceptionArgs> IReceiver<ReceivedPayload<IProtocolEvent>>.Exception
         {
             add
             {
@@ -81,7 +81,7 @@ namespace org.apache.qpid.transport.network
             }
         }
 
-        event EventHandler Receiver<ReceivedPayload<ProtocolEvent>>.Closed
+        event EventHandler IReceiver<ReceivedPayload<IProtocolEvent>>.Closed
         {
             add
             {
@@ -106,12 +106,12 @@ namespace org.apache.qpid.transport.network
         }
 
         // Invoked when a network event is received
-        public void On_ReceivedEvent(object sender, ReceivedPayload<NetworkEvent> payload)
+        public void On_ReceivedEvent(object sender, ReceivedPayload<INetworkEvent> payload)
         {
             payload.Payload.ProcessNetworkEvent(this);
         }
 
-        #region Interface NetworkDelegate
+        #region Interface INetworkDelegate
 
         public void Init(ProtocolHeader header)
         {
@@ -126,41 +126,41 @@ namespace org.apache.qpid.transport.network
         public void Frame(Frame frame)
         {
             MemoryStream segment;
-            if (frame.isFirstFrame() && frame.isLastFrame())
+            if (frame.IsFirstFrame() && frame.IsLastFrame())
             {                
                 byte[] tmp = new byte[frame.BodySize];
                 frame.Body.Read(tmp, 0, tmp.Length);
                 segment = new MemoryStream();
                 BinaryWriter w = new BinaryWriter(segment);
                 w.Write(tmp);
-                assemble(frame, new MemoryStream(tmp));
+                Assemble(frame, new MemoryStream(tmp));
             }
             else
             {
                 List<byte[]> frames;
-                if (frame.isFirstFrame())
+                if (frame.IsFirstFrame())
                 {
                     frames = new List<byte[]>();
-                    setSegment(frame, frames);
+                    SetSegment(frame, frames);
                 }
                 else
                 {
-                    frames = getSegment(frame);
+                    frames = GetSegment(frame);
                 }
                 byte[] tmp = new byte[frame.BodySize];
                 frame.Body.Read(tmp, 0, tmp.Length);
                 frames.Add(tmp);
 
-                if (frame.isLastFrame())
+                if (frame.IsLastFrame())
                 {
-                    clearSegment(frame);
+                    ClearSegment(frame);
                     segment = new MemoryStream();
                     BinaryWriter w = new BinaryWriter(segment);
                     foreach (byte[] f in frames)
                     {
                         w.Write(f);
                     }
-                    assemble(frame, segment);
+                    Assemble(frame, segment);
                 }
             }
         }
@@ -170,7 +170,7 @@ namespace org.apache.qpid.transport.network
         #region Private Support Functions
 
 
-        private MSDecoder getDecoder()
+        private MSDecoder GetDecoder()
         {
             if( _decoder == null )
             {
@@ -179,27 +179,27 @@ namespace org.apache.qpid.transport.network
             return _decoder;
         }
 
-        private void assemble(Frame frame, MemoryStream segment)
+        private void Assemble(Frame frame, MemoryStream segment)
         {
-            MSDecoder decoder = getDecoder();
-            decoder.init(segment);
+            MSDecoder decoder = GetDecoder();
+            decoder.Init(segment);
             int channel = frame.Channel;
             Method command;
             switch (frame.Type)
             {
                 case SegmentType.CONTROL:
-                    int controlType = decoder.readUint16();                    
-                    Method control = Method.create(controlType);
-                    control.read(decoder);
+                    int controlType = decoder.ReadUint16();                    
+                    Method control = Method.Create(controlType);
+                    control.Read(decoder);
                     Emit(channel, control);
                     break;
                 case SegmentType.COMMAND:
-                    int commandType = decoder.readUint16();
+                    int commandType = decoder.ReadUint16();
                      // read in the session header, right now we don't use it
-                    decoder.readUint16();
-                    command = Method.create(commandType);
-                    command.read(decoder);
-                    if (command.hasPayload())
+                    decoder.ReadUint16();
+                    command = Method.Create(commandType);
+                    command.Read(decoder);
+                    if (command.HasPayload())
                     {
                         incomplete[channel] = command;
                     }
@@ -211,12 +211,12 @@ namespace org.apache.qpid.transport.network
                 case SegmentType.HEADER:
                     command = incomplete[channel];
                     List<Struct> structs = new List<Struct>();
-                    while (decoder.hasRemaining())                    
+                    while (decoder.HasRemaining())                    
                     {
-                        structs.Add(decoder.readStruct32());
+                        structs.Add(decoder.ReadStruct32());
                     }
                     command.Header = new Header(structs);
-                    if (frame.isLastSegment())
+                    if (frame.IsLastSegment())
                     {
                         incomplete[channel] = null;
                         Emit(channel, command);
@@ -234,38 +234,38 @@ namespace org.apache.qpid.transport.network
             }
         }
 
-        private int segmentKey(Frame frame)
+        private int SegmentKey(Frame frame)
         {
             return (frame.Track + 1)*frame.Channel;
         }
 
-        private List<byte[]> getSegment(Frame frame)
+        private List<byte[]> GetSegment(Frame frame)
         {
-            return segments[segmentKey(frame)];
+            return segments[SegmentKey(frame)];
         }
 
-        private void setSegment(Frame frame, List<byte[]> segment)
+        private void SetSegment(Frame frame, List<byte[]> segment)
         {
-            int key = segmentKey(frame);
+            int key = SegmentKey(frame);
             if (segments.ContainsKey(key))
             {
                 Error(new ProtocolError(network.Frame.L2, "segment in progress: %s",
                                         frame));
             }
-            segments.Add(segmentKey(frame), segment);            
+            segments.Add(SegmentKey(frame), segment);            
         }
 
-        private void clearSegment(Frame frame)
+        private void ClearSegment(Frame frame)
         {
-            segments.Remove(segmentKey(frame));
+            segments.Remove(SegmentKey(frame));
         }
 
         // Emit a protocol event 
-        private void Emit(int channel, ProtocolEvent protevent)
+        private void Emit(int channel, IProtocolEvent protevent)
         {
             protevent.Channel = channel;
-            log.debug("Assembler: protocol event:", protevent);
-            ReceivedPayload<ProtocolEvent> payload = new ReceivedPayload<ProtocolEvent>();
+            log.Debug("Assembler: protocol event:", protevent);
+            ReceivedPayload<IProtocolEvent> payload = new ReceivedPayload<IProtocolEvent>();
             payload.Payload = protevent;
             if (ReceivedEvent != null)
             {
@@ -273,7 +273,7 @@ namespace org.apache.qpid.transport.network
             }
             else
             {
-                log.debug("No listener for event: {0}", protevent);
+                log.Debug("No listener for event: {0}", protevent);
             }
         }
 
