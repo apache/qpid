@@ -24,6 +24,10 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+
+/**
+ * Validate ExchangeLogSubjects are logged as expected
+ */
 public class ExchangeLogSubjectTest extends AbstractTestLogSubject
 {
     Exchange _exchange;

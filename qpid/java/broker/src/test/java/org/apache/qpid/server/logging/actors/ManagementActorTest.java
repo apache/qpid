@@ -20,60 +20,45 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import junit.framework.TestCase;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
+import org.apache.qpid.AMQException;
 
 import java.util.List;
 
 /**
- * Test : AMQPConnectionActorTest
- * Validate the AMQPConnectionActor class.
+ * Test : AMQPManagementActorTest
+ * Validate the AMQPManagementActor class.
  *
  * The test creates a new AMQPActor and then logs a message using it.
  *
  * The test then verifies that the logged message was the only one created and
  * that the message contains the required message.
  */
-public class ManagementActorTest extends TestCase
+public class ManagementActorTest extends BaseActorTestCase
 {
 
-    LogActor _amqpActor;
-    UnitTestMessageLogger _rawLogger;
     private static final String IP = "127.0.0.1";
     private static final String CONNECTION_ID = "1";
     private String _threadName;
 
-    public void setUp() throws ConfigurationException
+    @Override
+    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
-
-        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
-
-        _rawLogger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
-
-        _amqpActor = new ManagementActor(rootLogger);
+        super.setUpWithConfig(serverConfig);
+        _amqpActor = new ManagementActor(_rootLogger);
 
         // Set the thread name to be the same as a RMI JMX Connection would use
         _threadName = Thread.currentThread().getName();
         Thread.currentThread().setName("RMI TCP Connection(" + CONNECTION_ID + ")-" + IP);
     }
 
-    public void tearDown()
+    @Override
+    public void tearDown() throws Exception
     {
         Thread.currentThread().setName(_threadName);
-        _rawLogger.clearLogMessages();
+        super.tearDown();
     }
 
     /**
@@ -117,7 +102,7 @@ public class ManagementActorTest extends TestCase
                     logs.get(0).toString().contains("{"));
 
         // Verify that the message has the correct type
-        assertTrue("Message contains the [mng: prefix",
+        assertTrue("Message does not contain the [mng: prefix",
                    logs.get(0).toString().contains("[mng:"));
 
         // Verify that the logged message does not contains the 'ch:' marker

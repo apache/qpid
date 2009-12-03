@@ -102,13 +102,13 @@ public class MemoryMessageStore implements MessageStore
         }
         int hashtableCapacity = config.getInt(name + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
         _log.info("Using capacity " + hashtableCapacity + " for hash tables");
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1001(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_CREATED(this.getClass().getName()));
     }
 
     public void close() throws Exception
     {
         _closed.getAndSet(true);
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_1003());
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_CLOSED());
 
     }
 

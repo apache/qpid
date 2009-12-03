@@ -57,4 +57,10 @@ public interface LogActor
      * @return the RootMessageLogger that is currently in use by this LogActor.
      */
     RootMessageLogger getRootMessageLogger();
+
+    /**
+     * 
+     * @return the String representing this LogActor
+     */
+    public String getLogMessage();
 }

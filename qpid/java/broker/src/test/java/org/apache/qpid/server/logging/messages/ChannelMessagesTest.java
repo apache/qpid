@@ -20,14 +20,16 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import java.text.MessageFormat;
 import java.util.List;
 
+/**
+ * Test CHN Log Messges 
+ */
 public class ChannelMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testChannelCreate()
     {
-        _logMessage = ChannelMessages.CHN_1001();
+        _logMessage = ChannelMessages.CHN_CREATE();
         List<Object> log = performLog();
 
         // We use the MessageFormat here as that is what the ChannelMessage
@@ -37,11 +39,11 @@ public class ChannelMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "CHN-1001", expected);
     }
 
-    public void testMessage1002()
+    public void testChannelFlow()
     {
         String flow = "ON";
 
-        _logMessage = ChannelMessages.CHN_1002(flow);
+        _logMessage = ChannelMessages.CHN_FLOW(flow);
         List<Object> log = performLog();
 
         String[] expected = {"Flow", flow};
@@ -49,9 +51,9 @@ public class ChannelMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "CHN-1002", expected);
     }
 
-    public void testMessage1003()
+    public void testChannelClose()
     {
-        _logMessage = ChannelMessages.CHN_1003();
+        _logMessage = ChannelMessages.CHN_CLOSE();
         List<Object> log = performLog();
 
         String[] expected = {"Close"};

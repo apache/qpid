@@ -22,12 +22,15 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test VHT Log Messages
+ */
 public class VirtualHostMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testVirtualhostCreated()
     {
         String name = "test";
-        _logMessage = VirtualHostMessages.VHT_1001(name);
+        _logMessage = VirtualHostMessages.VHT_CREATED(name);
         List<Object> log = performLog();
 
         String[] expected = {"Created :", name};
@@ -35,9 +38,9 @@ public class VirtualHostMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "VHT-1001", expected);
     }
 
-    public void testMessage1002()
+    public void testSubscriptionClosed()
     {
-        _logMessage = VirtualHostMessages.VHT_1002();
+        _logMessage = VirtualHostMessages.VHT_CLOSED();
         List<Object> log = performLog();
 
         String[] expected = {"Closed"};

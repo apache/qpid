@@ -29,9 +29,11 @@ public class LogMessageTest extends TestCase
 {
 
     /**
-     * Test that the US local is loadable. 
+     * Test that the US local has a loadable bundle.
+     * No longer have a specific en_US bundle so cannot verify that that version
+     * is loaded.
      */
-    public void testUSLocale()
+    public void testBundle()
     {
         Locale usLocal = Locale.US;
         Locale.setDefault(usLocal);
@@ -39,8 +41,6 @@ public class LogMessageTest extends TestCase
                                                             usLocal);
 
         assertNotNull("Unable to load ResourceBundle", _messages);
-
-        assertEquals("Loaded bundle has incorrect locale.", usLocal, _messages.getLocale());
     }
 
     /**

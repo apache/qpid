@@ -25,9 +25,12 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.List;
 
+/**
+ * Test EXH Log Messages
+ */
 public class ExchangeMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001_Transient()
+    public void testExchangeCreated_Transient()
     {
         // Get the Default Exchange on the Test Vhost for testing
         Exchange exchange = ApplicationRegistry.getInstance().
@@ -37,7 +40,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         String type = exchange.getType().toString();
         String name = exchange.getName().toString();
 
-        _logMessage = ExchangeMessages.EXH_1001(type, name, false);
+        _logMessage = ExchangeMessages.EXH_CREATED(type, name, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Type:", type, "Name:", name};
@@ -45,7 +48,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "EXH-1001", expected);
     }
 
-    public void testMessage1001_Persistent()
+    public void testExchangeCreated_Persistent()
     {
         // Get the Default Exchange on the Test Vhost for testing
         Exchange exchange = ApplicationRegistry.getInstance().
@@ -55,7 +58,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         String type = exchange.getType().toString();
         String name = exchange.getName().toString();
 
-        _logMessage = ExchangeMessages.EXH_1001(type, name, true);
+        _logMessage = ExchangeMessages.EXH_CREATED(type, name, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Durable", "Type:", type, "Name:", name};
@@ -64,9 +67,9 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     }
 
 
-    public void testMessage1002()
+    public void testExchangeDeleted()
     {
-        _logMessage = ExchangeMessages.EXH_1002();
+        _logMessage = ExchangeMessages.EXH_DELETED();
         List<Object> log = performLog();
 
         String[] expected = {"Deleted"};

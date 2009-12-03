@@ -23,6 +23,9 @@ package org.apache.qpid.server.logging.subjects;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
+/**
+ * Validate MessageStoreLogSubjects are logged as expected
+ */
 public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
 {
     VirtualHost _testVhost;

@@ -22,11 +22,14 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test MNG Log Messages
+ */
 public class ManagementConsoleMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testManagementStartup()
     {
-        _logMessage = ManagementConsoleMessages.MNG_1001();
+        _logMessage = ManagementConsoleMessages.MNG_STARTUP();
         List<Object> log = performLog();
 
         String[] expected = {"Startup"};
@@ -34,12 +37,12 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MNG-1001", expected);
     }
 
-    public void testMessage1002()
+    public void testManagementListening()
     {
         String transport = "JMX";
         Integer port = 8889;
 
-        _logMessage = ManagementConsoleMessages.MNG_1002(transport, port);
+        _logMessage = ManagementConsoleMessages.MNG_LISTENING(transport, port);
         List<Object> log = performLog();
 
         String[] expected = {"Starting :", transport, ": Listening on port", String.valueOf(port)};
@@ -47,12 +50,12 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MNG-1002", expected);
     }
 
-    public void testMessage1003()
+    public void testManagementShuttingDown()
     {
         String transport = "JMX";
         Integer port = 8889;
 
-        _logMessage = ManagementConsoleMessages.MNG_1003(transport, port);
+        _logMessage = ManagementConsoleMessages.MNG_SHUTTING_DOWN(transport, port);
         List<Object> log = performLog();
 
         String[] expected = {"Shuting down :", transport, ": port", String.valueOf(port)};
@@ -60,9 +63,9 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MNG-1003", expected);
     }
 
-    public void testMessage1004()
+    public void testManagementReady()
     {
-        _logMessage = ManagementConsoleMessages.MNG_1004();
+        _logMessage = ManagementConsoleMessages.MNG_READY();
         List<Object> log = performLog();
 
         String[] expected = {"Ready"};
@@ -70,9 +73,9 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MNG-1004", expected);
     }
 
-    public void testMessage1005()
+    public void testManagementStopped()
     {
-        _logMessage = ManagementConsoleMessages.MNG_1005();
+        _logMessage = ManagementConsoleMessages.MNG_STOPPED();
         List<Object> log = performLog();
 
         String[] expected = {"Stopped"};
@@ -80,11 +83,11 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MNG-1005", expected);
     }
 
-    public void testMessage1006()
+    public void testManagementSSLKeyStore()
     {
         String path = "/path/to/the/keystore/files.jks";
 
-        _logMessage = ManagementConsoleMessages.MNG_1006(path);
+        _logMessage = ManagementConsoleMessages.MNG_SSL_KEYSTORE(path);
         List<Object> log = performLog();
 
         String[] expected = {"Using SSL Keystore :", path};

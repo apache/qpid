@@ -158,7 +158,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         _configuration = hostConfig;
         _name = hostConfig.getName();
 
-        CurrentActor.get().message(VirtualHostMessages.VHT_1001(_name));
+        CurrentActor.get().message(VirtualHostMessages.VHT_CREATED(_name));
 
         if (_name == null || _name.length() == 0)
         {
@@ -482,7 +482,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
             _messageStore.close();
         }
 
-        CurrentActor.get().message(VirtualHostMessages.VHT_1002());
+        CurrentActor.get().message(VirtualHostMessages.VHT_CLOSED());
     }
 
     public ManagedObject getBrokerMBean()
