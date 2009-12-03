@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.AMQChannel;
 
+/**
+ * Validate ChannelLogSubjects are logged as expected
+ */
 public class ChannelLogSubjectTest extends ConnectionLogSubjectTest
 {
     private final int _channelID = 1;

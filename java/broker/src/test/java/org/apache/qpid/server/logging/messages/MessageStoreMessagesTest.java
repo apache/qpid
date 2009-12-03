@@ -23,13 +23,16 @@ package org.apache.qpid.server.logging.messages;
 import java.text.MessageFormat;
 import java.util.List;
 
+/**
+ * Test MST Log Messages
+ */
 public class MessageStoreMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testMessageStoreCreated()
     {
         String name = "DerbyMessageStore";
 
-        _logMessage = MessageStoreMessages.MST_1001(name);
+        _logMessage = MessageStoreMessages.MST_CREATED(name);
         List<Object> log = performLog();
 
         String[] expected = {"Created :", name};
@@ -37,21 +40,21 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MST-1001", expected);
     }
 
-    public void testMessage1002()
+    public void testMessageStoreStoreLocation()
     {
         String location = "/path/to/the/message/store.files";
 
-        _logMessage = ConfigStoreMessages.CFG_1002(location);
+        _logMessage = MessageStoreMessages.MST_STORE_LOCATION(location);
         List<Object> log = performLog();
 
         String[] expected = {"Store location :", location};
 
-        validateLogMessage(log, "CFG-1002", expected);
+        validateLogMessage(log, "MST-1002", expected);
     }
 
-    public void testMessage1003()
+    public void testMessageStoreClosed()
     {
-        _logMessage = MessageStoreMessages.MST_1003();
+        _logMessage = MessageStoreMessages.MST_CLOSED();
         List<Object> log = performLog();
 
         String[] expected = {"Closed"};
@@ -59,21 +62,21 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MST-1003", expected);
     }
 
-  /*  public void testMessage1004()
+  public void testMessageStoreRecoveryStart()
     {
-        _logMessage = MessageStoreMessages.MST_1004(null,false);
+        _logMessage = MessageStoreMessages.MST_RECOVERY_START();
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Start"};
 
         validateLogMessage(log, "MST-1004", expected);
     }
-
-    public void testMessage1004_withQueue()
+/*
+    public void testMessageStoreRecoveryStart_withQueue()
     {
         String queueName = "testQueue";
 
-        _logMessage = MessageStoreMessages.MST_1004(queueName, true);
+        _logMessage = MessageStoreMessages.MST_RECOVERY_START(queueName, true);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Start :", queueName};
@@ -81,12 +84,12 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MST-1004", expected);
     }
 
-    public void testMessage1005()
+    public void testMessageStoreRecovered()
     {
         String queueName = "testQueue";
         Integer messasgeCount = 2000;
 
-        _logMessage = MessageStoreMessages.MST_1005(messasgeCount, queueName);
+        _logMessage = MessageStoreMessages.MST_RECOVERED(messasgeCount, queueName);
         List<Object> log = performLog();
 
         // Here we use MessageFormat to ensure the messasgeCount of 2000 is
@@ -98,9 +101,9 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MST-1005", expected);
     }
 
-    public void testMessage1006()
+    public void testMessageStoreRecoveryComplete()
     {
-        _logMessage = MessageStoreMessages.MST_1006(null,false);
+        _logMessage = MessageStoreMessages.MST_RECOVERY_COMPLETE(null,false);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Complete"};
@@ -108,11 +111,11 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MST-1006", expected);
     }
 
-    public void testMessage1006_withQueue()
+    public void testMessageStoreRecoveryComplete_withQueue()
     {
         String queueName = "testQueue";
 
-        _logMessage = MessageStoreMessages.MST_1006(queueName, true);
+        _logMessage = MessageStoreMessages.MST_RECOVERY_COMPLETE(queueName, true);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Complete :", queueName};

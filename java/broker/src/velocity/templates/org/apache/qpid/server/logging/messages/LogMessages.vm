@@ -121,7 +121,7 @@ public class ${type.name}Messages
     public static LogMessage ${message.methodName}(#foreach($parameter in ${message.parameters})${parameter.type} ${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end
 #end#if(${message.parameters.size()} > 0 && ${message.options.size()} > 0), #end#foreach($option in ${message.options})boolean ${option.name}#if (${velocityCount} != ${message.options.size()} ), #end#end)
     {
-        String rawMessage = "${message.name} : " + _messages.getString("${message.name}");
+        String rawMessage = _messages.getString("${message.name}");
 ## If we have some options then we need to build the message based
 ## on those values so only provide that logic if we need it.
 #if(${message.options.size()} > 0)

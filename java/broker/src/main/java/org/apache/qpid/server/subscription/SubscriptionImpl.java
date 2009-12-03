@@ -365,7 +365,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             CurrentActor.get().
                     message(_logSubject,
-                            SubscriptionMessages.SUB_1001(filterLogString,
+                            SubscriptionMessages.SUB_CREATE(filterLogString,
                                                           queue.isDurable() && exclusive,
                                                           filterLogString != null));
         }
@@ -508,7 +508,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
         //Log Subscription closed
-        CurrentActor.get().message(_logSubject, SubscriptionMessages.SUB_1002());
+        CurrentActor.get().message(_logSubject, SubscriptionMessages.SUB_CLOSE());
     }
 
     public boolean isClosed()
@@ -596,7 +596,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                 _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
             }
         }
-        CurrentActor.get().message(_logSubject,SubscriptionMessages.SUB_1003(_state.get().toString()));
+        CurrentActor.get().message(_logSubject,SubscriptionMessages.SUB_STATE(_state.get().toString()));
     }
 
     public State getState()

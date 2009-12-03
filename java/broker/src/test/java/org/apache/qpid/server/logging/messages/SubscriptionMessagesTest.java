@@ -22,13 +22,16 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test SUB Log Messages
+ */
 public class SubscriptionMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001ALL()
+    public void testSubscriptionCreateALL()
     {
         String arguments = "arguments";
 
-        _logMessage = SubscriptionMessages.SUB_1001(arguments, true, true);
+        _logMessage = SubscriptionMessages.SUB_CREATE(arguments, true, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Durable", "Arguments :", arguments};
@@ -36,9 +39,9 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "SUB-1001", expected);
     }
 
-    public void testMessage1001Durable()
+    public void testSubscriptionCreateDurable()
     {
-        _logMessage = SubscriptionMessages.SUB_1001(null, true, false);
+        _logMessage = SubscriptionMessages.SUB_CREATE(null, true, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Durable"};
@@ -46,11 +49,11 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "SUB-1001", expected);
     }
 
-    public void testMessage1001Arguments()
+    public void testSubscriptionCreateArguments()
     {
         String arguments = "arguments";
 
-        _logMessage = SubscriptionMessages.SUB_1001(arguments, false, true);
+        _logMessage = SubscriptionMessages.SUB_CREATE(arguments, false, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create :","Arguments :", arguments};
@@ -59,9 +62,9 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
     }
 
 
-    public void testMessage1002()
+    public void testSubscriptionClose()
     {
-        _logMessage = SubscriptionMessages.SUB_1002();
+        _logMessage = SubscriptionMessages.SUB_CLOSE();
         List<Object> log = performLog();
 
         String[] expected = {"Close"};
@@ -69,11 +72,11 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "SUB-1002", expected);
     }
 
-    public void testMessage1003()
+    public void testSubscriptionState()
     {
         String state = "ACTIVE";
 
-        _logMessage = SubscriptionMessages.SUB_1003(state);
+        _logMessage = SubscriptionMessages.SUB_STATE(state);
         List<Object> log = performLog();
 
         String[] expected = {"State :", state};

@@ -266,7 +266,7 @@ public class Main
         }
         else
         {
-            CurrentActor.get().message(BrokerMessages.BRK_1006(configFile.getAbsolutePath()));
+            CurrentActor.get().message(BrokerMessages.BRK_CONFIG(configFile.getAbsolutePath()));
         }
 
         String logConfig = commandLine.getOptionValue("l");
@@ -417,7 +417,7 @@ public class Main
                                 serverConfig.getNetworkConfiguration(), null);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
                                                                   new QpidAcceptor(driver,"TCP"));
-                    CurrentActor.get().message(BrokerMessages.BRK_1002("TCP", port));
+                    CurrentActor.get().message(BrokerMessages.BRK_LISTENING("TCP", port));
 
                 }
 
@@ -431,14 +431,14 @@ public class Main
                             new AMQProtocolEngineFactory(), serverConfig.getNetworkConfiguration(), sslFactory);
                 ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, serverConfig.getSSLPort()),
                         new QpidAcceptor(driver,"TCP"));
-                CurrentActor.get().message(BrokerMessages.BRK_1002("TCP/SSL", serverConfig.getSSLPort()));
+                CurrentActor.get().message(BrokerMessages.BRK_LISTENING("TCP/SSL", serverConfig.getSSLPort()));
             }
 
             //fixme  qpid.AMQP should be using qpidproperties to get value
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                     + " build: " + QpidProperties.getBuildVersion());
 
-            CurrentActor.get().message(BrokerMessages.BRK_1004());
+            CurrentActor.get().message(BrokerMessages.BRK_READY());
 
         }
         finally
@@ -558,7 +558,7 @@ public class Main
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            CurrentActor.get().message(BrokerMessages.BRK_1007(logConfigFile.getAbsolutePath()));
+            CurrentActor.get().message(BrokerMessages.BRK_LOG_CONFIG(logConfigFile.getAbsolutePath()));
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
             if (logWatchTime > 0)
             {

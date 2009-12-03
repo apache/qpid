@@ -20,15 +20,11 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
  * Test : CurrentActorTest
@@ -51,38 +47,28 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  * is called before one or more threads call get(). This way we can ensure that
  * the remove does not affect more than the Thread it was called in.
  */
-public class CurrentActorTest extends TestCase
+public class CurrentActorTest extends BaseConnectionActorTestCase
 {
     //Set this to be a reasonably large number
     int THREADS = 10;
 
     // Record any exceptions that are thrown by the threads
-    final Exception[] _errors = new Exception[THREADS];
+    Exception[] _errors = new Exception[THREADS];
 
-    // Create a single session for this test.
-    AMQProtocolSession _session;
-
-    public void setUp() throws Exception
-    {
-        super.setUp();
-        // Create a single session for this test.
-        VirtualHost virtualHost = ApplicationRegistry.getInstance().
-                getVirtualHostRegistry().getVirtualHosts().iterator().next();
-
-        // Create a single session for this test.
-        _session = new InternalTestProtocolSession(virtualHost);
-    }
-
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        // Correctly Close the AR we created
-        ApplicationRegistry.remove();
-        super.tearDown();
-    }
-
-
+    /**
+     * Test that CurrentActor behaves as LIFO queue.
+     *
+     * Test creates two Actors Connection and Channel and then sets the
+     * CurrentActor.
+     *
+     * The test validates that CurrentActor remembers the Connection actor
+     * after the Channel actor has been removed.
+     *
+     * And then finally validates that removing the Connection actor results
+     * in there being no actors set.
+     *
+     * @throws AMQException
+     */
     public void testLIFO() throws AMQException
     {
         // Create a new actor using retrieving the rootMessageLogger from
@@ -92,6 +78,12 @@ public class CurrentActorTest extends TestCase
                                                                       ApplicationRegistry.getInstance().
                                                                               getRootMessageLogger());
 
+        /*
+         * Push the actor on to the stack:
+         *
+         *  CurrentActor -> Connection
+         *       Stack   -> null
+         */
         CurrentActor.set(connectionActor);
 
         //Use the Actor to send a simple message
@@ -115,8 +107,12 @@ public class CurrentActorTest extends TestCase
                      connectionActor, CurrentActor.get());
 
         /**
-         * Set the actor to nwo be the Channel actor so testing the ability
-         * to push the actor on to the stack
+         * Set the actor to now be the Channel actor so testing the ability
+         * to push the actor on to the stack:
+         *
+         *  CurrentActor -> Channel
+         *       Stack   -> Connection, null
+         *
          */
 
         AMQChannel channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
@@ -149,6 +145,13 @@ public class CurrentActorTest extends TestCase
 
         // Remove the ChannelActor from the stack
         CurrentActor.remove();
+        /*
+         * Pop the actor on to the stack:
+         *
+         *  CurrentActor -> Connection
+         *       Stack   -> null
+         */
+
 
         // Verify we now have the same connection actor as we set earlier
         assertEquals("Retrieved actor is not as expected ",
@@ -157,18 +160,44 @@ public class CurrentActorTest extends TestCase
         // Verify that removing the our last actor it returns us to the test
         // default that the ApplicationRegistry sets.
         CurrentActor.remove();
+        /*
+         * Pop the actor on to the stack:
+         *
+         *  CurrentActor -> null
+         */
+
 
         assertEquals("CurrentActor not the Test default", TestLogActor.class ,CurrentActor.get().getClass());
     }
 
+    /**
+     * Test the setting CurrentActor is done correctly as a ThreadLocal.
+     *
+     * The test starts 'THREADS' threads that all set the CurrentActor log
+     * a message then remove the actor.
+     *
+     * Checks are done to ensure that there is no set actor after the remove.
+     *
+     * If the ThreadLoacl was not working then having concurrent actor sets
+     * would result in more than one actor and so the remove will not result
+     * in the clearing of the CurrentActor
+     *
+     */
     public void testThreadLocal()
     {
+
+        new Runnable(){
+            public void run()
+            {
+                System.out.println(_errors[0]);
+            }
+        };
 
         // Setup the threads
         Thread[] threads = new Thread[THREADS];
         for (int count = 0; count < THREADS; count++)
         {
-            Runnable test = new Test(count);
+            Runnable test = new LogMessagesWithAConnectionActor(count);
             threads[count] = new Thread(test);
         }
 
@@ -202,11 +231,15 @@ public class CurrentActorTest extends TestCase
         }
     }
 
-    public class Test implements Runnable
+    /**
+     * Creates a new ConnectionActor and logs the given number of messages
+     * before removing the actor and validating that there is no set actor.
+     */
+    public class LogMessagesWithAConnectionActor implements Runnable
     {
         int count;
 
-        Test(int count)
+        LogMessagesWithAConnectionActor(int count)
         {
             this.count = count;
         }

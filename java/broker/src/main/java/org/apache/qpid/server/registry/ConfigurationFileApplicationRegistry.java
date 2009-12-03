@@ -59,7 +59,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         // Set the Actor for current log messages
         CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
 
-        CurrentActor.get().message(BrokerMessages.BRK_1001(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));
+        CurrentActor.get().message(BrokerMessages.BRK_STARTUP(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));
 
         initialiseManagedObjectRegistry();
 

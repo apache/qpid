@@ -133,7 +133,7 @@ public class AMQChannel
         _actor = new AMQPChannelActor(this, session.getLogActor().getRootMessageLogger());
         _logSubject = new ChannelLogSubject(this);
 
-        _actor.message(ChannelMessages.CHN_1001());
+        _actor.message(ChannelMessages.CHN_CREATE());
 
         _messageStore = messageStore;
 
@@ -417,7 +417,7 @@ public class AMQChannel
     {
         _closing = closing;
 
-        CurrentActor.get().message(_logSubject, ChannelMessages.CHN_1003());
+        CurrentActor.get().message(_logSubject, ChannelMessages.CHN_CLOSE());
     }
 
     private void unsubscribeAllConsumers() throws AMQException
@@ -737,7 +737,7 @@ public class AMQChannel
             // Log Flow Started before we start the subscriptions
             if (!suspended)
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_1002("Started"));
+                _actor.message(_logSubject, ChannelMessages.CHN_FLOW("Started"));
             }
 
 
@@ -788,7 +788,7 @@ public class AMQChannel
             // stopped.
             if (suspended)
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_1002("Stopped"));
+                _actor.message(_logSubject, ChannelMessages.CHN_FLOW("Stopped"));
             }
 
         }
@@ -904,7 +904,7 @@ public class AMQChannel
 
     public void setCredit(final long prefetchSize, final int prefetchCount)
     {
-        _actor.message(ChannelMessages.CHN_1004(prefetchSize, prefetchCount));
+        _actor.message(ChannelMessages.CHN_PREFETCH_SIZE(prefetchSize, prefetchCount));
         _creditManager.setCreditLimits(prefetchSize, prefetchCount);
     }
 
@@ -1163,7 +1163,7 @@ public class AMQChannel
 
             if(_blocking.compareAndSet(false,true))
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_1005(queue.getName().toString()));
+                _actor.message(_logSubject, ChannelMessages.CHN_FLOW_ENFORCED(queue.getName().toString()));
                 flow(false);
             }
         }
@@ -1175,7 +1175,7 @@ public class AMQChannel
         {
             if(_blocking.compareAndSet(true,false))
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_1006());
+                _actor.message(_logSubject, ChannelMessages.CHN_FLOW_REMOVED());
 
                 flow(true);
             }

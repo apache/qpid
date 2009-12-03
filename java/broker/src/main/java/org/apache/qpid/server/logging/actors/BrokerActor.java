@@ -24,6 +24,7 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 
 public class BrokerActor extends AbstractActor
 {
+    private final String _logString;
 
     /**
      * Create a new BrokerActor
@@ -43,5 +44,10 @@ public class BrokerActor extends AbstractActor
 
         _logString = "[Broker(" + name + ")] ";
     }
+
+    public String getLogMessage()
+    {
+        return _logString;
+    }    
 
 }

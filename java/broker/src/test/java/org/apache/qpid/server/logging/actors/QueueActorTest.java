@@ -20,49 +20,27 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import junit.framework.TestCase;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.AMQException;
 
 import java.util.List;
 
-public class QueueActorTest extends TestCase
+public class QueueActorTest extends BaseConnectionActorTestCase
 {
-    LogActor _amqpActor;
-    UnitTestMessageLogger _rawLogger;
 
-    public void setUp() throws ConfigurationException
+    @Override
+    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
-
-        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");        
-
-        _rawLogger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
+        super.setUpWithConfig(serverConfig);
 
         MockAMQQueue queue = new MockAMQQueue(getName());
 
-        queue.setVirtualHost(ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next());
+        queue.setVirtualHost(_session.getVirtualHost());
 
-        _amqpActor = new QueueActor(queue, rootLogger);
-    }
-
-    public void tearDown()
-    {
-        _rawLogger.clearLogMessages();
-        ApplicationRegistry.remove();
+        _amqpActor = new QueueActor(queue, _rootLogger);
     }
 
     /**

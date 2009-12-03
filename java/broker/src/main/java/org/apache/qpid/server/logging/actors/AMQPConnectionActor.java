@@ -54,6 +54,15 @@ public class AMQPConnectionActor extends AbstractActor
      */
     public static final String USER_FORMAT = "con:{0}({1}@{2})";
 
+    // The log string prefix for each message
+    private String _logString;
+
+    // The Session this Actor is representing
+    private AMQProtocolSession _session;
+
+    // Used to stop re-creating the _logString when we reach our final format
+    private boolean _upToDate = false;
+
     public AMQPConnectionActor(AMQProtocolSession session, RootMessageLogger rootLogger)
     {
         super(rootLogger);
@@ -61,55 +70,66 @@ public class AMQPConnectionActor extends AbstractActor
         _logString = "[" + MessageFormat.format(SOCKET_FORMAT,
                                                 session.getSessionID(),
                                                 session.getRemoteAddress())
-
                      + "] ";
+
+        _session = session;
     }
 
     /**
-     * Call when the connection has been authorized so that the logString
-     * can be updated with the new user identity.
+     * Update the LogString as the Connection process proceeds.
      *
-     * @param session the authorized session
+     * When the Session has an authorized ID add that to the string.
+     *
+     * When the Session then gains a Vhost add that to the string, at this point
+     * we can set upToDate = true as the _logString will not need to be updated
+     * from this point onwards.
      */
-    public void connectionAuthorized(AMQProtocolSession session)
+    private void updateLogString()
     {
-        _logString = "[" + MessageFormat.format(USER_FORMAT,
-                                                session.getSessionID(),
-                                                session.getPrincipal().getName(),
-                                                session.getRemoteAddress())
-                     + "] ";
+        if (!_upToDate)
+        {
+            if (_session.getPrincipal() != null)
+            {
+                if (_session.getVirtualHost() != null)
+                {
+                    /**
+                     * LOG FORMAT used by the AMQPConnectorActor follows
+                     * ConnectionLogSubject.CONNECTION_FORMAT :
+                     * con:{0}({1}@{2}/{3})
+                     *
+                     * Uses a MessageFormat call to insert the required values according to
+                     * these indices:
+                     *
+                     * 0 - Connection ID
+                     * 1 - User ID
+                     * 2 - IP
+                     * 3 - Virtualhost
+                     */
+                    _logString = "[" + MessageFormat.format(ConnectionLogSubject.CONNECTION_FORMAT,
+                                                            _session.getSessionID(),
+                                                            _session.getPrincipal().getName(),
+                                                            _session.getRemoteAddress(),
+                                                            _session.getVirtualHost().getName())
+                                 + "] ";
+                    _upToDate = true;
+                }
+                else
+                {
+                    _logString = "[" + MessageFormat.format(USER_FORMAT,
+                                                            _session.getSessionID(),
+                                                            _session.getPrincipal().getName(),
+                                                            _session.getRemoteAddress())
+                                 + "] ";
 
+                }
+            }
+        }
     }
 
-    /**
-     * Called once the user has been authenticated and they are now selecting
-     * the virtual host they wish to use.
-     *
-     * @param session the session that now has a virtualhost associated with it.
-     */
-    public void virtualHostSelected(AMQProtocolSession session)
+    public String getLogMessage()
     {
-
-        /**
-         * LOG FORMAT used by the AMQPConnectorActor follows
-         * ConnectionLogSubject.CONNECTION_FORMAT :
-         * con:{0}({1}@{2}/{3})
-         *
-         * Uses a MessageFormat call to insert the requried values according to
-         * these indicies:
-         *
-         * 0 - Connection ID
-         * 1 - User ID
-         * 2 - IP
-         * 3 - Virtualhost
-         */
-        _logString = "[" + MessageFormat.format(ConnectionLogSubject.CONNECTION_FORMAT,
-                                                session.getSessionID(),
-                                                session.getPrincipal().getName(),
-                                                session.getRemoteAddress(),
-                                                session.getVirtualHost().getName())
-                     + "] ";
-
+        updateLogString();
+        return _logString;
     }
 }
 

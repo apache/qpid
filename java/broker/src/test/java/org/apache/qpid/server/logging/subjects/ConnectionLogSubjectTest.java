@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
+/**
+ * Validate ConnectionLogSubjects are logged as expected
+ */
 public class ConnectionLogSubjectTest extends AbstractTestLogSubject
 {
 

@@ -22,12 +22,15 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test BND Log Messages
+ */
 public class BindingMessagesTest extends AbstractTestMessages
 {
 
-    public void testMessage1001_NoArgs()
+    public void testBindCreate_NoArgs()
     {
-        _logMessage = BindingMessages.BND_1001(null, false);
+        _logMessage = BindingMessages.BND_CREATED(null, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create"};
@@ -35,11 +38,11 @@ public class BindingMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BND-1001", expected);
     }
 
-    public void testMessage1001_Args()
+    public void testBindCreate_Args()
     {
         String arguments = "arguments";
 
-        _logMessage = BindingMessages.BND_1001(arguments, true);
+        _logMessage = BindingMessages.BND_CREATED(arguments, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create", ": Arguments :", arguments};
@@ -47,9 +50,9 @@ public class BindingMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BND-1001", expected);
     }
         
-    public void testMessage1002()
+    public void testBindDelete()
     {
-        _logMessage = BindingMessages.BND_1002();
+        _logMessage = BindingMessages.BND_DELETED();
 
         List<Object> log = performLog();
 

@@ -21,6 +21,8 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.subjects.QueueLogSubject;
+import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
 import org.apache.qpid.server.subscription.Subscription;
 
 import java.text.MessageFormat;
@@ -28,15 +30,21 @@ import java.text.MessageFormat;
 public class SubscriptionActor extends AbstractActor
 {
     public static String SUBSCRIBER_FORMAT = "sub:{0}(vh({1})/qu({2}))";
+    private final String _logString;
 
     public SubscriptionActor(RootMessageLogger logger, Subscription subscription)
     {
         super(logger);
 
-        _logString = "[" + MessageFormat.format(SUBSCRIBER_FORMAT,
+        _logString = "[" + MessageFormat.format(SubscriptionLogSubject.SUBSCRIPTION_FORMAT,
                                                 subscription.getSubscriptionID(),
                                                 subscription.getQueue().getVirtualHost().getName(),
                                                 subscription.getQueue().getName())
                      + "] ";
+    }
+
+    public String getLogMessage()
+    {
+        return _logString;
     }
 }

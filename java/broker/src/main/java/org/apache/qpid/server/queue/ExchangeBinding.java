@@ -45,7 +45,7 @@ public class ExchangeBinding
         _arguments = arguments == null ? EMPTY_ARGUMENTS : arguments;
         _logSubject = new BindingLogSubject(routingKey,exchange,queue);
 
-        CurrentActor.get().message(_logSubject, BindingMessages.BND_1001(String.valueOf(_arguments), arguments != null));
+        CurrentActor.get().message(_logSubject, BindingMessages.BND_CREATED(String.valueOf(_arguments), arguments != null));
     }
 
 
@@ -54,7 +54,7 @@ public class ExchangeBinding
     {
         _exchange.deregisterQueue(_routingKey, queue, _arguments);
 
-        CurrentActor.get().message(_logSubject, BindingMessages.BND_1002());
+        CurrentActor.get().message(_logSubject, BindingMessages.BND_DELETED());
     }
 
     public Exchange getExchange()

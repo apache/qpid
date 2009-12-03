@@ -173,7 +173,7 @@ public class DerbyMessageStore implements MessageStore
                           Configuration storeConfiguration,
                           LogSubject logSubject) throws Exception
     {
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1001(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_CREATED(this.getClass().getName()));
 
         if(!_configured)
         {
@@ -231,7 +231,7 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
-        CurrentActor.get().message(logSubject, MessageStoreMessages.MST_1002(environmentPath.getAbsolutePath()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_STORE_LOCATION(environmentPath.getAbsolutePath()));
 
         createOrOpenDatabase(name, databasePath);
     }
@@ -369,6 +369,7 @@ public class DerbyMessageStore implements MessageStore
     {
         stateTransition(State.CONFIGURING, State.RECOVERING);
 
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_RECOVERY_START());
 
         try
         {
@@ -380,8 +381,6 @@ public class DerbyMessageStore implements MessageStore
             ConfigurationRecoveryHandler.BindingRecoveryHandler brh = erh.completeExchangeRecovery();
             recoverBindings(brh, exchanges);
             brh.completeBindingRecovery();
-
-
         }
         catch (SQLException e)
         {
@@ -408,9 +407,6 @@ public class DerbyMessageStore implements MessageStore
             qrh.queue(queueName, owner, null);
 
             queues.add(queueName);
-
-
-
         }
         return queues;
     }
@@ -505,7 +501,7 @@ public class DerbyMessageStore implements MessageStore
 
     public void close() throws Exception
     {
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_1003());
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_CLOSED());
         _closed.getAndSet(true);
     }
 
