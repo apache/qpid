@@ -49,8 +49,6 @@ public class AbstractAction
     
     protected IWorkbenchWindow _window;
     
-    public static final String SECURITY_FAILURE = "User authentication failed";   
-    public static final String SERVER_UNAVAILABLE = "Unable to connect to the specified Qpid JMX server";
     public static final String INVALID_PERSPECTIVE = "Invalid Perspective";
     public static final String CHANGE_PERSPECTIVE = "Please use the Qpid Management Perspective";
     
@@ -153,18 +151,16 @@ public class AbstractAction
                     return;
                 }
             }
-            else if (ex instanceof IOException)
+            else if (ex instanceof IOException || ex instanceof SecurityException )
             {
-                //uncaught IOException, eg when trying to connect to a server/port with no JMX server running
-                msg = SERVER_UNAVAILABLE;
-                //Display error dialogue and return
-                displayErrorDialogue(msg, title);
-                return;
-            }
-            else if (ex instanceof SecurityException)
-            {
-                //SecurityException when providing incorrect login credentials
-                msg = SECURITY_FAILURE;
+                msg = ex.getMessage();
+                
+                //if msg is still null, try reporting the cause.
+                if ((msg == null) && (ex.getCause() != null))
+                {
+                    msg = ex.getCause().getMessage();
+                }
+                
                 //Display error dialogue and return
                 displayErrorDialogue(msg, title);
                 return;
