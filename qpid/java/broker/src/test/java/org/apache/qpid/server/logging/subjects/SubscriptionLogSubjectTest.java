@@ -69,7 +69,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
 
     /**
      * Validate that the logged Subject  message is as expected:
-     * MESSAGE [Blank][sub:0(qu(SubscriptionLogSubjectTest))] <Log Message>
+     * MESSAGE [Blank][sub:0(vh(/test)/qu(SubscriptionLogSubjectTest))] <Log Message>
      *
      * @param message the message whos format needs validation
      */
@@ -83,9 +83,23 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
         assertNotNull("Unable to locate subscription 'sub:" +
                       _subscription.getSubscriptionID() + "'");
 
+
+
+        // Pull out the qu(..) section from the subscription message
+        // Split it into three parts
+        // MESSAGE [Blank][sub:0(vh(/
+        //                           test)/
+        //                                 qu(SubscriptionLogSubjectTest))]
+        // Take the last bit and drop off the extra )]        
+        String[] parts = message.split("/");
+        assertEquals("Message part count wrong", 3, parts.length);
+        String subscription = parts[2].substring(0, parts[2].indexOf(")") + 1);
+
         // Adding the ')' is a bit ugly but SubscriptionLogSubject is the only
         // Subject that nests () and so the simple parser of checking for the
         // next ')' falls down.
-        verifyQueue(subscriptionSlice + ")", _queue);
+        verifyVirtualHost(subscriptionSlice+ ")", _queue.getVirtualHost());
+
+        verifyQueue(subscription, _queue);
     }
 }

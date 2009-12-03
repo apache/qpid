@@ -33,7 +33,7 @@ public class SubscriptionLogSubject extends AbstractLogSubject
      * 0 - Subscription ID
      * 1 - queue name
      */
-    protected static String SUBSCRIPTION_FORMAT = "sub:{0}(qu({1}))";
+    public static String SUBSCRIPTION_FORMAT = "sub:{0}(vh(/{1})/qu({2}))";
 
     /**
      * Create an QueueLogSubject that Logs in the following format.
@@ -42,8 +42,8 @@ public class SubscriptionLogSubject extends AbstractLogSubject
      */
     public SubscriptionLogSubject(Subscription subscription)
     {
-
         setLogStringWithFormat(SUBSCRIPTION_FORMAT, subscription.getSubscriptionID(),
+                               subscription.getQueue().getVirtualHost().getName(),
                                subscription.getQueue().getName());
     }
 }

@@ -43,7 +43,6 @@ import org.apache.qpid.server.logging.RootMessageLogger;
  */
 public abstract class AbstractActor implements LogActor
 {
-    protected String _logString;
     protected RootMessageLogger _rootLogger;
 
     public AbstractActor(RootMessageLogger rootLogger)
@@ -59,7 +58,7 @@ public abstract class AbstractActor implements LogActor
     {
         if (_rootLogger.isMessageEnabled(this, subject))
         {
-            _rootLogger.rawMessage(_logString + String.valueOf(subject) + message);
+            _rootLogger.rawMessage(getLogMessage() + String.valueOf(subject) + message);
         }
     }
 
@@ -67,7 +66,7 @@ public abstract class AbstractActor implements LogActor
     {
         if (_rootLogger.isMessageEnabled(this))
         {
-            _rootLogger.rawMessage(_logString + message);
+            _rootLogger.rawMessage(getLogMessage() + message);
         }
     }
 
@@ -78,7 +77,9 @@ public abstract class AbstractActor implements LogActor
 
     public String toString()
     {
-        return _logString;
+        return getLogMessage();
     }
+
+    abstract public String getLogMessage();
 
 }

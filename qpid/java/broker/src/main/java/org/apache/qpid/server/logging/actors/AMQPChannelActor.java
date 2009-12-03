@@ -40,6 +40,7 @@ import java.text.MessageFormat;
  */
 public class AMQPChannelActor extends AbstractActor
 {
+    private final String _logString;
 
     /**
      * Create a new ChannelActor
@@ -74,6 +75,11 @@ public class AMQPChannelActor extends AbstractActor
                                                session.getVirtualHost().getName(),
                                                channel.getChannelId())
                     + "] ";
+    }
+
+    public String getLogMessage()
+    {
+        return _logString;
     }
 }
 

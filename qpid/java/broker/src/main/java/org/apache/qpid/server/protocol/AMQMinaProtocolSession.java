@@ -875,7 +875,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         _virtualHost = virtualHost;
 
-        _actor.virtualHostSelected(this);
         _logSubject = new ConnectionLogSubject(this);
 
         _virtualHost.getConnectionRegistry().registerConnection(this);
@@ -902,9 +901,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public void setAuthorizedID(Principal authorizedID)
     {
         _authorizedID = authorizedID;
-
-        // Let the actor know that this connection is now Authorized
-        _actor.connectionAuthorized(this);
     }
 
     public Principal getAuthorizedID()

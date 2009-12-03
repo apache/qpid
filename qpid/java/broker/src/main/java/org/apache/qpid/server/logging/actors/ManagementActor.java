@@ -60,11 +60,15 @@ public class ManagementActor extends AbstractActor
      */
     public static final String MANAGEMENT_FORMAT = "mng:{0}({1})";
 
+    /**
+     * The logString to be used for logging
+     */
+    private String _logString;
+
     /** @param rootLogger The RootLogger to use for this Actor */
     public ManagementActor(RootMessageLogger rootLogger)
     {
         super(rootLogger);
-
     }
 
     /**
@@ -111,18 +115,10 @@ public class ManagementActor extends AbstractActor
         }
     }
 
-    @Override
-    public void message(LogSubject subject, LogMessage message)
+    public String getLogMessage()
     {
         updateLogString();
-        super.message(subject, message);
-    }
-
-    @Override
-    public void message(LogMessage message)
-    {
-        updateLogString();
-        super.message(message);
+        return _logString;
     }
 
 }
