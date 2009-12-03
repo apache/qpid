@@ -25,6 +25,22 @@ import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
 
+/**
+ * This AbstractActor is the basis for all the actors instances.
+ *
+ * It provides the common initialisation and message methods.
+ *
+ * It is abstract as it leaves the setting of _logString to the instances.
+ *
+ * The setting of the _logString is done so that the LogActor that the log
+ * messages was sent to can be identified in the log output.
+ *
+ * When a log message is created it is written to the RootMessageLogger in the
+ * format:
+ *
+ *     _logString [+ subject] + message
+ *
+ */
 public abstract class AbstractActor implements LogActor
 {
     protected String _logString;

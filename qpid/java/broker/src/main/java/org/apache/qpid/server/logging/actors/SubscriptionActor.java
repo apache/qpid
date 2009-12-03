@@ -25,6 +25,10 @@ import org.apache.qpid.server.subscription.Subscription;
 
 import java.text.MessageFormat;
 
+/**
+ * The subscription actor provides formatted logging for actions that are
+ * performed by the subsciption. Such as SUB-1003 state changes.
+ */
 public class SubscriptionActor extends AbstractActor
 {
     public static String SUBSCRIBER_FORMAT = "sub:{0}(vh({1})/qu({2}))";

@@ -24,6 +24,13 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.RawMessageLogger;
 
+/**
+ * Log4j Binding for Logging Framework.
+ *
+ * This RawMessageLogger takes a messages and logs them to log4j on the given
+ * Logger. DEFAULT 'qpid.message' , level : INFO
+ *
+ */
 public class Log4jMessageLogger implements RawMessageLogger
 {
     public static final String DEFAULT_LEVEL = "INFO";
@@ -31,11 +38,19 @@ public class Log4jMessageLogger implements RawMessageLogger
     private Level _level;
     private Logger _rawMessageLogger;
 
+    /**
+     * Create a Logger that uses the default logger and level.
+     */
     public Log4jMessageLogger()
     {
         this(DEFAULT_LEVEL, DEFAULT_LOGGER);
     }
 
+    /**
+     * Create a new logger with the given level and logger values
+     * @param level String value of the Level to use {@see Level}.
+     * @param logger The logger name to use.
+     */
     public Log4jMessageLogger(String level, String logger)
     {
         _level = Level.toLevel(level);

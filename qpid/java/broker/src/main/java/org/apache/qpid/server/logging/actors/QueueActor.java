@@ -43,7 +43,7 @@ public class QueueActor extends AbstractActor
     {
         super(rootLogger);
 
-        _logString = "[" + MessageFormat.format(QueueLogSubject.LOG_FORMAT,
+        _logString = "[" + MessageFormat.format(QueueLogSubject.QUEUE_FORMAT,
                                                 queue.getVirtualHost().getName(),
                                                 queue.getName()) + "] ";
 

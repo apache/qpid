@@ -27,8 +27,8 @@ public class ChannelLogSubject extends AbstractLogSubject
 {
     /**
      * LOG FORMAT for the ChannelLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Uses a MessageFormat call to insert the required values according to
+     * these indices:
      *
      * 0 - Connection ID
      * 1 - User ID

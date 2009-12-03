@@ -27,6 +27,14 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import java.text.MessageFormat;
 
 /**
+ *
+ * The ManagementActor is a logging actor to provide details about the
+ * management connection that is performing actions.
+ *
+ * This allows actions such as CON-1002, connection close, to be distiguished
+ * between a user logged in via the management console closing the connection
+ * and the connected client closing the connection.
+ *
  * NOTE: This actor is not thread safe.
  *
  * Sharing of a ManagementActor instance between threads may result in an
@@ -44,12 +52,11 @@ public class ManagementActor extends AbstractActor
 
     /**
      * LOG FORMAT for the ManagementActor,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Uses a MessageFormat call to insert the required values according to
+     * these indices:
      *
      * 0 - Connection ID
-     * 1 - User ID
-     * 2 - IP
+     * 1 - IP
      */
     public static final String MANAGEMENT_FORMAT = "mng:{0}({1})";
 
@@ -60,6 +67,9 @@ public class ManagementActor extends AbstractActor
 
     }
 
+    /**
+     * Called to ensure we have the correct _logString for the given thread.
+     */
     private void updateLogString()
     {
         String currentName = Thread.currentThread().getName();

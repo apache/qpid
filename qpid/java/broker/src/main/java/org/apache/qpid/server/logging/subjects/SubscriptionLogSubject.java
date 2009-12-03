@@ -27,13 +27,13 @@ public class SubscriptionLogSubject extends AbstractLogSubject
 
     /**
      * LOG FORMAT for the SubscriptionLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Uses a MessageFormat call to insert the required values according to
+     * these indices:
      *
      * 0 - Subscription ID
      * 1 - queue name
      */
-    protected static String BINDING_FORMAT = "sub:{0}(qu({1}))";
+    protected static String SUBSCRIPTION_FORMAT = "sub:{0}(qu({1}))";
 
     /**
      * Create an QueueLogSubject that Logs in the following format.
@@ -43,7 +43,7 @@ public class SubscriptionLogSubject extends AbstractLogSubject
     public SubscriptionLogSubject(Subscription subscription)
     {
 
-        setLogStringWithFormat(BINDING_FORMAT, subscription.getSubscriptionID(),
+        setLogStringWithFormat(SUBSCRIPTION_FORMAT, subscription.getSubscriptionID(),
                                subscription.getQueue().getName());
     }
 }

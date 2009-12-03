@@ -22,6 +22,11 @@ package org.apache.qpid.server.logging.rawloggers;
 
 import org.apache.qpid.server.logging.RawMessageLogger;
 
+/**
+ * System Out Binding for Logging Framework.
+ *
+ * Logs all messages to System.out
+ */
 public class SystemOutMessageLogger implements RawMessageLogger
 {
     public void rawMessage(String message)

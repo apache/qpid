@@ -58,13 +58,14 @@ public class AMQPChannelActor extends AbstractActor
          * ChannelLogSubject.CHANNEL_FORMAT :
          * con:{0}({1}@{2}/{3})/ch:{4}
          *
-         * Uses a MessageFormat call to insert the requried values according to
-         * these indicies:
+         * Uses a MessageFormat call to insert the required values according to
+         * these indices:
          *
          * 0 - Connection ID
          * 1 - User ID
          * 2 - IP
          * 3 - Virtualhost
+         * 4 - Channel ID 
          */
         _logString = "[" + MessageFormat.format(ChannelLogSubject.CHANNEL_FORMAT,
                                                session.getSessionID(),

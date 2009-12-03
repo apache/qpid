@@ -28,19 +28,19 @@ public class ExchangeLogSubject extends AbstractLogSubject
 
     /**
      * LOG FORMAT for the ExchangeLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Uses a MessageFormat call to insert the required values according to
+     * these indices:
      *
      * 0 - Virtualhost Name
      * 1 - Exchange Type
      * 2 - Exchange Name
      */
-    protected static String BINDING_FORMAT = "vh(/{0})/ex({1}/{2})";
+    protected static String EXCHANGE_FORMAT = "vh(/{0})/ex({1}/{2})";
 
     /** Create an ExchangeLogSubject that Logs in the following format. */
     public ExchangeLogSubject(Exchange exchange, VirtualHost vhost)
     {
-        setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
+        setLogStringWithFormat(EXCHANGE_FORMAT, vhost.getName(),
                                exchange.getType(), exchange.getName());
     }
 }

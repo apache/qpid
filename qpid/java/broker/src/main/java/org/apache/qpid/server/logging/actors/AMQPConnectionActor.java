@@ -45,8 +45,8 @@ public class AMQPConnectionActor extends AbstractActor
 
     /**
      * LOG FORMAT for the ConnectionLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Uses a MessageFormat call to insert the required values according to
+     * these indices:
      *
      * 0 - Connection ID
      * 1 - User ID
@@ -95,8 +95,8 @@ public class AMQPConnectionActor extends AbstractActor
          * ConnectionLogSubject.CONNECTION_FORMAT :
          * con:{0}({1}@{2}/{3})
          *
-         * Uses a MessageFormat call to insert the requried values according to
-         * these indicies:
+         * Uses a MessageFormat call to insert the required values according to
+         * these indices:
          *
          * 0 - Connection ID
          * 1 - User ID

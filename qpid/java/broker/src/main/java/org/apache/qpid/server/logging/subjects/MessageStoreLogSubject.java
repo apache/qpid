@@ -28,18 +28,18 @@ public class MessageStoreLogSubject extends AbstractLogSubject
 
     /**
      * LOG FORMAT for the MessagesStoreLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Uses a MessageFormat call to insert the required values according to
+     * these indices:
      *
      * 0 - Virtualhost Name
      * 1 - Message Store Type
      */
-    protected static String BINDING_FORMAT = "vh(/{0})/ms({1})";
+    protected static String MESSAGE_STORE_FORMAT = "vh(/{0})/ms({1})";
 
     /** Create an ExchangeLogSubject that Logs in the following format. */
     public MessageStoreLogSubject(VirtualHost vhost, MessageStore store)
     {
-        setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
+        setLogStringWithFormat(MESSAGE_STORE_FORMAT, vhost.getName(),
                                store.getClass().getSimpleName());
     }
 }
