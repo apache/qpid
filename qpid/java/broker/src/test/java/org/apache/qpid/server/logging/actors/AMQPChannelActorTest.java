@@ -20,83 +20,40 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.AMQChannel;
 
 import java.util.List;
 
 /**
- * Test : AMQPConnectionActorTest
- * Validate the AMQPConnectionActor class.
+ * Test : AMQPChannelActorTest
+ * Validate the AMQPChannelActor class.
  *
  * The test creates a new AMQPActor and then logs a message using it.
  *
  * The test then verifies that the logged message was the only one created and
  * that the message contains the required message.
  */
-public class AMQPChannelActorTest extends TestCase
+public class AMQPChannelActorTest extends BaseConnectionActorTestCase
 {
 
-    LogActor _amqpActor;
-    UnitTestMessageLogger _rawLogger;
-    AMQProtocolSession _session;
     AMQChannel _channel;
 
-    public void setUp() throws Exception, AMQException
+    @Override
+    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
     {
-        super.setUp();
-        //Highlight that this test will cause a new AR to be created
-        ApplicationRegistry.getInstance();
-
-        Configuration config = new PropertiesConfiguration();
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
-
-        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");        
-
-        setUpWithConfig(serverConfig);
-    }
-
-    private void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
-    {
-        _rawLogger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
-
-        VirtualHost virtualHost = ApplicationRegistry.getInstance().
-                    getVirtualHostRegistry().getVirtualHosts().iterator().next();
-
-        // Create a single session for this test.
-        _session = new InternalTestProtocolSession(virtualHost);
-
+        super.setUpWithConfig(serverConfig);
 
         _channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
 
-        _amqpActor = new AMQPChannelActor(_channel, rootLogger);
-
-    }
-
-    public void tearDown() throws Exception
-    {
-        _rawLogger.clearLogMessages();
-        // Correctly Close the AR we created
-        ApplicationRegistry.remove();
-
-        super.tearDown();
+        _amqpActor = new AMQPChannelActor(_channel, _rootLogger);
     }
 
     /**

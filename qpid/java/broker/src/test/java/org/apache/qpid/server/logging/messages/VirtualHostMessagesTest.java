@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test VHT Log Messages
+ */
 public class VirtualHostMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001()

@@ -25,6 +25,9 @@ import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+/**
+ * Validate QueueLogSubjects are logged as expected
+ */
 public class QueueLogSubjectTest extends AbstractTestLogSubject
 {
 
@@ -46,14 +49,13 @@ public class QueueLogSubjectTest extends AbstractTestLogSubject
 
     /**
      * Validate that the logged Subject  message is as expected:
-     * MESSAGE [Blank][vh(/test)/qu(BindingLogSubjectTest)] <Log Message>
+     * MESSAGE [Blank][vh(/test)/qu(QueueLogSubjectTest)] <Log Message>
      *
      * @param message the message whos format needs validation
      */
     @Override
     protected void validateLogStatement(String message)
     {
-        System.err.println(message);
         verifyVirtualHost(message, _testVhost);
         verifyQueue(message, _queue);
     }

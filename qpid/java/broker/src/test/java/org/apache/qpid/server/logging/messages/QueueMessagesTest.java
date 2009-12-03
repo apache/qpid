@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test QUE Log Messages
+ */
 public class QueueMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001ALL()

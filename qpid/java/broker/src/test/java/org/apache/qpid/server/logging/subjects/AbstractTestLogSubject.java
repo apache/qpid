@@ -42,6 +42,17 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.util.List;
 
+/**
+ * Abstract Test for LogSubject testing
+ * Includes common validation code and two common tests.
+ *
+ * Each test class sets up the LogSubject and contains details of how to
+ * validate this class then performs a log statement with logging enabled and
+ * logging disabled.
+ *
+ * The resulting log file is then validated. 
+ *
+ */
 public abstract class AbstractTestLogSubject extends TestCase
 {
     protected Configuration _config = new PropertiesConfiguration();

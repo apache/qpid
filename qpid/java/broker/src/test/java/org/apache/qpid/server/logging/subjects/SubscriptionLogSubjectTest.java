@@ -21,7 +21,6 @@
 package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -32,14 +31,14 @@ import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+/**
+ * Validate SubscriptionLogSubjects are logged as expected
+ */
 public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
 {
 
     AMQQueue _queue;
     VirtualHost _testVhost;
-    private boolean _acks;
-    private FieldTable _filters;
-    private boolean _noLocal;
     private int _channelID = 1;
     Subscription _subscription;
 
@@ -50,7 +49,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
         _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
                 getVirtualHost("test");
 
-        _queue = new MockAMQQueue("QueueLogSubjectTest");
+        _queue = new MockAMQQueue("SubscriptionLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
         AMQChannel channel = new AMQChannel(_session, _channelID, _session.getVirtualHost().getMessageStore());
@@ -60,7 +59,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
         SubscriptionFactory factory = new SubscriptionFactoryImpl();
 
         _subscription = factory.createSubscription(_channelID, _session, new AMQShortString("cTag"),
-                                                   _acks, _filters, _noLocal,
+                                                   false, null, false,
                                                    new LimitlessCreditManager());
 
         _subscription.setQueue(_queue, false);
@@ -70,7 +69,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
 
     /**
      * Validate that the logged Subject  message is as expected:
-     * MESSAGE [Blank][sub:0(qu(QueueLogSubjectTest))] <Log Message>
+     * MESSAGE [Blank][sub:0(qu(SubscriptionLogSubjectTest))] <Log Message>
      *
      * @param message the message whos format needs validation
      */

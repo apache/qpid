@@ -25,6 +25,9 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.List;
 
+/**
+ * Test EXH Log Messages
+ */
 public class ExchangeMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001_Transient()

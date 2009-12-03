@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test BRK log Messages
+ */
 public class BrokerMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001()

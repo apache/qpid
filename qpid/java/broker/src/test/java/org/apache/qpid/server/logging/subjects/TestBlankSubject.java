@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
+/**
+ * Blank Subject for testing
+ */
 public class TestBlankSubject extends AbstractLogSubject
 {
     public TestBlankSubject()

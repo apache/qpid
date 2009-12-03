@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import java.text.MessageFormat;
 import java.util.List;
 
+/**
+ * Test CHN Log Messges 
+ */
 public class ChannelMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001()

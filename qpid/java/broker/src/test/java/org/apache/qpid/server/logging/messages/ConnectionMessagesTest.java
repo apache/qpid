@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test CON Log Messages
+ */
 public class ConnectionMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001_WithClientIDProtocolVersion()

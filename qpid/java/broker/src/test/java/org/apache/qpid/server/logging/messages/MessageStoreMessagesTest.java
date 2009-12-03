@@ -23,6 +23,9 @@ package org.apache.qpid.server.logging.messages;
 import java.text.MessageFormat;
 import java.util.List;
 
+/**
+ * Test MST Log Messages
+ */
 public class MessageStoreMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001()

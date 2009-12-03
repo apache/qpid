@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test BND Log Messages
+ */
 public class BindingMessagesTest extends AbstractTestMessages
 {
 

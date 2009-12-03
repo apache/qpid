@@ -27,6 +27,9 @@ import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+/**
+ * Validate BindingLogSubjects are logged as expected
+ */
 public class BindingLogSubjectTest extends AbstractTestLogSubject
 {
 

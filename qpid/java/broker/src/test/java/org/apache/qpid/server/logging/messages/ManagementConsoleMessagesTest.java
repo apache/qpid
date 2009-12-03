@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test MNG Log Messages
+ */
 public class ManagementConsoleMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001()

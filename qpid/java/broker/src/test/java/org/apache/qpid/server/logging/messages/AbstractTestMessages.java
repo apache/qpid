@@ -22,7 +22,6 @@ package org.apache.qpid.server.logging.messages;
 
 import junit.framework.TestCase;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.LogActor;
@@ -87,9 +86,8 @@ public abstract class AbstractTestMessages extends TestCase
      *
      * @param logs     the logs generated during test run
      * @param tag      the tag to check for
-     * @param expected
+     * @param expected the expected log messages
      *
-     * @return the log message section for further testing
      */
     protected void validateLogMessage(List<Object> logs, String tag, String[] expected)
     {

@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+/**
+ * Test SUB Log Messages
+ */
 public class SubscriptionMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001ALL()

@@ -20,23 +20,13 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import junit.framework.TestCase;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.subscription.MockSubscription;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.AMQException;
 
-import java.security.Principal;
 import java.util.List;
 
 /**
@@ -48,38 +38,24 @@ import java.util.List;
  * The test then verifies that the logged message was the only one created and
  * that the message contains the required message.
  */
-public class SubscriptionActorTest extends TestCase
+public class SubscriptionActorTest extends BaseConnectionActorTestCase
 {
 
-    LogActor _amqpActor;
-    UnitTestMessageLogger _rawLogger;
-
-    public void setUp() throws ConfigurationException
+    @Override
+    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+        super.setUpWithConfig(serverConfig);
 
-        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
-
-        _rawLogger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
 
         MockSubscription mockSubscription = new MockSubscription();
 
         MockAMQQueue queue = new MockAMQQueue(getName());
 
-        queue.setVirtualHost(ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next());
+        queue.setVirtualHost(_session.getVirtualHost());
 
         mockSubscription.setQueue(queue,false);
 
-        _amqpActor = new SubscriptionActor(rootLogger, mockSubscription);
-    }
-
-    public void tearDown()
-    {
-        _rawLogger.clearLogMessages();
-        ApplicationRegistry.remove();
+        _amqpActor = new SubscriptionActor(_rootLogger, mockSubscription);
     }
 
     /**
