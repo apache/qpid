@@ -37,39 +37,39 @@ namespace org.apache.qpid.transport.util
         /// first argument is less than, equal to, or greater than the
         ///  second
         ///
-        public static int compare(int s1, int s2)
+        public static int Compare(int s1, int s2)
         {
             return s1 - s2;
         }
 
-        public static bool lt(int s1, int s2)
+        public static bool Lt(int s1, int s2)
         {
-            return compare(s1, s2) < 0;
+            return Compare(s1, s2) < 0;
         }
 
-        public static bool le(int s1, int s2)
+        public static bool Le(int s1, int s2)
         {
-            return compare(s1, s2) <= 0;
+            return Compare(s1, s2) <= 0;
         }
 
-        public static bool gt(int s1, int s2)
+        public static bool Gt(int s1, int s2)
         {
-            return compare(s1, s2) > 0;
+            return Compare(s1, s2) > 0;
         }
 
-        public static bool ge(int s1, int s2)
+        public static bool Ge(int s1, int s2)
         {
-            return compare(s1, s2) >= 0;
+            return Compare(s1, s2) >= 0;
         }
 
-        public static bool eq(int s1, int s2)
+        public static bool Eq(int s1, int s2)
         {
             return s1 == s2;
         }
 
-        public static int min(int s1, int s2)
+        public static int Min(int s1, int s2)
         {
-            if (lt(s1, s2))
+            if (Lt(s1, s2))
             {
                 return s1;
             }
@@ -79,9 +79,9 @@ namespace org.apache.qpid.transport.util
             }
         }
 
-        public static int max(int s1, int s2)
+        public static int Max(int s1, int s2)
         {
-            if (gt(s1, s2))
+            if (Gt(s1, s2))
             {
                 return s1;
             }

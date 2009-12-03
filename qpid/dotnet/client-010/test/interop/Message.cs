@@ -30,38 +30,39 @@ namespace test.interop
 {
     public class Message : TestCase
     {
-        private static readonly Logger _log = Logger.get(typeof (Message));
+        private static readonly Logger _log = Logger.Get(typeof (Message));
 
         [Test]
         public void sendAndPurge()
         {
-            _log.debug("Running: exchangeBind");
-            ClientSession ssn = Client.createSession(0);
-            ssn.queueDelete("queue1");
-            QueueQueryResult result = (QueueQueryResult) ssn.queueQuery("queue1").Result;
-            Assert.IsNull(result.getQueue());
-            ssn.queueDeclare("queue1", null, null);
-            ssn.exchangeBind("queue1", "amq.direct", "queue1", null);
+            _log.Debug("Running: ExchangeBind");
+            IClientSession ssn = Client.CreateSession(0);
+            ssn.QueueDelete("queue1");
+            QueueQueryResult result = (QueueQueryResult) ssn.QueueQuery("queue1").Result;
+            Assert.IsNull(result.GetQueue());
+            ssn.QueueDeclare("queue1", null, null);
+            ssn.ExchangeBind("queue1", "amq.direct", "queue1", null);
+
             for (int i = 0; i < 10; i++)
             {
-                ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
-                                    new Header(new DeliveryProperties().setRoutingKey("queue1"),
-                                               new MessageProperties().setMessageId(UUID.randomUUID())),
+                ssn.MessageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                                    new Header(new DeliveryProperties().SetRoutingKey("queue1"),
+                                               new MessageProperties().SetMessageId(UUID.RandomUuid())),
                                     Encoding.UTF8.GetBytes("test: " + i));
             }
-            ssn.sync();
-            result = (QueueQueryResult) ssn.queueQuery("queue1").Result;
-            Assert.IsTrue(result.getMessageCount() == 10);
-            ssn.queuePurge("queue1");
-            ssn.sync();
-            result = (QueueQueryResult) ssn.queueQuery("queue1").Result;
-            Assert.IsTrue(result.getMessageCount() == 0);
+            ssn.Sync();
+            result = (QueueQueryResult) ssn.QueueQuery("queue1").Result;
+            Assert.IsTrue(result.GetMessageCount() == 10);
+            ssn.QueuePurge("queue1");
+            ssn.Sync();
+            result = (QueueQueryResult) ssn.QueueQuery("queue1").Result;
+            Assert.IsTrue(result.GetMessageCount() == 0);
         }
 
         [Test]
         public void sendAndReceiveSmallMessages()
         {
-            _log.debug("Running: sendAndReceiveSmallMessages");
+            _log.Debug("Running: sendAndReceiveSmallMessages");
             byte[] smallMessage = Encoding.UTF8.GetBytes("test");
             sendAndReceive(smallMessage, 100);
         }
@@ -69,7 +70,7 @@ namespace test.interop
         [Test]
         public void sendAndReceiveLargeMessages()
         {
-            _log.debug("Running: sendAndReceiveSmallMessages");
+            _log.Debug("Running: sendAndReceiveSmallMessages");
             byte[] largeMessage = new byte[100 * 1024];
             Random random = new Random();
             random.NextBytes(largeMessage);
@@ -79,7 +80,7 @@ namespace test.interop
         [Test]
         public void sendAndReceiveVeryLargeMessages()
         {
-            _log.debug("Running: sendAndReceiveSmallMessages");
+            _log.Debug("Running: sendAndReceiveSmallMessages");
             byte[] verylargeMessage = new byte[1000 * 1024];
             Random random = new Random();
             random.NextBytes(verylargeMessage);
@@ -88,36 +89,36 @@ namespace test.interop
 
         private void sendAndReceive(byte[] messageBody, int count)
         {           
-            ClientSession ssn = Client.createSession(0);
-            ssn.sync();
-            ssn.queueDeclare("queue1", null, null);
-            ssn.queueDelete("queue1");           
-            QueueQueryResult result = (QueueQueryResult) ssn.queueQuery("queue1").Result;            
-            Assert.IsNull(result.getQueue());
-            ssn.queueDeclare("queue1", null, null);
-            ssn.exchangeBind("queue1", "amq.direct", "queue1", null);
+            IClientSession ssn = Client.CreateSession(0);
+            ssn.Sync();
+            ssn.QueueDeclare("queue1", null, null);
+            ssn.QueueDelete("queue1");           
+            QueueQueryResult result = (QueueQueryResult) ssn.QueueQuery("queue1").Result;            
+            Assert.IsNull(result.GetQueue());
+            ssn.QueueDeclare("queue1", null, null);
+            ssn.ExchangeBind("queue1", "amq.direct", "queue1", null);
             Object myLock = new Object();
             MyListener myListener = new MyListener(myLock, count);
-            ssn.attachMessageListener(myListener, "myDest");
+            ssn.AttachMessageListener(myListener, "myDest");
 
-            ssn.messageSubscribe("queue1", "myDest", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED, null,
+            ssn.MessageSubscribe("queue1", "myDest", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED, null,
                                  0, null);
 
 
             // issue credits     
-            ssn.messageSetFlowMode("myDest", MessageFlowMode.WINDOW);
-            ssn.messageFlow("myDest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
-            ssn.messageFlow("myDest", MessageCreditUnit.MESSAGE, 10000);
-            ssn.sync();
+            ssn.MessageSetFlowMode("myDest", MessageFlowMode.WINDOW);
+            ssn.MessageFlow("myDest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
+            ssn.MessageFlow("myDest", MessageCreditUnit.MESSAGE, 10000);
+            ssn.Sync();
 
             for (int i = 0; i < count; i++)
             {
-                ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
-                                    new Header(new DeliveryProperties().setRoutingKey("queue1"),
-                                               new MessageProperties().setMessageId(UUID.randomUUID())),
+                ssn.MessageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                                    new Header(new DeliveryProperties().SetRoutingKey("queue1"),
+                                               new MessageProperties().SetMessageId(UUID.RandomUuid())),
                                     messageBody);
             }
-            ssn.sync();
+            ssn.Sync();
            
             lock (myLock)
             {
@@ -127,19 +128,19 @@ namespace test.interop
                 }
             }
             Assert.IsTrue(myListener.Count == 0);
-            ssn.messageAccept(myListener.UnAck);
-            ssn.sync();
+            ssn.MessageAccept(myListener.UnAck);
+            ssn.Sync();
             // the queue should be empty 
-            result = (QueueQueryResult)ssn.queueQuery("queue1").Result;
-            Assert.IsTrue(result.getMessageCount() == 0);
-            ssn.close();        
+            result = (QueueQueryResult)ssn.QueueQuery("queue1").Result;
+            Assert.IsTrue(result.GetMessageCount() == 0);
+            ssn.Close();        
         }
 
 
 
         private class MyListener : IMessageListener
         {
-            private static readonly Logger _log = Logger.get(typeof (MyListener));
+            private static readonly Logger _log = Logger.Get(typeof (MyListener));
             private readonly Object _wl;
             private int _count;
             private RangeSet _rs = new RangeSet();
@@ -150,11 +151,11 @@ namespace test.interop
                 _count = count;
             }
 
-            public void messageTransfer(IMessage     m)
+            public void MessageTransfer(IMessage     m)
             {
                 byte[] body = new byte[m.Body.Length - m.Body.Position];                               
-                _log.debug("Got a message of size: " + body.Length + " count = " + _count);
-                _rs.add(m.Id);
+                _log.Debug("Got a message of size: " + body.Length + " count = " + _count);
+                _rs.Add(m.Id);
                 lock (_wl)
                 {
                     _count--;

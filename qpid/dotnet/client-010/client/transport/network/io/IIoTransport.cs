@@ -29,7 +29,7 @@ namespace org.apache.qpid.transport.network.io
             set;
         }
 
-        Receiver<ReceivedPayload<MemoryStream>> Receiver
+        IReceiver<ReceivedPayload<MemoryStream>> Receiver
         {
             get;
             set;

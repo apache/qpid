@@ -28,9 +28,9 @@ namespace org.apache.qpid.transport.network
     /// <summary> 
     /// Disassembler
     /// </summary>
-    public sealed class Disassembler : Sender<ProtocolEvent>, ProtocolDelegate<Object>
+    public sealed class Disassembler : ISender<IProtocolEvent>, IProtocolDelegate<Object>
     {
-        private readonly IIOSender<MemoryStream> _sender;
+        private readonly IIoSender<MemoryStream> _sender;
         private readonly int _maxPayload;
         private readonly MemoryStream _header;
         private readonly BinaryWriter _writer;
@@ -38,38 +38,38 @@ namespace org.apache.qpid.transport.network
         [ThreadStatic] static MSEncoder _encoder;
 
 
-        public Disassembler(IIOSender<MemoryStream> sender, int maxFrame)
+        public Disassembler(IIoSender<MemoryStream> sender, int maxFrame)
         {
-            if (maxFrame <= Frame.HEADER_SIZE || maxFrame >= 64*1024)
+            if (maxFrame <= network.Frame.HEADER_SIZE || maxFrame >= 64*1024)
             {
-                throw new Exception(String.Format("maxFrame must be > {0} and < 64K: ", Frame.HEADER_SIZE) + maxFrame);
+                throw new Exception(String.Format("maxFrame must be > {0} and < 64K: ", network.Frame.HEADER_SIZE) + maxFrame);
             }
             _sender = sender;
-            _maxPayload = maxFrame - Frame.HEADER_SIZE;
-            _header = new MemoryStream(Frame.HEADER_SIZE);
+            _maxPayload = maxFrame - network.Frame.HEADER_SIZE;
+            _header = new MemoryStream(network.Frame.HEADER_SIZE);
             _writer = new BinaryWriter(_header);
         }
 
         #region Sender Interface 
 
-        public void send(ProtocolEvent pevent)
+        public void Send(IProtocolEvent pevent)
         {
             pevent.ProcessProtocolEvent(null, this);
         }
 
-        public void flush()
+        public void Flush()
         {
             lock (_sendlock)
             {
-                _sender.flush();
+                _sender.Flush();
             }
         }
 
-        public void close()
+        public void Close()
         {
             lock (_sendlock)
             {
-                _sender.close();
+                _sender.Close();
             }
         }
 
@@ -81,19 +81,19 @@ namespace org.apache.qpid.transport.network
         {
             lock (_sendlock)
             {
-                _sender.send(header.ToMemoryStream());
-                _sender.flush();
+                _sender.Send(header.ToMemoryStream());
+                _sender.Flush();
             }
         }
 
         public void Control(Object v, Method method)
         {
-            invokeMethod(method, SegmentType.CONTROL);
+            InvokeMethod(method, SegmentType.CONTROL);
         }
 
         public void Command(Object v, Method method)
         {
-            invokeMethod(method, SegmentType.COMMAND);
+            InvokeMethod(method, SegmentType.COMMAND);
         }
 
         public void Error(Object v, ProtocolError error)
@@ -105,13 +105,13 @@ namespace org.apache.qpid.transport.network
 
         #region private 
 
-        private void frame(byte flags, byte type, byte track, int channel, int size, MemoryStream buf)
+        private void Frame(byte flags, byte type, byte track, int channel, int size, MemoryStream buf)
         {
             lock (_sendlock)
             {
                  _writer.Write(flags);
                 _writer.Write(type);
-                _writer.Write(ByteEncoder.GetBigEndian((UInt16)(size + Frame.HEADER_SIZE)));
+                _writer.Write(ByteEncoder.GetBigEndian((UInt16)(size + network.Frame.HEADER_SIZE)));
                 _writer.Write((byte)0);
                 _writer.Write(track);
                 _writer.Write(ByteEncoder.GetBigEndian((UInt16)( channel)));               
@@ -119,16 +119,16 @@ namespace org.apache.qpid.transport.network
                 _writer.Write((byte)0);
                 _writer.Write((byte)0);
                _writer.Write((byte)0);
-                _sender.send(_header);
+                _sender.Send(_header);
                 _header.Seek(0, SeekOrigin.Begin);               
-                _sender.send(buf, size);
+                _sender.Send(buf, size);
             }
         }
 
-        private void fragment(byte flags, SegmentType type, ProtocolEvent mevent, MemoryStream buf)
+        private void Fragment(byte flags, SegmentType type, IProtocolEvent mevent, MemoryStream buf)
         {
             byte typeb = (byte) type;
-            byte track = mevent.EncodedTrack == Frame.L4 ? (byte) 1 : (byte) 0;
+            byte track = mevent.EncodedTrack == network.Frame.L4 ? (byte) 1 : (byte) 0;
             int remaining = (int) buf.Length;
             buf.Seek(0, SeekOrigin.Begin);
             bool first = true;
@@ -140,15 +140,15 @@ namespace org.apache.qpid.transport.network
                 byte newflags = flags;
                 if (first)
                 {
-                    newflags |= Frame.FIRST_FRAME;
+                    newflags |= network.Frame.FIRST_FRAME;
                     first = false;
                 }
                 if (remaining == 0)
                 {
-                    newflags |= Frame.LAST_FRAME;
+                    newflags |= network.Frame.LAST_FRAME;
                 }                
 
-                frame(newflags, typeb, track, mevent.Channel, size, buf);
+                Frame(newflags, typeb, track, mevent.Channel, size, buf);
 
                 if (remaining == 0)
                 {
@@ -157,7 +157,7 @@ namespace org.apache.qpid.transport.network
             }
         }
 
-        private MSEncoder getEncoder()
+        private MSEncoder GetEncoder()
         {
             if( _encoder == null)
             {
@@ -166,31 +166,31 @@ namespace org.apache.qpid.transport.network
             return _encoder;
         }
 
-        private void invokeMethod(Method method, SegmentType type)
+        private void InvokeMethod(Method method, SegmentType type)
         {
-            MSEncoder encoder = getEncoder();
-            encoder.init();
-            encoder.writeUint16(method.getEncodedType());
+            MSEncoder encoder = GetEncoder();
+            encoder.Init();
+            encoder.WriteUint16(method.GetEncodedType());
             if (type == SegmentType.COMMAND)
             {
                 if (method.Sync)
                 {
-                    encoder.writeUint16(0x0101);
+                    encoder.WriteUint16(0x0101);
                 }
                 else
                 {
-                    encoder.writeUint16(0x0100);
+                    encoder.WriteUint16(0x0100);
                 }
             }
-            method.write(_encoder);
-            MemoryStream methodSeg = encoder.segment();
+            method.Write(_encoder);
+            MemoryStream methodSeg = encoder.Segment();
 
-            byte flags = Frame.FIRST_SEG;
+            byte flags = network.Frame.FIRST_SEG;
 
-            bool payload = method.hasPayload();
+            bool payload = method.HasPayload();
             if (!payload)
             {
-                flags |= Frame.LAST_SEG;
+                flags |= network.Frame.LAST_SEG;
             }
 
             MemoryStream headerSeg = null;
@@ -201,18 +201,18 @@ namespace org.apache.qpid.transport.network
 
                 foreach (Struct st in structs)
                 {
-                    encoder.writeStruct32(st);
+                    encoder.WriteStruct32(st);
                 }
-                headerSeg = encoder.segment();
+                headerSeg = encoder.Segment();
             }
 
             lock (_sendlock)
             {
-                fragment(flags, type, method, methodSeg);
+                Fragment(flags, type, method, methodSeg);
                 if (payload)
                 {
-                    fragment( 0x0, SegmentType.HEADER, method, headerSeg);
-                    fragment(Frame.LAST_SEG, SegmentType.BODY, method, method.Body);
+                    Fragment( 0x0, SegmentType.HEADER, method, headerSeg);
+                    Fragment(network.Frame.LAST_SEG, SegmentType.BODY, method, method.Body);
                 }
             }
         }

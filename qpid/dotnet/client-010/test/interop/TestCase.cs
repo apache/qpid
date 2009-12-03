@@ -45,13 +45,13 @@ namespace test.interop
         {
             XmlConfigurator.Configure(new FileInfo("/log.xml"));
             // populate default properties
-            _properties.Add("UserName", "guest");
+            _properties.Add("Username", "guest");
             _properties.Add("Password", "guest");
             _properties.Add("Host", "localhost");
             _properties.Add("Port", "5672");
             _properties.Add("VirtualHost", "test");
              //Read the test config file  
-            XmlTextReader reader = new XmlTextReader(Environment.CurrentDirectory + "/test.config");
+            XmlTextReader reader = new XmlTextReader(Environment.CurrentDirectory + "/Qpid Test.dll.config");
             while (reader.Read())
             {                
                 // if node type is an element
@@ -70,15 +70,17 @@ namespace test.interop
             }
             // create a client and connect to the broker
             _client = new Client();
-            _client.connect(Properties["Host"], Convert.ToInt16(Properties["Port"]), Properties["VirtualHost"],
-                           Properties["UserName"], Properties["Password"]);           
+            _client.Connect(Properties["Host"], Convert.ToInt16(Properties["Port"]), Properties["VirtualHost"],
+                           Properties["Username"], Properties["Password"]);           
    
         }
 
         [TestFixtureTearDown]
         public void Cleanup()
         {
-         _client.close();
+            // Note : breaks the Resharper nunit test runner. It blocks on the Monitor.WaitAll() 
+            // Certainly a problem with the threading context..
+            //_client.Close();
         }
 
         public Client Client
@@ -94,22 +96,22 @@ namespace test.interop
 
         public class SyncListener : IMessageListener
         {
-            private static readonly Logger _log = Logger.get(typeof(SyncListener));
+            private static readonly Logger _log = Logger.Get(typeof(SyncListener));
             private readonly CircularBuffer<IMessage> _buffer;
             private readonly RangeSet _range = new RangeSet();
-            private readonly ClientSession _session;
+            private readonly IClientSession _session;
 
-            public SyncListener(ClientSession session, CircularBuffer<IMessage> buffer)
+            public SyncListener(IClientSession session, CircularBuffer<IMessage> buffer)
             {
                 _buffer = buffer;
                 _session = session;
             }
 
-            public void messageTransfer(IMessage m)
+            public void MessageTransfer(IMessage m)
             {
-                _range.clear();
-                _range.add(m.Id);
-                _session.messageAccept(_range);
+                _range.Clear();
+                _range.Add(m.Id);
+                _session.MessageAccept(_range);
                 _buffer.Enqueue(m);
             }
         }

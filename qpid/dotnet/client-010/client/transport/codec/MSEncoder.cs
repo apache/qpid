@@ -40,12 +40,12 @@ namespace org.apache.qpid.transport.codec
             _writer = new BinaryWriter(_out);
         }
 
-        public void init()
+        public void Init()
         {
             _out.Seek(0, SeekOrigin.Begin);            
         }
 
-        public MemoryStream segment()
+        public MemoryStream Segment()
         {            
             int length = (int) _out.Position;
             MemoryStream result =  new MemoryStream(_out.ToArray(), 0, length);
@@ -55,83 +55,83 @@ namespace org.apache.qpid.transport.codec
         }
 
 
-        protected override void doPut(byte b)
+        protected override void DoPut(byte b)
         {
             _writer.Write(b);
         }
 
-        protected override void doPut(MemoryStream src)
+        protected override void DoPut(MemoryStream src)
         {
             _writer.Write(src.ToArray());
         }
 
-        protected override void put(byte[] bytes)
+        protected override void Put(byte[] bytes)
         {
             _writer.Write(bytes);
         }
 
-        public override void writeUint8(short b)
+        public override void WriteUint8(short b)
         {
             Debug.Assert(b < 0x100);
             _writer.Write((byte) b);
         }
 
-        public override void writeUint16(int s)
+        public override void WriteUint16(int s)
         {
             Debug.Assert(s < 0x10000);
             _writer.Write(ByteEncoder.GetBigEndian((UInt16) s));
         }
 
-        public override void writeUint32(long i)
+        public override void WriteUint32(long i)
         {
             Debug.Assert(i < 0x100000000L);
             _writer.Write(ByteEncoder.GetBigEndian((UInt32) i));
         }
 
-        public override void writeUint64(long l)
+        public override void WriteUint64(long l)
         {
             _writer.Write(ByteEncoder.GetBigEndian(l));
         }
 
-        public override void writeInt8(short b)
+        public override void WriteInt8(short b)
         {
             Debug.Assert(b < 0x100);
             _writer.Write((byte) b);
         }
 
-        public override void writeInt16(int s)
+        public override void WriteInt16(int s)
         {
             Debug.Assert(s < 0x10000);
             _writer.Write(ByteEncoder.GetBigEndian((Int16) s));
         }
 
-        public override void writeInt32(long i)
+        public override void WriteInt32(long i)
         {
             Debug.Assert(i < 0x100000000L);
             _writer.Write(ByteEncoder.GetBigEndian((Int32) i));
         }
 
-        public override void writeInt64(long l)
+        public override void WriteInt64(long l)
         {
             _writer.Write(ByteEncoder.GetBigEndian(l));
         }        
         
-        public override void writeFloat(float f) {
+        public override void WriteFloat(float f) {
         	_writer.Write(f) ;
         }
         
-        public override void writeDouble(double d) {
+        public override void WriteDouble(double d) {
         	_writer.Write(ByteEncoder.GetBigEndian(d)) ;
         }
         
-        protected override int beginSize8()
+        protected override int BeginSize8()
         {
             int pos = (int) _out.Position;
             _writer.Write((byte) 0);
             return pos;
         }
 
-        protected override void endSize8(int pos)
+        protected override void EndSize8(int pos)
         {
             int cur = (int) _out.Position;
             _out.Seek(pos, SeekOrigin.Begin);
@@ -139,14 +139,14 @@ namespace org.apache.qpid.transport.codec
             _out.Seek(cur, SeekOrigin.Begin);
         }
 
-        protected override int beginSize16()
+        protected override int BeginSize16()
         {
             int pos = (int) _out.Position;
             _writer.Write((short) 0);
             return pos;
         }
 
-        protected override void endSize16(int pos)
+        protected override void EndSize16(int pos)
         {
             int cur = (int) _out.Position;
             _out.Seek(pos, SeekOrigin.Begin);
@@ -154,14 +154,14 @@ namespace org.apache.qpid.transport.codec
             _out.Seek(cur, SeekOrigin.Begin);
         }
 
-        protected override int beginSize32()
+        protected override int BeginSize32()
         {
             int pos = (int) _out.Position;
             _writer.Write(0);
             return pos;
         }
 
-        protected override void endSize32(int pos)
+        protected override void EndSize32(int pos)
         {
             int cur = (int) _out.Position;
             _out.Seek(pos, SeekOrigin.Begin);

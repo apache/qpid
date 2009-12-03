@@ -27,9 +27,9 @@ namespace org.apache.qpid.transport
     /// <summary> 
     /// Channel
     /// </summary>
-    public class Channel : Invoker, ProtocolDelegate<Object>
+    public class Channel : Invoker, IProtocolDelegate<Object>
     {
-        private static readonly Logger log = Logger.get(typeof (Channel));
+        private static readonly Logger log = Logger.Get(typeof (Channel));
 
         private readonly Connection _connection;
         private readonly int _channel;
@@ -52,7 +52,7 @@ namespace org.apache.qpid.transport
         }
 
         // Invoked when a network event is received
-        public void On_ReceivedEvent(object sender, ReceivedPayload<ProtocolEvent> payload)
+        public void On_ReceivedEvent(object sender, ReceivedPayload<IProtocolEvent> payload)
         {
             if (payload.Payload.Channel == _channel)
             {
@@ -72,10 +72,10 @@ namespace org.apache.qpid.transport
             switch (method.EncodedTrack)
             {
                 case Frame.L1:
-                    method.dispatch(this, _connection.ConnectionDelegate);
+                    method.Dispatch(this, _connection.ConnectionDelegate);
                     break;
                 case Frame.L2:
-                    method.dispatch(this, _methoddelegate);
+                    method.Dispatch(this, _methoddelegate);
                     break;
                 case Frame.L3:
                     method.ProcessProtocolEvent(_session, _sessionDelegate);
@@ -97,28 +97,28 @@ namespace org.apache.qpid.transport
 
         #endregion
 
-        public void exception(Exception t)
+        public void Exception(Exception t)
         {
-            _session.exception(t);
+            _session.Exception(t);
         }
 
-        public void closedFromConnection()
+        public void ClosedFromConnection()
         {
-            log.debug("channel closed: ", this);
+            log.Debug("channel Closed: ", this);
             if (_session != null)
             {
-                _session.closed();
+                _session.Closed();
             }
         }
 
-        public void closed()
+        public void Closed()
         {
-            log.debug("channel closed: ", this);
+            log.Debug("channel Closed: ", this);
             if (_session != null)
             {
-                _session.closed();
+                _session.Closed();
             }
-            _connection.removeChannel(_channel);
+            _connection.RemoveChannel(_channel);
         }
 
         public int EncodedChannel
@@ -132,41 +132,41 @@ namespace org.apache.qpid.transport
             set { _session = value; }
         }
 
-        public void closeCode(ConnectionClose close)
+        public void CloseCode(ConnectionClose close)
         {
             if (_session != null)
             {
-                _session.closeCode(close);
+                _session.CloseCode(close);
             }
         }
 
-        private void emit(ProtocolEvent pevent)
+        private void Emit(IProtocolEvent pevent)
         {
             pevent.Channel = _channel;
-            _connection.send(pevent);
+            _connection.Send(pevent);
         }
 
-        public void method(Method m)
+        public void Method(Method m)
         {
-            emit(m);
+            Emit(m);
 
             if (!m.Batch)
             {
-                _connection.flush();
+                _connection.Flush();
             }
         }
 
-        protected override void invoke(Method m)
+        protected override void Invoke(Method m)
         {
-            method(m);
+            Method(m);
         }
 
-        public override Future invoke(Method m, Future future)
+        public override IFuture Invoke(Method m, IFuture future)
         {
             throw new Exception("UnsupportedOperation");
         }
 
-        public String toString()
+        public override String ToString()
         {
             return String.Format("{0}:{1}", _connection, _channel);
         }

@@ -26,34 +26,34 @@ using org.apache.qpid.transport.util;
 
 namespace test.interop
 {
-    public class Admin:TestCase
+    public class Admin : TestCase
     {
-        private static readonly Logger _log = Logger.get(typeof(Admin));
+        private static readonly Logger _log = Logger.Get(typeof(Admin));
 
         [Test]
         public void createSession()
         {
-            _log.debug("Running: createSession");
-            ClientSession ssn = Client.createSession(0);
-            ssn.close();            
+            _log.Debug("Running: CreateSession");
+            IClientSession ssn = Client.CreateSession(0);
+            ssn.Close();            
             // This test fails if an exception is thrown 
         }
 
         [Test]
         public void queueLifecycle()
         {
-            _log.debug("Running: queueLifecycle");
-            ClientSession ssn = Client.createSession(0);
-            ssn.queueDeclare("queue1", null, null);
-            ssn.sync();
-            ssn.queueDelete("queue1");
-            ssn.sync();
+            _log.Debug("Running: queueLifecycle");
+            IClientSession ssn = Client.CreateSession(0);
+            ssn.QueueDeclare("queue1", null, null);
+            ssn.Sync();
+            ssn.QueueDelete("queue1");
+            ssn.Sync();
             try
             {
-                ssn.exchangeBind("queue1", "amq.direct", "queue1", null);
-                ssn.sync();
+                ssn.ExchangeBind("queue1", "amq.direct", "queue1", null);
+                ssn.Sync();
             }
-            catch (SessionException e)
+            catch (SessionException)
             {
               // as expected
             }           
@@ -63,25 +63,25 @@ namespace test.interop
         [Test]
         public void exchangeCheck()
         {
-            _log.debug("Running: exchangeCheck");           
-            ClientSession ssn = Client.createSession(0);            
-            ExchangeQueryResult query = (ExchangeQueryResult) ssn.exchangeQuery("amq.direct").Result;
-            Assert.IsFalse(query.getNotFound());
-            Assert.IsTrue(query.getDurable());
-            query = (ExchangeQueryResult)ssn.exchangeQuery("amq.topic").Result;
-            Assert.IsFalse(query.getNotFound());
-            Assert.IsTrue(query.getDurable());           
-            query = (ExchangeQueryResult) ssn.exchangeQuery("foo").Result;           
-            Assert.IsTrue(query.getNotFound());
+            _log.Debug("Running: exchangeCheck");           
+            IClientSession ssn = Client.CreateSession(0);            
+            ExchangeQueryResult query = (ExchangeQueryResult) ssn.ExchangeQuery("amq.direct").Result;
+            Assert.IsFalse(query.GetNotFound());
+            Assert.IsTrue(query.GetDurable());
+            query = (ExchangeQueryResult)ssn.ExchangeQuery("amq.topic").Result;
+            Assert.IsFalse(query.GetNotFound());
+            Assert.IsTrue(query.GetDurable());           
+            query = (ExchangeQueryResult) ssn.ExchangeQuery("foo").Result;           
+            Assert.IsTrue(query.GetNotFound());
         }
 
         [Test]
         public void exchangeBind()
         {
-            _log.debug("Running: exchangeBind");       
-            ClientSession ssn = Client.createSession(0);
-            ssn.queueDeclare("queue1", null, null);
-            ssn.exchangeBind("queue1", "amq.direct", "queue1", null);
+            _log.Debug("Running: ExchangeBind");       
+            IClientSession ssn = Client.CreateSession(0);
+            ssn.QueueDeclare("queue1", null, null);
+            ssn.ExchangeBind("queue1", "amq.direct", "queue1", null);
             // This test fails if an exception is thrown 
         }
 

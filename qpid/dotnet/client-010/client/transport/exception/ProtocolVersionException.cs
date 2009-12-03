@@ -34,7 +34,7 @@ namespace org.apache.qpid.transport
 		{
 			get
 			{
-				return this.major;
+				return _major;
 			}
 			
 		}
@@ -42,18 +42,18 @@ namespace org.apache.qpid.transport
 		{
 			get
 			{
-				return this.minor;
+				return _minor;
 			}
 			
 		}
 		
-		private sbyte major;
-		private sbyte minor;
+		private sbyte _major;
+		private sbyte _minor;
 		
 		public ProtocolVersionException(sbyte major, sbyte minor):base(String.Format("version missmatch: %{0}-{1}", major, minor))
 		{
-			this.major = major;
-			this.minor = minor;
+			this._major = major;
+			this._minor = minor;
 		}
 	}
 }

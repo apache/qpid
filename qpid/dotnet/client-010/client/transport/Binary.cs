@@ -51,22 +51,22 @@ namespace org.apache.qpid.transport
 		{
 		}
 		
-		public byte[] array()
+		public byte[] Array()
 		{
 			return bytes;
 		}
 		
-		public int offset()
+		public int Offset()
 		{
 			return offset_Renamed_Field;
 		}
 		
-		public int size()
+		public int Size()
 		{
 			return size_Renamed_Field;
 		}
 		
-		public Binary slice(int low, int high)
+		public Binary Slice(int low, int high)
 		{
 			int sz;
 			

@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Configuration;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -45,13 +46,17 @@ namespace org.apache.qpid.example.pubsub
 
         private static void Main(string[] args)
         {
-            string host = args.Length > 0 ? args[0] : "localhost";
-            int port = args.Length > 1 ? Convert.ToInt32(args[1]) : 5672;
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
             Client connection = new Client();
             try
             {
-                connection.connect(host, port, "test", "guest", "guest");
-                ClientSession session = connection.createSession(50000);
+                connection.Connect(host, port, virtualhost, username, password);
+                IClientSession session = connection.CreateSession(50000);
 
                 //--------- Main body of program --------------------------------------------
 
@@ -71,7 +76,7 @@ namespace org.apache.qpid.example.pubsub
 
                 //---------------------------------------------------------------------------
 
-                connection.close();
+                connection.Close();
             }
             catch (Exception e)
             {
@@ -79,12 +84,12 @@ namespace org.apache.qpid.example.pubsub
             }
         }
 
-        private static void prepareQueue(string queue, string routing_key, ClientSession session)
+        private static void prepareQueue(string queue, string routing_key, IClientSession session)
         {
             // Create a unique queue name for this consumer by concatenating
             // the queue name parameter with the Session ID.     
             Console.WriteLine("Declaring queue: " + queue);
-            session.queueDeclare(queue, Option.EXCLUSIVE, Option.AUTO_DELETE);
+            session.QueueDeclare(queue, Option.EXCLUSIVE, Option.AUTO_DELETE);
 
             // Route messages to the new queue if they match the routing key.
             // Also route any messages to with the "control" routing key to
@@ -92,27 +97,27 @@ namespace org.apache.qpid.example.pubsub
             // a message with the content "That's all, Folks!", using the
             // "control" routing key, when it is finished.
 
-            session.exchangeBind(queue, "amq.topic", routing_key);
-            session.exchangeBind(queue, "amq.topic", "control");
+            session.ExchangeBind(queue, "amq.topic", routing_key);
+            session.ExchangeBind(queue, "amq.topic", "control");
 
             // subscribe the listener to the queue
             IMessageListener listener = new MessageListener(session);
-            session.attachMessageListener(listener, queue);
-            session.messageSubscribe(queue);
+            session.AttachMessageListener(listener, queue);
+            session.MessageSubscribe(queue);
         }
     }
 
     public class MessageListener : IMessageListener
     {
-        private readonly ClientSession _session;
+        private readonly IClientSession _session;
         private readonly RangeSet _range = new RangeSet();
 
-        public MessageListener(ClientSession session)
+        public MessageListener(IClientSession session)
         {
             _session = session;
         }
 
-        public void messageTransfer(IMessage m)
+        public void MessageTransfer(IMessage m)
         {
             BinaryReader reader = new BinaryReader(m.Body, Encoding.UTF8);
             byte[] body = new byte[m.Body.Length - m.Body.Position];
@@ -121,13 +126,13 @@ namespace org.apache.qpid.example.pubsub
             string message = enc.GetString(body);
             Console.WriteLine("Message: " + message + " from " + m.Destination);
             // Add this message to the list of message to be acknowledged 
-            _range.add(m.Id);
+            _range.Add(m.Id);
             if (message.Equals("That's all, folks!"))
             {
-                Console.WriteLine("Shutting down listener for " + m.DeliveryProperties.getRoutingKey());
+                Console.WriteLine("Shutting down listener for " + m.DeliveryProperties.GetRoutingKey());
                 Listener._count--;
                 // Acknowledge all the received messages 
-                _session.messageAccept(_range);
+                _session.MessageAccept(_range);
                 lock (_session)
                 {
                     Monitor.Pulse(_session);

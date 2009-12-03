@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Configuration;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -43,13 +44,17 @@ namespace org.apache.qpid.example.fanout
     {
         private static void Main(string[] args)
         {
-            string host = args.Length > 0 ? args[0] : "localhost";
-            int port = args.Length > 1 ? Convert.ToInt32(args[1]) : 5672;
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
             Client connection = new Client();
             try
             {
-                connection.connect(host, port, "test", "guest", "guest");
-                ClientSession session = connection.createSession(50000);
+                connection.Connect(host, port, virtualhost, username, password);
+                IClientSession session = connection.CreateSession(50000);
 
                 //--------- Main body of program --------------------------------------------
                 // Each client creates its own private queue, using the 
@@ -63,23 +68,23 @@ namespace org.apache.qpid.example.fanout
                 // messages and routing in logs.
 
                 string myQueue = session.Name;
-                session.queueDeclare(myQueue, Option.EXCLUSIVE, Option.AUTO_DELETE);
-                session.exchangeBind(myQueue, "amq.fanout", "my-key");
+                session.QueueDeclare(myQueue, Option.EXCLUSIVE, Option.AUTO_DELETE);
+                session.ExchangeBind(myQueue, "amq.fanout", "my-key");
 
                 lock (session)
                 {
                     Console.WriteLine("Listening");
                     // Create a listener and subscribe it to my queue.
                     IMessageListener listener = new MessageListener(session);
-                    session.attachMessageListener(listener, myQueue);
-                    session.messageSubscribe(myQueue);
+                    session.AttachMessageListener(listener, myQueue);
+                    session.MessageSubscribe(myQueue);
                     // Receive messages until all messages are received
                     Monitor.Wait(session);
                 }
 
                 //---------------------------------------------------------------------------
 
-                connection.close();
+                connection.Close();
             }
             catch (Exception e)
             {
@@ -90,14 +95,14 @@ namespace org.apache.qpid.example.fanout
 
     public class MessageListener : IMessageListener
     {
-        private readonly ClientSession _session;
+        private readonly IClientSession _session;
         private readonly RangeSet _range = new RangeSet();
-        public MessageListener(ClientSession session)
+        public MessageListener(IClientSession session)
         {
             _session = session;
         }
 
-        public void messageTransfer(IMessage m)
+        public void MessageTransfer(IMessage m)
         {
             BinaryReader reader = new BinaryReader(m.Body, Encoding.UTF8);
             byte[] body = new byte[m.Body.Length - m.Body.Position];
@@ -106,11 +111,11 @@ namespace org.apache.qpid.example.fanout
             string message = enc.GetString(body);
             Console.WriteLine("Message: " + message);
             // Add this message to the list of message to be acknowledged 
-            _range.add(m.Id);
+            _range.Add(m.Id);
             if (message.Equals("That's all, folks!"))
             {
                 // Acknowledge all the received messages 
-                _session.messageAccept(_range);
+                _session.MessageAccept(_range);
                 lock (_session)
                 {
                     Monitor.Pulse(_session);

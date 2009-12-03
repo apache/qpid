@@ -37,7 +37,7 @@ namespace org.apache.qpid.client
         {
             _message = new MessageTransfer();
             _message.Header = new Header( new MessageProperties(), new DeliveryProperties());
-            ((MessageProperties) _message.Header.Structs[0]).setApplicationHeaders(new Dictionary<string, object>());
+            ((MessageProperties) _message.Header.Structs[0]).SetApplicationHeaders(new Dictionary<string, object>());
         }
 
         public MessageProperties MessageProperties
@@ -84,24 +84,24 @@ namespace org.apache.qpid.client
             get
             {
                 if (Header != null)
-                    return ((MessageProperties) Header.Structs[0]).getApplicationHeaders();
+                    return ((MessageProperties) Header.Structs[0]).GetApplicationHeaders();
                 return null;
             }
             set
             {
                 if (Header != null)
                 {
-                    ((MessageProperties) Header.Structs[0]).setApplicationHeaders(value);
+                    ((MessageProperties) Header.Structs[0]).SetApplicationHeaders(value);
                 }
             }
         }
 
-        public void appendData(byte[] bytes)
+        public void AppendData(byte[] bytes)
         {
             Body.Write(bytes, 0, bytes.Length);
         }
 
-        public void clearData()
+        public void ClearData()
         {
             Body.Seek(0, SeekOrigin.Begin);
         }
@@ -125,7 +125,7 @@ namespace org.apache.qpid.client
 
         public string Destination
         {
-            get{ return _message.getDestination();}
+            get{ return _message.GetDestination();}
         }
     }
 }

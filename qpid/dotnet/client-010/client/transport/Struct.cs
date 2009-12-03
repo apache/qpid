@@ -21,18 +21,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Decoder = org.apache.qpid.transport.codec.Decoder;
-using Encodable = org.apache.qpid.transport.codec.Encodable;
-using Encoder = org.apache.qpid.transport.codec.Encoder;
+using org.apache.qpid.transport.codec;
+
 namespace org.apache.qpid.transport
 {
 	/// <summary> 
 	/// Struct
 	/// </summary>
 
-    public abstract class Struct : Encodable
+    public abstract class Struct : IEncodable
     {
-        public  static Struct create(int type)
+        public  static Struct Create(int type)
         {
             return StructFactory.create(type);
         }
@@ -45,15 +44,15 @@ namespace org.apache.qpid.transport
             set { dirty = value; }
         }
 
-        public abstract int getStructType();
+        public abstract int GetStructType();
 
-        public abstract int getSizeWidth();
+        public abstract int GetSizeWidth();
 
-        public abstract int getPackWidth();
+        public abstract int GetPackWidth();
 
-        public int getEncodedType()
+        public int GetEncodedType()
         {
-            int type = getStructType();
+            int type = GetStructType();
             if (type < 0)
             {
                 throw new Exception();
@@ -61,41 +60,41 @@ namespace org.apache.qpid.transport
             return type;
         }
 
-        private bool isBit<C, T>(Field<C, T> f)
+        private bool IsBit<C, T>(Field<C, T> f)
         {
             return Equals(f.Type, typeof(Boolean));
         }
 
-        private bool packed()
+        private bool Packed()
         {
-            return getPackWidth() > 0;
+            return GetPackWidth() > 0;
         }
 
-        private bool encoded<C, T>(Field<C, T> f)
+        private bool Encoded<C, T>(Field<C, T> f)
         {
-            return !packed() || !isBit(f) && f.has(this);
+            return !Packed() || !IsBit(f) && f.Has(this);
         }
 
-        private int getFlagWidth()
+        private int GetFlagWidth()
         {
             return (Fields.Count + 7) / 8;
         }
 
-        private int getFlagCount()
+        private int GetFlagCount()
         {
-            return 8 * getPackWidth();
+            return 8 * GetPackWidth();
         }
 
-        public abstract void read(Decoder dec);
+        public abstract void Read(IDecoder dec);
 
-        public abstract void write(Encoder enc);
+        public abstract void Write(IEncoder enc);
 
         public abstract Dictionary<String, Object> Fields
         {
             get;
         }
 
-        public String toString()
+        public override String ToString()
         {
             StringBuilder str = new StringBuilder();
             str.Append(GetType());

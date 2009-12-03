@@ -35,15 +35,20 @@ namespace PerfTest
     [CommandLineManager(ApplicationName = "Qpid Perf Tests", Copyright = "Apache Software Foundation")]
     public class Options
     {
-        [CommandLineOption(Description = "Displays this help text")] public bool Help;
+        [CommandLineOption(Description = "Displays this help text")] 
+        public bool Help;
 
-        [CommandLineOption(Description = "Create shared queues.", MinOccurs = 0)] public Boolean Setup;
+        [CommandLineOption(Description = "Create shared queues.", MinOccurs = 0)] 
+        public Boolean Setup;
 
-        [CommandLineOption(Description = "Run test, print report.", MinOccurs = 0)] public Boolean Control;
+        [CommandLineOption(Description = "Run test, print report.", MinOccurs = 0)] 
+        public Boolean Control;
 
-        [CommandLineOption(Description = "Publish messages.", MinOccurs = 0)] public Boolean Publish;
+        [CommandLineOption(Description = "Publish messages.", MinOccurs = 0)] 
+        public Boolean Publish;
 
-        [CommandLineOption(Description = "Subscribe for messages.", MinOccurs = 0)] public Boolean Subscribe;
+        [CommandLineOption(Description = "Subscribe for messages.", MinOccurs = 0)] 
+        public Boolean Subscribe;
 
         [CommandLineOption(Description = "Test mode: [shared|fanout|topic]", MinOccurs = 0)]
         public string Mode
@@ -113,14 +118,18 @@ namespace PerfTest
 
         private long _size = 1024;
 
-        [CommandLineOption(Description = "Publisher use confirm-mode.", MinOccurs = 0)] public Boolean Confirm = true;
+        [CommandLineOption(Description = "Publisher use confirm-mode.", MinOccurs = 0)] 
+        public Boolean Confirm = true;
 
-        [CommandLineOption(Description = "Publish messages as durable.", MinOccurs = 0)] public Boolean Durable;
+        [CommandLineOption(Description = "Publish messages as durable.", MinOccurs = 0)] 
+        public Boolean Durable;
 
-        [CommandLineOption(Description = "Make data for each message unique.", MinOccurs = 0)] public Boolean UniqueData;
+        [CommandLineOption(Description = "Make data for each message unique.", MinOccurs = 0)] 
+        public Boolean UniqueData;
 
         [CommandLineOption(Description = "Wait for confirmation of each message before sending the next one.",
-            MinOccurs = 0)] public Boolean SyncPub;
+            MinOccurs = 0)]
+        public Boolean SyncPub;
 
         [CommandLineOption(Description = ">=0 delay between msg publish.", MinOccurs = 0)]
         public double IntervalPub
@@ -192,8 +201,8 @@ namespace PerfTest
 
         private int _tx;
 
-        [CommandLineOption(Description = "Make queue durable (implied if durable set.", MinOccurs = 0)] public Boolean
-            QueueDurable;
+        [CommandLineOption(Description = "Make queue durable (implied if durable set.", MinOccurs = 0)] 
+        public Boolean QueueDurable;
 
         [CommandLineOption(Description = "Queue policy: count to trigger 'flow to disk'", MinOccurs = 0)]
         public double QueueMaxCount
@@ -229,11 +238,11 @@ namespace PerfTest
 
     public abstract class PerfTestClient : Startable
     {
-        private readonly Client _connection;
-        private readonly ClientSession _session;
+        private readonly IClient _connection;
+        private readonly IClientSession _session;
         private readonly Options _options;
 
-        public ClientSession Session
+        public IClientSession Session
         {
             get { return _session; }
         }
@@ -247,8 +256,8 @@ namespace PerfTest
         {
             _options = options;
             _connection = new Client();
-            _connection.connect(options.Broker, options.Port, "test", "guest", "guest");
-            _session = _connection.createSession(50000);
+            _connection.Connect(options.Broker, options.Port, "test", "guest", "guest");
+            _session = _connection.CreateSession(50000);
         }
 
         public abstract void Start();
@@ -263,10 +272,10 @@ namespace PerfTest
 
         private void queueInit(String name, Boolean durable, Dictionary<String, Object> arguments)
         {
-            Session.queueDeclare(name, null, arguments, durable ? Option.DURABLE : Option.NONE);
-            Session.queuePurge(name);
-            Session.exchangeBind(name, "amq.direct", name);
-            Session.sync();
+            Session.QueueDeclare(name, null, arguments, durable ? Option.DURABLE : Option.NONE);
+            Session.QueuePurge(name);
+            Session.ExchangeBind(name, "amq.direct", name);
+            Session.Sync();
         }
 
         public override void Start()
@@ -298,10 +307,10 @@ namespace PerfTest
         public SubscribeThread(Options options, string key, string exchange)
             : base(options)
         {
-            _queue = "perftest" + (new UUID(10, 10)).ToString();
-            Session.queueDeclare(_queue, null, null, Option.EXCLUSIVE, Option.AUTO_DELETE,
+            _queue = "perftest" + (new UUID(10, 10));
+            Session.QueueDeclare(_queue, null, null, Option.EXCLUSIVE, Option.AUTO_DELETE,
                                  Options.Durable ? Option.DURABLE : Option.NONE);
-            Session.exchangeBind(_queue, exchange, key);
+            Session.ExchangeBind(_queue, exchange, key);
         }
 
         public SubscribeThread(Options options, string key)
@@ -314,34 +323,35 @@ namespace PerfTest
         {
             if (Options.Tx > 0)
             {
-                Session.txSelect();
-                Session.sync();
+                Session.TxSelect();
+                Session.Sync();
             }
             CircularBuffer<IMessage> buffer = new CircularBuffer<IMessage>(100);
             // Create a listener and subscribe it to the queue named "message_queue"
             IMessageListener listener = new SyncListener(buffer);
-            string dest = "dest" + UUID.randomUUID().ToString();
-            Session.attachMessageListener(listener, dest);
-            Session.messageSubscribe(_queue, dest,
+
+            string dest = "dest" + UUID.RandomUuid();
+            Session.AttachMessageListener(listener, dest);
+            Session.MessageSubscribe(_queue, dest,
                                      Options.Tx > 0 || Options.SubAck > 0
                                          ? MessageAcceptMode.EXPLICIT
                                          : MessageAcceptMode.NONE,
                                      MessageAcquireMode.PRE_ACQUIRED, null, 0, null);
             // issue credits     
-            Session.messageSetFlowMode(dest, MessageFlowMode.WINDOW);
-            Session.messageFlow(dest, MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
+            Session.MessageSetFlowMode(dest, MessageFlowMode.WINDOW);
+            Session.MessageFlow(dest, MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
 
             // Notify controller we are ready.
             IMessage message = new Message();
-            message.DeliveryProperties.setRoutingKey("sub_ready");
+            message.DeliveryProperties.SetRoutingKey("sub_ready");
 
-            message.appendData(Encoding.UTF8.GetBytes("ready"));
-            Session.messageTransfer("amq.direct", message);
+            message.AppendData(Encoding.UTF8.GetBytes("ready"));
+            Session.MessageTransfer("amq.direct", message);
 
             if (Options.Tx > 0)
             {
-                Session.txCommit();
-                Session.sync();
+                Session.TxCommit();
+                Session.Sync();
             }
 
 
@@ -349,7 +359,7 @@ namespace PerfTest
             {
                
                 //need to allocate some more credit
-                Session.messageFlow(dest, MessageCreditUnit.MESSAGE, (long)Options.SubQuota);
+                Session.MessageFlow(dest, MessageCreditUnit.MESSAGE, (long)Options.SubQuota);
                 
                 RangeSet range = new RangeSet();
                 IMessage msg;
@@ -359,37 +369,37 @@ namespace PerfTest
                     msg = buffer.Dequeue();
                     if (Options.Tx > 0 && ((i + 1)%Options.Tx == 0))
                     {
-                        Session.txCommit();
-                        Session.sync();
+                        Session.TxCommit();
+                        Session.Sync();
                     }
                     if (Options.IntervalSub > 0)
                     {
                         Thread.Sleep((int) Options.IntervalSub*1000);
                     }
-                    range.add(msg.Id);
+                    range.Add(msg.Id);
                 }
                 if (Options.Tx > 0 || Options.SubAck > 0)
-                    Session.messageAccept(range);
-                range.clear();
+                    Session.MessageAccept(range);
+                range.Clear();
                 if (Options.Tx > 0)
                 {
-                    Session.txSelect();
-                    Session.sync();
+                    Session.TxSelect();
+                    Session.Sync();
                 }
                 DateTime end = DateTime.Now;
 
                 // Report to publisher.
-                message.DeliveryProperties.setRoutingKey("sub_done");
-                message.clearData();
-                message.appendData(BitConverter.GetBytes(Options.SubQuota / end.Subtract(start).TotalMilliseconds ));
-                Session.messageTransfer("amq.direct", message);
+                message.DeliveryProperties.SetRoutingKey("sub_done");
+                message.ClearData();
+                message.AppendData(BitConverter.GetBytes(Options.SubQuota / end.Subtract(start).TotalMilliseconds ));
+                Session.MessageTransfer("amq.direct", message);
                 if (Options.Tx > 0)
                 {
-                    Session.txSelect();
-                    Session.sync();
+                    Session.TxSelect();
+                    Session.Sync();
                 }
             }
-            Session.close();
+            Session.Close();
         }
     }
 
@@ -402,7 +412,7 @@ namespace PerfTest
             _buffer = buffer;
         }
 
-        public void messageTransfer(IMessage m)
+        public void MessageTransfer(IMessage m)
         {
             _buffer.Enqueue(m);
         }
@@ -429,31 +439,31 @@ namespace PerfTest
             Random r = new Random(34);
             r.NextBytes(data);
             IMessage message = new Message();
-            message.appendData(data);
+            message.AppendData(data);
 
-            message.DeliveryProperties.setRoutingKey(_key);
+            message.DeliveryProperties.SetRoutingKey(_key);
 
             if (Options.Durable)
-                message.DeliveryProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+                message.DeliveryProperties.SetDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
             if (Options.Tx > 0)
             {
-                Session.txSelect();
-                Session.sync();
+                Session.TxSelect();
+                Session.Sync();
             }
 
             CircularBuffer<IMessage> buffer = new CircularBuffer<IMessage>(100);
             // Create a listener and subscribe it to the queue named "pub_start"          
             IMessageListener listener = new SyncListener(buffer);
-            string localQueue = "localQueue-" + UUID.randomUUID().ToString();
-            Session.queueDeclare(localQueue, null, null, Option.AUTO_DELETE);
-            Session.exchangeBind(localQueue, "amq.direct", "pub_start");
-            Session.attachMessageListener(listener, localQueue);
-            Session.messageSubscribe(localQueue);
+            string localQueue = "localQueue-" + UUID.RandomUuid().ToString();
+            Session.QueueDeclare(localQueue, null, null, Option.AUTO_DELETE);
+            Session.ExchangeBind(localQueue, "amq.direct", "pub_start");
+            Session.AttachMessageListener(listener, localQueue);
+            Session.MessageSubscribe(localQueue);
             if (Options.Tx > 0)
             {
-                Session.txCommit();
-                Session.sync();
+                Session.TxCommit();
+                Session.Sync();
             }
             buffer.Dequeue();
 
@@ -462,39 +472,39 @@ namespace PerfTest
                 DateTime start = DateTime.Now;                
                 for (long i = 0; i < Options.Count; ++i)
                 {
-                    Session.messageTransfer(_exchange, message);
+                    Session.MessageTransfer(_exchange, message);
 
                     if (Options.SyncPub)
                     {
-                        Session.sync();
+                        Session.Sync();
                     }
                     if (Options.Tx > 0 && (i + 1)%Options.Tx == 0)
                     {
-                        Session.txSelect();
-                        Session.sync();
+                        Session.TxSelect();
+                        Session.Sync();
                     }
                     if (Options.IntervalPub > 0)
                     {
                         Thread.Sleep((int) Options.IntervalSub*1000);
                     }
                 }
-                Session.sync();
+                Session.Sync();
                 DateTime end = DateTime.Now;
 
                 // Report to publisher.
-                message.DeliveryProperties.setRoutingKey("pub_done");
-                message.clearData();
+                message.DeliveryProperties.SetRoutingKey("pub_done");
+                message.ClearData();
                 double time = end.Subtract(start).TotalMilliseconds;
                 byte[] rate = BitConverter.GetBytes( Options.Count / time );
-                message.appendData(rate);
-                Session.messageTransfer("amq.direct", message);
+                message.AppendData(rate);
+                Session.MessageTransfer("amq.direct", message);
                 if (Options.Tx > 0)
                 {
-                    Session.txSelect();
-                    Session.sync();
+                    Session.TxSelect();
+                    Session.Sync();
                 }
             }
-            Session.close();
+            Session.Close();
         }
     }
 
@@ -509,11 +519,11 @@ namespace PerfTest
         {
             CircularBuffer<IMessage> buffer = new CircularBuffer<IMessage>(100);
             IMessageListener listener = new SyncListener(buffer);
-            string localQueue = "queue-" + UUID.randomUUID().ToString();
-            Session.queueDeclare(localQueue, null, null, Option.AUTO_DELETE);
-            Session.exchangeBind(localQueue, "amq.direct", queue);
-            Session.attachMessageListener(listener, localQueue);
-            Session.messageSubscribe(localQueue);
+            string localQueue = "queue-" + UUID.RandomUuid();
+            Session.QueueDeclare(localQueue, null, null, Option.AUTO_DELETE);
+            Session.ExchangeBind(localQueue, "amq.direct", queue);
+            Session.AttachMessageListener(listener, localQueue);
+            Session.MessageSubscribe(localQueue);
             for (int i = 0; i < size; ++i)
             {
                 buffer.Dequeue();
@@ -524,34 +534,34 @@ namespace PerfTest
         {
             CircularBuffer<IMessage> buffer = new CircularBuffer<IMessage>(100);
             IMessageListener listener = new SyncListener(buffer);
-            string localQueue = "queue-" + UUID.randomUUID().ToString();
-            Session.queueDeclare(localQueue, null, null, Option.AUTO_DELETE);
-            Session.exchangeBind(localQueue, "amq.direct", queue);
-            Session.attachMessageListener(listener, localQueue);
-            Session.messageSubscribe(localQueue);
+            string localQueue = "queue-" + UUID.RandomUuid();
+            Session.QueueDeclare(localQueue, null, null, Option.AUTO_DELETE);
+            Session.ExchangeBind(localQueue, "amq.direct", queue);
+            Session.AttachMessageListener(listener, localQueue);
+            Session.MessageSubscribe(localQueue);
             double rate = 0;
             RangeSet range = new RangeSet();
             for (int i = 0; i < size; ++i)
             {
                 IMessage m = buffer.Dequeue();
-                range.add(m.Id);
+                range.Add(m.Id);
                 BinaryReader reader = new BinaryReader(m.Body, Encoding.UTF8);
                 byte[] body = new byte[m.Body.Length - m.Body.Position];
                 reader.Read(body, 0, body.Length);
                 rate += BitConverter.ToDouble(body,0);
             }
-            Session.messageAccept(range);
+            Session.MessageAccept(range);
             return rate;
         }
 
         private void send(int size, string queue, string data)
         {
             IMessage message = new Message();
-            message.DeliveryProperties.setRoutingKey(queue);
-            message.appendData(Encoding.UTF8.GetBytes(data));
+            message.DeliveryProperties.SetRoutingKey(queue);
+            message.AppendData(Encoding.UTF8.GetBytes(data));
             for (int i = 0; i < size; ++i)
             {
-                Session.messageTransfer("amq.direct", message);
+                Session.MessageTransfer("amq.direct", message);
             }
         }
 

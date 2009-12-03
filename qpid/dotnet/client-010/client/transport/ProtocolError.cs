@@ -19,15 +19,14 @@
 *
 */
 using System;
-using NetworkDelegate = org.apache.qpid.transport.network.NetworkDelegate;
-using NetworkEvent = org.apache.qpid.transport.network.NetworkEvent;
+using org.apache.qpid.transport.network;
 
 namespace org.apache.qpid.transport
 {
     /// <summary> 
     /// ProtocolError
     /// </summary>
-    public sealed class ProtocolError : NetworkEvent, ProtocolEvent
+    public sealed class ProtocolError : INetworkEvent, IProtocolEvent
     {
         private int channel;
         private byte track;
@@ -41,16 +40,16 @@ namespace org.apache.qpid.transport
             this.args = args;
         }
 
-        #region NetworkEvent Methods
+        #region INetworkEvent Methods
 
-        public void ProcessNetworkEvent(NetworkDelegate ndelegate)
+        public void ProcessNetworkEvent(INetworkDelegate ndelegate)
         {
             ndelegate.Error(this);
         }
 
         #endregion
 
-        #region ProtocolEvent Methods
+        #region IProtocolEvent Methods
 
         public int Channel
         {
@@ -64,7 +63,7 @@ namespace org.apache.qpid.transport
             set { throw new NotImplementedException(); }
         }
 
-        public void ProcessProtocolEvent<C>(C context, ProtocolDelegate<C> protocoldelegate)
+        public void ProcessProtocolEvent<C>(C context, IProtocolDelegate<C> protocoldelegate)
         {
             protocoldelegate.Error(context, this);
         }
@@ -77,7 +76,7 @@ namespace org.apache.qpid.transport
         }
 
 
-        public String toString()
+        public override String ToString()
         {
             return String.Format("protocol error: {0}", Message);
         }

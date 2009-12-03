@@ -49,12 +49,12 @@ namespace org.apache.qpid.console
 		public EventSeverity Severity {get;set;}
 		public Dictionary<string, object> Arguments {get;set;} 
 		
-		public QMFEvent(Session session, Decoder dec)
+		public QMFEvent(Session session, IDecoder dec)
 		{
 			Session = session ;
 			ClassKey = new ClassKey(dec) ;
-			Timestamp = dec.readInt64() ;
-			Severity = (EventSeverity) dec.readUint8() ;
+			Timestamp = dec.ReadInt64() ;
+			Severity = (EventSeverity) dec.ReadUint8() ;
 			SchemaClass sClass = Session.GetSchema(ClassKey) ;
 			Arguments = new Dictionary<string, object>() ;
 			

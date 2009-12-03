@@ -30,7 +30,7 @@ namespace org.apache.qpid.transport.codec
     /// <summary> 
     /// AbstractEncoder
     /// </summary>
-    public abstract class AbstractEncoder : Encoder
+    public abstract class AbstractEncoder : IEncoder
     {
         private static readonly Dictionary<Type, Code> ENCODINGS = new Dictionary<Type, Code>();
         private readonly Dictionary<String, byte[]> str8cache = new Dictionary<String, byte[]>();
@@ -51,88 +51,88 @@ namespace org.apache.qpid.transport.codec
             ENCODINGS.Add(typeof (byte[]), Code.VBIN32);
         }
 
-        protected abstract void doPut(byte b);
+        protected abstract void DoPut(byte b);
 
-        protected abstract void doPut(MemoryStream src);
+        protected abstract void DoPut(MemoryStream src);
 
 
-        protected void put(byte b)
+        protected void Put(byte b)
         {
-            doPut(b);
+            DoPut(b);
         }
 
-        protected void put(MemoryStream src)
+        protected void Put(MemoryStream src)
         {
-            doPut(src);
+            DoPut(src);
         }
 
-        protected virtual void put(byte[] bytes)
+        protected virtual void Put(byte[] bytes)
         {
-            put(new MemoryStream(bytes));
+            Put(new MemoryStream(bytes));
         }
 
-        protected abstract int beginSize8();
-        protected abstract void endSize8(int pos);
+        protected abstract int BeginSize8();
+        protected abstract void EndSize8(int pos);
 
-        protected abstract int beginSize16();
-        protected abstract void endSize16(int pos);
+        protected abstract int BeginSize16();
+        protected abstract void EndSize16(int pos);
 
-        protected abstract int beginSize32();
-        protected abstract void endSize32(int pos);
+        protected abstract int BeginSize32();
+        protected abstract void EndSize32(int pos);
 
-        public virtual void writeUint8(short b)
+        public virtual void WriteUint8(short b)
         {
             Debug.Assert(b < 0x100);
-            put((byte) b);
+            Put((byte) b);
         }
 
-        public virtual void writeUint16(int s)
+        public virtual void WriteUint16(int s)
         {
             Debug.Assert(s < 0x10000);
-            put((byte) Functions.lsb(s >> 8));
-            put((byte) Functions.lsb(s));
+            Put((byte) Functions.Lsb(s >> 8));
+            Put((byte) Functions.Lsb(s));
         }
 
-        public virtual void writeUint32(long i)
+        public virtual void WriteUint32(long i)
         {
             Debug.Assert(i < 0x100000000L);
-            put((byte) Functions.lsb(i >> 24));
-            put((byte) Functions.lsb(i >> 16));
-            put((byte) Functions.lsb(i >> 8));
-            put((byte) Functions.lsb(i));
+            Put((byte) Functions.Lsb(i >> 24));
+            Put((byte) Functions.Lsb(i >> 16));
+            Put((byte) Functions.Lsb(i >> 8));
+            Put((byte) Functions.Lsb(i));
         }
 
-        public void writeSequenceNo(int i)
+        public void WriteSequenceNo(int i)
         {
-            writeUint32(i);
+            WriteUint32(i);
         }
 
-        public virtual void writeUint64(long l)
+        public virtual void WriteUint64(long l)
         {
             for (int i = 0; i < 8; i++)
             {
-                put((byte) Functions.lsb(l >> (56 - i*8)));
+                Put((byte) Functions.Lsb(l >> (56 - i*8)));
             }
         }
 
-        public abstract void writeInt8(short b) ;
-        public abstract void writeInt16(int s) ;
-        public abstract void writeInt32(long i) ;
-        public abstract void writeInt64(long l) ;
-        public abstract void writeFloat(float f) ;
-        public abstract void writeDouble(double d) ;        
+        public abstract void WriteInt8(short b) ;
+        public abstract void WriteInt16(int s) ;
+        public abstract void WriteInt32(long i) ;
+        public abstract void WriteInt64(long l) ;
+        public abstract void WriteFloat(float f) ;
+        public abstract void WriteDouble(double d) ;        
 
-        public void writeDatetime(long l)
+        public void WriteDatetime(long l)
         {
-            writeUint64(l);
+            WriteUint64(l);
         }
 
-        private static byte[] encode(String s, Encoding encoding)
+        private static byte[] Encode(String s, Encoding encoding)
         {
             return encoding.GetBytes(s);
         }
 
-        public void writeStr8(String s)
+        public void WriteStr8(String s)
         {
             if (s == null)
             {
@@ -142,30 +142,30 @@ namespace org.apache.qpid.transport.codec
             byte[] bytes;
             if (! str8cache.ContainsKey(s))
             {
-                bytes = encode(s, Encoding.UTF8);
+                bytes = Encode(s, System.Text.Encoding.UTF8);
                 str8cache.Add(s, bytes);
             }
             else
             {
                 bytes = str8cache[s];
             }
-            writeUint8((short) bytes.Length);
-            put(bytes);
+            WriteUint8((short) bytes.Length);
+            Put(bytes);
         }
 
-        public void writeStr16(String s)
+        public void WriteStr16(String s)
         {
             if (s == null)
             {
                 s = "";
             }
 
-            byte[] bytes = encode(s, Encoding.UTF8);
-            writeUint16(bytes.Length);
-            put(bytes);
+            byte[] bytes = Encode(s, System.Text.Encoding.UTF8);
+            WriteUint16(bytes.Length);
+            Put(bytes);
         }
 
-        public void writeVbin8(byte[] bytes)
+        public void WriteVbin8(byte[] bytes)
         {
             if (bytes == null)
             {
@@ -175,53 +175,53 @@ namespace org.apache.qpid.transport.codec
             {
                 throw new Exception("array too long: " + bytes.Length);
             }
-            writeUint8((short) bytes.Length);
-            put(bytes);
+            WriteUint8((short) bytes.Length);
+            Put(bytes);
         }
 
-        public void writeVbin16(byte[] bytes)
+        public void WriteVbin16(byte[] bytes)
         {
             if (bytes == null)
             {
                 bytes = new byte[0];
             }
-            writeUint16(bytes.Length);
-            put(bytes);
+            WriteUint16(bytes.Length);
+            Put(bytes);
         }
 
-        public void writeVbin32(byte[] bytes)
+        public void WriteVbin32(byte[] bytes)
         {
             if (bytes == null)
             {
                 bytes = new byte[0];
             }
-            writeUint32(bytes.Length);
-            put(bytes);
+            WriteUint32(bytes.Length);
+            Put(bytes);
         }
 
-        public void writeSequenceSet(RangeSet ranges)
+        public void WriteSequenceSet(RangeSet ranges)
         {
             if (ranges == null)
             {
-                writeUint16(0);
+                WriteUint16(0);
             }
             else
             {
-                writeUint16(ranges.size()*8);
+                WriteUint16(ranges.Size()*8);
                 foreach (Range range in ranges)
                 {
-                    writeSequenceNo(range.Lower);
-                    writeSequenceNo(range.Upper);
+                    WriteSequenceNo(range.Lower);
+                    WriteSequenceNo(range.Upper);
                 }
             }
         }
 
-        public void writeByteRanges(RangeSet ranges)
+        public void WriteByteRanges(RangeSet ranges)
         {
             throw new Exception("not implemented");
         }
 
-        public void writeUuid(UUID uuid)
+        public void WriteUuid(UUID uuid)
         {
             long msb = 0;
             long lsb = 0;
@@ -230,53 +230,53 @@ namespace org.apache.qpid.transport.codec
                 msb = uuid.MostSignificantBits;
                 lsb = uuid.LeastSignificantBits;
             }
-            writeUint64(msb);
-            writeUint64(lsb);
+            WriteUint64(msb);
+            WriteUint64(lsb);
         }
 
-        public void writeStruct(int type, Struct s)
+        public void WriteStruct(int type, Struct s)
         {
             if (s == null)
             {
-                s = Struct.create(type);
+                s = Struct.Create(type);
             }
 
-            int width = s.getSizeWidth();
+            int width = s.GetSizeWidth();
             int pos = -1;
             if (width > 0)
             {
-                pos = beginSize(width);
+                pos = BeginSize(width);
             }
 
             if (type > 0)
             {
-                writeUint16(type);
+                WriteUint16(type);
             }
 
-            s.write(this);
+            s.Write(this);
 
             if (width > 0)
             {
-                endSize(width, pos);
+                EndSize(width, pos);
             }
         }
 
-        public void writeStruct32(Struct s)
+        public void WriteStruct32(Struct s)
         {
             if (s == null)
             {
-                writeUint32(0);
+                WriteUint32(0);
             }
             else
             {
-                int pos = beginSize32();
-                writeUint16(s.getEncodedType());
-                s.write(this);
-                endSize32(pos);
+                int pos = BeginSize32();
+                WriteUint16(s.GetEncodedType());
+                s.Write(this);
+                EndSize32(pos);
             }
         }
 
-        private Code encoding(Object value)
+        private Code Encoding(Object value)
         {
             if (value == null)
             {
@@ -284,7 +284,7 @@ namespace org.apache.qpid.transport.codec
             }
 
             Type klass = value.GetType();
-            Code type = resolve(klass);
+            Code type = Resolve(klass);
 
             if (type == Code.VOID)
             {
@@ -297,7 +297,7 @@ namespace org.apache.qpid.transport.codec
             }
         }
 
-        private static Code resolve(Type klass)
+        private static Code Resolve(Type klass)
         {
             Code type;
             if(ENCODINGS.ContainsKey(klass))
@@ -308,7 +308,7 @@ namespace org.apache.qpid.transport.codec
             Type sup = klass.BaseType;
             if (sup != null)
             {
-                type = resolve(sup);
+                type = Resolve(sup);
 
                 if (type != Code.VOID)
                 {
@@ -317,7 +317,7 @@ namespace org.apache.qpid.transport.codec
             }
             foreach (Type iface in klass.GetInterfaces())
             {
-                type = resolve(iface);
+                type = Resolve(iface);
                 if (type != Code.VOID)
                 {
                     return type;
@@ -326,62 +326,62 @@ namespace org.apache.qpid.transport.codec
             return Code.VOID;
         }
 
-        public void writeMap(Dictionary<String, Object> map)
+        public void WriteMap(Dictionary<String, Object> map)
         {
-            int pos = beginSize32();
+            int pos = BeginSize32();
             if (map != null)
             {
-                writeUint32(map.Count);
-                writeMapEntries(map);
+                WriteUint32(map.Count);
+                WriteMapEntries(map);
             }
-            endSize32(pos);
+            EndSize32(pos);
         }
 
-        protected void writeMapEntries(Dictionary<String, Object> map)
+        protected void WriteMapEntries(Dictionary<String, Object> map)
         {
             foreach (KeyValuePair<String, Object> entry in map)
             {
                 String key = entry.Key;
                 Object value = entry.Value;
-                Code type = encoding(value);
-                writeStr8(key);
-                put((byte) type);
-                write(type, value);
+                Code type = Encoding(value);
+                WriteStr8(key);
+                Put((byte) type);
+                Write(type, value);
             }
         }
 
-        public void writeList(List<Object> list)
+        public void WriteList(List<Object> list)
         {
-            int pos = beginSize32();
+            int pos = BeginSize32();
             if (list != null)
             {
-                writeUint32(list.Count);
-                writeListEntries(list);
+                WriteUint32(list.Count);
+                WriteListEntries(list);
             }
-            endSize32(pos);
+            EndSize32(pos);
         }
 
-        protected void writeListEntries(List<Object> list)
+        protected void WriteListEntries(List<Object> list)
         {
             foreach (Object value in list)
             {
-                Code type = encoding(value);
-                put((byte) type);
-                write(type, value);
+                Code type = Encoding(value);
+                Put((byte) type);
+                Write(type, value);
             }
         }
 
-        public void writeArray(List<Object> array)
+        public void WriteArray(List<Object> array)
         {
-            int pos = beginSize32();
+            int pos = BeginSize32();
             if (array != null)
             {
-                writeArrayEntries(array);
+                WriteArrayEntries(array);
             }
-            endSize32(pos);
+            EndSize32(pos);
         }
 
-        protected void writeArrayEntries(List<Object> array)
+        protected void WriteArrayEntries(List<Object> array)
         {
             Code type;
 
@@ -391,18 +391,18 @@ namespace org.apache.qpid.transport.codec
             }
             else
             {
-                type = encoding(array[0]);
+                type = Encoding(array[0]);
             }
-            put((byte) type);
-            writeUint32(array.Count);
+            Put((byte) type);
+            WriteUint32(array.Count);
 
             foreach (Object value in array)
             {
-                write(type, value);
+                Write(type, value);
             }
         }
 
-        private void writeSize(QpidType t, int size)
+        private void WriteSize(QpidType t, int size)
         {
             if (t.Fixed)
             {
@@ -413,139 +413,139 @@ namespace org.apache.qpid.transport.codec
             }
             else
             {
-                writeSize(t.width, size);
+                WriteSize(t.width, size);
             }
         }
 
-        private void writeSize(int width, int size)
+        private void WriteSize(int width, int size)
         {
             // XXX: should check lengths
             switch (width)
             {
                 case 1:
-                    writeUint8((short) size);
+                    WriteUint8((short) size);
                     break;
                 case 2:
-                    writeUint16(size);
+                    WriteUint16(size);
                     break;
                 case 4:
-                    writeUint32(size);
+                    WriteUint32(size);
                     break;
                 default:
                     throw new Exception("illegal width: " + width);
             }
         }
 
-        private int beginSize(int width)
+        private int BeginSize(int width)
         {
             switch (width)
             {
                 case 1:
-                    return beginSize8();
+                    return BeginSize8();
                 case 2:
-                    return beginSize16();
+                    return BeginSize16();
                 case 4:
-                    return beginSize32();
+                    return BeginSize32();
                 default:
                     throw new Exception("illegal width: " + width);
             }
         }
 
-        private void endSize(int width, int pos)
+        private void EndSize(int width, int pos)
         {
             switch (width)
             {
                 case 1:
-                    endSize8(pos);
+                    EndSize8(pos);
                     break;
                 case 2:
-                    endSize16(pos);
+                    EndSize16(pos);
                     break;
                 case 4:
-                    endSize32(pos);
+                    EndSize32(pos);
                     break;
                 default:
                     throw new Exception("illegal width: " + width);
             }
         }
 
-        private void writeBytes(QpidType t, byte[] bytes)
+        private void WriteBytes(QpidType t, byte[] bytes)
         {
-            writeSize(t, bytes.Length);
-            put(bytes);
+            WriteSize(t, bytes.Length);
+            Put(bytes);
         }
 
-        private void write(Code t, Object value)
+        private void Write(Code t, Object value)
         {
             switch (t)
             {
                 case Code.BIN8:
                 case Code.UINT8:
-                    writeUint8((short) value);
+                    WriteUint8((short) value);
                     break;
                 case Code.INT8:
-                    put((Byte) value);
+                    Put((Byte) value);
                     break;
                 case Code.CHAR:
                     byte[] b = BitConverter.GetBytes((char) value);
-                    put(b[0]);
+                    Put(b[0]);
                     break;
                 case Code.BOOLEAN:
                     if ((bool) value)
                     {
-                        put(1);
+                        Put(1);
                     }
                     else
                     {
-                        put(0);
+                        Put(0);
                     }
 
                     break;
 
                 case Code.BIN16:
                 case Code.UINT16:
-                    writeUint16((int) value);
+                    WriteUint16((int) value);
                     break;
 
                 case Code.INT16:
-                    writeUint16((short) value);
+                    WriteUint16((short) value);
                     break;
 
                 case Code.BIN32:
                 case Code.UINT32:
-                    writeUint32((long) value);
+                    WriteUint32((long) value);
                     break;
 
                 case Code.CHAR_UTF32:
                 case Code.INT32:
-                    writeUint32((int) value);
+                    WriteUint32((int) value);
                     break;
 
                 case Code.FLOAT:
-                    writeUint32(BitConverter.DoubleToInt64Bits((float) value) >> 32);
+                    WriteUint32(BitConverter.DoubleToInt64Bits((float) value) >> 32);
                     break;
 
                 case Code.BIN64:
                 case Code.UINT64:
                 case Code.INT64:                   
                 case Code.DATETIME:
-                    writeUint64((long) value);
+                    WriteUint64((long) value);
                     break;
 
                 case Code.DOUBLE:
-                    writeUint64( BitConverter.DoubleToInt64Bits((double) value));                    
+                    WriteUint64( BitConverter.DoubleToInt64Bits((double) value));                    
                     break;
 
                 case Code.UUID:
-                    writeUuid((UUID) value);
+                    WriteUuid((UUID) value);
                     break;
 
                 case Code.STR8:
-                    writeStr8((string) value);
+                    WriteStr8((string) value);
                     break;
 
                 case Code.STR16:
-                    writeStr16((string) value);
+                    WriteStr16((string) value);
                     break;
 
                 case Code.STR8_LATIN:
@@ -553,20 +553,20 @@ namespace org.apache.qpid.transport.codec
                 case Code.STR16_LATIN:
                 case Code.STR16_UTF16:
                     // XXX: need to do character conversion
-                    writeBytes(QpidType.get((byte) t), encode((string) value, Encoding.Unicode));
+                    WriteBytes(QpidType.get((byte) t), Encode((string) value, System.Text.Encoding.Unicode));
                     break;
 
                 case Code.MAP:
-                    writeMap((Dictionary<String, Object>) value);
+                    WriteMap((Dictionary<String, Object>) value);
                     break;
                 case Code.LIST:
-                    writeList((List<Object>) value);
+                    WriteList((List<Object>) value);
                     break;
                 case Code.ARRAY:
-                    writeList((List<Object>) value);
+                    WriteList((List<Object>) value);
                     break;
                 case Code.STRUCT32:
-                    writeStruct32((Struct) value);
+                    WriteStruct32((Struct) value);
                     break;
 
                 case Code.BIN40:
@@ -574,14 +574,14 @@ namespace org.apache.qpid.transport.codec
                 case Code.BIN72:
                 case Code.DEC64:
                     // XXX: what types are we supposed to use here?
-                    writeBytes(QpidType.get((byte) t), (byte[]) value);
+                    WriteBytes(QpidType.get((byte) t), (byte[]) value);
                     break;
 
                 case Code.VOID:
                     break;
 
                 default:
-                    writeBytes(QpidType.get((byte) t), (byte[]) value);
+                    WriteBytes(QpidType.get((byte) t), (byte[]) value);
                     break;
             }
         }

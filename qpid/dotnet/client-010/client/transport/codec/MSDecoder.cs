@@ -34,77 +34,77 @@ namespace org.apache.qpid.transport.codec
 	/// </summary>
 	
 	
-	public sealed class MSDecoder:AbstractDecoder
+	public sealed class MSDecoder : AbstractDecoder
 	{
 
-	    private BinaryReader reader;
+	    private BinaryReader _reader;
 
-        public void init(MemoryStream st)
+        public void Init(MemoryStream st)
 		{            
-            reader = new BinaryReader(st, Encoding.BigEndianUnicode);
+            _reader = new BinaryReader(st, Encoding.BigEndianUnicode);
 		}
 		
-		protected override byte doGet()
+		protected override byte DoGet()
 		{
-		    return reader.ReadByte();
+		    return _reader.ReadByte();
 		}
 
-        protected override void doGet(byte[] bytes)
+        protected override void DoGet(byte[] bytes)
 		{
-            reader.Read(bytes, 0, bytes.Length);
+            _reader.Read(bytes, 0, bytes.Length);
 		}
 	
-		public override bool hasRemaining()
+		public override bool HasRemaining()
 		{
-		    return (reader.BaseStream.Position < reader.BaseStream.Length);
+		    return (_reader.BaseStream.Position < _reader.BaseStream.Length);
 		}
 
-        public override short readUint8()
+        public override short ReadUint8()
 		{
-			return (short) (0xFF & reader.ReadByte());
+			return (short) (0xFF & _reader.ReadByte());
 		}
 
-        public override int readUint16()
+        public override int ReadUint16()
 		{
-		    return ByteEncoder.GetBigEndian((UInt16) reader.ReadInt16());
+		    return ByteEncoder.GetBigEndian((UInt16) _reader.ReadInt16());
 		}
 
-        public override long readUint32()
+        public override long ReadUint32()
 		{
-            return ByteEncoder.GetBigEndian((UInt32) reader.ReadInt32());
+            return ByteEncoder.GetBigEndian((UInt32) _reader.ReadInt32());
 		}
 
-        public override long readUint64()
+        public override long ReadUint64()
 		{
-		    return (long) ByteEncoder.GetBigEndian(reader.ReadInt64());            
+		    return (long) ByteEncoder.GetBigEndian(_reader.ReadInt64());            
 		}
 
-        public override short readInt8()
+        public override short ReadInt8()
 		{
-			return (short) (0xFF & reader.ReadByte());
+			return (short) (0xFF & _reader.ReadByte());
 		}
 
-        public override int readInt16()
+        public override int ReadInt16()
 		{
-		    return ByteEncoder.GetBigEndian((Int16) reader.ReadInt16());
+		    return ByteEncoder.GetBigEndian((Int16) _reader.ReadInt16());
 		}
 
-        public override long readInt32()
+        public override long ReadInt32()
 		{
-            return ByteEncoder.GetBigEndian((Int32) reader.ReadInt32());
+            return ByteEncoder.GetBigEndian((Int32) _reader.ReadInt32());
 		}
 
-        public override long readInt64()
+        public override long ReadInt64()
 		{
-		    return (long) ByteEncoder.GetBigEndian(reader.ReadInt64());            
+		    return (long) ByteEncoder.GetBigEndian(_reader.ReadInt64());            
 		}        
 		
-		public override double readDouble() {
-			return (double) ByteEncoder.GetBigEndian(reader.ReadDouble()) ;
+		public override double ReadDouble() {
+			return (double) ByteEncoder.GetBigEndian(_reader.ReadDouble()) ;
 		}
 		
-		public override float readFloat() {
-			return (float) reader.ReadSingle() ;
+		public override float ReadFloat() {
+			return (float) _reader.ReadSingle() ;
 		}		
 	}
 }

@@ -37,12 +37,12 @@ namespace org.apache.qpid.client
 
         Dictionary<String, Object> ApplicationHeaders { get; set; }
 
-        void appendData(byte[] bytes);
+        void AppendData(byte[] bytes);
 
         MemoryStream Body { get; }
 
         string Destination { get; }
 
-        void clearData();
+        void ClearData();
     }
 }

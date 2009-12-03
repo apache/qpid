@@ -42,10 +42,10 @@ namespace org.apache.qpid.console
 		public BrokerURL url ;
 		public Dictionary<string, Agent> Agents = new Dictionary<string, Agent>() ;	
 		
-		private Client client ;
-		private ClientSession clientSession ;
+		private IClient client ;
+		private IClientSession clientSession ;
 		//FIXME This second session should not be needed. There is a bug in the underlieing code.
-		private ClientSession outSession ;		
+		private IClientSession outSession ;		
 		private int timeout = 50000 ;
 		private string replyName ;
 		private string topicName ;
@@ -84,40 +84,40 @@ namespace org.apache.qpid.console
 			Agent newAgent = new Agent(this,0,"BrokerAgent") ;
 			Agents.Add(newAgent.AgentKey(), newAgent) ;
 			client = new Client() ;
-			client.connect(url.Hostname, url.Port, null, url.AuthName, url.AuthPassword) ;
-			clientSession = client.createSession(timeout) ;		
-			//clientSession.setAutoSync(false) ;
-			string name = System.Text.Encoding.UTF8.GetString(clientSession.getName()) ;
+			client.Connect(url.Hostname, url.Port, null, url.AuthName, url.AuthPassword) ;
+			clientSession = client.CreateSession(timeout) ;		
+			//clientSession.SetAutoSync(false) ;
+			string name = System.Text.Encoding.UTF8.GetString(clientSession.GetName()) ;
 			replyName = "reply-" + name ;
 			topicName = "topic-" + name ;
-			clientSession.setAutoSync(true) ;
+			clientSession.SetAutoSync(true) ;
 			Option[] options = new Option[] {Option.EXCLUSIVE, Option.AUTO_DELETE} ;
 		
 			// This queue is used for responses to messages which are sent.	
-			clientSession.queueDeclare(replyName,options) ;
-			clientSession.exchangeBind(replyName,"amq.direct",replyName) ;
-			clientSession.attachMessageListener(this, "rdest") ;			
-			clientSession.messageSubscribe(replyName,"rdest",MessageAcceptMode.NONE,MessageAcquireMode.PRE_ACQUIRED,null,0,null) ;			  			  						
-            clientSession.messageSetFlowMode("rdest", MessageFlowMode.WINDOW);
-            clientSession.messageFlow("rdest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
-            clientSession.messageFlow("rdest", MessageCreditUnit.MESSAGE, ClientSession.MESSAGE_FLOW_MAX_BYTES);  			
+			clientSession.QueueDeclare(replyName,options) ;
+			clientSession.ExchangeBind(replyName,"amq.direct",replyName) ;
+			clientSession.AttachMessageListener(this, "rdest") ;			
+			clientSession.MessageSubscribe(replyName,"rdest",MessageAcceptMode.NONE,MessageAcquireMode.PRE_ACQUIRED,null,0,null) ;			  			  						
+            clientSession.MessageSetFlowMode("rdest", MessageFlowMode.WINDOW);
+            clientSession.MessageFlow("rdest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
+            clientSession.MessageFlow("rdest", MessageCreditUnit.MESSAGE, ClientSession.MESSAGE_FLOW_MAX_BYTES);  			
 		
 			// This queue is used for unsolicited messages sent to this class.
-			clientSession.queueDeclare(topicName, options) ;
-			clientSession.attachMessageListener(this, "tdest") ;			
-			clientSession.messageSubscribe(topicName,"tdest",MessageAcceptMode.NONE,MessageAcquireMode.PRE_ACQUIRED,null,0,null) ;							  									
-            clientSession.messageSetFlowMode("tdest", MessageFlowMode.WINDOW);
-            clientSession.messageFlow("tdest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
-            clientSession.messageFlow("tdest", MessageCreditUnit.MESSAGE, ClientSession.MESSAGE_FLOW_MAX_BYTES);  				
+			clientSession.QueueDeclare(topicName, options) ;
+			clientSession.AttachMessageListener(this, "tdest") ;			
+			clientSession.MessageSubscribe(topicName,"tdest",MessageAcceptMode.NONE,MessageAcquireMode.PRE_ACQUIRED,null,0,null) ;							  									
+            clientSession.MessageSetFlowMode("tdest", MessageFlowMode.WINDOW);
+            clientSession.MessageFlow("tdest", MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
+            clientSession.MessageFlow("tdest", MessageCreditUnit.MESSAGE, ClientSession.MESSAGE_FLOW_MAX_BYTES);  				
 			
-			outSession = client.createSession(timeout) ;	
-			outSession.exchangeBind(replyName,"amq.direct",replyName) ;
+			outSession = client.CreateSession(timeout) ;	
+			outSession.ExchangeBind(replyName,"amq.direct",replyName) ;
 			
 			connected = true ;
 			consoleSession.HandleBrokerConnect(this) ;		
 				
 			
-			Encoder encoder = CreateEncoder() ;
+			IEncoder encoder = CreateEncoder() ;
 			this.SetHeader(encoder, 'B', 0) ;
 			this.Send(encoder) ;
 		}
@@ -125,10 +125,10 @@ namespace org.apache.qpid.console
 		public void Shutdown() {
 			if (connected) {
 				this.WaitForStable() ;
-				clientSession.messageStop("rdest") ;
-				clientSession.messageStop("tdest") ;
-				clientSession.close() ;
-				client.close() ;
+				clientSession.MessageStop("rdest") ;
+				clientSession.MessageStop("tdest") ;
+				clientSession.Close() ;
+				client.Close() ;
 				this.connected = false ;
 			}
 		}
@@ -153,87 +153,87 @@ namespace org.apache.qpid.console
 			}
 		}
 		
-		public Encoder CreateEncoder() {
+		public IEncoder CreateEncoder() {
 			return new MSEncoder(1000) ;	
 		}
 		
 		
-		public Encoder CreateEncoder(char opcode, long sequence) {
+		public IEncoder CreateEncoder(char opcode, long sequence) {
 			return SetHeader(this.CreateEncoder(), opcode, sequence) ;
 		}
 		
-		public Encoder SetHeader(Encoder enc, char opcode, long sequence) {
-			enc.writeUint8((short)'A') ;
-			enc.writeUint8((short)'M') ;
-			enc.writeUint8((short)'3') ;
-	        enc.writeUint8((short)opcode) ;
-			enc.writeUint32(sequence) ;
+		public IEncoder SetHeader(IEncoder enc, char opcode, long sequence) {
+			enc.WriteUint8((short)'A') ;
+			enc.WriteUint8((short)'M') ;
+			enc.WriteUint8((short)'3') ;
+	        enc.WriteUint8((short)opcode) ;
+			enc.WriteUint32(sequence) ;
 			return enc ;
 		}		
 		
-		public Message CreateMessage(Encoder enc) {
+		public Message CreateMessage(IEncoder enc) {
 			return this.CreateMessage(enc, "broker", -1)  ;
 		}		
 		
-		public Message CreateMessage(Encoder enc, string routingKey) {
+		public Message CreateMessage(IEncoder enc, string routingKey) {
 			return this.CreateMessage(enc, routingKey, -1) ;
 		}
 		
-		public Message CreateMessage(Encoder enc, string routingKey, long ttl) {
+		public Message CreateMessage(IEncoder enc, string routingKey, long ttl) {
 			Message msg = new Message() ;
-			msg.Body = ((MSEncoder)enc).segment() ;
-			msg.DeliveryProperties.setRoutingKey(routingKey) ;
+			msg.Body = ((MSEncoder)enc).Segment() ;
+			msg.DeliveryProperties.SetRoutingKey(routingKey) ;
 			if (-1 != ttl) {
-				msg.DeliveryProperties.setTtl(ttl) ;
+				msg.DeliveryProperties.SetTtl(ttl) ;
 			}
-			msg.MessageProperties.setContentType("x-application/qmf") ;
-			msg.MessageProperties.setReplyTo(new ReplyTo("amq.direct", replyName)) ;
+			msg.MessageProperties.SetContentType("x-application/qmf") ;
+			msg.MessageProperties.SetReplyTo(new ReplyTo("amq.direct", replyName)) ;
 			return msg ;
 		}
 		
-		public void Send(Encoder enc) {
+		public void Send(IEncoder enc) {
 			this.Send(this.CreateMessage(enc)) ;
 		}
 		
 		public void Send(Message msg) {
 	
 			lock (lockObject) {
-				log.Debug(String.Format("Sending message to routing key '{0}'", msg.DeliveryProperties.getRoutingKey())) ;
+				log.Debug(String.Format("Sending message to routing key '{0}'", msg.DeliveryProperties.GetRoutingKey())) ;
 				//log.Debug(System.Text.Encoding.UTF8.GetString(msg.Body.ToArray())) ;			
-				outSession.messageTransfer("qpid.management", msg) ;
+				outSession.MessageTransfer("qpid.management", msg) ;
 				//clientSession.sync() ;
 			}
 		}
 		
-		protected bool CheckHeader(Decoder decoder, out char opcode, out long sequence) {
+		protected bool CheckHeader(IDecoder decoder, out char opcode, out long sequence) {
 			bool returnValue = false ;		
 			opcode = 'x' ;
 			sequence = -1 ;
-			if(decoder.hasRemaining()) {
-				char character = (char) decoder.readUint8() ;
+			if(decoder.HasRemaining()) {
+				char character = (char) decoder.ReadUint8() ;
 				if (character != 'A') {
 					return returnValue ;
 				}
-				character = (char) decoder.readUint8() ;			
+				character = (char) decoder.ReadUint8() ;			
 				if (character != 'M') {
 					return returnValue ;
 				}
-				character = (char) decoder.readUint8() ;			
+				character = (char) decoder.ReadUint8() ;			
 				if (character != '3') {
 					return returnValue ;
 				}	
 				returnValue = true ;
-				opcode = (char) decoder.readUint8() ;
-				sequence = decoder.readUint32() ;
+				opcode = (char) decoder.ReadUint8() ;
+				sequence = decoder.ReadUint32() ;
 			}
 			return returnValue ;
 		}
 		
-		public void messageTransfer(IMessage msg) {
+		public void MessageTransfer(IMessage msg) {
 			MSDecoder decoder = new MSDecoder() ;
-			decoder.init(msg.Body) ;
+			decoder.Init(msg.Body) ;
 			RangeSet rangeSet = new RangeSet() ;
-			rangeSet.add(msg.Id) ;
+			rangeSet.Add(msg.Id) ;
 			char opcode = 'x' ;
 			long seq = -1 ;
 			while (this.CheckHeader(decoder, out opcode, out seq)) {
@@ -279,7 +279,7 @@ namespace org.apache.qpid.console
 				}		
 			} 
 			lock (lockObject) {
-				outSession.messageAccept(rangeSet) ;
+				outSession.MessageAccept(rangeSet) ;
 			}
 		}
 		
@@ -294,9 +294,9 @@ namespace org.apache.qpid.console
 				this.reqsOutstanding -= 1 ;	
 				if ((reqsOutstanding == 0) & !topicBound) {
 					foreach (string key in consoleSession.BindingKeys()) {
-						//this.clientSession.exchangeBind(topicName, "qpid.mannagement", key) ;
+						//this.clientSession.ExchangeBind(topicName, "qpid.mannagement", key) ;
 						log.Debug("Setting Topic Binding " + key) ;						
-						this.outSession.exchangeBind(topicName, "qpid.management", key) ;
+						this.outSession.ExchangeBind(topicName, "qpid.management", key) ;
 					}
 					topicBound = true ;
 				}

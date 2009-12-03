@@ -19,6 +19,7 @@
 *
 */
 using System;
+using System.Configuration;
 using System.Text;
 using System.Threading;
 using org.apache.qpid.client;
@@ -29,27 +30,33 @@ namespace ExcelAddInProducer
     {
         static void Main(string[] args)
         {
+            string host = ConfigurationManager.AppSettings["Host"];
+            int port = int.Parse(ConfigurationManager.AppSettings["Port"]);
+            string virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
+            string username = ConfigurationManager.AppSettings["Username"];
+            string password = ConfigurationManager.AppSettings["Password"];
+
             Client client = new Client();
             Console.WriteLine("Client created");
-            client.connect("192.168.1.14", 5672, "test", "guest", "guest");
+            client.Connect(host, port, virtualhost, username, password);
             Console.WriteLine("Connection established");
 
-            ClientSession ssn = client.createSession(50000);
+            IClientSession ssn = client.CreateSession(50000);
             Console.WriteLine("Session created");
-            ssn.queueDeclare("queue1", null, null);
-            ssn.exchangeBind("queue1", "amq.direct", "queue1", null);
+            ssn.QueueDeclare("queue1", null, null);
+            ssn.ExchangeBind("queue1", "amq.direct", "queue1", null);
             IMessage message = new Message();
             message.ApplicationHeaders.Add("price", 0);
             for (int i = 0; i < 100; i++)
             {
-                message.clearData();
-                message.appendData( Encoding.UTF8.GetBytes("test: " + i));
+                message.ClearData();
+                message.AppendData( Encoding.UTF8.GetBytes("test: " + i));
                 message.ApplicationHeaders["price"] =  i;
-                ssn.messageTransfer("amq.direct", "queue1", message);               
+                ssn.MessageTransfer("amq.direct", "queue1", message);               
                 Thread.Sleep(1000);
             }
 
-            client.close();
+            client.Close();
         }
     }
 }

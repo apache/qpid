@@ -29,7 +29,7 @@ namespace org.apache.qpid.client
 {
     internal class ClientConnectionDelegate : ClientDelegate
     {
-        private static readonly Logger log = Logger.get(typeof (ClientConnectionDelegate));
+        private static readonly Logger log = Logger.Get(typeof (ClientConnectionDelegate));
         private readonly Client _client;
         private string _username;
         private string _password;
@@ -41,17 +41,17 @@ namespace org.apache.qpid.client
             _password = pasword;
         }
 
-        public override SessionDelegate getSessionDelegate()
+        public override SessionDelegate GetSessionDelegate()
         {
             return new ClientSessionDelegate();
         }
 
-        public override void exception(Exception t)
+        public override void Exception(Exception t)
         {
             throw t;
         }
 
-        public override void connectionStart(Channel context, ConnectionStart mystruct)
+        public override void ConnectionStart(Channel context, ConnectionStart mystruct)
         {
             const string mechanism = "PLAIN";          
             MemoryStream stResponse = new MemoryStream();
@@ -62,17 +62,17 @@ namespace org.apache.qpid.client
             part = Encoding.UTF8.GetBytes(_password);
             stResponse.Write(part, 0, part.Length);            
             Dictionary<String, Object> props = new Dictionary<String, Object>();
-            context.connectionStartOk(props, mechanism, stResponse.ToArray(), "utf8");
+            context.ConnectionStartOk(props, mechanism, stResponse.ToArray(), "utf8");
         }
 
-        public override void closed()
+        public override void Closed()
         {
-            log.debug("Delegate closed");
+            log.Debug("Delegate Closed");
             lock (_client.CloseOk)
             {
                 try
                 {
-                    _client.Closed = true;
+                    _client.IsClosed = true;
                     Monitor.PulseAll(_client.CloseOk);
                 }
                 catch (Exception e)
@@ -82,16 +82,16 @@ namespace org.apache.qpid.client
             }
         }
 
-        public override void connectionClose(Channel context, ConnectionClose connectionClose)
+        public override void ConnectionClose(Channel context, ConnectionClose connectionClose)
         {
-            base.connectionClose(context, connectionClose);
-            ErrorCode errorCode = ErrorCode.getErrorCode((int) connectionClose.getReplyCode());
+            base.ConnectionClose(context, connectionClose);
+            ErrorCode errorCode = ErrorCode.GetErrorCode((int) connectionClose.GetReplyCode());
             if (_client.ClosedListener == null && errorCode.Code != (int) QpidErrorCode.NO_ERROR)
             {
-                throw new Exception ("Server closed the connection: Reason " +
-                                       connectionClose.getReplyText());
+                throw new Exception ("Server Closed the connection: Reason " +
+                                       connectionClose.GetReplyText());
             }           
-                _client.ClosedListener.onClosed(errorCode, connectionClose.getReplyText(), null);                   
+                _client.ClosedListener.OnClosed(errorCode, connectionClose.GetReplyText(), null);                   
         }
     }
 }

@@ -28,12 +28,12 @@ namespace org.apache.qpid.transport.util
 	
 	public class Functions
 	{		
-		public static sbyte lsb(int i)
+		public static sbyte Lsb(int i)
 		{
 			return (sbyte) (0xFF & i);
 		}
 		
-		public static sbyte lsb(long l)
+		public static sbyte Lsb(long l)
 		{
 			return (sbyte) (0xFF & l);
 		}				

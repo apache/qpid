@@ -23,7 +23,7 @@ using System.IO;
 
 namespace org.apache.qpid.transport.network
 {
-    public sealed class Frame : NetworkEvent
+    public sealed class Frame : INetworkEvent
     {
         internal static int HEADER_SIZE = 12;
 
@@ -96,46 +96,46 @@ namespace org.apache.qpid.transport.network
             get { return track; }
         }
 
-        private bool flag(byte mask)
+        private bool Flag(byte mask)
         {
             return (flags & mask) != 0;
         }
 
-        public bool isFirstSegment()
+        public bool IsFirstSegment()
         {
-            return flag(FIRST_SEG);
+            return Flag(FIRST_SEG);
         }
 
-        public bool isLastSegment()
+        public bool IsLastSegment()
         {
-            return flag(LAST_SEG);
+            return Flag(LAST_SEG);
         }
 
-        public bool isFirstFrame()
+        public bool IsFirstFrame()
         {
-            return flag(FIRST_FRAME);
+            return Flag(FIRST_FRAME);
         }
 
-        public bool isLastFrame()
+        public bool IsLastFrame()
         {
-            return flag(LAST_FRAME);
+            return Flag(LAST_FRAME);
         }
 
-        #region NetworkEvent Methods
+        #region INetworkEvent Methods
 
-        public void ProcessNetworkEvent(NetworkDelegate ndelegate)
+        public void ProcessNetworkEvent(INetworkDelegate ndelegate)
         {
             ndelegate.Frame(this);
         }
 
         #endregion
 
-        public String toString()
+        public override String ToString()
         {
             return String.Format
                 ("[{0:d} {1:d} {2:d} {3} {4}{5}{6}{7}] ", Channel, Size, Track, Type,                 
-                 isFirstSegment() ? 1 : 0, isLastSegment() ? 1 : 0,
-                 isFirstFrame() ? 1 : 0, isLastFrame() ? 1 : 0);
+                 IsFirstSegment() ? 1 : 0, IsLastSegment() ? 1 : 0,
+                 IsFirstFrame() ? 1 : 0, IsLastFrame() ? 1 : 0);
         }
 
       

@@ -49,8 +49,8 @@ namespace ExcelAddIn
         private readonly Dictionary<int, IMessage> _topicMessages = new Dictionary<int, IMessage>();
         private readonly Dictionary<string, QpidListener> _queueListener = new Dictionary<string, QpidListener>();
         private readonly Dictionary<int, string> _topicQueueName = new Dictionary<int, string>();
-        private Client _client;
-        private ClientSession _session;
+        private IClient _client;
+        private IClientSession _session;
         private ProcessMessage _messageProcessor;
 
         #region properties
@@ -65,7 +65,7 @@ namespace ExcelAddIn
             get { return _topicMessages; }
         }
 
-        public ClientSession Session
+        public IClientSession Session
         {
             get { return _session; }
         }
@@ -103,7 +103,7 @@ namespace ExcelAddIn
             {
                 virtualhost = ConfigurationManager.AppSettings["VirtualHost"];
             }
-            if (ConfigurationManager.AppSettings["UserName"] != null)
+            if (ConfigurationManager.AppSettings["Username"] != null)
             {
                 username = ConfigurationManager.AppSettings["UserName"];
             }
@@ -132,9 +132,9 @@ namespace ExcelAddIn
             try
             {
                 _client = new Client();            
-                _client.connect(host, Convert.ToInt16(port), virtualhost, username, password);
+                _client.Connect(host, Convert.ToInt16(port), virtualhost, username, password);
                 // create a session 
-                _session = _client.createSession(0);          
+                _session = _client.CreateSession(0);          
             }
             catch (Exception e)
             {
@@ -164,8 +164,8 @@ namespace ExcelAddIn
                     queuename = (string) Strings.GetValue(0);
                 }
                 // Error message if the queue does not exist
-                QueueQueryResult result = (QueueQueryResult)_session.queueQuery(queuename).Result;
-                if( result.getQueue() == null )
+                QueueQueryResult result = (QueueQueryResult)_session.QueueQuery(queuename).Result;
+                if( result.GetQueue() == null )
                 {
                     System.Windows.Forms.MessageBox.Show("Error: \n queue " + queuename + " does not exist");
                     return "error";  
@@ -184,14 +184,14 @@ namespace ExcelAddIn
                     listener = new QpidListener(this);
                     listener.addTopic(TopicID);
                     _queueListener.Add(queuename, listener);
-                    _session.attachMessageListener(listener, destinationName);
-                    _session.messageSubscribe(queuename, destinationName, MessageAcceptMode.EXPLICIT,
+                    _session.AttachMessageListener(listener, destinationName);
+                    _session.MessageSubscribe(queuename, destinationName, MessageAcceptMode.EXPLICIT,
                                               MessageAcquireMode.PRE_ACQUIRED, null, 0, null);
                     // issue credits     
-                    _session.messageSetFlowMode(destinationName, MessageFlowMode.WINDOW);
-                    _session.messageFlow(destinationName, MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
-                    _session.messageFlow(destinationName, MessageCreditUnit.MESSAGE, 1000);
-                    _session.sync();
+                    _session.MessageSetFlowMode(destinationName, MessageFlowMode.WINDOW);
+                    _session.MessageFlow(destinationName, MessageCreditUnit.BYTE, ClientSession.MESSAGE_FLOW_MAX_BYTES);
+                    _session.MessageFlow(destinationName, MessageCreditUnit.MESSAGE, 1000);
+                    _session.Sync();
                 }                
             }
             catch (Exception e)
@@ -212,7 +212,7 @@ namespace ExcelAddIn
             string queueName = _topicQueueName[TopicID];
             if (_topicQueueName.Remove(TopicID) && !_topicQueueName.ContainsValue(queueName))
             {
-                _session.messageStop("ExcelAddIn-" + queueName);
+                _session.MessageStop("ExcelAddIn-" + queueName);
                 _session.MessageListeners.Remove("ExcelAddIn-" + queueName);
             }
         }
@@ -271,7 +271,7 @@ namespace ExcelAddIn
             _topics.Add(topic);
         }
 
-        public void messageTransfer(IMessage m)
+        public void MessageTransfer(IMessage m)
         {            
             foreach (int i in _topics)
             {
@@ -282,8 +282,8 @@ namespace ExcelAddIn
             }
             // ack this message 
             RangeSet rs = new RangeSet();
-            rs.add(m.Id);
-            _excel.Session.messageAccept(rs);        
+            rs.Add(m.Id);
+            _excel.Session.MessageAccept(rs);        
             _excel.OnMessage.UpdateNotify();
         }
     }

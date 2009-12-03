@@ -28,7 +28,7 @@ namespace org.apache.qpid.transport.network
     /// <summary> 
     /// InputHandler
     /// </summary>
-    public sealed class InputHandler : Receiver<ReceivedPayload<NetworkEvent>>
+    public sealed class InputHandler : IReceiver<ReceivedPayload<INetworkEvent>>
     {
         public enum State
         {
@@ -38,15 +38,15 @@ namespace org.apache.qpid.transport.network
             ERROR
         }
 
-        private static readonly Logger log = Logger.get(typeof(InputHandler));
+        private static readonly Logger log = Logger.Get(typeof(InputHandler));
         private readonly Object m_objectLock = new object();
 
         // the event raised when a buffer is read from the wire        
-        public event EventHandler<ReceivedPayload<NetworkEvent>> ReceivedEvent;
+        public event EventHandler<ReceivedPayload<INetworkEvent>> ReceivedEvent;
         public event EventHandler<ExceptionArgs> ExceptionProcessing;
         public event EventHandler HandlerClosed;
 
-        event EventHandler<ReceivedPayload<NetworkEvent>> Receiver<ReceivedPayload<NetworkEvent>>.Received
+        event EventHandler<ReceivedPayload<INetworkEvent>> IReceiver<ReceivedPayload<INetworkEvent>>.Received
         {
             add
             {
@@ -64,7 +64,7 @@ namespace org.apache.qpid.transport.network
             }
         }
 
-        event EventHandler<ExceptionArgs> Receiver<ReceivedPayload<NetworkEvent>>.Exception
+        event EventHandler<ExceptionArgs> IReceiver<ReceivedPayload<INetworkEvent>>.Exception
         {
             add
             {
@@ -82,7 +82,7 @@ namespace org.apache.qpid.transport.network
             }
         }
 
-        event EventHandler Receiver<ReceivedPayload<NetworkEvent>>.Closed
+        event EventHandler IReceiver<ReceivedPayload<INetworkEvent>>.Closed
         {
             add
             {
@@ -148,7 +148,7 @@ namespace org.apache.qpid.transport.network
                         }                      
                         int startPos = (int)buf.Position;
                         int consumed = needed;
-                        state = next(buf);
+                        state = Next(buf);
                         if ((buf.Position - startPos) < consumed)
                         {
                             buf.Seek(consumed  - (buf.Position - startPos), SeekOrigin.Current);
@@ -187,7 +187,7 @@ namespace org.apache.qpid.transport.network
 
         #region Private Support Functions
 
-        private State next(MemoryStream buf)
+        private State Next(MemoryStream buf)
         {
             BinaryReader reader = new BinaryReader(buf);
 
@@ -216,7 +216,7 @@ namespace org.apache.qpid.transport.network
                 case State.FRAME_HDR:
                     reader = new BinaryReader(buf, Encoding.BigEndianUnicode);
                     flags = reader.ReadByte();
-                    type = SegmentTypeGetter.get(reader.ReadByte()); // generated code 
+                    type = SegmentTypeGetter.Get(reader.ReadByte()); // generated code 
                     int size =  reader.ReadUInt16();
                     size = ByteEncoder.GetBigEndian((UInt16)size);                    
                     size -= Frame.HEADER_SIZE;
@@ -262,10 +262,10 @@ namespace org.apache.qpid.transport.network
             Fire_NetworkEvent(new ProtocolError(Frame.L1, fmt, args));            
         }
 
-        private void Fire_NetworkEvent(NetworkEvent netevent)
+        private void Fire_NetworkEvent(INetworkEvent netevent)
         {
-            log.debug("InputHandler: network event:", netevent);
-            ReceivedPayload<NetworkEvent> payload = new ReceivedPayload<NetworkEvent>();
+            log.Debug("InputHandler: network event:", netevent);
+            ReceivedPayload<INetworkEvent> payload = new ReceivedPayload<INetworkEvent>();
             payload.Payload = netevent;
             if (ReceivedEvent != null)
             {
@@ -273,7 +273,7 @@ namespace org.apache.qpid.transport.network
             }
             else
             {
-                log.debug("Nobody listening for event: {0}");
+                log.Debug("Nobody listening for event: {0}");
             }
         }
 

@@ -37,9 +37,9 @@ namespace org.apache.qpid.console
 		public string Description {get;set;}		
 		public string Unit {get;set;}		
 		
-		public SchemaStatistic(Decoder dec)
+		public SchemaStatistic(IDecoder dec)
 		{
-			Dictionary<string, Object> map = dec.readMap() ;							
+			Dictionary<string, Object> map = dec.ReadMap() ;							
 			Name = (string)  map["name"] ;
 			Type = (short) short.Parse(""+map["type"]) ;
 				

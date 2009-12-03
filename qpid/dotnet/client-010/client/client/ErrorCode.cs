@@ -74,7 +74,7 @@ namespace org.apache.qpid.client
             get { return _hardError; }
         }
 
-        public static ErrorCode getErrorCode(int code)
+        public static ErrorCode GetErrorCode(int code)
         {
             switch (code)
             {

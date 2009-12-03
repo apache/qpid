@@ -27,14 +27,14 @@ namespace org.apache.qpid.transport
     {
         public ExceptionArgs(Exception e)
         {
-            m_exception = e;
+            _exception = e;
         }
-        private Exception m_exception;
+        private Exception _exception;
 
         public Exception Exception
         {
-            get { return m_exception; }
-            set { m_exception = value; }
+            get { return _exception; }
+            set { _exception = value; }
         }
 
     }

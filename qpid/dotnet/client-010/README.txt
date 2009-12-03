@@ -3,17 +3,19 @@ Info
 
 AMQP 0.10 Native .NET client supporting WCF and xcel
 
-This client is self contained, all dependancies are in this
-directory.
+In order to build this client from the sources you'll need the following folders :
+- <project home>/java/lib
+- <project home>/python
+- <project home>/specs
 
 
 Setup
 =====
 
 Install:
-  Microsoft Visual Studio 2005 (VS2005)
-  NAnt 0.85 - only required for builds outside VS2005 (.net 1.1, .net 2.0, mono 2.0)
-  Ant 1.6.5
+  Microsoft Visual Studio 2008 (VS2008). It's also possible to build with vs2005 by creating a new solution and adding Client.csproj
+  NAnt 0.85 - only required for builds outside VS2008 (.net 1.1, .net 2.0, mono 2.0)
+  Ant 1.6.5 (requires Java)
   Cygwin (or alternatively build via cmd but alter instructions below accordingly)
 
 Set up PATH to include Nant.exe:
@@ -33,7 +35,7 @@ Generate code from <project home>/dotnet/client-010/gentool:
   $ cd <project home>/dotnet/client-010/gentool
   $ ant
 
-You can build from Visual Studio 2005 normally. Alternatively, you
+You can build from Visual Studio 2008 normally. Alternatively, you
 can build debug releases for any supported framework from the 
 command line using Nant:
 

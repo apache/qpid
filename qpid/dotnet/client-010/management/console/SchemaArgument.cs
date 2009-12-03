@@ -34,9 +34,9 @@ namespace org.apache.qpid.console
 
 		public string Direction {get;set;}	
 		
-		public SchemaArgument(Decoder dec, bool methodArg)
+		public SchemaArgument(IDecoder dec, bool methodArg)
 		{
-			Dictionary<string, Object> map = dec.readMap() ;	
+			Dictionary<string, Object> map = dec.ReadMap() ;	
 			base.PopulateData(map) ;					
 				
 			if (map.ContainsKey("dir")) {

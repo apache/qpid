@@ -1,4 +1,5 @@
 /*
+*
 * Licensed to the Apache Software Foundation (ASF) under one
 * or more contributor license agreements.  See the NOTICE file
 * distributed with this work for additional information
@@ -15,17 +16,23 @@
 * KIND, either express or implied.  See the License for the
 * specific language governing permissions and limitations
 * under the License.
+*
 */
 
-
-namespace org.apache.qpid.client
+namespace org.apache.qpid.transport
 {
-    public interface IMessageListener
+    /// <summary> 
+    /// Future
+    /// </summary>
+    public interface IFuture
     {
-        /// <summary>
-        /// Inform the listener of the message transfer
-        /// </summary>
-        /// <param name="xfr">The message transfer object</param>
-        void messageTransfer(IMessage xfr);
+        Struct Result
+        {
+            get; set;
+        }
+
+        Session Session
+        { set;
+        }
     }
 }

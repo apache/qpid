@@ -33,15 +33,15 @@ namespace org.apache.qpid.transport.network.io
         private const int TIMEOUT = 60000;
         private const int QUEUE_SIZE = 1000;
         // props
-        private static readonly Logger log = Logger.get(typeof (IoSSLTransport));
+        private static readonly Logger log = Logger.Get(typeof (IoSSLTransport));
         private Stream m_stream;
         private IoSender m_sender;
-        private Receiver<ReceivedPayload<MemoryStream>> m_receiver;
+        private IReceiver<ReceivedPayload<MemoryStream>> m_receiver;
         private TcpClient m_socket;
         private Connection m_con;
         private readonly bool _rejectUntrusted;
 
-        public static Connection connect(String host, int port, string serverName, string certPath, bool rejectUntrusted,  ConnectionDelegate conndel)
+        public static Connection Connect(String host, int port, string serverName, string certPath, bool rejectUntrusted,  ConnectionDelegate conndel)
         {            
             IIoTransport transport = new IoSSLTransport(host, port, serverName, certPath, rejectUntrusted, conndel);
             return transport.Connection;
@@ -50,7 +50,7 @@ namespace org.apache.qpid.transport.network.io
         public IoSSLTransport(String host, int port, string serverName, string certPath, bool rejectUntrusted, ConnectionDelegate conndel)
         {
             _rejectUntrusted = rejectUntrusted;
-            createSocket(host, port, serverName, certPath);
+            CreateSocket(host, port, serverName, certPath);
             Sender = new IoSender(this, QUEUE_SIZE, TIMEOUT);
             Receiver = new IoReceiver(Stream, Socket.ReceiveBufferSize*2, TIMEOUT);
             Assembler assembler = new Assembler();
@@ -76,7 +76,7 @@ namespace org.apache.qpid.transport.network.io
             set { m_con = value; }
         }
 
-        public Receiver<ReceivedPayload<MemoryStream>> Receiver
+        public IReceiver<ReceivedPayload<MemoryStream>> Receiver
         {
             get { return m_receiver; }
             set { m_receiver = value; }
@@ -103,7 +103,7 @@ namespace org.apache.qpid.transport.network.io
 
         #region Private Support Functions
 
-        private void createSocket(String host, int port, string serverName, string certPath)
+        private void CreateSocket(String host, int port, string serverName, string certPath)
         {
             TcpClient socket;
             try
@@ -120,10 +120,10 @@ namespace org.apache.qpid.transport.network.io
                                             ? DEFAULT_READ_WRITE_BUFFER_SIZE
                                             : int.Parse(writeBufferSize);
 
-                log.debug("NoDelay : {0}", socket.NoDelay);
-                log.debug("ReceiveBufferSize : {0}", socket.ReceiveBufferSize);
-                log.debug("SendBufferSize : {0}", socket.SendBufferSize);
-                log.debug("Openning connection with host : {0}; port: {1}", host, port);
+                log.Debug("NoDelay : {0}", socket.NoDelay);
+                log.Debug("ReceiveBufferSize : {0}", socket.ReceiveBufferSize);
+                log.Debug("SendBufferSize : {0}", socket.SendBufferSize);
+                log.Debug("Openning connection with host : {0}; port: {1}", host, port);
 
                 socket.Connect(host, port);
                 Socket = socket;
@@ -151,10 +151,10 @@ namespace org.apache.qpid.transport.network.io
             }
             catch (AuthenticationException e)
             {
-                log.warn("Exception: {0}", e.Message);
+                log.Warn("Exception: {0}", e.Message);
                 if (e.InnerException != null)
                 {
-                    log.warn("Inner exception: {0}", e.InnerException.Message);
+                    log.Warn("Inner exception: {0}", e.InnerException.Message);
                 }
                 socket.Close();
                 throw new TransportException("Authentication failed - closing the connection.");
@@ -171,7 +171,7 @@ namespace org.apache.qpid.transport.network.io
             bool result = true;
             if (sslPolicyErrors != SslPolicyErrors.None &&  _rejectUntrusted )
             {
-                log.warn("Certificate error: {0}", sslPolicyErrors);
+                log.Warn("Certificate error: {0}", sslPolicyErrors);
                 // Do not allow this client to communicate with unauthenticated servers.
                 result =  false;  
             }

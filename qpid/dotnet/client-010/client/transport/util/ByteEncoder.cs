@@ -34,7 +34,7 @@ namespace org.apache.qpid.transport.util
         {
             if (BitConverter.IsLittleEndian)
             {
-                return swapByteOrder(value);
+                return SwapByteOrder(value);
             }
             return value;
         }
@@ -48,7 +48,7 @@ namespace org.apache.qpid.transport.util
         {
             if (BitConverter.IsLittleEndian)
             {
-                return swapByteOrder(value);
+                return SwapByteOrder(value);
             }
             return value;
         }
@@ -62,7 +62,7 @@ namespace org.apache.qpid.transport.util
         {
             if (BitConverter.IsLittleEndian)
             {
-                return swapByteOrder(value);
+                return SwapByteOrder(value);
             }
             return value;
         }
@@ -76,7 +76,7 @@ namespace org.apache.qpid.transport.util
         {
             if (BitConverter.IsLittleEndian)
             {
-                return swapByteOrder(value);
+                return SwapByteOrder(value);
             }
             return value;
         }
@@ -85,7 +85,7 @@ namespace org.apache.qpid.transport.util
         {
             if (BitConverter.IsLittleEndian)
             {
-                return swapByteOrder(value);
+                return SwapByteOrder(value);
             }
             return value;
         }        
@@ -101,7 +101,7 @@ namespace org.apache.qpid.transport.util
             {
                 return value;
             }
-            return swapByteOrder(value);
+            return SwapByteOrder(value);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace org.apache.qpid.transport.util
             {
                 return value;
             }
-            return swapByteOrder(value);
+            return SwapByteOrder(value);
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace org.apache.qpid.transport.util
             {
                 return value;
             }
-            return swapByteOrder(value);
+            return SwapByteOrder(value);
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace org.apache.qpid.transport.util
             {
                 return value;
             }
-            return swapByteOrder(value);
+            return SwapByteOrder(value);
         }
         
         public static double GetLittleEndian(double value)
@@ -152,7 +152,7 @@ namespace org.apache.qpid.transport.util
             {
                 return value;
             }
-            return swapByteOrder(value);
+            return SwapByteOrder(value);
         }        
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace org.apache.qpid.transport.util
         /// </summary>
         /// <param name="value"><see cref="Int32"/> to swap the bytes of.</param>
         /// <returns>Byte order swapped <see cref="Int32"/>.</returns>
-        private static Int32 swapByteOrder(Int32 value)
+        private static Int32 SwapByteOrder(Int32 value)
         {
             Int32 swapped = (Int32)((0x000000FF) & (value >> 24)
                                      | (0x0000FF00) & (value >> 8)
@@ -174,7 +174,7 @@ namespace org.apache.qpid.transport.util
         /// </summary>
         /// <param name="value"><see cref="UInt16"/> to swap the bytes of.</param>
         /// <returns>Byte order swapped <see cref="UInt16"/>.</returns>
-        private static UInt16 swapByteOrder(UInt16 value)
+        private static UInt16 SwapByteOrder(UInt16 value)
         {
             return (UInt16)((0x00FF & (value >> 8))
                              | (0xFF00 & (value << 8)));
@@ -185,7 +185,7 @@ namespace org.apache.qpid.transport.util
         /// </summary>
         /// <param name="value"><see cref="UInt32"/> to swap the bytes of.</param>
         /// <returns>Byte order swapped <see cref="UInt32"/>.</returns>
-        private static UInt32 swapByteOrder(UInt32 value)
+        private static UInt32 SwapByteOrder(UInt32 value)
         {
             UInt32 swapped = ((0x000000FF) & (value >> 24)
                              | (0x0000FF00) & (value >> 8)
@@ -199,14 +199,14 @@ namespace org.apache.qpid.transport.util
         /// </summary>
         /// <param name="value"><see cref="Double"/> to swap.</param>
         /// <returns>Byte order swapped <see cref="Double"/> value.</returns>
-        private static long swapByteOrder(long value)
+        private static long SwapByteOrder(long value)
         {
             Byte[] buffer = BitConverter.GetBytes(value);
             Array.Reverse(buffer, 0, buffer.Length);
             return BitConverter.ToInt64(buffer, 0);
         }
         
-        private static double swapByteOrder(double value)
+        private static double SwapByteOrder(double value)
         {
             Byte[] buffer = BitConverter.GetBytes(value);
             Array.Reverse(buffer, 0, buffer.Length);

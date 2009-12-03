@@ -25,19 +25,20 @@ using org.apache.qpid.transport.util;
 
 namespace org.apache.qpid.client
 {
-    public class Client : ClientInterface
+    public class Client : IClient
     {
         private Connection _conn;
-        private static readonly Logger _log = Logger.get(typeof (Client));
+        private static readonly Logger _log = Logger.Get(typeof (Client));
         private const long timeout = 60000;
-        private bool _closed;
+        private bool _isClosed;
         private readonly Object _closeOK;
-        private ClosedListener _closedListner;
+        private IClosedListener _closedListner;
 
-        public bool Closed
+
+        public bool IsClosed
         {
-            get { return _closed; }
-            set { _closed = value; }
+            get { return _isClosed; }
+            set { _isClosed = value; }
         }
 
         public Object CloseOk
@@ -47,11 +48,11 @@ namespace org.apache.qpid.client
 
         public Client()
         {
-            _closed = false;
+            _isClosed = false;
             _closeOK = new object();
         }
 
-        #region Interface ClientInterface
+        #region Interface IClient
         
         /// <summary>
         /// Establishes a connection with a broker using the provided user auths 
@@ -62,17 +63,17 @@ namespace org.apache.qpid.client
         /// <param name="virtualHost">virtual host name</param>
         /// <param name="username">User Name</param>
         /// <param name="password">Password</param>
-        public void connect(String host, int port, String virtualHost, String username, String password)
+        public void Connect(String host, int port, String virtualHost, String username, String password)
         {
-            _log.debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
+            _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
                                      port, virtualHost, username));
             ConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
             ManualResetEvent negotiationComplete = new ManualResetEvent(false);
             connectionDelegate.setCondition(negotiationComplete);
             connectionDelegate.VirtualHost = virtualHost;
-            _conn = IoTransport.connect(host, port, connectionDelegate);
+            _conn = IoTransport.Connect(host, port, connectionDelegate);
             
-            _conn.send(new ProtocolHeader(1, 0, 10));
+            _conn.Send(new ProtocolHeader(1, 0, 10));
             negotiationComplete.WaitOne();
         }
 
@@ -88,53 +89,53 @@ namespace org.apache.qpid.client
         /// <param name="serverName">Name of the SSL server</param>
         /// <param name="certPath">Path to the X509 certificate to be used for client authentication</param>
         /// <param name="rejectUntrusted">If true connection will not be established if the broker is not trusted</param>
-        public void connectSSL(String host, int port, String virtualHost, String username, String password, string serverName, string certPath, bool rejectUntrusted)
+        public void ConnectSSL(String host, int port, String virtualHost, String username, String password, string serverName, string certPath, bool rejectUntrusted)
         {
-            _log.debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
+            _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
                                      port, virtualHost, username));
-            _log.debug(String.Format("SSL paramters: serverName: {0}; certPath: {1}; rejectUntrusted: {2}", serverName, certPath, rejectUntrusted));          
+            _log.Debug(String.Format("SSL paramters: serverName: {0}; certPath: {1}; rejectUntrusted: {2}", serverName, certPath, rejectUntrusted));          
             ConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
             ManualResetEvent negotiationComplete = new ManualResetEvent(false);
             connectionDelegate.setCondition(negotiationComplete);
             connectionDelegate.VirtualHost = virtualHost;
-            _conn = IoSSLTransport.connect(host, port, serverName, certPath, rejectUntrusted, connectionDelegate);
+            _conn = IoSSLTransport.Connect(host, port, serverName, certPath, rejectUntrusted, connectionDelegate);
 
-            _conn.send(new ProtocolHeader(1, 0, 10));
+            _conn.Send(new ProtocolHeader(1, 0, 10));
             negotiationComplete.WaitOne();
         }
 
-        public void close()
+        public void Close()
         {
-            Channel ch = _conn.getChannel(0);
-            ch.connectionClose(ConnectionCloseCode.NORMAL, "client is closing");
+            Channel ch = _conn.GetChannel(0);
+            ch.ConnectionClose(ConnectionCloseCode.NORMAL, "client is closing");
             lock (CloseOk)
             {
                 DateTime start = DateTime.Now;
                 long elapsed = 0;
-                while (!Closed && elapsed < timeout)
+                while (!IsClosed && elapsed < timeout)
                 {
                     Monitor.Wait(CloseOk, (int) (timeout - elapsed));
                     elapsed = DateTime.Now.Subtract(start).Milliseconds;
                 }
-                if (!Closed)
+                if (!IsClosed)
                 {
                     throw new Exception("Timed out when closing connection");
                 }
-                _conn.close();
+                _conn.Close();
             }
         }
 
-        public ClientSession createSession(long expiryInSeconds)
+        public IClientSession CreateSession(long expiryInSeconds)
         {
-            Channel ch = _conn.getChannel();
-            ClientSession ssn = new ClientSession(Encoding.UTF8.GetBytes(UUID.randomUUID().ToString()));
-            ssn.attach(ch);
-            ssn.sessionAttach(ssn.getName());
-            ssn.sessionRequestTimeout(expiryInSeconds);
+            Channel ch = _conn.GetChannel();
+            ClientSession ssn = new ClientSession(Encoding.UTF8.GetBytes(UUID.RandomUuid().ToString()));
+            ssn.Attach(ch);
+            ssn.SessionAttach(ssn.GetName());
+            ssn.SessionRequestTimeout(expiryInSeconds);
             return ssn;
         }
 
-        public ClosedListener ClosedListener
+        public IClosedListener ClosedListener
         {
             set { _closedListner = value; }
             get { return _closedListner; }
