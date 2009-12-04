@@ -43,7 +43,6 @@
 using namespace qpid;
 using namespace broker;
 using namespace std;
-using namespace boost;
 using namespace qpid::sys;
 
 namespace qpid {
@@ -60,9 +59,9 @@ struct TestStoreOptions : public Options {
 };
 
 struct Completer : public Runnable {
-    intrusive_ptr<PersistableMessage> message;
+    boost::intrusive_ptr<PersistableMessage> message;
     int usecs;
-    Completer(intrusive_ptr<PersistableMessage> m, int u) : message(m), usecs(u) {}
+    Completer(boost::intrusive_ptr<PersistableMessage> m, int u) : message(m), usecs(u) {}
     void run() {
         qpid::sys::usleep(usecs);
         message->enqueueComplete();
@@ -82,7 +81,7 @@ class TestStore : public NullMessageStore {
                  const boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& )
     {
-        string data = polymorphic_downcast<Message*>(msg.get())->getFrames().getContent();
+        string data = boost::polymorphic_downcast<Message*>(msg.get())->getFrames().getContent();
 
         // Check the message for special instructions.
         size_t i = string::npos;
@@ -106,7 +105,7 @@ class TestStore : public NullMessageStore {
             }
             else if (strncmp(action.c_str(), ASYNC.c_str(), strlen(ASYNC.c_str())) == 0) {
                 std::string delayStr(action.substr(ASYNC.size()));
-                int delay = lexical_cast<int>(delayStr);
+                int delay = boost::lexical_cast<int>(delayStr);
                 threads.push_back(Thread(*new Completer(msg, delay)));
             }
             else {
