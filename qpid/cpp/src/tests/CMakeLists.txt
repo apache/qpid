@@ -290,6 +290,7 @@ endif (BUILD_ACL)
 endif (PYTHON_EXECUTABLE)
 
 add_library(test_store MODULE test_store.cpp)
+target_link_libraries (test_store qpidbroker qpidcommon)
 set_target_properties (test_store PROPERTIES PREFIX "")
 
 #EXTRA_DIST +=								\
