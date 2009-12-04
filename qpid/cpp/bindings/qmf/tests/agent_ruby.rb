@@ -83,7 +83,7 @@ end
 
 class App < Qmf::AgentHandler
   def get_query(context, query, userId)
-#   puts "Query: user=#{userId} context=#{context} class=#{query.class_name} object_num=#{query.object_id.object_num_low if query.object_id}"
+#    puts "Query: user=#{userId} context=#{context} class=#{query.class_name} object_num=#{query.object_id if query.object_id}"
     if query.class_name == 'parent'
         @agent.query_response(context, @parent)
     elsif query.object_id == @parent_oid
@@ -93,7 +93,7 @@ class App < Qmf::AgentHandler
   end
 
   def method_call(context, name, object_id, args, userId)
-#    puts "Method: user=#{userId} context=#{context} method=#{name} object_num=#{object_id.object_num_low if object_id} args=#{args}"
+#    puts "Method: user=#{userId} context=#{context} method=#{name} object_num=#{object_id if object_id} args=#{args}"
     
     retCode = 0
     retText = "OK"

@@ -51,15 +51,15 @@ namespace engine {
         void encode(qpid::framing::Buffer& buffer) const;
         void fromString(const std::string& repr);
         const std::string& asString() const;
-        uint8_t getFlags() const { return (first & 0xF000000000000000LL) >> 60; }
-        uint16_t getSequence() const { return (first & 0x0FFF000000000000LL) >> 48; }
-        uint32_t getBrokerBank() const { return (first & 0x0000FFFFF0000000LL) >> 28; }
-        uint32_t getAgentBank() const { return first & 0x000000000FFFFFFFLL; }
-        uint64_t getObjectNum() const { return second; }
-        uint32_t getObjectNumHi() const { return (uint32_t) (second >> 32); }
-        uint32_t getObjectNumLo() const { return (uint32_t) (second & 0x00000000FFFFFFFFLL); }
+        uint8_t getFlags() const;
+        uint16_t getSequence() const;
+        uint32_t getBrokerBank() const;
+        uint32_t getAgentBank() const;
+        uint64_t getObjectNum() const;
+        uint32_t getObjectNumHi() const;
+        uint32_t getObjectNumLo() const;
         bool isDurable() const { return getSequence() == 0; }
-        void setValue(uint64_t f, uint64_t s) { first = f; second = s; }
+        void setValue(uint64_t f, uint64_t s) { first = f; second = s; agent = 0; }
 
         bool operator==(const ObjectIdImpl& other) const;
         bool operator<(const ObjectIdImpl& other) const;

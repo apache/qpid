@@ -472,8 +472,7 @@ module Qmf
     end
 
     def ==(other)
-      return (@impl.getObjectNumHi == other.impl.getObjectNumHi) &&
-        (@impl.getObjectNumLo == other.impl.getObjectNumLo)
+      return @impl == other.impl
     end
 
     def to_s
