@@ -22,6 +22,8 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.subscription.Subscription;
 
+import java.text.MessageFormat;
+
 public class SubscriptionLogSubject extends AbstractLogSubject
 {
 
@@ -31,9 +33,8 @@ public class SubscriptionLogSubject extends AbstractLogSubject
      * these indices:
      *
      * 0 - Subscription ID
-     * 1 - queue name
      */
-    public static String SUBSCRIPTION_FORMAT = "sub:{0}(vh(/{1})/qu({2}))";
+    public static String SUBSCRIPTION_FORMAT = "sub:{0}";
 
     /**
      * Create an QueueLogSubject that Logs in the following format.
@@ -42,8 +43,20 @@ public class SubscriptionLogSubject extends AbstractLogSubject
      */
     public SubscriptionLogSubject(Subscription subscription)
     {
-        setLogStringWithFormat(SUBSCRIPTION_FORMAT, subscription.getSubscriptionID(),
-                               subscription.getQueue().getVirtualHost().getName(),
-                               subscription.getQueue().getName());
+        // Delegate the formating of the Queue to the QueueLogSubject. So final
+        // log string format is:
+        // [ sub:<id>(vh(<vhost>)/qu(<queue>)) ]
+
+        String queueString = new QueueLogSubject(subscription.getQueue()).toString();
+
+        _logString = "[" + MessageFormat.format(SubscriptionLogSubject.SUBSCRIPTION_FORMAT,
+                                                subscription.getSubscriptionID())
+                     + "("
+                     // queueString is [vh(/{0})/qu({1}) ] so need to trim
+                     //                ^                ^^
+                     + queueString.substring(1,queueString.length() - 3)
+                     + ")"
+                     + "] ";
+
     }
 }

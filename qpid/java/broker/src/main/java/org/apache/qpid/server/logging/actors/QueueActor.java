@@ -32,7 +32,7 @@ import java.text.MessageFormat;
  */
 public class QueueActor extends AbstractActor
 {
-    private final String _logString;
+    private QueueLogSubject _logSubject;
 
     /**
      * Create an QueueLogSubject that Logs in the following format.
@@ -44,14 +44,12 @@ public class QueueActor extends AbstractActor
     {
         super(rootLogger);
 
-        _logString = "[" + MessageFormat.format(QueueLogSubject.QUEUE_FORMAT,
-                                                queue.getVirtualHost().getName(),
-                                                queue.getName()) + "] ";
+        _logSubject = new QueueLogSubject(queue);
     }
 
     public String getLogMessage()
     {
-        return _logString;
+        return _logSubject.toString();
     }
 }
     
