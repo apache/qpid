@@ -35,7 +35,6 @@ from qmfengine import (TYPE_ABSTIME, TYPE_ARRAY, TYPE_BOOL, TYPE_DELTATIME,
 from qmfengine import (O_EQ, O_NE, O_LT, O_LE, O_GT, O_GE, O_RE_MATCH, O_RE_NOMATCH,
                        E_NOT, E_AND, E_OR, E_XOR)
 
-
   ##==============================================================================
   ## CONNECTION
   ##==============================================================================
@@ -561,9 +560,7 @@ class ObjectId:
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__): return False
-        return (self.impl.getObjectNumHi() == other.impl.getObjectNumHi() and
-                self.impl.getObjectNumLo() == other.impl.getObjectNumLo())
-    
+        return self.impl == other.impl
     
     def __ne__(self, other):
         return not self.__eq__(other)

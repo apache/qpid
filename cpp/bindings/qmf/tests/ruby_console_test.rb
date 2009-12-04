@@ -214,9 +214,21 @@ class ConsoleTest < ConsoleTestBase
     fail("Didn't find a non-broker agent")
   end
 
+  def test_E_filter_by_object_id
+    mgmt_exchange = @qmfc.object(:class => "exchange", 'name' => "qpid.management")
+    assert(mgmt_exchange, "No Management Exchange")
+
+    bindings = @qmfc.objects(:class => "binding", 'exchangeRef' => mgmt_exchange.object_id)
+    if bindings.size == 0
+      fail("No bindings found on management exchange")
+    end
+
+    bindings.each do |binding|
+      assert_equal(binding.exchangeRef, mgmt_exchange.object_id)
+    end
+  end
+
 end
 
 app = ConsoleTest.new
-
-
 

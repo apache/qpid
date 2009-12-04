@@ -24,7 +24,6 @@ using namespace std;
 using namespace qmf::engine;
 using qpid::framing::Buffer;
 
-
 void AgentAttachment::setBanks(uint32_t broker, uint32_t agent)
 {
     first =
@@ -121,25 +120,57 @@ const string& ObjectIdImpl::asString() const
     return repr;
 }
 
+#define ACTUAL_FIRST (agent == 0 ? first : first | agent->first)
+#define ACTUAL_OTHER (other.agent == 0 ? other.first : other.first | other.agent->first)
+
+uint8_t ObjectIdImpl::getFlags() const
+{
+    return (ACTUAL_FIRST & 0xF000000000000000LL) >> 60;
+}
+
+uint16_t ObjectIdImpl::getSequence() const
+{
+    return (ACTUAL_FIRST & 0x0FFF000000000000LL) >> 48;
+}
+
+uint32_t ObjectIdImpl::getBrokerBank() const
+{
+    return (ACTUAL_FIRST & 0x0000FFFFF0000000LL) >> 28;
+}
+
+uint32_t ObjectIdImpl::getAgentBank() const
+{
+    return ACTUAL_FIRST & 0x000000000FFFFFFFLL;
+}
+
+uint64_t ObjectIdImpl::getObjectNum() const
+{
+    return second;
+}
+
+uint32_t ObjectIdImpl::getObjectNumHi() const
+{
+    return (uint32_t) (second >> 32);
+}
+
+uint32_t ObjectIdImpl::getObjectNumLo() const
+{
+    return (uint32_t) (second & 0x00000000FFFFFFFFLL);
+}
+
 bool ObjectIdImpl::operator==(const ObjectIdImpl& other) const
 {
-    uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
-
-    return first == otherFirst && second == other.second;
+    return ACTUAL_FIRST == ACTUAL_OTHER && second == other.second;
 }
 
 bool ObjectIdImpl::operator<(const ObjectIdImpl& other) const
 {
-    uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
-
-    return (first < otherFirst) || ((first == otherFirst) && (second < other.second));
+    return (ACTUAL_FIRST < ACTUAL_OTHER) || ((ACTUAL_FIRST == ACTUAL_OTHER) && (second < other.second));
 }
 
 bool ObjectIdImpl::operator>(const ObjectIdImpl& other) const
 {
-    uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
-
-    return (first > otherFirst) || ((first == otherFirst) && (second > other.second));
+    return (ACTUAL_FIRST > ACTUAL_OTHER) || ((ACTUAL_FIRST == ACTUAL_OTHER) && (second > other.second));
 }
 
 

@@ -151,6 +151,21 @@ class QmfInteropTests(TestBase010):
         newList = qmf.getObjects(_objectId=parent.getObjectId())
         self.assertEqual(len(newList), 1)
 
+    def test_E_filter_by_object_id(self):
+        self.startQmf()
+        qmf = self.qmf
+
+        list = qmf.getObjects(_class="exchange", name="qpid.management")
+        self.assertEqual(len(list), 1, "No Management Exchange")
+        mgmt_exchange = list[0]
+
+        bindings = qmf.getObjects(_class="binding", exchangeRef=mgmt_exchange.getObjectId())
+        if len(bindings) == 0:
+            self.fail("No bindings found on management exchange")
+
+        for binding in bindings:
+            self.assertEqual(binding.exchangeRef, mgmt_exchange.getObjectId())
+
     def getProperty(self, msg, name):
         for h in msg.headers:
             if hasattr(h, name): return getattr(h, name)
