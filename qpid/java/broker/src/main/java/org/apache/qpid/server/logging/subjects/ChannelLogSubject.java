@@ -43,12 +43,25 @@ public class ChannelLogSubject extends AbstractLogSubject
     {
         AMQProtocolSession session = channel.getProtocolSession();
 
-        // Provide the value for the 4th replacement.
+        /**
+         * LOG FORMAT used by the AMQPConnectorActor follows
+         * ChannelLogSubject.CHANNEL_FORMAT :
+         * con:{0}({1}@{2}/{3})/ch:{4}
+         *
+         * Uses a MessageFormat call to insert the required values according to
+         * these indices:
+         *
+         * 0 - Connection ID
+         * 1 - User ID
+         * 2 - IP
+         * 3 - Virtualhost
+         * 4 - Channel ID
+         */
         setLogStringWithFormat(CHANNEL_FORMAT,
-              session.getSessionID(),
-              session.getPrincipal().getName(),
-              session.getRemoteAddress(),
-              session.getVirtualHost().getName(),
-              channel.getChannelId());
+                               session.getSessionID(),
+                               session.getAuthorizedID().getName(),
+                               session.getRemoteAddress(),
+                               session.getVirtualHost().getName(),
+                               channel.getChannelId());
     }
 }

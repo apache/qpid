@@ -36,7 +36,7 @@ public abstract class AbstractLogSubject implements LogSubject
     /**
      * The logString that will be returned via toString
      */
-    protected String logString;
+    protected String _logString;
 
     /**
      * Set the toString logging of this LogSubject. Based on a format provided
@@ -46,7 +46,7 @@ public abstract class AbstractLogSubject implements LogSubject
      */
     protected void setLogStringWithFormat(String format, Object... args)
     {
-        logString = "[" + MessageFormat.format(format, args) + "] ";
+        _logString = "[" + MessageFormat.format(format, args) + "] ";
     }
 
     /**
@@ -58,7 +58,7 @@ public abstract class AbstractLogSubject implements LogSubject
     @Override
     public String toString()
     {
-        return logString;
+        return _logString;
     }
 
 }
