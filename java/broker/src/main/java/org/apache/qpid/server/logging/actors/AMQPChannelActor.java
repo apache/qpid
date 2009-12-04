@@ -40,7 +40,7 @@ import java.text.MessageFormat;
  */
 public class AMQPChannelActor extends AbstractActor
 {
-    private final String _logString;
+    private final ChannelLogSubject _logString;
 
     /**
      * Create a new ChannelActor
@@ -52,33 +52,13 @@ public class AMQPChannelActor extends AbstractActor
     {
         super(rootLogger);
 
-        AMQProtocolSession session = channel.getProtocolSession();
 
-        /**
-         * LOG FORMAT used by the AMQPConnectorActor follows
-         * ChannelLogSubject.CHANNEL_FORMAT :
-         * con:{0}({1}@{2}/{3})/ch:{4}
-         *
-         * Uses a MessageFormat call to insert the requried values according to
-         * these indicies:
-         *
-         * 0 - Connection ID
-         * 1 - User ID
-         * 2 - IP
-         * 3 - Virtualhost
-         */
-        _logString = "[" + MessageFormat.format(ChannelLogSubject.CHANNEL_FORMAT,
-                                               session.getSessionID(),
-                                               session.getPrincipal().getName(),
-                                               session.getRemoteAddress(),
-                                               session.getVirtualHost().getName(),
-                                               channel.getChannelId())
-                    + "] ";
+        _logString = new ChannelLogSubject(channel);
     }
 
     public String getLogMessage()
     {
-        return _logString;
+        return _logString.toString();
     }
 }
 

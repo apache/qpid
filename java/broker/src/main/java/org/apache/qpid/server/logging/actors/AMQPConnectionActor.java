@@ -24,7 +24,7 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
-import java.text.MessageFormat;
+
 
 /**
  * An AMQPConnectionActor represtents a connectionthrough the AMQP port.
@@ -37,99 +37,18 @@ import java.text.MessageFormat;
  */
 public class AMQPConnectionActor extends AbstractActor
 {
-    /**
-     * 0 - Connection ID
-     * 1 - Remote Address
-     */
-    public static String SOCKET_FORMAT = "con:{0}({1})";
-
-    /**
-     * LOG FORMAT for the ConnectionLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
-     *
-     * 0 - Connection ID
-     * 1 - User ID
-     * 2 - IP
-     */
-    public static final String USER_FORMAT = "con:{0}({1}@{2})";
-
-    // The log string prefix for each message
-    private String _logString;
-
-    // The Session this Actor is representing
-    private AMQProtocolSession _session;
-
-    // Used to stop re-creating the _logString when we reach our final format
-    private boolean _upToDate = false;
+    private ConnectionLogSubject _logSubject;
 
     public AMQPConnectionActor(AMQProtocolSession session, RootMessageLogger rootLogger)
     {
         super(rootLogger);
 
-        _logString = "[" + MessageFormat.format(SOCKET_FORMAT,
-                                                session.getSessionID(),
-                                                session.getRemoteAddress())
-                     + "] ";
-
-        _session = session;
-    }
-
-    /**
-     * Update the LogString as the Connection process proceeds.
-     *
-     * When the Session has an authorized ID add that to the string.
-     *
-     * When the Session then gains a Vhost add that to the string, at this point
-     * we can set upToDate = true as the _logString will not need to be updated
-     * from this point onwards.
-     */
-    private void updateLogString()
-    {
-        if (!_upToDate)
-        {
-            if (_session.getPrincipal() != null)
-            {
-                if (_session.getVirtualHost() != null)
-                {
-                    /**
-                     * LOG FORMAT used by the AMQPConnectorActor follows
-                     * ConnectionLogSubject.CONNECTION_FORMAT :
-                     * con:{0}({1}@{2}/{3})
-                     *
-                     * Uses a MessageFormat call to insert the required values according to
-                     * these indices:
-                     *
-                     * 0 - Connection ID
-                     * 1 - User ID
-                     * 2 - IP
-                     * 3 - Virtualhost
-                     */
-                    _logString = "[" + MessageFormat.format(ConnectionLogSubject.CONNECTION_FORMAT,
-                                                            _session.getSessionID(),
-                                                            _session.getPrincipal().getName(),
-                                                            _session.getRemoteAddress(),
-                                                            _session.getVirtualHost().getName())
-                                 + "] ";
-                    _upToDate = true;
-                }
-                else
-                {
-                    _logString = "[" + MessageFormat.format(USER_FORMAT,
-                                                            _session.getSessionID(),
-                                                            _session.getPrincipal().getName(),
-                                                            _session.getRemoteAddress())
-                                 + "] ";
-
-                }
-            }
-        }
+        _logSubject = new ConnectionLogSubject(session);
     }
 
     public String getLogMessage()
     {
-        updateLogString();
-        return _logString;
+        return _logSubject.toString();
     }
 }
 

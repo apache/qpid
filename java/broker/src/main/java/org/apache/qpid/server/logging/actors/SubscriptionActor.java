@@ -27,24 +27,23 @@ import org.apache.qpid.server.subscription.Subscription;
 
 import java.text.MessageFormat;
 
+/**
+ * The subscription actor provides formatted logging for actions that are
+ * performed by the subsciption. Such as SUB_STATE changes.
+ */
 public class SubscriptionActor extends AbstractActor
 {
-    public static String SUBSCRIBER_FORMAT = "sub:{0}(vh({1})/qu({2}))";
-    private final String _logString;
+    private SubscriptionLogSubject _logSubject;
 
     public SubscriptionActor(RootMessageLogger logger, Subscription subscription)
     {
         super(logger);
 
-        _logString = "[" + MessageFormat.format(SubscriptionLogSubject.SUBSCRIPTION_FORMAT,
-                                                subscription.getSubscriptionID(),
-                                                subscription.getQueue().getVirtualHost().getName(),
-                                                subscription.getQueue().getName())
-                     + "] ";
+        _logSubject = new SubscriptionLogSubject(subscription);
     }
 
     public String getLogMessage()
     {
-        return _logString;
+        return _logSubject.toString();
     }
 }
