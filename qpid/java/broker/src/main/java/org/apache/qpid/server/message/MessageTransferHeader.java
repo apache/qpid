@@ -44,7 +44,14 @@ class MessageTransferHeader implements AMQMessageHeader
 
     public String getCorrelationId()
     {
-        return _messageProps == null ? null : new String(_messageProps.getCorrelationId());
+        if (_messageProps != null && _messageProps.getCorrelationId() != null)
+        {
+            return new String(_messageProps.getCorrelationId());
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public long getExpiration()
@@ -88,7 +95,14 @@ class MessageTransferHeader implements AMQMessageHeader
 
     public String getReplyTo()
     {
-        return _messageProps == null ? null : _messageProps.getReplyTo().toString();
+        if (_messageProps != null && _messageProps.getReplyTo() != null)
+        {
+            return _messageProps.getReplyTo().toString();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public Object getHeader(String name)
