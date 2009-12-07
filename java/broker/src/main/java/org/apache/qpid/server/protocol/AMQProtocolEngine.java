@@ -178,6 +178,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
+
+        _logSubject = new ConnectionLogSubject(this);
+
         _actor.message(ConnectionMessages.CON_OPEN(null, null, false, false));
 
     }
@@ -897,8 +900,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public void setVirtualHost(VirtualHost virtualHost) throws AMQException
     {
         _virtualHost = virtualHost;
-
-        _logSubject = new ConnectionLogSubject(this);
 
         _virtualHost.getConnectionRegistry().registerConnection(this);
 
