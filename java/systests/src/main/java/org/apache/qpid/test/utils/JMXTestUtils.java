@@ -142,7 +142,7 @@ public class JMXTestUtils
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 
-        _test.assertEquals("Incorrect number of exchange with name '" + queue +
+        _test.assertEquals("Incorrect number of queues with name '" + allObject.querystring +
                            "' returned", 1, objectNames.size());
 
         // We have verified we have only one value in objectNames so return it
