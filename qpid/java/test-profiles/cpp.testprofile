@@ -16,4 +16,4 @@ broker.args=
 broker=${broker.executable} -p @PORT --data-dir ${build.data}/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
 
 profile.excludes=010PrefetchExcludes 010TransientExcludes
-test.excludes=Excludes 010Excludes ${profile}.excludes ${profile.excludes}
+test.excludes=Excludes 010Excludes ${profile}.excludes ${profile.excludes} cpp.excludes
