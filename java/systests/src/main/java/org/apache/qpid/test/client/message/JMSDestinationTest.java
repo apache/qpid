@@ -57,6 +57,9 @@ public class JMSDestinationTest extends QpidTestCase implements MessageListener
 
     public void setUp() throws Exception
     {
+        //Ensure JMX management is enabled for MovedToQueue test 
+        setConfigurationProperty("management.enabled", "true");
+        
         super.setUp();
 
         _connection = getConnection();

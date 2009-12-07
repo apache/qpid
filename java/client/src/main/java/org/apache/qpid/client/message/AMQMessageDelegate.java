@@ -22,7 +22,6 @@
 package org.apache.qpid.client.message;
 
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
