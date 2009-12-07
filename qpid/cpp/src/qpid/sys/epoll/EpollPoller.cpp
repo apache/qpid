@@ -25,6 +25,7 @@
 #include "qpid/sys/DeletionManager.h"
 #include "qpid/sys/posix/check.h"
 #include "qpid/sys/posix/PrivatePosix.h"
+#include "qpid/log/Statement.h"
 
 #include <sys/epoll.h>
 #include <errno.h>
@@ -467,28 +468,35 @@ bool Poller::interrupt(PollerHandle& handle) {
 }
 
 void Poller::run() {
-    // Make sure we can't be interrupted by signals at a bad time
-    ::sigset_t ss;
-    ::sigfillset(&ss);
-    ::pthread_sigmask(SIG_SETMASK, &ss, 0);
+    // Ensure that we exit thread responsibly under all circumstances
+    try {
+        // Make sure we can't be interrupted by signals at a bad time
+        ::sigset_t ss;
+        ::sigfillset(&ss);
+        ::pthread_sigmask(SIG_SETMASK, &ss, 0);
 
-    do {
-        Event event = wait();
+        do {
+            Event event = wait();
 
-        // If can read/write then dispatch appropriate callbacks
-        if (event.handle) {
-            event.process();
-        } else {
-            // Handle shutdown
-            switch (event.type) {
-            case SHUTDOWN:
-                return;
-            default:
-                // This should be impossible
-                assert(false);
+            // If can read/write then dispatch appropriate callbacks
+            if (event.handle) {
+                event.process();
+            } else {
+                // Handle shutdown
+                switch (event.type) {
+                case SHUTDOWN:
+                    PollerHandleDeletionManager.destroyThreadState();
+                    return;
+                default:
+                    // This should be impossible
+                    assert(false);
+                }
             }
-        }
-    } while (true);
+        } while (true);
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "IO worker thread exiting with unhandled exception: " << e.what());
+    }
+    PollerHandleDeletionManager.destroyThreadState();
 }
 
 Poller::Event Poller::wait(Duration timeout) {
