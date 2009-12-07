@@ -784,11 +784,11 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
                 break;
         }
+
     }
 
     void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
-        msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
 
