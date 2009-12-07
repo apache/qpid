@@ -33,6 +33,7 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 
@@ -403,13 +404,25 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                     ContentHeaderBody headerBody = msg.getContentHeaderBody();
                     // Create header attributes list
                     String[] headerAttributes = getMessageHeaderProperties(headerBody);
-                    Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position};
+                    Object[] itemValues = {msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position};
                     CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
                     _messageList.put(messageData);
+
                 }
                 else
                 {
-                    // TODO 0-10 Message
+                    // We have a 0-10 message
+                    if (serverMsg instanceof MessageTransferMessage)
+                    {
+                        MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
+
+                        AMQMessageHeader header = msg.getMessageHeader();
+                        // Create header attributes list
+                        String[] headerAttributes = getAMQMessageHeaderProperties(header);
+                        Object[] itemValues = {msg.getMessageNumber(), headerAttributes, msg.getSize(), queueEntry.isRedelivered(), position};
+                        CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
+                        _messageList.put(messageData);
+                    }
                 }
             }
         }
@@ -447,6 +460,37 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         list.add("JMSExpiration = " + strDate);
 
         longDate = headerProperties.getTimestamp();
+        strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
+        list.add("JMSTimestamp = " + strDate);
+
+        return list.toArray(new String[list.size()]);
+    }
+
+    private String[] getAMQMessageHeaderProperties(AMQMessageHeader header)
+    {
+        List<String> list = new ArrayList<String>();
+
+        list.add("reply-to = " + header.getReplyTo());
+        //TODO - Complete header property extraction
+//        list.add("propertyFlags = " + header.getgetPropertyFlags());
+//        list.add("ApplicationID = " + header.getAppIdAsString());
+//        list.add("ClusterID = " + header.getClusterIdAsString());
+//        list.add("UserId = " + header.getUserIdAsString());
+        list.add("JMSMessageID = " + header.getMessageId());
+        list.add("JMSCorrelationID = " + header.getCorrelationId());
+        
+//        int delMode = header.getDeliveryMode();
+//        list.add("JMSDeliveryMode = " +
+//                 ((delMode == BasicContentHeaderProperties.PERSISTENT) ? "Persistent" : "Non_Persistent"));
+
+        list.add("JMSPriority = " + header.getPriority());
+        list.add("JMSType = " + header.getType());
+
+        long longDate = header.getExpiration();
+        String strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
+        list.add("JMSExpiration = " + strDate);
+
+        longDate = header.getTimestamp();
         strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
         list.add("JMSTimestamp = " + strDate);
 
