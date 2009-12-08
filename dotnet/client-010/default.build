@@ -207,7 +207,7 @@
         </nant>
       
         <!-- copy config files over to the output dir -->
-        <copy todir="${build.dir}" file="test/test.config"/>
+        <copy todir="${build.dir}" file="test/Qpid Test.dll.config"/>
         <copy todir="${build.dir}" file="log.xml"/>
 
         
