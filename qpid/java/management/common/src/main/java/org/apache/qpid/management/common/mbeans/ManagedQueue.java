@@ -68,6 +68,9 @@ public interface ManagedQueue
     String ATTR_MSG_COUNT = "MessageCount";
     String ATTR_QUEUE_DEPTH = "QueueDepth";
     String ATTR_RCVD_MSG_COUNT = "ReceivedMessageCount";
+    String ATTR_CAPACITY = "Capacity";
+    String ATTR_FLOW_OVERFULL = "FlowOverfull";
+    String ATTR_FLOW_RESUME_CAPACITY = "FlowResumeCapacity";
     
     //All attribute names constant
     String[] QUEUE_ATTRIBUTES = new String[]{
@@ -83,7 +86,10 @@ public interface ManagedQueue
             ATTR_ACTIVE_CONSUMER_COUNT,
             ATTR_MSG_COUNT,
             ATTR_QUEUE_DEPTH,
-            ATTR_RCVD_MSG_COUNT
+            ATTR_RCVD_MSG_COUNT,
+            ATTR_CAPACITY,
+            ATTR_FLOW_OVERFULL,
+            ATTR_FLOW_RESUME_CAPACITY
     };
     
     /**
@@ -230,7 +236,56 @@ public interface ManagedQueue
      */
     @MBeanAttribute(name="MaximumQueueDepth", description="The threshold high value(Bytes) for Queue Depth")
     void setMaximumQueueDepth(Long value) throws IOException;
+    
+    
+    /**
+     * Returns the current flow control Capacity of the queue in bytes.
+     * 
+     * @since Qpid JMX API 1.6
+     * @return Capacity at which flow control is enforced
+     * @throws IOException
+     */
+    Long getCapacity() throws IOException;
 
+    /**
+     * Sets the Capacity in bytes above which flow is blocked.
+     * 
+     * @since Qpid JMX API 1.6
+     * @param value the capacity in bytes
+     * @throws IOException
+     * @throws IllegalArgumentException If the given value is less than the queue FloeResumeCapacity
+     */
+    @MBeanAttribute(name="Capacity", description="The flow control Capacity (Bytes) of the queue")
+    void setCapacity(Long value) throws IOException, IllegalArgumentException;
+    
+    /**
+     * Returns the current flow control FlowResumeCapacity of the queue in bytes.
+     * 
+     * @since Qpid JMX API 1.6
+     * @return Capacity below which flow resumes in bytes
+     * @throws IOException
+     */
+    Long getFlowResumeCapacity() throws IOException;
+
+    /**
+     * Sets the FlowResumeCapacity in bytes below which flow resumes.
+     * 
+     * @since Qpid JMX API 1.6
+     * @param value of the resume capacity in bytes
+     * @throws IOException
+     * @throws IllegalArgumentException If the given value exceeds the queue Capacity
+     */
+    @MBeanAttribute(name="FlowResumeCapacity", description="The flow resume Capacity (Bytes) of the queue")
+    void setFlowResumeCapacity(Long value) throws IOException, IllegalArgumentException;
+
+    /**
+     * Indicates whether the Queue is currently considered overfull by the FlowControl system
+     * 
+     * @since Qpid JMX API 1.6
+     * @throws IOException
+     */
+    @MBeanAttribute(name="FlowOverfull", description="true if the queue is considered overfull by the Flow Control system")
+    boolean isFlowOverfull() throws IOException;
 
     //********** Operations *****************//
 
