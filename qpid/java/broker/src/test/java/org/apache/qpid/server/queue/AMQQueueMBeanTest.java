@@ -337,12 +337,16 @@ public class AMQQueueMBeanTest extends TestCase
             assertTrue(_queueMBean.getFlowResumeCapacity() == 0);
         }
         
-        //(FlowResume)Capacity currently 0, set both to 2 then try setting Capacity below this
+        //add a message to the queue
+        sendMessages(1, true);
+
+        //(FlowResume)Capacity currently 0, set both to 2
         _queueMBean.setCapacity(2L);
         assertTrue(_queueMBean.getCapacity() == 2L);
         _queueMBean.setFlowResumeCapacity(2L);
         assertTrue(_queueMBean.getFlowResumeCapacity() == 2L);
         
+        //Try setting Capacity below FlowResumeCapacity
         try
         {
             _queueMBean.setCapacity(1L);
@@ -354,27 +358,16 @@ public class AMQQueueMBeanTest extends TestCase
             assertTrue(_queueMBean.getCapacity() == 2);
         }
         
-        //set (FlowResume)Capacity to MESSAGE_SIZE +1 then add a message to the queue
-        _queueMBean.setCapacity(MESSAGE_SIZE + 1);
-        _queueMBean.setFlowResumeCapacity(MESSAGE_SIZE + 1);
-
+        //create a channel and use it to exercise the capacity check mechanism
         AMQChannel channel = new AMQChannel(_protocolSession, 1, _messageStore);
-        sendMessages(1, true);
-        _queue.checkCapacity(channel);
-        
-        assertFalse(_queueMBean.isFlowOverfull());
-        assertFalse(channel.getBlocking());
-        
-        //add another message then check queue is now overfull and channel blocked
-        sendMessages(1, true);
         _queue.checkCapacity(channel);
         
         assertTrue(_queueMBean.isFlowOverfull());
         assertTrue(channel.getBlocking());
         
-        //set FlowResumeCapacity to 2x MESSAGE_SIZE and check queue is now underfull and channel unblocked
-        _queueMBean.setCapacity(2 * MESSAGE_SIZE);//must increase capacity too
-        _queueMBean.setFlowResumeCapacity(2 * MESSAGE_SIZE);
+        //set FlowResumeCapacity to MESSAGE_SIZE and check queue is now underfull and channel unblocked
+        _queueMBean.setCapacity(MESSAGE_SIZE);//must increase capacity too
+        _queueMBean.setFlowResumeCapacity(MESSAGE_SIZE);
         
         assertFalse(_queueMBean.isFlowOverfull());
         assertFalse(channel.getBlocking());
