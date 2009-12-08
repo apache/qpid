@@ -20,7 +20,10 @@
  */
 package org.apache.qpid.test.client.message;
 
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.CustomJMSXProperty;
+import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -30,11 +33,13 @@ import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.Topic;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
+import java.nio.BufferOverflowException;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  * When a message is received, its JMSDestination value must be equivalent to
  * the value assigned when it was sent.
  */
-public class JMSDestinationTest extends QpidTestCase implements MessageListener
+public class JMSDestinationTest extends QpidTestCase
 {
 
     private Connection _connection;
@@ -59,7 +64,7 @@ public class JMSDestinationTest extends QpidTestCase implements MessageListener
     {
         //Ensure JMX management is enabled for MovedToQueue test 
         setConfigurationProperty("management.enabled", "true");
-        
+
         super.setUp();
 
         _connection = getConnection();
@@ -129,7 +134,7 @@ public class JMSDestinationTest extends QpidTestCase implements MessageListener
      * current consumer destination.
      *
      * This test can only be run against the Java broker as it uses JMX to move
-     * messages between queues. 
+     * messages between queues.
      *
      * @throws Exception
      */
@@ -158,7 +163,7 @@ public class JMSDestinationTest extends QpidTestCase implements MessageListener
             ManagedQueue managedQueue = jmxUtils.
                     getManagedObject(ManagedQueue.class,
                                      jmxUtils.getQueueObjectName(getConnectionFactory().getVirtualPath().substring(1),
-                                                                  getTestQueueName()));
+                                                                 getTestQueueName()));
 
             // Find the first message on the queue
             TabularData data = managedQueue.viewMessages(1L, 2L);
@@ -220,7 +225,14 @@ public class JMSDestinationTest extends QpidTestCase implements MessageListener
         _message = null;
         _receiveMessage = new CountDownLatch(1);
 
-        consumer.setMessageListener(this);
+        consumer.setMessageListener(new MessageListener()
+        {
+            public void onMessage(Message message)
+            {
+                _message = message;
+                _receiveMessage.countDown();
+            }
+        });
 
         assertTrue("Timed out waiting for message to be received ", _receiveMessage.await(1, TimeUnit.SECONDS));
 
@@ -233,9 +245,102 @@ public class JMSDestinationTest extends QpidTestCase implements MessageListener
         assertEquals("Incorrect Destination type", queue.getClass(), destination.getClass());
     }
 
-    public void onMessage(Message message)
+    /**
+     *
+     * NOTE: On the 0.5.x-dev branch we do not have a multiprotocol java broker
+     * as a result we are unable to test this scenario as we have no way of
+     * putting a messaage on to a broker that does not have the
+     * JMS_QPID_DESTTYPE property set.
+     *
+     * The test has been modified to ensure the received message is just resent.
+     * The check for the existence of JMS_QPID_DESTTYPE has been REMOVED.
+     *
+     * A different code path will be executed to that on trunk as we will be
+     * using 0-8/9 for the original message send so the recieved message will
+     * have JMS_QPID_DESTTYPE already set and so when the message is resent no
+     * work needs to be done.
+     *
+     * -----
+     *
+     * Test a message received without the JMS_QPID_DESTTYPE can be resent
+     * and correctly have the property set.
+     *
+     * To do this we need to create a 0-10 connection and send a message
+     * which is then received by a 0-8/9 client.
+     *
+     * @throws Exception
+     */
+    public void testReceiveResend() throws Exception
     {
-        _message = message;
-        _receiveMessage.countDown();
+        // Create a 0-10 Connection and send message
+//        setSystemProperty(ClientProperties.AMQP_VERSION, "0-10");
+
+        Connection connection010 = getConnection();
+
+        Session session010 = connection010.createSession(true, Session.SESSION_TRANSACTED);
+
+        // Create queue for testing
+        Queue queue = session010.createQueue(getTestQueueName());
+
+        // Ensure queue exists
+        session010.createConsumer(queue).close();
+
+        sendMessage(session010, queue, 1);
+
+        // Close the 010 connection
+        connection010.close();
+
+        // Create a 0-8 Connection and receive message
+//        setSystemProperty(ClientProperties.AMQP_VERSION, "0-8");
+
+        Connection connection08 = getConnection();
+
+        Session session08 = connection08.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        MessageConsumer consumer = session08.createConsumer(queue);
+
+        connection08.start();
+
+        Message message = consumer.receive(1000);
+
+        assertNotNull("Didn't receive 0-10 message.", message);
+
+        // Validate that JMS_QPID_DESTTYPE is not set
+//        try
+//        {
+//            message.getIntProperty(CustomJMSXProperty.JMS_QPID_DESTTYPE.toString());
+//            fail("JMS_QPID_DESTTYPE should not be set, so should throw NumberFormatException");
+//        }
+//        catch (NumberFormatException nfe)
+//        {
+//
+//        }
+
+        // Resend message back to queue and validate that
+        // a) getJMSDestination works without the JMS_QPID_DESTTYPE
+        // b) we can actually send without a BufferOverFlow.
+
+        MessageProducer producer = session08.createProducer(queue);
+
+        try
+        {
+            producer.send(message);
+        }
+        catch (BufferOverflowException bofe)
+        {
+            // Print the stack trace so we can validate where the execption occured.
+            bofe.printStackTrace();
+            fail("BufferOverflowException thrown during send");
+        }
+
+        message = consumer.receive(1000);
+
+        assertNotNull("Didn't receive recent 0-8 message.", message);
+
+        // Validate that JMS_QPID_DESTTYPE is not set
+        assertEquals("JMS_QPID_DESTTYPE should be set to a Queue", AMQDestination.QUEUE_TYPE,
+                     message.getIntProperty(CustomJMSXProperty.JMS_QPID_DESTTYPE.toString()));
+
     }
+
 }
