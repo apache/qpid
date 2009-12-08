@@ -314,6 +314,60 @@ public class AMQQueueMBeanTest extends TestCase
 
         }
     }
+    
+    public void testFlowControlProperties() throws Exception
+    {
+        assertTrue(_queueMBean.getCapacity() == 0);
+        assertTrue(_queueMBean.getFlowResumeCapacity() == 0);
+        assertFalse(_queueMBean.isFlowOverfull());
+        
+        //capacity currently 0, try setting FlowResumeCapacity above this
+        try
+        {
+            _queueMBean.setFlowResumeCapacity(1L);
+            fail("Should have failed to allow setting FlowResumeCapacity above Capacity");
+        }
+        catch (IllegalArgumentException ex)
+        {
+            //expected exception
+            assertTrue(_queueMBean.getFlowResumeCapacity() == 0);
+        }
+        
+        //add a message to the queue
+        sendMessages(1, true);
+
+        //(FlowResume)Capacity currently 0, set both to 2
+        _queueMBean.setCapacity(2L);
+        assertTrue(_queueMBean.getCapacity() == 2L);
+        _queueMBean.setFlowResumeCapacity(2L);
+        assertTrue(_queueMBean.getFlowResumeCapacity() == 2L);
+        
+        //Try setting Capacity below FlowResumeCapacity
+        try
+        {
+            _queueMBean.setCapacity(1L);
+            fail("Should have failed to allow setting Capacity below FlowResumeCapacity");
+        }
+        catch (IllegalArgumentException ex)
+        {
+            //expected exception
+            assertTrue(_queueMBean.getCapacity() == 2);
+        }
+        
+        //create a channel and use it to exercise the capacity check mechanism
+        AMQChannel channel = new AMQChannel(_protocolSession, 1, _messageStore);
+        _queue.checkCapacity(channel);
+        
+        assertTrue(_queueMBean.isFlowOverfull());
+        assertTrue(channel.getBlocking());
+        
+        //set FlowResumeCapacity to MESSAGE_SIZE and check queue is now underfull and channel unblocked
+        _queueMBean.setCapacity(MESSAGE_SIZE);//must increase capacity too
+        _queueMBean.setFlowResumeCapacity(MESSAGE_SIZE);
+        
+        assertFalse(_queueMBean.isFlowOverfull());
+        assertFalse(channel.getBlocking());
+    }
 
     private IncomingMessage message(final boolean immediate, boolean persistent) throws AMQException
     {
