@@ -265,3 +265,55 @@ You should see the following output:
 <wind_speed_mph>16</wind_speed_mph><temperature_f>70</temperature_f>
 <dewpoint>35</dewpoint></weather>
 
+
+Running the Headers Examples
+-----------------------------
+
+To run the headers examples, do the following:
+
+1. Make sure that a qpidd broker is running:
+
+ $ ps -eaf | grep qpidd
+
+  If a broker is running, you should see the qpidd process in the output of the above command. 
+
+2.Declare a message queues and bind them to an exchange by running declare_queues.py, as follows:
+
+ $ python declare_queues.py
+
+ This program has no output. After this program has been run, all messages sent to the amq.match exchange with an application-header of {'class': 'first'} will be routed to the queue named "first" and messages with an application-header of {'class': 'second'} will be routed to the queue named "second".
+
+3.Publish a series of messages to the amq.match exchange by running headers_producer.py, as follows:
+
+ $ python headers_producer.py
+
+This program has no output; the messages are routed to the message queues, as instructed by the bindings.
+
+4. Read the messages from the message queues using headers_consumer.py as follows:
+
+ $ python headers_consumer.py
+
+You should see the following output:
+
+message(first) 0
+message(first) 1
+message(first) 2
+message(first) 3
+message(first) 4
+message(first) 5
+message(first) 6
+message(first) 7
+message(first) 8
+message(first) 9
+That's all, folks!
+message(second) 0
+message(second) 1
+message(second) 2
+message(second) 3
+message(second) 4
+message(second) 5
+message(second) 6
+message(second) 7
+message(second) 8
+message(second) 9
+That's all, folks!
