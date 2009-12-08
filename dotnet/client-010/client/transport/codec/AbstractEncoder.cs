@@ -49,6 +49,7 @@ namespace org.apache.qpid.transport.codec
             ENCODINGS.Add(typeof (Double), Code.DOUBLE);
             ENCODINGS.Add(typeof (char), Code.CHAR);
             ENCODINGS.Add(typeof (byte[]), Code.VBIN32);
+            ENCODINGS.Add(typeof (UUID), Code.UUID);
         }
 
         protected abstract void DoPut(byte b);
