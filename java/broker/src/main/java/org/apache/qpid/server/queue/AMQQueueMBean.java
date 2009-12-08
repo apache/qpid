@@ -241,6 +241,41 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return _queue.getQueueDepth();
     }
 
+    public Long getCapacity()
+    {
+        return _queue.getCapacity();
+    }
+
+    public void setCapacity(Long capacity) throws IllegalArgumentException
+    {
+        if( _queue.getFlowResumeCapacity() > capacity )
+        {
+            throw new IllegalArgumentException("Capacity must not be less than FlowResumeCapacity");
+        }
+        
+    	_queue.setCapacity(capacity);
+    }
+
+    public Long getFlowResumeCapacity()
+    {
+        return _queue.getFlowResumeCapacity();
+    }
+
+    public void setFlowResumeCapacity(Long flowResumeCapacity) throws IllegalArgumentException
+    {
+        if( _queue.getCapacity() < flowResumeCapacity )
+        {
+            throw new IllegalArgumentException("FlowResumeCapacity must not exceed Capacity");
+        }
+        
+        _queue.setFlowResumeCapacity(flowResumeCapacity);
+    }
+    
+    public boolean isFlowOverfull()
+    {
+        return _queue.isOverfull();
+    }
+
     /**
      * Checks if there is any notification to be send to the listeners
      */

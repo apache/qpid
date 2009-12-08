@@ -426,4 +426,9 @@ public class MockAMQQueue implements AMQQueue
     {
         return _name.toString();
     }
+
+    public boolean isOverfull()
+    {
+        return false;
+    }
 }

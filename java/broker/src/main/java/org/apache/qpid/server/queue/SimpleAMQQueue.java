@@ -1799,8 +1799,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public void setFlowResumeCapacity(long flowResumeCapacity)
     {
         _flowResumeCapacity = flowResumeCapacity;
+        
+        checkCapacity();
     }
 
+    public boolean isOverfull()
+    {
+        return _overfull.get();
+    }
 
     public Set<NotificationCheck> getNotificationChecks()
     {

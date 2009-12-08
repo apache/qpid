@@ -186,7 +186,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void setFlowResumeCapacity(long flowResumeCapacity);
 
-
+    boolean isOverfull();
 
     void deleteMessageFromTop();
 
