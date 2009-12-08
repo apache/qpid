@@ -36,6 +36,7 @@ import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.transport.MessageProperties;
 
 import javax.management.JMException;
 import javax.management.MBeanNotificationInfo;
@@ -409,20 +410,24 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                     _messageList.put(messageData);
 
                 }
-                else
+                else if(serverMsg instanceof MessageTransferMessage)
                 {
                     // We have a 0-10 message
-                    if (serverMsg instanceof MessageTransferMessage)
-                    {
-                        MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
+                    MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
 
-                        AMQMessageHeader header = msg.getMessageHeader();
-                        // Create header attributes list
-                        String[] headerAttributes = getAMQMessageHeaderProperties(header);
-                        Object[] itemValues = {msg.getMessageNumber(), headerAttributes, msg.getSize(), queueEntry.isRedelivered(), position};
-                        CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
-                        _messageList.put(messageData);
-                    }
+                    // Create header attributes list
+                    String[] headerAttributes = getMessageTransferMessageHeaderProps(msg);
+                    Object[] itemValues = {msg.getMessageNumber(), headerAttributes, msg.getSize(), queueEntry.isRedelivered(), position};
+                    CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
+                    _messageList.put(messageData);
+                }
+                else
+                {
+                    //unknown message
+                    String[] headerAttributes = new String[]{"N/A"};
+                    Object[] itemValues = { serverMsg.getMessageNumber(), headerAttributes, serverMsg.getSize(), queueEntry.isRedelivered(), position};
+                    CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
+                    _messageList.put(messageData);
                 }
             }
         }
@@ -466,23 +471,30 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return list.toArray(new String[list.size()]);
     }
 
-    private String[] getAMQMessageHeaderProperties(AMQMessageHeader header)
+    private String[] getMessageTransferMessageHeaderProps(MessageTransferMessage msg)
     {
         List<String> list = new ArrayList<String>();
+        
+        AMQMessageHeader header = msg.getMessageHeader();
+        MessageProperties msgProps = msg.getHeader().get(MessageProperties.class);
+
+        String appID = null;
+        String userID = null;
+
+        if(msgProps != null)
+        {
+            appID = msgProps.getAppId() == null ? "null" : new String(msgProps.getAppId());
+            userID = msgProps.getUserId() == null ? "null" : new String(msgProps.getUserId());
+        }
 
         list.add("reply-to = " + header.getReplyTo());
-        //TODO - Complete header property extraction
-//        list.add("propertyFlags = " + header.getgetPropertyFlags());
-//        list.add("ApplicationID = " + header.getAppIdAsString());
-//        list.add("ClusterID = " + header.getClusterIdAsString());
-//        list.add("UserId = " + header.getUserIdAsString());
+        list.add("propertyFlags = "); //TODO
+        list.add("ApplicationID = " + appID);
+        list.add("ClusterID = "); //TODO
+        list.add("UserId = " + userID);
         list.add("JMSMessageID = " + header.getMessageId());
         list.add("JMSCorrelationID = " + header.getCorrelationId());
-        
-//        int delMode = header.getDeliveryMode();
-//        list.add("JMSDeliveryMode = " +
-//                 ((delMode == BasicContentHeaderProperties.PERSISTENT) ? "Persistent" : "Non_Persistent"));
-
+        list.add("JMSDeliveryMode = " + (msg.isPersistent() ? "Persistent" : "Non_Persistent"));
         list.add("JMSPriority = " + header.getPriority());
         list.add("JMSType = " + header.getType());
 
