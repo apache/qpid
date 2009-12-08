@@ -119,6 +119,7 @@ public class JMXTestUtils
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 
+        _test.assertNotNull("Null ObjectName Set returned", objectNames);
         _test.assertEquals("Incorrect number test vhosts returned", 1, objectNames.size());
 
         // We have verified we have only one value in objectNames so return it
@@ -142,6 +143,7 @@ public class JMXTestUtils
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 
+        _test.assertNotNull("Null ObjectName Set returned", objectNames);
         _test.assertEquals("Incorrect number of queues with name '" + allObject.querystring +
                            "' returned", 1, objectNames.size());
 
@@ -167,6 +169,7 @@ public class JMXTestUtils
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 
+        _test.assertNotNull("Null ObjectName Set returned", objectNames);
         _test.assertEquals("Incorrect number of exchange with name '" + exchange +
                            "' returned", 1, objectNames.size());
 
@@ -181,6 +184,7 @@ public class JMXTestUtils
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 
+        _test.assertNotNull("Null ObjectName Set returned", objectNames);
         _test.assertEquals("More than one " + managedClass + " returned", 1, objectNames.size());
 
         ObjectName objectName = objectNames.iterator().next();
