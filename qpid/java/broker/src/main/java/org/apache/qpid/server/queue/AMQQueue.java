@@ -169,7 +169,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void setFlowResumeCapacity(long flowResumeCapacity);
 
-
+    boolean isOverfull();
 
     void deleteMessageFromTop(StoreContext storeContext) throws AMQException;
 

@@ -371,4 +371,9 @@ public class MockAMQQueue implements AMQQueue
         
     }
 
+
+    public boolean isOverfull()
+    {
+        return false;
+    }
 }
