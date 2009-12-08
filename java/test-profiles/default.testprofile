@@ -27,7 +27,7 @@ test.port.alt=25672
 test.port.alt.ssl=25671
 
 test.exclude=true
-profile.excludes=08TransientExcludes
+profile.excludes=08TransientExcludes 08InVMExcludes
 test.excludes=Excludes XAExcludes 08Excludes ${profile}.excludes ${profile.excludes}
 test.fork=no
 test.mem=512M
