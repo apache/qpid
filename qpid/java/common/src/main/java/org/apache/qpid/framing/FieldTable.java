@@ -131,9 +131,10 @@ public class FieldTable
         }
         else if ((_encodedForm != null) && (val != null))
         {
-            EncodingUtils.writeShortStringBytes(_encodedForm, key);
-            val.writeToBuffer(_encodedForm);
-
+            // We have updated data to store in the buffer
+            // So clear the _encodedForm to allow it to be rebuilt later
+            // this is safer than simply appending to any existing buffer.
+            _encodedForm = null;
         }
         else if (val == null)
         {
