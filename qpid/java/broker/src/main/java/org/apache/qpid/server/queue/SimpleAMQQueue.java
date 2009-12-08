@@ -1037,30 +1037,26 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             final ServerMessage message = entry.getMessage();
 
-            if (message.isPersistent() && toQueue.isDurable())
+            txn.enqueue(toQueue, message, new ServerTransaction.Action()
             {
-
-                txn.enqueue(toQueue, message, new ServerTransaction.Action()
+                public void postCommit()
+                {
+                    try
                     {
-                        public void postCommit()
-                        {
-                            try
-                            {
-                                toQueue.enqueue(message);
-                            }
-                            catch (AMQException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
-                        }
+                        toQueue.enqueue(message);
+                    }
+                    catch (AMQException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
 
-                        public void onRollback()
-                        {
+                public void onRollback()
+                {
 
-                        }
-                    });
+                }
+            });
 
-            }
         }
 
     }
