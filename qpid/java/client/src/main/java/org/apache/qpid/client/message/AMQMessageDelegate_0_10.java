@@ -92,18 +92,6 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
         _readableProperties = false;
     }
 
-    protected AMQMessageDelegate_0_10(long deliveryTag, MessageProperties messageProps, DeliveryProperties deliveryProps, AMQShortString exchange,
-                                      AMQShortString routingKey) throws AMQException
-    {
-        this(messageProps, deliveryProps, deliveryTag);
-
-
-        AMQDestination dest;
-
-        dest = generateDestination(exchange, routingKey);
-        setJMSDestination(dest);
-    }
-
     private AMQDestination generateDestination(AMQShortString exchange, AMQShortString routingKey)
     {
         AMQDestination dest;
