@@ -163,10 +163,6 @@ namespace org.apache.qpid.transport
         {
             _sender.Close();
         }
-
-        public override String ToString()
-        {
-            return String.Format("conn:{0}", this);
-        }
     }
+
 }
