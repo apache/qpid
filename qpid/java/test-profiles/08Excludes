@@ -18,3 +18,5 @@ org.apache.qpid.client.SessionCreateTest#*
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
 org.apache.qpid.server.queue.ModelTest#*
 
+// QPID-2242 exclude till issue has been resolved
+org.apache.qpid.test.client.message.JMSDestinationTest#*

@@ -171,6 +171,11 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
         _deliveryTag = deliveryTag;
         _readableProperties = (_messageProps != null);
 
+        AMQDestination dest;
+
+        dest = generateDestination(new AMQShortString(_deliveryProps.getExchange()),
+                                   new AMQShortString(_deliveryProps.getRoutingKey()));
+        setJMSDestination(dest);        
     }
 
 
