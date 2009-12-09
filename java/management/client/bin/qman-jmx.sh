@@ -49,7 +49,9 @@ if [ "$QMAN_CONFIG_FILE" = "" ] ; then
 	QMAN_CONFIG_FILE=$QMAN_HOME/etc/qman-config.xml
 fi
 
-QMAN_LIBS=$QMAN_HOME/lib
+if [ "$QMAN_LIBS" = "" ] ; then
+	QMAN_LIBS=$QMAN_HOME/lib
+fi
 QMAN_CLASSPATH=`find $QMAN_LIBS | tr '\n' ":"`
 QMAN_CLASSPATH=$QMAN_HOME/etc:$QMAN_CLASSPATH
 
