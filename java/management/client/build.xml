@@ -38,6 +38,8 @@
 	
 	</target>
 	
+    <target name="release-bin" depends="release-bin-tasks"/>
+    
 	<target name="resources-release" description="copy resources into module release">
 		<copy todir="${module.release}" failonerror="false" flatten="true">
 			<fileset dir="${resources}" excludes="META-INF">
