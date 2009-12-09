@@ -52,6 +52,15 @@ public class MockAMQQueue implements AMQQueue
        _name = new AMQShortString(name);
     }
 
+    public boolean getDeleteOnNoConsumers()
+    {
+        return false;
+    }
+
+    public void setDeleteOnNoConsumers(boolean b)
+    {        
+    }
+
     public AMQShortString getName()
     {
         return _name;

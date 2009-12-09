@@ -649,6 +649,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _logActor;
     }
 
+    public boolean isTransient()
+    {
+        return false;
+    }
+
     ServerSession getSession()
     {
         return _session;

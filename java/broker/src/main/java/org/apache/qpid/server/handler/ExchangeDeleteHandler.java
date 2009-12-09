@@ -60,6 +60,10 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
 
         try
         {
+            if(exchangeRegistry.getExchange(body.getExchange()) == null)
+            {
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "No such exchange: " + body.getExchange());
+            }
             exchangeRegistry.unregisterExchange(body.getExchange(), body.getIfUnused());
 
             ExchangeDeleteOkBody responseBody = session.getMethodRegistry().createExchangeDeleteOkBody();
@@ -68,6 +72,7 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         }
         catch (ExchangeInUseException e)
         {
+            throw body.getChannelException(AMQConstant.IN_USE, "Exchange in use");
             // TODO: sort out consistent channel close mechanism that does all clean up etc.
         }
 

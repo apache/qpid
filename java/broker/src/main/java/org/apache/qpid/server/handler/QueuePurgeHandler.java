@@ -103,6 +103,11 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
                 if (!virtualHost.getAccessManager().authorisePurge(session, queue))
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+                }            
+                else if (queue.isExclusive() && queue.getExclusiveOwner() != session)
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                      "Queue is exclusive, but not created on this Connection.");
                 }
 
                 long purged = queue.clearQueue();

@@ -114,25 +114,37 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     {
                         store.createQueue(queue, body.getArguments());
                     }
-                    queueRegistry.registerQueue(queue);
-                    if(queue.isExclusive()  && !queue.isAutoDelete())
+                    if(body.getAutoDelete())
                     {
-                        final AMQQueue q = queue;
-                        queue.setExclusiveOwner(session);
-                        final AMQProtocolSession.Task sessionCloseTask = new AMQProtocolSession.Task()
+                        queue.setDeleteOnNoConsumers(true);
+                    }
+                    queueRegistry.registerQueue(queue);
+                    if(body.getExclusive())
+                    {
+                        if(body.getDurable())
                         {
-                            public void doTask(AMQProtocolSession session) throws AMQException
+                            queue.setExclusiveOwner(session.getPrincipal().getName());
+                        }
+                        else
+                        {
+                            final AMQQueue q = queue;
+                            queue.setExclusiveOwner(session);
+                            final AMQProtocolSession.Task sessionCloseTask = new AMQProtocolSession.Task()
                             {
-                                q.setExclusiveOwner(null);
-                            }
-                        };
-                        session.addSessionCloseTask(sessionCloseTask);
-                        queue.addQueueDeleteTask(new AMQQueue.Task() {
-                            public void doTask(AMQQueue queue) throws AMQException
-                            {
-                                session.removeSessionCloseTask(sessionCloseTask);
-                            }
-                        });
+                                public void doTask(AMQProtocolSession session) throws AMQException
+                                {
+                                    q.setExclusiveOwner(null);
+                                }
+                            };
+                            session.addSessionCloseTask(sessionCloseTask);
+                            queue.addQueueDeleteTask(new AMQQueue.Task() {
+                                public void doTask(AMQQueue queue) throws AMQException
+                                {
+                                    session.removeSessionCloseTask(sessionCloseTask);
+                                }
+                            });
+                        }
+
                     }
                     if (autoRegister)
                     {
@@ -143,11 +155,19 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     }
                 }
             }
-            else if (queue.getPrincipalHolder() != null
-                      && queue.getPrincipalHolder().getPrincipal() != null
-                      && queue.getPrincipalHolder().getPrincipal().getName() != null
-                      && (!queue.getPrincipalHolder().getPrincipal().getName().equals(session.getPrincipal().getName())
-                          || ((!body.getPassive() && queue.getExclusiveOwner() != null && queue.getExclusiveOwner() != session))))
+            else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
+            {
+                throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                  "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+            }
+            else if(!body.getPassive() && ((queue.isExclusive()) != body.getExclusive()))
+            {
+
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
+                                                  "Cannot re-declare queue '" + queue.getName() + "' with different exclusivity (was: "
+                                                    + queue.isExclusive() + " requested " + body.getExclusive() + ")");
+            }
+            else if (!body.getPassive() && body.getExclusive() && !queue.getExclusiveOwner().equals(queue.isDurable() ? session.getPrincipal().getName() : session))
             {
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "
@@ -155,6 +175,20 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                                                                            + queue.getPrincipalHolder().getPrincipal().getName() + "')");
 
             }
+            else if(!body.getPassive() && queue.isAutoDelete() != body.getAutoDelete())
+            {
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
+                                                  "Cannot re-declare queue '" + queue.getName() + "' with different auto-delete (was: "
+                                                    + queue.isAutoDelete() + " requested " + body.getAutoDelete() + ")");
+            }
+            else if(!body.getPassive() && queue.isDurable() != body.getDurable())
+            {
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
+                                                  "Cannot re-declare queue '" + queue.getName() + "' with different durability (was: "
+                                                    + queue.isDurable() + " requested " + body.getDurable() + ")");
+            }
+
+
             AMQChannel channel = session.getChannel(channelId);
 
             if (channel == null)

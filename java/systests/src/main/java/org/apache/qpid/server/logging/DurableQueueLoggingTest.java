@@ -249,11 +249,15 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-priorities", PRIORITIES);
         // Need to create a queue that does not exist so use test name
-        ((AMQSession) _session).createQueue(new AMQShortString(getTestQueueName()), false, _durable, false, arguments);
+        final String queueName = getTestQueueName();
+        ((AMQSession) _session).createQueue(new AMQShortString(queueName), false, _durable, false, arguments);
+
+        Queue queue = (Queue) _session.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='"+_durable+"'&autodelete='false'");
+
 
         //Need to create a Consumer to ensure that the log has had time to write
         // as the above Create is Asynchronous
-        _session.createConsumer(_session.createQueue(getTestQueueName()));
+        _session.createConsumer(queue);
 
         // Validation
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
@@ -310,11 +314,15 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-priorities", PRIORITIES);
         // Need to create a queue that does not exist so use test name
-        ((AMQSession) _session).createQueue(new AMQShortString(getTestQueueName()), true, _durable, false, arguments);
+        final String queueName = getTestQueueName() + "-autoDeletePriority";
+        ((AMQSession) _session).createQueue(new AMQShortString(queueName), true, _durable, false, arguments);
+
+        Queue queue = (Queue) _session.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='"+_durable+"'&autodelete='true'");
+
 
         //Need to create a Consumer to ensure that the log has had time to write
         // as the above Create is Asynchronous
-        _session.createConsumer(_session.createQueue(getTestQueueName()));
+        _session.createConsumer(queue);
 
         // Validation
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);

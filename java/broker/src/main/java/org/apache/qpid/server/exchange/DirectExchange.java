@@ -212,7 +212,7 @@ public class DirectExchange extends AbstractExchange
         final String routingKey = payload.getRoutingKey();
 
 
-        final ArrayList<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
+        final ArrayList<AMQQueue> queues = (routingKey == null) ? _index.get("") : _index.get(routingKey);
 
         if (_logger.isDebugEnabled())
         {

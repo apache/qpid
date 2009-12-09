@@ -68,6 +68,14 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
 
         ProtocolVersion pv = new ProtocolVersion((byte) body.getVersionMajor(), (byte) body.getVersionMinor());
 
+        // 0-9-1 is indistinguishable from 0-9 using only major and minor ... if we established the connection as 0-9-1
+        // and now get back major = 0 , minor = 9 then we can assume it means 0-9-1
+
+        if(pv.equals(ProtocolVersion.v0_9) && session.getProtocolVersion().equals(ProtocolVersion.v0_91))
+        {
+            pv = ProtocolVersion.v0_91;
+        }
+
         // For the purposes of interop, we can make the client accept the broker's version string.
         // If it does, it then internally records the version as being the latest one that it understands.
         // It needs to do this since frame lookup is done by version.

@@ -403,9 +403,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _protocolVersion = pv;
         _methodRegistry = MethodRegistry.getMethodRegistry(pv);
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(pv, this);
-
-        //  _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);
-    }
+  }
 
     public byte getProtocolMinorVersion()
     {
@@ -421,11 +419,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         return _protocolVersion;
     }
-
-//    public VersionSpecificRegistry getRegistry()
-//    {
-//        return _registry;
-//    }
 
     public MethodRegistry getMethodRegistry()
     {

@@ -21,7 +21,9 @@
 package org.apache.qpid.test.client.message;
 
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
@@ -57,11 +59,15 @@ public class MessageToStringTest extends QpidTestCase
         //Create Producer put some messages on the queue
         _connection = getConnection();
 
-        //Create Queue
-        _queue = new AMQQueue("amq.direct", "queue");
-
         //Create Consumer
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        String queueName = getTestQueueName();
+
+        //Create Queue
+        ((AMQSession) _session).createQueue(new AMQShortString(queueName), true, false, false);
+        _queue = _session.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
+
 
         _consumer = _session.createConsumer(_queue);
 

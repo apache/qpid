@@ -150,6 +150,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private boolean _nolocal;
 
     private final AtomicBoolean _overfull = new AtomicBoolean(false);
+    private boolean _deleteOnNoConsumers;
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
     {
@@ -374,7 +375,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             throw new ExistingExclusiveSubscription();
         }
 
-        if (exclusive)
+        if (exclusive && !subscription.isTransient())
         {
             if (getConsumerCount() != 0)
             {
@@ -431,7 +432,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             // auto-delete queues must be deleted if there are no remaining subscribers
 
-            if (_autoDelete && getConsumerCount() == 0  && !isExclusive())
+            if (_autoDelete && getDeleteOnNoConsumers() && !subscription.isTransient() && getConsumerCount() == 0  )
             {
                 if (_logger.isInfoEnabled())
                 {
@@ -447,6 +448,17 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
     }
+
+    public boolean getDeleteOnNoConsumers()
+    {
+        return _deleteOnNoConsumers;
+    }
+
+    public void setDeleteOnNoConsumers(boolean b)
+    {
+        _deleteOnNoConsumers = b;
+    }
+
 
     // ------ Enqueue / Dequeue
 

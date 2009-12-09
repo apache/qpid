@@ -823,6 +823,11 @@ public class ServerSessionDelegate extends SessionDelegate
                             queue.setPrincipalHolder((ServerSession)session);
                             queue.setExclusiveOwner(session);
                         }
+                        else if(method.getAutoDelete())
+                        {
+                            queue.setDeleteOnNoConsumers(true);
+                        }
+                        
                         final String alternateExchangeName = method.getAlternateExchange();
                         if(alternateExchangeName != null && alternateExchangeName.length() != 0)
                         {
