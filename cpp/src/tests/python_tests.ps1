@@ -22,7 +22,7 @@
 $srcdir = Split-Path $myInvocation.InvocationName
 $PYTHON_DIR = "$srcdir\..\..\..\python"
 if (!(Test-Path $PYTHON_DIR -pathType Container)) {
-    "Skipping header test as python libs not found"
+    "Skipping python tests as python libs not found"
     exit 1
 }
 
