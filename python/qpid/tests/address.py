@@ -19,12 +19,20 @@
 
 from qpid.tests import Test
 from qpid.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE
+from parser import ParserBase
 
-class AddressTests(Test):
+class AddressTests(ParserBase, Test):
 
-  def lex(self, addr, *types):
-    toks = [t.type for t in lex(addr) if t.type not in (WSPACE, EOF)]
-    assert list(types) == toks, "expected %s, got %s" % (types, toks)
+  EXCLUDE = (WSPACE, EOF)
+
+  def do_lex(self, st):
+    return lex(st)
+
+  def do_parse(self, st):
+    return parse(st)
+
+  def valid(self, addr, name=None, subject=None, options=None):
+    ParserBase.valid(self, addr, (name, subject, options))
 
   def testDashInId1(self):
     self.lex("foo-bar", ID)
@@ -46,18 +54,6 @@ class AddressTests(Test):
 
   def testNegativeNum(self):
     self.lex("-3", NUMBER)
-
-  def valid(self, addr, name=None, subject=None, options=None):
-    expected = (name, subject, options)
-    got = parse(addr)
-    assert expected == got, "expected %s, got %s" % (expected, got)
-
-  def invalid(self, addr, error=None):
-    try:
-      p = parse(addr)
-      assert False, "invalid address parsed: %s" % p
-    except ParseError, e:
-      assert error == str(e), "expected %r, got %r" % (error, str(e))
 
   def testHash(self):
     self.valid("foo/bar.#", "foo", "bar.#")
