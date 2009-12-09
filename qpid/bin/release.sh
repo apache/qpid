@@ -201,6 +201,7 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp qpid-${VER}/java/client/release/*.tar.gz artifacts/qpid-java-client-${VER}.tar.gz
   #cp qpid-${VER}/java/client/example/release/*.tar.gz 
   cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
+  cp qpid-${VER}/java/management/client/release/*.tar.gz artifacts/qpid-management-client-${VER}.tar.gz
 fi
 
 if [ "SIGN" == "$SIGN" ] ; then
