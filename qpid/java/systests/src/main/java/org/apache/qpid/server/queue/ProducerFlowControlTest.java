@@ -107,7 +107,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         arguments.put("x-qpid-capacity",1000);
         arguments.put("x-qpid-flow-resume-capacity",800);
         ((AMQSession) producerSession).createQueue(new AMQShortString(queueName), true, false, false, arguments);
-        queue = new AMQQueue("amq.direct",queueName);
+        queue = producerSession.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
         ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
         producer = producerSession.createProducer(queue);
 
@@ -149,7 +149,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         arguments.put("x-qpid-capacity",1000);
         arguments.put("x-qpid-flow-resume-capacity",800);
         ((AMQSession) producerSession).createQueue(new AMQShortString(queueName), true, false, false, arguments);
-        queue = new AMQQueue("amq.direct",queueName);
+        queue = producerSession.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
         ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
         producer = producerSession.createProducer(queue);
 
@@ -194,7 +194,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         arguments.put("x-qpid-capacity",1000);
         arguments.put("x-qpid-flow-resume-capacity",800);
         ((AMQSession) session).createQueue(new AMQShortString(queueName), true, false, false, arguments);
-        queue = new AMQQueue("amq.direct",queueName);
+        queue = producerSession.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
         ((AMQSession) session).declareAndBind((AMQDestination)queue);
         producer = session.createProducer(queue);
 
@@ -224,7 +224,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         arguments.put("x-qpid-capacity",1000);
         arguments.put("x-qpid-flow-resume-capacity",1000);
         ((AMQSession) producerSession).createQueue(new AMQShortString(queueName), true, false, false, arguments);
-        queue = new AMQQueue("amq.direct",queueName);
+        queue = producerSession.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
         ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
         producer = producerSession.createProducer(queue);
 
@@ -266,7 +266,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
         ((AMQSession) consumerSession).createQueue(new AMQShortString(queueName), false, false, false, arguments);
 
-        queue = new AMQQueue("amq.direct",queueName);
+        queue = producerSession.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='false'");
         ((AMQSession) consumerSession).declareAndBind((AMQDestination)queue);
         consumerConnection.start();
 
@@ -322,7 +322,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         arguments.put("x-qpid-capacity",1000);
         arguments.put("x-qpid-flow-resume-capacity",800);
         ((AMQSession) session).createQueue(new AMQShortString(queueName), true, false, false, arguments);
-        queue = new AMQQueue("amq.direct",queueName);
+        queue = producerSession.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
         ((AMQSession) session).declareAndBind((AMQDestination)queue);
         producer = session.createProducer(queue);
 
@@ -354,7 +354,9 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         arguments.put("x-qpid-capacity",0);
         arguments.put("x-qpid-flow-resume-capacity",0);
         ((AMQSession) producerSession).createQueue(new AMQShortString(queueName), true, false, false, arguments);
-        queue = new AMQQueue("amq.direct",queueName);
+
+        queue = producerSession.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='false'&autodelete='true'");
+
         ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
         producer = producerSession.createProducer(queue);
         

@@ -113,6 +113,11 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
             }
+            else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
+            {
+                throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                  "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+            }
 
             if (!exch.isBound(routingKey, body.getArguments(), queue))
             {

@@ -36,6 +36,7 @@ import javax.naming.Context;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
@@ -61,6 +62,7 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
     private Session _clientSession1;
     private Queue _queue;
     private final CountDownLatch _allMessagesSent = new CountDownLatch(2); // all messages Sent Lock
+    private static final String QUEUE_NAME = "queue" + UUID.randomUUID().toString();
 
     protected void setUp() throws Exception
     {
@@ -73,7 +75,7 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
 
         _clientSession1 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _queue =_clientSession1.createQueue("queue");
+        _queue =_clientSession1.createQueue(QUEUE_NAME);
 
         _consumer1 = _clientSession1.createConsumer(_queue);
 

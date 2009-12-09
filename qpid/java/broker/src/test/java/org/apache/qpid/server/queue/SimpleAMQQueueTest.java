@@ -259,6 +259,7 @@ public class SimpleAMQQueueTest extends TestCase
     {
        _queue.stop();
        _queue = new SimpleAMQQueue(_qname, false, null, true, _virtualHost);
+       _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));
        _queue.enqueue(message);

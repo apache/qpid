@@ -188,6 +188,11 @@ public class SubscriptionTestHelper implements Subscription
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean isTransient()
+    {
+        return false;
+    }
+
     public AMQQueue getQueue()
     {
         return null;

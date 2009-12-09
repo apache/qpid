@@ -97,6 +97,11 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
                 }
+                else if (queue.isExclusive() && queue.getExclusiveOwner() != session)
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                      "Queue is exclusive, but not created on this Connection.");
+                }
 
                 if (!performGet(queue,session, channel, !body.getNoAck()))
                 {
@@ -186,6 +191,11 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             throws AMQException
         {
             super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
+        }
+
+        public boolean isTransient()
+        {
+            return true;
         }
 
         public boolean wouldSuspend(QueueEntry msg)

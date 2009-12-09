@@ -42,6 +42,9 @@ import java.util.Map;
 
 public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource
 {
+    boolean getDeleteOnNoConsumers();
+
+    void setDeleteOnNoConsumers(boolean b);
 
 
     public interface Context

@@ -667,6 +667,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return !isBrowser();
     }
 
+    public boolean isTransient()
+    {
+        return false;
+    }
+
     public void set(String key, Object value)
     {
         _properties.put(key, value);

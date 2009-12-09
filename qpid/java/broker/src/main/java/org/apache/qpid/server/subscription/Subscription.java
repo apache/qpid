@@ -31,6 +31,8 @@ public interface Subscription
 {
     LogActor getLogActor();
 
+    boolean isTransient();
+
     public static enum State
     {
         ACTIVE,
