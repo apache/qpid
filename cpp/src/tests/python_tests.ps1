@@ -33,7 +33,7 @@ if (Test-Path env:PYTHON_TESTS) {
     $tests = "$env:PYTHON_TESTS"
 }
 else {
-    $tests = "*"
+    $tests = "$args"
 }
 
 #cd $PYTHON_DIR
