@@ -69,4 +69,5 @@ while (($line = $p.StandardOutput.ReadLine()) -ne $null) {
 # ReadToEnd() works, but doesn't show any output until the program exits.
 #$p.StandardOutput.ReadToEnd()
 $p.WaitForExit()
-exit $p.ExitCode
+$status = $p.ExitCode
+exit $status
