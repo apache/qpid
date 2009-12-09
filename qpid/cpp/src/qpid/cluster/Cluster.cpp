@@ -600,6 +600,7 @@ void Cluster::setReady(Lock&) {
 
 void Cluster::initMapCompleted(Lock& l) {
     // Called on completion of the initial status map. 
+    QPID_LOG(debug, *this << " initial status map complete. ");
     if (state == INIT) {
         // We have status for all members so we can make join descisions.
         initMap.checkConsistent();
@@ -705,10 +706,7 @@ void Cluster::initialStatus(const MemberId& member, uint32_t version, bool activ
         member,
         ClusterInitialStatusBody(ProtocolVersion(), version, active, id, store, shutdownId)
     );
-    if (initMap.transitionToComplete()) {
-        QPID_LOG(debug, *this << " initial status map complete. ");
-        initMapCompleted(l);
-    }
+    if (initMap.transitionToComplete()) initMapCompleted(l);
 }
 
 void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
@@ -808,10 +806,11 @@ void Cluster::updateInRetracted() {
     checkUpdateIn(l);
 }
 
-void Cluster::checkUpdateIn(Lock&) {
+void Cluster::checkUpdateIn(Lock& l) {
     if (state != UPDATEE) return; // Wait till we reach the stall point.
     if (updatedMap) { // We're up to date
         map = *updatedMap;
+        memberUpdate(l);
         mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
         state = CATCHUP;
         discarding = false;     // ok to set, we're stalled for update.

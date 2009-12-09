@@ -89,6 +89,7 @@ class Popen(popen2.Popen3):
         self.stdout = ExceptionWrapper(self.fromchild, msg)
         self.stderr = ExceptionWrapper(self.childerr, msg)
         self.dump(self.cmd_str(), "cmd")
+        log.debug("Started process %s" % self.pname)
 
     def dump(self, str, ext):
         name = "%s.%s" % (self.pname, ext)
@@ -107,7 +108,7 @@ class Popen(popen2.Popen3):
             try:
                 self.kill()
             except:
-                self.unexpected("Exit code %d" % self.wait())
+                self.unexpected("expected running, exit code %d" % self.wait())
         else:
             # Give the process some time to exit.
             delay = 0.1
@@ -393,13 +394,11 @@ class NumberedSender(Thread):
         self.condition.release()
 
     def stop(self):
-        log.debug("NumberedSender.stop")
         self.condition.acquire()
         self.stopped = True
         self.condition.notify()
         self.condition.release()
         self.join()
-        log.debug("NumberedSender.stop - joined")
         if self.error: raise self.error
         
 class NumberedReceiver(Thread):
@@ -437,18 +436,14 @@ class NumberedReceiver(Thread):
                     if self.sender:
                         self.sender.notify_received(self.received)
         except Exception, e:
-            log.debug("NumberedReceiver.run exception %s" % (e)) # FIXME aconway 2009-12-02: 
             self.error = RethrownException(e, self.receiver.pname)
 
     def stop(self, count):
         """Returns when received >= count"""
-        log.debug("NumberedReceiver.stop") # FIXME aconway 2009-12-02: 
         self.lock.acquire()
-        log.debug("NumberedReceiver.stop at %d, received=%d" % (count, self.received))
         self.stopat = count
         self.lock.release()
         self.join()
-        log.debug("NumberedReceiver.stop - joined")
         if self.error: raise self.error
 
 class ErrorGenerator(StoppableThread):

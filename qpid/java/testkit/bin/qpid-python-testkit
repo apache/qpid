@@ -25,10 +25,6 @@
 . ./setenv.sh
 
 export PYTHONPATH=../:$PYTHONPATH
-
-if [ -d $OUTDIR ]; then
-  rm -rf $OUTDIR	
-fi
-
-$PYTHON_DIR/qpid-python-test -DOUTDIR=$OUTDIR  -m testkit
+rm -rf $OUTDIR
+$PYTHON_DIR/qpid-python-test -DOUTDIR=$OUTDIR  -m testkit "$@"
 
