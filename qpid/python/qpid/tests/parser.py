@@ -17,12 +17,21 @@
 # under the License.
 #
 
-class Test:
+from qpid.parser import ParseError
 
-  def __init__(self, name):
-    self.name = name
+class ParserBase:
 
-  def configure(self, config):
-    self.config = config
+  def lex(self, addr, *types):
+    toks = [t.type for t in self.do_lex(addr) if t.type not in self.EXCLUDE]
+    assert list(types) == toks, "expected %s, got %s" % (types, toks)
 
-import address, framing, mimetype, messaging
+  def valid(self, addr, expected):
+    got = self.do_parse(addr)
+    assert expected == got, "expected %s, got %s" % (expected, got)
+
+  def invalid(self, addr, error=None):
+    try:
+      p = self.do_parse(addr)
+      assert False, "invalid address parsed: %s" % p
+    except ParseError, e:
+      assert error == str(e), "expected %r, got %r" % (error, str(e))
