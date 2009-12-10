@@ -50,7 +50,7 @@
   <property name="module.etc"          location="etc"/>
     
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
-  <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.osgi"/>
+  <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.0.osgi"/>
   <property name="module.release.base" value="${basedir}/release"/>
   <property name="module.release"      value="${module.release.base}/${module.namever}"/>
   <property name="module.release.lib"  value="${module.release}/lib"/>
