@@ -35,7 +35,7 @@ set (cluster_test_SOURCES
   InitialStatusMap
   StoreStatus
   )
-add_executable (cluster_test cluster_test ${cluster_test_SOURCES}  ${platform_test_additions})
+add_executable (cluster_test ${cluster_test_SOURCES}  ${platform_test_additions})
 target_link_libraries (cluster_test ${qpid_test_boost_libs} qpidclient qpidbroker cluster_shared)
 remember_location(cluster_test)
 
