@@ -51,6 +51,7 @@ build: $(TARGETS)
 doc:
 	@mkdir -p $(BUILD)
 	epydoc qpid.messaging -o $(BUILD)/doc --no-private --no-sourcecode --include-log
+	epydoc qmf.qmfCommon qmf.qmfConsole -o $(BUILD)/doc/qmf --no-private --no-sourcecode --include-log
 
 install: build
 	install -d $(PYTHON_LIB)
