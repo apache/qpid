@@ -77,11 +77,7 @@ public:
 
     static void destroyThreadState() {
         ThreadStatus* threadStatus = getThreadStatus();
-        {
-        ScopedLock<Mutex> l(threadStatus->lock);
-
         allThreadsStatuses.delThreadStatus(threadStatus);
-        }
         delete threadStatus;
         threadStatus = 0;
     }
