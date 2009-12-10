@@ -50,22 +50,6 @@
         </copy>
     </target>
 
-    <target name="create-version" description="Create the version file">
-
-        <exec executable="svnversion" spawn="false" failifexecutionfails="false"
-              dir="." outputproperty="svnversion">
-            <arg line="."/>
-        </exec>
-
-        <!-- Write the version.properties out. -->
-        <propertyfile file="${module.classes}/qpidversion.properties">
-            <entry key="qpid.version" value="${project.version}"/>
-            <entry key="qpid.svnversion" value="${svnversion}"/>
-            <entry key="qpid.name" value="${project.name}"/>            
-        </propertyfile>
-
-    </target>
-
     <target name="precompile" depends="copy-plugin-files, create-version" />
 
     <!-- Override imported module.xml release-bin target -->

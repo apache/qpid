@@ -596,4 +596,28 @@
     </cobertura-report>
   </target>
   
+  <property name="version.file" location="${module.classes}/qpidversion.properties"/>
+  <property file="${version.file}" prefix="old."/>
+
+  <target name="check-version">
+    <exec executable="svnversion" spawn="false" failifexecutionfails="false"
+        dir="${project.root}" outputproperty="svnversion.output">
+      <arg line="."/>
+    </exec>
+    <condition property="version.stale">
+      <not>
+        <equals arg1="${svnversion.output}" arg2="${old.qpid.svnversion}"/>
+      </not>
+    </condition>
+  </target>
+
+  <target name="create-version" depends="check-version" if="version.stale">
+    <!-- Write the version.properties out.-->
+    <!-- Echos exactly as shown, so leave no spaces before/after lines -->
+    <echo file="${version.file}" append="false">qpid.version=${project.version}
+qpid.svnversion=${svnversion.output}
+qpid.name=${project.name}
+</echo>
+  </target>
+
 </project>

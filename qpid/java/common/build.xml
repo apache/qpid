@@ -77,31 +77,7 @@
     <touch file="${gentools.timestamp}" />
   </target>
 
-  <property name="version.file" location="${module.classes}/qpidversion.properties"/>
-  <property file="${version.file}" prefix="old."/>
-
-  <target name="check-version">
-    <exec executable="svnversion" spawn="false" failifexecutionfails="false"
-          dir="${project.root}" outputproperty="qpid.svnversion">
-      <arg line="."/>
-    </exec>
-    <condition property="version.stale">
-      <not>
-        <equals arg1="${qpid.svnversion}" arg2="${old.qpid.svnversion}"/>
-      </not>
-    </condition>
-  </target>
-
-  <target name="version" depends="check-version" if="version.stale">
-    <!-- Write the version.properties out. -->
-    <echo file="${version.file}" append="true">
-      qpid.svnversion=${qpid.svnversion}
-      qpid.name=${project.name}
-      qpid.version=${project.version}
-    </echo>
-  </target>
-
-  <target name="precompile" depends="gentools,jython,version"/>
+  <target name="precompile" depends="gentools,jython,create-version"/>
 
   <target name="bundle" depends="bundle-tasks"/>
 </project>
