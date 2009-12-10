@@ -49,53 +49,12 @@ public class MapBinding implements TypeBinding
     public void encode(Encoder enc, Object value)
     {
         Map map = (Map) value;
-        BBEncoder newEncoder = new BBEncoder(10);
-        newEncoder.writeUint32(map.size());
-        for (Object key : map.keySet())
-        {
-            String keyString = key.toString();
-            Object mapValue = map.get(key);
-            TypeBinding binding = bctx.getTypeBinding(mapValue.getClass());
-            newEncoder.writeStr8(keyString);
-            newEncoder.writeUint8(binding.getCode());
-            binding.encode(newEncoder, mapValue);
-        }
-        enc.writeVbin32(newEncoder.buffer().array());
+        enc.writeMap(map);
     }
 
     public Object decode(Decoder dec)
     {
-        Map map = null;
-        try
-        {
-            if (javaClass.isInterface())
-            {
-                map = new HashMap();
-            } else
-            {
-                map = (Map) javaClass.newInstance();
-            }
-        } catch (Exception e)
-        {
-            throw new BindingException(
-                    "Could not create a Map implementation for "
-                            + javaClass.getName(), e);
-        }
-        BBDecoder newDecoder = new BBDecoder();
-        newDecoder.init(ByteBuffer.wrap(dec.readVbin32()));
-        long count = newDecoder.readUint32();
-        while (count > 0)
-        {
-            String key = newDecoder.readStr8();
-            short typeCode = newDecoder.readUint8();
-            TypeBinding type = QMFTypeBinding.getType(typeCode);
-            if (type == null)
-            {
-                type = bctx.getTypeBinding(Object.class);
-            }
-            map.put(key, type.decode(newDecoder));
-            count -= 1;
-        }
+        Map map = dec.readMap();
         return map;
     }
 

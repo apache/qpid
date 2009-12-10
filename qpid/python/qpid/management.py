@@ -400,7 +400,7 @@ class managementClient:
     """ Compose the header of a management message. """
     codec.write_uint8 (ord ('A'))
     codec.write_uint8 (ord ('M'))
-    codec.write_uint8 (ord ('3'))
+    codec.write_uint8 (ord ('2'))
     codec.write_uint8 (opcode)
     codec.write_uint32  (seq)
 
@@ -414,7 +414,7 @@ class managementClient:
       if octet != 'M':
         return None
       octet = chr (codec.read_uint8 ())
-      if octet != '3':
+      if octet != '2':
         return None
       opcode = chr (codec.read_uint8 ())
       seq    = codec.read_uint32 ()
@@ -496,16 +496,7 @@ class managementClient:
     elif typecode == 14: # UUID
       data = codec.read_uuid ()
     elif typecode == 15: # FTABLE
-      data = {}
-      sc = Codec(codec.read_vbin32())
-      if sc.encoded:
-        count = sc.read_uint32()
-        while count > 0:
-          k = sc.read_str8()
-          code = sc.read_uint8()
-          v = self.decodeValue(sc, code)
-          data[k] = v
-          count -= 1
+      data = codec.read_map ()
     elif typecode == 16:
       data = codec.read_int8 ()
     elif typecode == 17:
@@ -680,7 +671,7 @@ class managementClient:
     packageName = codec.read_str8 ()
     className   = codec.read_str8 ()
     hash        = codec.read_bin128 ()
-    hasSupertype = codec.read_uint8()
+    hasSupertype = 0 #codec.read_uint8()
     configCount = codec.read_uint16 ()
     instCount   = codec.read_uint16 ()
     methodCount = codec.read_uint16 ()

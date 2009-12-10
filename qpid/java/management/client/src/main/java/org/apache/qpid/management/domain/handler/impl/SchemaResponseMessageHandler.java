@@ -69,16 +69,9 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 	            
 	            Binary schemaHash = new Binary(decoder.readBin128());
 
-	            int hasSuperclass = decoder.readUint8();
 	            int howManyProperties = decoder.readUint16();
 	            int howManyStatistics = decoder.readUint16();
 	            int howManyMethods = decoder.readUint16();
-
-                    if (hasSuperclass != 0) {
-                        String parentPackageName = decoder.readStr8();
-                        String parentClassName = decoder.readStr8();
-                        Binary parentHash = new Binary(decoder.readBin128());
-                    }
 
 	            _domainModel.addSchema(
 	                    packageName, 
