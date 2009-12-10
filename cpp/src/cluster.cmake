@@ -133,7 +133,7 @@ if (BUILD_CLUSTER)
       )
 
   add_library (cluster MODULE ${cluster_SOURCES})
-  target_link_libraries (cluster ${LIBCPG} ${CMAN_LIB} qpidbroker qpidclient ${Boost_FILESYSTEM_LIBRARY})
+  target_link_libraries (cluster ${LIBCPG} ${CMAN_LIB} qpidbroker qpidclient ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
   set_target_properties (cluster PROPERTIES PREFIX "")
   
   # Create a second shared library for linking with test executables,

@@ -157,7 +157,7 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 # (which itself uses regex).
 find_package(Boost 1.33 REQUIRED
              COMPONENTS filesystem program_options date_time thread
-                        regex unit_test_framework)
+                        regex unit_test_framework system)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
@@ -179,6 +179,14 @@ endif (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
 if (NOT Boost_REGEX_LIBRARY)
   set(Boost_REGEX_LIBRARY boost_regex)
 endif (NOT Boost_REGEX_LIBRARY)
+
+if (NOT Boost_SYSTEM_LIBRARY)
+  # This library is not present in earlier boost versions so check for presence.
+  find_library(LIBBOOST_SYSTEM, boost_system ${Boost_LIBRARY_DIRS})
+  if (LIBBOOST_SYSTEM)
+    set(Boost_SYSTEM_LIBRARY boost_system)
+  endif (LIBBOOST_SYSTEM)
+endif (NOT Boost_SYSTEM_LIBRARY)
 
 # The Windows install also wants the Boost DLLs and headers that the release
 # is built with. The DLLs enable everything to run, and the headers ensure
