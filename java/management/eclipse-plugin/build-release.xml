@@ -18,7 +18,7 @@
  - under the License.
  -
  -->
-<project name="Eclipse Plugin Binary Release" default="release-bin">
+<project name="JMX Management Console Binary Release" default="release-bin">
 
 	<!-- check properties that must be set by caller -->
     <target name="check" description="ensure all required properties are set">
@@ -27,7 +27,6 @@
     	        <!-- common properties -->
                 <isset property ="mcplugin.filename"/>
                 <isset property ="jmxremote.sasl.manifest"/>
-                <isset property ="qpidmanagementcommon.manifest"/>
                 <!-- platform specific properties -->
                 <isset property ="qpidmc.ini"/>
                 <isset property ="qpidmc.executable"/>
@@ -59,6 +58,9 @@
     </target>
 
     <target name="release-bin-qpid-mc-plugin">
+       <available file="${build.lib}/qpid-management-eclipse-plugin-${project.version}.jar" property="management-eclipse-plugin.jar.present"/>
+       <fail unless="management-eclipse-plugin.jar.present" message="Please run ant build for the management-eclipse-plugin module"/>
+
         <!-- Copy the qpid management-eclipse-plugin module jar -->
         <copy tofile="${release.subdir}/plugins/${mcplugin.filename}.jar" flatten="true" failonerror="true">
             <fileset file="${build.lib}/qpid-management-eclipse-plugin-${project.version}.jar"/>
@@ -73,9 +75,12 @@
     </target>
 
     <target name="release-bin-qpid-management-common-plugin">
+	<available file="${build.lib}/qpid-management-common_${project.version}.0.osgi.jar" property="management-common.jar.present"/>
+	<fail unless="management-common.jar.present" message="Please run ant bundle for the management-common module"/>
+
         <!-- Copy the qpid-management-common module osgi jar -->
         <copy todir="${release.subdir}/plugins" failonerror="true">
-            <fileset file="${build.lib}/qpid-management-common_${project.version}.osgi.jar"/>
+            <fileset file="${build.lib}/qpid-management-common_${project.version}.0.osgi.jar"/>
         </copy>
     </target>
     

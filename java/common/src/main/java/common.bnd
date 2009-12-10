@@ -1,4 +1,4 @@
-ver: 0.5.0
+ver: 0.6.0
 
 Bundle-SymbolicName: qpid-common
 Bundle-Version: ${ver}
