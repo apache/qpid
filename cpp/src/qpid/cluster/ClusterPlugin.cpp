@@ -139,7 +139,6 @@ struct ClusterPlugin : public Plugin {
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
-        broker::Message::setUpdateDestination(UpdateClient::UPDATE);
         ManagementAgent* mgmt = broker->getManagementAgent();
         if (mgmt) {
             std::auto_ptr<IdAllocator> allocator(new UpdateClientIdAllocator());

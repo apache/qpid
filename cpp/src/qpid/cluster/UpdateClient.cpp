@@ -217,10 +217,11 @@ class MessageUpdater {
         // Disable client code that clears the delivery-properties.exchange
         sb.get()->setDoClearDeliveryPropertiesExchange(false);
         framing::MessageTransferBody transfer(
-            framing::ProtocolVersion(), UpdateClient::UPDATE, message::ACCEPT_MODE_NONE,
-            message::ACQUIRE_MODE_PRE_ACQUIRED);
+            *message.payload->getFrames().as<framing::MessageTransferBody>());
+        transfer.setDestination(UpdateClient::UPDATE);
         
-        sb.get()->send(transfer, message.payload->getFrames(), !message.payload->isContentReleased());
+        sb.get()->send(transfer, message.payload->getFrames(),
+                       !message.payload->isContentReleased());
         if (message.payload->isContentReleased()){
             uint16_t maxFrameSize = sb.get()->getConnection()->getNegotiatedSettings().maxFrameSize;
             uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();

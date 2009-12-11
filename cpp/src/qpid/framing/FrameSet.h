@@ -57,6 +57,7 @@ public:
     bool isContentBearing() const;
 
     QPID_COMMON_EXTERN const AMQMethodBody* getMethod() const;
+    QPID_COMMON_EXTERN AMQMethodBody* getMethod();
     QPID_COMMON_EXTERN const AMQHeaderBody* getHeaders() const;
     QPID_COMMON_EXTERN AMQHeaderBody* getHeaders();
      
@@ -68,6 +69,11 @@ public:
     template <class T> const T* as() const {
         const AMQMethodBody* method = getMethod();
         return (method && method->isA<T>()) ? dynamic_cast<const T*>(method) : 0;
+    }    
+
+    template <class T>  T* as()  {
+        AMQMethodBody* method = getMethod();
+        return (method && method->isA<T>()) ? dynamic_cast<T*>(method) : 0;
     }    
 
     template <class T> const T* getHeaderProperties() const {

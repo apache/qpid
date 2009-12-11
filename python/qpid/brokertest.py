@@ -259,15 +259,15 @@ class Cluster:
         self.args += [ "--load-module", BrokerTest.cluster_lib ]
         self.start_n(count, expect=expect, wait=wait)
 
-    def start(self, name=None, expect=EXPECT_RUNNING, wait=True):
+    def start(self, name=None, expect=EXPECT_RUNNING, wait=True, args=[]):
         """Add a broker to the cluster. Returns the index of the new broker."""
         if not name: name="%s-%d" % (self.name, len(self._brokers))
         log.debug("Cluster %s starting member %s" % (self.name, name))
-        self._brokers.append(self.test.broker(self.args, name, expect, wait))
+        self._brokers.append(self.test.broker(self.args+args, name, expect, wait))
         return self._brokers[-1]
 
-    def start_n(self, count, expect=EXPECT_RUNNING, wait=True):
-        for i in range(count): self.start(expect=expect, wait=wait)
+    def start_n(self, count, expect=EXPECT_RUNNING, wait=True, args=[]):
+        for i in range(count): self.start(expect=expect, wait=wait, args=args)
 
     # Behave like a list of brokers.
     def __len__(self): return len(self._brokers)
@@ -289,6 +289,7 @@ class BrokerTest(TestCase):
     receiver_exec = os.getenv("RECEIVER_EXEC")
     sender_exec = os.getenv("SENDER_EXEC")
     store_lib = os.getenv("STORE_LIB")
+    test_store_lib = os.getenv("TEST_STORE_LIB")
     rootdir = os.getcwd()
 
     def configure(self, config): self.config=config

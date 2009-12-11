@@ -109,6 +109,7 @@ if (BUILD_CLUSTER)
        qpid/cluster/ExpiryPolicy.cpp
        qpid/cluster/FailoverExchange.cpp
        qpid/cluster/FailoverExchange.h
+       qpid/cluster/UpdateExchange.cpp
        qpid/cluster/UpdateExchange.h
        qpid/cluster/UpdateReceiver.h
        qpid/cluster/LockedConnectionMap.h
