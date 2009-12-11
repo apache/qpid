@@ -60,7 +60,7 @@ namespace org.apache.qpid.console
 		    Kind = kind ;
 		    Session = session ;
 		    this.Key = key ;   
-		    bool hasSupertype = !(dec.ReadUint8().Equals(0)) ;	
+		    bool hasSupertype = false ;
 		 
 		 	if (kind == CLASS_KIND_TABLE) {
 				int propCount = dec.ReadUint16() ;

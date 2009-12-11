@@ -43,7 +43,7 @@ public class SchemaClass
         setKind(kind);
         setSession(session);
         this.setKey(key);
-        boolean hasSupertype = dec.readUint8() != 0;
+        boolean hasSupertype = false; //dec.readUint8() != 0;
         if (kind == CLASS_KIND_TABLE)
         {
             int propCount = dec.readUint16();

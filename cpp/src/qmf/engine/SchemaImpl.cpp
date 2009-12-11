@@ -341,7 +341,6 @@ SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) : hasHash(true), cl
     buffer.getShortString(name);
     hash.decode(buffer);
 
-    /*uint8_t hasParentClass =*/ buffer.getOctet(); // TODO: Parse parent-class indicator
     uint16_t propCount     = buffer.getShort();
     uint16_t statCount     = buffer.getShort();
     uint16_t methodCount   = buffer.getShort();
@@ -374,7 +373,7 @@ void SchemaObjectClassImpl::encode(Buffer& buffer) const
     buffer.putShortString(package);
     buffer.putShortString(name);
     hash.encode(buffer);
-    buffer.putOctet(0); // No parent class
+    //buffer.putOctet(0); // No parent class
     buffer.putShort((uint16_t) properties.size());
     buffer.putShort((uint16_t) statistics.size());
     buffer.putShort((uint16_t) methods.size());

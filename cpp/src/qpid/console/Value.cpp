@@ -114,7 +114,7 @@ string MapValue::str() const
 
 MapValue::MapValue(framing::Buffer& buffer)
 {
-    value.qmfDecode(buffer);
+    value.decode(buffer);
 }
 
 

@@ -356,13 +356,13 @@ public class ClassBinding implements TypeBinding
         enc.writeStr8(name);
         enc.writeBin128(this.getSchemaHash()); // schema hash
         // Send true (1) if we have a super-type
-        if (superType == null)
-        {
-            enc.writeUint8((short) 0);
-        } else
-        {
-            enc.writeUint8((short) 1);
-        }
+        //if (superType == null)
+        //{
+        //    enc.writeUint8((short) 0);
+        //} else
+        //{
+        //    enc.writeUint8((short) 1);
+        //}
         enc.writeUint16(properties.size());
         // Events do not have the method size sent
         if (kind == 1)
@@ -371,12 +371,12 @@ public class ClassBinding implements TypeBinding
             enc.writeUint16(methods.size());
         }
         // Add the super type information if we have it
-        if (superType != null)
-        {
-            enc.writeStr8(superType.pkg);
-            enc.writeStr8(superType.name);
-            enc.writeBin128(superType.getSchemaHash()); // schema hash
-        }
+        //if (superType != null)
+        //{
+        //    enc.writeStr8(superType.pkg);
+        //    enc.writeStr8(superType.name);
+        //    enc.writeBin128(superType.getSchemaHash()); // schema hash
+        //}
         for (PropertyBinding p : properties)
         {
             log.trace("encoding property " + p.getName());

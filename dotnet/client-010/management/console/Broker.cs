@@ -165,7 +165,7 @@ namespace org.apache.qpid.console
 		public IEncoder SetHeader(IEncoder enc, char opcode, long sequence) {
 			enc.WriteUint8((short)'A') ;
 			enc.WriteUint8((short)'M') ;
-			enc.WriteUint8((short)'3') ;
+			enc.WriteUint8((short)'2') ;
 	        enc.WriteUint8((short)opcode) ;
 			enc.WriteUint32(sequence) ;
 			return enc ;
@@ -219,7 +219,7 @@ namespace org.apache.qpid.console
 					return returnValue ;
 				}
 				character = (char) decoder.ReadUint8() ;			
-				if (character != '3') {
+				if (character != '2') {
 					return returnValue ;
 				}	
 				returnValue = true ;

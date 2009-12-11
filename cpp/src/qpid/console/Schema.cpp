@@ -119,7 +119,7 @@ SchemaClass::SchemaClass(const uint8_t _kind, const ClassKey& _key, framing::Buf
     kind(_kind), key(_key)
 {
     if (kind == KIND_TABLE) {
-        uint8_t  hasSupertype = buffer.getOctet();
+        uint8_t  hasSupertype = 0; //buffer.getOctet();
         uint16_t propCount    = buffer.getShort();
         uint16_t statCount    = buffer.getShort();
         uint16_t methodCount  = buffer.getShort();

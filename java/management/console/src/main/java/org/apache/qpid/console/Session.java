@@ -189,22 +189,7 @@ public class Session
         case 14: // UUID
             return dec.readUuid();
         case 15: // Ftable
-            java.util.HashMap<String, Object> ftable = new java.util.HashMap<String, Object>();
-            BBDecoder sc = new BBDecoder();
-            sc.init(ByteBuffer.wrap(dec.readVbin32()));
-            if (sc.hasRemaining())
-            {
-                long count = sc.readUint32();
-                while (count > 0)
-                {
-                    String key = sc.readStr8();
-                    short code = sc.readUint8();
-                    Object newValue = this.decodeValue(sc, code);
-                    ftable.put(key, newValue);
-                    count -= 1;
-                }
-            }
-            return ftable;
+            return dec.readMap();
         case 16: // int8
             return dec.readInt8();
         case 17: // int16
@@ -317,20 +302,7 @@ public class Session
                 enc.writeUuid((UUID) val);
                 break;
             case 15: // Ftable
-                Map<String, Object> ftable = (Map<String, Object>) val;
-                BBEncoder sc = new BBEncoder(1);
-                sc.init();
-                sc.writeUint32(ftable.size());
-                for (String key : ftable.keySet())
-                {
-                    Object obj = ftable.get(key);
-                    short innerType = Util.qmfType(obj);
-                    sc.writeStr8(key);
-                    sc.writeUint8(innerType);
-                    this.encodeValue(sc, innerType, obj);
-                }
-                byte[] bytes = sc.segment().array();
-                enc.writeVbin32(bytes);
+                enc.writeMap((HashMap) val);
                 break;
             case 16: // int8
                 enc.writeInt8((Byte) val);

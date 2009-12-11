@@ -958,17 +958,7 @@ class Session:
     elif typecode == 17: data = codec.read_int16()      # S16
     elif typecode == 18: data = codec.read_int32()      # S32
     elif typecode == 19: data = codec.read_int64()      # S63
-    elif typecode == 15:                                # FTABLE
-      data = {}
-      sc = Codec(codec.read_vbin32())
-      if sc.encoded:
-        count = sc.read_uint32()
-        while count > 0:
-          k = sc.read_str8()
-          code = sc.read_uint8()
-          v = self._decodeValue(sc, code, broker)
-          data[k] = v
-          count -= 1
+    elif typecode == 15: data = codec.read_map()        # FTABLE
     elif typecode == 20:                                # OBJECT
       # Peek at the type, and if it is still 20 pull it decode. If
       # Not, call back into self.
@@ -1031,18 +1021,7 @@ class Session:
     elif typecode == 18: codec.write_int32  (int(value))    # S32
     elif typecode == 19: codec.write_int64  (int(value))    # S64
     elif typecode == 20: value._encodeUnmanaged(codec)      # OBJECT
-    elif typecode == 15:                                    # FTABLE
-        sc = Codec()
-        if value is not None:
-          sc.write_uint32(len(value))
-          for k, v in value.items():
-            mtype = self.encoding(v)
-            sc.write_str8(k)
-            sc.write_uint8(mtype)
-            self._encodeValue(sc, v, mtype)
-        else:
-          sc.write_uint32(0)
-        codec.write_vbin32(sc.encoded)
+    elif typecode == 15: codec.write_map    (value)         # FTABLE
     elif typecode == 21:                                    # List
         sc = Codec()
         self._encodeValue(sc, len(value), 3)
@@ -1254,7 +1233,7 @@ class SchemaClass:
     self.arguments = []
     self.session = session
 
-    hasSupertype = codec.read_uint8()
+    hasSupertype = 0  #codec.read_uint8()
     if self.kind == self.CLASS_KIND_TABLE:
       propCount   = codec.read_uint16()
       statCount   = codec.read_uint16()
@@ -1729,7 +1708,7 @@ class Broker:
     """ Compose the header of a management message. """
     codec.write_uint8(ord('A'))
     codec.write_uint8(ord('M'))
-    codec.write_uint8(ord('3'))
+    codec.write_uint8(ord('2'))
     codec.write_uint8(ord(opcode))
     codec.write_uint32(seq)
 
@@ -1743,7 +1722,7 @@ class Broker:
       if octet != 'M':
         return None, None
       octet = chr(codec.read_uint8())
-      if octet != '3':
+      if octet != '2':
         return None, None
       opcode = chr(codec.read_uint8())
       seq    = codec.read_uint32()
