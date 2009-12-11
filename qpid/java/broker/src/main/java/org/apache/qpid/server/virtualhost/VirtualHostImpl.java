@@ -268,10 +268,11 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                         {
                             q.checkMessageStatus();
                         }
-                        catch (AMQException e)
+                        catch (Exception e)
                         {
                             _logger.error("Exception in housekeeping for queue: " + q.getName().toString(), e);
-                            throw new RuntimeException(e);
+                            //Don't throw exceptions as this will stop the
+                            // house keeping task from running.
                         }
                     }
                 }
