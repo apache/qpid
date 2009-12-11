@@ -1618,13 +1618,29 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && node.expired() && node.acquire())
+            // Only process nodes that are not currently deleted
+            if (!node.isDeleted())
             {
-                node.discard(storeContext);
-            }
-            else
-            {
-                _managedObject.checkForNotification(node.getMessage());
+                // If the node has exired then aquire it
+                if (node.expired() && node.acquire())
+                {
+                    // Then dequeue it.
+                    node.discard(storeContext);
+                }
+                else
+                {
+                    if (_managedObject != null)
+                    {
+                        // There is a chance that the node could be deleted by
+                        // the time the check actually occurs. So verify we
+                        // can actually get the message to perform the check.
+                        AMQMessage msg = node.getMessage();
+                        if (msg != null)
+                        {
+                            _managedObject.checkForNotification(msg);
+                        }
+                    }
+                }
             }
         }
 
