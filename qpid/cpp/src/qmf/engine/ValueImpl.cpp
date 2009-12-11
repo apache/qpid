@@ -55,8 +55,6 @@ ValueImpl::ValueImpl(Typecode t, Buffer& buf) : typecode(t)
 
     case TYPE_MAP:
         ft.decode(buf);
-        // TODO: either update to recursively use QMF types or reduce to int/string/...
-        // (maybe use another ctor with a FieldValue argument)
         break;
 
     case TYPE_LIST:

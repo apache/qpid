@@ -111,7 +111,7 @@ public class Broker implements MessageListener
                 return returnValue;
             }
             character = (char) decoder.readUint8();
-            if (character != '3')
+            if (character != '2')
             {
                 return returnValue;
             }
@@ -349,7 +349,7 @@ public class Broker implements MessageListener
     {
         enc.writeUint8((short) 'A');
         enc.writeUint8((short) 'M');
-        enc.writeUint8((short) '3');
+        enc.writeUint8((short) '2');
         enc.writeUint8((short) opcode);
         enc.writeUint32(sequence);
         return enc;

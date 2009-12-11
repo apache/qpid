@@ -37,14 +37,14 @@ bool Protocol::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq)
     *opcode = buf.getOctet();
     *seq    = buf.getLong();
 
-    return h1 == 'A' && h2 == 'M' && h3 == '3';
+    return h1 == 'A' && h2 == 'M' && h3 == '2';
 }
 
 void Protocol::encodeHeader(qpid::framing::Buffer& buf, uint8_t opcode, uint32_t seq)
 {
     buf.putOctet('A');
     buf.putOctet('M');
-    buf.putOctet('3');
+    buf.putOctet('2');
     buf.putOctet(opcode);
     buf.putLong (seq);
 }

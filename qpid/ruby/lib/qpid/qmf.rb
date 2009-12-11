@@ -640,25 +640,12 @@ module Qpid::Qmf
       when 12: data = codec.read_float      # FLOAT
       when 13: data = codec.read_double     # DOUBLE
       when 14: data = codec.read_uuid       # UUID
-      #when 15: data = codec.read_map        # FTABLE
+      when 15: data = codec.read_map        # FTABLE
       when 16: data = codec.read_int8       # S8
       when 17: data = codec.read_int16      # S16
       when 18: data = codec.read_int32      # S32
       when 19: data = codec.read_int64      # S64
-      when 15:                              # Ftable
-          data = {}
-          rec_codec = Qpid::StringCodec.new(codec.spec, codec.read_vbin32())
-          if rec_codec.encoded:
-            count = rec_codec.read_uint32()
-            while count > 0 do
-              k = rec_codec.read_str8()
-              code = rec_codec.read_uint8()
-              v = decode_value(rec_codec, code)
-              data[k] = v
-              count -= 1
-            end
-          end
-      when 20:                               # Object
+      when 20:                              # Object
         inner_type_code = codec.read_uint8()
         if (inner_type_code == 20)
             classKey = ClassKey.new(codec)
@@ -731,26 +718,12 @@ module Qpid::Qmf
       when 12: codec.write_float(value)         # FLOAT
       when 13: codec.write_double(value)        # DOUBLE
       when 14: codec.write_uuid(value)          # UUID
-      #when 15: codec.write_map(value)           # FTABLE
+      when 15: codec.write_map(value)           # FTABLE
       when 16: codec.write_int8(value)          # S8
       when 17: codec.write_int16(value)         # S16
       when 18: codec.write_int32(value)         # S32
       when 19: codec.write_int64(value)         # S64
       when 20: value.encode(codec)
-      when 15:                                  # FTABLE
-        send_codec = Qpid::StringCodec.new(codec.spec)
-        if !value.nil?
-          send_codec.write_uint32(value.size())
-          value.each do |k,v|
-            mtype = encoding(v)
-            send_codec.write_str8(k.to_s)
-            send_codec.write_uint8(mtype)
-            encode_value(send_codec, v, mtype)
-          end
-        else
-          send_codec.write_uint32(0)
-        codec.write_vbin32(send_codec.encoded)
-        end
       when 21:                                  # List
         send_codec = Qpid::StringCodec.new(codec.spec)
         encode_value(send_codec, value.size, 3)
@@ -896,7 +869,7 @@ module Qpid::Qmf
       @methods = []
       @arguments = []
 
-      has_supertype = codec.read_uint8
+      has_supertype = 0 #codec.read_uint8
       if @kind == CLASS_KIND_TABLE
         prop_count   = codec.read_uint16
         stat_count   = codec.read_uint16
@@ -1542,7 +1515,7 @@ module Qpid::Qmf
     def set_header(codec, opcode, seq=0)
       codec.write_uint8(?A)
       codec.write_uint8(?M)
-      codec.write_uint8(?3)
+      codec.write_uint8(?2)
       codec.write_uint8(opcode)
       codec.write_uint32(seq)
     end
@@ -1707,7 +1680,7 @@ module Qpid::Qmf
       begin
         return [nil, nil] unless codec.read_uint8 == ?A
         return [nil, nil] unless codec.read_uint8 == ?M
-        return [nil, nil] unless codec.read_uint8 == ?3
+        return [nil, nil] unless codec.read_uint8 == ?2
         opcode = codec.read_uint8
         seq    = codec.read_uint32
         return [opcode, seq]

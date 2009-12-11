@@ -239,7 +239,7 @@ public class Agent implements MessageListener
             throw new AgentException(e);
         }
         byte[] magic = dec.readBytes(3);
-        if (magic[0] != 'A' || magic[1] != 'M' || magic[2] != '3')
+        if (magic[0] != 'A' || magic[1] != 'M' || magic[2] != '2')
         {
             throw new AgentException("bad magic: " + new String(magic));
         }
@@ -475,7 +475,7 @@ public class Agent implements MessageListener
         enc.init();
         enc.writeUint8((short) 'A');
         enc.writeUint8((short) 'M');
-        enc.writeUint8((short) '3');
+        enc.writeUint8((short) '2');
         enc.writeUint8((short) opcode);
         enc.writeUint32(sequence);
         return enc;

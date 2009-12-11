@@ -616,21 +616,7 @@ namespace org.apache.qpid.console
 		 		case 12: return dec.ReadFloat() ;       // float		
 		 		case 13: return dec.ReadDouble() ;      // double		 
 		 		case 14: return dec.ReadUuid() ;	    // UUID			
-		 		case 15:	                            // Ftable
-		 			Dictionary<string, object> ftable = new Dictionary<string, object>() ;
-		 			MSDecoder sc = new MSDecoder() ;
-		 			sc.Init(new MemoryStream(dec.ReadVbin32())) ;
-		 			if (sc.HasRemaining()) {
-		 				long count = sc.ReadUint32() ;
-		 				while (count > 0) {
-		 					string key = sc.ReadStr8() ;
-		 					short code = sc.ReadUint8() ;
-		 					object newValue = this.DecodeValue(sc, code) ;
-		 					ftable.Add(key, newValue) ;
-		 					count -= 1 ;
-		 				}
-		 			}
-		 			return ftable ;
+		 		case 15: return dec.ReadMap() ;             // Ftable
 		 		case 16: return dec.ReadInt8() ;        // int8
 		 		case 17: return dec.ReadInt16() ;       // int16    
 		 		case 18: return dec.ReadInt32() ;       // int32
@@ -709,21 +695,7 @@ namespace org.apache.qpid.console
 			 		case 12: enc.WriteFloat((float) val); break;	   // FLOAT
 			 		case 13: enc.WriteDouble((double) val);   break;   // DOUBLE			 			
 			 		case 14: enc.WriteUuid((UUID) val) ; break ;	   // UUID		
-			 		case 15:	                                       // Ftable
-			 			Dictionary<string, object> ftable = (Dictionary<string, object>) val ;
-			 			MSEncoder sc = new MSEncoder(1) ;
-			 			sc.Init() ;
-			 			sc.WriteUint32(ftable.Count) ;
-			 			foreach (String key in ftable.Keys) {
-			 				object obj = ftable[key] ;
-			 				short innerType = Util.QMFType(obj) ;
-			 				sc.WriteStr8(key) ;
-			 				sc.WriteUint8(innerType) ;
-			 				this.EncodeValue(sc,innerType,obj) ;
-			 			}
-			 			byte[] bytes = sc.Segment().ToArray() ;
-			 			enc.WriteVbin32(bytes) ;
-			 			break ;
+			 		case 15: enc.WriteMap((Dictionary<string, object>) val) ; break ;  // Ftable
 			 		case 16: enc.WriteInt8((short) val) ; break;       // int8
 			 		case 17: enc.WriteInt16((int) val) ;  break;       // int16     
 			 		case 18: enc.WriteInt32(long.Parse(""+ val)) ; break;       // int32
