@@ -1,6 +1,3 @@
-#ifndef QPID_CLUSTER_UPDATEEXCHANGE_H
-#define QPID_CLUSTER_UPDATEEXCHANGE_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,25 +18,30 @@
  * under the License.
  *
  */
-
-#include "qpid/cluster/UpdateClient.h"
-#include "qpid/broker/FanOutExchange.h"
-
+#include "qpid/framing/MessageTransferBody.h"
+#include "qpid/broker/Message.h"
+#include "UpdateExchange.h"
 
 namespace qpid {
 namespace cluster {
 
-/**
- * A keyless exchange (like fanout exchange) that does not modify
- * delivery-properties.exchange but copies it to the MessageTransfer.
- */
-class UpdateExchange : public broker::FanOutExchange
-{
-  public:
-    UpdateExchange(management::Manageable* parent);
-    void setProperties(const boost::intrusive_ptr<broker::Message>&);
-};
+using framing::MessageTransferBody;
+using framing::DeliveryProperties;
+
+UpdateExchange::UpdateExchange(management::Manageable* parent)
+    : broker::Exchange(UpdateClient::UPDATE, parent),
+      broker::FanOutExchange(UpdateClient::UPDATE, parent) {}
+
+
+void UpdateExchange::setProperties(const boost::intrusive_ptr<broker::Message>& msg) {
+    MessageTransferBody* transfer = msg->getMethod<MessageTransferBody>();
+    assert(transfer);
+    const DeliveryProperties* props = msg->getProperties<DeliveryProperties>();
+    assert(props);
+    if (props->hasExchange())
+        transfer->setDestination(props->getExchange());
+    else
+        transfer->clearDestinationFlag();
+}
 
 }} // namespace qpid::cluster
-
-#endif  /*!QPID_CLUSTER_UPDATEEXCHANGE_H*/

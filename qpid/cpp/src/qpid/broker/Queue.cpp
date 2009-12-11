@@ -598,7 +598,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
             string key = ft->getAsString(qpidVQMatchProperty);
 
             i = lvq.find(key);
-            if (i == lvq.end() || msg->isUpdateMessage()){
+            if (i == lvq.end() || (broker && broker->isClusterUpdatee())) {
                 messages.push_back(qm);
                 listeners.populate(copy);
                 lvq[key] = msg; 

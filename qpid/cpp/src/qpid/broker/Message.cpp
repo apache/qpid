@@ -425,19 +425,4 @@ framing::FieldTable& Message::getOrInsertHeaders()
     return getProperties<MessageProperties>()->getApplicationHeaders();
 }
 
-
-void Message::setUpdateDestination(const std::string& d)
-{
-    updateDestination = d;
-}
-
-
-bool Message::isUpdateMessage()
-{
-    return updateDestination.size() && isA<MessageTransferBody>() 
-        && getMethod<MessageTransferBody>()->getDestination() == updateDestination;
-}
-
-std::string Message::updateDestination;
-
 }} // namespace qpid::broker

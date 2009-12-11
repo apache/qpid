@@ -154,6 +154,7 @@ Broker::Broker(const Broker::Options& conf) :
     queueCleaner(queues, timer),
     queueEvents(poller,!conf.asyncQueueEvents), 
     recovery(true),
+    clusterUpdatee(false),
     expiryPolicy(new ExpiryPolicy),
     connectionCounter(conf.maxConnections),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))

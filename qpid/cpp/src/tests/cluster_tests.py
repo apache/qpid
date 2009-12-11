@@ -57,6 +57,34 @@ class ShortTests(BrokerTest):
         self.assertEqual("y", m.content)
         s2.connection.close()
 
+    def test_store_direct_update_match(self):
+        """Verify that brokers stores an identical message whether they receive it
+        direct from clients or during an update, no header or other differences"""
+        cluster = self.cluster(0, args=["--load-module", self.test_store_lib])
+        cluster.start(args=["--test-store-dump", "direct.dump"])
+        # Try messages with various headers
+        cluster[0].send_message("q", Message(durable=True, content="foobar",
+                                             subject="subject",
+                                             reply_to="reply_to",
+                                             properties={"n":10}))
+        # Try messages of different sizes
+        for size in range(0,10000,100):
+            cluster[0].send_message("q", Message(content="x"*size, durable=True))
+        # Try sending via named exchange
+        c = cluster[0].connect_old()
+        s = c.session(str(qpid.datatypes.uuid4()))
+        s.exchange_bind(exchange="amq.direct", binding_key="foo", queue="q")
+        props = s.delivery_properties(routing_key="foo", delivery_mode=2)
+        s.message_transfer(
+            destination="amq.direct",
+            message=qpid.datatypes.Message(props, "content"))
+
+        # Now update a new member and compare their dumps.
+        cluster.start(args=["--test-store-dump", "updatee.dump"])
+        assert file("direct.dump").read() == file("updatee.dump").read()
+        os.remove("direct.dump")
+        os.remove("updatee.dump")
+        
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):

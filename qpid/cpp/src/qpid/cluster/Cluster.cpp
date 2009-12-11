@@ -619,6 +619,7 @@ void Cluster::initMapCompleted(Lock& l) {
 
         if (initMap.isUpdateNeeded())  { // Joining established cluster.
             broker.setRecovery(false); // Ditch my current store.
+            broker.setClusterUpdatee(true);
             state = JOINER;
         }
         else {                  // I can go ready.
@@ -813,6 +814,7 @@ void Cluster::checkUpdateIn(Lock& l) {
         memberUpdate(l);
         mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
         state = CATCHUP;
+        broker.setClusterUpdatee(false);
         discarding = false;     // ok to set, we're stalled for update.
         QPID_LOG(notice, *this << " update complete, starting catch-up.");
         deliverEventQueue.start();

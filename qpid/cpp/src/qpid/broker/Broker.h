@@ -168,8 +168,10 @@ public:
     std::vector<Url> getKnownBrokersImpl();
     std::string federationTag;
     bool recovery;
+    bool clusterUpdatee;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConnectionCounter connectionCounter;
+    
   public:
     virtual ~Broker();
 
@@ -258,6 +260,9 @@ public:
 
     void setRecovery(bool set) { recovery = set; }
     bool getRecovery() const { return recovery; }
+
+    void setClusterUpdatee(bool set) { clusterUpdatee = set; }
+    bool isClusterUpdatee() const { return clusterUpdatee; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
     
