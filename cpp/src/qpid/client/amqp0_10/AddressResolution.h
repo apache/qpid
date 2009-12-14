@@ -31,7 +31,7 @@ class ReplyTo;
 }
 
 namespace messaging {
-struct Address;
+class Address;
 struct Filter;
 }
 
