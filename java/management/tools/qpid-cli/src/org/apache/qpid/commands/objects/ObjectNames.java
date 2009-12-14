@@ -21,8 +21,10 @@
 
 package org.apache.qpid.commands.objects;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.management.Attribute;
@@ -31,6 +33,8 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+
 public class ObjectNames
 {
     public String querystring = null;
@@ -38,6 +42,16 @@ public class ObjectNames
     public Set<ObjectName> set = null;
     public String attributes = "";
     public String attributevalues = "";// = null;
+    
+    private static final Map<String,Integer> QUEUE_ATTRIBUTES = new HashMap<String,Integer>();
+    static
+    {
+        QUEUE_ATTRIBUTES.put(ManagedQueue.ATTR_NAME, 1);
+        QUEUE_ATTRIBUTES.put(ManagedQueue.ATTR_DURABLE, 2);
+        QUEUE_ATTRIBUTES.put(ManagedQueue.ATTR_ACTIVE_CONSUMER_COUNT, 3);
+        QUEUE_ATTRIBUTES.put(ManagedQueue.ATTR_MSG_COUNT, 4);
+        QUEUE_ATTRIBUTES.put(ManagedQueue.ATTR_RCVD_MSG_COUNT, 5);
+    }
 
     public ObjectNames(MBeanServerConnection mbsc)
     {
@@ -318,14 +332,12 @@ public class ObjectNames
         Iterator it = set.iterator();
         String line = "";
         int iterator = 0;
-        int attr_count = 0;
         String temp1 = "";
         String temp2 = "";
         try
         {
             do
             {
-                attr_count = 0;
                 ObjectName temp_object = null;
                 if (it.hasNext())
                 {
@@ -349,7 +361,13 @@ public class ObjectNames
                     for (MBeanAttributeInfo attr : attr_info)
                     {
                         Object toWrite = null;
-                        attr_count++;
+                        Integer attr_count = QUEUE_ATTRIBUTES.get(attr.getName());
+                        
+                        if(attr_count == null)
+                        {
+                            continue;
+                        }
+                        
                         try
                         {
                             toWrite = mbsc.getAttribute(temp_object, attr.getName());
@@ -358,7 +376,7 @@ public class ObjectNames
                                 switch (attr_count)
                                 {
                                 case 1:
-                                case 3:
+                                case 2:
                                     temp1 = attr.getName();
                                     while (temp1.length() < 10)
                                         temp1 = " " + temp1;
@@ -368,7 +386,7 @@ public class ObjectNames
                                         temp2 = " " + temp2;
                                     attributevalues = attributevalues + temp2 + "|";
                                     break;
-                                case 6:
+                                case 3:
                                     temp1 = attr.getName();
                                     while (temp1.length() < 20)
                                         temp1 = " " + temp1;
@@ -378,7 +396,7 @@ public class ObjectNames
                                         temp2 = " " + temp2;
                                     attributevalues = attributevalues + temp2 + "|";
                                     break;
-                                case 7:
+                                case 4:
                                     temp1 = attr.getName();
                                     while (temp1.length() < 13)
                                         temp1 = " " + temp1;
@@ -388,7 +406,7 @@ public class ObjectNames
                                         temp2 = " " + temp2;
                                     attributevalues = attributevalues + temp2 + "|";
                                     break;
-                                case 9:
+                                case 5:
                                     temp1 = attr.getName();
                                     while (temp1.length() < 20)
                                         temp1 = " " + temp1;
@@ -402,29 +420,10 @@ public class ObjectNames
                             }
                             else if (output.compareToIgnoreCase("csv") == 0)
                             {
-                                switch (attr_count)
-                                {
-                                case 1:
-                                case 3:
-                                case 6:
-                                    temp1 = attr.getName();
-                                    attributes = attributes + temp1 + seperator;
-                                    temp2 = toWrite.toString();
-                                    attributevalues = attributevalues + temp2 + seperator;
-                                    break;
-                                case 7:
-                                    temp1 = attr.getName();
-                                    attributes = attributes + temp1 + seperator;
-                                    temp2 = toWrite.toString();
-                                    attributevalues = attributevalues + temp2 + seperator;
-                                    break;
-                                case 9:
-                                    temp1 = attr.getName();
-                                    attributes = attributes + temp1 + seperator;
-                                    temp2 = toWrite.toString();
-                                    attributevalues = attributevalues + temp2 + seperator;
-                                    break;
-                                }
+                                temp1 = attr.getName();
+                                attributes = attributes + temp1 + seperator;
+                                temp2 = toWrite.toString();
+                                attributevalues = attributevalues + temp2 + seperator;
                             }
                             else
                             {
