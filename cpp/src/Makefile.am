@@ -691,6 +691,8 @@ libqpidclient_la_SOURCES =			\
   qpid/client/SubscriptionManager.cpp		\
   qpid/client/SubscriptionManagerImpl.cpp	\
   qpid/client/SubscriptionManagerImpl.h		\
+  qpid/client/TCPConnector.cpp			\
+  qpid/client/TCPConnector.h			\
   qpid/messaging/Address.cpp			\
   qpid/messaging/Connection.cpp			\
   qpid/messaging/ListContent.cpp		\
