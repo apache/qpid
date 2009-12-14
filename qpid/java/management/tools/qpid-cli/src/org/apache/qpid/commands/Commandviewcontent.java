@@ -39,10 +39,7 @@ public class Commandviewcontent extends CommandImpl
 
     public static final String COMMAND_NAME = "viewcontent";
 
-    private String object;
-    private String name;
-    private String vhost;
-    private int number = 0;
+    private long number = 0;
     private QueueObject objname;
     private MBeanServerConnection mbsc;
     private String method1;
@@ -61,7 +58,7 @@ public class Commandviewcontent extends CommandImpl
     {
         Set set = null;
         Object temp[] = { null };
-        objname.setQueryString(this.object, this.name, this.vhost);
+        objname.setQueryString(getObject(), getName(), getVirtualhost());
         set = objname.returnObjects();
         String temp_header = "", header = "", message_data = "", encoding = null;
 
@@ -233,8 +230,7 @@ public class Commandviewcontent extends CommandImpl
 
     private void setnumber(String number)
     {
-        Integer i = new Integer(number);
-        this.number = i.intValue();
+        this.number = Long.valueOf(number);
     }
 
     private static String removeSpaces(String s)
@@ -246,7 +242,7 @@ public class Commandviewcontent extends CommandImpl
         return t;
     }
 
-    public int getnumber()
+    public long getnumber()
     {
         return this.number;
     }
