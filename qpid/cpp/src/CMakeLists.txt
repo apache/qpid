@@ -426,17 +426,25 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/Thread.cpp
     qpid/sys/windows/Time.cpp
     qpid/sys/windows/uuid.cpp
+    ${sslcommon_windows_SOURCES}
   )
   set (qpidcommon_platform_LIBS
-    rpcrt4 ws2_32
+    ${windows_ssl_libs} rpcrt4 ws2_32
   )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
+    ${sslbroker_windows_SOURCES}
   )
-
+  set (qpidbroker_platform_LIBS
+    ${windows_ssl_libs}
+  )
   set (qpidclient_platform_SOURCES
     qpid/client/windows/SaslFactory.cpp
+    ${sslclient_windows_SOURCES}
+  )
+  set (qpidclient_platform_LIBS
+    ${windows_ssl_libs}
   )
 
   set (qpidd_platform_SOURCES
@@ -625,6 +633,7 @@ set (qpidclient_SOURCES
      qpid/client/SubscriptionImpl.cpp
      qpid/client/SubscriptionManager.cpp
      qpid/client/SubscriptionManagerImpl.cpp
+     qpid/client/TCPConnector.cpp
      qpid/messaging/Address.cpp
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
@@ -665,7 +674,7 @@ set (qpidclient_SOURCES
 )
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
-target_link_libraries (qpidclient qpidcommon)
+target_link_libraries (qpidclient qpidcommon ${qpidclient_platform_LIBS})
 set_target_properties (qpidclient PROPERTIES VERSION ${qpidc_version})
 install (TARGETS qpidclient
          DESTINATION ${QPID_INSTALL_LIBDIR}
@@ -751,7 +760,7 @@ set (qpidbroker_SOURCES
      qpid/sys/TCPIOPlugin.cpp
 )
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
-target_link_libraries (qpidbroker qpidcommon)
+target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
 set_target_properties (qpidbroker PROPERTIES VERSION ${qpidc_version})
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
