@@ -22,9 +22,9 @@
 package org.apache.qpid.commands.objects;
 
 import javax.management.MBeanServerConnection;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
 import javax.management.ObjectName;
+
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
 
 public class QueueObject extends ObjectNames
 {
@@ -47,33 +47,12 @@ public class QueueObject extends ObjectNames
 
     public int getmessagecount(ObjectName queue)
     {
-        int attr_count = 0;
-        String value;
-        Integer depth = null;
-
+        Number depth = null;
+        
         try
         {
-            MBeanInfo bean_info;
-            bean_info = mbsc.getMBeanInfo(queue);
-            MBeanAttributeInfo[] attr_info = bean_info.getAttributes();
-            if (attr_info == null)
-                return 0;
-            else
-            {
-                for (MBeanAttributeInfo attr : attr_info)
-                {
-                    Object toWrite = null;
-                    attr_count++;
-                    toWrite = mbsc.getAttribute(queue, attr.getName());
-                    if (attr_count == 7)
-                    {
-                        value = toWrite.toString();
-                        depth = new Integer(value);
-                    }
-                }
-
-            }
-
+            depth = (Number) mbsc.getAttribute(queue, ManagedQueue.ATTR_MSG_COUNT);
+            
         }
         catch (Exception ex)
         {
