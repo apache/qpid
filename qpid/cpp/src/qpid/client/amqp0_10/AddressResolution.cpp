@@ -617,7 +617,7 @@ void Queue::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
     } else {
         try {
             sync(session).queueDeclare(arg::queue=name, arg::passive=true);
-        } catch (const qpid::framing::NotFoundException& e) {
+        } catch (const qpid::framing::NotFoundException& /*e*/) {
             throw InvalidAddress((boost::format("Queue %1% does not exist") % name).str());
         } catch (const std::exception& e) {
             throw InvalidAddress(e.what());
@@ -716,7 +716,7 @@ void Exchange::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
     } else {
         try {
             sync(session).exchangeDeclare(arg::exchange=name, arg::passive=true);
-        } catch (const qpid::framing::NotFoundException& e) {
+        } catch (const qpid::framing::NotFoundException& /*e*/) {
             throw InvalidAddress((boost::format("Exchange %1% does not exist") % name).str());
         } catch (const std::exception& e) {
             throw InvalidAddress(e.what());
