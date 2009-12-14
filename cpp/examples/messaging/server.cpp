@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     try {
         Connection connection = Connection::open(url);
         Session session = connection.newSession();
-        Receiver receiver = session.createReceiver("service_queue");
+        Receiver receiver = session.createReceiver("service_queue; {create: always}");
 
         while (true) {
             Message request = receiver.fetch();
