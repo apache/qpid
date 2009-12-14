@@ -28,6 +28,9 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # Shouldn't need this... but there are still client header inclusions
 # of Boost. When building examples at an install site, the Boost files
 # should be locatable aside from these settings.
+# So set up to find the headers, find the libs at link time, but dynamically
+# link them all and clear the CMake Boost library names to avoid adding them to
+# the project files.
 include_directories( ${Boost_INCLUDE_DIR} )
 link_directories( ${Boost_LIBRARY_DIRS} )
 
@@ -35,7 +38,9 @@ link_directories( ${Boost_LIBRARY_DIRS} )
 # Linux needs to reference the boost libs, even though they should be
 # resolved via the Qpid libs.
 if (MSVC)
-  add_definitions( /D "NOMINMAX" /D "WIN32_LEAN_AND_MEAN" )
+  add_definitions( /D "NOMINMAX" /D "WIN32_LEAN_AND_MEAN" /D "BOOST_ALL_DYN_LINK" )
+  set(Boost_PROGRAM_OPTIONS_LIBRARY "")
+  set(Boost_FILESYSTEM_LIBRARY "")
   # On Windows, prevent the accidental inclusion of Boost headers from
   # autolinking in the Boost libs. There should be no direct references to
   # Boost in the examples, and references via qpidclient/qpidcommon are
