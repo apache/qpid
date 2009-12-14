@@ -166,7 +166,7 @@ endif(NOT Boost_FOUND)
 # Boost.system was introduced at Boost 1.35; it's needed secondarily by other
 # Boost libs Qpid needs, so be sure it's there.
 if (NOT Boost_VERSION LESS 103500)
-  find_library(Boost_SYSTEM_LIBRARY, boost_system ${Boost_LIBRARY_DIRS})
+  find_library(Boost_SYSTEM_LIBRARY boost_system ${Boost_LIBRARY_DIRS})
   if (NOT Boost_SYSTEM_LIBRARY)
     message(FATAL_ERROR "Boost.system library not found.  Please install or try setting BOOST_ROOT")
   endif (NOT Boost_SYSTEM_LIBRARY)
