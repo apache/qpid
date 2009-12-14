@@ -43,6 +43,33 @@ AMQP_QMF_NAME_SEPARATOR = "/"
 AMQP_QMF_AGENT_LOCATE = "amq.topic/agent.locate"
 AMQP_QMF_AGENT_INDICATION = "amq.topic/agent.ind"
 
+AMQP_QMF_SUBJECT = "qmf"
+AMQP_QMF_VERSION = 4
+AMQP_QMF_SUBJECT_FMT = "%s%d.%s"
+
+class OpCode(object):
+    agent_locate = "agent-locate"
+    agent_ind = "agent"
+    noop = "noop"
+
+def makeSubject(_code): 
+    """
+    Create a message subject field value.
+    """
+    return AMQP_QMF_SUBJECT_FMT % (AMQP_QMF_SUBJECT, AMQP_QMF_VERSION, _code)
+
+
+def parseSubject(_sub):
+    """
+    Deconstruct a subject field, return version,opcode values
+    """
+    if _sub[:3] != "qmf":
+        raise Exception("Non-QMF message received")
+
+    return _sub[3:].split('.', 1)
+
+
+
 
 ##==============================================================================
 ## Agent Identification

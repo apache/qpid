@@ -25,7 +25,8 @@ from threading import Thread
 from qpid.messaging import Connection, Message
 from uuid import uuid4
 from qmfCommon import (AMQP_QMF_TOPIC, AMQP_QMF_DIRECT, AMQP_QMF_AGENT_LOCATE, 
-                       AMQP_QMF_AGENT_INDICATION, AgentId, QmfManaged)
+                       AMQP_QMF_AGENT_INDICATION, AgentId, QmfManaged, makeSubject,
+                       parseSubject, OpCode)
 
 
 
@@ -59,53 +60,52 @@ class Agent(Thread):
         self._direct_receiver = self._session.receiver(AMQP_QMF_DIRECT + "/" + self._address)
         self._ind_sender = self._session.sender(AMQP_QMF_AGENT_INDICATION)
         self._running = True
-        self._start()
+        self.start()
 
 
-    def _dispatch(self, msg):
-        if msg.subject != "qmf4":
-            logging.debug("Ignoring non-qmf message '%s'" % msg.subject)
+    def _dispatch(self, msg, _direct=False):
+        """
+        @param _direct: True if msg directly addressed to this agent.
+        """
+        try:
+            version,opcode = parseSubject(msg.subject)
+        except:
+            logging.debug("Ignoring unrecognized message '%s'" % msg.subject)
             return
 
-        cmap = {}
+        cmap = {}; props={}
         if msg.content_type == "amqp/map":
             cmap = msg.content
+        if msg.properties:
+            props = msg.properties
 
-        if (not msg.properties or
-            not "method" in msg.properties or
-            not "opcode" in msg.properties):
-            logging.error("INVALID MESSAGE PROPERTIES: '%s'" % str(msg.properties))
-            return
-
-        if msg.properties["method"] == "request":
-            if msg.properties["opcode"] == "agent-locate":
+        if opcode == OpCode.agent_locate:
+            reply = False
+            if "method" in props and props["method"] == "request":
                 if "query" in cmap:
-                    query = cmap["query"]
-                    if ("vendor" in query and (query["vendor"] == "*" or query["vendor"] == self.vendor) and
-                        "product" in query and (query["product"] == "*" or query["product"] == self.product) and
-                        "name" in query and (query["name"] == "*" or query["name"] == self.name)):
-                        logging.debug("Query received for %s:%s:%s" % (self.vendor, self.product, self.name))
-                        logging.debug("reply-to [%s], cid=%s" % (msg.reply_to, msg.correlation_id))
-                        try:
-                            tmp_snd = self.session.sender( msg.reply_to )
-                            m = Message( subject="qmf4",
-                                         properties={"method":"response",
-                                                     "opcode":"agent"},
-                                         content={"name": {"vendor":"redhat.com",
-                                                           "product":"agent",
-                                                           "name":"tross"}},
-                                         correlation_id=msg.correlation_id)
-                            tmp_snd.send(m)
-                            logging.debug("reply-to [%s] sent" % msg.reply_to)
-                        except e:
-                            logging.error("Failed to send reply to msg '%s'" % str(e))
+                    if self._doQuery(cmap["query"]):
+                        reply=True
+                else:
+                    reply=True
 
+            if reply:
+                try:
+                    tmp_snd = self._session.sender( msg.reply_to )
+                    m = Message( subject=makeSubject(OpCode.agent_locate),
+                                 properties={"method":"response"},
+                                 content={"name": {"vendor":"redhat.com",
+                                                   "product":"agent",
+                                                   "name":"tross"}},
+                                 correlation_id=msg.correlation_id)
+                    tmp_snd.send(m)
+                    logging.debug("reply-to [%s] sent" % msg.reply_to)
+                except e:
+                    logging.error("Failed to send reply to msg '%s'" % str(e))
             else:
-                logging.warning("Ignoring message with unrecognized 'opcode' value: '%s'"
-                                % msg.properties["opcode"])
+                logging.debug("Ignoring invalid agent-locate msg")
         else:
-            logging.warning("Ignoring message with unrecognized 'method' value: '%s'" 
-                            % msg.properties["method"] )
+            logging.warning("Ignoring message with unrecognized 'opcode' value: '%s'"
+                            % opcode)
 
 
 
@@ -114,8 +114,9 @@ class Agent(Thread):
         while self._running:
             try:
                 msg = self._locate_receiver.fetch(1)
+                logging.info("Agent Locate Rcvd: '%s'" % msg)
                 if msg.content_type == "amqp/map":
-                    self._dispatch(msg)
+                    self._dispatch(msg, _direct=False)
             except KeyboardInterrupt:
                 break
             except:
@@ -123,8 +124,9 @@ class Agent(Thread):
 
             try:
                 msg = self._direct_receiver.fetch(1)
+                logging.info("Agent Msg Rcvd: '%s'" % msg)
                 if msg.content_type == "amqp/map":
-                    self._dispatch(msg)
+                    self._dispatch(msg, _direct=True)
             except KeyboardInterrupt:
                 break
             except:
@@ -133,13 +135,12 @@ class Agent(Thread):
             count+= 1
             if count == 5:
                 count = 0
-                m = Message( subject="qmf4",
-                             properties={"method":"indication",
-                                         "opcode":"agent"},
+                m = Message( subject=makeSubject(OpCode.agent_ind),
+                             properties={"method":"indication"},
                              content={"name": {"vendor":"redhat.com",
                                                "product":"agent",
                                                "name":"tross"}} )
-                self.ind_sender.send(m)
+                self._ind_sender.send(m)
                 logging.info("Agent Indication Sent")
 
     
@@ -177,7 +178,15 @@ class Agent(Thread):
         """
         logging.error("!!!Agent.releaseWorkItem() TBD!!!")
 
-
+    def _doQuery(self, query):
+        # query = cmap["query"]
+        # if ("vendor" in query and (query["vendor"] == "*" or query["vendor"] == self.vendor) and
+        #     "product" in query and (query["product"] == "*" or query["product"] == self.product) and
+        #     "name" in query and (query["name"] == "*" or query["name"] == self.name)):
+        #     logging.debug("Query received for %s:%s:%s" % (self.vendor, self.product, self.name))
+        #     logging.debug("reply-to [%s], cid=%s" % (msg.reply_to, msg.correlation_id))
+        logging.error("!!!Agent._doQuery() TBD!!!")
+        return True
 
 
   ##==============================================================================
@@ -209,3 +218,31 @@ class QmfAgentData(QmfManaged):
     def setProperty( self, _name, _value):
         super(QmfAgentData, self).setProperty(_name, _value)
         # @todo: publish change
+
+
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+if __name__ == '__main__':
+    import time
+    #logging.getLogger().setLevel(logging.INFO)
+    logging.info( "Starting Connection" )
+    _c = Connection("localhost")
+    _c.connect()
+    #c.start()
+
+    logging.info( "Starting Agent" )
+    _agent = Agent("redhat.com", "agent", "tross")
+    _agent.setConnection(_c)
+
+    logging.info( "Running Agent" )
+    
+    while True:
+        try:
+            time.sleep(10)
+        except KeyboardInterrupt:
+            break
+    
