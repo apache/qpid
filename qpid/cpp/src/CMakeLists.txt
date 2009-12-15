@@ -166,10 +166,11 @@ endif(NOT Boost_FOUND)
 # Boost.system was introduced at Boost 1.35; it's needed secondarily by other
 # Boost libs Qpid needs, so be sure it's there.
 if (NOT Boost_VERSION LESS 103500)
-  find_library(Boost_SYSTEM_LIBRARY boost_system ${Boost_LIBRARY_DIRS})
+  find_package(Boost COMPONENTS system)
   if (NOT Boost_SYSTEM_LIBRARY)
-    message(FATAL_ERROR "Boost.system library not found.  Please install or try setting BOOST_ROOT")
+    set(Boost_SYSTEM_LIBRARY boost_system)
   endif (NOT Boost_SYSTEM_LIBRARY)
+
 endif (NOT Boost_VERSION LESS 103500)
 
 # Versions of cmake pre 2.6 don't set the Boost_*_LIBRARY variables correctly
