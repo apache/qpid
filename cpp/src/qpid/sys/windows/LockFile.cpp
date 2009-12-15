@@ -36,7 +36,7 @@ public:
 LockFile::LockFile(const std::string& path_, bool create)
   : path(path_), created(create) {
 
-    HANDLE h = CreateFile(path.c_str(),
+    HANDLE h = ::CreateFile(path.c_str(),
                           create ? (GENERIC_READ|GENERIC_WRITE) : GENERIC_READ,
                           FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
                           0, /* Default security */
@@ -44,14 +44,19 @@ LockFile::LockFile(const std::string& path_, bool create)
                           FILE_FLAG_DELETE_ON_CLOSE, /* Delete file when closed */
                           NULL);
     if (h == INVALID_HANDLE_VALUE)
-        throw qpid::Exception(path + qpid::sys::strError(GetLastError()));
+        throw qpid::Exception(path + ": " + qpid::sys::strError(GetLastError()));
+
+    // Lock up to 4Gb
+    if (!::LockFile(h, 0, 0, 0xffffffff, 0))
+        throw qpid::Exception(path + ": " + qpid::sys::strError(GetLastError()));
     impl.reset(new LockFilePrivate(h));
 }
 
 LockFile::~LockFile() {
     if (impl) {
         if (impl->fd != INVALID_HANDLE_VALUE) {
-            CloseHandle(impl->fd);
+            ::UnlockFile(impl->fd, 0, 0, 0xffffffff, 0);
+            ::CloseHandle(impl->fd);
         }
     }
 }
