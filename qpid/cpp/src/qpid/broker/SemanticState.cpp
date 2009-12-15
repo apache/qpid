@@ -311,7 +311,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
     bool sync = syncFrequency && ++deliveryCount >= syncFrequency;
     if (sync) deliveryCount = 0;//reset
     parent->deliver(record, sync);
-    if (!ackExpected) record.setEnded();//allows message to be released now its been delivered
+    if (!ackExpected && acquire) record.setEnded();//allows message to be released now its been delivered
     if (windowing || ackExpected || !acquire) {
         parent->record(record);
     } 
