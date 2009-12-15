@@ -46,7 +46,6 @@ namespace amqp0_10 {
 
 using qpid::Exception;
 using qpid::messaging::Address;
-using qpid::messaging::Filter;
 using qpid::messaging::InvalidAddress;
 using qpid::messaging::Variant;
 using qpid::framing::ExchangeBoundResult;
