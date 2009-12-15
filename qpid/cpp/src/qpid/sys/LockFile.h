@@ -29,7 +29,7 @@
 namespace qpid {
 namespace sys {
 
-class LockFilePrivate;    
+class LockFilePrivate;
 
 /**
  * @class LockFile
@@ -43,34 +43,17 @@ class LockFilePrivate;
  */
 class LockFile : private boost::noncopyable
 {
-    boost::shared_ptr<LockFilePrivate> impl;
-
     std::string path;
     bool created;
+    boost::shared_ptr<LockFilePrivate> impl;
+
+protected:
+    int read(void*, size_t) const;
+    int write(void*, size_t) const;
 
 public:
     QPID_COMMON_EXTERN LockFile(const std::string& path_, bool create);
     QPID_COMMON_EXTERN ~LockFile();
-
-    /**
-     * Read the process ID from the lock file. This method assumes that
-     * if there is a process ID in the file, it was written there by
-     * writePid(); thus, it's at the start of the file.
-     *
-     * Throws an exception if there is an error reading the file.
-     *
-     * @returns The stored process ID. No validity check is done on it.
-     */
-    QPID_COMMON_EXTERN pid_t readPid(void) const;
-
-    /**
-     * Write the current process's ID to the lock file. It's written at
-     * the start of the file and will overwrite any other content that
-     * may be in the file.
-     *
-     * Throws an exception if the write fails.
-     */
-    QPID_COMMON_EXTERN void writePid(void);
 };
  
 }}   /* namespace qpid::sys */

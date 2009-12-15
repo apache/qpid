@@ -154,6 +154,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/posix/Fork.cpp			\
   qpid/sys/posix/StrError.cpp			\
   qpid/sys/posix/PollableCondition.cpp		\
+  qpid/sys/posix/PidFile.h			\
   qpid/sys/posix/PipeHandle.cpp			\
   qpid/log/posix/SinkOptions.h 			\
   qpid/sys/posix/Fork.h

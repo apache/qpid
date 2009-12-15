@@ -22,6 +22,7 @@
 #include "qpid/DataDir.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/FileSysDir.h"
+#include "qpid/sys/LockFile.h"
 
 namespace qpid {
 
