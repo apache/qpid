@@ -39,13 +39,11 @@ link_directories( ${Boost_LIBRARY_DIRS} )
 # resolved via the Qpid libs.
 if (MSVC)
   add_definitions( /D "NOMINMAX" /D "WIN32_LEAN_AND_MEAN" /D "BOOST_ALL_DYN_LINK" )
-  set(Boost_PROGRAM_OPTIONS_LIBRARY "")
-  set(Boost_FILESYSTEM_LIBRARY "")
   # On Windows, prevent the accidental inclusion of Boost headers from
   # autolinking in the Boost libs. There should be no direct references to
   # Boost in the examples, and references via qpidclient/qpidcommon are
   # resolved in the Qpid libs.
-  add_definitions( /D "BOOST_ALL_DYN_LINK" /D "BOOST_ALL_NO_LIB" )
+  add_definitions( /D "BOOST_ALL_NO_LIB" )
 else (MSVC)
   set(_boost_libs_needed ${Boost_PROGRAM_OPTIONS_LIBRARY}
                          ${Boost_FILESYSTEM_LIBRARY})
