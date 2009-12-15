@@ -22,7 +22,6 @@
  *
  */
 
-#include "qpid/memory.h"
 #include <boost/shared_ptr.hpp>
 
 
