@@ -444,7 +444,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/DispatchHandle.h			\
   qpid/sys/Dispatcher.cpp			\
   qpid/sys/Dispatcher.h				\
-  qpid/sys/ExceptionHolder.h			\
   qpid/sys/FileSysDir.h				\
   qpid/sys/Fork.h				\
   qpid/sys/LockFile.h				\
@@ -791,6 +790,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/management/ManagementEvent.h	\
   ../include/qpid/management/ManagementObject.h	\
   ../include/qpid/sys/Condition.h		\
+  ../include/qpid/sys/ExceptionHolder.h		\
   ../include/qpid/sys/IOHandle.h		\
   ../include/qpid/sys/IntegerTypes.h		\
   ../include/qpid/sys/Monitor.h			\
