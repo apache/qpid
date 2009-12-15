@@ -15,10 +15,16 @@
  * limitations under the License.
  *
  */
+
+/*
+ * TODO: Note this is really a Posix specific implementation and so should be
+ * refactored together with windows/QpiddBroker into a more coherent daemon driver/
+ * platform specific split
+ */
 #include "qpid/broker/Daemon.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
-#include "qpid/sys/LockFile.h"
+#include "qpid/sys/posix/PidFile.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -31,7 +37,7 @@ namespace qpid {
 namespace broker {
 
 using namespace std;
-using qpid::sys::LockFile;
+using qpid::sys::PidFile;
 
 Daemon::Daemon(std::string _pidDir) : pidDir(_pidDir) {
     struct stat s;
@@ -176,7 +182,7 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
  */
 void Daemon::ready(uint16_t port) { // child
     lockFile = pidFile(pidDir, port);
-    LockFile lf(lockFile, true);
+    PidFile lf(lockFile, true);
 
     /*
      * Write the PID to the lockfile.
@@ -200,7 +206,7 @@ void Daemon::ready(uint16_t port) { // child
  */
 pid_t Daemon::getPid(string _pidDir, uint16_t port) {
     string name = pidFile(_pidDir, port);
-    LockFile lf(name, false);
+    PidFile lf(name, false);
     pid_t pid = lf.readPid();
     if (kill(pid, 0) < 0 && errno != EPERM) {
         unlink(name.c_str());

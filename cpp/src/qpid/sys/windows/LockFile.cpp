@@ -56,29 +56,4 @@ LockFile::~LockFile() {
     }
 }
 
-pid_t LockFile::readPid(void) const {
-    if (!impl)
-        throw Exception("Lock file not open");
-
-    pid_t pid;
-    DWORD desired_read = sizeof(pid_t);
-    DWORD actual_read = 0;
-    if (!ReadFile(impl->fd, &pid, desired_read, &actual_read, 0)) {
-        throw Exception("Cannot read lock file " + path);
-    }
-    return pid;
-}
-
-void LockFile::writePid(void) {
-    if (!impl)
-        throw Exception("Lock file not open");
-
-    pid_t pid = GetCurrentProcessId();
-    DWORD desired_write = sizeof(pid_t);
-    DWORD written = 0;
-    if (!WriteFile(impl->fd, &pid, desired_write, &written, 0)) {
-        throw Exception("Cannot write lock file " + path);
-    }
-}
- 
 }}  /* namespace qpid::sys */

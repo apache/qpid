@@ -141,12 +141,12 @@ class SocketProxy : private qpid::sys::Runnable
                 }
                 // Something is set; relay data as needed until something closes
                 if (FD_ISSET(server->getFd(), &socks)) {
-                    ssize_t n = server->read(buffer, sizeof(buffer));
+                    int n = server->read(buffer, sizeof(buffer));
                     throwIf(n <= 0, "SocketProxy: server disconnected");
                     if (!dropServer) client.write(buffer, n);
                 }
                 if (FD_ISSET(client.getFd(), &socks)) {
-                    ssize_t n = client.read(buffer, sizeof(buffer));
+                    int n = client.read(buffer, sizeof(buffer));
                     throwIf(n <= 0, "SocketProxy: client disconnected");
                     if (!dropServer) server->write(buffer, n);
                 }

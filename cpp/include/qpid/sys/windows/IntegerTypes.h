@@ -21,8 +21,6 @@
  *
  */
 
-#include <BaseTsd.h>    /* Windows system types */
-
 typedef unsigned char    uint8_t;
 typedef char             int8_t;
 typedef unsigned short   uint16_t;
@@ -33,8 +31,6 @@ typedef unsigned __int64 uint64_t;
 typedef          __int64 int64_t;
 
 // Visual Studio doesn't define other common types, so set them up here too.
-typedef int              pid_t;
-typedef SSIZE_T          ssize_t;
 typedef unsigned int     uint;
 
 #endif  /*!QPID_SYS_WINDOWS_INTEGERTYPES_H*/
