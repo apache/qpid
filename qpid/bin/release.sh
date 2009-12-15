@@ -40,6 +40,7 @@ usage()
     echo "--java  |-j : Generate the java artefacts"
     echo "--ruby  |-r : Generate the ruby artefacts"
     echo "--python|-p : Generate the python artefacts"
+    echo "--wcf   |-w : Generate the WCF artefacts"
     echo "--source|-e : Generate the source artefact"
     echo "--sign  |-s : Sign generated artefacts"
     echo "--upload|-u : Upload the artifacts directory to people.apache.org as qpid-\$VER"
@@ -77,6 +78,7 @@ for arg in $* ; do
    JAVA="JAVA"
    RUBY="RUBY"
    PYTHON="PYTHON"
+   WCF="WCF"
    SOURCE="SOURCE"
  ;;
  --cpp|-c)
@@ -93,6 +95,9 @@ for arg in $* ; do
  ;;
  --python|-p)
    PYTHON="PYTHON"
+ ;;
+ --wcf|-w)
+   WCF="WCF"
  ;;
  --source|-e)
    SOURCE="SOURCE"
@@ -134,13 +139,14 @@ echo REV:$REV
 echo VER:$VER
 
 # If nothing is specified then do it all
-if [ -z "${CLEAN}${PREPARE}${CPP}${DOTNET}${JAVA}${RUBY}${PYTHON}${SOURCE}${SIGN}${UPLOAD}" ] ; then
+if [ -z "${CLEAN}${PREPARE}${CPP}${DOTNET}${JAVA}${RUBY}${PYTHON}${WCF}${SOURCE}${SIGN}${UPLOAD}" ] ; then
    PREPARE="PREPARE"
    CPP="CPP"
    DOTNET="DOTNET"
    JAVA="JAVA"
    RUBY="RUBY"
    PYTHON="PYTHON"
+   WCF="WCF"
    SOURCE="SOURCE"
 
    SIGN="SIGN"
@@ -184,6 +190,10 @@ fi
 
 if [ "PYTHON" == "$PYTHON" ] ; then
   tar -czf artifacts/qpid-python-${VER}.tar.gz qpid-${VER}/python qpid-${VER}/specs
+fi
+
+if [ "WCF" == "$WCF" ] ; then
+  zip -rq artifacts/qpid-wcf-${VER}.zip qpid-${VER}/wcf
 fi
 
 if [ "CPP" == "$CPP" ] ; then
