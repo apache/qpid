@@ -823,7 +823,7 @@ public class QpidCompositeRollingAppender extends FileAppender
                     LogLog.debug("CD=0,curSizeRollBackups:"+curSizeRollBackups);
                     LogLog.debug("CD=0,maxSizeRollBackups:"+maxSizeRollBackups);
 
-                    // delete the first and keep counting up.
+                    // delete the first and keep counting up.                                                                                               
                     int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
                     LogLog.debug("CD=0,deleteFile:"+oldestFileIndex);
                     deleteFile(newFile + '.' + oldestFileIndex);
@@ -888,6 +888,11 @@ public class QpidCompositeRollingAppender extends FileAppender
         LogLog.debug("CD="+countDirection+",done");
     }
 
+
+    private int countFileIndex(String fileName)
+    {
+        return countFileIndex(fileName, true);
+    }
     /**
      * Use filename as a base name and find what count number we are up to by
      * looking at the files in this format:
@@ -899,9 +904,10 @@ public class QpidCompositeRollingAppender extends FileAppender
      * 
      *
      * @param fileName the basefilename to use
+     * @param checkBackupLocation should backupFilesToPath location be checked for existing backups
      * @return int the next free index
      */
-    private int countFileIndex(String fileName)
+    private int countFileIndex(String fileName, boolean checkBackupLocation)
     {
         String testFileName;
 
@@ -910,6 +916,14 @@ public class QpidCompositeRollingAppender extends FileAppender
         int index=1;
 
         testFileName = fileName + "." + index;
+
+        // Bail out early if there is a problem with the file
+        if (new File(testFileName) == null
+                || new File(testFileName + COMPRESS_EXTENSION) == null)
+
+        {
+            return index;
+        }
 
         // Check that we do not have the 1..n missing scenario
         if (!(new File(testFileName).exists()
@@ -920,33 +934,36 @@ public class QpidCompositeRollingAppender extends FileAppender
             String prunedFileName = new File(fileName).getName();
 
             // Look through all files to find next index
-            for (File file : new File(fileName).getParentFile().listFiles())
+            if (new File(fileName).getParentFile() != null)
             {
-                String name = file.getName();
-
-                if (name.startsWith(prunedFileName) && !name.equals(prunedFileName))
+                for (File file : new File(fileName).getParentFile().listFiles())
                 {
-                    String parsedCount = name.substring(prunedFileName.length() + 1 );
+                    String name = file.getName();
 
-                    if (parsedCount.endsWith(COMPRESS_EXTENSION))
+                    if (name.startsWith(prunedFileName) && !name.equals(prunedFileName))
                     {
-                        parsedCount = parsedCount.substring(0, parsedCount.indexOf(COMPRESS_EXTENSION));
-                    }
+                        String parsedCount = name.substring(prunedFileName.length() + 1);
 
-                    try
-                    {
-                        max = Integer.parseInt(parsedCount);
-
-                        // if we got a good value then update our index value.
-                        if (max > index)
+                        if (parsedCount.endsWith(COMPRESS_EXTENSION))
                         {
-                            // +1 as we want to return the next free value.
-                            index = max + 1;
+                            parsedCount = parsedCount.substring(0, parsedCount.indexOf(COMPRESS_EXTENSION));
                         }
-                    }
-                    catch (NumberFormatException nfe)
-                    {
-                        //ignore it assume file doesn't exist.
+
+                        try
+                        {
+                            max = Integer.parseInt(parsedCount);
+
+                            // if we got a good value then update our index value.
+                            if (max > index)
+                            {
+                                // +1 as we want to return the next free value.
+                                index = max + 1;
+                            }
+                        }
+                        catch (NumberFormatException nfe)
+                        {
+                            //ignore it assume file doesn't exist.
+                        }
                     }
                 }
             }
@@ -961,6 +978,12 @@ public class QpidCompositeRollingAppender extends FileAppender
         {
             index++;
             testFileName = fileName + "." + index;
+        }
+
+        if (checkBackupLocation && index == 1 && backupFilesToPath != null)
+        {
+            LogLog.debug("Trying backup location:"+backupFilesToPath + System.getProperty("file.separator") + fileName);
+            return countFileIndex(backupFilesToPath + System.getProperty("file.separator") + new File(fileName).getName(), false);
         }
 
         return index;
