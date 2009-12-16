@@ -278,7 +278,6 @@ namespace Apache.Qpid.Channel
 
         public bool TryReceive(TimeSpan timeout, out Message message)
         {
-            this.ThrowIfDisposedOrNotOpen();
             AmqpMessage amqpMessage;
             message = null;
 
@@ -379,6 +378,7 @@ namespace Apache.Qpid.Channel
         protected override void OnAbort()
         {
             //// TODO: check for network-less qpid teardown or launch special thread
+            this.CloseEndPoint();
             this.Cleanup();
         }
 
