@@ -37,6 +37,7 @@ class RecoverableMessage
 public:
     typedef boost::shared_ptr<RecoverableMessage> shared_ptr;
     virtual void setPersistenceId(uint64_t id) = 0;
+    virtual void setRedelivered() = 0;
     /**
      * Used by store to determine whether to load content on recovery
      * or let message load its own content as and when it requires it.
