@@ -22,8 +22,8 @@
 # Tests for the watchdog plug-in
 
 # Start a broker with  watchdog, freeze it with kill -STOP, verify that it is killed.
-PORT=`$QPIDD_EXEC -dp0 --no-data-dir --auth=no --no-module-dir --load-module $WATCHDOG_LIB --log-to-file=qpidd_watchdog.log --watchdog-interval 1`
-PID=`$QPIDD_EXEC --no-module-dir -cp $PORT`
+PORT=`$QPIDD_EXEC -dp0 --no-data-dir --auth=no --no-module-dir --load-module $WATCHDOG_LIB --log-to-file=qpidd_watchdog.log --watchdog-interval 1` || exit 1
+PID=`$QPIDD_EXEC --no-module-dir -cp $PORT` || exit 1
 kill -STOP $PID
 sleep 2
 
