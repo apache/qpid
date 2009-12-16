@@ -371,10 +371,6 @@ public class QpidCompositeRollingAppender extends FileAppender
         if (!staticLogFileName)
         {
             scheduledFilename = fileName = fileName.trim() + sdf.format(now);
-            if (countDirection > 0)
-            {
-                scheduledFilename = fileName = fileName + '.' + (++curSizeRollBackups);
-            }
         }
 
         super.setFile(fileName, append, bufferedIO, bufferSize);
@@ -514,75 +510,10 @@ public class QpidCompositeRollingAppender extends FileAppender
      */
     protected void existingInit()
     {
-
-        if (zeroBased)
-        {
-            curSizeRollBackups = -1;
-        }
-
         curTimeRollBackups = 0;
 
         // part A starts here
-        String filter;
-        if (staticLogFileName || !rollDate)
-        {
-            filter = baseFileName + ".*";
-        }
-        else
-        {
-            filter = scheduledFilename + ".*";
-        }
-
-        File f = new File(baseFileName);
-        f = f.getParentFile();
-        if (f == null)
-        {
-            f = new File(".");
-        }
-
-        LogLog.debug("Searching for existing files in: " + f);
-        String[] files = f.list();
-
-        if (files != null)
-        {
-            for (int i = 0; i < files.length; i++)
-            {
-                if (!files[i].startsWith(baseFileName))
-                {
-                    continue;
-                }
-
-                int index = files[i].lastIndexOf(".");
-
-                if (staticLogFileName)
-                {
-                    int endLength = files[i].length() - index;
-                    if ((baseFileName.length() + endLength) != files[i].length())
-                    {
-                        // file is probably scheduledFilename + .x so I don't care
-                        continue;
-                    }
-                }
-
-                try
-                {
-                    int backup = Integer.parseInt(files[i].substring(index + 1, files[i].length()));
-                    LogLog.debug("From file: " + files[i] + " -> " + backup);
-                    if (backup > curSizeRollBackups)
-                    {
-                        curSizeRollBackups = backup;
-                    }
-                }
-                catch (Exception e)
-                {
-                    // this happens when file.log -> file.log.yyyy-mm-dd which is normal
-                    // when staticLogFileName == false
-                    LogLog.debug("Encountered a backup file not ending in .x " + files[i]);
-                }
-            }
-        }
-
-        LogLog.debug("curSizeRollBackups starts at: " + curSizeRollBackups);
+        // This is now down at first log when curSizeRollBackup==0 see rollFile
         // part A ends here
 
         // part B not yet implemented
@@ -664,47 +595,11 @@ public class QpidCompositeRollingAppender extends FileAppender
 
         this.closeFile(); // keep windows happy.
 
-        // delete the old stuff here
 
-        if (staticLogFileName)
-        {
-            /* Compute filename, but only if datePattern is specified */
-            if (datePattern == null)
-            {
-                errorHandler.error("Missing DatePattern option in rollOver().");
-
-                return;
-            }
-
-            // is the new file name equivalent to the 'current' one
-            // something has gone wrong if we hit this -- we should only
-            // roll over if the new file will be different from the old
-            String dateFormat = sdf.format(now);
-            if (scheduledFilename.equals(fileName + dateFormat))
-            {
-                errorHandler.error("Compare " + scheduledFilename + " : " + fileName + dateFormat);
-
-                return;
-            }
-
-            // close current file, and rename it to datedFilename
-            this.closeFile();
-
-
-            rollFile();
-        }
-        else
-        {
-            if (compress)
-            {
-                compress(fileName);
-            }
-        }
+        rollFile();
 
         try
         {
-            // This will also close the file. This is OK since multiple
-            // close operations are safe.
             curSizeRollBackups = 0; // We're cleared out the old date and are ready for the new
 
             // new scheduled name
@@ -728,7 +623,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         {
             if (compress)
             {
-                LogLog.debug("Attempting to compress file with same output name.");
+                LogLog.error("Attempting to compress file with same output name.");
             }
 
             return;
@@ -737,6 +632,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         File target = new File(to);
 
         File file = new File(from);
+        // Perform Roll by renaming
         if (!file.getPath().equals(target.getPath()))
         {
             file.renameTo(target);
@@ -747,32 +643,26 @@ public class QpidCompositeRollingAppender extends FileAppender
         // as it will not be the statically named value.
         if (compress)
         {
-            compress(to);
+            compress(target);
         }
 
         LogLog.debug(from + " -> " + to);
     }
 
-    protected void compress(String file)
-    {
-        File f = new File(file);
-        compress(f, f);
-    }
-
-    private void compress(File from, File target)
+    private void compress(File target)
     {
         if (compressAsync)
         {
             synchronized (_compress)
             {
-                _compress.offer(new CompressJob(from, target));
+                _compress.offer(new CompressJob(target, target));
             }
 
             startCompression();
         }
         else
         {
-            doCompress(from, target);
+            doCompress(target, target);
         }
     }
 
@@ -785,9 +675,9 @@ public class QpidCompositeRollingAppender extends FileAppender
     }
 
     /** Delete's the specified file if it exists */
-    protected static void deleteFile(String fileName)
+    protected void deleteFile(String fileName)
     {
-        File file = new File(fileName);
+        File file = compress ? new File(fileName + COMPRESS_EXTENSION) : new File(fileName);
         if (file.exists())
         {
             file.delete();
@@ -847,11 +737,11 @@ public class QpidCompositeRollingAppender extends FileAppender
      */
     private void rollFile()
     {
+        LogLog.debug("CD="+countDirection+",start");
         if (countDirection < 0)
         {
-
             // If we haven't rolled yet then validate we have the right value
-            // for curSizeRollBackups                
+            // for curSizeRollBackups
             if (curSizeRollBackups == 0)
             {
                 //Validate curSizeRollBackups
@@ -860,17 +750,20 @@ public class QpidCompositeRollingAppender extends FileAppender
                 curSizeRollBackups--;
             }
 
-
             // If we are not keeping an infinite set of backups the delete oldest
             if (maxSizeRollBackups > 0)
             {
+                LogLog.debug("CD=-1,curSizeRollBackups:"+curSizeRollBackups);
+                LogLog.debug("CD=-1,maxSizeRollBackups:"+maxSizeRollBackups);
+
                 // Delete the oldest file.
                 // curSizeRollBackups is never -1 so infinite backups are ok here
-                if ((curSizeRollBackups - maxSizeRollBackups) >= maxSizeRollBackups)
+                if ((curSizeRollBackups - maxSizeRollBackups) >= 0)
                 {
                     //The oldest file is the one with the largest number
                     // as the 0 is always fileName
                     // which moves to fileName.1 etc.
+                    LogLog.debug("CD=-1,deleteFile:"+curSizeRollBackups);
                     deleteFile(fileName + '.' + curSizeRollBackups);
                     // decrement to offset the later increment
                     curSizeRollBackups--;
@@ -879,7 +772,18 @@ public class QpidCompositeRollingAppender extends FileAppender
             // Map {(maxBackupIndex - 1), ..., 2, 1} to {maxBackupIndex, ..., 3, 2}
             for (int i = curSizeRollBackups; i >= 1; i--)
             {
-                rollFile((fileName + "." + i), (fileName + '.' + (i + 1)), false);
+                String oldName = (fileName + "." + i);
+                String newName = (fileName + '.' + (i + 1));
+
+                // Ensure that when compressing we rename the compressed archives
+                if (compress)
+                {
+                    rollFile(oldName + COMPRESS_EXTENSION, newName + COMPRESS_EXTENSION, false);
+                }
+                else
+                {
+                    rollFile(oldName, newName, false);
+                }
             }
 
             curSizeRollBackups++;
@@ -914,10 +818,14 @@ public class QpidCompositeRollingAppender extends FileAppender
                 // Otherwise we would have to check on startup that we didn't
                 // have more than maxSizeRollBackups and prune then.
 
-                if (((curSizeRollBackups - maxSizeRollBackups) >= maxSizeRollBackups))
+                if (((curSizeRollBackups - maxSizeRollBackups) >= 0))
                 {
+                    LogLog.debug("CD=0,curSizeRollBackups:"+curSizeRollBackups);
+                    LogLog.debug("CD=0,maxSizeRollBackups:"+maxSizeRollBackups);
+
                     // delete the first and keep counting up.
                     int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
+                    LogLog.debug("CD=0,deleteFile:"+oldestFileIndex);
                     deleteFile(newFile + '.' + oldestFileIndex);
                 }
             }
@@ -938,7 +846,6 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
         else
         { // countDirection > 0
-
             // If we haven't rolled yet then validate we have the right value
             // for curSizeRollBackups
             if (curSizeRollBackups == 0)
@@ -953,6 +860,9 @@ public class QpidCompositeRollingAppender extends FileAppender
             // If we are not keeping an infinite set of backups the delete oldest
             if (maxSizeRollBackups > 0)
             {
+                LogLog.debug("CD=1,curSizeRollBackups:"+curSizeRollBackups);
+                LogLog.debug("CD=1,maxSizeRollBackups:"+maxSizeRollBackups);
+
                 // Don't prune older files if they exist just go for the last
                 // one based on our maxSizeRollBackups. This means we may have
                 // more files left on disk that maxSizeRollBackups if this value
@@ -960,10 +870,11 @@ public class QpidCompositeRollingAppender extends FileAppender
                 // Otherwise we would have to check on startup that we didn't
                 // have more than maxSizeRollBackups and prune then.
 
-                if (((curSizeRollBackups - maxSizeRollBackups) >= maxSizeRollBackups))
+                if (((curSizeRollBackups - maxSizeRollBackups) >= 0))
                 {
                     // delete the first and keep counting up.
                     int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
+                    LogLog.debug("CD=1,deleteFile:"+oldestFileIndex);
                     deleteFile(fileName + '.' + oldestFileIndex);
                 }
             }
@@ -972,7 +883,9 @@ public class QpidCompositeRollingAppender extends FileAppender
             curSizeRollBackups++;
 
             rollFile(fileName, fileName + '.' + curSizeRollBackups, compress);
+
         }
+        LogLog.debug("CD="+countDirection+",done");
     }
 
     /**
