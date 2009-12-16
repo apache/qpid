@@ -30,7 +30,8 @@ from threading import Condition
 from qpid.messaging import *
 
 from qmfCommon import (AMQP_QMF_DIRECT, AMQP_QMF_NAME_SEPARATOR, AMQP_QMF_AGENT_INDICATION,
-                       AMQP_QMF_AGENT_LOCATE, AgentId, makeSubject, parseSubject, OpCode)
+                       AMQP_QMF_AGENT_LOCATE, AgentId, makeSubject, parseSubject, OpCode,
+                       Query, AgentIdFactory, Notifier, _doQuery)
 
 
 
@@ -67,9 +68,8 @@ class _Mailbox(object):
     def fetch(self, timeout=None):
         self._cv.acquire()
         try:
-            if len(self._msgs):
-                return self._msgs.pop()
-            self._cv.wait(timeout)
+            if len(self._msgs) == 0:
+                self._cv.wait(timeout)
             if len(self._msgs):
                 return self._msgs.pop()
             return None
@@ -169,6 +169,19 @@ class SequencedWaiter(object):
             self.lock.release()
 
 
+    def isValid(self, seq):
+        """
+        True if seq is in use, else False (seq is unknown)
+        """
+        seq = long(seq)
+        self.lock.acquire()
+        try:
+            return seq in self.pending
+        finally:
+            self.lock.release()
+        return False
+
+
 
 #class ObjectProxy(QmfObject):
 class ObjectProxy(object):
@@ -198,11 +211,11 @@ class ObjectProxy(object):
         """
         if not self._agent:
             raise Exception("No Agent associated with this object")
-        newer = self._agent.get_object(Query({"object_id":object_id}), timeout)
+        newer = self._agent.get_object(Query({"object_id":None}), timeout)
         if newer == None:
             logging.error("Failed to retrieve object %s from agent %s" % (str(self), str(self._agent)))
             raise Exception("Failed to retrieve object %s from agent %s" % (str(self), str(self._agent)))
-        self.mergeUpdate(newer)  ### ??? in Rafi's console.py::Object Class
+        #self.mergeUpdate(newer)  ### ??? in Rafi's console.py::Object Class
 
     ### def _merge_update(self, newerObject):
     ### ??? in Rafi's console.py::Object Class
@@ -216,32 +229,36 @@ class ObjectProxy(object):
 
 
 
-class AgentProxy(object):
+class Agent(object):
     """
     A local representation of a remote agent managed by this console.
     """
-    def __init__(self, name):
+    def __init__(self, agent_id, console):
         """
         @type name: AgentId
         @param name: uniquely identifies this agent in the AMQP domain.
         """
-        if not name or not isinstance(name, AgentId):
-            raise Exception( "Attempt to create an Agent without supplying a valid agent name." );
+        if not isinstance(agent_id, AgentId):
+            raise TypeError("parameter must be an instance of class AgentId")
+        if not isinstance(console, Console):
+            raise TypeError("parameter must be an instance of class Console")
 
-        self._name = name
-        self._address = AMQP_QMF_DIRECT + AMQP_QMF_NAME_SEPARATOR + str(name)
-        self._console = None
+        self._id = agent_id
+        self._address = AMQP_QMF_DIRECT + AMQP_QMF_NAME_SEPARATOR + str(agent_id)
+        self._console = console
         self._sender = None
         self._packages = [] # list of package names known to this agent
         self._classes = {}  # dict [key:class] of classes known to this agent
         self._subscriptions = [] # list of active standing subscriptions for this agent
-        self._exists = False  # true when Agent Announce is received from this agent
-        logging.debug( "Created AgentProxy with address: [%s]" % self._address )
+        self._announce_timestamp = long(0) # timestamp when last announce received
+        logging.debug( "Created Agent with address: [%s]" % self._address )
 
 
-    def key(self):
-        return str(self._name)
+    def getAgentId(self):
+        return self._id
 
+    def isActive(self):
+        return self._announce_timestamp != 0
     
     def _send_msg(self, msg):
         """
@@ -250,25 +267,10 @@ class AgentProxy(object):
         msg.reply_to = self._console.address()
         handle = self._console._req_correlation.allocate()
         if handle == 0:
-            raise Exception("Can not allocate a sequence id!")
+            raise Exception("Can not allocate a correlation id!")
         msg.correlation_id = str(handle)
         self._sender.send(msg)
         return handle
-
-
-
-    def _fetch_reply_msg(self, handle, timeout=None):
-        """
-        Low-level routine to wait for an expected reply from the agent.
-        """
-        if handle == 0:
-            raise Exception("Invalid handle")
-        msg = self._console._req_correlation.get_data( handle, timeout )
-        if not msg:
-            logging.debug("timed out waiting for reply message")
-        self._console._req_correlation.release( handle )
-        return msg
-
 
     def get_packages(self):
         """
@@ -371,22 +373,6 @@ class WorkItem(object):
 
 
 
-class Notifier(object):
-    """
-    Virtual base class that defines a call back which alerts the application that
-    a QMF Console notification is pending.
-    """
-    def console_indication(self):
-        """
-        Called when one or more console items are ready for the console application to process.
-        This method may be called by the internal console management thread.  Its purpose is to
-        indicate that the console application should process pending items.
-        """
-        pass
-
-
-
-
 class Console(Thread):
     """
     A Console manages communications to a collection of agents on behalf of an application.
@@ -408,16 +394,17 @@ class Console(Thread):
         self._notifier = notifier
         self._conn = None
         self._session = None
-        # dict of "agent-direct-address":AgentProxy entries
+        self._lock = Lock()
+        # dict of "agent-direct-address":class Agent entries
         self._agent_map = {}
-        self._agent_map_lock = Lock()
         self._direct_recvr = None
         self._announce_recvr = None
         self._locate_sender = None
         self._schema_cache = {}
         self._req_correlation = SequencedWaiter()
         self._operational = False
-        self._agent_discovery = False
+        self._agent_discovery_predicate = None
+        self._default_timeout = 60
         # lock out run() thread
         self._cv = Condition()
         # for passing WorkItems to the application
@@ -514,78 +501,96 @@ class Console(Thread):
         return self._address
 
 
-    def create_agent( self, agent_name ):
+    def _createAgent( self, agent_id ):
         """
         Factory to create/retrieve an agent for this console
         """
-        if not isinstance(agent_name, AgentId):
-            raise TypeError("agent_name must be an instance of AgentId")
+        if not isinstance(agent_id, AgentId):
+            raise TypeError("parameter must be an instance of class AgentId")
 
-        agent = AgentProxy(agent_name)
-
-        self._agent_map_lock.acquire()
+        self._lock.acquire()
         try:
-            if agent_name in self._agent_map:
-                return self._agent_map[agent_name]
+            if agent_id in self._agent_map:
+                return self._agent_map[agent_id]
 
-            agent._console = self
+            agent = Agent(agent_id, self)
             agent._sender = self._session.sender(agent._address)
-            self._agent_map[agent_name] = agent
+            self._agent_map[agent_id] = agent
         finally:
-            self._agent_map_lock.release()
+            self._lock.release()
 
         return agent
 
 
 
-    def destroy_agent( self, agent ):
+    def destroyAgent( self, agent ):
         """
         Undoes create.
         """
-        if not isinstance(agent, AgentProxy):
-            raise TypeError("agent must be an instance of AgentProxy")
+        if not isinstance(agent, Agent):
+            raise TypeError("agent must be an instance of class Agent")
 
-        self._agent_map_lock.acquire()
+        self._lock.acquire()
         try:
-            if agent._name in self._agent_map:
-                del self._agent_map[agent._name]
+            if agent._id in self._agent_map:
+                del self._agent_map[agent._id]
         finally:
-            self._agent_map_lock.release()
+            self._lock.release()
 
 
 
 
-    def find_agent(self, agent_name, timeout=None ):
+    def findAgent(self, agent_id, timeout=None ):
         """
-        Given the name of a particular agent, return an AgentProxy representing 
-        that agent.  Return None if the agent does not exist.
+        Given the id of a particular agent, return an instance of class Agent 
+        representing that agent.  Return None if the agent does not exist.
         """
-        self._agent_map_lock.acquire()
+        if not isinstance(agent_id, AgentId):
+            raise TypeError("parameter must be an instance of class AgentId")
+
+        self._lock.acquire()
         try:
-            if agent_name in self._agent_map:
-                return self._agent_map[agent_name]
+            if agent_id in self._agent_map:
+                return self._agent_map[agent_id]
         finally:
-            self._agent_map_lock.release()
+            self._lock.release()
 
-        new_agent = self.create_agent(agent_name)
-        msg = Message(subject=makeSubject(OpCode.agent_locate),
-                      properties={"method":"request"},
-                      content={"query": {"vendor" : agent_name.vendor(),
-                                         "product" : agent_name.product(),
-                                         "name" : agent_name.name()}})
-        handle = new_agent._send_msg(msg)
+        # agent not present yet - ping it with an agent_locate
+
+        handle = self._req_correlation.allocate()
         if handle == 0:
-            raise Exception("Failed to send Agent locate message to agent %s" % str(agent_name))
-
-        msg = new_agent._fetch_reply_msg(handle, timeout)
-        if not msg:
-            logging.debug("Unable to contact agent '%s' - no reply." % agent_name)
-            self.destroy_agent(new_agent)
+            raise Exception("Can not allocate a correlation id!")
+        try:
+            tmp_sender = self._session.sender(AMQP_QMF_DIRECT + AMQP_QMF_NAME_SEPARATOR + str(agent_id))
+            msg = Message(subject=makeSubject(OpCode.agent_locate),
+                          properties={"method":"request"},
+                          content={"query": {Query._TARGET: {Query._TARGET_AGENT_ID:None},
+                                             Query._PREDICATE:
+                                                 [Query._LOGIC_AND,
+                                                  [Query._CMP_EQ, "vendor",  agent_id.vendor()],
+                                                  [Query._CMP_EQ, "product", agent_id.product()],
+                                                  [Query._CMP_EQ, "name", agent_id.name()]]}})
+            msg.reply_to = self._address
+            msg.correlation_id = str(handle)
+            tmp_sender.send( msg )
+        except SendError, e:
+            logging.error(str(e))
+            self._req_correlation.release(handle)
             return None
-        # @todo - for now, dump the message
-        logging.info( "agent-locate reply received for %s" % agent_name)
-        return new_agent
 
+        if not timeout:
+            timeout = self._default_timeout
+
+        new_agent = None
+        self._req_correlation.get_data( handle, timeout )
+        self._req_correlation.release(handle)
+        self._lock.acquire()
+        try:
+            if agent_id in self._agent_map:
+                new_agent = self._agent_map[agent_id]
+        finally:
+            self._lock.release()
+        return new_agent
 
 
     def run(self):
@@ -600,14 +605,14 @@ class Console(Thread):
             try:
                 msg = self._announce_recvr.fetch(timeout = 0)
                 if msg:
-                    self._rcv_announce(msg)
+                    self._dispatch(msg, _direct=False)
             except:
                 pass
 
             try:
                 msg = self._direct_recvr.fetch(timeout = 0)
                 if msg:
-                    self._rcv_direct(msg)
+                    self._dispatch(msg, _direct=True)
             except:
                 pass
 
@@ -626,7 +631,7 @@ class Console(Thread):
 
                 _callback_thread = currentThread()
                 logging.info("Calling console indication")
-                self._notifier.console_indication()
+                self._notifier.indication()
                 _callback_thread = None
 
             while self._operational and \
@@ -640,79 +645,120 @@ class Console(Thread):
 
     # called by run() thread ONLY
     #
-    def _rcv_announce(self, msg):
+    def _dispatch(self, msg, _direct=True):
         """
-        PRIVATE: Process a message received on the announce receiver
+        PRIVATE: Process a message received from an Agent
         """
-        logging.info( "Announce message received!" )
+        logging.error( "Message received from Agent! [%s]" % msg )
         try:
             version,opcode = parseSubject(msg.subject)
+            # @todo: deal with version mismatch!!!
         except:
-            logging.debug("Ignoring unrecognized broadcast message '%s'" % msg.subject)
+            logging.error("Ignoring unrecognized broadcast message '%s'" % msg.subject)
             return
 
-        amap = {}; props = {}
+        cmap = {}; props = {}
         if msg.content_type == "amqp/map":
-            amap = msg.content
+            cmap = msg.content
         if msg.properties:
             props = msg.properties
 
         if opcode == OpCode.agent_ind:
-            # agent indication
-            if "name" in amap:
-                if self._agent_discovery:
-                    ind = amap["name"]
-                    if "vendor" in ind and "product" in ind and "name" in ind:
-
-                        agent = self.create_agent(AgentId( ind["vendor"],
-                                                           ind["product"],
-                                                           ind["name"] ))
-                        if not agent._exists:
-                            # new agent
-                            agent._exists = True
-                            logging.info("AGENT_ADDED for %s" % agent)
-                            wi = WorkItem(WorkItem.AGENT_ADDED,
-                                          {"agent": agent})
-                            self._work_q.put(wi)
+            self._handleAgentIndMsg( msg, cmap, version, _direct )
+        elif opcode == OpCode.data_ind:
+            logging.warning("!!! data_ind TBD !!!")
+        elif opcode == OpCode.event_ind:
+            logging.warning("!!! event_ind TBD !!!")
+        elif opcode == OpCode.managed_object:
+            logging.warning("!!! managed_object TBD !!!")
+        elif opcode == OpCode.object_ind:
+            logging.warning("!!! object_ind TBD !!!")
+        elif opcode == OpCode.response:
+            logging.warning("!!! response TBD !!!")
+        elif opcode == OpCode.schema_ind:
+            logging.warning("!!! schema_ind TBD !!!")
+        elif opcode == OpCode.noop:
+             logging.debug("No-op msg received.")
         else:
             logging.warning("Ignoring message with unrecognized 'opcode' value: '%s'" % opcode)
 
 
+    def _handleAgentIndMsg(self, msg, cmap, version, direct):
+        """
+        Process a received agent-ind message.  This message may be a response to a
+        agent-locate, or it can be an unsolicited agent announce.
+        """
+        logging.debug("_handleAgentIndMsg '%s'" % msg)
 
-    # called by run() thread ONLY
-    #
-    def _rcv_direct(self, msg):
-        """
-        PRIVATE: Process a message sent to my direct receiver
-        """
-        logging.info( "direct message received!" )
+        if Query._TARGET_AGENT_ID in cmap:
+            try:
+                agent_id = AgentIdFactory(cmap[Query._TARGET_AGENT_ID])
+            except:
+                logging.debug("Bad agent-ind message received: '%s'" % msg)
+                return
+
+        ignore = True
+        matched = False
+        correlated = False
         if msg.correlation_id:
-            self._req_correlation.put_data(msg.correlation_id, msg)
+            correlated = self._req_correlation.isValid(msg.correlation_id)
+
+        if direct and correlated:
+            ignore = False
+        elif self._agent_discovery_predicate:
+            matched = _doQuery( self._agent_discovery_predicate,
+                                agent_id.mapEncode() )
+            ignore = not matched
+
+        if not ignore:
+            agent = None
+            self._lock.acquire()
+            try:
+                if agent_id in self._agent_map:
+                    agent = self._agent_map[agent_id]
+            finally:
+                self._lock.release()
+
+            if not agent:
+                # need to create and add a new agent
+                agent = self._createAgent(agent_id)
+
+            old_timestamp = agent._announce_timestamp
+            agent._announce_timestamp = time.time()
+
+            if old_timestamp == 0 and matched:
+                logging.debug("AGENT_ADDED for %s" % agent)
+                wi = WorkItem(WorkItem.AGENT_ADDED,
+                              {"agent": agent})
+                self._work_q.put(wi)
+
+            if correlated:
+                # wake up all waiters
+                logging.debug("waking waiters for correlation id %s" % msg.correlation_id)
+                self._req_correlation.put_data(msg.correlation_id, msg)
 
 
-
-    def enable_agent_discovery(self):
+    def enableAgentDiscovery(self, query=None):
         """
         Called to enable the asynchronous Agent Discovery process.
         Once enabled, AGENT_ADD work items can arrive on the WorkQueue.
         """
-        if not self._agent_discovery:
-            self._agent_discovery = True
-            msg = Message(subject=makeSubject(OpCode.agent_locate),
-                          properties={"method":"request"},
-                          content={"query": {"vendor": "*",
-                                             "product": "*",
-                                             "name": "*"}})
-            self._locate_sender.send(msg)
+        self._agent_discovery_predicate = [Query._CMP_TRUE]  # default: match all indications
+        if query:
+            if not isinstance(query, dict):
+                raise TypeError("parameter must be of type dict")
+            if Query._TARGET not in query or query[Query._TARGET] != {Query._TARGET_AGENT_ID:None}:
+                raise TypeError("query must be for an agent '%s'" % query)
+            if Query._PREDICATE in query:
+                self._agent_discovery_predicate = query[Query._PREDICATE][:]
 
 
-
-    def disable_agent_discovery(self):
+    def disableAgentDiscovery(self):
         """
         Called to disable the async Agent Discovery process enabled by
-        calling enable_agent_discovery()
+        calling enableAgentDiscovery()
         """
-        self._agent_discovery = False
+        self._agent_discovery_predicate = None
 
 
 
@@ -731,7 +777,7 @@ class Console(Thread):
         """
         try:
             wi = self._work_q.get(True, timeout)
-        except Queue.Empty:
+        except:
             return None
         return wi
 
@@ -1125,8 +1171,7 @@ class Console(Thread):
 
 if __name__ == '__main__':
     # temp test code
-    import time
-    from qmfCommon import (AgentId, SchemaEventClassFactory, qmfTypes, SchemaPropertyFactory,
+    from qmfCommon import (SchemaEventClassFactory, qmfTypes, SchemaPropertyFactory,
                            SchemaObjectClassFactory, ObjectIdFactory, QmfData, QmfDescribed,
                            QmfDescribedFactory, QmfManaged, QmfManagedFactory, QmfDataFactory,
                            QmfEvent)
@@ -1142,7 +1187,7 @@ if __name__ == '__main__':
     _myConsole.add_connection( _c )
 
     logging.info( "Finding Agent" )
-    _myAgent = _myConsole.find_agent( AgentId( "redhat.com", "agent", "tross" ), 5 )
+    _myAgent = _myConsole.findAgent( AgentId( "redhat.com", "agent", "tross" ), 5 )
 
     logging.info( "Agent Found: %s" % _myAgent )
 
@@ -1159,7 +1204,7 @@ if __name__ == '__main__':
             self._myContext = context
             self.WorkAvailable = False
 
-        def console_indication(self):
+        def indication(self):
             print("Indication received! context=%d" % self._myContext)
             self.WorkAvailable = True
 
@@ -1168,7 +1213,7 @@ if __name__ == '__main__':
     _myConsole = Console(notifier=_noteMe)
     _myConsole.add_connection( _c )
 
-    _myConsole.enable_agent_discovery()
+    _myConsole.enableAgentDiscovery()
     logging.info("Waiting...")
 
 

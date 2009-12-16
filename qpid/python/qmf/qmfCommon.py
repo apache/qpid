@@ -48,9 +48,28 @@ AMQP_QMF_VERSION = 4
 AMQP_QMF_SUBJECT_FMT = "%s%d.%s"
 
 class OpCode(object):
-    agent_locate = "agent-locate"
-    agent_ind = "agent"
     noop = "noop"
+
+    # codes sent by a console and processed by the agent
+    agent_locate = "agent-locate"
+    cancel_subscription = "cancel-subscription"
+    create_subscription = "create-subscription"
+    get_query = "get_query"
+    method_req = "method"
+    renew_subscription = "renew-subscription"
+    schema_query = "schema-query"  # @todo: deprecate
+
+    # codes sent by the agent to a console
+    agent_ind = "agent"
+    data_ind = "data"
+    event_ind = "event"
+    managed_object = "managed-object"
+    object_ind = "object"
+    response = "response"
+    schema_ind="schema"   # @todo: deprecate
+
+
+
 
 def makeSubject(_code): 
     """
@@ -68,6 +87,19 @@ def parseSubject(_sub):
 
     return _sub[3:].split('.', 1)
 
+
+class Notifier(object):
+    """
+    Virtual base class that defines a call back which alerts the application that
+    a QMF Console notification is pending.
+    """
+    def indication(self):
+        """
+        Called when one or more items are ready for the application to process.
+        This method may be called by an internal QMF library thread.  Its purpose is to
+        indicate that the application should process pending work items.
+        """
+        raise Exception("The indication method must be overridden by the application!")
 
 
 
@@ -966,7 +998,127 @@ class MethodResponse(object):
 #   ##==============================================================================
 
 
+
+def _doQuery(predicate, params ):
+    """
+    Given the predicate from a query, and a map of named parameters, apply the predicate
+    to the parameters, and return True or False.
+    """
+    if type(predicate) != list or len(predicate) < 1:
+        return False
+
+    opr = predicate[0]
+    if opr == Query._CMP_TRUE:
+        logging.info("_doQuery() TRUE: [%s]" % predicate )
+        return True
+    elif opr == Query._CMP_FALSE:
+        logging.info("_doQuery() FALSE: [%s]" % predicate )
+        return False
+    elif opr == Query._LOGIC_AND:
+        logging.info("_doQuery() AND: [%s]" % predicate )
+        rc = False
+        for exp in predicate[1:]:
+            rc = _doQuery( exp, params )
+            if not rc:
+                break
+        return rc
+
+    elif opr == Query._LOGIC_OR:
+        logging.info("_doQuery() OR: [%s]" % predicate )
+        rc = False
+        for exp in predicate[1:]:
+            rc = _doQuery( exp, params )
+            if rc:
+                break
+        return rc
+
+    elif opr == Query._LOGIC_NOT:
+        logging.info("_doQuery() NOT: [%s]" % predicate )
+        if len(predicate) != 2:
+            logging.warning("Malformed query not-expression received: '%s'" % predicate)
+            return False
+        return not _doQuery( predicate[1:], params )
+
+    elif opr in [Query._CMP_EQ, Query._CMP_NE, Query._CMP_LT, 
+                 Query._CMP_LE, Query._CMP_GT, Query._CMP_GE,
+                 Query._CMP_RE]:
+        if len(predicate) != 3:
+            logging.warning("Malformed query compare expression received: '%s'" % predicate)
+            return False
+        # @todo: support regular expression match
+        name = predicate[1]
+        if name not in params:
+            logging.warning("Malformed query, attribute '%s' not present." % name)
+            return False
+        arg1 = params[name]
+        arg1Type = type(arg1)
+        logging.info("_doQuery() CMP: [%s] value='%s'" % (predicate, arg1) )
+        try:
+            arg2 = arg1Type(predicate[2])
+            if opr == Query._CMP_EQ: return arg1 == arg2
+            if opr == Query._CMP_NE: return arg1 != arg2
+            if opr == Query._CMP_LT: return arg1 < arg2
+            if opr == Query._CMP_LE: return arg1 <= arg2
+            if opr == Query._CMP_GT: return arg1 > arg2
+            if opr == Query._CMP_GE: return arg1 >= arg2
+            if opr == Query._CMP_RE: 
+                logging.error("!!! RE QUERY TBD !!!")
+                return False
+        except:
+            logging.warning("Malformed query, unable to compare '%s'" % predicate)
+        return False
+
+    elif opr == Query._CMP_PRESENT:
+        logging.info("_doQuery() PRESENT: [%s]" % predicate )
+        if len(predicate) != 2:
+            logging.warning("Malformed query present expression received: '%s'" % predicate)
+            return False
+        name = predicate[1]
+        return name in params
+
+    else:
+        logging.warning("Unknown query operator received: '%s'" % opr)
+    return False
+
+
+
 class Query:
+    _TARGET="what"
+    _PREDICATE="where"
+
+    _TARGET_PACKAGES="_packages"
+    _TARGET_OBJECT_ID="_object_id"
+    _TARGET_SCHEMA="_schema"
+    _TARGET_SCHEMA_ID="_schema_id"
+    _TARGET_MGT_DATA="_mgt_data"
+    _TARGET_AGENT_ID="_agent_id"
+
+    _PRED_PACKAGE="_package_name"
+    _PRED_CLASS="_class_name"
+    _PRED_TYPE="_type"
+    _PRED_HASH="_has_str"
+    _PRED_SCHEMA_ID="_schema_id"
+    _PRED_VENDOR="_vendor"
+    _PRED_PRODUCT="_product"
+    _PRED_NAME="_name"
+    _PRED_AGENT_ID="_agent_id"
+    _PRED_PRIMARY_KEY="_primary_key"
+
+    _CMP_EQ="eq"
+    _CMP_NE="ne"
+    _CMP_LT="lt"
+    _CMP_LE="le"
+    _CMP_GT="gt"
+    _CMP_GE="ge"
+    _CMP_RE="re_match"
+    _CMP_PRESENT="exists"
+    _CMP_TRUE="true"
+    _CMP_FALSE="false"
+
+    _LOGIC_AND="and"
+    _LOGIC_OR="or"
+    _LOGIC_NOT="not"
+
     def __init__(self, kwargs={}):
         pass
 #         if "impl" in kwargs:
