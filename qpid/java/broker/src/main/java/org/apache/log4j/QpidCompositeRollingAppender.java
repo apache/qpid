@@ -157,6 +157,7 @@ public class QpidCompositeRollingAppender extends FileAppender
     protected String backupFilesToPath = null;
     private final ConcurrentLinkedQueue<CompressJob> _compress = new ConcurrentLinkedQueue<CompressJob>();
     private AtomicBoolean _compressing = new AtomicBoolean(false);
+    private static final String COMPRESS_EXTENSION = ".gz";
 
     /** The default constructor does nothing. */
     public QpidCompositeRollingAppender()
@@ -689,16 +690,8 @@ public class QpidCompositeRollingAppender extends FileAppender
             // close current file, and rename it to datedFilename
             this.closeFile();
 
-            // we may have to roll over a large number of backups here
-            String from, to;
-            for (int i = 1; i <= curSizeRollBackups; i++)
-            {
-                from = fileName + '.' + i;
-                to = scheduledFilename + '.' + i;
-                rollFile(from, to, false);
-            }
 
-            rollFile(fileName, scheduledFilename, compress);
+            rollFile();
         }
         else
         {
@@ -742,11 +735,6 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
 
         File target = new File(to);
-        if (target.exists())
-        {
-            LogLog.debug("deleting existing target file: " + target);
-            target.delete();
-        }
 
         File file = new File(from);
         if (!file.getPath().equals(target.getPath()))
@@ -838,57 +826,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         // If maxBackups <= 0, then there is no file renaming to be done.
         if (maxSizeRollBackups != 0)
         {
-
-            if (countDirection < 0)
-            {
-                // Delete the oldest file, to keep Windows happy.
-                if (curSizeRollBackups == maxSizeRollBackups)
-                {
-                    deleteFile(fileName + '.' + maxSizeRollBackups);
-                    curSizeRollBackups--;
-                }
-
-                // Map {(maxBackupIndex - 1), ..., 2, 1} to {maxBackupIndex, ..., 3, 2}
-                for (int i = curSizeRollBackups; i >= 1; i--)
-                {
-                    rollFile((fileName + "." + i), (fileName + '.' + (i + 1)), false);
-                }
-
-                curSizeRollBackups++;
-                // Rename fileName to fileName.1
-                rollFile(fileName, fileName + ".1", compress);
-
-            } // REMOVE This code branching for Alexander Cerna's request
-            else if (countDirection == 0)
-            {
-                // rollFile based on date pattern
-                curSizeRollBackups++;
-                now.setTime(System.currentTimeMillis());
-                scheduledFilename = fileName + sdf.format(now);
-                rollFile(fileName, scheduledFilename, compress);
-            }
-            else
-            { // countDirection > 0
-                if ((curSizeRollBackups >= maxSizeRollBackups) && (maxSizeRollBackups > 0))
-                {
-                    // delete the first and keep counting up.
-                    int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
-                    deleteFile(fileName + '.' + oldestFileIndex);
-                }
-
-                if (staticLogFileName)
-                {
-                    curSizeRollBackups++;
-                    rollFile(fileName, fileName + '.' + curSizeRollBackups, compress);
-                }
-                else
-                {
-                    if (compress)
-                    {
-                        compress(fileName);
-                    }
-                }
-            }
+            rollFile();
         }
 
         try
@@ -903,16 +841,187 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
     }
 
+    /**
+     * Perform file Rollover ensuring the countDirection is applied along with
+     * the other options
+     */
+    private void rollFile()
+    {
+        if (countDirection < 0)
+        {
+
+            // If we haven't rolled yet then validate we have the right value
+            // for curSizeRollBackups                
+            if (curSizeRollBackups == 0)
+            {
+                //Validate curSizeRollBackups
+                curSizeRollBackups = countFileIndex(fileName);
+                // decrement to offset the later increment
+                curSizeRollBackups--;
+            }
+
+
+            // If we are not keeping an infinite set of backups the delete oldest
+            if (maxSizeRollBackups > 0)
+            {
+                // Delete the oldest file.
+                // curSizeRollBackups is never -1 so infinite backups are ok here
+                if ((curSizeRollBackups - maxSizeRollBackups) >= maxSizeRollBackups)
+                {
+                    //The oldest file is the one with the largest number
+                    // as the 0 is always fileName
+                    // which moves to fileName.1 etc.
+                    deleteFile(fileName + '.' + curSizeRollBackups);
+                    // decrement to offset the later increment
+                    curSizeRollBackups--;
+                }
+            }
+            // Map {(maxBackupIndex - 1), ..., 2, 1} to {maxBackupIndex, ..., 3, 2}
+            for (int i = curSizeRollBackups; i >= 1; i--)
+            {
+                rollFile((fileName + "." + i), (fileName + '.' + (i + 1)), false);
+            }
+
+            curSizeRollBackups++;
+            // Rename fileName to fileName.1
+            rollFile(fileName, fileName + ".1", compress);
+
+        } // REMOVE This code branching for Alexander Cerna's request
+        else if (countDirection == 0)
+        {
+            // rollFile based on date pattern
+            curSizeRollBackups++;
+            now.setTime(System.currentTimeMillis());
+            scheduledFilename = fileName + sdf.format(now);
+            rollFile(fileName, scheduledFilename, compress);
+        }
+        else
+        { // countDirection > 0
+
+            // If we haven't rolled yet then validate we have the right value
+            // for curSizeRollBackups
+            if (curSizeRollBackups == 0)
+            {
+                //Validate curSizeRollBackups
+                curSizeRollBackups = countFileIndex(fileName);
+                // to balance the increment just coming up. as the count returns
+                // the next free number not the last used.
+                curSizeRollBackups--;
+            }
+
+            // If we are not keeping an infinite set of backups the delete oldest
+            if (maxSizeRollBackups > 0)
+            {
+                // Don't prune older files if they exist just go for the last
+                // one based on our maxSizeRollBackups. This means we may have
+                // more files left on disk that maxSizeRollBackups if this value
+                // is adjusted between runs but that is an acceptable state.
+                // Otherwise we would have to check on startup that we didn't
+                // have more than maxSizeRollBackups and prune then.
+
+                if (((curSizeRollBackups - maxSizeRollBackups) >= maxSizeRollBackups))
+                {
+                    // delete the first and keep counting up.
+                    int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
+                    deleteFile(fileName + '.' + oldestFileIndex);
+                }
+            }
+
+
+            curSizeRollBackups++;
+
+            rollFile(fileName, fileName + '.' + curSizeRollBackups, compress);
+        }
+    }
+
+    /**
+     * Use filename as a base name and find what count number we are up to by
+     * looking at the files in this format:
+     *
+     * <filename>.<count>[COMPRESS_EXTENSION]
+     *
+     * If a count value of 1 cannot be found then a directory listing is
+     * performed to try and identify if there is a valid value for <count>.
+     * 
+     *
+     * @param fileName the basefilename to use
+     * @return int the next free index
+     */
+    private int countFileIndex(String fileName)
+    {
+        String testFileName;
+
+        // It is possible for index 1..n to be missing leaving n+1..n+1+m logs
+        // in this scenario we should still return n+1+m+1
+        int index=1;
+        
+        testFileName = fileName + "." + index;
+
+        // Check that we do not have the 1..n missing scenario
+        if (!(new File(testFileName).exists()
+              || new File(testFileName + COMPRESS_EXTENSION).exists()))
+
+        {
+            int max=0;
+            String prunedFileName = new File(fileName).getName();
+
+            // Look through all files to find next index
+            for (File file : new File(fileName).getParentFile().listFiles())
+            {
+                String name = file.getName();
+
+                if (name.startsWith(prunedFileName) && !name.equals(prunedFileName))
+                {
+                    String parsedCount = name.substring(prunedFileName.length() + 1 );
+
+                    if (parsedCount.endsWith(COMPRESS_EXTENSION))
+                    {
+                        parsedCount = parsedCount.substring(0, parsedCount.indexOf(COMPRESS_EXTENSION));
+                    }
+
+                    try
+                    {
+                        max = Integer.parseInt(parsedCount);
+
+                        // if we got a good value then update our index value.
+                        if (max > index)
+                        {
+                            // +1 as we want to return the next free value.
+                            index = max + 1;
+                        }
+                    }
+                    catch (NumberFormatException nfe)
+                    {
+                        //ignore it assume file doesn't exist.
+                    }
+                }
+            }
+
+            // Update testFileName 
+            testFileName = fileName + "." + index;
+        }
+
+
+        while (new File(testFileName).exists()
+                || new File(testFileName + COMPRESS_EXTENSION).exists())
+        {
+            index++;
+            testFileName = fileName + "." + index;
+        }
+        
+        return index;
+    }
+
     protected synchronized void doCompress(File from, File to)
     {
         String toFile;
         if (backupFilesToPath == null)
         {
-            toFile = to.getPath() + ".gz";
+            toFile = to.getPath() + COMPRESS_EXTENSION;
         }
         else
         {
-            toFile = backupFilesToPath + System.getProperty("file.separator") + to.getName() + ".gz";
+            toFile = backupFilesToPath + System.getProperty("file.separator") + to.getName() + COMPRESS_EXTENSION;
         }
 
         File target = new File(toFile);
