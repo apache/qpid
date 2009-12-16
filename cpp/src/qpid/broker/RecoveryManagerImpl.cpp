@@ -48,6 +48,7 @@ public:
     RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold); 
     ~RecoverableMessageImpl() {};
     void setPersistenceId(uint64_t id);
+    void setRedelivered();
     bool loadContent(uint64_t available);
     void decodeContent(framing::Buffer& buffer);
     void recover(Queue::shared_ptr queue);
@@ -185,6 +186,11 @@ void RecoverableMessageImpl::recover(Queue::shared_ptr queue)
 void RecoverableMessageImpl::setPersistenceId(uint64_t id)
 {
     msg->setPersistenceId(id);
+}
+
+void RecoverableMessageImpl::setRedelivered()
+{
+    msg->redeliver();
 }
 
 void RecoverableQueueImpl::recover(RecoverableMessage::shared_ptr msg)
