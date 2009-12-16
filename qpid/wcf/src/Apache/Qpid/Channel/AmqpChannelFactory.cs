@@ -32,7 +32,8 @@ namespace Apache.Qpid.Channel
         AmqpChannelProperties channelProperties;
         long maxBufferPoolSize;
         bool shared;
-	int prefetchLimit;
+	    int prefetchLimit;
+        List<AmqpTransportChannel> openChannels;
 
         internal AmqpChannelFactory(AmqpTransportBindingElement bindingElement, BindingContext context)
             : base(context.Binding)
@@ -45,7 +46,7 @@ namespace Apache.Qpid.Channel
             Collection<MessageEncodingBindingElement> messageEncoderBindingElements
                 = context.BindingParameters.FindAll<MessageEncodingBindingElement>();
 
-            if(messageEncoderBindingElements.Count > 1)
+            if (messageEncoderBindingElements.Count > 1)
             {
                 throw new InvalidOperationException("More than one MessageEncodingBindingElement was found in the BindingParameters of the BindingContext");
             }
@@ -57,6 +58,8 @@ namespace Apache.Qpid.Channel
             {
                 this.messageEncoderFactory = new TextMessageEncodingBindingElement().CreateMessageEncoderFactory();
             }
+
+            openChannels = new List<AmqpTransportChannel>();
         }
 
 
@@ -93,8 +96,42 @@ namespace Apache.Qpid.Channel
 
         protected override TChannel OnCreateChannel(EndpointAddress remoteAddress, Uri via)
         {
-            return (TChannel)(object) new AmqpTransportChannel(this, this.channelProperties, remoteAddress, this.messageEncoderFactory.Encoder, this.maxBufferPoolSize, this.shared, this.prefetchLimit);
+            AmqpTransportChannel channel = new AmqpTransportChannel(this, this.channelProperties, remoteAddress, this.messageEncoderFactory.Encoder, this.maxBufferPoolSize, this.shared, this.prefetchLimit);
+            lock (openChannels)
+            {
+                channel.Closed += new EventHandler(channel_Closed);
+                openChannels.Add(channel);
+            }
+            return (TChannel)(object) channel;
         }
 
+        void channel_Closed(object sender, EventArgs e)
+        {
+            if (this.State != CommunicationState.Opened)
+            {
+                return;
+            }
+
+            lock (openChannels)
+            {
+                AmqpTransportChannel channel = (AmqpTransportChannel)sender;
+                if (openChannels.Contains(channel))
+                {
+                    openChannels.Remove(channel);
+                }
+            }
+        }
+
+        protected override void OnClose(TimeSpan timeout)
+        {
+            base.OnClose(timeout);
+            lock (openChannels)
+            {
+                foreach (AmqpTransportChannel channel in openChannels)
+                {
+                    channel.Close(timeout);
+                }
+            }
+        }
     }
 }
