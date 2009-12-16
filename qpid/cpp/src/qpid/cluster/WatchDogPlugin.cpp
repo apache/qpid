@@ -113,7 +113,7 @@ struct WatchDogPlugin : public qpid::Plugin, public qpid::sys::Fork {
   protected:
 
     void child() {              // Child of fork
-        const char* watchdog = ::getenv("QPID_WATCHDOG_EXE"); // For use in tests
+        const char* watchdog = ::getenv("QPID_WATCHDOG_EXEC"); // For use in tests
         if (!watchdog) watchdog=QPID_EXEC_DIR "/qpidd_watchdog";
         std::string interval = boost::lexical_cast<std::string>(settings.interval);
         ::execl(watchdog, watchdog, interval.c_str(), NULL);
