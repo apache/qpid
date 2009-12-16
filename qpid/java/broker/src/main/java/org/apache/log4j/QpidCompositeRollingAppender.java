@@ -749,16 +749,17 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
 
         File file = new File(from);
+        if (!file.getPath().equals(target.getPath()))
+        {
+            file.renameTo(target);
+        }
+
+        // Compress file after it has been moved out the way... this is safe
+        // as it will gain a .gz ending and we can then safely delete this file
+        // as it will not be the statically named value.
         if (compress)
         {
-            compress(file, target);
-        }
-        else
-        {
-            if (!file.getPath().equals(target.getPath()))
-            {
-                file.renameTo(target);
-            }
+            compress(to);
         }
 
         LogLog.debug(from + " -> " + to);
