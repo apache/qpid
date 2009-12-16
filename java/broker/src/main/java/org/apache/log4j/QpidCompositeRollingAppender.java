@@ -890,10 +890,51 @@ public class QpidCompositeRollingAppender extends FileAppender
         else if (countDirection == 0)
         {
             // rollFile based on date pattern
-            curSizeRollBackups++;
             now.setTime(System.currentTimeMillis());
-            scheduledFilename = fileName + sdf.format(now);
-            rollFile(fileName, scheduledFilename, compress);
+            String newFile = fileName + sdf.format(now);
+            
+            // If we haven't rolled yet then validate we have the right value
+            // for curSizeRollBackups
+            if (curSizeRollBackups == 0)
+            {
+                //Validate curSizeRollBackups
+                curSizeRollBackups = countFileIndex(newFile);
+                // to balance the increment just coming up. as the count returns
+                // the next free number not the last used.
+                curSizeRollBackups--;
+            }
+
+            // If we are not keeping an infinite set of backups the delete oldest
+            if (maxSizeRollBackups > 0)
+            {
+                // Don't prune older files if they exist just go for the last
+                // one based on our maxSizeRollBackups. This means we may have
+                // more files left on disk that maxSizeRollBackups if this value
+                // is adjusted between runs but that is an acceptable state.
+                // Otherwise we would have to check on startup that we didn't
+                // have more than maxSizeRollBackups and prune then.
+
+                if (((curSizeRollBackups - maxSizeRollBackups) >= maxSizeRollBackups))
+                {
+                    // delete the first and keep counting up.
+                    int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
+                    deleteFile(newFile + '.' + oldestFileIndex);
+                }
+            }
+
+
+            String finalName = newFile;
+
+            curSizeRollBackups++;             
+
+            // Add rollSize if it is > 0
+            if (curSizeRollBackups > 0 ) 
+            {
+                finalName = newFile + '.' + curSizeRollBackups;
+
+            }
+
+            rollFile(fileName, finalName, compress);
         }
         else
         { // countDirection > 0
@@ -954,7 +995,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         // It is possible for index 1..n to be missing leaving n+1..n+1+m logs
         // in this scenario we should still return n+1+m+1
         int index=1;
-        
+
         testFileName = fileName + "." + index;
 
         // Check that we do not have the 1..n missing scenario
@@ -1008,7 +1049,7 @@ public class QpidCompositeRollingAppender extends FileAppender
             index++;
             testFileName = fileName + "." + index;
         }
-        
+
         return index;
     }
 
