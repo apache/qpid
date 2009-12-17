@@ -83,7 +83,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="$(QPID_BUILD_ROOT)\src\Debug\qpidcommond.lib $(QPID_BUILD_ROOT)\src\Debug\qpidclientd.lib Debug\Apache.Qpid.AmqpTypes.netmodule"
+				AdditionalOptions="$(QPID_BUILD_ROOT)\src\Debug\qpidcommond.lib $(QPID_BUILD_ROOT)\src\Debug\qpidclientd.lib Debug\Apache.Qpid.AmqpTypes.netmodule xolehlp.lib"
 				AdditionalDependencies="$(NoInherit)"
 				OutputFile="$(OutDir)\Apache.Qpid.Interop.dll"
 				LinkIncremental="2"
@@ -207,6 +207,11 @@
 			AssemblyName="System.Runtime.Serialization, Version=3.0.0.0, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL"
 			MinFrameworkVersion="196608"
 		/>
+		<AssemblyReference
+			RelativePath="System.Transactions.dll"
+			AssemblyName="System.Transactions, Version=2.0.0.0, PublicKeyToken=b77a5c561934e089, processorArchitecture=x86"
+			MinFrameworkVersion="131072"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -248,6 +253,14 @@
 			</File>
 			<File
 				RelativePath=".\OutputLink.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\DtxResourceManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\XaTransaction.cpp"
 				>
 			</File>
 		</Filter>
@@ -294,6 +307,14 @@
 			</File>
 			<File
 				RelativePath=".\QpidMarshal.h"
+				>
+			</File>
+			<File
+				RelativePath=".\DtxResourceManager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\XaTransaction.h"
 				>
 			</File>
 		</Filter>

@@ -45,6 +45,8 @@ private:
     Collections::Generic::List<MessageWaiter^>^ waiters;
     bool disposed;
     bool finalizing;
+    Object^ linkLock;
+    Object^ subscriptionLock;
     QpidFrameSetPtr* dequeuedFrameSetpp;
     ManualResetEvent^ asyncHelperWaitHandle;
     // number of messages to buffer locally for future consumption

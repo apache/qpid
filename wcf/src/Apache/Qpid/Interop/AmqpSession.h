@@ -29,29 +29,50 @@ namespace Interop {
 
 using namespace System;
 using namespace System::Runtime::InteropServices;
+using namespace System::Transactions;
+using namespace System::Diagnostics;
+
 
 using namespace qpid::client;
 using namespace std;
 
 ref class InputLink;
 ref class OutputLink;
+ref class XaTransaction;
 
 public ref class AmqpSession
 {
 private:
+    Object^ sessionLock;
+    Object^ openCloseLock;
     AmqpConnection^ connection;
-    Connection* connectionp;
     AsyncSession* sessionp;
     SessionImpl* sessionImplp;
     SubscriptionManager* subs_mgrp;
-    LocalQueue* localQueuep;
     Collections::Generic::List<CompletionWaiter^>^ waiters;
     bool helperRunning;
+
+    // number of active InputLinks and OutputLinks
     int openCount;
 
+    // the number of async commands sent to the broker that need completion confirmation
+    int syncCount;
+
+    bool closing;
+    ManualResetEvent^ closeWaitHandle;
+    bool dtxEnabled;
+    Transaction^ openSystemTransaction;
+    XaTransaction^ openXaTransaction;
+    Collections::Generic::List<XaTransaction^>^ pendingTransactions;
+
     void Cleanup();
+    void CheckOpen();
     void asyncHelper(Object ^);
     void addWaiter(CompletionWaiter^ waiter);
+    void UpdateTransactionState(msclr::lock^ sessionLock);
+    void IncrementSyncs();
+    void DecrementSyncs();
+    void WaitLastSync(msclr::lock^ l);
 
 public:  
     OutputLink^ CreateOutputLink(System::String^ targetQueue);
@@ -66,16 +87,21 @@ internal:
     void NotifyClosed();
     CompletionWaiter^ SendMessage (System::String^ queue, MessageBodyStream ^mbody, TimeSpan timeout, bool async, AsyncCallback^ callback, Object^ state);
     void ConnectionClosed();
-    void internalWaitForCompletion(IntPtr Future);
+    void internalWaitForCompletion(IntPtr future);
     void removeWaiter(CompletionWaiter^ waiter);
-    bool MessageStop(Completion &comp, std::string &name);
+    bool MessageStop(std::string &name);
     void AcceptAndComplete(SequenceSet& transfers);
+    IntPtr BeginPhase0Flush(XaTransaction^);
+    void EndPhase0Flush(XaTransaction^, IntPtr);
+    IntPtr DtxStart(IntPtr xidp, bool, bool);
+    IntPtr DtxPrepare(IntPtr xidp);
+    IntPtr DtxCommit(IntPtr xidp, bool onePhase);
+    IntPtr DtxRollback(IntPtr xidp);
+    void ReleaseCompletion(IntPtr completion);
 
     property AmqpConnection^ Connection {
 	AmqpConnection^ get () { return connection; }
     }
-
-
 };
 
 }}} // namespace Apache::Qpid::Interop

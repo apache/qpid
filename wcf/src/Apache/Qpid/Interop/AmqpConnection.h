@@ -28,6 +28,7 @@ using namespace std;
 using namespace qpid::client;
 
 ref class AmqpSession;
+ref class DtxResourceManager;
 
 public delegate void ConnectionIdleEventHandler(Object^ sender, EventArgs^ eventArgs);
 
@@ -35,19 +36,42 @@ public ref class AmqpConnection
 {
 private:
     Connection* connectionp;
-    void Cleanup();
+    String^ host;
+    int port;
     bool disposed;
     Collections::Generic::List<AmqpSession^>^ sessions;
     bool isOpen;
     int busyCount;
     int maxFrameSize;
+    DtxResourceManager^ dtxResourceManager;
+    void Cleanup();
+    // unique string used for distributed transactions
+    String^ dataSourceName;
 
  internal:
     void NotifyBusy();
     void NotifyIdle();
+    AmqpConnection^ Clone();
 
     property int MaxFrameSize {
 	int get () { return maxFrameSize; }
+    }
+
+    property DtxResourceManager^ CachedResourceManager {
+	DtxResourceManager^ get () { return dtxResourceManager; }
+	void set (DtxResourceManager^ value) { dtxResourceManager = value; }
+    }
+
+    property String^ DataSourceName {
+	// Note: any change to this format has to be reflected in the DTC plugin's xa_open()
+	String^ get() {
+	    if (dataSourceName == nullptr) {
+		dataSourceName = String::Format("{0}.{1}..AMQP.{2}.{3}", port, host, 
+						System::Diagnostics::Process::GetCurrentProcess()->Id, 
+						AppDomain::CurrentDomain->Id);
+	    }
+	    return dataSourceName;
+	}
     }
 
 public:  
