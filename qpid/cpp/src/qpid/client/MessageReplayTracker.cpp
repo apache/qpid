@@ -43,9 +43,7 @@ void MessageReplayTracker::init(AsyncSession s)
 void MessageReplayTracker::replay(AsyncSession s)
 {
     session = s;
-    std::list<ReplayRecord> copy; 
-    buffer.swap(copy);
-    std::for_each(copy.begin(), copy.end(), boost::bind(&ReplayRecord::send, _1, boost::ref(*this)));
+    std::for_each(buffer.begin(), buffer.end(), boost::bind(&ReplayRecord::send, _1, boost::ref(*this)));
     session.flush();
     count = 0;
 }
