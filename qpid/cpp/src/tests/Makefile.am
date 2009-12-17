@@ -116,7 +116,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ClientMessageTest.cpp \
 	PollableCondition.cpp \
 	Variant.cpp \
-	Address.cpp
+	Address.cpp \
+	ClientMessage.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp

@@ -140,6 +140,7 @@ set(unit_tests_to_build
     ClientMessageTest
     PollableCondition
     Variant
+    ClientMessage
     ${xml_tests}
     CACHE STRING "Which unit tests to build"
    )
