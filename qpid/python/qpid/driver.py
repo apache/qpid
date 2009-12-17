@@ -852,6 +852,7 @@ class Driver:
       msg.reply_to = reply_to2addr(mp.reply_to)
     msg.correlation_id = mp.correlation_id
     msg.durable = dp.delivery_mode == delivery_mode.persistent
+    msg.redelivered = dp.redelivered
     msg.properties = mp.application_headers
     msg.content_type = mp.content_type
     msg._transfer_id = xfr.id
