@@ -25,7 +25,7 @@ namespace Apache.Qpid.Channel
     using System.ServiceModel.Description;
     using Apache.Qpid.AmqpTypes;
 
-    public class AmqpTransportBindingElement : TransportBindingElement
+    public class AmqpTransportBindingElement : TransportBindingElement, ITransactedBindingElement
     {
         AmqpChannelProperties channelProperties;
         bool shared;
@@ -110,6 +110,11 @@ namespace Apache.Qpid.Channel
         {
             get { return this.shared; }
             set { this.shared = value; }
+        }
+
+        public bool TransactedReceiveEnabled
+        {
+            get { return true; }
         }
 
         public TransferMode TransferMode

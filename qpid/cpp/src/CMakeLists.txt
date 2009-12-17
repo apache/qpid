@@ -693,6 +693,15 @@ if (WIN32)
              COMPONENT ${QPID_COMPONENT_CLIENT})
 endif (WIN32)
 
+if (WIN32)
+    set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
+    set(DTC_PLUGIN_SOURCE ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
+    if (EXISTS ${DTC_PLUGIN_SOURCE})
+        add_library (qpidxarm SHARED ${DTC_PLUGIN_SOURCE})
+        target_link_libraries (qpidxarm qpidclient qpidcommon)
+    endif (EXISTS ${DTC_PLUGIN_SOURCE})
+endif (WIN32)
+
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
      ${qpidbroker_platform_SOURCES}
