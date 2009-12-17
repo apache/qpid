@@ -605,6 +605,7 @@ class Driver:
       cmd = ExchangeDeclare(exchange=name, durable=durable)
     elif type == "queue":
       cmd = QueueDeclare(queue=name, durable=durable)
+      bindings = xprops.pop("bindings", [])
     else:
       return ("unrecognized type, must be topic or queue: %s" % type,)
 
@@ -621,9 +622,20 @@ class Driver:
     else:
       subtype = None
 
+    cmds = [cmd]
+    if type == "queue":
+      for b in bindings:
+        try:
+          n, s, o = address.parse(b)
+        except address.ParseError, e:
+          return (e,)
+        cmds.append(ExchangeBind(name, n, s, o))
+
+    for c in cmds[:-1]:
+      sst.write_cmd(c)
     def do_action():
       action(type, subtype)
-    sst.write_cmd(cmd, do_action)
+    sst.write_cmd(cmds[-1], do_action)
 
   def delete(self, sst, name, action):
     def do_delete(er, qr):
