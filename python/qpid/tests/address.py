@@ -145,7 +145,7 @@ class AddressTests(ParserBase, Test):
 
   def testBadOptions3(self):
     self.invalid("name/subject; { key:",
-                 "expecting (NUMBER, STRING, ID, LBRACE), got EOF "
+                 "expecting (NUMBER, STRING, ID, LBRACE, LBRACK), got EOF "
                  "line:1,20:name/subject; { key:")
 
   def testBadOptions4(self):
@@ -167,3 +167,33 @@ class AddressTests(ParserBase, Test):
     self.invalid("name/subject; { key: value } asdf",
                  "expecting EOF, got ID('asdf') "
                  "line:1,29:name/subject; { key: value } asdf")
+
+  def testList1(self):
+    self.valid("name/subject; { key: [] }", "name", "subject", {"key": []})
+
+  def testList2(self):
+    self.valid("name/subject; { key: ['one'] }", "name", "subject", {"key": ['one']})
+
+  def testList3(self):
+    self.valid("name/subject; { key: [1, 2, 3] }", "name", "subject",
+               {"key": [1, 2, 3]})
+
+  def testList4(self):
+    self.valid("name/subject; { key: [1, [2, 3], 4] }", "name", "subject",
+               {"key": [1, [2, 3], 4]})
+
+  def testBadList1(self):
+    self.invalid("name/subject; { key: [ }", "expecting (NUMBER, STRING, ID, LBRACE, LBRACK), "
+                 "got RBRACE('}') line:1,23:name/subject; { key: [ }")
+
+  def testBadList2(self):
+    self.invalid("name/subject; { key: [ 1 }", "expecting (COMMA, RBRACK), "
+                 "got RBRACE('}') line:1,25:name/subject; { key: [ 1 }")
+
+  def testBadList3(self):
+    self.invalid("name/subject; { key: [ 1 2 }", "expecting (COMMA, RBRACK), "
+                 "got NUMBER('2') line:1,25:name/subject; { key: [ 1 2 }")
+
+  def testBadList4(self):
+    self.invalid("name/subject; { key: [ 1 2 ] }", "expecting (COMMA, RBRACK), "
+                 "got NUMBER('2') line:1,25:name/subject; { key: [ 1 2 ] }")
