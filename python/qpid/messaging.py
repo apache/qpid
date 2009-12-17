@@ -787,6 +787,7 @@ class Message:
     self.reply_to = reply_to
     self.correlation_id = correlation_id
     self.durable = durable
+    self.redelivered = False
     if properties is None:
       self.properties = {}
     else:
