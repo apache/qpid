@@ -57,12 +57,17 @@ public class Functions
 
     public static final String str(ByteBuffer buf, int limit)
     {
+    	return str(buf, limit,buf.position());
+    }
+    
+    public static final String str(ByteBuffer buf, int limit,int start)
+    {
         StringBuilder str = new StringBuilder();
         str.append('"');
 
         for (int i = 0; i < min(buf.remaining(), limit); i++)
         {
-            byte c = buf.get(buf.position() + i);
+            byte c = buf.get(start + i);
 
             if (c > 31 && c < 127 && c != '\\')
             {
