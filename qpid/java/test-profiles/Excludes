@@ -31,8 +31,8 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#*
 
 // The following tests exibit random failures and are temporarily excluded.
 // QPID-2224 Random Test failures - The test needs to be fixed.
-MINANetworkDriverTest#*
+org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
 // QPID-2225 Random Test failures against the in-vm broker.
-FailoverBeforeConsumingRecover#*
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecover#*
 // QPID-2262 Random test failures - The test needs to be fixed.
-SimpleACLTest#testClientPublishInvalidQueueSuccess
+org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
