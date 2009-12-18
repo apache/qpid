@@ -153,6 +153,6 @@ cd "$(ProjectDir)obj\$(ConfigurationName)"
 del $(AssemblyName).dll
 del $(AssemblyName).pdb
 cd "$(ProjectDir)"
-CreateNetModule.bat</PostBuildEvent>
+CreateNetModule.bat $(ConfigurationName)</PostBuildEvent>
   </PropertyGroup>
 </Project>
