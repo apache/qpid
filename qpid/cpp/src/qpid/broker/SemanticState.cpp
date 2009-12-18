@@ -70,7 +70,8 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       tagGenerator("sgen"),
       dtxSelected(false),
       authMsg(getSession().getBroker().getOptions().auth && !getSession().getConnection().isFederationLink()),
-      userID(getSession().getConnection().getUserId())
+      userID(getSession().getConnection().getUserId()),
+      defaultRealm(getSession().getBroker().getOptions().realm)
 {
     acl = getSession().getBroker().getAcl();
 }
@@ -429,7 +430,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string id =
     	msg->hasProperties<MessageProperties>() ? msg->getProperties<MessageProperties>()->getUserId() : nullstring;
 
-    if (authMsg &&  !id.empty() && id != userID )
+    if (authMsg &&  !id.empty() && id != userID && id.append("@").append(defaultRealm) != userID)
     {
         QPID_LOG(debug, "authorised user id : " << userID << " but user id in message declared as " << id);
         throw UnauthorizedAccessException(QPID_MSG("authorised user id : " << userID << " but user id in message declared as " << id));
@@ -438,7 +439,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     if (acl && acl->doTransferAcl())
     {
         if (!acl->authorise(getSession().getConnection().getUserId(),acl::ACT_PUBLISH,acl::OBJ_EXCHANGE,exchangeName, msg->getRoutingKey() ))
-            throw NotAllowedException(QPID_MSG(getSession().getConnection().getUserId() << " cannot publish to " <<
+            throw NotAllowedException(QPID_MSG(userID << " cannot publish to " <<
                                                exchangeName << " with routing-key " << msg->getRoutingKey()));
     }
 
