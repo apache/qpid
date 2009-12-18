@@ -407,6 +407,11 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         consumerConnection.start();
         
         consumer.receive();
+        
+        //perform a synchronous op on the connection
+        ((AMQSession) consumerSession).declareExchange(
+                new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
+        
         assertFalse("Queue should not be overfull", queueMBean.isFlowOverfull());
         
         consumer.receive();
