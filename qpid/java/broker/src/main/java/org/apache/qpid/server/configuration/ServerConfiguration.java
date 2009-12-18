@@ -538,6 +538,11 @@ public class ServerConfiguration implements SignalHandler
         return getConfig().getList("connector.non010port", Collections.EMPTY_LIST);
     }
 
+    public List getPortExclude091()
+    {
+        return getConfig().getList("connector.non091port", Collections.EMPTY_LIST);
+    }
+
     public List getPortExclude09()
     {
         return getConfig().getList("connector.non09port", Collections.EMPTY_LIST);

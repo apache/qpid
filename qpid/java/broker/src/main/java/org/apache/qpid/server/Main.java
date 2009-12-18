@@ -140,6 +140,12 @@ public class Main
                         .withDescription("when listening on the specified port do not accept AMQP0-10 connections. The specified port must be one specified on the command line")
                         .withLongOpt("exclude-0-10").create();
 
+        Option exclude0_9_1 =
+                OptionBuilder.withArgName("exclude-0-9-1").hasArg()
+                        .withDescription("when listening on the specified port do not accept AMQP0-9-1 connections. The specified port must be one specified on the command line")
+                        .withLongOpt("exclude-0-9-1").create();
+
+
         Option exclude0_9 =
                 OptionBuilder.withArgName("exclude-0-9").hasArg()
                         .withDescription("when listening on the specified port do not accept AMQP0-9 connections. The specified port must be one specified on the command line")
@@ -179,6 +185,7 @@ public class Main
         options.addOption(logwatchconfig);
         options.addOption(port);
         options.addOption(exclude0_10);
+        options.addOption(exclude0_9_1);
         options.addOption(exclude0_9);
         options.addOption(exclude0_8);
         options.addOption(mport);
@@ -335,6 +342,7 @@ public class Main
 
             Set<Integer> ports = new HashSet<Integer>();
             Set<Integer> exclude_0_10 = new HashSet<Integer>();
+            Set<Integer> exclude_0_9_1 = new HashSet<Integer>();
             Set<Integer> exclude_0_9 = new HashSet<Integer>();
             Set<Integer> exclude_0_8 = new HashSet<Integer>();
 
@@ -343,6 +351,7 @@ public class Main
 
                 parsePortList(ports, serverConfig.getPorts());
                 parsePortList(exclude_0_10, serverConfig.getPortExclude010());
+                parsePortList(exclude_0_9_1, serverConfig.getPortExclude091());
                 parsePortList(exclude_0_9, serverConfig.getPortExclude09());
                 parsePortList(exclude_0_8, serverConfig.getPortExclude08());
 
@@ -351,6 +360,7 @@ public class Main
             {
                 parsePortArray(ports, portStr);
                 parsePortArray(exclude_0_10, commandLine.getOptionValues("exclude-0-10"));
+                parsePortArray(exclude_0_9_1, commandLine.getOptionValues("exclude-0-9-1"));
                 parsePortArray(exclude_0_9, commandLine.getOptionValues("exclude-0-9"));
                 parsePortArray(exclude_0_8, commandLine.getOptionValues("exclude-0-8"));
 
@@ -398,6 +408,11 @@ public class Main
                     if(exclude_0_10.contains(port))
                     {
                         supported.remove(VERSION.v0_10);
+                    }
+
+                    if(exclude_0_9_1.contains(port))
+                    {
+                        supported.remove(VERSION.v0_9_1);
                     }
                     if(exclude_0_9.contains(port))
                     {

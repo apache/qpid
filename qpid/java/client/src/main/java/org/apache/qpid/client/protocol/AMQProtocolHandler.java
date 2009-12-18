@@ -171,6 +171,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     private Job _writeJob;
     private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
     private NetworkDriver _networkDriver;
+    private ProtocolVersion _suggestedProtocolVersion;
 
     private long _writtenBytes;
     private long _readBytes;
@@ -427,6 +428,7 @@ public class AMQProtocolHandler implements ProtocolEngine
 
             Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Runnable()
             {
+
                 public void run()
                 {
                     // Decode buffer
@@ -467,9 +469,8 @@ public class AMQProtocolHandler implements ProtocolEngine
                                 // suggesting an alternate ProtocolVersion; the server will then close the
                                 // connection.
                                 ProtocolInitiation protocolInit = (ProtocolInitiation) message;
-                                ProtocolVersion pv = protocolInit.checkVersion();
-                                getConnection().setProtocolVersion(pv);
-
+                                _suggestedProtocolVersion = protocolInit.checkVersion();
+                                
                                 // get round a bug in old versions of qpid whereby the connection is not closed
                                 _stateManager.changeState(AMQState.CONNECTION_CLOSED);
                             }
@@ -845,4 +846,10 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         return _networkDriver;
     }
+
+    public ProtocolVersion getSuggestedProtocolVersion()
+    {
+        return _suggestedProtocolVersion;
+    }
+
 }

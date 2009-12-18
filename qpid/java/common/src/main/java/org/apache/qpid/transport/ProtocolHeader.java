@@ -39,13 +39,15 @@ public final class ProtocolHeader implements NetworkEvent, ProtocolEvent
     private static final byte[] AMQP = {'A', 'M', 'Q', 'P' };
     private static final byte CLASS = 1;
 
+    final private byte protoClass;
     final private byte instance;
     final private byte major;
     final private byte minor;
     private int channel;
 
-    public ProtocolHeader(byte instance, byte major, byte minor)
+    public ProtocolHeader(byte protoClass, byte instance, byte major, byte minor)
     {
+        this.protoClass = protoClass;
         this.instance = instance;
         this.major = major;
         this.minor = minor;
@@ -53,7 +55,7 @@ public final class ProtocolHeader implements NetworkEvent, ProtocolEvent
 
     public ProtocolHeader(int instance, int major, int minor)
     {
-        this((byte) instance, (byte) major, (byte) minor);
+        this(CLASS, (byte) instance, (byte) major, (byte) minor);
     }
 
     public byte getInstance()
@@ -90,7 +92,7 @@ public final class ProtocolHeader implements NetworkEvent, ProtocolEvent
     {
         ByteBuffer buf = ByteBuffer.allocate(8);
         buf.put(AMQP);
-        buf.put(CLASS);
+        buf.put(protoClass);
         buf.put(instance);
         buf.put(major);
         buf.put(minor);
