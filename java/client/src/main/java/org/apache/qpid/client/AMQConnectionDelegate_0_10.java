@@ -301,4 +301,9 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     {
        return Integer.MAX_VALUE;
     }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return ProtocolVersion.v0_10;
+    }
 }

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.ProtocolVersion;
+
 
 public class AMQConnectionDelegate_9_1 extends AMQConnectionDelegate_8_0
 {
@@ -29,4 +31,9 @@ public class AMQConnectionDelegate_9_1 extends AMQConnectionDelegate_8_0
         super(conn);
     }
 
+    @Override
+    public ProtocolVersion getProtocolVersion()
+    {
+        return ProtocolVersion.v0_91;
+    }
 }

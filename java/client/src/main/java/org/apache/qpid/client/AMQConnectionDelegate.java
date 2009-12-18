@@ -61,4 +61,6 @@ public interface AMQConnectionDelegate
     void setIdleTimeout(long l);
     
     int getMaxChannelID();
+    
+    ProtocolVersion getProtocolVersion();
 }

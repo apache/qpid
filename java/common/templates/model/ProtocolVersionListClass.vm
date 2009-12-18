@@ -149,15 +149,20 @@ public class ProtocolVersion  implements Comparable
     private static final ProtocolVersion _defaultVersion;							 
 
 	
+    public static final ProtocolVersion v0_10 = new ProtocolVersion((byte)0,(byte)10);
+
 #foreach( $version in $model.getVersionSet() )
 #set( $versionId = "v$version.getMajor()_$version.getMinor()" )
-        public static final ProtocolVersion $versionId = new ProtocolVersion((byte)$version.getMajor(),(byte)$version.getMinor());
+    public static final ProtocolVersion $versionId = new ProtocolVersion((byte)$version.getMajor(),(byte)$version.getMinor());
 #end
 	
+        
     static
     {
         SortedSet<ProtocolVersion> versions = new TreeSet<ProtocolVersion>();
 
+		versions.add(v0_10);
+		_nameToVersionMap.put("0-10", v0_10);
 #foreach( $version in $model.getVersionSet() )
 #set( $versionId = "v$version.getMajor()_$version.getMinor()" )
         versions.add($versionId);

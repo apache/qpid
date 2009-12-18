@@ -308,7 +308,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /** Thread Pool for executing connection level processes. Such as returning bounced messages. */
     private final ExecutorService _taskPool = Executors.newCachedThreadPool();
     private static final long DEFAULT_TIMEOUT = 1000 * 30;
-    private ProtocolVersion _protocolVersion = ProtocolVersion.v0_91; // FIXME TGM, shouldn't need this
 
     protected AMQConnectionDelegate _delegate;
 
@@ -458,9 +457,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         _failoverPolicy = new FailoverPolicy(connectionURL, this);
         BrokerDetails brokerDetails = _failoverPolicy.getCurrentBrokerDetails();
-        if (brokerDetails.getTransport().equals(BrokerDetails.VM) || "0-8".equals(amqpVersion) || "0-9".equals(amqpVersion))
+        if (brokerDetails.getTransport().equals(BrokerDetails.VM) || "0-8".equals(amqpVersion)) 
         {
             _delegate = new AMQConnectionDelegate_8_0(this);
+        } 
+        else if ("0-9".equals(amqpVersion))
+        {
+            _delegate = new AMQConnectionDelegate_0_9(this);
+        }
+        else if ("0-91".equals(amqpVersion) || "0-9-1".equals(amqpVersion))
+        {
+            _delegate = new AMQConnectionDelegate_9_1(this);
         }
         else
         {
@@ -1541,13 +1548,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public ProtocolVersion getProtocolVersion()
     {
-        return _protocolVersion;
-    }
-
-    public void setProtocolVersion(ProtocolVersion protocolVersion)
-    {
-        _protocolVersion = protocolVersion;
-        _protocolHandler.getProtocolSession().setProtocolVersion(protocolVersion);
+        return _delegate.getProtocolVersion();
     }
 
     public boolean isFailingOver()

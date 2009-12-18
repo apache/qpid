@@ -144,10 +144,11 @@ public class InputHandler implements Receiver<ByteBuffer>
                 return ERROR;
             }
 
+            byte protoClass = input.get(pos + 4);
             byte instance = input.get(pos + 5);
             byte major = input.get(pos + 6);
             byte minor = input.get(pos + 7);
-            receiver.received(new ProtocolHeader(instance, major, minor));
+            receiver.received(new ProtocolHeader(protoClass, instance, major, minor));
             needed = Frame.HEADER_SIZE;
             return FRAME_HDR;
         case FRAME_HDR:

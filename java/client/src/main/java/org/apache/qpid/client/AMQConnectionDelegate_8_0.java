@@ -107,9 +107,13 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         {
             _conn._failoverPolicy.attainedConnection();
             _conn._connected = true;
+            return null;
+        } 
+        else 
+        {
+            return _conn._protocolHandler.getSuggestedProtocolVersion();
         }
 
-        return null;
     }
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode, final int prefetch)
@@ -305,5 +309,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public int getMaxChannelID()
     {
         return (int) (Math.pow(2, 16)-1);
+    }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return ProtocolVersion.v8_0;
     }
 }
