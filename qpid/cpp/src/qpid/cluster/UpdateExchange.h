@@ -30,14 +30,14 @@ namespace qpid {
 namespace cluster {
 
 /**
- * A keyless exchange (like fanout exchange) that does not modify delivery-properties.exchange
- * on messages.
+ * A keyless exchange (like fanout exchange) that does not modify
+ * delivery-properties.exchange but copies it to the MessageTransfer.
  */
 class UpdateExchange : public broker::FanOutExchange
 {
   public:
-    UpdateExchange(management::Manageable* parent) : broker::Exchange(UpdateClient::UPDATE, parent), broker::FanOutExchange(UpdateClient::UPDATE, parent) {}
-    void setProperties(const boost::intrusive_ptr<broker::Message>&) {}
+    UpdateExchange(management::Manageable* parent);
+    void setProperties(const boost::intrusive_ptr<broker::Message>&);
 };
 
 }} // namespace qpid::cluster

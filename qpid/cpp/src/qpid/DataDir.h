@@ -23,10 +23,13 @@
 
 #include <string>
 #include <memory>
-#include "qpid/sys/LockFile.h"
 #include "qpid/CommonImportExport.h"
 
 namespace qpid {
+
+    namespace sys {
+        class LockFile;
+    }
 
 /**
  * DataDir class.

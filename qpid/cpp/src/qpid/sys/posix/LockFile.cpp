@@ -17,6 +17,7 @@
  */
 
 #include "qpid/sys/LockFile.h"
+#include "qpid/sys/posix/PidFile.h"
 
 #include <string>
 #include <unistd.h>
@@ -31,6 +32,7 @@ namespace sys {
 
 class LockFilePrivate {
     friend class LockFile;
+    friend class PidFile;
 
     int fd;
 
@@ -64,27 +66,43 @@ LockFile::~LockFile() {
     }
 }
 
-pid_t LockFile::readPid(void) const {
+int LockFile::read(void* bytes, size_t len) const {
     if (!impl)
-        throw Exception("Lock file not open");
+        throw Exception("Lock file not open: " + path);
 
+    ssize_t rc = ::read(impl->fd, bytes, len);
+    if ((ssize_t)len > rc) {
+        throw Exception("Cannot read lock file: " + path);
+    }
+    return rc;
+}
+
+int LockFile::write(void* bytes, size_t len) const {
+    if (!impl)
+        throw Exception("Lock file not open: " + path);
+
+    ssize_t rc = ::write(impl->fd, bytes, len);
+    if ((ssize_t)len > rc) {
+        throw Exception("Cannot write lock file: " + path);
+    }
+    return rc;
+}
+
+PidFile::PidFile(const std::string& path_, bool create):
+    LockFile(path_, create)
+{}
+
+pid_t PidFile::readPid(void) const {
     pid_t pid;
     int desired_read = sizeof(pid_t);
-    if (desired_read > ::read(impl->fd, &pid, desired_read) ) {
-        throw Exception("Cannot read lock file " + path);
-    }
+    read(&pid, desired_read);
     return pid;
 }
 
-void LockFile::writePid(void) {
-    if (!impl)
-        throw Exception("Lock file not open");
-
+void PidFile::writePid(void) {
     pid_t pid = getpid();
     int desired_write = sizeof(pid_t);
-    if (desired_write > ::write(impl->fd, &pid, desired_write)) {
-        throw Exception("Cannot write lock file " + path);
-    }
+    write(&pid, desired_write);
 }
  
 }}  /* namespace qpid::sys */

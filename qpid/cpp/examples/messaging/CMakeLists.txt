@@ -17,10 +17,10 @@
 # under the License.
 #
 
-# disabling spout & drain under cmake until build issues on windows
-# are resolved (QPID-2212):
-#add_example(messaging drain ${Boost_PROGRAM_OPTIONS_LIBRARY})
-#add_example(messaging spout ${Boost_PROGRAM_OPTIONS_LIBRARY})
+# drain and spout have explicit Boost.program_options usage in them, so be
+# sure that lib is linked in.
+add_example(messaging drain ${Boost_PROGRAM_OPTIONS_LIBRARY})
+add_example(messaging spout ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 add_example(messaging queue_receiver)
 add_example(messaging queue_sender)

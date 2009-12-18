@@ -44,12 +44,6 @@ Connection:
 
     - connected: F, NR
 
-    - start: F, NR, ND
-      + see comment on Receiver.start
-
-    - stop: F, NR, ND
-      + see comment on Receiver.start
-
     - close: F, NR, ND
       + currently there is no distinction between a "close" that does
         a complete handshake with the remote broker, and a "close"
@@ -90,16 +84,7 @@ Session:
 
     - rollback: F, NR
 
-    - start: F, NR, ND
-      + see comment on Receiver.start
-
-    - stop: F, NR, ND
-      + see comment on Receiver.start
-
-    - fetch: NF
-      + this method if added would permit the listener functionality
-        to be removed as it would become trivial to replicate via user
-        code
+    - next_receiver: F, NR
 
     - close: F, ND
       + see comment on Connection.close
@@ -146,18 +131,6 @@ Receiver:
       + changing capacity/prefetch to issue credit on ack rather than
         fetch return
 
-    - start: F, NR, ND
-      + when a receiver is "stopped", it is treated as if the receiver
-        has zero capacity even if the capacity field is set to a non
-        zero value, this is a mild convenience since you can stop and
-        then start a receiver without having to remember what the
-        capacity was before, however it is unclear if this is really
-        worthwhile since stop/start is entirely equivalent to setting
-        capacity to a zero/non-zero value
-
-    - stop: F, NR, ND
-      + see comment on Receiver.start
-
     - sync/wait: NF
 
     - close: F, NR
@@ -185,10 +158,10 @@ Message:
 Address:
 
   - syntax: F, NR
-  - subject related changes, e.g. allowing patterns on both ends: NF, ND
-  - creating/deleting queues/exchanges
-    + need to handle cleanup of temp queues/topics: NF
-    + passthrough options for creating exchanges/queues: NF
+  - subject related changes, e.g. allowing patterns on both ends: NF
+  - creating/deleting queues/exchanges F, NR
+    + need to handle cleanup of temp queues/topics: F, NR
+    + passthrough options for creating exchanges/queues: F, NR
   - integration with java: NF
   - queue browsing: NF
   - temporary queues: NF

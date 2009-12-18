@@ -104,6 +104,10 @@ public:
         return frames.as<T>();
     }
 
+    template <class T> T* getMethod() {
+        return frames.as<T>();
+    }
+
     template <class T> bool isA() const {
         return frames.isA<T>();
     }
@@ -157,9 +161,6 @@ public:
     void setDequeueCompleteCallback(MessageCallback& cb);
     void resetDequeueCompleteCallback();
 
-    bool isUpdateMessage();
-    static void setUpdateDestination(const std::string&);
-
   private:
     typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
 
@@ -190,7 +191,6 @@ public:
     MessageCallback* dequeueCallback;
 
     uint32_t requiredCredit;
-    static std::string updateDestination;
 };
 
 }}

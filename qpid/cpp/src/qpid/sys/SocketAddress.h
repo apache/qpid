@@ -37,6 +37,8 @@ class SocketAddress {
 public:
     /** Create a SocketAddress from hostname and port*/
     QPID_COMMON_EXTERN SocketAddress(const std::string& host, const std::string& port);
+    QPID_COMMON_EXTERN SocketAddress(const SocketAddress&);
+    QPID_COMMON_EXTERN SocketAddress& operator=(const SocketAddress&);
     QPID_COMMON_EXTERN ~SocketAddress();
 
     std::string asString() const;
@@ -44,7 +46,7 @@ public:
 private:
     std::string host;
     std::string port;
-    ::addrinfo* addrInfo;
+    mutable ::addrinfo* addrInfo;
 };
 
 }}

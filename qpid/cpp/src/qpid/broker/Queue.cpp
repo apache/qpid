@@ -598,7 +598,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
             string key = ft->getAsString(qpidVQMatchProperty);
 
             i = lvq.find(key);
-            if (i == lvq.end() || msg->isUpdateMessage()){
+            if (i == lvq.end() || (broker && broker->isClusterUpdatee())) {
                 messages.push_back(qm);
                 listeners.populate(copy);
                 lvq[key] = msg; 
@@ -940,11 +940,11 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
 void Queue::encode(Buffer& buffer) const 
 {
     buffer.putShortString(name);
-    buffer.putShortString(alternateExchange.get() ? alternateExchange->getName() : std::string(""));
     buffer.put(settings);
     if (policy.get()) { 
         buffer.put(*policy);
     }
+    buffer.putShortString(alternateExchange.get() ? alternateExchange->getName() : std::string(""));
 }
 
 uint32_t Queue::encodedSize() const
@@ -959,14 +959,16 @@ Queue::shared_ptr Queue::decode ( QueueRegistry& queues, Buffer& buffer, bool re
 {
     string name;
     buffer.getShortString(name);
-    string altExch;
-    buffer.getShortString(altExch);
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
-    result.first->alternateExchangeName.assign(altExch);
     buffer.get(result.first->settings);
     result.first->configure(result.first->settings, recovering );
     if (result.first->policy.get() && buffer.available() >= result.first->policy->encodedSize()) {
         buffer.get ( *(result.first->policy) );
+    }
+    if (buffer.available()) {
+        string altExch;
+        buffer.getShortString(altExch);
+        result.first->alternateExchangeName.assign(altExch);
     }
 
     return result.first;

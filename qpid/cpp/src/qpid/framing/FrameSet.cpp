@@ -52,6 +52,11 @@ const AMQMethodBody* FrameSet::getMethod() const
     return parts.empty() ? 0 : parts[0].getMethod();
 }
 
+AMQMethodBody* FrameSet::getMethod() 
+{
+    return parts.empty() ? 0 : parts[0].getMethod();
+}
+
 const AMQHeaderBody* FrameSet::getHeaders() const
 {
     return parts.size() < 2 ? 0 : parts[1].castBody<AMQHeaderBody>();

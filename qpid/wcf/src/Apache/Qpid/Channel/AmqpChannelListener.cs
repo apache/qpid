@@ -130,15 +130,21 @@ namespace Apache.Qpid.Channel
 
         protected override IInputChannel OnAcceptChannel(TimeSpan timeout)
         {
+            if (this.IsDisposed)
+            {
+                return null;
+            }
+
             if (amqpTransportChannel == null)
             {
+                // TODO: add timeout processing
                 amqpTransportChannel = new AmqpTransportChannel(this, this.channelProperties,
                         new EndpointAddress(uri), messageEncoderFactory.Encoder,
                         maxBufferPoolSize, this.shared, this.prefetchLimit);
-                return (IInputChannel)(object) amqpTransportChannel;
+                return (IInputChannel)(object)amqpTransportChannel;
             }
 
-            // TODO: remove "max one channel" restriction,  add timeout processing
+            // Singleton channel.  Subsequent Accepts wait until the listener is closed
             acceptWaitEvent.WaitOne();
             return null;
         }
@@ -155,7 +161,11 @@ namespace Apache.Qpid.Channel
 
         protected override void OnClose(TimeSpan timeout)
         {
-            // TODO: (+ OnAbort)
+            if (amqpTransportChannel != null)
+            {
+                amqpTransportChannel.Close();
+            }
+            acceptWaitEvent.Set();
         }
 
         protected override IAsyncResult OnBeginClose(TimeSpan timeout, AsyncCallback callback, object state)
@@ -170,7 +180,9 @@ namespace Apache.Qpid.Channel
 
         protected override void OnAbort()
         {
-            // TODO:
+            if (amqpTransportChannel != null)
+                amqpTransportChannel.Abort();
+            acceptWaitEvent.Set();
         }
     }
 }

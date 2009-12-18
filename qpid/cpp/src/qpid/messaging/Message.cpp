@@ -27,7 +27,7 @@ namespace messaging {
 Message::Message(const std::string& bytes) : impl(new MessageImpl(bytes)) {}
 Message::Message(const char* bytes, size_t count) : impl(new MessageImpl(bytes, count)) {}
 
-Message::Message(const Message& m) : impl(new MessageImpl(m.getContent())) {}
+Message::Message(const Message& m) : impl(new MessageImpl(*m.impl)) {}
 Message::~Message() { delete impl; }
 
 Message& Message::operator=(const Message& m) { *impl = *m.impl; return *this; }

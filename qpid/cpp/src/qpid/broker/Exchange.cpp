@@ -209,8 +209,10 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     buffer.getShortString(name);
     bool durable(buffer.getOctet());
     buffer.getShortString(type);
-    buffer.getShortString(altName);
     buffer.get(args);
+    // For backwards compatibility on restoring exchanges from before the alt-exchange update, perform check
+    if (buffer.available())
+        buffer.getShortString(altName);
 
     try {
         Exchange::shared_ptr exch = exchanges.declare(name, type, durable, args).first;
@@ -228,10 +230,10 @@ void Exchange::encode(Buffer& buffer) const
     buffer.putShortString(name);
     buffer.putOctet(durable);
     buffer.putShortString(getType());
-    buffer.putShortString(alternate.get() ? alternate->getName() : string(""));
     if (args.isSet(qpidSequenceCounter))
         args.setInt64(std::string(qpidSequenceCounter),sequenceNo);
     buffer.put(args);
+    buffer.putShortString(alternate.get() ? alternate->getName() : string(""));
 }
 
 uint32_t Exchange::encodedSize() const

@@ -155,12 +155,23 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 # TODO: Not all these libs are needed everywhere:
 # Linux only uses filesystem program_options unit_test_framework
 # (which itself uses regex).
+# Boost.system is sometimes needed; it's handled separately, below.
 find_package(Boost 1.33 REQUIRED
              COMPONENTS filesystem program_options date_time thread
                         regex unit_test_framework)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
+
+# Boost.system was introduced at Boost 1.35; it's needed secondarily by other
+# Boost libs Qpid needs, so be sure it's there.
+if (NOT Boost_VERSION LESS 103500)
+  find_package(Boost COMPONENTS system)
+  if (NOT Boost_SYSTEM_LIBRARY)
+    set(Boost_SYSTEM_LIBRARY boost_system)
+  endif (NOT Boost_SYSTEM_LIBRARY)
+
+endif (NOT Boost_VERSION LESS 103500)
 
 # Versions of cmake pre 2.6 don't set the Boost_*_LIBRARY variables correctly
 # these values are correct for Linux
@@ -179,6 +190,10 @@ endif (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
 if (NOT Boost_REGEX_LIBRARY)
   set(Boost_REGEX_LIBRARY boost_regex)
 endif (NOT Boost_REGEX_LIBRARY)
+
+if (NOT Boost_SYSTEM_LIBRARY)
+  set(Boost_SYSTEM_LIBRARY boost_system)
+endif (NOT Boost_SYSTEM_LIBRARY)
 
 # The Windows install also wants the Boost DLLs and headers that the release
 # is built with. The DLLs enable everything to run, and the headers ensure
@@ -412,17 +427,25 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/Thread.cpp
     qpid/sys/windows/Time.cpp
     qpid/sys/windows/uuid.cpp
+    ${sslcommon_windows_SOURCES}
   )
   set (qpidcommon_platform_LIBS
-    rpcrt4 ws2_32
+    ${windows_ssl_libs} rpcrt4 ws2_32
   )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
+    ${sslbroker_windows_SOURCES}
   )
-
+  set (qpidbroker_platform_LIBS
+    ${windows_ssl_libs}
+  )
   set (qpidclient_platform_SOURCES
     qpid/client/windows/SaslFactory.cpp
+    ${sslclient_windows_SOURCES}
+  )
+  set (qpidclient_platform_LIBS
+    ${windows_ssl_libs}
   )
 
   set (qpidd_platform_SOURCES
@@ -611,6 +634,7 @@ set (qpidclient_SOURCES
      qpid/client/SubscriptionImpl.cpp
      qpid/client/SubscriptionManager.cpp
      qpid/client/SubscriptionManagerImpl.cpp
+     qpid/client/TCPConnector.cpp
      qpid/messaging/Address.cpp
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
@@ -651,7 +675,7 @@ set (qpidclient_SOURCES
 )
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
-target_link_libraries (qpidclient qpidcommon)
+target_link_libraries (qpidclient qpidcommon ${qpidclient_platform_LIBS})
 set_target_properties (qpidclient PROPERTIES VERSION ${qpidc_version})
 install (TARGETS qpidclient
          DESTINATION ${QPID_INSTALL_LIBDIR}
@@ -667,6 +691,15 @@ if (WIN32)
              ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.pdb
              DESTINATION ${QPID_INSTALL_LIBDIR}
              COMPONENT ${QPID_COMPONENT_CLIENT})
+endif (WIN32)
+
+if (WIN32)
+    set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
+    set(DTC_PLUGIN_SOURCE ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
+    if (EXISTS ${DTC_PLUGIN_SOURCE})
+        add_library (qpidxarm SHARED ${DTC_PLUGIN_SOURCE})
+        target_link_libraries (qpidxarm qpidclient qpidcommon)
+    endif (EXISTS ${DTC_PLUGIN_SOURCE})
 endif (WIN32)
 
 set (qpidbroker_SOURCES
@@ -737,7 +770,7 @@ set (qpidbroker_SOURCES
      qpid/sys/TCPIOPlugin.cpp
 )
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
-target_link_libraries (qpidbroker qpidcommon)
+target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
 set_target_properties (qpidbroker PROPERTIES VERSION ${qpidc_version})
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)

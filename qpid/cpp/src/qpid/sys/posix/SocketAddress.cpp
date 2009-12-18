@@ -35,27 +35,34 @@ SocketAddress::SocketAddress(const std::string& host0, const std::string& port0)
     port(port0),
     addrInfo(0)
 {
-    ::addrinfo hints;
-    ::memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET; // In order to allow AF_INET6 we'd have to change createTcp() as well
-    hints.ai_socktype = SOCK_STREAM;
+}
 
-    const char* node = 0;
-    if (host.empty()) {
-        hints.ai_flags |= AI_PASSIVE;
-    } else {
-        node = host.c_str();
+SocketAddress::SocketAddress(const SocketAddress& sa) :
+    host(sa.host),
+    port(sa.port),
+    addrInfo(0)
+{
+}
+
+SocketAddress& SocketAddress::operator=(const SocketAddress& sa)
+{
+    if (&sa != this) {
+        host = sa.host;
+        port = sa.port;
+
+        if (addrInfo) {
+            ::freeaddrinfo(addrInfo);
+            addrInfo = 0;
+        }
     }
-    const char* service = port.empty() ? "0" : port.c_str();
-
-    int n = ::getaddrinfo(node, service, &hints, &addrInfo);
-    if (n != 0)
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << ::gai_strerror(n)));
+    return *this;
 }
 
 SocketAddress::~SocketAddress()
 {
-    ::freeaddrinfo(addrInfo);
+    if (addrInfo) {
+        ::freeaddrinfo(addrInfo);
+    }
 }
 
 std::string SocketAddress::asString() const
@@ -65,6 +72,25 @@ std::string SocketAddress::asString() const
 
 const ::addrinfo& getAddrInfo(const SocketAddress& sa)
 {
+    if (!sa.addrInfo) {
+        ::addrinfo hints;
+        ::memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET; // In order to allow AF_INET6 we'd have to change createTcp() as well
+        hints.ai_socktype = SOCK_STREAM;
+
+        const char* node = 0;
+        if (sa.host.empty()) {
+            hints.ai_flags |= AI_PASSIVE;
+        } else {
+            node = sa.host.c_str();
+        }
+        const char* service = sa.port.empty() ? "0" : sa.port.c_str();
+
+        int n = ::getaddrinfo(node, service, &hints, &sa.addrInfo);
+        if (n != 0)
+            throw Exception(QPID_MSG("Cannot resolve " << sa.host << ": " << ::gai_strerror(n)));
+    }
+
     return *sa.addrInfo;
 }
 

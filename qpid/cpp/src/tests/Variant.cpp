@@ -157,6 +157,22 @@ QPID_AUTO_TEST_CASE(testMap)
     BOOST_CHECK_EQUAL(std::string("now it's a string"), value.asMap()["my-key"].asString());
 }
 
+QPID_AUTO_TEST_CASE(testIsEqualTo)
+{
+    BOOST_CHECK_EQUAL(Variant("abc"), Variant("abc"));
+    BOOST_CHECK_EQUAL(Variant(1234), Variant(1234));
+
+    Variant a = Variant::Map();
+    a.asMap()["colour"] = "red";
+    a.asMap()["pi"] = 3.14f;
+    a.asMap()["my-key"] = 1234;
+    Variant b = Variant::Map();
+    b.asMap()["colour"] = "red";
+    b.asMap()["pi"] = 3.14f;
+    b.asMap()["my-key"] = 1234;
+    BOOST_CHECK_EQUAL(a, b);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

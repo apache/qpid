@@ -39,7 +39,6 @@
 #include <boost/function.hpp>
 #include <boost/intrusive_ptr.hpp>
 
-using qpid::messaging::Filter;
 using qpid::messaging::KeyError;
 using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Sender;

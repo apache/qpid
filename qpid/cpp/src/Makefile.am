@@ -154,6 +154,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/posix/Fork.cpp			\
   qpid/sys/posix/StrError.cpp			\
   qpid/sys/posix/PollableCondition.cpp		\
+  qpid/sys/posix/PidFile.h			\
   qpid/sys/posix/PipeHandle.cpp			\
   qpid/log/posix/SinkOptions.h 			\
   qpid/sys/posix/Fork.h
@@ -444,7 +445,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/DispatchHandle.h			\
   qpid/sys/Dispatcher.cpp			\
   qpid/sys/Dispatcher.h				\
-  qpid/sys/ExceptionHolder.h			\
   qpid/sys/FileSysDir.h				\
   qpid/sys/Fork.h				\
   qpid/sys/LockFile.h				\
@@ -691,6 +691,8 @@ libqpidclient_la_SOURCES =			\
   qpid/client/SubscriptionManager.cpp		\
   qpid/client/SubscriptionManagerImpl.cpp	\
   qpid/client/SubscriptionManagerImpl.h		\
+  qpid/client/TCPConnector.cpp			\
+  qpid/client/TCPConnector.h			\
   qpid/messaging/Address.cpp			\
   qpid/messaging/Connection.cpp			\
   qpid/messaging/ListContent.cpp		\
@@ -789,6 +791,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/management/ManagementEvent.h	\
   ../include/qpid/management/ManagementObject.h	\
   ../include/qpid/sys/Condition.h		\
+  ../include/qpid/sys/ExceptionHolder.h		\
   ../include/qpid/sys/IOHandle.h		\
   ../include/qpid/sys/IntegerTypes.h		\
   ../include/qpid/sys/Monitor.h			\

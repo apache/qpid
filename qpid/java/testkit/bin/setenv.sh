@@ -17,6 +17,10 @@
 # under the License.
 #
 
+# If QPIDD_EXEC ..etc is not set, it will first check to see
+# if this is run from a qpid svn check out, if not it will look
+# for installed rpms.
+
 abs_path()
 {
   D=`dirname "$1"`
@@ -25,30 +29,50 @@ abs_path()
 }
 
 # Environment for python tests
-test -d ../../../python || { echo "WARNING: skipping test, no python directory."; exit 0; }
-PYTHON_DIR=../../../python
-PYTHONPATH=$PYTHON_DIR:$PYTHON_DIR/qpid
+
+if [ -d ../../../python ] ; then
+   PYTHON_DIR=../../../python
+   PYTHONPATH=$PYTHON_DIR:$PYTHON_DIR/qpid
+elif [ -z `echo $PYTHONPATH | awk '$0 ~ /qpid/'` ]; then
+   echo "WARNING: skipping test, no qpid python scripts found ."; exit 0;
+fi          
+
 
 if [ "$QPIDD_EXEC" = "" ] ; then
-   test -x ../../../cpp/src/qpidd || { echo "WARNING: skipping test, QPIDD_EXEC not set and qpidd not found."; exit 0; }
-   QPIDD_EXEC=`abs_path "../../../cpp/src/qpidd"`
-   #QPIDD_EXEC=/opt/workspace/qpid/trunk/qpid/cpp/src/.libs/lt-qpidd
+   if [ -x ../../../cpp/src/qpidd ]; then
+      QPIDD_EXEC=`abs_path "../../../cpp/src/qpidd"`
+   elif [ -n "$(which qpidd)" ] ; then
+      QPIDD_EXEC=$(which qpidd)   
+   else
+      echo "WARNING: skipping test, QPIDD_EXEC not set and qpidd not found."; exit 0;
+   fi
 fi
 
 if [ "$CLUSTER_LIB" = "" ] ; then
-   test -x ../../../cpp/src/.libs/cluster.so || { echo "WARNING: skipping test, CLUSTER_LIB not set and cluster.so not found."; exit 0; }
-   CLUSTER_LIB=`abs_path "../../../cpp/src/.libs/cluster.so"`
-   #CLUSTER_LIB=/opt/workspace/qpid/trunk/qpid/cpp/src/.libs/cluster.so
+   if [ -x ../../../cpp/src/.libs/cluster.so ]; then
+      CLUSTER_LIB=`abs_path "../../../cpp/src/.libs/cluster.so"`
+   elif [ -e /usr/lib64/qpid/daemon/cluster.so ] ; then
+      CLUSTER_LIB="/usr/lib64/qpid/daemon/cluster.so"
+   elif [ -e /usr/lib/qpid/daemon/cluster.so ] ; then 
+      CLUSTER_LIB="/usr/lib/qpid/daemon/cluster.so"
+   else
+     echo "WARNING: skipping test, CLUSTER_LIB not set and cluster.so not found."; exit 0;
+   fi
 fi
 
 if [ "$QP_CP" = "" ] ; then
-   QP_JAR_PATH=`abs_path "../../build/lib/"`
+   if [ -d ../../build/lib/ ]; then
+      QP_JAR_PATH=`abs_path "../../build/lib/"`
+   elif [ -d /usr/share/java/qpid-deps ]; then
+      QP_JAR_PATH=`abs_path "/usr/share/java"`
+   else
+      "WARNING: skipping test, QP_CP not set and the Qpid jars are not present."; exit 0; 	
+   fi
    QP_CP=`find $QP_JAR_PATH -name '*.jar' | tr '\n' ':'`
 fi
 
 if [ "$OUTDIR" = "" ] ; then
    OUTDIR=`abs_path "../output"`
 fi
-
 
 export PYTHONPATH PYTHON_DIR QPIDD_EXEC CLUSTER_LIB QP_CP OUTDIR

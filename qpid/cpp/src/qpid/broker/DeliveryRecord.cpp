@@ -43,7 +43,7 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                                   acceptExpected(!accepted),
                                                   cancelled(false),
                                                   completed(false),
-                                                  ended(accepted),
+                                                  ended(accepted && acquired),
                                                   windowing(_windowing),
                                                   credit(msg.payload ? msg.payload->getRequiredCredit() : _credit)
 {}
@@ -150,6 +150,10 @@ void DeliveryRecord::acquire(DeliveryIds& results) {
     if (queue->acquire(msg)) {
         acquired = true;
         results.push_back(id);
+        if (!acceptExpected) {
+            if (ended) { QPID_LOG(error, "Can't dequeue ended message"); }
+            else { queue->dequeue(0, msg); setEnded(); }
+        }
     } else {
         QPID_LOG(info, "Message already acquired " << id.getValue());
     }

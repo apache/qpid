@@ -19,6 +19,7 @@
 
 #include <windows.h>
 #include <msclr\lock.h>
+#include <oletx2xa.h>
 
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
@@ -31,6 +32,8 @@
 #include "AmqpSession.h"
 #include "QpidMarshal.h"
 #include "QpidException.h"
+#include "DtxResourceManager.h"
+#include "XaTransaction.h"
 
 namespace Apache {
 namespace Qpid {
@@ -66,6 +69,9 @@ AmqpConnection::AmqpConnection(String^ server, int port) :
 	success = true;
 	const ConnectionSettings& settings = connectionp->getNegotiatedSettings();
 	this->maxFrameSize = settings.maxFrameSize;
+	this->host = server;
+	this->port = port;
+	this->isOpen = true;
     } catch (const qpid::Exception& error) {
         String^ errmsg = gcnew String(error.what());
 	openException = gcnew QpidException(errmsg);
@@ -80,6 +86,12 @@ AmqpConnection::AmqpConnection(String^ server, int port) :
     }
 }
 
+AmqpConnection^ AmqpConnection::Clone() {
+    if (disposed)
+	throw gcnew ObjectDisposedException("AmqpConnection.Clone");
+    return gcnew AmqpConnection (this->host, this->port);
+}
+
 void AmqpConnection::Cleanup()
 {
     {
@@ -91,6 +103,7 @@ void AmqpConnection::Cleanup()
 
     try {
         // let the child sessions clean up
+
         for each(AmqpSession^ s in sessions) {
 	    s->ConnectionClosed();
 	}
@@ -98,6 +111,7 @@ void AmqpConnection::Cleanup()
     finally
     {
 	if (connectionp != NULL) {
+	    isOpen = false;
 	    connectionp->close();
 	    delete connectionp;
 	    connectionp = NULL;

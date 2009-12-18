@@ -24,6 +24,8 @@ l = Lexicon()
 
 LBRACE = l.define("LBRACE", r"\{")
 RBRACE = l.define("RBRACE", r"\}")
+LBRACK = l.define("LBRACK", r"\[")
+RBRACK = l.define("RBRACK", r"\]")
 COLON = l.define("COLON", r":")
 SEMI = l.define("SEMI", r";")
 SLASH = l.define("SLASH", r"/")
@@ -128,8 +130,30 @@ class AddressParser(Parser):
       return tok2obj(self.eat())
     elif self.matches(LBRACE):
       return self.map()
+    elif self.matches(LBRACK):
+      return self.list()
     else:
-      raise ParseError(self.next(), NUMBER, STRING, ID, LBRACE)
+      raise ParseError(self.next(), NUMBER, STRING, ID, LBRACE, LBRACK)
+
+  def list(self):
+    self.eat(LBRACK)
+
+    result = []
+
+    while True:
+      if self.matches(RBRACK):
+        break
+      else:
+        result.append(self.value())
+        if self.matches(COMMA):
+          self.eat(COMMA)
+        elif self.matches(RBRACK):
+          break
+        else:
+          raise ParseError(self.next(), COMMA, RBRACK)
+
+    self.eat(RBRACK)
+    return result
 
 def parse(addr):
   return AddressParser(lex(addr)).parse()

@@ -642,6 +642,28 @@ class AddressTests(Base):
     # XXX: need to figure out close after error
     self.conn._remove_session(self.ssn)
 
+  def testBindings(self):
+    snd = self.ssn.sender("""
+test-bindings-queue; {
+  create: always,
+  delete: always,
+  node-properties: {
+    x-properties: {
+      bindings: ["amq.topic/a.#", "amq.direct/b", "amq.topic/c.*"]
+    }
+  }
+}
+""")
+    snd.send("one")
+    snd_a = self.ssn.sender("amq.topic/a.foo")
+    snd_b = self.ssn.sender("amq.direct/b")
+    snd_c = self.ssn.sender("amq.topic/c.bar")
+    snd_a.send("two")
+    snd_b.send("three")
+    snd_c.send("four")
+    rcv = self.ssn.receiver("test-bindings-queue")
+    self.drain(rcv, expected=["one", "two", "three", "four"])
+
 NOSUCH_Q = "this-queue-should-not-exist"
 UNPARSEABLE_ADDR = "name/subject; {bad options"
 UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"

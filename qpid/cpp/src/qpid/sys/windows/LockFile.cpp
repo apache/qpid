@@ -36,7 +36,7 @@ public:
 LockFile::LockFile(const std::string& path_, bool create)
   : path(path_), created(create) {
 
-    HANDLE h = CreateFile(path.c_str(),
+    HANDLE h = ::CreateFile(path.c_str(),
                           create ? (GENERIC_READ|GENERIC_WRITE) : GENERIC_READ,
                           FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
                           0, /* Default security */
@@ -44,41 +44,21 @@ LockFile::LockFile(const std::string& path_, bool create)
                           FILE_FLAG_DELETE_ON_CLOSE, /* Delete file when closed */
                           NULL);
     if (h == INVALID_HANDLE_VALUE)
-        throw qpid::Exception(path + qpid::sys::strError(GetLastError()));
+        throw qpid::Exception(path + ": " + qpid::sys::strError(GetLastError()));
+
+    // Lock up to 4Gb
+    if (!::LockFile(h, 0, 0, 0xffffffff, 0))
+        throw qpid::Exception(path + ": " + qpid::sys::strError(GetLastError()));
     impl.reset(new LockFilePrivate(h));
 }
 
 LockFile::~LockFile() {
     if (impl) {
         if (impl->fd != INVALID_HANDLE_VALUE) {
-            CloseHandle(impl->fd);
+            ::UnlockFile(impl->fd, 0, 0, 0xffffffff, 0);
+            ::CloseHandle(impl->fd);
         }
     }
 }
 
-pid_t LockFile::readPid(void) const {
-    if (!impl)
-        throw Exception("Lock file not open");
-
-    pid_t pid;
-    DWORD desired_read = sizeof(pid_t);
-    DWORD actual_read = 0;
-    if (!ReadFile(impl->fd, &pid, desired_read, &actual_read, 0)) {
-        throw Exception("Cannot read lock file " + path);
-    }
-    return pid;
-}
-
-void LockFile::writePid(void) {
-    if (!impl)
-        throw Exception("Lock file not open");
-
-    pid_t pid = GetCurrentProcessId();
-    DWORD desired_write = sizeof(pid_t);
-    DWORD written = 0;
-    if (!WriteFile(impl->fd, &pid, desired_write, &written, 0)) {
-        throw Exception("Cannot write lock file " + path);
-    }
-}
- 
 }}  /* namespace qpid::sys */

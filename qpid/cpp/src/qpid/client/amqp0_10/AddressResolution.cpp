@@ -46,7 +46,6 @@ namespace amqp0_10 {
 
 using qpid::Exception;
 using qpid::messaging::Address;
-using qpid::messaging::Filter;
 using qpid::messaging::InvalidAddress;
 using qpid::messaging::Variant;
 using qpid::framing::ExchangeBoundResult;
@@ -617,7 +616,7 @@ void Queue::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
     } else {
         try {
             sync(session).queueDeclare(arg::queue=name, arg::passive=true);
-        } catch (const qpid::framing::NotFoundException& e) {
+        } catch (const qpid::framing::NotFoundException& /*e*/) {
             throw InvalidAddress((boost::format("Queue %1% does not exist") % name).str());
         } catch (const std::exception& e) {
             throw InvalidAddress(e.what());
@@ -716,7 +715,7 @@ void Exchange::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
     } else {
         try {
             sync(session).exchangeDeclare(arg::exchange=name, arg::passive=true);
-        } catch (const qpid::framing::NotFoundException& e) {
+        } catch (const qpid::framing::NotFoundException& /*e*/) {
             throw InvalidAddress((boost::format("Exchange %1% does not exist") % name).str());
         } catch (const std::exception& e) {
             throw InvalidAddress(e.what());

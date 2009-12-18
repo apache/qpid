@@ -21,11 +21,10 @@
 #include "qpid/messaging/Variant.h"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <algorithm>
+#include <sstream>
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
 
 InvalidConversion::InvalidConversion(const std::string& msg) : Exception(msg) {}
@@ -80,6 +79,9 @@ class VariantImpl
 
     void setEncoding(const std::string&);
     const std::string& getEncoding() const;
+
+    bool isEqualTo(VariantImpl&) const;
+    bool isEquivalentTo(VariantImpl&) const;
 
     static VariantImpl* create(const Variant&);    
   private:
@@ -168,6 +170,18 @@ bool toBool(const std::string& s)
     if (caseInsensitiveMatch(s, FALSE)) return false;
     try { return boost::lexical_cast<int>(s); } catch(const boost::bad_lexical_cast&) {}
     throw InvalidConversion(QPID_MSG("Cannot convert " << s << " to bool"));    
+}
+
+template <class T> std::string toString(const T& t)
+{
+    std::stringstream out;
+    out << t;
+    return out.str();
+}
+
+template <class T> bool equal(const T& a, const T& b)
+{
+    return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
 }
 
 }
@@ -298,8 +312,35 @@ std::string VariantImpl::asString() const
       case VAR_DOUBLE: return boost::lexical_cast<std::string>(value.d);
       case VAR_FLOAT: return boost::lexical_cast<std::string>(value.f);
       case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
+      case VAR_LIST: return toString(asList());
+      case VAR_MAP: return toString(asMap());
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_STRING)));
     }
+}
+
+bool VariantImpl::isEqualTo(VariantImpl& other) const
+{
+    if (type == other.type) {
+        switch(type) {
+          case VAR_VOID: return true;
+          case VAR_BOOL: return value.b == other.value.b;
+          case VAR_UINT8: return value.ui8 == other.value.ui8;
+          case VAR_UINT16: return value.ui16 == other.value.ui16;
+          case VAR_UINT32: return value.ui32 == other.value.ui32;
+          case VAR_UINT64: return value.ui64 == other.value.ui64;
+          case VAR_INT8: return value.i8 == other.value.i8;
+          case VAR_INT16: return value.i16 == other.value.i16;
+          case VAR_INT32: return value.i32 == other.value.i32;
+          case VAR_INT64: return value.i64 == other.value.i64;
+          case VAR_DOUBLE: return value.d == other.value.d;
+          case VAR_FLOAT: return value.f == other.value.f;
+          case VAR_STRING: return *reinterpret_cast<std::string*>(value.v) 
+                == *reinterpret_cast<std::string*>(other.value.v);
+          case VAR_LIST: return equal(asList(), other.asList());
+          case VAR_MAP: return equal(asMap(), other.asMap());
+        }
+    }
+    return false;
 }
 
 const Variant::Map& VariantImpl::asMap() const
@@ -603,6 +644,16 @@ std::ostream& operator<<(std::ostream& out, const Variant& value)
         break;
     }
     return out;    
+}
+
+bool operator==(const Variant& a, const Variant& b)
+{
+    return a.isEqualTo(b);
+}
+
+bool Variant::isEqualTo(const Variant& other) const
+{
+    return impl->isEqualTo(*other.impl);
 }
 
 }} // namespace qpid::messaging

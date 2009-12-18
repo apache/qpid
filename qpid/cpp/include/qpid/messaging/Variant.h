@@ -149,6 +149,8 @@ class Variant
     QPID_CLIENT_EXTERN void setEncoding(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getEncoding() const;
 
+    QPID_CLIENT_EXTERN bool isEqualTo(const Variant& a) const;
+
     QPID_CLIENT_EXTERN void reset();    
   private:
     VariantImpl* impl;
@@ -157,6 +159,7 @@ class Variant
 QPID_CLIENT_EXTERN std::ostream& operator<<(std::ostream& out, const Variant& value);
 QPID_CLIENT_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::Map& map);
 QPID_CLIENT_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::List& list);
+QPID_CLIENT_EXTERN bool operator==(const Variant& a, const Variant& b);
 
 typedef Variant::Map VariantMap;
 
