@@ -269,9 +269,10 @@ broker::SemanticState& Connection::semanticState() {
     return sessionState().getSemanticState();
 }
 
-void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled)
+void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled, const SequenceNumber& position)
 {
     broker::SemanticState::ConsumerImpl& c = semanticState().find(name);
+    c.position = position;
     c.setBlocked(blocked);
     if (notifyEnabled) c.enableNotify(); else c.disableNotify();
     consumerNumbering.add(c.shared_from_this());

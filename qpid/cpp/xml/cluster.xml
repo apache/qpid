@@ -137,6 +137,7 @@
       <field name="name" type="str8"/>
       <field name="blocked" type="bit"/>
       <field name="notifyEnabled" type="bit"/>
+      <field name="position" type="sequence-no"/>
     </control>
 
     <!-- Delivery-record for outgoing messages sent but not yet accepted. -->
