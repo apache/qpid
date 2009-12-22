@@ -16,9 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import sys
-import socket
-import os
 import time
 import logging
 from threading import Lock
@@ -47,6 +44,13 @@ AMQP_QMF_SUBJECT = "qmf"
 AMQP_QMF_VERSION = 4
 AMQP_QMF_SUBJECT_FMT = "%s%d.%s"
 
+class MsgKey(object):
+    agent_info = "agent_info"
+    query = "query"
+    package_info = "package_info"
+    schema_id = "schema_id"
+
+
 class OpCode(object):
     noop = "noop"
 
@@ -54,7 +58,7 @@ class OpCode(object):
     agent_locate = "agent-locate"
     cancel_subscription = "cancel-subscription"
     create_subscription = "create-subscription"
-    get_query = "get_query"
+    get_query = "get-query"
     method_req = "method"
     renew_subscription = "renew-subscription"
     schema_query = "schema-query"  # @todo: deprecate
@@ -316,6 +320,9 @@ class QmfData(object):
     def getProperty(self, _name):
         return self._properties[_name]
 
+    def hasProperty(self, _name):
+        return _name in self._properties
+
     def setProperty(self, _name, _value):
         if self._const:
             raise Exception("cannot modify constant data object")
@@ -332,15 +339,11 @@ class QmfData(object):
         # ignore private data members
         if _name[0] == '_':
             return super.__setattr__(self, _name, _value)
-        # @todo: this is bad - what if the same name is used for a
-        # property and statistic or argument?
         if _name in self._properties:
             return self.setProperty(_name, _value)
         return super.__setattr__(self, _name, _value)
 
     def __getattr__(self, _name):
-        # @todo: this is bad - what if the same name is used for a
-        # property and statistic or argument?
         if _name in self._properties: return self.getProperty(_name)
         raise AttributeError("no item named '%s' in this object" % _name)
 
@@ -453,6 +456,32 @@ class QmfDescribed(QmfData):
         return result
 
 
+    def getProperty(self, name):
+        # meta-properties
+        if name == QmfQuery._PRED_PACKAGE:
+            return self._schemaId.getClassId().getPackageName()
+        if name == QmfQuery._PRED_CLASS:
+            return self._schemaId.getClassId().getClassName()
+        if name == QmfQuery._PRED_TYPE:
+            return self._schemaId.getClassId().getType()
+        if name == QmfQuery._PRED_HASH:
+            return self._schemaId.getClassId().getHashString()
+        if name == QmfQuery._PRED_SCHEMA_ID:
+            return self._schemaId.getClassId()
+        if name == QmfQuery._PRED_PRIMARY_KEY:
+            return self.getPrimaryKey()
+
+        return super(QmfDescribed, self).getProperty(name)
+
+
+    def hasProperty(self, name):
+        if name in [QmfQuery._PRED_PACKAGE, QmfQuery._PRED_CLASS, QmfQuery._PRED_TYPE,
+                    QmfQuery._PRED_HASH, QmfQuery._PRED_SCHEMA_ID, QmfQuery._PRED_PRIMARY_KEY]:
+            return True
+
+        return super(QmfDescribed, self).hasProperty(name)
+
+
     def mapEncode(self):
         _map = {}
         _map["schema_id"] = self._schemaId.mapEncode()
@@ -552,6 +581,29 @@ class QmfManaged(QmfDescribed):
 
     def isDeleted(self): 
         return self._timestamps[QmfManaged._ts_delete] == 0
+
+
+    def getProperty(self, name):
+        # meta-properties
+        if name == QmfQuery._PRED_OBJECT_ID:
+            return self.getObjectId()
+        if name == QmfQuery._PRED_UPDATE_TS:
+            return self._timestamps[QmfManaged._ts_update]
+        if name == QmfQuery._PRED_CREATE_TS:
+            return self._timestamps[QmfManaged._ts_create]
+        if name == QmfQuery._PRED_DELETE_TS:
+            return self._timestamps[QmfManaged._ts_delete]
+
+        return super(QmfManaged, self).getProperty(name)
+
+
+    def hasProperty(self, name):
+        if name in [QmfQuery._PRED_OBJECT_ID, QmfQuery._PRED_UPDATE_TS,
+                    QmfQuery._PRED_CREATE_TS, QmfQuery._PRED_DELETE_TS]:
+            return True
+
+        return super(QmfManaged, self).hasProperty(name)
+
 
     def mapEncode(self):
         _map = super(QmfManaged, self).mapEncode()
@@ -999,110 +1051,110 @@ class MethodResponse(object):
 
 
 
-def _doQuery(predicate, params ):
-    """
-    Given the predicate from a query, and a map of named parameters, apply the predicate
-    to the parameters, and return True or False.
-    """
-    if type(predicate) != list or len(predicate) < 1:
-        return False
+# def _doQuery(predicate, params ):
+#     """
+#     Given the predicate from a query, and a map of named parameters, apply the predicate
+#     to the parameters, and return True or False.
+#     """
+#     if type(predicate) != list or len(predicate) < 1:
+#         return False
 
-    opr = predicate[0]
-    if opr == Query._CMP_TRUE:
-        logging.info("_doQuery() TRUE: [%s]" % predicate )
-        return True
-    elif opr == Query._CMP_FALSE:
-        logging.info("_doQuery() FALSE: [%s]" % predicate )
-        return False
-    elif opr == Query._LOGIC_AND:
-        logging.info("_doQuery() AND: [%s]" % predicate )
-        rc = False
-        for exp in predicate[1:]:
-            rc = _doQuery( exp, params )
-            if not rc:
-                break
-        return rc
+#     elif opr == Query._LOGIC_AND:
+#         logging.debug("_doQuery() AND: [%s]" % predicate )
+#         rc = False
+#         for exp in predicate[1:]:
+#             rc = _doQuery( exp, params )
+#             if not rc:
+#                 break
+#         return rc
 
-    elif opr == Query._LOGIC_OR:
-        logging.info("_doQuery() OR: [%s]" % predicate )
-        rc = False
-        for exp in predicate[1:]:
-            rc = _doQuery( exp, params )
-            if rc:
-                break
-        return rc
+#     elif opr == Query._LOGIC_OR:
+#         logging.debug("_doQuery() OR: [%s]" % predicate )
+#         rc = False
+#         for exp in predicate[1:]:
+#             rc = _doQuery( exp, params )
+#             if rc:
+#                 break
+#         return rc
 
-    elif opr == Query._LOGIC_NOT:
-        logging.info("_doQuery() NOT: [%s]" % predicate )
-        if len(predicate) != 2:
-            logging.warning("Malformed query not-expression received: '%s'" % predicate)
-            return False
-        return not _doQuery( predicate[1:], params )
-
-    elif opr in [Query._CMP_EQ, Query._CMP_NE, Query._CMP_LT, 
-                 Query._CMP_LE, Query._CMP_GT, Query._CMP_GE,
-                 Query._CMP_RE]:
-        if len(predicate) != 3:
-            logging.warning("Malformed query compare expression received: '%s'" % predicate)
-            return False
-        # @todo: support regular expression match
-        name = predicate[1]
-        if name not in params:
-            logging.warning("Malformed query, attribute '%s' not present." % name)
-            return False
-        arg1 = params[name]
-        arg1Type = type(arg1)
-        logging.info("_doQuery() CMP: [%s] value='%s'" % (predicate, arg1) )
-        try:
-            arg2 = arg1Type(predicate[2])
-            if opr == Query._CMP_EQ: return arg1 == arg2
-            if opr == Query._CMP_NE: return arg1 != arg2
-            if opr == Query._CMP_LT: return arg1 < arg2
-            if opr == Query._CMP_LE: return arg1 <= arg2
-            if opr == Query._CMP_GT: return arg1 > arg2
-            if opr == Query._CMP_GE: return arg1 >= arg2
-            if opr == Query._CMP_RE: 
-                logging.error("!!! RE QUERY TBD !!!")
-                return False
-        except:
-            logging.warning("Malformed query, unable to compare '%s'" % predicate)
-        return False
-
-    elif opr == Query._CMP_PRESENT:
-        logging.info("_doQuery() PRESENT: [%s]" % predicate )
-        if len(predicate) != 2:
-            logging.warning("Malformed query present expression received: '%s'" % predicate)
-            return False
-        name = predicate[1]
-        return name in params
-
-    else:
-        logging.warning("Unknown query operator received: '%s'" % opr)
-    return False
+#     elif opr == Query._LOGIC_NOT:
+#         logging.debug("_doQuery() NOT: [%s]" % predicate )
+#         if len(predicate) != 2:
+#             logging.warning("Malformed query not-expression received: '%s'" % predicate)
+#             return False
+#         return not _doQuery( predicate[1:], params )
 
 
 
-class Query:
+#     else:
+#         logging.warning("Unknown query operator received: '%s'" % opr)
+#     return False
+
+
+
+class QmfQuery(object):
+
     _TARGET="what"
     _PREDICATE="where"
 
-    _TARGET_PACKAGES="_packages"
-    _TARGET_OBJECT_ID="_object_id"
-    _TARGET_SCHEMA="_schema"
-    _TARGET_SCHEMA_ID="_schema_id"
-    _TARGET_MGT_DATA="_mgt_data"
-    _TARGET_AGENT_ID="_agent_id"
+    #### Query Targets ####
+    _TARGET_PACKAGES="schema_package"
+    # (returns just package names)
+    # predicate key(s):
+    #
+    #_PRED_PACKAGE
+
+
+    _TARGET_SCHEMA_ID="schema_id"
+    _TARGET_SCHEMA="schema"
+    # predicate key(s):
+    #
+    #_PRED_PACKAGE
+    #_PRED_CLASS
+    #_PRED_TYPE
+    #_PRED_HASH
+    #_PRED_SCHEMA_ID
+    # name of property (exist test only)
+    # name of method (exist test only)
+
+
+    _TARGET_AGENT="agent"
+    # predicate keys(s):
+    #
+    #_PRED_VENDOR="_vendor"
+    #_PRED_PRODUCT="_product"
+    #_PRED_NAME="_name"
+
+    _TARGET_OBJECT_ID="object_id"
+    _TARGET_OBJECT="object"
+    # package and class names must be suppled in the target value:
+    # predicate on all values or meta-values[tbd]
+    #
+    #_PRED_PACKAGE
+    #_PRED_CLASS
+    #_PRED_TYPE
+    #_PRED_HASH
+    #_primary_key
+    #_PRED_SCHEMA_ID
+    #_PRED_OBJECT_ID
+    #_PRED_UPDATE_TS
+    #_PRED_CREATE_TS
+    #_PRED_DELETE_TS
+    #<name of property>
 
     _PRED_PACKAGE="_package_name"
     _PRED_CLASS="_class_name"
     _PRED_TYPE="_type"
-    _PRED_HASH="_has_str"
-    _PRED_SCHEMA_ID="_schema_id"
+    _PRED_HASH="_hash_str"
     _PRED_VENDOR="_vendor"
     _PRED_PRODUCT="_product"
     _PRED_NAME="_name"
-    _PRED_AGENT_ID="_agent_id"
     _PRED_PRIMARY_KEY="_primary_key"
+    _PRED_SCHEMA_ID="_schema_id"
+    _PRED_OBJECT_ID="_object_id"
+    _PRED_UPDATE_TS="_update_ts"
+    _PRED_CREATE_TS="_create_ts"
+    _PRED_DELETE_TS="_delete_ts"
 
     _CMP_EQ="eq"
     _CMP_NE="ne"
@@ -1110,8 +1162,8 @@ class Query:
     _CMP_LE="le"
     _CMP_GT="gt"
     _CMP_GE="ge"
-    _CMP_RE="re_match"
-    _CMP_PRESENT="exists"
+    _CMP_RE_MATCH="re_match"
+    _CMP_EXISTS="exists"
     _CMP_TRUE="true"
     _CMP_FALSE="false"
 
@@ -1119,34 +1171,219 @@ class Query:
     _LOGIC_OR="or"
     _LOGIC_NOT="not"
 
-    def __init__(self, kwargs={}):
-        pass
-#         if "impl" in kwargs:
-#             self.impl = kwargs["impl"]
-#         else:
-#             package = ''
-#             if "key" in kwargs:
-#                 # construct using SchemaClassKey:
-#                 self.impl = qmfengine.Query(kwargs["key"])
-#             elif "object_id" in kwargs:
-#                 self.impl = qmfengine.Query(kwargs["object_id"].impl)
-#             else:
-#                 if "package" in kwargs:
-#                     package = kwargs["package"]
-#                 if "class" in kwargs:
-#                     self.impl = qmfengine.Query(kwargs["class"], package)
-#                 else:
-#                     raise Exception("Argument error: invalid arguments, use 'key', 'object_id' or 'class'[,'package']")
+    _valid_targets = [_TARGET_PACKAGES, _TARGET_OBJECT_ID, _TARGET_SCHEMA, _TARGET_SCHEMA_ID, 
+                      _TARGET_OBJECT, _TARGET_AGENT]
+
+    def __init__(self, qmap):
+        """
+        """
+        self._target_map = None
+        self._predicate = None
+
+        if type(qmap) != dict:
+            raise TypeError("constructor must be of type dict")
+
+        if self._TARGET in qmap:
+            self._target_map = qmap[self._TARGET]
+            if self._PREDICATE in qmap:
+                self.setPredicate(qmap[self._PREDICATE])
+            return
+        else:
+            # assume qmap to be the target map
+            self._target_map = qmap[:]
 
 
-#     def package_name(self): return self.impl.getPackage()
-#     def class_name(self): return self.impl.getClass()
-#     def object_id(self):
-#         _objid = self.impl.getObjectId()
-#         if _objid:
-#             return ObjectId(_objid)
-#         else:
-#             return None
+    def setPredicate(self, predicate):
+        """
+        """
+        if isinstance(predicate, QmfQueryPredicate):
+            self._predicate = predicate
+        elif type(predicate) == dict:
+            self._predicate = QmfQueryPredicate(predicate)
+        else:
+            raise TypeError("Invalid type for a predicate: %s" % str(predicate))
+
+
+    def evaluate(self, qmfData):
+        """
+        """
+        # @todo: how to interpred qmfData against target??????
+        #
+        if self._predicate:
+            return self._predicate.evaluate(qmfData)
+        # no predicate - always match
+        return True
+
+    def getTarget(self):
+        for key in self._target_map.iterkeys():
+            if key in self._valid_targets:
+                return key
+        return None
+
+    def getPredicate(self):
+        return self._predicate
+
+    def mapEncode(self):
+        _map = {}
+        _map[self._TARGET] = self._target_map
+        _map[self._PREDICATE] = self._predicate.mapEncode()
+        return _map
+
+    def __repr__(self):
+        return str(self.mapEncode())
+
+
+
+class QmfQueryPredicate(object):
+    """
+    Class for Query predicates.
+    """
+    _valid_cmp_ops = [QmfQuery._CMP_EQ, QmfQuery._CMP_NE, QmfQuery._CMP_LT, 
+                      QmfQuery._CMP_GT, QmfQuery._CMP_LE, QmfQuery._CMP_GE,
+                      QmfQuery._CMP_EXISTS, QmfQuery._CMP_RE_MATCH,
+                      QmfQuery._CMP_TRUE, QmfQuery._CMP_FALSE]
+    _valid_logic_ops = [QmfQuery._LOGIC_AND, QmfQuery._LOGIC_OR, QmfQuery._LOGIC_NOT]
+
+
+    def __init__( self, pmap):
+        """
+        {"op": listOf(operands)}
+        """
+        self._oper = None
+        self._operands = []
+
+        logic_op = False
+        if type(pmap) == dict:
+            for key in pmap.iterkeys():
+                logging.error("key = %s" % key)
+                if key in self._valid_cmp_ops:
+                    # coparison operation - may have "name" and "value"
+                    self._oper = key
+                    break
+                if key in self._valid_logic_ops:
+                    logic_op = True
+                    self._oper = key
+                    break
+
+            if not self._oper:
+                raise TypeError("invalid predicate expression: '%s'" % str(pmap))
+
+            if type(pmap[self._oper]) == list or type(pmap[self._oper]) == tuple:
+                if logic_op:
+                    for exp in pmap[self._oper]:
+                        self.append(QmfQueryPredicate(exp))
+                else:
+                    self._operands = list(pmap[self._oper])
+
+        else:
+            raise TypeError("invalid predicate: '%s'" % str(pmap))
+
+
+    def append(self, operand):
+        """
+        Append another operand to a predicate expression
+        """
+        logging.error("Appending: '%s'" % str(operand))
+        self._operands.append(operand)
+
+
+
+    def evaluate( self, qmfData ):
+        """
+        """
+        if not isinstance(qmfData, QmfData):
+            raise TypeError("Query expects to evaluate QmfData types.")
+
+        if self._oper == QmfQuery._CMP_TRUE:
+            logging.debug("query evaluate TRUE")
+            return True
+        if self._oper == QmfQuery._CMP_FALSE:
+            logging.debug("query evaluate FALSE")
+            return False
+
+        if self._oper in [QmfQuery._CMP_EQ, QmfQuery._CMP_NE, QmfQuery._CMP_LT, 
+                          QmfQuery._CMP_LE, QmfQuery._CMP_GT, QmfQuery._CMP_GE,
+                          QmfQuery._CMP_RE_MATCH]:
+            if len(self._operands) != 2:
+                logging.warning("Malformed query compare expression received: '%s, %s'" %
+                                (self._oper, str(self._operands)))
+                return False
+            # @todo: support regular expression match
+            name = self._operands[0]
+            logging.debug("looking for: '%s'" % str(name))
+            if not qmfData.hasProperty(name):
+                logging.warning("Malformed query, attribute '%s' not present." % name)
+                return False
+            arg1 = qmfData.getProperty(name)
+            arg1Type = type(arg1)
+            logging.debug("query evaluate %s: '%s' '%s' '%s'" % 
+                          (name, str(arg1), self._oper, str(self._operands[1])))
+            try:
+                arg2 = arg1Type(self._operands[1])
+                if self._oper == QmfQuery._CMP_EQ: return arg1 == arg2
+                if self._oper == QmfQuery._CMP_NE: return arg1 != arg2
+                if self._oper == QmfQuery._CMP_LT: return arg1 < arg2
+                if self._oper == QmfQuery._CMP_LE: return arg1 <= arg2
+                if self._oper == QmfQuery._CMP_GT: return arg1 > arg2
+                if self._oper == QmfQuery._CMP_GE: return arg1 >= arg2
+                if self._oper == QmfQuery._CMP_RE_MATCH: 
+                    logging.error("!!! RE QUERY TBD !!!")
+                    return False
+            except:
+                pass
+            logging.warning("Malformed query - %s: '%s' '%s' '%s'" % 
+                            (name, str(arg1), self._oper, str(self._operands[1])))
+            return False
+
+
+        if self._oper == QmfQuery._CMP_EXISTS:
+            if len(self._operands) != 1:
+                logging.warning("Malformed query present expression received")
+                return False
+            name = self._operands[0]
+            logging.debug("query evaluate PRESENT: [%s]" % str(name))
+            return qmfData.hasProperty(name)
+
+        if self._oper == QmfQuery._LOGIC_AND:
+            logging.debug("query evaluate AND: '%s'" % str(self._operands))
+            for exp in self._operands:
+                if not exp.evaluate(qmfData):
+                    return False
+            return True
+
+        if self._oper == QmfQuery._LOGIC_OR:
+            logging.debug("query evaluate OR: [%s]" % str(self._operands))
+            for exp in self._operands:
+                if exp.evaluate(qmfData):
+                    return True
+            return False
+
+        if self._oper == QmfQuery._LOGIC_NOT:
+            logging.debug("query evaluate NOT: [%s]" % str(self._operands))
+            for exp in self._operands:
+                if exp.evaluate(qmfData):
+                    return False
+            return True
+
+        logging.warning("Unrecognized query operator: [%s]" % str(self._oper))
+        return False
+
+    
+    def mapEncode(self):
+        _map = {}
+        _list = []
+        for exp in self._operands:
+            if isinstance(exp, QmfQueryPredicate):
+                _list.append(exp.mapEncode())
+            else:
+                _list.append(exp)
+        _map[self._oper] = _list
+        return _map
+
+
+    def __repr__(self):
+        return str(self.mapEncode())
+    
 
 
 ##==============================================================================
@@ -1696,7 +1933,7 @@ def SchemaMethodFactory( param ):
 
 
 
-class SchemaClass(object):
+class SchemaClass(QmfData):
     """
     Base class for Data and Event Schema classes.
     """
@@ -1766,6 +2003,33 @@ class SchemaClass(object):
                                        hstr )
         return hstr
 
+
+    def getPropertyCount(self): return len(self._properties)
+    def getProperties(self): return self._properties.copy()
+    def addProperty(self, name, prop):
+        self._properties[name] = prop
+        # need to re-generate schema hash
+        self._classId = None
+
+    def getProperty(self, name):
+        # check for meta-properties first
+        if name == QmfQuery._PRED_PACKAGE:
+            return self._pname
+        if name == QmfQuery._PRED_CLASS:
+            return self._cname
+        if name == QmfQuery._PRED_TYPE:
+            return self._type
+        if name == QmfQuery._PRED_HASH:
+            return self.getClassId().getHashString()
+        if name == QmfQuery._PRED_SCHEMA_ID:
+            return self.getClassId()
+        return super(SchemaClass, self).getProperty(name)
+
+    def hasProperty(self, name):
+        if name in [QmfQuery._PRED_PACKAGE, QmfQuery._PRED_CLASS, 
+                    QmfQuery._PRED_TYPE, QmfQuery._PRED_HASH, QmfQuery._PRED_SCHEMA_ID]:
+            return True
+        super(SchemaClass, self).hasProperty(name)
 
     def mapEncode(self):
         """
@@ -1838,19 +2102,9 @@ class SchemaObjectClass(SchemaClass):
 
     def getPrimaryKeyList(self): return self._pkeyNames[:]
 
-    def getPropertyCount(self): return len(self._properties)
-    def getProperties(self): return self._properties.copy()
-    def getProperty(self, name): return self._properties[name]
-
     def getMethodCount(self): return len(self._methods)
     def getMethods(self): return self._methods.copy()
     def getMethod(self, name): return self._methods[name]
-
-    def addProperty(self, name, prop):
-        self._properties[name] = prop
-        # need to re-generate schema hash
-        self._classId = None
-
     def addMethod(self, name, method): 
         self._methods[name] = method
         self._classId = None
@@ -1915,18 +2169,6 @@ class SchemaEventClass(SchemaClass):
                                                desc,
                                                _hash )
         self._properties = _props.copy()
-
-    def getPropertyCount(self): return len(self._properties)
-    def getProperties(self): return self._properties.copy()
-    def getProperty(self, name): return self._properties[name]
-    def addProperty(self, name, prop):
-        self._properties[name] = prop
-        # need to re-generate schema hash
-        self._classId = None
-
-    def mapEncode(self):
-        _map = super(SchemaEventClass, self).mapEncode()
-        return _map
 
 
 

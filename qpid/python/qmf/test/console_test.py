@@ -4,7 +4,7 @@ from threading import Semaphore
 
 
 from qpid.messaging import *
-from qmfCommon import (Notifier, Query)
+from qmfCommon import (Notifier, QmfQuery)
 from qmfConsole import Console
 
 
@@ -31,17 +31,19 @@ logging.info( "Starting Console" )
 
 _notifier = ExampleNotifier()
 _myConsole = Console(notifier=_notifier)
-_myConsole.add_connection( _c )
+_myConsole.addConnection( _c )
 
 # Discover only agents from vendor "redhat.com" that 
 # are a "qmf" product....
 # @todo: replace "manual" query construction with 
 # a formal class-based Query API
-_query = {Query._TARGET: {Query._TARGET_AGENT_ID:None},
-          Query._PREDICATE:
-              [Query._LOGIC_AND,
-               [Query._CMP_EQ, "vendor",  "redhat.com"],
-               [Query._CMP_EQ, "product", "qmf"]]}
+_query = {QmfQuery._TARGET: 
+          {QmfQuery._TARGET_AGENT:None},
+          QmfQuery._PREDICATE:
+              {QmfQuery._LOGIC_AND: 
+               [{QmfQuery._CMP_EQ: ["vendor",  "redhat.com"]},
+                {QmfQuery._CMP_EQ: ["product", "qmf"]}]}}
+_query = QmfQuery(_query)
 
 _myConsole.enableAgentDiscovery(_query)
 
@@ -59,7 +61,7 @@ while not _done:
         _done = True
 
 logging.info( "Removing connection" )
-_myConsole.remove_connection( _c, 10 )
+_myConsole.removeConnection( _c, 10 )
 
 logging.info( "Destroying console:" )
 _myConsole.destroy( 10 )

@@ -43,14 +43,23 @@ _schema.addProperty( "index1",
                      SchemaProperty(qmfTypes.TYPE_UINT8))
 _schema.addProperty( "index2",
                      SchemaProperty(qmfTypes.TYPE_LSTR))
+# these two properties are statistics
+_schema.addProperty( "query_count",
+                     SchemaProperty(qmfTypes.TYPE_UINT32))
+_schema.addProperty( "method_call_count",
+                     SchemaProperty(qmfTypes.TYPE_UINT32))
+# These two properties can be set via the method call
+_schema.addProperty( "set_string",
+                     SchemaProperty(qmfTypes.TYPE_LSTR))
+_schema.addProperty( "set_int",
+                     SchemaProperty(qmfTypes.TYPE_UINT32))
+
 
 # add method
-_meth = SchemaMethod( _desc="A test method" )
-_meth.addArgument( "arg1", SchemaProperty(qmfTypes.TYPE_UINT32) )
-_meth.addArgument( "arg2", SchemaProperty(qmfTypes.TYPE_LSTR) )
-_meth.addArgument( "arg3", SchemaProperty(qmfTypes.TYPE_BOOL) )
-
-_schema.addMethod( "meth_1", _meth )
+_meth = SchemaMethod( _desc="Method to set string and int in object." )
+_meth.addArgument( "arg_int", SchemaProperty(qmfTypes.TYPE_UINT32) )
+_meth.addArgument( "arg_str", SchemaProperty(qmfTypes.TYPE_LSTR) )
+_schema.addMethod( "set_meth", _meth )
 
 # Add schema to Agent
 
@@ -61,11 +70,19 @@ _agent.registerObjectClass(_schema)
 _obj = QmfAgentData( _agent, _schema )
 _obj.setProperty("index1", 100)
 _obj.setProperty("index2", "a name" )
-
+_obj.setProperty("set_string", "UNSET")
+_obj.setProperty("set_int", 0)
+_obj.setProperty("query_count", 0)
+_obj.setProperty("method_call_count", 0)
 _agent.addObject( _obj )
+
 _agent.addObject( QmfAgentData( _agent, _schema,
                                 _props={"index1":99, 
-                                        "index2": "another name"} ))
+                                        "index2": "another name",
+                                        "set_string": "UNSET",
+                                        "set_int": 0,
+                                        "query_count": 0,
+                                        "method_call_count": 0} ))
 
 ## Now connect to the broker
 

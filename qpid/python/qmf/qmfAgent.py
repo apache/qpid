@@ -18,15 +18,16 @@
 #
 
 import sys
-import socket
-import os
 import logging
+import datetime
+import time
 from threading import Thread, Lock
-from qpid.messaging import Connection, Message
+from qpid.messaging import Connection, Message, Empty, SendError
 from uuid import uuid4
 from qmfCommon import (AMQP_QMF_TOPIC, AMQP_QMF_DIRECT, AMQP_QMF_AGENT_LOCATE, 
                        AMQP_QMF_AGENT_INDICATION, AgentId, QmfManaged, makeSubject,
-                       parseSubject, OpCode, Query, SchemaObjectClass, _doQuery)
+                       parseSubject, OpCode, QmfQuery, SchemaObjectClass, MsgKey, 
+                       QmfData)
 
 
 
@@ -36,7 +37,8 @@ from qmfCommon import (AMQP_QMF_TOPIC, AMQP_QMF_DIRECT, AMQP_QMF_AGENT_LOCATE,
 
 class Agent(Thread):
     def __init__(self, vendor, product, name=None,
-                 notifier=None, kwargs={}):
+                 notifier=None, heartbeat_interval=30,
+                 kwargs={}):
         Thread.__init__(self)
         self._running = False
         self.vendor = vendor
@@ -48,10 +50,13 @@ class Agent(Thread):
         self._id = AgentId(self.vendor, self.product, self.name)
         self._address = str(self._id)
         self._notifier = notifier
+        self._heartbeat_interval = heartbeat_interval
         self._conn = None
+        self._session = None
         self._lock = Lock()
-        self._data_schema = {}
-        self._event_schema = {}
+        self._packages = {}
+        self._schema_timestamp = long(0)
+        self._schema = {}
         self._agent_data = {}
 
     def getAgentId(self):
@@ -60,8 +65,9 @@ class Agent(Thread):
     def setConnection(self, conn):
         self._conn = conn
         self._session = self._conn.session()
-        self._locate_receiver = self._session.receiver(AMQP_QMF_AGENT_LOCATE)
-        self._direct_receiver = self._session.receiver(AMQP_QMF_DIRECT + "/" + self._address)
+        self._locate_receiver = self._session.receiver(AMQP_QMF_AGENT_LOCATE, capacity=10)
+        self._direct_receiver = self._session.receiver(AMQP_QMF_DIRECT + "/" + self._address,
+                                                       capacity=10)
         self._ind_sender = self._session.sender(AMQP_QMF_AGENT_INDICATION)
         self._running = True
         self.start()
@@ -77,7 +83,16 @@ class Agent(Thread):
 
         self._lock.acquire()
         try:
-            self._data_schema[schema.getClassId()] = schema
+            classId = schema.getClassId()
+            pname = classId.getPackageName()
+            cname = classId.getClassName()
+            if pname not in self._packages:
+                self._packages[pname] = [cname]
+            else:
+                if cname not in self._packages[pname]:
+                    self._packages[pname].append(cname)
+            self._schema[classId] = schema
+            self._schema_timestamp = long(time.time() * 1000)
         finally:
             self._lock.release()
 
@@ -128,35 +143,41 @@ class Agent(Thread):
 
 
     def run(self):
-        count = 0   # @todo: hack
+        next_heartbeat = datetime.datetime.utcnow()
         while self._running:
-            try:
-                msg = self._locate_receiver.fetch(1)
-                logging.debug("Agent Locate Rcvd: '%s'" % msg)
-                if msg.content_type == "amqp/map":
-                    self._dispatch(msg, _direct=False)
-            except KeyboardInterrupt:
-                break
-            except:
-                pass
 
-            try:
-                msg = self._direct_receiver.fetch(1)
-                logging.debug("Agent Msg Rcvd: '%s'" % msg)
-                if msg.content_type == "amqp/map":
-                    self._dispatch(msg, _direct=True)
-            except KeyboardInterrupt:
-                break
-            except:
-                pass
-
-            # @todo: actually implement the periodic agent-ind
-            # message generation!
-            count+= 1
-            if count == 5:
-                count = 0
+            now = datetime.datetime.utcnow()
+            print("now=%s next_heartbeat=%s" % (now, next_heartbeat))
+            if  now >= next_heartbeat:
                 self._ind_sender.send(self._makeAgentIndMsg())
                 logging.debug("Agent Indication Sent")
+                next_heartbeat = now + datetime.timedelta(seconds = self._heartbeat_interval)
+
+            timeout = ((next_heartbeat - now) + datetime.timedelta(microseconds=999999)).seconds 
+            print("now=%s next_heartbeat=%s timeout=%s" % (now, next_heartbeat, timeout))
+            try:
+                logging.error("waiting for next rcvr (timeout=%s)..." % timeout)
+                self._session.next_receiver(timeout = timeout)
+            except Empty:
+                pass
+            except KeyboardInterrupt:
+                break
+
+            try:
+                msg = self._locate_receiver.fetch(timeout = 0)
+                if msg.content_type == "amqp/map":
+                    self._dispatch(msg, _direct=False)
+            except Empty:
+                pass
+
+            try:
+                msg = self._direct_receiver.fetch(timeout = 0)
+                if msg.content_type == "amqp/map":
+                    self._dispatch(msg, _direct=True)
+            except Empty:
+                pass
+
+
 
     #
     # Private:
@@ -166,11 +187,11 @@ class Agent(Thread):
         """
         Create an agent indication message identifying this agent
         """
+        _map = self.getAgentId().mapEncode()
+        _map["schemaTimestamp"] = self._schema_timestamp
         return Message( subject=makeSubject(OpCode.agent_ind),
                         properties={"method":"response"},
-                        content={Query._TARGET_AGENT_ID: 
-                                 self.getAgentId().mapEncode()})
-
+                        content={MsgKey.agent_info: _map})
 
 
     def _dispatch(self, msg, _direct=False):
@@ -195,7 +216,7 @@ class Agent(Thread):
         if opcode == OpCode.agent_locate:
             self._handleAgentLocateMsg( msg, cmap, props, version, _direct )
         elif opcode == OpCode.get_query:
-            logging.warning("!!! GET_QUERY TBD !!!")
+            self._handleQueryMsg( msg, cmap, props, version, _direct )
         elif opcode == OpCode.method_req:
             logging.warning("!!! METHOD_REQ TBD !!!")
         elif opcode == OpCode.cancel_subscription:
@@ -220,17 +241,9 @@ class Agent(Thread):
 
         reply = True
         if "method" in props and props["method"] == "request":
-            if "query" in cmap:
-                query = cmap["query"]
-                # is the query an agent locate?
-                if Query._TARGET in query and query[Query._TARGET] == {Query._TARGET_AGENT_ID:None}:
-                    if Query._PREDICATE in query:
-                        # does this agent match the predicate?
-                        reply = _doQuery( query[Query._PREDICATE], self.getAgentId().mapEncode() )
-                else:
-                    reply = False
-                    logging.debug("Ignoring query - not an agent-id query: '%s'" % query)
-                reply=True
+            if MsgKey.query in cmap:
+                agentIdMap = self.getAgentId().mapEncode()
+                reply = QmfQuery(cmap[MsgKey.query]).evaluate(QmfData(agentIdMap))
 
         if reply:
             try:
@@ -239,10 +252,90 @@ class Agent(Thread):
                 m.correlation_id = msg.correlation_id
                 tmp_snd.send(m)
                 logging.debug("agent-ind sent to [%s]" % msg.reply_to)
-            except:
-                logging.error("Failed to send reply to agent-ind msg '%s'" % msg)
+            except SendError, e:
+                logging.error("Failed to send reply to agent-ind msg '%s' (%s)" % (msg, str(e)))
         else:
             logging.debug("agent-locate msg not mine - no reply sent")
+
+
+    def _handleQueryMsg(self, msg, cmap, props, version, _direct ):
+        """
+        Handle received query message
+        """
+        logging.debug("_handleQueryMsg")
+
+        if "method" in props and props["method"] == "request":
+            qmap = cmap.get(MsgKey.query)
+            if qmap:
+                query = QmfQuery(qmap)
+                target = query.getTarget()
+                if target == QmfQuery._TARGET_PACKAGES:
+                    self._queryPackages( msg, query )
+                elif target == QmfQuery._TARGET_SCHEMA_ID:
+                    self._querySchemaId( msg, query )
+                elif target == QmfQuery._TARGET_SCHEMA:
+                    logging.warning("!!! Query TARGET=SCHEMA TBD !!!")
+                    #self._querySchema( query.getPredicate(), _idOnly=False )
+                elif target == QmfQuery._TARGET_AGENT:
+                    logging.warning("!!! Query TARGET=AGENT TBD !!!")
+                elif target == QmfQuery._TARGET_OBJECT_ID:
+                    logging.warning("!!! Query TARGET=OBJECT_ID TBD !!!")
+                elif target == QmfQuery._TARGET_OBJECT:
+                    logging.warning("!!! Query TARGET=OBJECT TBD !!!")
+                else:
+                    logging.warning("Unrecognized query target: '%s'" % str(target))
+
+
+    def _queryPackages(self, msg, query):
+        """
+        Run a query against the list of known packages
+        """
+        pnames = []
+        self._lock.acquire()
+        try:
+            for name in self._packages.iterkeys():
+                if query.evaluate(QmfData(_props={QmfQuery._PRED_PACKAGE:name})):
+                    pnames.append(name)
+        finally:
+            self._lock.release()
+
+        try:
+            tmp_snd = self._session.sender( msg.reply_to )
+            m = Message( subject=makeSubject(OpCode.data_ind),
+                         properties={"method":"response"},
+                         content={MsgKey.package_info: pnames} )
+            if msg.correlation_id != None:
+                m.correlation_id = msg.correlation_id
+            tmp_snd.send(m)
+            logging.debug("package_info sent to [%s]" % msg.reply_to)
+        except SendError, e:
+            logging.error("Failed to send reply to query msg '%s' (%s)" % (msg, str(e)))
+
+
+    def _querySchemaId( self, msg, query ):
+        """
+        """
+        schemas = []
+        self._lock.acquire()
+        try:
+            for schemaId in self._schema.iterkeys():
+                if query.evaluate(QmfData(_props={QmfQuery._PRED_PACKAGE:schemaId.getPackageName()})):
+                    schemas.append(schemaId.mapEncode())
+        finally:
+            self._lock.release()
+
+        try:
+            tmp_snd = self._session.sender( msg.reply_to )
+            m = Message( subject=makeSubject(OpCode.data_ind),
+                         properties={"method":"response"},
+                         content={MsgKey.schema_id: schemas} )
+            if msg.correlation_id != None:
+                m.correlation_id = msg.correlation_id
+            tmp_snd.send(m)
+            logging.debug("schema_id sent to [%s]" % msg.reply_to)
+        except SendError, e:
+            logging.error("Failed to send reply to query msg '%s' (%s)" % (msg, str(e)))
+
 
 
 
