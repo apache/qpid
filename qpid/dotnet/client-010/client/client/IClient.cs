@@ -18,6 +18,7 @@
 */
 
 using System;
+using org.apache.qpid.transport;
 
 namespace org.apache.qpid.client
 {
@@ -49,12 +50,17 @@ namespace org.apache.qpid.client
         /// <returns>A newly created (suspended) session.</returns>
         IClientSession CreateSession(long expiryInSeconds);
 
+
+        event EventHandler<ExceptionArgs> ExceptionRaised;
+        event EventHandler ConnectionLost;
+
         /// <summary>      
-        /// If the communication layer detects a serious problem with a connection, it
-        //  informs the client's ClosedListener
+        /// If the broker sends a disconnect message, it will notify the ClosedListener
         /// </summary>        
         /// 
         IClosedListener ClosedListener { set; }
+
+
 
         bool IsClosed { get; set; }
 

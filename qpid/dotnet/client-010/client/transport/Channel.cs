@@ -64,7 +64,7 @@ namespace org.apache.qpid.transport
 
         public void Init(Object v, ProtocolHeader hdr)
         {
-            _connection.ConnectionDelegate.init(this, hdr);
+            _connection.ConnectionDelegate.Init(this, hdr);
         }
 
         public void Control(Object v, Method method)

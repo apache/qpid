@@ -34,11 +34,18 @@ namespace org.apache.qpid.client
         private readonly Object _closeOK;
         private IClosedListener _closedListner;
 
+        public event EventHandler<ExceptionArgs> ExceptionRaised;
+        public event EventHandler ConnectionLost;
 
         public bool IsClosed
         {
             get { return _isClosed; }
-            set { _isClosed = value; }
+            set
+            {
+                _isClosed = value;
+                if(_isClosed && ConnectionLost != null)
+                    ConnectionLost(this, EventArgs.Empty);
+            }
         }
 
         public Object CloseOk
@@ -67,14 +74,20 @@ namespace org.apache.qpid.client
         {
             _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
                                      port, virtualHost, username));
-            ConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
+            ClientConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
             ManualResetEvent negotiationComplete = new ManualResetEvent(false);
-            connectionDelegate.setCondition(negotiationComplete);
+            connectionDelegate.SetCondition(negotiationComplete);
             connectionDelegate.VirtualHost = virtualHost;
             _conn = IoTransport.Connect(host, port, connectionDelegate);
             
             _conn.Send(new ProtocolHeader(1, 0, 10));
             negotiationComplete.WaitOne();
+
+            if (connectionDelegate.Exception != null)
+                throw connectionDelegate.Exception;
+
+            connectionDelegate.SetCondition(null);
+
         }
 
         /// <summary>
@@ -93,15 +106,20 @@ namespace org.apache.qpid.client
         {
             _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
                                      port, virtualHost, username));
-            _log.Debug(String.Format("SSL paramters: serverName: {0}; certPath: {1}; rejectUntrusted: {2}", serverName, certPath, rejectUntrusted));          
-            ConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
+            _log.Debug(String.Format("SSL paramters: serverName: {0}; certPath: {1}; rejectUntrusted: {2}", serverName, certPath, rejectUntrusted));
+            ClientConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
             ManualResetEvent negotiationComplete = new ManualResetEvent(false);
-            connectionDelegate.setCondition(negotiationComplete);
+            connectionDelegate.SetCondition(negotiationComplete);
             connectionDelegate.VirtualHost = virtualHost;
             _conn = IoSSLTransport.Connect(host, port, serverName, certPath, rejectUntrusted, connectionDelegate);
 
             _conn.Send(new ProtocolHeader(1, 0, 10));
             negotiationComplete.WaitOne();
+
+            if (connectionDelegate.Exception != null)
+                throw connectionDelegate.Exception;
+
+            connectionDelegate.SetCondition(null);
         }
 
         public void Close()
@@ -142,5 +160,11 @@ namespace org.apache.qpid.client
         }       
 
         #endregion
+
+        public void RaiseException(Exception exception)
+        {
+            if (ExceptionRaised != null)
+                ExceptionRaised(this, new ExceptionArgs(exception));
+        }
     }
 }

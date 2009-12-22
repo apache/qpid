@@ -30,6 +30,7 @@ using NUnit.Framework;
 using org.apache.qpid.client;
 using org.apache.qpid.transport;
 using org.apache.qpid.transport.util;
+using test.Helpers;
 
 namespace test.interop
 {
@@ -43,35 +44,11 @@ namespace test.interop
         [TestFixtureSetUp] 
         public void Init()
         {
-            XmlConfigurator.Configure(new FileInfo("/log.xml"));
-            // populate default properties
-            _properties.Add("Username", "guest");
-            _properties.Add("Password", "guest");
-            _properties.Add("Host", "localhost");
-            _properties.Add("Port", "5672");
-            _properties.Add("VirtualHost", "test");
-             //Read the test config file  
-            XmlTextReader reader = new XmlTextReader(Environment.CurrentDirectory + "/Qpid Test.dll.config");
-            while (reader.Read())
-            {                
-                // if node type is an element
-                if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("add"))
-                {
-                    if (_properties.ContainsKey(reader.GetAttribute("key")))
-                    {
-                        _properties[reader.GetAttribute("key")] = reader.GetAttribute("value");
-                    }
-                    else
-                    {
-                        _properties.Add(reader.GetAttribute("key"), reader.GetAttribute("value"));    
-                    }
-                    
-                }               
-            }
+            var properties = ConfigHelpers.LoadConfig();
             // create a client and connect to the broker
             _client = new Client();
-            _client.Connect(Properties["Host"], Convert.ToInt16(Properties["Port"]), Properties["VirtualHost"],
-                           Properties["Username"], Properties["Password"]);           
+            _client.Connect(properties["Host"], Convert.ToInt16(properties["Port"]), properties["VirtualHost"],
+                           properties["Username"], properties["Password"]);           
    
         }
 

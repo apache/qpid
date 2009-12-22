@@ -35,20 +35,20 @@ namespace org.apache.qpid.transport
         private static readonly Logger log = Logger.Get(typeof(ConnectionDelegate));
         private String _virtualHost;
 
-        private ManualResetEvent _negotiationComplete;
+        protected ManualResetEvent _negotiationComplete;
 
         public abstract SessionDelegate GetSessionDelegate();
 
-        public abstract void Exception(Exception t);
+        public abstract void RaiseException(Exception t);
 
         public abstract void Closed();
 
-        public void setCondition(ManualResetEvent negotiationComplete)
+        public void SetCondition(ManualResetEvent negotiationComplete)
         {
             _negotiationComplete = negotiationComplete;
         }
 
-        public virtual void init(Channel ch, ProtocolHeader hdr)
+        public virtual void Init(Channel ch, ProtocolHeader hdr)
         {
             ch.Connection.Send(new ProtocolHeader((byte)1, hdr.Major, hdr.Minor));
             List<Object> plain = new List<Object>();

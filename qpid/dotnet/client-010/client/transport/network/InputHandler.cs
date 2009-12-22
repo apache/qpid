@@ -44,7 +44,9 @@ namespace org.apache.qpid.transport.network
         // the event raised when a buffer is read from the wire        
         public event EventHandler<ReceivedPayload<INetworkEvent>> ReceivedEvent;
         public event EventHandler<ExceptionArgs> ExceptionProcessing;
-        public event EventHandler HandlerClosed;
+
+        // Not in used... This even is never raised in the code => the application will block on Close() until the timeout is reached 
+        public event EventHandler Closed;
 
         event EventHandler<ReceivedPayload<INetworkEvent>> IReceiver<ReceivedPayload<INetworkEvent>>.Received
         {
@@ -78,24 +80,6 @@ namespace org.apache.qpid.transport.network
                 lock (m_objectLock)
                 {
                     ExceptionProcessing -= value;
-                }
-            }
-        }
-
-        event EventHandler IReceiver<ReceivedPayload<INetworkEvent>>.Closed
-        {
-            add
-            {
-                lock (m_objectLock)
-                {
-                    HandlerClosed += value;
-                }
-            }
-            remove
-            {
-                lock (m_objectLock)
-                {
-                    HandlerClosed -= value;
                 }
             }
         }
