@@ -130,7 +130,7 @@ namespace org.apache.qpid.transport
 
         public void On_ReceivedException(Object sender, ExceptionArgs arg)
         {
-            _connDdelegate.Exception(arg.Exception);
+            _connDdelegate.RaiseException(arg.Exception);
         }
 
         public void On_ReceivedClosed(Object sender, EventArgs arg)

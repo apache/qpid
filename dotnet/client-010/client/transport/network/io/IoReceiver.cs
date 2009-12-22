@@ -166,10 +166,6 @@ namespace org.apache.qpid.transport.network.io
                 }
                 log.Debug("Receiver thread terminating");
             }
-            catch (IOException)
-            {
-                // IOException is thrown when the socket is Closed according to the docs
-            }
             catch (Exception t)
             {
                 if (ExceptionReading != null)

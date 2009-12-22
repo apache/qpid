@@ -47,6 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="interop\ConnectionTests.cs" />
+    <Compile Include="Helpers\ConfigHelpers.cs" />
     <Compile Include="interop\Admin.cs" />
     <Compile Include="interop\ApplicationHeaders.cs" />
     <Compile Include="interop\Message.cs" />

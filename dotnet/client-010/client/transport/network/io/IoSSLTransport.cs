@@ -62,11 +62,9 @@ namespace org.apache.qpid.transport.network.io
             inputHandler.ReceivedEvent += assembler.On_ReceivedEvent;
             // Connection listen to asembler protocol event 
             Receiver.Closed += Connection.On_ReceivedClosed;
+            assembler.Closed += Connection.On_ReceivedClosed;
             Receiver.Exception += Connection.On_ReceivedException;
-            inputHandler.HandlerClosed += Connection.On_ReceivedClosed;
             inputHandler.ExceptionProcessing += Connection.On_ReceivedException;
-            assembler.HandlerClosed += Connection.On_ReceivedClosed;
-            assembler.ExceptionProcessing += Connection.On_ReceivedException;
             assembler.ReceivedEvent += Connection.On_ReceivedEvent;
         }
 

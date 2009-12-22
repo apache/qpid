@@ -42,8 +42,11 @@ namespace org.apache.qpid.transport.network
 
         // the event raised when a buffer is read from the wire        
         public event EventHandler<ReceivedPayload<IProtocolEvent>> ReceivedEvent;
-        public event EventHandler<ExceptionArgs> ExceptionProcessing;
-        public event EventHandler HandlerClosed;
+        public event EventHandler Closed;
+
+
+        // Not in use : 
+        public event EventHandler<ExceptionArgs> Exception;
 
         event EventHandler<ReceivedPayload<IProtocolEvent>> IReceiver<ReceivedPayload<IProtocolEvent>>.Received
         {
@@ -59,42 +62,6 @@ namespace org.apache.qpid.transport.network
                 lock (m_objectLock)
                 {
                     ReceivedEvent -= value;
-                }
-            }
-        }
-
-        event EventHandler<ExceptionArgs> IReceiver<ReceivedPayload<IProtocolEvent>>.Exception
-        {
-            add
-            {
-                lock (m_objectLock)
-                {
-                    ExceptionProcessing += value;
-                }
-            }
-            remove
-            {
-                lock (m_objectLock)
-                {
-                    ExceptionProcessing -= value;
-                }
-            }
-        }
-
-        event EventHandler IReceiver<ReceivedPayload<IProtocolEvent>>.Closed
-        {
-            add
-            {
-                lock (m_objectLock)
-                {
-                    HandlerClosed += value;
-                }
-            }
-            remove
-            {
-                lock (m_objectLock)
-                {
-                    HandlerClosed -= value;
                 }
             }
         }
@@ -267,13 +234,18 @@ namespace org.apache.qpid.transport.network
             log.Debug("Assembler: protocol event:", protevent);
             ReceivedPayload<IProtocolEvent> payload = new ReceivedPayload<IProtocolEvent>();
             payload.Payload = protevent;
-            if (ReceivedEvent != null)
+
+            if (protevent is ConnectionCloseOk)
             {
-                ReceivedEvent(this, payload);
+                if (Closed != null)
+                    Closed(this, EventArgs.Empty);
             }
             else
             {
-                log.Debug("No listener for event: {0}", protevent);
+                if (ReceivedEvent != null)
+                    ReceivedEvent(this, payload);
+                else
+                    log.Debug("No listener for event: {0}", protevent);
             }
         }
 

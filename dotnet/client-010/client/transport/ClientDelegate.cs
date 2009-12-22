@@ -24,7 +24,7 @@ namespace org.apache.qpid.transport
 {
     abstract class ClientDelegate : ConnectionDelegate
     {
-        public override void init(Channel ch, ProtocolHeader hdr)
+        public override void Init(Channel ch, ProtocolHeader hdr)
         {
             if (hdr.Major != 0 && hdr.Minor != 10)
             {

@@ -33,6 +33,7 @@ namespace org.apache.qpid.client
         private readonly Client _client;
         private string _username;
         private string _password;
+        private Exception _exception;
 
         public ClientConnectionDelegate(Client client, string username, string pasword)
         {
@@ -41,14 +42,24 @@ namespace org.apache.qpid.client
             _password = pasword;
         }
 
+        public Exception Exception
+        {
+            get { return _exception; }
+        }
+
         public override SessionDelegate GetSessionDelegate()
         {
             return new ClientSessionDelegate();
         }
 
-        public override void Exception(Exception t)
+        public override void RaiseException(Exception exception)
         {
-            throw t;
+            _exception = exception;
+
+            if (_negotiationComplete != null)
+                _negotiationComplete.Set();
+            else
+                _client.RaiseException(exception);
         }
 
         public override void ConnectionStart(Channel context, ConnectionStart mystruct)
@@ -78,7 +89,7 @@ namespace org.apache.qpid.client
                 catch (Exception e)
                 {
                     throw new SystemException("Error when closing client", e);
-                }
+                } 
             }
         }
 
@@ -86,12 +97,12 @@ namespace org.apache.qpid.client
         {
             base.ConnectionClose(context, connectionClose);
             ErrorCode errorCode = ErrorCode.GetErrorCode((int) connectionClose.GetReplyCode());
-            if (_client.ClosedListener == null && errorCode.Code != (int) QpidErrorCode.NO_ERROR)
-            {
-                throw new Exception ("Server Closed the connection: Reason " +
-                                       connectionClose.GetReplyText());
-            }           
-                _client.ClosedListener.OnClosed(errorCode, connectionClose.GetReplyText(), null);                   
+
+            if(_client.ClosedListener != null)
+                _client.ClosedListener.OnClosed(errorCode, connectionClose.GetReplyText(), null);
+
+            if (errorCode.Code != (int)QpidErrorCode.NO_ERROR)
+                throw new Exception ("Server Closed the connection: Reason " + connectionClose.GetReplyText());
         }
     }
 }
