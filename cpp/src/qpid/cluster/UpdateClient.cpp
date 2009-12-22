@@ -381,7 +381,8 @@ void UpdateClient::updateConsumer(
     ClusterConnectionProxy(shadowSession).consumerState(
         ci->getName(),
         ci->isBlocked(),
-        ci->isNotifyEnabled()
+        ci->isNotifyEnabled(),
+        ci->position
     );
     consumerNumbering.add(ci);
 

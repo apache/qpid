@@ -1149,6 +1149,43 @@ QPID_AUTO_TEST_CASE(testExactByteCredit) {
     BOOST_CHECK(!browseByteCredit(c1, "q", size-1, m));
 }
 
+// Test that consumer positions are updated correctly.
+// Regression test for https://bugzilla.redhat.com/show_bug.cgi?id=541927
+//
+QPID_AUTO_TEST_CASE(testUpdateConsumerPosition) {
+    ClusterFixture::Args args;
+    prepareArgs(args, durableFlag);
+    ClusterFixture cluster(1, args, -1);
+    Client c0(cluster[0], "c0");
+
+    c0.session.queueDeclare("q", arg::durable=durableFlag);
+    SubscriptionSettings settings;
+    settings.autoAck = 0;
+    // Set the acquire mode to 'not-acquired' the consumer moves along the queue
+    // but does not acquire (remove) messages.
+    settings.acquireMode = ACQUIRE_MODE_NOT_ACQUIRED;
+    Subscription s = c0.subs.subscribe(c0.lq, "q", settings);
+    c0.session.messageTransfer(arg::content=makeMessage("1", "q", durableFlag));
+    BOOST_CHECK_EQUAL("1", c0.lq.get(TIMEOUT).getData());
+
+    // Add another member, send/receive another message and acquire
+    // the messages.  With the bug, this creates an inconsistency
+    // because the browse position was not updated to the new member.
+    cluster.add();
+    c0.session.messageTransfer(arg::content=makeMessage("2", "q", durableFlag));
+    BOOST_CHECK_EQUAL("2", c0.lq.get(TIMEOUT).getData());
+    s.acquire(s.getUnacquired());
+    s.accept(s.getUnaccepted());
+
+    // In the bug we now have 0 messages on cluster[0] and 1 message on cluster[1]
+    // Subscribing on cluster[1] provokes an error that shuts down cluster[0]
+    Client c1(cluster[1], "c1");
+    Subscription s1 = c1.subs.subscribe(c1.lq, "q"); // Default auto-ack=1
+    Message m;
+    BOOST_CHECK(!c1.lq.get(m, TIMEOUT/10));
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);
+    BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 0u);
+}
 
 QPID_AUTO_TEST_SUITE_END()
 }} // namespace qpid::tests
