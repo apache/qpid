@@ -58,7 +58,7 @@
 
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
-        </layout>`
+        </layout>
     </appender>
 
     <appender class="org.apache.log4j.FileAppender" name="FileAppender">
