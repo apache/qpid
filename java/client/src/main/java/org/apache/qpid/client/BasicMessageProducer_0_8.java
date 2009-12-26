@@ -24,6 +24,8 @@ import java.util.UUID;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.Topic;
+import javax.jms.Queue;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -85,6 +87,26 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         ByteBuffer payload = message.getData();
         AMQMessageDelegate_0_8 delegate = (AMQMessageDelegate_0_8) message.getDelegate();
         BasicContentHeaderProperties contentHeaderProperties = delegate.getContentHeaderProperties();
+
+        contentHeaderProperties.setUserId(_userID);
+
+        //Set the JMS_QPID_DESTTYPE for 0-8/9 messages
+        int type;
+        if (destination instanceof Topic)
+        {
+            type = AMQDestination.TOPIC_TYPE;
+        }
+        else if (destination instanceof Queue)
+        {
+            type = AMQDestination.QUEUE_TYPE;
+        }
+        else
+        {
+            type = AMQDestination.UNKNOWN_TYPE;
+        }
+
+        //Set JMS_QPID_DESTTYPE
+        delegate.getContentHeaderProperties().getHeaders().setInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName(), type);
 
         if (!_disableTimestamps)
         {

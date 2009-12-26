@@ -52,13 +52,13 @@ class ExchangeBindings
      */
     void addBinding(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
     {
-        _bindings.add(new ExchangeBinding(routingKey, exchange, arguments));
+        _bindings.add(new ExchangeBinding(routingKey, exchange, _queue, arguments));
     }
 
 
     public boolean remove(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
     {
-        return _bindings.remove(new ExchangeBinding(routingKey, exchange, arguments));
+        return _bindings.remove(new ExchangeBinding(routingKey, exchange, _queue, arguments));
     }
 
 

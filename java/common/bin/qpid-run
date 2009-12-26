@@ -56,6 +56,12 @@ if [ -z $AMQJ_LOGGING_LEVEL ]; then
     export AMQJ_LOGGING_LEVEL=info
 fi
 
+#Set to help us get round the manifold problems of ps/pgrep on various
+#platforms which gather up to prevent qpid_stop from working .....
+if [ -z "$QPID_PNAME" ]; then
+    export QPID_PNAME=" -DPNAME=QPBRKR"
+fi
+
 if [ -z "$QPID_HOME" ]; then
     export QPID_HOME=$(dirname $(dirname $(readlink -f $0)))
     export PATH=${PATH}:${QPID_HOME}/bin
@@ -105,6 +111,7 @@ if [ -n "$QPID_LOG_SUFFIX" ]; then
 fi
 
 log $INFO System Properties set to $SYSTEM_PROPS
+log $INFO QPID_OPTS set to $QPID_OPTS
 
 program=$(basename $0)
 sourced=${BASH_SOURCE[0]}
@@ -253,6 +260,6 @@ if $cygwin; then
   JAVA=$(cygpath -u $JAVA)
 fi
 
-COMMAND=($JAVA $JAVA_VM $JAVA_GC $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
+COMMAND=($JAVA $JAVA_VM $QPID_PNAME $JAVA_GC $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
 
 DISPATCH

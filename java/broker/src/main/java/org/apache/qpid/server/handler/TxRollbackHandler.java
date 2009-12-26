@@ -44,9 +44,9 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, TxRollbackBody body, int channelId) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, TxRollbackBody body, final int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
 
         try
         {
@@ -57,17 +57,22 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
                 throw body.getChannelNotFoundException(channelId);
             }
 
-            channel.rollback();
 
-            MethodRegistry methodRegistry = session.getMethodRegistry();
-            AMQMethodBody responseBody = methodRegistry.createTxRollbackOkBody();
-            session.writeFrame(responseBody.generateFrame(channelId));
 
+            final MethodRegistry methodRegistry = session.getMethodRegistry();
+            final AMQMethodBody responseBody = methodRegistry.createTxRollbackOkBody();
+
+            Runnable task = new Runnable()
+            {
+
+                public void run()
+                {
+                    session.writeFrame(responseBody.generateFrame(channelId));
+                }
+            };
+
+            channel.rollback(task);
             
-            //Now resend all the unacknowledged messages back to the original subscribers.
-            //(Must be done after the TxnRollback-ok response).
-            // Why, are we not allowed to send messages back to client before the ok method?
-            channel.resend(false);
         }
         catch (AMQException e)
         {

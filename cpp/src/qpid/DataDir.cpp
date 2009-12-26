@@ -18,15 +18,11 @@
  *
  */
 
-#include "Exception.h"
-#include "DataDir.h"
+#include "qpid/Exception.h"
+#include "qpid/DataDir.h"
 #include "qpid/log/Statement.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/file.h>
-#include <fcntl.h>
-#include <cerrno>
-#include <unistd.h>
+#include "qpid/sys/FileSysDir.h"
+#include "qpid/sys/LockFile.h"
 
 namespace qpid {
 
@@ -40,16 +36,9 @@ DataDir::DataDir (std::string path) :
         return;
     }
 
-    const  char *cpath = dirPath.c_str ();
-    struct stat  s;
-    if (::stat(cpath, &s)) {
-        if (errno == ENOENT) {
-            if (::mkdir(cpath, 0755))
-                throw Exception ("Can't create data directory: " + path);
-        }
-        else
-            throw Exception ("Data directory not found: " + path);
-    }
+    sys::FileSysDir dir(dirPath);
+    if (!dir.exists())
+        dir.mkdir();
     std::string lockFileName(path);
     lockFileName += "/lock";
     lockFile = std::auto_ptr<sys::LockFile>(new sys::LockFile(lockFileName, true));

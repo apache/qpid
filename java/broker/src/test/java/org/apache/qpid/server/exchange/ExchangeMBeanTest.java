@@ -21,12 +21,15 @@
 package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -129,7 +132,7 @@ public class ExchangeMBeanTest  extends TestCase
     {
         super.setUp();
 
-        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance(1);
+        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _queueRegistry = _virtualHost.getQueueRegistry();
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("ExchangeMBeanTest"), false, _virtualHost,
@@ -139,7 +142,8 @@ public class ExchangeMBeanTest  extends TestCase
 
     protected void tearDown()
     {
-        ApplicationRegistry.remove(1);
+        // Correctly Close the AR that we created above
+        ApplicationRegistry.remove();
     }
 
 }

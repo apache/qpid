@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,19 +18,26 @@
  * under the License.
  *
  */
-#include "Connection.h"
+#include "qpid/amqp_0_10/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/exceptions.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/ProtocolInitiation.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
 using sys::Mutex;
 
-Connection::Connection(sys::OutputControl& o, broker::Broker& broker, const std::string& id, bool _isClient)
-    : frameQueueClosed(false), output(o),
-      connection(new broker::Connection(this, broker, id, _isClient)),
-      identifier(id), initialized(false), isClient(_isClient) {}
+Connection::Connection(sys::OutputControl& o, const std::string& id, bool _isClient)
+    : pushClosed(false), popClosed(false), output(o), identifier(id), initialized(false),
+      isClient(_isClient), buffered(0), version(0,10)
+{}
+
+void Connection::setInputHandler(std::auto_ptr<sys::ConnectionInputHandler> c) {
+    connection = c;
+}
 
 size_t  Connection::decode(const char* buffer, size_t size) {
     framing::Buffer in(const_cast<char*>(buffer), size);
@@ -38,7 +45,9 @@ size_t  Connection::decode(const char* buffer, size_t size) {
         //read in protocol header
         framing::ProtocolInitiation pi;
         if (pi.decode(in)) {
-            //TODO: check the version is correct
+            if(!(pi==version))
+                throw Exception(QPID_MSG("Unsupported version: " << pi
+                                         << " supported version " << version));
             QPID_LOG(trace, "RECV " << identifier << " INIT(" << pi << ")");
         }
         initialized = true;
@@ -52,18 +61,26 @@ size_t  Connection::decode(const char* buffer, size_t size) {
 }
 
 bool Connection::canEncode() {
-    if (!frameQueueClosed) connection->doOutput();
     Mutex::ScopedLock l(frameQueueLock);
-    return (!isClient && !initialized) || !frameQueue.empty();
+    if (!popClosed)  {
+        Mutex::ScopedUnlock u(frameQueueLock);
+        connection->doOutput();
+    }
+    return !popClosed && ((!isClient && !initialized) || !frameQueue.empty());
 }
 
 bool Connection::isClosed() const {
     Mutex::ScopedLock l(frameQueueLock);
-    return frameQueueClosed;
+    return pushClosed && popClosed;
 }
 
 size_t  Connection::encode(const char* buffer, size_t size) {
-    Mutex::ScopedLock l(frameQueueLock);
+    {   // Swap frameQueue data into workQueue to avoid holding lock while we encode.
+        Mutex::ScopedLock l(frameQueueLock);
+        if (popClosed) return 0; // Can't pop any more frames.
+        assert(workQueue.empty());
+        workQueue.swap(frameQueue);
+    }
     framing::Buffer out(const_cast<char*>(buffer), size);
     if (!isClient && !initialized) {
         framing::ProtocolInitiation pi(getVersion());
@@ -71,23 +88,39 @@ size_t  Connection::encode(const char* buffer, size_t size) {
         initialized = true;
         QPID_LOG(trace, "SENT " << identifier << " INIT(" << pi << ")");
     }
-    while (!frameQueue.empty() && (frameQueue.front().size() <= out.available())) {
-            frameQueue.front().encode(out);
-            QPID_LOG(trace, "SENT [" << identifier << "]: " << frameQueue.front());
-            frameQueue.pop();
+    size_t frameSize=0;
+    size_t encoded=0;
+    while (!workQueue.empty() && ((frameSize=workQueue.front().encodedSize()) <= out.available())) {
+        workQueue.front().encode(out);
+        QPID_LOG(trace, "SENT [" << identifier << "]: " << workQueue.front());
+        workQueue.pop_front();
+        encoded += frameSize;
+        if (workQueue.empty() && out.available() > 0) connection->doOutput();
     }
-    assert(frameQueue.empty() || frameQueue.front().size() <= size);
-    if (!frameQueue.empty() && frameQueue.front().size() > size)
-        throw InternalErrorException(QPID_MSG("Could not write frame, too large for buffer."));
+    assert(workQueue.empty() || workQueue.front().encodedSize() <= size);
+    if (!workQueue.empty() && workQueue.front().encodedSize() > size)
+        throw InternalErrorException(QPID_MSG("Frame too large for buffer."));
+    {
+        Mutex::ScopedLock l(frameQueueLock);
+        buffered -= encoded;
+        // Put back any frames we did not encode.
+        frameQueue.insert(frameQueue.begin(), workQueue.begin(), workQueue.end());
+        workQueue.clear();
+        if (frameQueue.empty() && pushClosed)
+            popClosed = true;
+    }
     return out.getPosition();
 }
 
-void  Connection::activateOutput() { output.activateOutput(); }
+void Connection::abort() { output.abort(); }
+void Connection::activateOutput() { output.activateOutput(); }
+void Connection::giveReadCredit(int32_t credit) { output.giveReadCredit(credit); }
 
 void  Connection::close() {
-    // Close the output queue.
+    // No more frames can be pushed onto the queue.
+    // Frames aleady on the queue can be popped.
     Mutex::ScopedLock l(frameQueueLock);
-    frameQueueClosed = true;
+    pushClosed = true;
 }
 
 void  Connection::closed() {
@@ -97,14 +130,24 @@ void  Connection::closed() {
 void Connection::send(framing::AMQFrame& f) {
     {
         Mutex::ScopedLock l(frameQueueLock);
-	if (!frameQueueClosed)
-            frameQueue.push(f);
+	if (!pushClosed)
+            frameQueue.push_back(f);
+        buffered += f.encodedSize();
     }
     activateOutput();
 }
 
 framing::ProtocolVersion Connection::getVersion() const {
-    return framing::ProtocolVersion(0,10);
+    return version;
+}
+
+void Connection::setVersion(const framing::ProtocolVersion& v)  {
+    version = v;
+}
+
+size_t Connection::getBuffered() const {
+    Mutex::ScopedLock l(frameQueueLock);
+    return buffered;
 }
 
 }} // namespace qpid::amqp_0_10

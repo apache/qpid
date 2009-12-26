@@ -22,9 +22,9 @@
  *
  */
 
-#include <stdint.h>
+#include "qpid/sys/IntegerTypes.h"
 #include "qpid/SharedObject.h"
-#include "ConnectionCodec.h"
+#include "qpid/sys/ConnectionCodec.h"
 #include <boost/function.hpp>
 
 namespace qpid {
@@ -46,6 +46,7 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
         const std::string& host, int16_t port,
         ConnectionCodec::Factory* codec,
         ConnectFailedCallback failed) = 0;
+    virtual bool supports(const std::string& /*capability*/) { return false; }
 };
 
 inline ProtocolFactory::~ProtocolFactory() {}

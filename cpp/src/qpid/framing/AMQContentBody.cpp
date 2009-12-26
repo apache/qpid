@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "AMQContentBody.h"
+#include "qpid/framing/AMQContentBody.h"
 #include <iostream>
 
 qpid::framing::AMQContentBody::AMQContentBody(){
@@ -27,7 +27,7 @@ qpid::framing::AMQContentBody::AMQContentBody(){
 qpid::framing::AMQContentBody::AMQContentBody(const string& _data) : data(_data){
 }
 
-uint32_t qpid::framing::AMQContentBody::size() const{
+uint32_t qpid::framing::AMQContentBody::encodedSize() const{
     return data.size();
 }
 void qpid::framing::AMQContentBody::encode(Buffer& buffer) const{
@@ -39,6 +39,8 @@ void qpid::framing::AMQContentBody::decode(Buffer& buffer, uint32_t _size){
 
 void qpid::framing::AMQContentBody::print(std::ostream& out) const
 {
-    out << "content (" << size() << " bytes)";
-    out << " " << data.substr(0,16) << "...";
+    out << "content (" << encodedSize() << " bytes)";
+    const size_t max = 32;
+    out << " " << data.substr(0, max);
+    if (data.size() > max) out << "...";
 }

@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.jms;
 
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.jms.failover.FailoverExchangeMethod;
 import org.apache.qpid.jms.failover.FailoverMethod;
 import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
+import org.apache.qpid.jms.failover.NoFailover;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +51,7 @@ public class FailoverPolicy
     private long _lastMethodTime;
     private long _lastFailTime;
 
-    public FailoverPolicy(ConnectionURL connectionDetails)
+    public FailoverPolicy(ConnectionURL connectionDetails, AMQConnection conn)
     {
         FailoverMethod method;
 
@@ -87,6 +90,14 @@ public class FailoverPolicy
                 if (failoverMethod.equals(FailoverMethod.ROUND_ROBIN))
                 {
                     method = new FailoverRoundRobinServers(connectionDetails);
+                }
+                else if (failoverMethod.equals(FailoverMethod.FAILOVER_EXCHANGE))
+                {
+                    method = new FailoverExchangeMethod(connectionDetails, conn);
+                }
+                else if (failoverMethod.equals(FailoverMethod.NO_FAILOVER))
+                {
+                    method = new NoFailover(connectionDetails);
                 }
                 else
                 {
@@ -272,7 +283,7 @@ public class FailoverPolicy
 
     public FailoverMethod getCurrentMethod()
     {
-        if ((_currentMethod >= 0) && (_currentMethod < (_methods.length - 1)))
+        if ((_currentMethod >= 0) && (_currentMethod < (_methods.length)))
         {
             return _methods[_currentMethod];
         }

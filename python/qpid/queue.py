@@ -63,7 +63,9 @@ class Queue(BaseQueue):
     if listener is None:
       if self.thread is not None:
         self.put(Queue.STOP)
-        self.thread.join()
+        # loop and timed join permit keyboard interrupts to work
+        while self.thread.isAlive():
+          self.thread.join(3)
         self.thread = None
 
     self.listener = listener

@@ -25,8 +25,8 @@
 #include <functional>
 #include <list>
 #include "qpid/framing/SequenceSet.h"
-#include "DeliveryRecord.h"
-#include "TxOp.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/TxOp.h"
 
 namespace qpid {
     namespace broker {
@@ -34,9 +34,31 @@ namespace qpid {
          * Defines the transactional behaviour for accepts received by
          * a transactional channel.
          */
-        class TxAccept : public TxOp{
-            framing::SequenceSet& acked;
-            std::list<DeliveryRecord>& unacked;
+        class TxAccept : public TxOp {
+            struct RangeOp
+            {
+                AckRange range;
+    
+                RangeOp(const AckRange& r);
+                void prepare(TransactionContext* ctxt);
+                void commit();
+            };
+
+            struct RangeOps
+            {
+                std::vector<RangeOp> ranges;
+                DeliveryRecords& unacked;
+    
+                RangeOps(DeliveryRecords& u);
+
+                void operator()(framing::SequenceNumber start, framing::SequenceNumber end);
+                void prepare(TransactionContext* ctxt);
+                void commit();    
+            };
+
+            framing::SequenceSet acked;
+            DeliveryRecords& unacked;
+            RangeOps ops;
 
         public:
             /**
@@ -44,11 +66,15 @@ namespace qpid {
              * acks received
              * @param unacked the record of delivered messages
              */
-            TxAccept(framing::SequenceSet& acked, std::list<DeliveryRecord>& unacked);
+            TxAccept(const framing::SequenceSet& acked, DeliveryRecords& unacked);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();
             virtual ~TxAccept(){}
+            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
+
+            // Used by cluster replication.
+            const framing::SequenceSet& getAcked() const { return acked; }
         };
     }
 }

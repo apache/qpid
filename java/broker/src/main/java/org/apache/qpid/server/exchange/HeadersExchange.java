@@ -22,6 +22,8 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -29,11 +31,10 @@ import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
 
 import javax.management.JMException;
 import javax.management.openmbean.ArrayType;
@@ -50,8 +51,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An exchange that binds queues based on a set of required headers and header values
@@ -82,9 +83,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class HeadersExchange extends AbstractExchange
 {
+
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
-
-
 
     public static final ExchangeType<HeadersExchange> TYPE = new ExchangeType<HeadersExchange>()
     {
@@ -103,6 +103,7 @@ public class HeadersExchange extends AbstractExchange
                 boolean autoDelete) throws AMQException
         {
             HeadersExchange exch = new HeadersExchange();
+
             exch.initialise(host, name, durable, ticket, autoDelete);
             return exch;
         }
@@ -116,6 +117,7 @@ public class HeadersExchange extends AbstractExchange
 
 
     private final List<Registration> _bindings = new CopyOnWriteArrayList<Registration>();
+    private Map<AMQShortString, Registration> _bindingByKey = new ConcurrentHashMap<AMQShortString, Registration>();
 
     /**
      * HeadersExchangeMBean class implements the management interface for the
@@ -137,17 +139,15 @@ public class HeadersExchange extends AbstractExchange
          */
         protected void init() throws OpenDataException
         {
-            _bindingItemNames = new String[]{"Binding No", "Queue  Name", "Queue Bindings"};
-            _bindingItemIndexNames = new String[]{_bindingItemNames[0]};
 
             _bindingItemTypes = new OpenType[3];
             _bindingItemTypes[0] = SimpleType.INTEGER;
             _bindingItemTypes[1] = SimpleType.STRING;
             _bindingItemTypes[2] = new ArrayType(1, SimpleType.STRING);
             _bindingDataType = new CompositeType("Exchange Binding", "Queue name and header bindings",
-                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+                    HEADERS_COMPOSITE_ITEM_NAMES, HEADERS_COMPOSITE_ITEM_DESC, _bindingItemTypes);
             _bindinglistDataType = new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
-                                                   _bindingDataType, _bindingItemIndexNames);
+                                                   _bindingDataType, HEADERS_TABULAR_UNIQUE_INDEX);
         }
 
         public TabularData bindings() throws OpenDataException
@@ -180,7 +180,7 @@ public class HeadersExchange extends AbstractExchange
 
 
                 Object[] bindingItemValues = {count++, queueName, mappingList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
+                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, HEADERS_COMPOSITE_ITEM_NAMES, bindingItemValues);
                 _bindingList.put(bindingData);
             }
 
@@ -208,14 +208,24 @@ public class HeadersExchange extends AbstractExchange
             for (int i = 0; i < bindings.length; i++)
             {
                 String[] keyAndValue = bindings[i].split("=");
-                if (keyAndValue == null || keyAndValue.length < 2)
+                if (keyAndValue == null || keyAndValue.length == 0 || keyAndValue.length > 2)
                 {
                     throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
                 }
-                bindingMap.setString(keyAndValue[0], keyAndValue[1]);
+
+                if(keyAndValue.length ==1)
+                {
+                    //no value was given, only a key. Use an empty value
+                    //to signal match on key presence alone
+                    bindingMap.setString(keyAndValue[0], "");
+                }
+                else
+                {
+                    bindingMap.setString(keyAndValue[0], keyAndValue[1]);
+                }
             }
 
-            _bindings.add(new Registration(new HeadersBinding(bindingMap), queue));
+            _bindings.add(new Registration(new HeadersBinding(bindingMap), queue, new AMQShortString(binding)));
         }
 
     } // End of MBean class
@@ -228,44 +238,48 @@ public class HeadersExchange extends AbstractExchange
     public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Binding " + queue.getName() + " with " + args);
-        _bindings.add(new Registration(new HeadersBinding(args), queue));
+
+        Registration registration = new Registration(new HeadersBinding(args), queue, routingKey);
+        _bindings.add(registration);
+
     }
 
     public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Unbinding " + queue.getName());
-        if(!_bindings.remove(new Registration(new HeadersBinding(args), queue)))
+
+        if(!_bindings.remove(new Registration(args == null ? null : new HeadersBinding(args), queue, routingKey)))
         {
             throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
-                                   + " with headers args " + args);    
+                                   + " with headers args " + args);
         }
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
-        FieldTable headers = getHeaders(payload.getContentHeaderBody());
+        AMQMessageHeader header = payload.getMessageHeader();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
+            _logger.debug("Exchange " + getName() + ": routing message with headers " + header);
         }
         boolean routed = false;
         ArrayList<AMQQueue> queues = new ArrayList<AMQQueue>();
         for (Registration e : _bindings)
         {
 
-            if (e.binding.matches(headers))
+            if (e.binding.matches(header))
             {
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
-                                  headers + " to " + e.queue.getName());
+                                  header + " to " + e.queue.getName());
                 }
                 queues.add(e.queue);
 
                 routed = true;
             }
         }
-        payload.enqueue(queues);
+        return queues;
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
@@ -308,17 +322,9 @@ public class HeadersExchange extends AbstractExchange
         return ((BasicContentHeaderProperties) contentHeaderFrame.properties).getHeaders();
     }
 
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new HeadersExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-            _logger.error("Exception occured in creating the HeadersExchangeMBean", ex);
-            throw new AMQException("Exception occured in creating the HeadersExchangeMBean", ex);
-        }
+        return new HeadersExchangeMBean();
     }
 
     public Map<AMQShortString, List<AMQQueue>> getBindings()
@@ -326,25 +332,38 @@ public class HeadersExchange extends AbstractExchange
         return null;
     }
 
+    public Logger getLogger()
+    {
+        return _logger;
+    }
+
+
     private static class Registration
     {
         private final HeadersBinding binding;
         private final AMQQueue queue;
+        private final AMQShortString routingKey;
 
-        Registration(HeadersBinding binding, AMQQueue queue)
+        Registration(HeadersBinding binding, AMQQueue queue, AMQShortString routingKey)
         {
             this.binding = binding;
             this.queue = queue;
+            this.routingKey = routingKey;
         }
 
         public int hashCode()
         {
-            return queue.hashCode();
+            int queueHash = queue.hashCode();
+            int routingHash = routingKey == null ? 0 : routingKey.hashCode();
+            return queueHash + routingHash;
         }
 
         public boolean equals(Object o)
         {
-            return o instanceof Registration && ((Registration) o).queue.equals(queue);
+            return o instanceof Registration
+                   && ((Registration) o).queue.equals(queue)
+                   && (routingKey == null ? ((Registration)o).routingKey == null
+                                          : routingKey.equals(((Registration)o).routingKey));
         }
     }
 }

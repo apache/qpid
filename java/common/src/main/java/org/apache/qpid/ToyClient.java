@@ -33,48 +33,30 @@ import org.apache.qpid.transport.network.mina.MinaHandler;
  * @author Rafael H. Schloming
  */
 
-class ToyClient extends SessionDelegate
+class ToyClient implements SessionListener
 {
+    public void opened(Session ssn) {}
 
-    @Override public void messageReject(Session ssn, MessageReject reject)
+    public void resumed(Session ssn) {}
+
+    public void exception(Session ssn, SessionException exc)
     {
-        for (Range range : reject.getTransfers())
-        {
-            for (long l = range.getLower(); l <= range.getUpper(); l++)
-            {
-                System.out.println("message rejected: " +
-                                   ssn.getCommand((int) l));
-            }
-        }
+        exc.printStackTrace();
     }
 
-    @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
+    public void message(Session ssn, MessageTransfer xfr)
     {
         System.out.println("msg: " + xfr);
     }
 
+    public void closed(Session ssn) {}
+
     public static final void main(String[] args)
     {
-        Connection conn = MinaHandler.connect("0.0.0.0", 5672,
-                                              new ClientDelegate()
-                                              {
-                                                  public SessionDelegate getSessionDelegate()
-                                                  {
-                                                      return new ToyClient();
-                                                  }
-                                                  public void exception(Throwable t)
-                                                  {
-                                                      t.printStackTrace();
-                                                  }
-                                                  public void closed() {}
-                                              });
-        conn.send(new ProtocolHeader
-                  (1, 0, 10));
-
-        Channel ch = conn.getChannel(0);
-        Session ssn = new Session("my-session".getBytes());
-        ssn.attach(ch);
-        ssn.sessionAttach(ssn.getName());
+        Connection conn = new Connection();
+        conn.connect("0.0.0.0", 5672, null, "guest", "guest", false);
+        Session ssn = conn.createSession();
+        ssn.setSessionListener(new ToyClient());
 
         ssn.queueDeclare("asdf", null, null);
         ssn.sync();

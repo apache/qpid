@@ -24,7 +24,7 @@ if [ -z "$QPID_HOME" ]; then
 fi
 
 # Set classpath to include Qpid jar with all required jars in manifest
-QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar:$QPID_HOME/lib/bdbstore-launch.jar
+QPID_LIBS=$QPID_HOME/lib/qpid-all.jar:$QPID_HOME/lib/bdbstore-launch.jar
 
 # Set other variables used by the qpid-run script before calling
 export JAVA=java \
@@ -32,6 +32,8 @@ export JAVA=java \
        JAVA_MEM=-Xmx1024m \
        JAVA_GC="-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" \
        QPID_CLASSPATH=$QPID_LIBS \
-       QPID_RUN_LOG=2
+       QPID_RUN_LOG=2 
+
+QPID_OPTS="$QPID_OPTS -Damqj.read_write_pool_size=32 -DQPID_LOG_APPEND=$QPID_LOG_APPEND"
 
 . qpid-run org.apache.qpid.server.Main "$@"

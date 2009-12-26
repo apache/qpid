@@ -17,20 +17,22 @@
 // under the License.
 //
 
-#include "System.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid/broker/System.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/Uuid.h"
-#include <sys/utsname.h>
+#include "qpid/sys/SystemInfo.h"
 #include <iostream>
 #include <fstream>
 
 using qpid::management::ManagementAgent;
 using namespace qpid::broker;
 using namespace std;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
-System::System (string _dataDir) : mgmtObject(0)
+System::System (string _dataDir, Broker* broker) : mgmtObject(0)
 {
-    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    ManagementAgent* agent = broker ? broker->getManagementAgent() : 0;
 
     if (agent != 0)
     {
@@ -62,18 +64,20 @@ System::System (string _dataDir) : mgmtObject(0)
             }
         }
 
-        mgmtObject = new management::System (agent, this, systemId);
-        struct utsname _uname;
-        if (uname (&_uname) == 0)
-        {
-            mgmtObject->set_osName   (std::string (_uname.sysname));
-            mgmtObject->set_nodeName (std::string (_uname.nodename));
-            mgmtObject->set_release  (std::string (_uname.release));
-            mgmtObject->set_version  (std::string (_uname.version));
-            mgmtObject->set_machine  (std::string (_uname.machine));
-        }
+        mgmtObject = new _qmf::System (agent, this, systemId);
+        std::string sysname, nodename, release, version, machine;
+        qpid::sys::SystemInfo::getSystemId (sysname,
+                                            nodename,
+                                            release,
+                                            version,
+                                            machine);
+        mgmtObject->set_osName   (sysname);
+        mgmtObject->set_nodeName (nodename);
+        mgmtObject->set_release  (release);
+        mgmtObject->set_version  (version);
+        mgmtObject->set_machine  (machine);
 
-        agent->addObject (mgmtObject, 1, 1);
+        agent->addObject (mgmtObject, 0x1000000000000001LL);
     }
 }
 

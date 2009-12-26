@@ -20,13 +20,35 @@
  */
 
 
+/**
+ *
+ * xml_producer.cpp
+ *
+ * This is one of three programs used to implement XML-based content
+ * routing in C++.
+ *
+ * declare_queues.cpp 
+ *
+ *       Creates a queue named "message_qaueue" on the broker,
+ *       declares an XML Exchange, subscribes the queue to the XML
+ *       Exchange using an XQuery in the binding, then exits.
+ *
+ * xml_producer.cpp (this program)
+ *
+ *       Publishes messages to the XML Exchange.
+ *
+ * listener.cpp
+ *
+ *       Reads messages from the "message_queue" queue.
+ */
+
+
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/AsyncSession.h>
 #include <qpid/client/Message.h>
 
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -55,7 +77,7 @@ int main(int argc, char** argv) {
 	// In the XML exchange, the routing key and the name of
 	// the query match.
 
-	message.getDeliveryProperties().setRoutingKey("query_name"); 
+	message.getDeliveryProperties().setRoutingKey("content_feed"); 
 	message.getHeaders().setString("control","continue");
 
 	// Now send some messages ...

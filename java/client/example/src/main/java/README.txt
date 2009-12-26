@@ -3,15 +3,16 @@ variables, QPID_HOME and QPID_SAMPLE. If not the default values will be used.
 
 QPID_HOME
 ---------
-This is the distribution directory. You would have set the QPID_HOME when you
-started the Qpid Java broker.
+This is the directory that contains the QPID distribution. If you are running the Qpid
+Java broker on the same machine as the examples, you have already set QPID_HOME to this 
+directory.
 
 default: /usr/share/java/
 
 QPID_SAMPLE
 -----------
-This is the parent directory of the directory in which you find the runSample.sh
+This is the parent directory of the 'java' directory in which you find 'runSample.sh'
 (Ex:- $QPID_SRC_HOME/java/client/example/src/main)
 
-default: /usr/share/doc/rhm-0.2
+default: $PWD
 

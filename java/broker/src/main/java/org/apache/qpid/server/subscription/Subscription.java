@@ -23,12 +23,15 @@ package org.apache.qpid.server.subscription;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
 public interface Subscription
 {
+    LogActor getLogActor();
 
+    boolean isTransient();
 
     public static enum State
     {
@@ -45,12 +48,16 @@ public interface Subscription
     AMQQueue getQueue();
 
     QueueEntry.SubscriptionAcquiredState getOwningState();
+    QueueEntry.SubscriptionAssignedState getAssignedState();
 
-    void setQueue(AMQQueue queue);
 
-    AMQChannel getChannel();
+    void setQueue(AMQQueue queue, boolean exclusive);
+
+    void setNoLocal(boolean noLocal);
 
     AMQShortString getConsumerTag();
+
+    long getSubscriptionID();
 
     boolean isSuspended();
 
@@ -60,35 +67,42 @@ public interface Subscription
 
     boolean isClosed();
 
-    boolean isBrowser();
+    boolean acquires();
+
+    boolean seesRequeues();
 
     void close();
 
-    boolean filtersMessages();
-
     void send(QueueEntry msg) throws AMQException;
 
-    void queueDeleted(AMQQueue queue); 
+    void queueDeleted(AMQQueue queue);
 
 
     boolean wouldSuspend(QueueEntry msg);
 
     void getSendLock();
+
     void releaseSendLock();
 
-    void resend(final QueueEntry entry) throws AMQException;
+    void onDequeue(final QueueEntry queueEntry);
 
     void restoreCredit(final QueueEntry queueEntry);
 
     void setStateListener(final StateListener listener);
 
-    QueueEntry getLastSeenEntry();
+    public State getState();
 
-    boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue);
+    AMQQueue.Context getQueueContext();
+
+    void setQueueContext(AMQQueue.Context queueContext);
 
 
     boolean isActive();
 
+    void confirmAutoClose();
 
+    public void set(String key, Object value);
+
+    public Object get(String key);
 
 }

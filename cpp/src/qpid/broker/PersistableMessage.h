@@ -26,10 +26,11 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include "Persistable.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Persistable.h"
 #include "qpid/framing/amqp_types.h"
-#include "qpid/sys/Monitor.h"
-#include "PersistableQueue.h"
+#include "qpid/sys/Mutex.h"
+#include "qpid/broker/PersistableQueue.h"
 
 namespace qpid {
 namespace broker {
@@ -41,10 +42,11 @@ class MessageStore;
  */
 class PersistableMessage : public Persistable
 {
-    sys::Monitor asyncEnqueueLock;
-    sys::Monitor asyncDequeueLock;
+    typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
+    sys::Mutex asyncEnqueueLock;
+    sys::Mutex asyncDequeueLock;
     sys::Mutex storeLock;
-	
+       
     /**
      * Tracks the number of outstanding asynchronous enqueue
      * operations. When the message is enqueued asynchronously the
@@ -62,15 +64,33 @@ class PersistableMessage : public Persistable
      * dequeues.
      */
     int asyncDequeueCounter;
-protected:
-    typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
-    syncList synclist;
-    MessageStore* store;
-    bool contentReleased;
-    
-    inline void setContentReleased() {contentReleased = true; }
 
-public:
+    void enqueueAsync();
+    void dequeueAsync();
+
+    syncList synclist;
+    struct ContentReleaseState
+    {
+        bool blocked;
+        bool requested;
+        bool released;
+        
+        ContentReleaseState();
+    };
+    ContentReleaseState contentReleaseState;
+
+  protected:
+    /** Called when all enqueues are complete for this message. */
+    virtual void allEnqueuesComplete() = 0;
+    /** Called when all dequeues are complete for this message. */
+    virtual void allDequeuesComplete() = 0;
+
+    void setContentReleased();
+
+    MessageStore* store;
+
+
+  public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;
 
     /**
@@ -78,105 +98,39 @@ public:
      */
     virtual uint32_t encodedHeaderSize() const = 0;
 
-    virtual ~PersistableMessage() {};
+    virtual ~PersistableMessage();
 
-    PersistableMessage(): 
-    	asyncEnqueueCounter(0), 
-    	asyncDequeueCounter(0),
-        store(0),
-        contentReleased(false) 
-        {}
+    PersistableMessage();
 
     void flush();
     
-    inline bool isContentReleased()const {return contentReleased; }
-	
-    inline void waitForEnqueueComplete() {
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-        while (asyncEnqueueCounter > 0) {
-            asyncEnqueueLock.wait();
-        }
-    }
+    QPID_BROKER_EXTERN bool isContentReleased() const;
 
-    inline bool isEnqueueComplete() {
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-        return asyncEnqueueCounter == 0;
-    }
+    QPID_BROKER_EXTERN void setStore(MessageStore*);
+    void requestContentRelease();
+    void blockContentRelease();
+    bool checkContentReleasable();
 
-    inline void enqueueComplete() {
-        bool notify = false;
-        {
-            sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-            if (asyncEnqueueCounter > 0) {
-                if (--asyncEnqueueCounter == 0) {
-                    asyncEnqueueLock.notify();
-                    notify = true;
-                }
-            }
-        }
-        if (notify) {
-            sys::ScopedLock<sys::Mutex> l(storeLock);
-            if (store) {
-                for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-                    PersistableQueue::shared_ptr q(i->lock());
-                    if (q) q->notifyDurableIOComplete();
-                } 
-            }            
-        }
-    }
+    virtual QPID_BROKER_EXTERN bool isPersistent() const = 0;
 
-    inline void enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
-        if (_store){
-            sys::ScopedLock<sys::Mutex> l(storeLock);
-            store = _store;
-            boost::weak_ptr<PersistableQueue> q(queue);
-            synclist.push_back(q);
-        }
-        enqueueAsync();
-    }
+    QPID_BROKER_EXTERN bool isEnqueueComplete();
 
-    inline void enqueueAsync() { 
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-        asyncEnqueueCounter++; 
-    }
+    QPID_BROKER_EXTERN void enqueueComplete();
 
-    inline bool isDequeueComplete() { 
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        return asyncDequeueCounter == 0;
-    }
+    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
+                                         MessageStore* _store);
+
+
+    QPID_BROKER_EXTERN bool isDequeueComplete();
     
-    inline void dequeueComplete() { 
+    QPID_BROKER_EXTERN void dequeueComplete();
 
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        if (asyncDequeueCounter > 0) {
-            if (--asyncDequeueCounter == 0) {
-                asyncDequeueLock.notify();
-            }
-        }
-    }
+    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
+                                         MessageStore* _store);
 
-    inline void waitForDequeueComplete() {
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        while (asyncDequeueCounter > 0) {
-            asyncDequeueLock.wait();
-        }
-    }
-
-    inline void dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
-        if (_store){
-            sys::ScopedLock<sys::Mutex> l(storeLock);
-            store = _store;
-            boost::weak_ptr<PersistableQueue> q(queue);
-            synclist.push_back(q);
-        }
-        dequeueAsync();
-    }
-
-    inline void dequeueAsync() { 
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        asyncDequeueCounter++; 
-    }
-
+    bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
+    
+    void addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store);
     
 };
 

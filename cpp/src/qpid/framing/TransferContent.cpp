@@ -19,19 +19,16 @@
  *
  */
 
-#include "TransferContent.h"
+#include "qpid/framing/TransferContent.h"
 
 namespace qpid {
 namespace framing {
 
-TransferContent::TransferContent(const std::string& data,
-                                 const std::string& routingKey,
-                                 const std::string& exchange)
-{
+TransferContent::TransferContent(const std::string& data, const std::string& key) {
     setData(data);
-    if (routingKey.size()) getDeliveryProperties().setRoutingKey(routingKey);
-    if (exchange.size()) getDeliveryProperties().setExchange(exchange);
+    if (!key.empty()) getDeliveryProperties().setRoutingKey(key);
 }
+
 
 AMQHeaderBody TransferContent::getHeader() const
 {

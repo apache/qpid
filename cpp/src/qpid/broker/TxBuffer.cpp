@@ -18,10 +18,11 @@
  * under the License.
  *
  */
-#include "TxBuffer.h"
+#include "qpid/broker/TxBuffer.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/mem_fn.hpp>
+#include <boost/bind.hpp>
 using boost::mem_fn;
 using namespace qpid::broker;
 
@@ -72,4 +73,8 @@ bool TxBuffer::commitLocal(TransactionalStore* const store)
         QPID_LOG(error, "Commit failed with unknown exception");
     }
     return false;
+}
+
+void TxBuffer::accept(TxOpConstVisitor& v) const {
+    std::for_each(ops.begin(), ops.end(), boost::bind(&TxOp::accept, _1, boost::ref(v))); 
 }

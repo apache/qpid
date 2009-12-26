@@ -16,126 +16,150 @@
  *
  */
 
-#include "Acl.h"
-
+#include "qpid/acl/Acl.h"
+#include "qpid/acl/AclData.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/log/Logger.h"
+#include "qmf/org/apache/qpid/acl/Package.h"
+#include "qmf/org/apache/qpid/acl/EventAllow.h"
+#include "qmf/org/apache/qpid/acl/EventDeny.h"
+#include "qmf/org/apache/qpid/acl/EventFileLoaded.h"
+#include "qmf/org/apache/qpid/acl/EventFileLoadFailed.h"
 
 #include <map>
 
+#include <boost/shared_ptr.hpp>
 #include <boost/utility/in_place_factory.hpp>
 
-namespace qpid {
-namespace acl {
-
 using namespace std;
+using namespace qpid::acl;
+using qpid::broker::Broker;
+using qpid::management::ManagementAgent;
+using qpid::management::ManagementObject;
+using qpid::management::Manageable;
+using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::acl;
 
-   Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transferAcl(false)
-   {
-       if (!readAclFile()) throw Exception("Could not read ACL file");
-	   QPID_LOG(info, "ACL Plugin loaded");
+Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false)
+{
+	   
+    agent = broker->getManagementAgent();
 
-   }
+    if (agent != 0){
+        _qmf::Package  packageInit(agent);
+        mgmtObject = new _qmf::Acl (agent, this, broker);
+        agent->addObject (mgmtObject);
+    }
 
-   std::string Acl::printAction(acl::Action action)
-   {
-      switch (action)
-	  {
-	   case CONSUME: return "Consume";
-	   case PUBLISH: return "Publish";
-	   case CREATE: return "Create";
-	   case ACCESS: return "Access";
-	   case BIND: return "Bind";
-	   case UNBIND: return "Unbind";
-	   case DELETE: return "Delete";
-	   case PURGE: return "Purge";
-	   case UPDATE: return "Update";
-	   default: return "Unknown";
-	  }
-   }
-   
-   std::string Acl::printObjType(acl::ObjectType objType)
-   {
-      switch (objType)
-	  {
-      case QUEUE: return "Queue";
-	  case EXCHANGE: return "Exchnage";
-	  case BROKER: return "Broker";
-	  case LINK: return "Link";
-	  case ROUTE: return "Route";
-	  default: return "Unknown";
-	  }
-   }
+    std::string errorString;
+    if (!readAclFile(errorString)){
+        throw Exception("Could not read ACL file " + errorString);
+        if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
+    }
+    QPID_LOG(info, "ACL Plugin loaded");
+	   if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
+}
 
-   bool Acl::authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, std::map<std::string, std::string>*
-   /*params*/)
+   bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
    {
-      if (aclValues.noEnforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
-      
-      // only use dataLocal here...
-   
-      // add real ACL check here... 
-      AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
-	  
-	  
-	  return result(aclreslt, id, action, objType, name); 
+
+      // add real ACL check here...
+      AclResult aclreslt = dataLocal->lookup(id,action,objType,name,params);
+
+
+	  return result(aclreslt, id, action, objType, name);
    }
 
-   bool Acl::authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string ExchangeName, std::string /*RoutingKey*/)
+   bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey)
    {
-      if (aclValues.noEnforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
-      
+
       // only use dataLocal here...
-   
-      // add real ACL check here... 
-      AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
-	  
-	  
-	  return result(aclreslt, id, action, objType, ExchangeName); 
+      AclResult aclreslt = dataLocal->lookup(id,action,objType,ExchangeName,RoutingKey);
+
+	  return result(aclreslt, id, action, objType, ExchangeName);
    }
 
-   
-   bool Acl::result(AclResult aclreslt, std::string id, acl::Action action, acl::ObjectType objType, std::string name)
+
+   bool Acl::result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name)
    {
 	  switch (aclreslt)
 	  {
 	  case ALLOWLOG:
-          QPID_LOG(info, "ACL Allow id:" << id <<" action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name );  
+          QPID_LOG(info, "ACL Allow id:" << id <<" action:" << AclHelper::getActionStr(action) <<
+                   " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );
+          agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
+                                             AclHelper::getObjectTypeStr(objType),
+                                             name, framing::FieldTable()));
 	  case ALLOW:
 	      return true;
-	  case DENYNOLOG:
-	      return false;
 	  case DENY:
-	  default:
-	      QPID_LOG(info, "ACL Deny id:" << id << " action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name);  
+	      if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
 	      return false;
+	  case DENYLOG:
+	      if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
+      default:
+          QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
+          agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
+                                            AclHelper::getObjectTypeStr(objType),
+                                            name, framing::FieldTable()));
+          return false;
 	  }
-      return false;  
-   }
-      
-   bool Acl::readAclFile()
-   {
-      // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for permormance reasons.
-      return readAclFile(aclValues.aclFile);
+      return false;
    }
 
-   bool Acl::readAclFile(std::string aclFile) {
+   bool Acl::readAclFile(std::string& errorText)
+   {
+      // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for permormance reasons.
+      return readAclFile(aclValues.aclFile, errorText);
+   }
+
+   bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
       boost::shared_ptr<AclData> d(new AclData);
-      if (AclReader::read(aclFile, d))
+      AclReader ar;
+      if (ar.read(aclFile, d)){
+          agent->raiseEvent(_qmf::EventFileLoadFailed("", ar.getError()));
+          errorText = ar.getError();
+          QPID_LOG(error,ar.getError());
           return false;
- 
+      }
+
       data = d;
+	  transferAcl = data->transferAcl; // any transfer ACL
+	  if (mgmtObject!=0){
+	      mgmtObject->set_transferAcl(transferAcl?1:0);
+		  mgmtObject->set_policyFile(aclFile);
+		  sys::AbsTime now = sys::AbsTime::now();
+          int64_t ns = sys::Duration(now);
+		  mgmtObject->set_lastAclLoad(ns);
+          agent->raiseEvent(_qmf::EventFileLoaded(""));
+	  }
       return true;
    }
 
    Acl::~Acl(){}
 
+   ManagementObject* Acl::GetManagementObject(void) const
+   {
+       return (ManagementObject*) mgmtObject;
+   }
 
-    
-}} // namespace qpid::acl
+   Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, string& text)
+   {
+      Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+      QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
+
+      switch (methodId)
+      {
+      case _qmf::Acl::METHOD_RELOADACLFILE :
+          readAclFile(text);
+          status = Manageable::STATUS_USER;
+          break;
+      }
+
+    return status;
+}

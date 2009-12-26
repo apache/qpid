@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,18 +18,22 @@
  * under the License.
  *
  */
-#include "SessionState.h"
-#include "Broker.h"
-#include "ConnectionState.h"
-#include "MessageDelivery.h"
-#include "SessionManager.h"
-#include "SessionHandler.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/SessionManager.h"
+#include "qpid/broker/SessionHandler.h"
+#include "qpid/broker/RateFlowcontrol.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/log/Statement.h"
+#include "qpid/management/ManagementAgent.h"
+#include "qpid/framing/AMQP_ClientProxy.h"
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
@@ -44,41 +48,61 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+using qpid::sys::AbsTime;
+//using qpid::sys::Timer;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 SessionState::SessionState(
-    Broker& b, SessionHandler& h, const SessionId& id, const SessionState::Configuration& config) 
+    Broker& b, SessionHandler& h, const SessionId& id, const SessionState::Configuration& config)
     : qpid::SessionState(id, config),
       broker(b), handler(&h),
-      ignoring(false),
       semanticState(*this, *this),
       adapter(semanticState),
       msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
       enqueuedOp(boost::bind(&SessionState::enqueued, this, _1)),
-      mgmtObject(0)
+      mgmtObject(0),
+      rateFlowcontrol(0)
 {
+    uint32_t maxRate = broker.getOptions().maxSessionRate;
+    if (maxRate) {
+        if (handler->getConnection().getClientThrottling()) {
+            rateFlowcontrol.reset(new RateFlowcontrol(maxRate));
+        } else {
+            QPID_LOG(warning, getId() << ": Unable to flow control client - client doesn't support");
+        }
+    }
     Manageable* parent = broker.GetVhostObject ();
     if (parent != 0) {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent != 0) {
-            mgmtObject = new management::Session (agent, this, parent, getId().getName());
+            mgmtObject = new _qmf::Session
+                (agent, this, parent, getId().getName());
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
-            agent->addObject (mgmtObject);
+            mgmtObject->clr_expireTime();
+            if (rateFlowcontrol) mgmtObject->set_maxClientRate(maxRate);
+            agent->addObject (mgmtObject, agent->allocateId(this));
         }
     }
     attach(h);
 }
 
 SessionState::~SessionState() {
-    // Remove ID from active session list.
-    broker.getSessionManager().forget(getId());
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
+
+    if (flowControlTimer)
+        flowControlTimer->cancel();
 }
 
 AMQP_ClientProxy& SessionState::getProxy() {
     assert(isAttached());
     return handler->getProxy();
+}
+
+uint16_t SessionState::getChannel() const {
+    assert(isAttached());
+    return handler->getChannel();
 }
 
 ConnectionState& SessionState::getConnection() {
@@ -92,18 +116,19 @@ bool SessionState::isLocal(const ConnectionToken* t) const
 }
 
 void SessionState::detach() {
-    // activateOutput can be called in a different thread, lock to protect attached status
-    Mutex::ScopedLock l(lock);
     QPID_LOG(debug, getId() << ": detached on broker.");
-    getConnection().outputTasks.removeOutputTask(&semanticState);
+    disableOutput();
     handler = 0;
     if (mgmtObject != 0)
         mgmtObject->set_attached  (0);
 }
 
+void SessionState::disableOutput()
+{
+    semanticState.detached(); //prevents further activateOutput calls until reattached
+}
+
 void SessionState::attach(SessionHandler& h) {
-    // activateOutput can be called in a different thread, lock to protect attached status
-    Mutex::ScopedLock l(lock);
     QPID_LOG(debug, getId() << ": attached on broker.");
     handler = &h;
     if (mgmtObject != 0)
@@ -114,11 +139,19 @@ void SessionState::attach(SessionHandler& h) {
     }
 }
 
+void SessionState::abort() {
+    if (isAttached())
+        getConnection().outputTasks.abort();
+}
+
 void SessionState::activateOutput() {
-    // activateOutput can be called in a different thread, lock to protect attached status
-    Mutex::ScopedLock l(lock);
-    if (isAttached()) 
+    if (isAttached())
         getConnection().outputTasks.activateOutput();
+}
+
+void SessionState::giveReadCredit(int32_t credit) {
+    if (isAttached())
+        getConnection().outputTasks.giveReadCredit(credit);
 }
 
 ManagementObject* SessionState::GetManagementObject (void) const
@@ -127,21 +160,21 @@ ManagementObject* SessionState::GetManagementObject (void) const
 }
 
 Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
-                                                     Args&    /*args*/)
+                                                     Args&    /*args*/,
+                                                     string&  /*text*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
     switch (methodId)
     {
-      case management::Session::METHOD_DETACH :
-        if (handler != 0)
-        {
+    case _qmf::Session::METHOD_DETACH :
+        if (handler != 0) {
             handler->sendDetach();
         }
         status = Manageable::STATUS_OK;
         break;
 
-      case management::Session::METHOD_CLOSE :
+    case _qmf::Session::METHOD_CLOSE :
         /*
           if (handler != 0)
           {
@@ -151,8 +184,8 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
           break;
         */
 
-      case management::Session::METHOD_SOLICITACK :
-      case management::Session::METHOD_RESETLIFESPAN :
+    case _qmf::Session::METHOD_SOLICITACK :
+    case _qmf::Session::METHOD_RESETLIFESPAN :
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
     }
@@ -162,17 +195,41 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
 
 void SessionState::handleCommand(framing::AMQMethodBody* method, const SequenceNumber& id) {
     Invoker::Result invocation = invoke(adapter, *method);
-    receiverCompleted(id);                                    
+    receiverCompleted(id);
     if (!invocation.wasHandled()) {
         throw NotImplementedException(QPID_MSG("Not implemented: " << *method));
     } else if (invocation.hasResult()) {
         getProxy().getExecution().result(id, invocation.getResult());
     }
-    if (method->isSync()) { 
+    if (method->isSync()) {
         incomplete.process(enqueuedOp, true);
-        sendCompletion(); 
+        sendAcceptAndCompletion();
     }
 }
+
+struct ScheduledCreditTask : public sys::TimerTask {
+    sys::Timer& timer;
+    SessionState& sessionState;
+    ScheduledCreditTask(const qpid::sys::Duration& d, sys::Timer& t,
+                        SessionState& s) :
+        TimerTask(d),
+        timer(t),
+        sessionState(s)
+    {}
+
+    void fire() {
+        // This is the best we can currently do to avoid a destruction/fire race
+        sessionState.getConnection().requestIOProcessing(boost::bind(&ScheduledCreditTask::sendCredit, this));
+    }
+
+    void sendCredit() {
+        if ( !sessionState.processSendCredit(0) ) {
+            QPID_LOG(warning, sessionState.getId() << ": Reschedule sending credit");
+            setupNextFire();
+            timer.add(this);
+        }
+    }
+};
 
 void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
 {
@@ -183,14 +240,13 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
     if (frame.getEof() && frame.getEos()) {//end of frameset
         if (frame.getBof()) {
             //i.e this is a just a command frame, add a dummy header
-            AMQFrame header;
-            header.setBody(AMQHeaderBody());
+            AMQFrame header((AMQHeaderBody()));
             header.setBof(false);
             header.setEof(false);
-            msg->getFrames().append(header);                        
+            msg->getFrames().append(header);
         }
         msg->setPublisher(&getConnection());
-        semanticState.handle(msg);        
+        semanticState.handle(msg);
         msgBuilder.end();
 
         if (msg->isEnqueueComplete()) {
@@ -199,51 +255,80 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
             incomplete.add(msg);
         }
 
-        //hold up execution until async enqueue is complete        
-        if (msg->getFrames().getMethod()->isSync()) { 
+        //hold up execution until async enqueue is complete
+        if (msg->getFrames().getMethod()->isSync()) {
             incomplete.process(enqueuedOp, true);
-            sendCompletion(); 
+            sendAcceptAndCompletion();
         } else {
             incomplete.process(enqueuedOp, false);
         }
     }
+
+    // Handle producer session flow control
+    if (rateFlowcontrol && frame.getBof() && frame.getBos()) {
+        if ( !processSendCredit(1) ) {
+            QPID_LOG(debug, getId() << ": Schedule sending credit");
+            sys::Timer& timer = getBroker().getTimer();
+            // Use heuristic for scheduled credit of time for 50 messages, but not longer than 500ms
+            sys::Duration d = std::min(sys::TIME_SEC * 50 / rateFlowcontrol->getRate(), 500 * sys::TIME_MSEC);
+            flowControlTimer = new ScheduledCreditTask(d, timer, *this);
+            timer.add(flowControlTimer);
+        }
+    }
+}
+
+bool SessionState::processSendCredit(uint32_t msgs)
+{
+    qpid::sys::ScopedLock<Mutex> l(rateLock);
+    // Check for violating flow control
+    if ( msgs > 0 && rateFlowcontrol->flowStopped() ) {
+        QPID_LOG(warning, getId() << ": producer throttling violation");
+        // TODO: Probably do message.stop("") first time then disconnect
+        // See comment on getClusterOrderProxy() in .h file
+        getClusterOrderProxy().getMessage().stop("");
+        return true;
+    }
+    AbsTime now = AbsTime::now();
+    uint32_t sendCredit = rateFlowcontrol->receivedMessage(now, msgs);
+    if (mgmtObject) mgmtObject->dec_clientCredit(msgs);
+    if ( sendCredit>0 ) {
+        QPID_LOG(debug, getId() << ": send producer credit " << sendCredit);
+        getClusterOrderProxy().getMessage().flow("", 0, sendCredit);
+        rateFlowcontrol->sentCredit(now, sendCredit);
+        if (mgmtObject) mgmtObject->inc_clientCredit(sendCredit);
+        return true;
+    } else {
+        return !rateFlowcontrol->flowStopped() ;
+    }
+}
+
+void SessionState::sendAcceptAndCompletion()
+{
+    if (!accepted.empty()) {
+        getProxy().getMessage().accept(accepted);
+        accepted.clear();
+    }
+    sendCompletion();
 }
 
 void SessionState::enqueued(boost::intrusive_ptr<Message> msg)
 {
     receiverCompleted(msg->getCommandId());
-    if (msg->requiresAccept())         
-        getProxy().getMessage().accept(SequenceSet(msg->getCommandId()));        
+    if (msg->requiresAccept())
+        accepted.add(msg->getCommandId());
 }
 
 void SessionState::handleIn(AMQFrame& frame) {
     SequenceNumber commandId = receiverGetCurrent();
-    try {
-        //TODO: make command handling more uniform, regardless of whether
-        //commands carry content.
-        AMQMethodBody* m = frame.getMethod();
-        if (m == 0 || m->isContentBearing()) {
-            handleContent(frame, commandId);
-        } else if (frame.getBof() && frame.getEof()) {
-            handleCommand(frame.getMethod(), commandId);                
-        } else {
-            throw InternalErrorException("Cannot handle multi-frame command segments yet");
-        }
-    } catch(const SessionException& e) {
-        //TODO: better implementation of new exception handling mechanism
-
-        //0-10 final changes the types of exceptions, 'model layer'
-        //exceptions will all be session exceptions regardless of
-        //current channel/connection classification
-
-        AMQMethodBody* m = frame.getMethod();
-        if (m) {
-            getProxy().getExecution().exception(e.code, commandId, m->amqpClassId(), m->amqpMethodId(), 0, e.what(), FieldTable());
-        } else {
-            getProxy().getExecution().exception(e.code, commandId, 0, 0, 0, e.what(), FieldTable());
-        }
-        ignoring = true;
-        handler->sendDetach();
+    //TODO: make command handling more uniform, regardless of whether
+    //commands carry content.
+    AMQMethodBody* m = frame.getMethod();
+    if (m == 0 || m->isContentBearing()) {
+        handleContent(frame, commandId);
+    } else if (frame.getBof() && frame.getEof()) {
+        handleCommand(frame.getMethod(), commandId);
+    } else {
+        throw InternalErrorException("Cannot handle multi-frame command segments yet");
     }
 }
 
@@ -252,32 +337,50 @@ void SessionState::handleOut(AMQFrame& frame) {
     handler->out(frame);
 }
 
-DeliveryId SessionState::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
+void SessionState::deliver(DeliveryRecord& msg, bool sync)
 {
     uint32_t maxFrameSize = getConnection().getFrameMax();
     assert(senderGetCommandPoint().offset == 0);
     SequenceNumber commandId = senderGetCommandPoint().command;
-    MessageDelivery::deliver(msg, getProxy().getHandler(), commandId, token, maxFrameSize);
+    msg.deliver(getProxy().getHandler(), commandId, maxFrameSize);
     assert(senderGetCommandPoint() == SessionPoint(commandId+1, 0)); // Delivery has moved sendPoint.
-    return commandId;
+    if (sync) {
+        AMQP_ClientProxy::Execution& p(getProxy().getExecution());
+        Proxy::ScopedSync s(p);
+        p.sync();
+    }
 }
 
-void SessionState::sendCompletion() { handler->sendCompletion(); }
+void SessionState::sendCompletion() {
+    handler->sendCompletion();
+}
 
 void SessionState::senderCompleted(const SequenceSet& commands) {
     qpid::SessionState::senderCompleted(commands);
-    for (SequenceSet::RangeIterator i = commands.rangesBegin(); i != commands.rangesEnd(); i++)
-        semanticState.completed(i->first(), i->last());
+    semanticState.completed(commands);
 }
 
 void SessionState::readyToSend() {
     QPID_LOG(debug, getId() << ": ready to send, activating output.");
     assert(handler);
-    sys::AggregateOutput& tasks = handler->getConnection().outputTasks;
-    tasks.addOutputTask(&semanticState);
-    tasks.activateOutput();
+    semanticState.attached();
+    if (rateFlowcontrol) {
+        qpid::sys::ScopedLock<Mutex> l(rateLock);
+        // Issue initial credit - use a heuristic here issue min of 300 messages or 1 secs worth
+        uint32_t credit = std::min(rateFlowcontrol->getRate(), 300U);
+        QPID_LOG(debug, getId() << ": Issuing producer message credit " << credit);
+        // See comment on getClusterOrderProxy() in .h file
+        getClusterOrderProxy().getMessage().setFlowMode("", 0);
+        getClusterOrderProxy().getMessage().flow("", 0, credit);
+        rateFlowcontrol->sentCredit(AbsTime::now(), credit);
+        if (mgmtObject) mgmtObject->inc_clientCredit(credit);
+    }
 }
 
 Broker& SessionState::getBroker() { return broker; }
+
+framing::AMQP_ClientProxy& SessionState::getClusterOrderProxy() {
+    return handler->getClusterOrderProxy();
+}
 
 }} // namespace qpid::broker

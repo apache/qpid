@@ -19,8 +19,14 @@
 #include "test_tools.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
+#include "qpid/log/OstreamOutput.h"
 #include "qpid/memory.h"
 #include "qpid/Options.h"
+#if defined (_WIN32)
+#  include "qpid/log/windows/SinkOptions.h"
+#else
+#  include "qpid/log/posix/SinkOptions.h"
+#endif
 
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/format.hpp>
@@ -30,6 +36,9 @@
 #include <fstream>
 #include <time.h>
 
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(loggingTestSuite)
 
@@ -77,6 +86,7 @@ QPID_AUTO_TEST_CASE(testStatementEnabled) {
     // Verify that the singleton enables and disables static
     // log statements.
     Logger& l = Logger::instance();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(debug));
     static Statement s=QPID_LOG_STATEMENT_INIT(debug);
     BOOST_CHECK(!s.enabled);
@@ -99,7 +109,7 @@ struct TestOutput : public Logger::Output {
     TestOutput(Logger& l) {
         l.output(std::auto_ptr<Logger::Output>(this));
     }
-                 
+
     void log(const Statement& s, const string& m) {
         msg.push_back(m);
         stmt.push_back(s);
@@ -133,7 +143,7 @@ QPID_AUTO_TEST_CASE(testLoggerOutput) {
 
 QPID_AUTO_TEST_CASE(testMacro) {
     Logger& l=Logger::instance();
-    l.clear();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(info));
     TestOutput* out=new TestOutput(l);
     QPID_LOG(info, "foo");
@@ -152,6 +162,7 @@ QPID_AUTO_TEST_CASE(testMacro) {
 
 QPID_AUTO_TEST_CASE(testLoggerFormat) {
     Logger& l = Logger::instance();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(critical));
     TestOutput* out=new TestOutput(l);
 
@@ -165,23 +176,19 @@ QPID_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(Logger::FUNCTION);
     QPID_LOG(critical, "foo");
-    
+    BOOST_CHECK_EQUAL(string(BOOST_CURRENT_FUNCTION) + ": foo\n", out->last());
+
     l.format(Logger::LEVEL);
     QPID_LOG(critical, "foo");
     BOOST_CHECK_EQUAL("critical foo\n", out->last());
-
-    l.format(~0);               // Everything
-    QPID_LOG(critical, "foo");
-    string re=".* critical -?\\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void .*testLoggerFormat.*\\(\\): foo\n";
-    BOOST_CHECK_REGEX(re, out->last());
 }
 
 QPID_AUTO_TEST_CASE(testOstreamOutput) {
     Logger& l=Logger::instance();
-    l.clear();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(error));
     ostringstream os;
-    l.output(os);
+    l.output(qpid::make_auto_ptr<Logger::Output>(new OstreamOutput(os)));
     QPID_LOG(error, "foo");
     QPID_LOG(error, "bar");
     QPID_LOG(error, "baz");
@@ -191,6 +198,7 @@ QPID_AUTO_TEST_CASE(testOstreamOutput) {
 #if 0 // This test requires manual intervention. Normally disabled.
 QPID_AUTO_TEST_CASE(testSyslogOutput) {
     Logger& l=Logger::instance();
+    Logger::StateSaver ls(l);
     l.clear();
     l.select(Selector(info));
     l.syslog("qpid_test");
@@ -223,12 +231,12 @@ clock_t timeLoop(int times, int (*fp)()) {
 
 // Overhead test disabled because it consumes a ton of CPU and takes
 // forever under valgrind. Not friendly for regular test runs.
-// 
+//
 #if 0
 QPID_AUTO_TEST_CASE(testOverhead) {
     // Ensure that the ratio of CPU time for an incrementing loop
     // with and without disabled log statements is in  acceptable limits.
-    // 
+    //
     int times=100000000;
     clock_t noLog=timeLoop(times, count);
     clock_t withLog=timeLoop(times, loggedCount);
@@ -237,9 +245,9 @@ QPID_AUTO_TEST_CASE(testOverhead) {
     // NB: in initial tests the ratio was consistently below 1.5,
     // 2.5 is reasonable and should avoid spurios failures
     // due to machine load.
-    // 
-    BOOST_CHECK_SMALL(ratio, 2.5); 
-}    
+    //
+    BOOST_CHECK_SMALL(ratio, 2.5);
+}
 #endif // 0
 
 Statement statement(
@@ -258,19 +266,26 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
         "--log-enable", "error+:foo",
         "--log-enable", "debug:bar",
         "--log-enable", "info",
-        "--log-output", "x",
-        "--log-output", "y",
+        "--log-to-stderr", "no",
+        "--log-to-file", "logout",
         "--log-level", "yes",
         "--log-source", "1",
         "--log-thread", "true",
         "--log-function", "YES"
     };
     qpid::log::Options opts("");
+#ifdef _WIN32
+    qpid::log::windows::SinkOptions sinks("test");
+#else
+    qpid::log::posix::SinkOptions sinks("test");
+#endif
     opts.parse(ARGC(argv), const_cast<char**>(argv));
+    sinks = *opts.sinkOptions;
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
-    expect=list_of("x")("y");
-    BOOST_CHECK_EQUAL(expect, opts.outputs);
+    BOOST_CHECK(!sinks.logToStderr);
+    BOOST_CHECK(!sinks.logToStdout);
+    BOOST_CHECK(sinks.logFile == "logout");
     BOOST_CHECK(opts.level);
     BOOST_CHECK(opts.source);
     BOOST_CHECK(opts.function);
@@ -278,10 +293,17 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
 }
 
 QPID_AUTO_TEST_CASE(testOptionsDefault) {
-    Options opts("");
-    vector<string> expect=list_of("stderr");
-    BOOST_CHECK_EQUAL(expect, opts.outputs);
-    expect=list_of("error+");
+    qpid::log::Options opts("");
+#ifdef _WIN32
+    qpid::log::windows::SinkOptions sinks("test");
+#else
+    qpid::log::posix::SinkOptions sinks("test");
+#endif
+    sinks = *opts.sinkOptions;
+    BOOST_CHECK(sinks.logToStderr);
+    BOOST_CHECK(!sinks.logToStdout);
+    BOOST_CHECK(sinks.logFile.length() == 0);
+    vector<string> expect=list_of("notice+");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
     BOOST_CHECK(opts.time && opts.level);
     BOOST_CHECK(!(opts.source || opts.function || opts.thread));
@@ -306,47 +328,16 @@ QPID_AUTO_TEST_CASE(testSelectorFromOptions) {
     BOOST_CHECK(s.isEnabled(critical, "foo"));
 }
 
-QPID_AUTO_TEST_CASE(testOptionsFormat) {
-    Logger l;
-    {
-        Options opts("");
-        BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
-        const char* argv[]={
-            0,
-            "--log-time", "no", 
-            "--log-level", "no",
-            "--log-source", "1",
-            "--log-thread",  "1"
-        };
-        opts.parse(ARGC(argv), const_cast<char**>(argv));
-        BOOST_CHECK_EQUAL(
-            Logger::FILE|Logger::LINE|Logger::THREAD, l.format(opts));
-    }
-    {
-        Options opts("");           // Clear.
-        const char* argv[]={
-            0,
-            "--log-level", "no",
-            "--log-thread", "true",
-            "--log-function", "YES",
-            "--log-time", "YES"
-        };
-        opts.parse(ARGC(argv), const_cast<char**>(argv));
-        BOOST_CHECK_EQUAL(
-            Logger::THREAD|Logger::FUNCTION|Logger::TIME,
-            l.format(opts));
-    }
-}
-
-QPID_AUTO_TEST_CASE(testLoggerConfigure) {
+QPID_AUTO_TEST_CASE(testLoggerStateure) {
     Logger& l=Logger::instance();
-    l.clear();
-    Options opts("test");
+    ScopedSuppressLogging ls(l);
+    qpid::log::Options opts("test");
     const char* argv[]={
         0,
-        "--log-time", "no", 
+        "--log-time", "no",
         "--log-source", "yes",
-        "--log-output", "logging.tmp",
+        "--log-to-stderr", "no",
+        "--log-to-file", "logging.tmp",
         "--log-enable", "critical"
     };
     opts.parse(ARGC(argv), const_cast<char**>(argv));
@@ -363,15 +354,23 @@ QPID_AUTO_TEST_CASE(testLoggerConfigure) {
 
 QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     Logger& l=Logger::instance();
-    l.clear();
-    Options opts("test");
-    opts.outputs.clear();
-    opts.outputs.push_back("logging.tmp");
+    ScopedSuppressLogging ls(l);
+    qpid::log::Options opts("test");
     opts.time=false;
+#ifdef _WIN32
+    qpid::log::windows::SinkOptions *sinks =
+      dynamic_cast<qpid::log::windows::SinkOptions *>(opts.sinkOptions.get());
+#else
+    qpid::log::posix::SinkOptions *sinks =
+      dynamic_cast<qpid::log::posix::SinkOptions *>(opts.sinkOptions.get());
+#endif
+    sinks->logToStderr = false;
+    sinks->logFile = "logging.tmp";
     l.configure(opts);
+
     char s[] = "null\0tab\tspace newline\nret\r\x80\x99\xff";
     string str(s, sizeof(s));
-    QPID_LOG(critical, str); 
+    QPID_LOG(critical, str);
     ifstream log("logging.tmp");
     string line;
     getline(log, line, '\0');
@@ -382,3 +381,5 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

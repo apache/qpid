@@ -45,7 +45,6 @@ public class ClientListener implements NotificationListener
     {
         ObjectName objName = null;
         String     type = notification.getType();
-        MBeanUtility.printOutput(type + ":" + objName);
         
         if (MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(type))
         {
@@ -59,7 +58,13 @@ public class ClientListener implements NotificationListener
         }
         else if (JMXConnectionNotification.FAILED.equals(type))
         {
-            ApplicationRegistry.serverConnectionClosed(server);
+            ApplicationRegistry.serverConnectionClosedRemotely(server);
+            MBeanUtility.printOutput("JMX Connection to " + server.getName() + " failed.");
+        }
+        else if (JMXConnectionNotification.CLOSED.equals(type))
+        {
+            ApplicationRegistry.serverConnectionClosedRemotely(server);
+            MBeanUtility.printOutput("JMX Connection to " + server.getName() + " was closed.");
         }
     }
 

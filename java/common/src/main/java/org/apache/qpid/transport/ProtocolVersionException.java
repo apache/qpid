@@ -26,17 +26,22 @@ package org.apache.qpid.transport;
  *
  */
 
-public final class ProtocolVersionException extends TransportException
+public final class ProtocolVersionException extends ConnectionException
 {
 
     private final byte major;
     private final byte minor;
 
-    public ProtocolVersionException(byte major, byte minor)
+    public ProtocolVersionException(byte major, byte minor, Throwable cause)
     {
-        super(String.format("version missmatch: %s-%s", major, minor));
+        super(String.format("version mismatch: %s-%s", major, minor), cause);
         this.major = major;
         this.minor = minor;
+    }
+
+    public ProtocolVersionException(byte major, byte minor)
+    {
+        this(major, minor, null);
     }
 
     public byte getMajor()
@@ -47,6 +52,11 @@ public final class ProtocolVersionException extends TransportException
     public byte getMinor()
     {
         return this.minor;
+    }
+
+    @Override public void rethrow()
+    {
+        throw new ProtocolVersionException(major, minor, this);
     }
 
 }

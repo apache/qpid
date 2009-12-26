@@ -19,11 +19,19 @@
 # under the License.
 #
 
+
+###############################################################################
+## This file is being obsoleted by qmf/console.py
+###############################################################################
+
 import qpid
 import re
 import socket
 import struct
 import os
+import platform
+import locale
+from qpid.connection import Timeout
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
@@ -40,9 +48,11 @@ class Broker:
     if not match: raise ValueError("'%s' is not a valid broker url" % (text))
     user, password, host, port = match.groups()
 
-    self.host = socket.gethostbyname (host)
     if port: self.port = int(port)
     else: self.port = 5672
+    for addr in socket.getaddrinfo(host, self.port):
+      if addr[1] == socket.AF_INET:
+        self.host = addr[4][0]
     self.username = user or "guest"
     self.password = password or "guest"
 
@@ -71,14 +81,14 @@ class ManagementData:
   #
 
   def registerObjId (self, objId):
-    if not objId in self.idBackMap:
-      self.idBackMap[objId]   = self.nextId
+    if not objId.index() in self.idBackMap:
+      self.idBackMap[objId.index()] = self.nextId
       self.idMap[self.nextId] = objId
       self.nextId += 1
 
-  def displayObjId (self, objId):
-    if objId in self.idBackMap:
-      return self.idBackMap[objId]
+  def displayObjId (self, objIdIndex):
+    if objIdIndex in self.idBackMap:
+      return self.idBackMap[objIdIndex]
     else:
       return 0
 
@@ -86,11 +96,16 @@ class ManagementData:
     if displayId in self.idMap:
       return self.idMap[displayId]
     else:
-      return 0
+      return None
 
   def displayClassName (self, cls):
     (packageName, className, hash) = cls
-    return packageName + "." + className
+    rev = self.schema[cls][4]
+    if rev == 0:
+      suffix = ""
+    else:
+      suffix = ".%d" % rev
+    return packageName + ":" + className + suffix
 
   def dataHandler (self, context, className, list, timestamps):
     """ Callback for configuration and instrumentation data updates """
@@ -102,19 +117,20 @@ class ManagementData:
         self.tables[className] = {}
 
       # Register the ID so a more friendly presentation can be displayed
-      id = long (list[0][1])
-      self.registerObjId (id)
+      objId = list[0][1]
+      oidx  = objId.index()
+      self.registerObjId (objId)
 
       # If this object hasn't been seen before, create a new object record with
       # the timestamps and empty lists for configuration and instrumentation data.
-      if id not in self.tables[className]:
-        self.tables[className][id] = (timestamps, [], [])
+      if oidx not in self.tables[className]:
+        self.tables[className][oidx] = (timestamps, [], [])
 
-      (unused, oldConf, oldInst) = self.tables[className][id]
+      (unused, oldConf, oldInst) = self.tables[className][oidx]
 
       # For config updates, simply replace old config list with the new one.
       if   context == 0: #config
-        self.tables[className][id] = (timestamps, list, oldInst)
+        self.tables[className][oidx] = (timestamps, list, oldInst)
 
       # For instrumentation updates, carry the minimum and maximum values for
       # "hi-lo" stats forward.
@@ -132,7 +148,7 @@ class ManagementData:
               if oldInst[idx][1] < value:
                 value = oldInst[idx][1]
             newInst.append ((key, value))
-        self.tables[className][id] = (timestamps, oldConf, newInst)
+        self.tables[className][oidx] = (timestamps, oldConf, newInst)
 
     finally:
       self.lock.release ()
@@ -190,15 +206,25 @@ class ManagementData:
     self.lastUnit       = None
     self.methodSeq      = 1
     self.methodsPending = {}
-    self.sessionId      = "%s.%d" % (os.uname()[1], os.getpid())
+    self.sessionId      = "%s.%d" % (platform.uname()[1], os.getpid())
 
     self.broker = Broker (host)
-    self.conn   = Connection (connect (self.broker.host, self.broker.port),
+    sock = connect (self.broker.host, self.broker.port)
+    oldTimeout = sock.gettimeout()
+    sock.settimeout(10)
+    self.conn   = Connection (sock,
                               username=self.broker.username, password=self.broker.password)
-    self.spec = self.conn.spec
+    def aborted():
+      raise Timeout("Waiting for connection to be established with broker")
+    oldAborted = self.conn.aborted
+    self.conn.aborted = aborted
+
     self.conn.start ()
 
-    self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
+    sock.settimeout(oldTimeout)
+    self.conn.aborted = oldAborted
+
+    self.mclient = managementClient ("unused", self.ctrlHandler, self.configHandler,
                                      self.instHandler, self.methodReply, self.closeHandler)
     self.mclient.schemaListener (self.schemaHandler)
     self.mch = self.mclient.addChannel (self.conn.session(self.sessionId))
@@ -211,11 +237,13 @@ class ManagementData:
     pass
 
   def refName (self, oid):
-    if oid == 0:
+    if oid == None:
       return "NULL"
-    return str (self.displayObjId (oid))
+    return str (self.displayObjId (oid.index()))
 
   def valueDisplay (self, classKey, key, value):
+    if value == None:
+      return "<NULL>"
     for kind in range (2):
       schema = self.schema[classKey][kind]
       for item in schema:
@@ -248,7 +276,7 @@ class ManagementData:
             else:
               return "True"
           elif typecode == 14:
-            return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", value)
+            return str (value)
           elif typecode == 15:
             return str (value)
     return "*type-error*"
@@ -267,14 +295,21 @@ class ManagementData:
     return result
 
   def getClassKey (self, className):
-    dotPos = className.find(".")
-    if dotPos == -1:
+    delimPos = className.find(":")
+    if delimPos == -1:
+      schemaRev = 0
+      delim = className.find(".")
+      if delim != -1:
+        schemaRev = int(className[delim + 1:])
+        name      = className[0:delim]
+      else:
+        name = className
       for key in self.schema:
-        if key[1] == className:
+        if key[1] == name and self.schema[key][4] == schemaRev:
           return key
     else:
-      package   = className[0:dotPos]
-      name      = className[dotPos + 1:]
+      package   = className[0:delimPos]
+      name      = className[delimPos + 1:]
       schemaRev = 0
       delim = name.find(".")
       if delim != -1:
@@ -338,6 +373,12 @@ class ManagementData:
       return "int32"
     elif typecode == 19:
       return "int64"
+    elif typecode == 20:
+      return "object"
+    elif typecode == 21:
+      return "list"
+    elif typecode == 22:
+      return "array"      
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 
@@ -437,7 +478,7 @@ class ManagementData:
         if classKey in self.tables:
           ids = self.listOfIds(classKey, tokens[1:])
           for objId in ids:
-            (ts, config, inst) = self.tables[classKey][self.rawObjId(objId)]
+            (ts, config, inst) = self.tables[classKey][self.rawObjId(objId).index()]
             createTime  = self.disp.timestamp (ts[1])
             destroyTime = "-"
             if ts[2] > 0:
@@ -445,7 +486,7 @@ class ManagementData:
             objIndex = self.getObjIndex (classKey, config)
             row = (objId, createTime, destroyTime, objIndex)
             rows.append (row)
-          self.disp.table ("Objects of type %s.%s" % (classKey[0], classKey[1]),
+          self.disp.table ("Objects of type %s" % self.displayClassName(classKey),
                            ("ID", "Created", "Destroyed", "Index"),
                            rows)
     finally:
@@ -486,33 +527,33 @@ class ManagementData:
 
       rows = []
       timestamp = None
-      config = self.tables[classKey][ids[0]][1]
+      config = self.tables[classKey][ids[0].index()][1]
       for eIdx in range (len (config)):
         key = config[eIdx][0]
         if key != "id":
           row   = ("property", key)
           for id in ids:
             if timestamp == None or \
-               timestamp < self.tables[classKey][id][0][0]:
-              timestamp = self.tables[classKey][id][0][0]
-            (key, value) = self.tables[classKey][id][1][eIdx]
+               timestamp < self.tables[classKey][id.index()][0][0]:
+              timestamp = self.tables[classKey][id.index()][0][0]
+            (key, value) = self.tables[classKey][id.index()][1][eIdx]
             row = row + (self.valueDisplay (classKey, key, value),)
           rows.append (row)
 
-      inst = self.tables[classKey][ids[0]][2]
+      inst = self.tables[classKey][ids[0].index()][2]
       for eIdx in range (len (inst)):
         key = inst[eIdx][0]
         if key != "id":
           row = ("statistic", key)
           for id in ids:
-            (key, value) = self.tables[classKey][id][2][eIdx]
+            (key, value) = self.tables[classKey][id.index()][2][eIdx]
             row = row + (self.valueDisplay (classKey, key, value),)
           rows.append (row)
 
       titleRow = ("Type", "Element")
       for id in ids:
-        titleRow = titleRow + (self.refName (id),)
-      caption = "Object of type %s.%s:" % (classKey[0], classKey[1])
+        titleRow = titleRow + (self.refName(id),)
+      caption = "Object of type %s:" % self.displayClassName(classKey)
       if timestamp != None:
         caption = caption + " (last sample time: " + self.disp.timestamp (timestamp) + ")"
       self.disp.table (caption, titleRow, rows)
@@ -530,15 +571,11 @@ class ManagementData:
       sorted.sort ()
       for classKey in sorted:
         tuple = self.schema[classKey]
-        if tuple[4] == 0:
-          suffix = ""
-        else:
-          suffix = ".%d" % tuple[4]
-        className = classKey[0] + "." + classKey[1] + suffix
-        row = (className, len (tuple[0]), len (tuple[1]), len (tuple[2]), len (tuple[3]))
+        row = (self.displayClassName(classKey), len (tuple[0]), len (tuple[1]),
+               len (tuple[2]))
         rows.append (row)
       self.disp.table ("Classes in Schema:",
-                       ("Class", "Properties", "Statistics", "Methods", "Events"),
+                       ("Class", "Properties", "Statistics", "Methods"),
                        rows)
     finally:
       self.lock.release ()
@@ -563,13 +600,15 @@ class ManagementData:
           access   = self.accessName (config[4])
           extra    = ""
           if config[5] == 1:
-            extra = extra + "index "
+            extra += "index "
           if config[6] != None:
-            extra = extra + "Min: " + str (config[6])
+            extra += "Min: " + str(config[6]) + " "
           if config[7] != None:
-            extra = extra + "Max: " + str (config[7])
+            extra += "Max: " + str(config[7]) + " "
           if config[8] != None:
-            extra = extra + "MaxLen: " + str (config[8])
+            extra += "MaxLen: " + str(config[8]) + " "
+          if config[9] == 1:
+            extra += "optional "
           rows.append ((name, typename, unit, access, extra, desc))
         
       for config in self.schema[classKey][1]:
@@ -581,7 +620,7 @@ class ManagementData:
           rows.append ((name, typename, unit, "", "", desc))
 
       titles = ("Element", "Type", "Unit", "Access", "Notes", "Description")
-      self.disp.table ("Schema for class '%s.%s.%d':" % (classKey[0], classKey[1], schemaRev), titles, rows)
+      self.disp.table ("Schema for class '%s':" % self.displayClassName(classKey), titles, rows)
 
       for mname in self.schema[classKey][2]:
         (mdesc, args) = self.schema[classKey][2][mname]
@@ -606,14 +645,14 @@ class ManagementData:
         titles = ("Argument", "Type", "Direction", "Unit", "Notes", "Description")
         self.disp.table (caption, titles, rows)
 
-    except:
+    except Exception,e:
       pass
     self.lock.release ()
 
   def getClassForId (self, objId):
     """ Given an object ID, return the class key for the referenced object """
     for classKey in self.tables:
-      if objId in self.tables[classKey]:
+      if objId.index() in self.tables[classKey]:
         return classKey
     return None
 
@@ -626,7 +665,7 @@ class ManagementData:
         raise ValueError ()
 
       if methodName not in self.schema[classKey][2]:
-        print "Method '%s' not valid for class '%s.%s'" % (methodName, classKey[0], classKey[1])
+        print "Method '%s' not valid for class '%s'" % (methodName, self.displayClassName(classKey))
         raise ValueError ()
 
       schemaMethod = self.schema[classKey][2][methodName]
@@ -647,7 +686,7 @@ class ManagementData:
 
       self.methodSeq = self.methodSeq + 1
       self.methodsPending[self.methodSeq] = methodName
-    except:
+    except Exception, e:
       methodOk = False
     self.lock.release ()
     if methodOk:
@@ -659,14 +698,19 @@ class ManagementData:
 
   def makeIdRow (self, displayId):
     if displayId in self.idMap:
-      rawId = self.idMap[displayId]
+      objId = self.idMap[displayId]
     else:
       return None
-    return (displayId,
-            rawId,
-            (rawId & 0x7FFF000000000000) >> 48,
-            (rawId & 0x0000FFFFFF000000) >> 24,
-            (rawId & 0x0000000000FFFFFF))
+    if objId.getFlags() == 0:
+      flags = ""
+    else:
+      flags = str(objId.getFlags())
+    seq = objId.getSequence()
+    if seq == 0:
+      seqText = "<durable>"
+    else:
+      seqText = str(seq)
+    return (displayId, flags, seqText, objId.getBroker(), objId.getBank(), hex(objId.getObject()))
 
   def listIds (self, select):
     rows = []
@@ -683,7 +727,7 @@ class ManagementData:
         return
       rows.append(row)
     self.disp.table("Translation of Display IDs:",
-                    ("DisplayID", "RawID", "BootSequence", "Bank", "Object"),
+                    ("DisplayID", "Flags", "BootSequence", "Broker", "Bank", "Object"),
                     rows)
 
   def do_list (self, data):
@@ -704,7 +748,11 @@ class ManagementData:
       self.schemaTable (data)
 
   def do_call (self, data):
-    tokens = data.split ()
+    encTokens = data.split ()
+    try:
+      tokens = [a.decode(locale.getpreferredencoding()) for a in encArgs]
+    except:
+      tokens = encTokens
     if len (tokens) < 2:
       print "Not enough arguments supplied"
       return

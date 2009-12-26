@@ -24,6 +24,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -76,8 +77,7 @@ public class StreamMessageTest extends QpidTestCase
         FieldTable ft = new FieldTable();
         ft.setString("F1000", "1");
         MessageConsumer consumer =
-            consumerSession.createConsumer(queue, AMQSession.DEFAULT_PREFETCH_LOW_MARK,
-                AMQSession.DEFAULT_PREFETCH_HIGH_MARK, false, false, (String) null, ft);
+            consumerSession.createConsumer(queue, Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), false, false, (String) null, ft);
 
         // force synch to ensure the consumer has resulted in a bound queue
         // ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);

@@ -1,6 +1,0 @@
-
-* Implement durable subscriptions.
-* Implement prefetching
-* support multiple versions of AMQP from the same client.
-* Add new unit and integration tests
-* Implement Transactions

@@ -21,9 +21,10 @@
 #ifndef _DeliverableMessage_
 #define _DeliverableMessage_
 
-#include "Deliverable.h"
-#include "Queue.h"
-#include "Message.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/Message.h"
 
 #include <boost/intrusive_ptr.hpp>
 
@@ -32,10 +33,10 @@ namespace qpid {
         class DeliverableMessage : public Deliverable{
             boost::intrusive_ptr<Message> msg;
         public:
-            DeliverableMessage(boost::intrusive_ptr<Message>& msg);
-            virtual void deliverTo(Queue::shared_ptr& queue);
-            Message& getMessage();
-            uint64_t contentSize();
+            QPID_BROKER_EXTERN DeliverableMessage(const boost::intrusive_ptr<Message>& msg);
+            QPID_BROKER_EXTERN virtual void deliverTo(const boost::shared_ptr<Queue>& queue);
+            QPID_BROKER_EXTERN Message& getMessage();
+            QPID_BROKER_EXTERN uint64_t contentSize();
             virtual ~DeliverableMessage(){}
         };
     }

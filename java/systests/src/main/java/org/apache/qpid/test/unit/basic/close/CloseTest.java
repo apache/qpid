@@ -35,18 +35,6 @@ public class CloseTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CloseTest.class);
 
-    private static final String BROKER = "vm://:1";
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.setUp();
-    }
-
     public void testCloseQueueReceiver() throws  Exception
     {
         AMQConnection connection = (AMQConnection) getConnection("guest", "guest");
@@ -62,7 +50,7 @@ public class CloseTest extends QpidTestCase
 
         _logger.info("About to close consumer");
 
-        consumer.close();
+        consumer.close();                                
 
         _logger.info("Closed Consumer");
         connection.close();

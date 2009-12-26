@@ -26,14 +26,13 @@ import java.nio.ByteOrder;
 
 
 /**
- * BBEncoder
- *
+ * Byte Buffer Encoder.
+ * Encoder concrete implementor using a backing byte buffer for encoding data.
+ * 
  * @author Rafael H. Schloming
  */
-
 public final class BBEncoder extends AbstractEncoder
 {
-
     private ByteBuffer out;
     private int segment;
 
@@ -60,12 +59,23 @@ public final class BBEncoder extends AbstractEncoder
         return slice;
     }
 
+    public ByteBuffer buffer()
+    {
+        int pos = out.position();
+        out.position(segment);
+        ByteBuffer slice = out.slice();
+        slice.limit(pos - segment);
+        out.position(pos);
+        return slice;
+    }
+
     private void grow(int size)
     {
         ByteBuffer old = out;
         int capacity = old.capacity();
         out = ByteBuffer.allocate(Math.max(capacity + size, 2*capacity));
         out.order(ByteOrder.BIG_ENDIAN);
+        old.flip();
         out.put(old);
     }
 
@@ -229,4 +239,96 @@ public final class BBEncoder extends AbstractEncoder
         out.putInt(pos, (cur - pos - 4));
     }
 
+	public void writeDouble(double aDouble)
+	{
+		try 
+		{
+			out.putDouble(aDouble);
+		} catch(BufferOverflowException exception)
+		{
+			grow(8);
+			out.putDouble(aDouble);
+		}
+	}
+
+	public void writeInt16(short aShort)
+	{
+		try 
+		{
+			out.putShort(aShort);
+		} catch(BufferOverflowException exception)
+		{
+			grow(2);
+			out.putShort(aShort);
+		}
+	}
+
+	public void writeInt32(int anInt)
+	{
+		try
+		{
+			out.putInt(anInt);
+		} catch(BufferOverflowException exception)
+		{
+			grow(4);
+			out.putInt(anInt);
+		}
+	}
+
+	public void writeInt64(long aLong)
+	{
+		try
+		{
+			out.putLong(aLong);
+		} catch(BufferOverflowException exception)
+		{
+			grow(8);
+			out.putLong(aLong);
+		}
+	}
+      
+	public void writeInt8(byte aByte)
+	{
+		try 
+		{
+			out.put(aByte);	
+		} catch(BufferOverflowException exception)
+		{
+			grow(1);
+			out.put(aByte);
+		}
+	}	
+	
+	public void writeBin128(byte[] byteArray)
+	{
+		byteArray = (byteArray != null) ? byteArray : new byte [16];
+		
+		assert byteArray.length == 16;
+		
+		try 
+		{
+			out.put(byteArray);
+		} catch(BufferOverflowException exception)
+		{
+			grow(16);
+			out.put(byteArray);			
+		}
+	}
+
+	public void writeFloat(float aFloat)
+	{
+		try 
+		{
+			out.putFloat(aFloat);
+		} catch(BufferOverflowException exception)
+		{
+			grow(4);
+			out.putFloat(aFloat);
+		}
+	}
+
+	public void writeMagicNumber()
+	{
+		out.put("AM2".getBytes());
+	}	
 }

@@ -16,7 +16,7 @@
  *
  */
 
-#include "Options.h"
+#include "qpid/Options.h"
 #include "qpid/Exception.h"
 
 #include <boost/bind.hpp>
@@ -55,7 +55,8 @@ struct EnvOptMapper {
     }
 
     static bool matchStr(const string& env, boost::shared_ptr<po::option_description> desc) {
-        return std::equal(env.begin(), env.end(), desc->long_name().begin(), &matchChar);
+        return desc->long_name().size() == env.size() &&
+            std::equal(env.begin(), env.end(), desc->long_name().begin(), &matchChar);
     }
             
     static bool matchCase(const string& env, boost::shared_ptr<po::option_description> desc) {

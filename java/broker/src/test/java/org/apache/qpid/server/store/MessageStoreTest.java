@@ -21,23 +21,21 @@
 package org.apache.qpid.server.store;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQPriorityQueue;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.queue.ExchangeBinding;
-import org.apache.qpid.server.txn.NonTransactionalContext;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.queue.*;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -101,7 +99,8 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            _virtualHost = new VirtualHost(virtualHostName, configuration, null);
+            _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration(getClass().getName(), configuration));
+            ApplicationRegistry.getInstance().getVirtualHostRegistry().registerVirtualHost(_virtualHost);
         }
         catch (Exception e)
         {
@@ -133,12 +132,12 @@ public class MessageStoreTest extends TestCase
 
     protected void setUp()
     {
-        ApplicationRegistry.getInstance(1);
+        ApplicationRegistry.getInstance();
     }
 
     protected void tearDown()
     {
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
     }
 
     protected void runTestWithStore(Configuration configuration)
@@ -166,7 +165,7 @@ public class MessageStoreTest extends TestCase
         Exchange topicExchange = createExchange(TopicExchange.TYPE, topicExchangeName, true);
         bindAllTopicQueuesToExchange(topicExchange, topicRouting);
 
-        //Send Message To NonDurable direct Exchange = persistent        
+        //Send Message To NonDurable direct Exchange = persistent
         sendMessageOnExchange(nonDurableExchange, directRouting, true);
         // and non-persistent
         sendMessageOnExchange(nonDurableExchange, directRouting, false);
@@ -341,22 +340,11 @@ public class MessageStoreTest extends TestCase
 
         MessagePublishInfo messageInfo = new TestMessagePublishInfo(directExchange, false, false, routingKey);
 
-        IncomingMessage currentMessage = null;
+        final IncomingMessage currentMessage;
 
-        try
-        {
-            currentMessage = new IncomingMessage(_virtualHost.getMessageStore().getNewMessageId(),
-                                                 messageInfo,
-                                                 new NonTransactionalContext(_virtualHost.getMessageStore(),
-                                                                             new StoreContext(), null, null),
-                                                 new InternalTestProtocolSession());
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
 
-        currentMessage.setMessageStore(_virtualHost.getMessageStore());
+        currentMessage = new IncomingMessage(messageInfo);
+
         currentMessage.setExchange(directExchange);
 
         ContentHeaderBody headerBody = new ContentHeaderBody();
@@ -376,35 +364,42 @@ public class MessageStoreTest extends TestCase
 
         currentMessage.setExpiration();
 
-        try
-        {
-            currentMessage.route();
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        MessageMetaData mmd = currentMessage.headersReceived();
+        currentMessage.setStoredMessage(_virtualHost.getMessageStore().addMessage(mmd));
 
-        try
-        {
-            currentMessage.routingComplete(_virtualHost.getMessageStore(), new MessageHandleFactory());
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        currentMessage.route();
+
+
 
         // check and deliver if header says body length is zero
         if (currentMessage.allContentReceived())
         {
-            try
-            {
-                currentMessage.deliverToQueues();
-            }
-            catch (AMQException e)
-            {
-                fail(e.getMessage());
-            }
+            // TODO Deliver to queues
+            ServerTransaction trans = new AutoCommitTransaction(_virtualHost.getMessageStore());
+            final List<AMQQueue> destinationQueues = currentMessage.getDestinationQueues();
+            trans.enqueue(currentMessage.getDestinationQueues(), currentMessage, new ServerTransaction.Action() {
+                public void postCommit()
+                {
+                    try
+                    {
+                        AMQMessage message = new AMQMessage(currentMessage.getStoredMessage());
+
+                        for(AMQQueue queue : destinationQueues)
+                        {
+                            QueueEntry entry = queue.enqueue(message);
+                        }
+                    }
+                    catch (AMQException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+
+                public void onRollback()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+            });
         }
     }
 
@@ -493,14 +488,7 @@ public class MessageStoreTest extends TestCase
             fail(e.getMessage());
         }
 
-        try
-        {
-            _virtualHost.getQueueRegistry().registerQueue(queue);
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        _virtualHost.getQueueRegistry().registerQueue(queue);
 
     }
 

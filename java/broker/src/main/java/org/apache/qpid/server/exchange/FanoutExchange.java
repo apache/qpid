@@ -22,15 +22,17 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -59,6 +61,8 @@ public class FanoutExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Fanout Exchange")
     private final class FanoutExchangeMBean extends ExchangeMBean
     {
+        private static final String BINDING_KEY_SUBSTITUTE = "*";
+
         @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
         public FanoutExchangeMBean() throws JMException
         {
@@ -72,14 +76,22 @@ public class FanoutExchange extends AbstractExchange
 
             _bindingList = new TabularDataSupport(_bindinglistDataType);
 
+            if(_queues.isEmpty())
+            {
+                return _bindingList;
+            }
+
+            ArrayList<String> queueNames = new ArrayList<String>();
+
             for (AMQQueue queue : _queues)
             {
                 String queueName = queue.getName().toString();
-
-                Object[] bindingItemValues = {queueName, new String[]{queueName}};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
-                _bindingList.put(bindingData);
+                queueNames.add(queueName);
             }
+
+            Object[] bindingItemValues = {BINDING_KEY_SUBSTITUTE, queueNames.toArray(new String[0])};
+            CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
+            _bindingList.put(bindingData);
 
             return _bindingList;
         }
@@ -92,29 +104,31 @@ public class FanoutExchange extends AbstractExchange
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
             }
 
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
             try
             {
-                queue.bind(FanoutExchange.this, new AMQShortString(binding), null);
+                queue.bind(FanoutExchange.this, new AMQShortString(BINDING_KEY_SUBSTITUTE), null);
             }
             catch (AMQException ex)
             {
                 throw new MBeanException(ex);
             }
+            finally
+            {
+                CurrentActor.remove();
+            }
         }
 
     } // End of MBean class
 
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new FanoutExchange.FanoutExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-            _logger.error("Exception occured in creating the direct exchange mbean", ex);
-            throw new AMQException("Exception occured in creating the direct exchange mbean", ex);
-        }
+        return new FanoutExchange.FanoutExchangeMBean();
+    }
+
+    public Logger getLogger()
+    {
+        return _logger;
     }
 
     public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
@@ -182,16 +196,16 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
 
-    
+
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Publishing message to queue " + _queues);
         }
 
-        payload.enqueue(new ArrayList(_queues));
+        return new ArrayList(_queues);
 
     }
 

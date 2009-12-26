@@ -20,7 +20,7 @@
  */
 
 #include <boost/detail/atomic_count.hpp>
-#include "ScopedIncrement.h"
+#include "qpid/sys/ScopedIncrement.h"
 
 namespace qpid {
 namespace sys {

@@ -60,7 +60,7 @@ public class AMQConnectionException extends AMQException
     public AMQFrame getCloseFrame(int channel)
     {
         MethodRegistry reg = MethodRegistry.getMethodRegistry(new ProtocolVersion(major,minor));
-        return new AMQFrame(channel,
+        return new AMQFrame(0,
                             reg.createConnectionCloseBody(getErrorCode().getCode(),
                                                           new AMQShortString(getMessage()),
                                                           _classId,

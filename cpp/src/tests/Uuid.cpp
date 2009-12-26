@@ -18,11 +18,14 @@
 
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
 #include <set>
-#include <alloca.h>
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(UuidTestSuite)
 
@@ -77,3 +80,5 @@ QPID_AUTO_TEST_CASE(testUuidEncodeDecode) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

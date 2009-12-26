@@ -19,17 +19,20 @@
  *
  */
 
-#include "Results.h"
-#include "FutureResult.h"
+#include "qpid/client/Results.h"
+#include "qpid/client/FutureResult.h"
 #include "qpid/framing/SequenceSet.h"
 
 using namespace qpid::framing;
-using namespace boost;
 
 namespace qpid {
 namespace client {
 
 Results::Results() {}
+
+Results::~Results() {
+  try { close(); } catch (const std::exception& /*e*/) { assert(0); }
+}
 
 void Results::close()
 {

@@ -19,8 +19,8 @@
  *
  */
 
-#include "APRBase.h"
-#include "APRPool.h"
+#include "qpid/sys/apr/APRBase.h"
+#include "qpid/sys/apr/APRPool.h"
 
 #include <boost/noncopyable.hpp>
 #include <apr_thread_mutex.h>

@@ -33,8 +33,10 @@ import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
+import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
@@ -102,10 +104,12 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         }
 
         getProtocolHandler().writeFrame(ackFrame);
+        _unacknowledgedMessageTags.remove(deliveryTag);
     }
 
     public void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
-            final AMQShortString exchangeName, final AMQDestination dest) throws AMQException, FailoverException
+                              final AMQShortString exchangeName, final AMQDestination dest,
+                              final boolean nowait) throws AMQException, FailoverException
     {
         getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createQueueBindBody
                                         (getTicket(),queueName,exchangeName,routingKey,false,arguments).
@@ -114,12 +118,23 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
-        getProtocolHandler().closeSession(this);
-        getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createChannelCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),
-                new AMQShortString("JMS client closing channel"), 0, 0).generateFrame(_channelId), 
-                                       ChannelCloseOkBody.class, timeout);
-        // When control resumes at this point, a reply will have been received that
-        // indicates the broker has closed the channel successfully.
+        // we also need to check the state manager for 08/09 as the
+        // _connection variable may not be updated in time by the error receiving
+        // thread.
+        // We can't close the session if we are alreadying in the process of
+        // closing/closed the connection.
+                
+        if (!(getProtocolHandler().getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSED)
+            || getProtocolHandler().getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSING)))
+        {
+
+            getProtocolHandler().closeSession(this);
+            getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createChannelCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),
+                                                                                                           new AMQShortString("JMS client closing channel"), 0, 0).generateFrame(_channelId),
+                                           ChannelCloseOkBody.class, timeout);
+            // When control resumes at this point, a reply will have been received that
+            // indicates the broker has closed the channel successfully.
+        }
     }
 
     public void sendCommit() throws AMQException, FailoverException
@@ -172,6 +187,11 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                 BasicRecoverSyncBody body = ((MethodRegistry_0_9)getMethodRegistry()).createBasicRecoverSyncBody(false);
                 _connection.getProtocolHandler().syncWrite(body.generateFrame(_channelId), BasicRecoverSyncOkBody.class);
             }
+            else if(getProtocolVersion().equals(ProtocolVersion.v0_91))
+            {
+                BasicRecoverSyncBody body = ((MethodRegistry_0_91)getMethodRegistry()).createBasicRecoverSyncBody(false);
+                _connection.getProtocolHandler().syncWrite(body.generateFrame(_channelId), BasicRecoverSyncOkBody.class);
+            }
             else
             {
                 throw new RuntimeException("Unsupported version of the AMQP Protocol: " + getProtocolVersion());
@@ -181,6 +201,12 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
     public void releaseForRollback()
     {
+        // Reject all the messages that have been received in this session and
+        // have not yet been acknowledged. Should look to remove
+        // _deliveredMessageTags and use _txRangeSet as used by 0-10.
+        // Otherwise messages will be able to arrive out of order to a second
+        // consumer on the queue. Whilst this is within the JMS spec it is not
+        // user friendly and avoidable.
         while (true)
         {
             Long tag = _deliveredMessageTags.poll();
@@ -190,11 +216,6 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
             }
 
             rejectMessage(tag, true);
-        }
-
-        if (_dispatcher != null)
-        {
-            _dispatcher.rollback();
         }
     }
 
@@ -297,13 +318,16 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     public void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final AMQProtocolHandler protocolHandler,
             final boolean nowait) throws AMQException, FailoverException
     {
-        ExchangeDeclareBody body = getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,false,false,false,false,nowait,null);
+        ExchangeDeclareBody body = getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,
+                                                                                 name.toString().startsWith("amq."),
+                                                                                 false,false,false,false,null);
         AMQFrame exchangeDeclare = body.generateFrame(_channelId);
 
         protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
     }
 
-    public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler) throws AMQException, FailoverException
+    public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+                                 final boolean nowait) throws AMQException, FailoverException
     {
         QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),amqd.getAMQQueueName(),false,amqd.isDurable(),amqd.isExclusive(),amqd.isAutoDelete(),false,null);
 
@@ -418,18 +442,11 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         getProtocolHandler().syncWrite(frame, TxRollbackOkBody.class);
     }
 
-     public TemporaryQueue createTemporaryQueue() throws JMSException
-    {
-        checkNotClosed();
-
-        return new AMQTemporaryQueue(this);
-    }
-
     public  TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
     {
 
         checkNotClosed();
-        AMQTopic origTopic = checkValidTopic(topic);
+        AMQTopic origTopic = checkValidTopic(topic, true);
         AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
         TopicSubscriberAdaptor<BasicMessageConsumer_0_8> subscriber = _subscriptions.get(name);
         if (subscriber != null)
@@ -493,7 +510,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
 
 
-    public void setPrefecthLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
+    public void setPrefetchLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
     {
         new FailoverRetrySupport<Object, AMQException>(
                 new FailoverProtectedOperation<Object, AMQException>()

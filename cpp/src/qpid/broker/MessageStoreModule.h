@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,11 +21,12 @@
 #ifndef _MessageStoreModule_
 #define _MessageStoreModule_
 
-#include "MessageStore.h"
-#include "Queue.h"
-#include "RecoveryManager.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/RecoveryManager.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -35,11 +36,12 @@ namespace broker {
  */
 class MessageStoreModule : public MessageStore
 {
-    MessageStore* store;
+    boost::shared_ptr<MessageStore> store;
   public:
-    MessageStoreModule(MessageStore* store);
+    MessageStoreModule(boost::shared_ptr<MessageStore>& store);
 
     bool init(const Options* options);
+    void truncateInit(const bool pushDownStoreFiles = false);
     std::auto_ptr<TransactionContext> begin();
     std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     void prepare(TPCTransactionContext& txn);
@@ -51,9 +53,9 @@ class MessageStoreModule : public MessageStore
     void destroy(PersistableQueue& queue);
     void create(const PersistableExchange& exchange, const framing::FieldTable& args);
     void destroy(const PersistableExchange& exchange);
-    void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+    void bind(const PersistableExchange& exchange, const PersistableQueue& queue,
               const std::string& key, const framing::FieldTable& args);
-    void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+    void unbind(const PersistableExchange& exchange, const PersistableQueue& queue,
                 const std::string& key, const framing::FieldTable& args);
     void create(const PersistableConfig& config);
     void destroy(const PersistableConfig& config);
@@ -61,7 +63,7 @@ class MessageStoreModule : public MessageStore
     void stage(const boost::intrusive_ptr<PersistableMessage>& msg);
     void destroy(PersistableMessage& msg);
     void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg, const std::string& data);
-    void loadContent(const qpid::broker::PersistableQueue& queue, 
+    void loadContent(const qpid::broker::PersistableQueue& queue,
                      const boost::intrusive_ptr<const PersistableMessage>& msg, std::string& data,
                      uint64_t offset, uint32_t length);
 
@@ -73,7 +75,8 @@ class MessageStoreModule : public MessageStore
                  const PersistableQueue& queue);
     uint32_t outstandingQueueAIO(const PersistableQueue& queue);
     void flush(const qpid::broker::PersistableQueue& queue);
-	 
+    bool isNull() const;
+
     ~MessageStoreModule();
 };
 

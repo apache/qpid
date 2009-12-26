@@ -19,8 +19,8 @@
  *
  */
 
-#include "SequenceSet.h"
-#include "Buffer.h"
+#include "qpid/framing/SequenceSet.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::framing;
@@ -46,6 +46,7 @@ void SequenceSet::encode(Buffer& buffer) const
 
 void SequenceSet::decode(Buffer& buffer)
 {
+    clear();
     uint16_t size = buffer.getShort();
     uint16_t count = size / RANGE_SIZE;//number of ranges
     if (size % RANGE_SIZE)
@@ -56,7 +57,7 @@ void SequenceSet::decode(Buffer& buffer)
     }
 }
 
-uint32_t SequenceSet::size() const {
+uint32_t SequenceSet::encodedSize() const {
     return 2 /*size field*/ + (rangesSize() * RANGE_SIZE);
 }
 

@@ -18,59 +18,35 @@
  * under the License.
  *
  */
-#include "LocalQueue.h"
+#include "qpid/client/LocalQueue.h"
+#include "qpid/client/LocalQueueImpl.h"
+#include "qpid/client/MessageImpl.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/FrameSet.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/client/PrivateImplRef.h"
+#include "qpid/client/SubscriptionImpl.h"
 
 namespace qpid {
 namespace client {
 
 using namespace framing;
 
-LocalQueue::LocalQueue(AckPolicy a) : autoAck(a) {}
-LocalQueue::~LocalQueue() {}
+typedef PrivateImplRef<LocalQueue> PI;
 
-Message LocalQueue::pop() { return get(); }
+LocalQueue::LocalQueue() { PI::ctor(*this, new LocalQueueImpl()); }
+LocalQueue::LocalQueue(const LocalQueue& x) : Handle<LocalQueueImpl>() { PI::copy(*this, x); }
+LocalQueue::~LocalQueue() { PI::dtor(*this); }
+LocalQueue& LocalQueue::operator=(const LocalQueue& x) { return PI::assign(*this, x); }
 
-Message LocalQueue::get() {
-    Message result;
-    bool ok = get(result, sys::TIME_INFINITE);
-    assert(ok); (void) ok;
-    return result;
-}
+Message LocalQueue::pop(sys::Duration timeout) { return impl->pop(timeout); }
 
-bool LocalQueue::get(Message& result, sys::Duration timeout) {
-    if (!queue)
-        throw ClosedException();
-    FrameSet::shared_ptr content;
-    bool ok = queue->pop(content, timeout);
-    if (!ok) return false;
-    if (content->isA<MessageTransferBody>()) {
-        result = Message(*content);
-        autoAck.ack(result, session);
-        return true;
-    }
-    else
-        throw CommandInvalidException(
-            QPID_MSG("Unexpected method: " << content->getMethod()));
-}
+Message LocalQueue::get(sys::Duration timeout) { return impl->get(timeout); }
 
-void LocalQueue::setAckPolicy(AckPolicy a) { autoAck=a; }
-AckPolicy& LocalQueue::getAckPolicy() { return autoAck; }
+bool LocalQueue::get(Message& result, sys::Duration timeout) { return impl->get(result, timeout); }
 
-bool LocalQueue::empty() const
-{ 
-    if (!queue)
-        throw ClosedException();
-    return queue->empty(); 
-}
-
-size_t LocalQueue::size() const
-{ 
-    if (!queue)
-        throw ClosedException();
-    return queue->size(); 
-}
+bool LocalQueue::empty() const { return impl->empty(); }
+size_t LocalQueue::size() const { return impl->size(); }
 
 }} // namespace qpid::client

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,15 +24,17 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
 #include <iostream>
-#include <alloca.h>
 
-using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(MessageTestSuite)
 
@@ -44,13 +46,12 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     string data1("abcdefg");
     string data2("hijklmn");
 
-    intrusive_ptr<Message> msg(new Message());
+    boost::intrusive_ptr<Message> msg(new Message());
 
-    AMQFrame method(in_place<MessageTransferBody>(
-                        ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
-    AMQFrame content1(in_place<AMQContentBody>(data1));
-    AMQFrame content2(in_place<AMQContentBody>(data2));
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
+    AMQFrame content1((AMQContentBody(data1)));
+    AMQFrame content2((AMQContentBody(data2)));
 
     msg->getFrames().append(method);
     msg->getFrames().append(header);
@@ -58,7 +59,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     msg->getFrames().append(content2);
 
     MessageProperties* mProps = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-    mProps->setContentLength(data1.size() + data2.size());        
+    mProps->setContentLength(data1.size() + data2.size());
     mProps->setMessageId(messageId);
     FieldTable applicationHeaders;
     applicationHeaders.setString("abc", "xyz");
@@ -71,7 +72,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     char* buff = static_cast<char*>(::alloca(msg->encodedSize()));
     Buffer wbuffer(buff, msg->encodedSize());
     msg->encode(wbuffer);
-        
+
     Buffer rbuffer(buff, msg->encodedSize());
     msg = new Message();
     msg->decodeHeader(rbuffer);
@@ -81,10 +82,11 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
     BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->getProperties<MessageProperties>()->getContentLength());
     BOOST_CHECK_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
-    BOOST_CHECK_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getString("abc"));
+    BOOST_CHECK_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("abc"));
     BOOST_CHECK_EQUAL((uint8_t) PERSISTENT, msg->getProperties<DeliveryProperties>()->getDeliveryMode());
     BOOST_CHECK(msg->isPersistent());
 }
 
 QPID_AUTO_TEST_SUITE_END()
 
+}} // namespace qpid::tests

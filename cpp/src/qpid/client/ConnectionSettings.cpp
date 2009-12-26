@@ -18,27 +18,28 @@
  * under the License.
  *
  */
-#include "ConnectionSettings.h"
+#include "qpid/client/ConnectionSettings.h"
 
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Socket.h"
-#include <sys/socket.h>
+#include "qpid/Version.h"
 
 namespace qpid {
 namespace client {
 
 ConnectionSettings::ConnectionSettings() :
+    protocol("tcp"),
     host("localhost"), 
     port(TcpAddress::DEFAULT_PORT),
-    username("guest"), 
-    password("guest"),
-    mechanism("PLAIN"),
     locale("en_US"),
     heartbeat(0),
     maxChannels(32767),
     maxFrameSize(65535),
     bounds(2),
-    tcpNoDelay(false)
+    tcpNoDelay(false),
+    service(qpid::saslName),
+    minSsf(0),
+    maxSsf(256)
 {}
 
 ConnectionSettings::~ConnectionSettings() {}
@@ -46,7 +47,7 @@ ConnectionSettings::~ConnectionSettings() {}
 void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
 {
     if (tcpNoDelay) {
-        socket.setTcpNoDelay(tcpNoDelay);
+        socket.setTcpNoDelay();
         QPID_LOG(info, "Set TCP_NODELAY");
     }
 }

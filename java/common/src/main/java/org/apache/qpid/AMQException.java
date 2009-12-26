@@ -90,4 +90,33 @@ public class AMQException extends Exception
     {
         return true;
     }
+
+    /**
+     * Rethrown this exception as a new exception.
+     *
+     * Attempt to create a new exception of the same class if they hav the default constructor of:
+     * {AMQConstant.class, String.class, Throwable.class}
+     *
+     * Individual subclasses may override as requried to create a new instance.
+     * 
+     */
+    public AMQException cloneForCurrentThread()
+    {
+        Class amqeClass = this.getClass();
+        Class<?>[] paramClasses = {AMQConstant.class, String.class, Throwable.class};
+        Object[] params = {getErrorCode(), getMessage(), this};
+
+        AMQException newAMQE;
+
+        try
+        {
+            newAMQE = (AMQException) amqeClass.getConstructor(paramClasses).newInstance(params);
+        }
+        catch (Exception creationException)
+        {
+            newAMQE = new AMQException(getErrorCode(), getMessage(), this);
+        }
+
+        return newAMQE;
+    }
 }

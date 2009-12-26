@@ -24,9 +24,15 @@ import static org.apache.qpid.management.ui.Constants.ERROR_SERVER_CONNECTION;
 
 import java.io.IOException;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
 import org.apache.qpid.management.ui.Constants;
+import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.core.runtime.IStatus;
@@ -43,10 +49,13 @@ public class AbstractAction
     
     protected IWorkbenchWindow _window;
     
-    public static final String RMI_SASL_ERROR = "non-JRMP server";
-    public static final String SECURITY_FAILURE = "User authentication has failed";   
-    public static final String SERVER_UNAVAILABLE = "Qpid server is not running";
-   
+    public static final String INVALID_PERSPECTIVE = "Invalid Perspective";
+    public static final String CHANGE_PERSPECTIVE = "Please use the Qpid Management Perspective";
+    
+    private static final String SSL_EMPTY_TRUSTANCHORS = "the trustAnchors parameter must be non-empty";
+    private static final String SSL_UNABLE_TO_FIND_CERTPATH = "sun.security.provider.certpath.SunCertPathBuilderException: " +
+    		                                    "unable to find valid certification path to requested target";
+      
     /**
      * We will cache window object in order to
      * be able to provide parent shell for the message dialog.
@@ -71,52 +80,127 @@ public class AbstractAction
         return _navigationView;
     }
     
-    
     protected void handleException(Throwable ex, String title, String msg)
     {
-        MBeanUtility.printStackTrace(ex);
-        if (msg == null)
+        //ensure first that the exception is not due to running in the wrong eclipse perspective
+        NavigationView view = (NavigationView)_window.getActivePage().findView(NavigationView.ID);
+        if (view == null)
         {
-            if (ex instanceof IOException)
-            {
-                if ((ex.getMessage() != null) && (ex.getMessage().indexOf(RMI_SASL_ERROR) != -1))
-                {
-                    msg = SECURITY_FAILURE;
-                }
-                else
-                {
-                    msg = SERVER_UNAVAILABLE;
-                }
-            }
-            else if (ex instanceof SecurityException)
-            {
-                msg = SECURITY_FAILURE;
-            }
-            else
-            {
-                msg = ex.getMessage();
-            }
+            IStatus status = new Status(IStatus.WARNING, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
+                    IStatus.OK, CHANGE_PERSPECTIVE, null); 
+            ErrorDialog.openError(_window.getShell(), "Warning", INVALID_PERSPECTIVE, status);
+            return;
         }
-        
-        if ((msg == null) && (ex.getCause() != null))
-        {
-            msg = ex.getCause().getMessage();
-        }
-        
-        if (msg == null)
-        {
-            msg = ERROR_SERVER_CONNECTION;
-        }
-        
+
+        //default title if none given
         if (title == null)
         {
             title = ERROR_SERVER_CONNECTION;
         }
-        IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                    IStatus.OK, msg, null); 
-        ErrorDialog.openError(_window.getShell(), "Error", title, status);
+
+        //determine the error message to display
+        if (msg == null)
+        {
+            if (ex instanceof SSLException)
+            {
+                if (ex instanceof SSLKeyException)
+                {
+                    msg = "SSL key was invalid, please check the certificate configuration.";
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+                else if (ex instanceof SSLPeerUnverifiedException)
+                {
+                    msg = "SSL peer identity could not be verified, please ensure valid certificate configuration.";
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+                else if (ex instanceof SSLHandshakeException)
+                {
+                    if (ex.getMessage().contains(SSL_UNABLE_TO_FIND_CERTPATH))
+                    {
+                        msg = "Unable to certify the provided SSL certificate using the current SSL trust store.";
+                    }
+                    else
+                    {
+                        //cause unknown, provide a trace too
+                        MBeanUtility.printStackTrace(ex);
+                        msg = "SSL handhshake error.";
+                    }
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+                else
+                {
+                    //general SSL Exception.
+                    if (ex.getMessage().contains(SSL_EMPTY_TRUSTANCHORS))
+                    {
+                        msg = "Unable to locate the specified SSL certificate trust store, please check the configuration.";
+                    }
+                    else
+                    {
+                        //cause unknown, print stack trace
+                        MBeanUtility.printStackTrace(ex);
+                        msg = "SSL connection error.";
+                    }
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+            }
+            else if (ex instanceof IOException || ex instanceof SecurityException )
+            {
+                msg = ex.getMessage();
+                
+                //if msg is still null, try reporting the cause.
+                if ((msg == null) && (ex.getCause() != null))
+                {
+                    msg = ex.getCause().getMessage();
+                }
+                
+                //Display error dialogue and return
+                displayErrorDialogue(msg, title);
+                return;
+            }
+            else if (ex instanceof ManagementConsoleException)
+            {
+                msg = ex.getMessage();
+                displayErrorDialogue(msg, title);
+                return;
+            }
+            else
+            {
+                //Unknown exception type/reason. 
+                msg = ex.getMessage();
+            }
+
+            //if msg is still null, try reporting the cause.
+            if ((msg == null) && (ex.getCause() != null))
+            {
+                msg = ex.getCause().getMessage();
+            }
+
+            //failing all else, default non-descript error message.
+            if (msg == null)
+            {
+                msg = "An unknown error has occured.";
+            }
+        }
+
+        //Display error dialogue and print the exception stack trace
+        MBeanUtility.printStackTrace(ex);
+        displayErrorDialogue(msg, title);
     }
     
+    private void displayErrorDialogue(String msg, String title)
+    {
+        IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
+                IStatus.OK, msg, null); 
+        ErrorDialog.openError(_window.getShell(), "Error", title, status);      
+    }
 
     /**
      * Selection in the workbench has been changed. We can change the state of the 'real' action here

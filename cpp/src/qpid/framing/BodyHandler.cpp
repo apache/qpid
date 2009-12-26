@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-#include "BodyHandler.h"
-#include "AMQMethodBody.h"
-#include "AMQHeaderBody.h"
-#include "AMQContentBody.h"
-#include "AMQHeartbeatBody.h"
+#include "qpid/framing/BodyHandler.h"
+#include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/AMQContentBody.h"
+#include "qpid/framing/AMQHeartbeatBody.h"
 #include <boost/cast.hpp>
 #include "qpid/framing/reply_exceptions.h"
 

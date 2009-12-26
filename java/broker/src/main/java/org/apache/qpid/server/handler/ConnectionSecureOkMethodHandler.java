@@ -25,14 +25,16 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ConnectionSecureBody;
+import org.apache.qpid.framing.ConnectionSecureOkBody;
+import org.apache.qpid.framing.ConnectionTuneBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.HeartbeatConfig;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -92,7 +94,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 ConnectionTuneBody tuneBody =
                         methodRegistry.createConnectionTuneBody(0xFFFF,
                                                                 ConnectionStartOkMethodHandler.getConfiguredFrameSize(),
-                                                                HeartbeatConfig.getInstance().getDelay());
+                                                                ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
                 session.writeFrame(tuneBody.generateFrame(0));
                 session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));
                 disposeSaslServer(session);

@@ -1,19 +1,29 @@
 #!/bin/sh
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
 # Run the python tests.
+source ./test_env.sh
+test -d $PYTHON_DIR || { echo "Skipping python tests, no python dir."; exit 0; }
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
-MY_DIR=`dirname \`which $0\``
-QPID_PYTHON_DIR=${QPID_PYTHON_DIR:-${MY_DIR}/../../../python}
+FAILING=${FAILING:-/dev/null}
 
-run() {
-    SPEC=$1
-    FAILING=$2
-    ./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || { echo "FAIL python tests for $SPEC"; exit 1; }
-}
-
-if test -d ${QPID_PYTHON_DIR} ;  then
-    cd ${QPID_PYTHON_DIR}
-    run 0-10-errata cpp_failing_0-10.txt
-else
-    echo "WARNING: No python tests. $QPID_PYTHON_DIR not found."
-fi
+python $QPID_PYTHON_TEST -b localhost:$QPID_PORT -I $FAILING $PYTHON_TESTS || exit 1

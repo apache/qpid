@@ -30,16 +30,16 @@ public class FailoverSingleServer implements FailoverMethod
     private static final Logger _logger = LoggerFactory.getLogger(FailoverSingleServer.class);
 
     /** The default number of times to rety a conection to this server */
-    public static final int DEFAULT_SERVER_RETRIES = 1;
+    public static final int DEFAULT_SERVER_RETRIES = 0;
 
     /** The details of the Single Server */
     private BrokerDetails _brokerDetail;
 
     /** The number of times to retry connecting to the sever */
-    private int _retries;
+    protected int _retries;
 
     /** The current number of attempts made to the server */
-    private int _currentRetries;
+    protected int _currentRetries = 0;
 
 
     public FailoverSingleServer(ConnectionURL connectionDetails)
@@ -61,7 +61,7 @@ public class FailoverSingleServer implements FailoverMethod
 
     public void reset()
     {
-        _currentRetries = -1;
+        _currentRetries = 0;
     }
 
     public boolean failoverAllowed()
@@ -157,7 +157,7 @@ public class FailoverSingleServer implements FailoverMethod
 
     public String toString()
     {
-        return "SingleServer:\n" +
+        return methodName()+":\n" +
                "Max Retries:" + _retries +
                "\nCurrent Retry:" + _currentRetries +
                "\n" + _brokerDetail + "\n";

@@ -92,6 +92,11 @@ public interface PrincipalDatabase
      */
     Principal getUser(String username);
 
+    /**
+     * Reload the database to its ensure contents are up to date
+     * @throws IOException If there was an error reloading the database
+     */
+    void reload() throws IOException;
 
     public Map<String, AuthenticationProviderInitialiser> getMechanisms();
 

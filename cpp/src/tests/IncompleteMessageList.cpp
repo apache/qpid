@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,9 @@
 
 #include "unit_test.h"
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(IncompleteMessageListTestSuite)
 
 using namespace qpid::broker;
@@ -41,7 +44,7 @@ struct Checker
     Checker(uint start, uint end) {
         for (uint i = start; i <= end; i++) {
             ids.push_back(i);
-        }        
+        }
     }
 
     Checker& expect(const SequenceNumber& id) {
@@ -49,11 +52,11 @@ struct Checker
         return *this;
     }
 
-    void operator()(boost::intrusive_ptr<Message> msg) { 
+    void operator()(boost::intrusive_ptr<Message> msg) {
         BOOST_CHECK(!ids.empty());
         BOOST_CHECK_EQUAL(msg->getCommandId(), ids.front());
         ids.pop_front();
-    } 
+    }
 };
 
 QPID_AUTO_TEST_CASE(testProcessSimple)
@@ -73,6 +76,7 @@ QPID_AUTO_TEST_CASE(testProcessSimple)
 
 QPID_AUTO_TEST_CASE(testProcessWithIncomplete)
 {
+    Queue::shared_ptr queue;
     IncompleteMessageList list;
     SequenceNumber counter(1);
     boost::intrusive_ptr<Message> middle;
@@ -82,7 +86,7 @@ QPID_AUTO_TEST_CASE(testProcessWithIncomplete)
         list.add(msg);
         if (i == 2) {
             //mark a message in the middle as incomplete
-            msg->enqueueAsync();
+            msg->enqueueAsync(queue, 0);
             middle = msg;
         }
     }
@@ -90,7 +94,7 @@ QPID_AUTO_TEST_CASE(testProcessWithIncomplete)
     list.process(Checker(1, 2), false);
     //mark message complete and re-process to get remaining messages sent to listener
     middle->enqueueComplete();
-    list.process(Checker(3, 5), false);    
+    list.process(Checker(3, 5), false);
 }
 
 
@@ -126,3 +130,5 @@ QPID_AUTO_TEST_CASE(testSyncProcessWithIncomplete)
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

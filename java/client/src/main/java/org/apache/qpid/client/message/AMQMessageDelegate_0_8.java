@@ -46,7 +46,7 @@ import java.util.Enumeration;
 import java.util.UUID;
 import java.net.URISyntaxException;
 
-public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
+public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 {
     private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
 
@@ -65,6 +65,16 @@ public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
     private AMQSession _session;
     private final long _deliveryTag;
 
+    // The base set of items that needs to be set. 
+    private AMQMessageDelegate_0_8(BasicContentHeaderProperties properties, long deliveryTag)
+    {
+        _contentHeaderProperties = properties;
+        _deliveryTag = deliveryTag;
+        _readableProperties = (_contentHeaderProperties != null);
+        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
+    }
+
+    // Used for the creation of new messages
     protected AMQMessageDelegate_0_8()
     {
         this(new BasicContentHeaderProperties(), -1);
@@ -73,6 +83,7 @@ public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
 
     }
 
+    // Used when generating a received message object
     protected AMQMessageDelegate_0_8(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
                                      AMQShortString routingKey) 
     {
@@ -80,41 +91,33 @@ public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
 
         Integer type = contentHeader.getHeaders().getInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
 
-        if(type == null)
+        AMQDestination dest = null;
+
+        // If we have a type set the attempt to use that.
+        if (type != null)
         {
-            type = AMQDestination.UNKNOWN_TYPE;
+            switch (type.intValue())
+            {
+                case AMQDestination.QUEUE_TYPE:
+                    dest = new AMQQueue(exchange, routingKey, routingKey);
+                    break;
+                case AMQDestination.TOPIC_TYPE:
+                    dest = new AMQTopic(exchange, routingKey, null);
+                    break;
+                default:
+                    // Use the generateDestination method
+                    dest = null;
+            }
         }
 
-        AMQDestination dest;
-
-        switch(type.intValue())
+        if (dest == null)
         {
-            case AMQDestination.QUEUE_TYPE:
-                dest = new AMQQueue(exchange, routingKey, routingKey);
-                break;
-            case  AMQDestination.TOPIC_TYPE:
-                dest = new AMQTopic(exchange, routingKey, null);
-                break;
-            default:
-                dest = new AMQUndefinedDestination(exchange, routingKey, null);
+            dest = generateDestination(exchange, routingKey);
         }
-        
 
-
-        // Destination dest = AMQDestination.createDestination(url);
         setJMSDestination(dest);
-
-
-
     }
 
-    protected AMQMessageDelegate_0_8(BasicContentHeaderProperties properties, long deliveryTag)
-    {
-        _contentHeaderProperties = properties;
-        _deliveryTag = deliveryTag;
-        _readableProperties = (_contentHeaderProperties != null);
-        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
-    }
 
 
     public String getJMSMessageID() throws JMSException
@@ -124,12 +127,18 @@ public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
 
     public void setJMSMessageID(String messageId) throws JMSException
     {
-        getContentHeaderProperties().setMessageId(messageId);
+        if (messageId != null)
+        {
+            getContentHeaderProperties().setMessageId(messageId);
+        }
     }
 
     public void setJMSMessageID(UUID messageId) throws JMSException
     {
-        getContentHeaderProperties().setMessageId("ID:" + messageId);
+        if (messageId != null)
+        {
+            getContentHeaderProperties().setMessageId("ID:" + messageId);
+        }
     }
 
 
@@ -196,7 +205,8 @@ public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
     {
         if (destination == null)
         {
-            throw new IllegalArgumentException("Null destination not allowed");
+            getContentHeaderProperties().setReplyTo((String) null);
+            return; // We're done here
         }
 
         if (!(destination instanceof AMQDestination))

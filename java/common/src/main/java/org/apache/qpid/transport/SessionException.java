@@ -27,20 +27,35 @@ import java.util.List;
  *
  */
 
-public class SessionException extends RuntimeException
+public class SessionException extends TransportException
 {
 
-    private List<ExecutionException> exceptions;
+    private ExecutionException exception;
 
-    public SessionException(List<ExecutionException> exceptions)
+    public SessionException(String message, ExecutionException exception, Throwable cause)
     {
-        super(exceptions.isEmpty() ? "" : exceptions.toString());
-        this.exceptions = exceptions;
+        super(message, cause);
+        this.exception = exception;
     }
 
-    public List<ExecutionException> getExceptions()
+    public SessionException(ExecutionException exception)
     {
-        return exceptions;
+        this(String.valueOf(exception), exception, null);
+    }
+
+    public SessionException(String message)
+    {
+        this(message, null, null);
+    }
+
+    public ExecutionException getException()
+    {
+        return exception;
+    }
+
+    @Override public void rethrow()
+    {
+        throw new SessionException(getMessage(), exception, this);
     }
 
 }

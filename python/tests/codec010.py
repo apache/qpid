@@ -17,31 +17,54 @@
 # under the License.
 #
 
+import time
+
 from unittest import TestCase
-from qpid.spec010 import load
 from qpid.codec010 import StringCodec
-from qpid.testlib import testrunner
+from qpid.datatypes import timestamp, uuid4
+from qpid.ops import PRIMITIVE
 
 class CodecTest(TestCase):
 
-  def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10.xml"))
-
-  def check(self, type, value):
-    t = self.spec[type]
-    sc = StringCodec(self.spec)
-    t.encode(sc, value)
-    decoded = t.decode(sc)
-    assert decoded == value, "%s, %s" % (decoded, value)
+  def check(self, type, value, compare=True):
+    t = PRIMITIVE[type]
+    sc = StringCodec()
+    sc.write_primitive(t, value)
+    decoded = sc.read_primitive(t)
+    if compare:
+      assert decoded == value, "%s, %s" % (decoded, value)
+    return decoded
 
   def testMapString(self):
     self.check("map", {"string": "this is a test"})
+
+  def testMapUnicode(self):
+    self.check("map", {"unicode": u"this is a unicode test"})
+
+  def testMapBinary(self):
+    self.check("map", {"binary": "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5"})
+
+  def testMapBuffer(self):
+    s = "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5"
+    dec = self.check("map", {"buffer": buffer(s)}, False)
+    assert dec["buffer"] == s
 
   def testMapInt(self):
     self.check("map", {"int": 3})
 
   def testMapLong(self):
     self.check("map", {"long": 2**32})
+    self.check("map", {"long": 1 << 34})
+    self.check("map", {"long": -(1 << 34)})
+
+  def testMapTimestamp(self):
+    decoded = self.check("map", {"timestamp": timestamp(0)})
+    assert isinstance(decoded["timestamp"], timestamp)
+
+  def testMapDatetime(self):
+    decoded = self.check("map", {"datetime": timestamp(0).datetime()}, compare=False)
+    assert isinstance(decoded["datetime"], timestamp)
+    assert decoded["datetime"] == 0.0
 
   def testMapNone(self):
     self.check("map", {"none": None})
@@ -52,13 +75,21 @@ class CodecTest(TestCase):
   def testMapList(self):
     self.check("map", {"list": [1, "two", 3.0, -4]})
 
+  def testMapUUID(self):
+    self.check("map", {"uuid": uuid4()})
+
   def testMapAll(self):
-    self.check("map", {"string": "this is a test",
-                       "int": 3,
-                       "long": 2**32,
-                       "none": None,
-                       "map": {"string": "nested map"},
-                       "list": [1, "two", 3.0, -4]})
+    decoded = self.check("map", {"string": "this is a test",
+                                 "unicode": u"this is a unicode test",
+                                 "binary": "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5",
+                                 "int": 3,
+                                 "long": 2**32,
+                                 "timestamp": timestamp(0),
+                                 "none": None,
+                                 "map": {"string": "nested map"},
+                                 "list": [1, "two", 3.0, -4],
+                                 "uuid": uuid4()})
+    assert isinstance(decoded["timestamp"], timestamp)
 
   def testMapEmpty(self):
     self.check("map", {})
@@ -86,3 +117,17 @@ class CodecTest(TestCase):
 
   def testArrayNone(self):
     self.check("array", None)
+
+  def testInt16(self):
+    self.check("int16", 3)
+    self.check("int16", -3)
+
+  def testInt64(self):
+    self.check("int64", 3)
+    self.check("int64", -3)
+    self.check("int64", 1<<34)
+    self.check("int64", -(1<<34))
+
+  def testDatetime(self):
+    self.check("datetime", timestamp(0))
+    self.check("datetime", timestamp(long(time.time())))

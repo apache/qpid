@@ -21,30 +21,29 @@
 package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
-import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.EncoderException;
+import org.apache.qpid.util.FileUtils;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.io.PrintStream;
-import java.util.regex.Pattern;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.concurrent.locks.ReentrantLock;
 import java.security.Principal;
-import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -64,8 +63,8 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
     private Map<String, AuthenticationProviderInitialiser> _saslServers;
 
     AMQUserManagementMBean _mbean;
-    private static final String DEFAULT_ENCODING = "utf-8";
-    private Map<String, User> _users = new HashMap<String, User>();
+    public static final String DEFAULT_ENCODING = "utf-8";
+    private Map<String, HashedUser> _users = new HashMap<String, HashedUser>();
     private ReentrantLock _userUpdate = new ReentrantLock();
 
     public Base64MD5PasswordFilePrincipalDatabase()
@@ -80,6 +79,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         CRAMMD5HashedInitialiser cram = new CRAMMD5HashedInitialiser();
         cram.initialise(this);
         _saslServers.put(cram.getMechanismName(), cram);
+
+        //Add the Hex initialiser
+        CRAMMD5HexInitialiser cramHex = new CRAMMD5HexInitialiser();
+        cramHex.initialise(this);
+        _saslServers.put(cramHex.getMechanismName(), cramHex);
 
         //fixme The PDs should setup a PD Mangement MBean
 //        try
@@ -113,6 +117,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     /**
      * SASL Callback Mechanism - sets the Password in the PasswordCallback based on the value in the PasswordFile
+     * If you want to change the password for a user, use updatePassword instead.
      *
      * @param principal The Principal to set the password for
      * @param callback  The PasswordCallback to call setPassword on
@@ -155,21 +160,66 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
     public boolean verifyPassword(String principal, char[] password) throws AccountNotFoundException
     {
         char[] pwd = lookupPassword(principal);
-
-        int index = 0;
-        boolean verified = true;
-
-        while (verified & index < password.length)
+        
+        if (pwd == null)
         {
-            verified = (pwd[index] == password[index]);
-            index++;
+            throw new AccountNotFoundException("Unable to lookup the specfied users password");
         }
-        return verified;
+        
+        byte[] byteArray = new byte[password.length];
+        int index = 0;
+        for (char c : password)
+        {
+            byteArray[index++] = (byte) c;
+        }
+        
+        byte[] MD5byteArray;
+        try
+        {
+            MD5byteArray = HashedUser.getMD5(byteArray);
+        }
+        catch (Exception e1)
+        {
+            _logger.warn("Unable to hash password for user '" + principal + "' for comparison");
+            return false;
+        }
+        
+        char[] hashedPassword = new char[MD5byteArray.length];
+
+        index = 0;
+        for (byte c : MD5byteArray)
+        {
+            hashedPassword[index++] = (char) c;
+        }
+
+        return compareCharArray(pwd, hashedPassword);
+    }
+    
+    private boolean compareCharArray(char[] a, char[] b)
+    {
+        boolean equal = false;
+        if (a.length == b.length)
+        {
+            equal = true;
+            int index = 0;
+            while (equal && index < a.length)
+            {
+                equal = a[index] == b[index];
+                index++;
+            }
+        }
+        return equal;
     }
 
+    /**
+     * Changes the password for the specified user
+     * 
+     * @param principal to change the password for
+     * @param password plaintext password to set the password too
+     */
     public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
     {
-        User user = _users.get(principal.getName());
+        HashedUser user = _users.get(principal.getName());
 
         if (user == null)
         {
@@ -182,7 +232,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             {
                 _userUpdate.lock();
                 char[] orig = user.getPassword();
-                user.setPassword(password);
+                user.setPassword(password,false);
 
                 try
                 {
@@ -193,7 +243,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     _logger.error("Unable to save password file, password change for user'"
                                   + principal + "' will revert at restart");
                     //revert the password change
-                    user.setPassword(orig);
+                    user.setPassword(orig,true);
                     return false;
                 }
                 return true;
@@ -219,7 +269,17 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return false;
         }
 
-        User user = new User(principal.getName(), password);
+        HashedUser user;
+        try
+        {
+            user = new HashedUser(principal.getName(), password);
+        }
+        catch (Exception e1)
+        {
+            _logger.warn("Unable to create new user '" + principal.getName() + "'");
+            return false;
+        }
+
 
         try
         {
@@ -249,7 +309,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
     {
-        User user = _users.get(principal.getName());
+        HashedUser user = _users.get(principal.getName());
 
         if (user == null)
         {
@@ -284,7 +344,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         return true;
     }
 
-
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
@@ -314,7 +373,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
      */
     private char[] lookupPassword(String name)
     {
-        User user = _users.get(name);
+        HashedUser user = _users.get(name);
         if (user == null)
         {
             return null;
@@ -324,7 +383,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return user.getPassword();
         }
     }
-
 
     private void loadPasswordFile() throws IOException
     {
@@ -347,7 +405,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                         continue;
                     }
 
-                    User user = new User(result);
+                    HashedUser user = new HashedUser(result);
                     _logger.info("Created user:" + user);
                     _users.put(user.getName(), user);
                 }
@@ -377,11 +435,17 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
             BufferedReader reader = null;
             PrintStream writer = null;
-            File tmp = new File(_passwordFile.getAbsolutePath() + ".tmp");
-            if (tmp.exists())
+            
+            Random r = new Random();
+            File tmp;
+            do
             {
-                tmp.delete();
+                tmp = new File(_passwordFile.getPath() + r.nextInt() + ".tmp");
             }
+            while(tmp.exists());
+            
+            tmp.deleteOnExit();
+
             try
             {
                 writer = new PrintStream(tmp);
@@ -394,10 +458,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     if (result == null || result.length < 2 || result[0].startsWith("#"))
                     {
                         writer.write(line.getBytes(DEFAULT_ENCODING));
+                        writer.println();
                         continue;
                     }
 
-                    User user = _users.get(result[0]);
+                    HashedUser user = _users.get(result[0]);
 
                     if (user == null)
                     {
@@ -415,7 +480,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                         {
                             try
                             {
-                                byte[] encodedPassword = user.getEncodePassword();
+                                byte[] encodedPassword = user.getEncodedPassword();
 
                                 writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
                                 writer.write(encodedPassword);
@@ -433,14 +498,14 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     }
                 }
 
-                for (User user : _users.values())
+                for (HashedUser user : _users.values())
                 {
                     if (user.isModified())
                     {
                         byte[] encodedPassword;
                         try
                         {
-                            encodedPassword = user.getEncodePassword();
+                            encodedPassword = user.getEncodedPassword();
                             writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
                             writer.write(encodedPassword);
                             writer.println();
@@ -453,6 +518,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     }
                 }
             }
+            catch(IOException e)
+            {
+                _logger.error("Unable to create the new password file: " + e);
+                throw new IOException("Unable to create the new password file" + e);
+            }
             finally
             {
                 if (reader != null)
@@ -464,16 +534,35 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 {
                     writer.close();
                 }
+            }
+            
+            // Swap temp file to main password file.
+            File old = new File(_passwordFile.getAbsoluteFile() + ".old");
+            if (old.exists())
+            {
+                old.delete();
+            }
+            
+            if(!_passwordFile.renameTo(old))
+            {
+                //unable to rename the existing file to the backup name 
+                _logger.error("Could not backup the existing password file");
+                throw new IOException("Could not backup the existing password file");
+            }
 
-                // Swap temp file to main password file.
-                File old = new File(_passwordFile.getAbsoluteFile() + ".old");
-                if (old.exists())
+            if(!tmp.renameTo(_passwordFile))
+            {
+                //failed to rename the new file to the required filename
+                
+                if(!old.renameTo(_passwordFile))
                 {
-                    old.delete();
+                    //unable to return the backup to required filename
+                    _logger.error("Could not rename the new password file into place, and unable to restore original file");
+                    throw new IOException("Could not rename the new password file into place, and unable to restore original file");
                 }
-                _passwordFile.renameTo(old);
-                tmp.renameTo(_passwordFile);
-                tmp.delete();
+                
+                _logger.error("Could not rename the new password file into place");
+                throw new IOException("Could not rename the new password file into place");
             }
         }
         finally
@@ -485,114 +574,9 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    private class User implements Principal
+    public void reload() throws IOException
     {
-        String _name;
-        char[] _password;
-        byte[] _encodedPassword = null;
-        private boolean _modified = false;
-        private boolean _deleted = false;
-
-        User(String[] data) throws UnsupportedEncodingException
-        {
-            if (data.length != 2)
-            {
-                throw new IllegalArgumentException("User Data should be lenght 2, username, password");
-            }
-
-            _name = data[0];
-
-            byte[] encoded_password = data[1].getBytes(DEFAULT_ENCODING);
-
-            Base64 b64 = new Base64();
-            byte[] decoded = b64.decode(encoded_password);
-
-            _encodedPassword = encoded_password;
-
-            _password = new char[decoded.length];
-
-            int index = 0;
-            for (byte c : decoded)
-            {
-                _password[index++] = (char) c;
-            }
-        }
-
-        public User(String name, char[] password)
-        {
-            _name = name;
-            setPassword(password);
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public String toString()
-        {
-            if (_logger.isDebugEnabled())
-            {
-                return getName() + ((_encodedPassword == null) ? "" : ":" + new String(_encodedPassword));
-            }
-            else
-            {
-                return _name;
-            }
-        }
-
-        char[] getPassword()
-        {
-            return _password;
-        }
-
-        void setPassword(char[] password)
-        {
-            _password = password;
-            _modified = true;
-            _encodedPassword = null;
-        }
-
-
-        byte[] getEncodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
-        {
-            if (_encodedPassword == null)
-            {
-                encodePassword();
-            }
-            return _encodedPassword;
-        }
-
-        private void encodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
-        {
-            byte[] byteArray = new byte[_password.length];
-            int index = 0;
-            for (char c : _password)
-            {
-                byteArray[index++] = (byte) c;
-            }
-            _encodedPassword = (new Base64()).encode(byteArray);
-        }
-
-        public boolean isModified()
-        {
-            return _modified;
-        }
-
-        public boolean isDeleted()
-        {
-            return _deleted;
-        }
-
-        public void delete()
-        {
-            _deleted = true;
-        }
-
-        public void saved()
-        {
-            _modified = false;
-        }
-
+        loadPasswordFile();
     }
+
 }

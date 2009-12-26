@@ -20,29 +20,32 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import java.util.HashMap;
+import java.util.LinkedList;
+
+import javax.management.MBeanServerConnection;
 
 import static org.apache.qpid.management.ui.Constants.*;
+
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
+import org.apache.qpid.management.ui.actions.BackAction;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.model.AttributeData;
-import org.apache.qpid.management.ui.model.OperationData;
-import org.apache.qpid.management.ui.model.OperationDataModel;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Form;
@@ -51,14 +54,10 @@ import org.eclipse.ui.part.ViewPart;
 
 /**
  * MBean View create appropriate view based on the user selection on the Navigation View.
- * Create TabFolder for all MBeans and displays the attribtues and method tabs.
- * @author Bhupendra Bhardwaj
- *
  */
 public class MBeanView extends ViewPart
 {
     public static final String ID = "org.apache.qpid.management.ui.mbeanView";
-    private static final String CONTROLLER = "CONTROLLER";
     
     private FormToolkit  _toolkit = null;
     private Form _form = null;
@@ -67,15 +66,18 @@ public class MBeanView extends ViewPart
     private TreeObject _selectedNode = null;
     private ManagedBean _mbean = null;
     private static String _virtualHostName = null;
-    // This map contains a TabFolder for each kind of MBean.
-    // TabFolder is mapped with mbeantype(Connection, Queue and Exchange)
-    private HashMap<String, TabFolder> tabFolderMap = new HashMap<String, TabFolder>();
-    private ISelectionListener selectionListener = new SelectionListenerImpl();
+    private static MBeanServerConnection _mbsc = null;
+    private TabFolder _tabFolder = null;
+    private ISelectionListener _selectionListener = new SelectionListenerImpl();
 
     // TabFolder to list all the mbeans for a given mbeantype(eg Connection, Queue, Exchange)
-    private TabFolder typeTabFolder = null;
+    private TabFolder _typeTabFolder = null;
     
-    private TabFolder notificationTabFolder = null;
+    private TabFolder _notificationTabFolder = null;
+
+    private LinkedList<Object> _backHistory;
+    private BackAction _backAction;
+    
     /*
      * Listener for the selection events in the navigation view
      */ 
@@ -93,16 +95,84 @@ public class MBeanView extends ViewPart
             // mbean should be set to null. A selection done on the navigation view can be either an mbean or
             // an mbeantype. For mbeantype selection(eg Connection, Queue, Exchange) _mbean will remain null.
             _mbean = null;
-            setInvisible();
+            clearView();
+            
+            //clear the back history, it is only for use when opening subsequent mbeans not in the nav tree
+            _backHistory.clear();
+            _backAction.setEnabled(false);
             
             // If a selected node(mbean) gets unregistered from mbean server, mbeanview should 
             // make the tabfolber for that mbean invisible
-            if (_selectedNode == null)            
+            if (_selectedNode == null)
+            {
                 return;
+            }
             
             setServer();
-            refreshMBeanView();
-            setFormTitle();            
+            
+            if(!ApplicationRegistry.isServerConnected(_server))
+            {
+                return;
+            }
+            
+            if (MBEAN.equals(_selectedNode.getType()))
+            {
+                _mbean = (ManagedBean)_selectedNode.getManagedObject();
+            }
+            
+            setFormTitle();                
+            showRelevantTabView();
+        }
+    }
+    
+    public void openMBean(ManagedBean mbean)
+    {
+        openMBean(mbean, false);
+    }
+    
+    private void openMBean(ManagedBean mbean, boolean undoing)
+    {
+        if(mbean == null)
+        {
+            return;
+        }
+        
+        //if an mbean is about to be opened (but not returning to using back) from the mbean view,
+        //then record the current viewed area/object as a means of back history
+        if(!undoing)
+        {
+            if(_backHistory.isEmpty())
+            {
+                //ensure the button is enabled if this is to be the first history item
+                _backAction.setEnabled(true);
+            }
+            
+            if(_mbean == null)
+            {
+                //queue etc selection area is open, record the tree object
+                _backHistory.addLast(_selectedNode);
+            }
+            else
+            {
+                _backHistory.addLast(_mbean); 
+            }
+        }
+        
+        _mbean = mbean;
+        
+        try
+        {
+            clearView();
+            
+            setFormTitle();
+            showMBean(mbean);
+            
+            _form.layout(true);
+            _form.getBody().layout(true, true);
+        }
+        catch(Exception ex)
+        {
+            MBeanUtility.handleException(mbean, ex);
         }
     }
     
@@ -131,32 +201,58 @@ public class MBeanView extends ViewPart
         _form.setText(_formText);
     }
     
-    public void refreshMBeanView()
+    public void showRelevantTabView()
     {
         try
         {
-            if (NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
-                NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
+            if (_selectedNode == null)
             {
                 return;
             }
-            else if (NODE_TYPE_TYPEINSTANCE.equals(_selectedNode.getType()))
+            
+            String mbeanType = _selectedNode.getType();
+            
+            if (NODE_TYPE_TYPEINSTANCE.equals(mbeanType))
             {
                 // An virtual host instance is selected
-                refreshTypeTabFolder(typeTabFolder.getItem(0));
+                generateTypeTabFolder();
             }
-            else if (NODE_TYPE_MBEANTYPE.equals(_selectedNode.getType()))
+            else if (NODE_TYPE_MBEANTYPE.equals(mbeanType))
             {
-                refreshTypeTabFolder(_selectedNode.getName());
+                showTypeTabFolder(_selectedNode.getName());
             } 
-            else if (NOTIFICATIONS.equals(_selectedNode.getType()))
+            else if (NOTIFICATIONS.equals(mbeanType))
             {
                 refreshNotificationPage();
             }
-            else if (MBEAN.equals(_selectedNode.getType()))
+            else if (MBEAN.equals(mbeanType))
             {
-                _mbean = (ManagedBean)_selectedNode.getManagedObject(); 
-                showSelectedMBean();
+                showMBean(_mbean);
+            }
+            else if(NODE_TYPE_SERVER.equals(mbeanType))
+            {
+                ServerRegistry serverReg = ApplicationRegistry.getServerRegistry(_server);
+                
+                //check the server is connected
+                if(serverReg != null)
+                {
+                    //post a message if the server supports a newer API version.
+                    ApiVersion serverAPI = serverReg.getManagementApiVersion();
+                    int supportedMajor = ApplicationRegistry.SUPPORTED_QPID_JMX_API_MAJOR_VERSION;
+                    int supportedMinor = ApplicationRegistry.SUPPORTED_QPID_JMX_API_MINOR_VERSION;
+                    
+                    if(serverAPI.greaterThan(supportedMajor, supportedMinor))
+                    {
+                        _form.setText("The server supports an updated management API and may offer " +
+                        		"functionality not available with this console. " +
+                        		"Please check for an updated console release.");
+                    }
+                    
+                }
+            }
+            else
+            {
+                return;
             }
             
             _form.layout(true);
@@ -176,8 +272,7 @@ public class MBeanView extends ViewPart
      */
     private void setServer()
     {
-        if (NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
-            NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
+        if (NODE_TYPE_SERVER.equals(_selectedNode.getType()))
         {
             _server = (ManagedServer)_selectedNode.getManagedObject();
             _virtualHostName = null;
@@ -195,6 +290,11 @@ public class MBeanView extends ViewPart
             
             _virtualHostName = _selectedNode.getVirtualHost();
         }
+        
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(_server);
+        if(serverRegistry != null){
+            _mbsc = serverRegistry.getServerConnection();
+        }
     }
     
     public static ManagedServer getServer()
@@ -207,45 +307,36 @@ public class MBeanView extends ViewPart
         return _virtualHostName;
     }
     
-    private void showSelectedMBean() throws Exception
+    private void showMBean(ManagedBean mbean) throws Exception
     {           
         try
         {                
-            MBeanUtility.getMBeanInfo(_mbean);     
+            MBeanUtility.getMBeanInfo(mbean);     
         }
         catch(Exception ex)
         {
-            MBeanUtility.handleException(_mbean, ex);
+            MBeanUtility.handleException(mbean, ex);
             return;
         }
 
-        TabFolder tabFolder = tabFolderMap.get(_mbean.getType());
-        /*
-         * This solution can be used if there are many versions of Qpid running. Otherwise
-         * there is no need to create a tabFolder everytime a bean is selected.
-        if (tabFolder != null && !tabFolder.isDisposed())
+        if (_tabFolder != null && !_tabFolder.isDisposed())
         {
-            tabFolder.dispose();
+            _tabFolder.dispose();
         }
-        tabFolder = createTabFolder();
-        */
-        if (tabFolder == null)
-        {
-            tabFolder = createMBeanTabFolder();
-        }
+        
+        _tabFolder = MBeanTabFolderFactory.generateMBeanTabFolder(_form.getBody(),(JMXManagedObject)mbean,_mbsc);
         
         int tabIndex = 0;
         if (NOTIFICATIONS.equals(_selectedNode.getType()))
         {
-            tabIndex = tabFolder.getItemCount() -1;
+            tabIndex = _tabFolder.getItemCount() -1;
         }
        
-        TabItem tab = tabFolder.getItem(tabIndex);
+        TabItem tab = _tabFolder.getItem(tabIndex);
         // If folder is being set as visible after tab refresh, then the tab 
         // doesn't have the focus.                  
-        tabFolder.setSelection(tabIndex);
+        _tabFolder.setSelection(tabIndex);
         refreshTab(tab);
-        setVisible(tabFolder); 
     }
     
     public void createPartControl(Composite parent)
@@ -257,57 +348,30 @@ public class MBeanView extends ViewPart
         _form.setText(APPLICATION_NAME);
         
         // Add selection listener for selection events in the Navigation view
-        getSite().getPage().addSelectionListener(NavigationView.ID, selectionListener); 
-        
-        // Add mbeantype TabFolder. This will list all the mbeans under a mbeantype (eg Queue, Exchange).
-        // Using this list mbeans will be added in the navigation view
-        createMBeanTypeTabFolder();
-        
+        getSite().getPage().addSelectionListener(NavigationView.ID, _selectionListener); 
+
         createNotificationsTabFolder();
-    }
-    
-    private TabFolder createMBeanTabFolder()
-    {
-        TabFolder tabFolder = new TabFolder(_form.getBody(), SWT.NONE);
-        FormData layoutData = new FormData();
-        layoutData.left = new FormAttachment(0);
-        layoutData.top = new FormAttachment(0);
-        layoutData.right = new FormAttachment(100);
-        layoutData.bottom = new FormAttachment(100);
-        tabFolder.setLayoutData(layoutData);
-        tabFolder.setVisible(false);
         
-        createAttributesTab(tabFolder);
-        createOperationTabs(tabFolder);
-        createNotificationsTab(tabFolder);
+        ViewUtility.setMBeanView(this);
         
-        tabFolder.addListener(SWT.Selection, new Listener()
-        {
-            public void handleEvent(Event evt)
-            {
-                TabItem tab = (TabItem)evt.item;        
-                refreshTab(tab);
-            }
-        });
-        
-        tabFolderMap.put(_mbean.getType(), tabFolder);
-        return tabFolder;
+        _backAction = new BackAction();
+        getViewSite().getActionBars().getToolBarManager().add(_backAction);
+        _backAction.setEnabled(false);
+        _backHistory = new LinkedList<Object>();
     }
     
     private void refreshTab(TabItem tab)
     {
-        // We can avoid refreshing the attributes tab because it's control
-        // already contains the required values. But it is added for now and 
-        // will remove if there is any performance issue or any other issue.
-        // The operations control should be refreshed because there is only one
-        // controller for all operations tab.
-        // The Notifications control needs to refresh with latest set of notifications
-        
         if (tab == null)
+        {
             return;
+        }
         
-        TabControl controller = (TabControl)tab.getData(CONTROLLER);
-        controller.refresh(_mbean);
+        TabControl controller = (TabControl)tab.getData(TabControl.CONTROLLER);
+        if(controller != null)
+        {
+            controller.refresh(_mbean);
+        }
     }
     
     public void setFocus()
@@ -321,225 +385,216 @@ public class MBeanView extends ViewPart
         super.dispose();
     }
     
-    private void createAttributesTab(TabFolder tabFolder)
-    {
-        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
-        if (serverRegistry.getAttributeModel(_mbean).getCount() == 0)
-        {
-            return;
-        }
-        
-        TabItem tab = new TabItem(tabFolder, SWT.NONE);
-        tab.setText(ATTRIBUTES);
-        AttributesTabControl controller = new AttributesTabControl(tabFolder);
-        tab.setControl(controller.getControl());
-        tab.setData(CONTROLLER, controller);
-    }
-    
-    private void createOperationTabs(TabFolder tabFolder)
-    {
-        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);        
-        int operationsCount = serverRegistry.getOperationModel(_mbean).getCount();
-        if (operationsCount == 0)
-        {
-            return;
-        }
-        
-        OperationDataModel operationModel = serverRegistry.getOperationModel(_mbean);
-        for (OperationData operationData : operationModel.getOperations())
-        {
-            TabItem operationTab = new TabItem(tabFolder, SWT.NONE);
-            operationTab.setText(ViewUtility.getDisplayText(operationData.getName()));
-            operationTab.setData(operationData);
-            OperationTabControl control = new OperationTabControl(tabFolder, operationData);
-            operationTab.setData(CONTROLLER, control);
-            operationTab.setControl(control.getControl());
-        }
-    }
-    
-    private void createNotificationsTab(TabFolder tabFolder)
-    {
-        NotificationsTabControl controller = new NotificationsTabControl(tabFolder);
-        
-        TabItem tab = new TabItem(tabFolder, SWT.NONE);
-        tab.setText(NOTIFICATIONS);
-        tab.setData(CONTROLLER, controller);
-        tab.setControl(controller.getControl());
-    }
-    
-    /**
-     * For the EditAttribtue Action. Invoking this from action is same as clicking
-     * "EditAttribute" button from Attribute tab.
-     */
-    public void editAttribute() throws Exception
-    {
-       if (_mbean == null)
-           throw new InfoRequiredException("Please select the managed object and then attribute to be edited");
-       
-       String name = (_mbean.getName() != null) ? _mbean.getName() : _mbean.getType();
-       ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
-       if (serverRegistry.getAttributeModel(_mbean).getCount() == 0)
-       {
-           throw new InfoRequiredException("There are no attributes to be edited for " + name);
-       }
-       
-       TabFolder tabFolder = tabFolderMap.get(_mbean.getType());
-       int index = tabFolder.getSelectionIndex();
-       if (index != 0)
-       {
-           tabFolder.setSelection(0);
-           throw new InfoRequiredException("Please select the attribute to be edited");
-       }
-       
-       TabItem tab = tabFolder.getItem(0);
-       AttributesTabControl tabControl = (AttributesTabControl)tab.getData(CONTROLLER);
-       AttributeData attribute = tabControl.getSelectionAttribute();
-       if (attribute == null)
-           throw new InfoRequiredException("Please select the attribute to be edited");
-       
-       tabControl.createDetailsPopup(attribute);
-    }
-    
-    /**
-     * Creates TabFolder and tabs for each mbeantype (eg Connection, Queue, Exchange)
-     */
-    private void createMBeanTypeTabFolder()
-    {
-        typeTabFolder = new TabFolder(_form.getBody(), SWT.NONE);
-        FormData layoutData = new FormData();
-        layoutData.left = new FormAttachment(0);
-        layoutData.top = new FormAttachment(0);
-        layoutData.right = new FormAttachment(100);
-        layoutData.bottom = new FormAttachment(100);
-        typeTabFolder.setLayoutData(layoutData);
-        typeTabFolder.setVisible(false);
-              
-        TabItem tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(CONNECTION); 
-        MBeanTypeTabControl controller = new ConnectionTypeTabControl(typeTabFolder);
-        tab.setData(CONTROLLER, controller);
-        tab.setControl(controller.getControl());
-        
-        tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(EXCHANGE);      
-        controller = new ExchangeTypeTabControl(typeTabFolder);
-        tab.setData(CONTROLLER, controller);
-        tab.setControl(controller.getControl());
-        
-        tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(QUEUE);  
-        controller = new QueueTypeTabControl(typeTabFolder);
-        tab.setData(CONTROLLER, controller);
-        tab.setControl(controller.getControl());
-        
-        typeTabFolder.addListener(SWT.Selection, new Listener()
-        {
-            public void handleEvent(Event evt)
-            {
-                TabItem tab = (TabItem)evt.item;     
-                try
-                {
-                    refreshTypeTabFolder(tab);
-                }
-                catch (Exception ex)
-                {
-                    MBeanUtility.handleException(ex);
-                }
-            }
-        });
-    }
     
     private void createNotificationsTabFolder()
     {
-        notificationTabFolder = new TabFolder(_form.getBody(), SWT.NONE);
+        _notificationTabFolder = new TabFolder(_form.getBody(), SWT.NONE);
         FormData layoutData = new FormData();
         layoutData.left = new FormAttachment(0);
         layoutData.top = new FormAttachment(0);
         layoutData.right = new FormAttachment(100);
         layoutData.bottom = new FormAttachment(100);
-        notificationTabFolder.setLayoutData(layoutData);
-        notificationTabFolder.setVisible(false);
+        _notificationTabFolder.setLayoutData(layoutData);
+        _notificationTabFolder.setVisible(false);
         
-        VHNotificationsTabControl controller = new VHNotificationsTabControl(notificationTabFolder);       
-        TabItem tab = new TabItem(notificationTabFolder, SWT.NONE);
+        VHNotificationsTabControl controller = new VHNotificationsTabControl(_notificationTabFolder);       
+        TabItem tab = new TabItem(_notificationTabFolder, SWT.NONE);
         tab.setText(NOTIFICATIONS);
-        tab.setData(CONTROLLER, controller);
+        tab.setData(TabControl.CONTROLLER, controller);
         tab.setControl(controller.getControl());
     }
     
     private void refreshNotificationPage()
     {        
-        TabItem tab = notificationTabFolder.getItem(0);
-        VHNotificationsTabControl controller = (VHNotificationsTabControl)tab.getData(CONTROLLER);
+        TabItem tab = _notificationTabFolder.getItem(0);
+        VHNotificationsTabControl controller = (VHNotificationsTabControl)tab.getData(TabControl.CONTROLLER);
         controller.refresh();
-        notificationTabFolder.setVisible(true);
+        _notificationTabFolder.setVisible(true);
     }
     
-    /**
-     * Refreshes the Selected mbeantype tab. The control lists all the available mbeans
-     * for an mbeantype(eg Queue, Exchange etc)
-     * @param tab
-     * @throws Exception
-     */
-    private void refreshTypeTabFolder(TabItem tab) throws Exception
+
+
+    private void generateTypeTabFolder() throws Exception
     {
-        if (tab == null)
+        if (_typeTabFolder != null && !_typeTabFolder.isDisposed())
         {
-            return;
+            _typeTabFolder.dispose();
         }
-        typeTabFolder.setSelection(tab);
-        MBeanTypeTabControl controller = (MBeanTypeTabControl)tab.getData(CONTROLLER);
-        controller.refresh();
-        typeTabFolder.setVisible(true);
+        
+        //Generates the full Queue/Connection/Exchange selection tab set
+        _typeTabFolder = MBeanTabFolderFactory.generateMBeanTypeTabFolder(
+                                            _form.getBody(), getServer(), getVirtualHost());
+        refreshTab(_typeTabFolder.getItem(0));
     }
     
-    private void refreshTypeTabFolder(String type) throws Exception
+    private void showTypeTabFolder(String type) throws Exception
     {
+        if (_typeTabFolder != null && !_typeTabFolder.isDisposed())
+        {
+            _typeTabFolder.dispose();
+        }
+        
         if (CONNECTION.equals(type))
         {
-            refreshTypeTabFolder(typeTabFolder.getItem(0));
+            //Generates the Connection selection tab
+            _typeTabFolder = MBeanTabFolderFactory.generateConnectionTypeTabFolder(
+                    _form.getBody(), getServer(), getVirtualHost());
+            refreshTab(_typeTabFolder.getItem(0));
         }
         else if (EXCHANGE.equals(type))
         {
-            refreshTypeTabFolder(typeTabFolder.getItem(1));
+            //Generates the Exchange selection tab
+            _typeTabFolder = MBeanTabFolderFactory.generateExchangeTypeTabFolder(
+                    _form.getBody(), getServer(), getVirtualHost());
+            refreshTab(_typeTabFolder.getItem(0));
         }
         else if (QUEUE.equals(type))
         {
-            refreshTypeTabFolder(typeTabFolder.getItem(2));
+            //Generates the Queue selection tab
+            _typeTabFolder = MBeanTabFolderFactory.generateQueueTypeTabFolder(
+                    _form.getBody(), getServer(), getVirtualHost());
+            refreshTab(_typeTabFolder.getItem(0));
         }
     }
-    
-    /**
-     * hides other folders and makes the given one visible.
-     * @param tabFolder
-     */
-    private void setVisible(TabFolder tabFolder)
+
+    private void clearView()
     {
-        for (TabFolder folder : tabFolderMap.values())
+        if (_tabFolder != null && !_tabFolder.isDisposed())
         {
-            if (folder == tabFolder)
-                folder.setVisible(true);
-            else
-                folder.setVisible(false);
-        }
-    }
-    
-    private void setInvisible()
-    {
-        for (TabFolder folder : tabFolderMap.values())
-        {
-            folder.setVisible(false);
+            _tabFolder.setVisible(false);
         }
         
-        if (typeTabFolder != null)
+        if (_typeTabFolder != null && !_typeTabFolder.isDisposed())
         {
-            typeTabFolder.setVisible(false);
+            _typeTabFolder.setVisible(false);
         }
         
-        if (notificationTabFolder != null)
+        if (_notificationTabFolder != null && !_notificationTabFolder.isDisposed())
         {
-            notificationTabFolder.setVisible(false);
+            _notificationTabFolder.setVisible(false);
+        }
+        
+        _form.setText(APPLICATION_NAME);
+        populateStatusBar("");
+    }
+    
+    public void mbeanUnregistered(ManagedBean mbean)
+    {
+        //if the mbean is actually open, clear the view and empty the Back history
+        if(mbean == _mbean)
+        {
+            clearView();
+            _backHistory.clear();
+            _backAction.setEnabled(false);
+            ViewUtility.popupInfoMessage("MBean Unregistered", 
+                    "The open MBean was unregistered from the server.");
         }
     }
     
+    public void refresh()
+    {
+        if(!ApplicationRegistry.isServerConnected(_server))
+        {
+            return;
+        }
+        
+        if (_tabFolder != null && !_tabFolder.isDisposed())
+        {
+            if(_tabFolder.getVisible())
+            {
+                int selectedTab = _tabFolder.getSelectionIndex();
+                TabItem tab = _tabFolder.getItem(selectedTab);
+                TabControl controller = (TabControl) tab.getData(TabControl.CONTROLLER);
+                if(controller != null)
+                {
+                    controller.refresh(_mbean);
+                }
+                return;
+            }
+        }
+        
+        if (_typeTabFolder != null && !_typeTabFolder.isDisposed())
+        {
+            
+            if(_typeTabFolder.getVisible())
+            {
+                int selectedTab = _typeTabFolder.getSelectionIndex();
+                TabItem tab = _typeTabFolder.getItem(selectedTab);
+                TabControl controller = (TabControl) tab.getData(TabControl.CONTROLLER);
+                if(controller != null)
+                {
+                    controller.refresh(_mbean);
+                }
+                return;
+            }
+        }
+        
+        if (_notificationTabFolder != null && !_notificationTabFolder.isDisposed())
+        {
+            if(_notificationTabFolder.getVisible())
+            {
+                int selectedTab = _notificationTabFolder.getSelectionIndex();
+                TabItem tab = _notificationTabFolder.getItem(selectedTab);
+                TabControl controller = (TabControl) tab.getData(TabControl.CONTROLLER);
+                if(controller != null)
+                {
+                    controller.refresh(_mbean);
+                }
+                return;
+            }
+        }
+    }
+    
+    public void populateStatusBar(Image icon, String message)
+    {
+        IActionBars bars = getViewSite().getActionBars();
+        bars.getStatusLineManager().setMessage(icon, message);
+    }
+    
+    public void populateStatusBar(String message)
+    {
+        IActionBars bars = getViewSite().getActionBars();
+        bars.getStatusLineManager().setMessage(message);
+    }
+
+    public void back() throws Exception
+    {
+        if(_backHistory.isEmpty())
+        {
+            return;
+        }
+        
+        Object previous = _backHistory.removeLast();
+        if(_backHistory.isEmpty())
+        {
+            //if this is the last history item, disable the action button
+            _backAction.setEnabled(false);
+        }
+        
+        if(previous instanceof ManagedBean)
+        {
+            openMBean((ManagedBean)previous, true);
+        }
+        else if (previous instanceof TreeObject)
+        {
+            _mbean = null;
+            clearView();
+            setFormTitle();
+            
+            TreeObject node = (TreeObject) previous;
+            String mbeanType = node.getType();
+            
+            if (NODE_TYPE_TYPEINSTANCE.equals(mbeanType))
+            {
+                generateTypeTabFolder();
+            }
+            else if (NODE_TYPE_MBEANTYPE.equals(mbeanType))
+            {
+                showTypeTabFolder(node.getName());
+            }
+        }
+        
+        _form.layout(true);
+        _form.getBody().layout(true, true);
+    }
 }

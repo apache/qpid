@@ -29,7 +29,7 @@ class so that the generated code can be reused in a variety of
 situations.
 """
 
-import os, mllib, spec08, spec010
+import os, mllib, spec08
 
 def default():
   try:
@@ -54,6 +54,8 @@ def load(specfile, *errata):
   minor = doc["amqp/@minor"]
 
   if major == "0" and minor == "10":
-    return spec010.load(specfile, *errata)
+    return None
   else:
     return spec08.load(specfile, *errata)
+
+SPEC = load(default())

@@ -19,15 +19,16 @@
  *
  */
 
-#include "HandlerImpl.h"
+#include "qpid/broker/HandlerImpl.h"
 
-#include "ConnectionToken.h"
-#include "OwnershipToken.h"
+#include "qpid/broker/ConnectionToken.h"
+#include "qpid/broker/OwnershipToken.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/StructHelper.h"
 
+#include <algorithm>
 #include <vector>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -68,6 +69,12 @@ class Queue;
     FileHandler* getFileHandler() { throw framing::NotImplementedException("Class not implemented"); }
     StreamHandler* getStreamHandler() { throw framing::NotImplementedException("Class not implemented"); }
 
+    template <class F> void eachExclusiveQueue(F f) 
+    { 
+        queueImpl.eachExclusiveQueue(f);
+    }
+
+
   private:
     //common base for utility methods etc that are specific to this adapter
     struct HandlerHelper : public HandlerImpl 
@@ -102,14 +109,14 @@ class Queue;
                                            const std::string& routingKey,
                                            const framing::FieldTable& arguments);
       private:
-        void checkType(shared_ptr<Exchange> exchange, const std::string& type);
+        void checkType(boost::shared_ptr<Exchange> exchange, const std::string& type);
 
-        void checkAlternate(shared_ptr<Exchange> exchange,
-                            shared_ptr<Exchange> alternate);
+        void checkAlternate(boost::shared_ptr<Exchange> exchange,
+                            boost::shared_ptr<Exchange> alternate);
     };
 
     class QueueHandlerImpl : public QueueHandler,
-            public HandlerHelper, public OwnershipToken
+            public HandlerHelper
     {
         Broker& broker;
         std::vector< boost::shared_ptr<Queue> > exclusiveQueues;
@@ -130,6 +137,10 @@ class Queue;
         bool isLocal(const ConnectionToken* t) const; 
 
         void destroyExclusiveQueues();
+        template <class F> void eachExclusiveQueue(F f) 
+        { 
+            std::for_each(exclusiveQueues.begin(), exclusiveQueues.end(), f);
+        }
     };
 
     class MessageHandlerImpl :

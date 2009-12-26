@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import org.apache.qpid.server.registry.ApplicationRegistry;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -28,10 +30,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class VirtualHostRegistry
 {
-    private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String,VirtualHost>();
+    private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String, VirtualHost>();
 
 
     private String _defaultVirtualHostName;
+    private ApplicationRegistry _applicationRegistry;
+
+    public VirtualHostRegistry(ApplicationRegistry applicationRegistry)
+    {
+        _applicationRegistry = applicationRegistry;
+    }
 
     public synchronized void registerVirtualHost(VirtualHost host) throws Exception
     {
@@ -66,5 +74,10 @@ public class VirtualHostRegistry
     public Collection<VirtualHost> getVirtualHosts()
     {
         return new ArrayList<VirtualHost>(_registry.values());
+    }
+
+    public ApplicationRegistry getApplicationRegistry()
+    {
+        return _applicationRegistry;
     }
 }

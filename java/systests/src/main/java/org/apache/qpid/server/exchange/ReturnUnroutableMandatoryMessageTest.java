@@ -21,32 +21,37 @@
 
 package org.apache.qpid.server.exchange;
 
-import junit.framework.TestCase;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.jms.Connection;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.NullApplicationRegistry;
-import org.apache.qpid.client.*;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.client.AMQHeadersExchange;
+import org.apache.qpid.client.AMQNoRouteException;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
 
-import javax.jms.*;
-import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.net.URISyntaxException;
-
-public class ReturnUnroutableMandatoryMessageTest extends TestCase implements ExceptionListener
+public class ReturnUnroutableMandatoryMessageTest extends QpidTestCase implements ExceptionListener
 {
     private static final Logger _logger = Logger.getLogger(ReturnUnroutableMandatoryMessageTest.class);
 
     private final List<Message> _bouncedMessageList = Collections.synchronizedList(new ArrayList<Message>());
-    private static final String VIRTUALHOST = "test";
-    private static final String BROKER = "vm://:1";
 
     static
     {
@@ -57,21 +62,6 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
             System.out.println("QPID_WORK not set using tmp directory: " + tempdir);
             System.setProperty("QPID_WORK", tempdir);
         }
-//        DOMConfigurator.configure("../broker/etc/log4j.xml");
-    }
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        TransportConnection.createVMBroker(1);
-        ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-        TransportConnection.killAllVMBrokers();
-        ApplicationRegistry.remove(1);
     }
 
     /**
@@ -79,7 +69,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
      *
      * @throws Exception
      */
-    public void testReturnUnroutableMandatoryMessage_HEADERS() throws URISyntaxException, AMQException, JMSException
+    public void testReturnUnroutableMandatoryMessage_HEADERS() throws Exception
     {
         _bouncedMessageList.clear();
         MessageConsumer consumer = null;
@@ -88,20 +78,20 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         Connection con=null, con2 = null;
         try
         {
-            con = new AMQConnection(BROKER, "guest", "guest", "consumer1", VIRTUALHOST);
+            con = getConnection();
 
             AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
             queue = new AMQHeadersExchange(new AMQBindingURL(ExchangeDefaults.HEADERS_EXCHANGE_CLASS + "://" + ExchangeDefaults.HEADERS_EXCHANGE_NAME + "/test/queue1?" + BindingURL.OPTION_ROUTING_KEY + "='F0000=1'"));
             FieldTable ft = new FieldTable();
             ft.setString("F1000", "1");
-            consumer = consumerSession.createConsumer(queue, AMQSession.DEFAULT_PREFETCH_LOW_MARK, AMQSession.DEFAULT_PREFETCH_HIGH_MARK, false, false, (String) null, ft);
+            consumer = consumerSession.createConsumer(queue, Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT) /2 ,  false, false, (String) null, ft);
 
             //force synch to ensure the consumer has resulted in a bound queue
             //((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
             // This is the default now
 
-            con2 = new AMQConnection(BROKER, "guest", "guest", "producer1", VIRTUALHOST);
+            con2 = getConnection();
 
             con2.setExceptionListener(this);
             producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
@@ -168,7 +158,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
     public void testReturnUnroutableMandatoryMessage_QUEUE() throws Exception
     {
         _bouncedMessageList.clear();
-        Connection con = new AMQConnection(BROKER, "guest", "guest", "consumer1", VIRTUALHOST);
+        Connection con = getConnection();
 
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
@@ -180,7 +170,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         //((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         // This is the default now
 
-        Connection con2 = new AMQConnection(BROKER, "guest", "guest", "producer1", VIRTUALHOST);
+        Connection con2 = getConnection();
 
         con2.setExceptionListener(this);
         AMQSession producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
@@ -229,7 +219,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
     public void testReturnUnroutableMandatoryMessage_TOPIC() throws Exception
     {
         _bouncedMessageList.clear();
-        Connection con = new AMQConnection(BROKER, "guest", "guest", "consumer1", VIRTUALHOST);
+        Connection con = getConnection();
 
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
@@ -241,7 +231,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         //((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         // This is the default now
 
-        Connection con2 = new AMQConnection(BROKER, "guest", "guest", "producer1", VIRTUALHOST);
+        Connection con2 = getConnection();
 
         con2.setExceptionListener(this);
         AMQSession producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);

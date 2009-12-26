@@ -23,13 +23,15 @@
  */
 
 #include <boost/shared_ptr.hpp>
-#include "MessageStore.h"
-#include "PersistableConfig.h"
-#include "Bridge.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/PersistableConfig.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/RetryList.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Link.h"
+#include "qpid/management/ManagementAgent.h"
+#include "qmf/org/apache/qpid/broker/Link.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 
 namespace qpid {
@@ -47,30 +49,35 @@ namespace qpid {
             MessageStore*       store;
             string        host;
             uint16_t      port;
-            bool          useSsl;
+            string        transport;
             bool          durable;
             string        authMechanism;
             string        username;
             string        password;
             mutable uint64_t    persistenceId;
-            management::Link*   mgmtObject;
+            qmf::org::apache::qpid::broker::Link* mgmtObject;
             Broker* broker;
             int     state;
             uint32_t visitCount;
             uint32_t currentInterval;
             bool     closing;
+            RetryList urls;
+            bool updateUrls;
 
             typedef std::vector<Bridge::shared_ptr> Bridges;
             Bridges created;   // Bridges pending creation
             Bridges active;    // Bridges active
+            Bridges cancellations;    // Bridges pending cancellation
             uint channelCounter;
             Connection* connection;
+            management::ManagementAgent* agent;
 
             static const int STATE_WAITING     = 1;
             static const int STATE_CONNECTING  = 2;
             static const int STATE_OPERATIONAL = 3;
             static const int STATE_FAILED      = 4;
             static const int STATE_CLOSED      = 5;
+            static const int STATE_PASSIVE     = 6;
 
             static const uint32_t MAX_INTERVAL = 32;
 
@@ -78,6 +85,8 @@ namespace qpid {
             void startConnectionLH();        // Start the IO Connection
             void destroy();                  // Called when mgmt deletes this link
             void ioThreadProcessing();       // Called on connection's IO thread by request
+            bool tryFailover();              // Called during maintenance visit
+            void checkClosePermission();     // ACL check for explict mgmt call to close this link
 
         public:
             typedef boost::shared_ptr<Link> shared_ptr;
@@ -86,7 +95,7 @@ namespace qpid {
                  MessageStore* store,
                  string&       host,
                  uint16_t      port,
-                 bool          useSsl,
+                 string&       transport,
                  bool          durable,
                  string&       authMechanism,
                  string&       username,
@@ -106,12 +115,15 @@ namespace qpid {
             void established();              // Called when connection is created
             void closed(int, std::string);   // Called when connection goes away
             void setConnection(Connection*); // Set pointer to the AMQP Connection
+            void reconnect(const TcpAddress&); //called by LinkRegistry
 
             string getAuthMechanism() { return authMechanism; }
             string getUsername()      { return username; }
             string getPassword()      { return password; }
+            Broker* getBroker()       { return broker; }
 
             void notifyConnectionForced(const std::string text);
+            void setPassive(bool p);
             
             // PersistableConfig:
             void     setPersistenceId(uint64_t id) const;
@@ -123,8 +135,8 @@ namespace qpid {
             static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
             // Manageable entry points
-            management::ManagementObject*    GetManagementObject (void) const;
-            management::Manageable::status_t ManagementMethod (uint32_t, management::Args&);
+            management::ManagementObject*    GetManagementObject(void) const;
+            management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
         };
     }
 }

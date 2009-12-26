@@ -1,4 +1,25 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!--
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
+-->
+
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -9,6 +30,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Apache.Qpid.Sasl</RootNamespace>
     <AssemblyName>Apache.Qpid.Sasl</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,24 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Callbacks.cs" />
-    <Compile Include="Configuration\SaslConfiguration.cs" />
-    <Compile Include="Configuration\SaslConfigurationSectionHandler.cs" />
-    <Compile Include="MD5HMAC.cs" />
-    <Compile Include="Mechanisms\ExternalSaslClient.cs" />
-    <Compile Include="SaslException.cs" />
-    <Compile Include="Mechanisms\AnonymousSaslClient.cs" />
-    <Compile Include="Mechanisms\DigestSaslClient.cs" />
-    <Compile Include="Sasl.cs" />
-    <Compile Include="DefaultClientFactory.cs" />
-    <Compile Include="ISaslCallbackHandler.cs" />
-    <Compile Include="ISaslClientFactory.cs" />
-    <Compile Include="Mechanisms\CramMD5SaslClient.cs" />
-    <Compile Include="SaslProperties.cs" />
-    <Compile Include="ISaslClient.cs" />
-    <Compile Include="Mechanisms\PlainSaslClient.cs" />
-    <Compile Include="SaslClient.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="**\*.cs" />    
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

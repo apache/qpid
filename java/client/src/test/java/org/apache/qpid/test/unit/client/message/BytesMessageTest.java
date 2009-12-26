@@ -559,7 +559,7 @@ public class BytesMessageTest extends TestCase
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
         bm.reset();
         String result = bm.toBodyString();
-        assertNull(result);
+        assertEquals("\"\"", result);
     }
 
     public static junit.framework.Test suite()

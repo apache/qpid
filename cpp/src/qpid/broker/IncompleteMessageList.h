@@ -21,25 +21,35 @@
 #ifndef _IncompleteMessageList_
 #define _IncompleteMessageList_
 
-#include <list>
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/sys/Monitor.h"
+#include "qpid/broker/Message.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/function.hpp>
+#include <list>
 
 namespace qpid {
 namespace broker {
 
-class Message;
-
 class IncompleteMessageList
 {
     typedef std::list< boost::intrusive_ptr<Message> > Messages;
+
+    void enqueueComplete(const boost::intrusive_ptr<Message>&);
+
+    sys::Monitor lock;
     Messages incomplete;
+    Message::MessageCallback callback;
 
 public:
-    typedef boost::function<void(boost::intrusive_ptr<Message>)> CompletionListener;    
+    typedef Message::MessageCallback CompletionListener;    
 
-    void add(boost::intrusive_ptr<Message> msg);
-    void process(CompletionListener l, bool sync);
+    QPID_BROKER_EXTERN IncompleteMessageList();
+    QPID_BROKER_EXTERN ~IncompleteMessageList();
+    
+    QPID_BROKER_EXTERN void add(boost::intrusive_ptr<Message> msg);
+    QPID_BROKER_EXTERN void process(const CompletionListener& l, bool sync);
+    void each(const CompletionListener& l);
 };
 
 

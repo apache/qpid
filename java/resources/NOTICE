@@ -1,105 +1,113 @@
-// ------------------------------------------------------------------
-// NOTICE file corresponding to the section 4d of The Apache License,
-// Version 2.0, in this case for Qpid Common Utilities
-// ------------------------------------------------------------------
-
 Apache Qpid
-Copyright 2006-2007 Apache Software Foundation
-
+Copyright 2006-2008 Apache Software Foundation
 This product includes software developed at
 Apache Software Foundation (http://www.apache.org/)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
-This product includes/uses software, Unnamed - relaxngDatatype:relaxngDatatype:jar:20020414 (http://sourceforge.net/projects/relaxng)
-License: BSD License (http://www.opensource.org/licenses/bsd-license.php)
+Message logging is provided by the SLF4J library package,
+which is open source software, written by Ceki Gülcü, and
+copyright by SLF4J.ORG and QOS.ch.  The original software is
+available from
 
-This product includes/uses software, Apache MINA Core API (http://directory.apache.org/projects/mina/)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+   http://www.slf4j.org/
 
-This product includes/uses software, Unnamed - isorelax:isorelax:jar:20020414
-License: MIT license (http://www.opensource.org/licenses/mit-license.html)
+Concurrency utlitity classes are provided by the backport-util-concurrent
+library package, which is open source software, written by
+Dawid Kurzyniec, and copyright by Distributed Computing Laboratory,
+Emory University.  The original software is available from
 
-This product includes/uses software, SLF4J API Module (http://www.slf4j.org),
-developed by QOS.ch  (http://www.qos.ch)
-License: MIT License (http://www.slf4j.org/license.html)
+   http://dcl.mathcs.emory.edu/util/backport-util-concurrent/
 
-This product includes/uses software, Commons Collections - commons-collections:commons-collections:jar:3.1,
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+Data compression support is provided by the JZLib library package,
+which is open source software, written by JCraft, and copyright
+by JCraft.  The original software is available from
 
-This product includes/uses software, Commons Digester - commons-digester:commons-digester:jar:1.6
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+   http://www.jcraft.com/jzlib/
 
-This product includes/uses software, Commons CLI - commons-cli:commons-cli:jar:1.0
-Ideveloped by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+Spring framework is provided by the Spring framework library
+package, which is open source software, written by Rod Johnson
+et al, and copyright by Springframework.org.  The original
+software is available from
 
-This product includes/uses software, Unnamed - msv:msv:jar:20020414
-developed by (https://msv.dev.java.net/)
-License: 
+   http://www.springframework.org/
 
-This product includes/uses software, Codec (http://jakarta.apache.org/commons/codec/),
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: The Apache Software License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
-This product includes/uses software, Commons Logging - commons-logging:commons-logging:jar:1.0
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+This product includes software developed at
+The OSGi Alliance (http://www.osgi.org/).
+Copyright 2006 The OSGi Alliance.
+Licensed under the Apache License 2.0.
 
-This product includes/uses software, Backport of JSR 166 (http://www.mathcs.emory.edu/dcl/util/backport-util-concurrent/),
-developed by Dawid Kurzyniec (http://www.mathcs.emory.edu/~dawidk/)
-License: Public Domain  (http://creativecommons.org/licenses/publicdomain)
+Handling console input is provided bye the Jline library package,
+JLine is a Java library for handling console input. It is similar 
+in functionality to BSD editline and GNU readline.Original software is
+available from 
 
-This product includes/uses software, Commons Lang - commons-lang:commons-lang:jar:2.1
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+pphttp://jline.sourceforge.net/index.html
 
-This product includes/uses software, Apache MINA SSL Filter (http://directory.apache.org/subprojects/mina/mina-filter-ssl)
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+Jython is used within ant scripts for generating code.
+Jython is hosted at http://www.jython.org
+The license for jython is located at http://www.jython.org/Project/license.txt
 
-This product includes/uses software, Unnamed - xerces:xercesImpl:jar:2.2.1
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+The Apache Muse Project is a Java-based implementation 
+of the WS-ResourceFramework (WSRF), WS-BaseNotification (WSN), 
+and WS-DistributedManagement (WSDM) specifications.
+It is licensed under the Apache License 2.0.
+The original software is available from 
 
-This product includes/uses software,  - javax.servlet:servlet-api:jar:2.3
+http://ws.apache.org/muse/
 
-This product includes/uses software, Xalan - xalan:xalan:jar:2.7.0
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+The Web Services Description Language for Java Toolkit (WSDL4J) allows 
+the creation, representation, and manipulation of WSDL documents
+It is licensed under the Common Public License 1.0
+The original software is available from 
 
-This product includes/uses software, Commons Configuration (http://jakarta.apache.org/commons/),
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+http://sourceforge.net/projects/wsdl4j
 
-This product includes/uses software, Apache MINA Java5 Extensions (http://directory.apache.org/subprojects/mina/mina-java5)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+Xml manipulation and all related xml common utilities are provider by the 
+xml-apis library, which is an open source software.
+It is licensed under the Apache License 2.0 and is available from :
 
-This product includes/uses software, Jaxen - jaxen:jaxen:jar:1.0-FCS
-License: Apache License (http://jaxen.org/faq.html)
+http://xml.apache.org/commons/
 
-This product includes/uses software, BeanUtils (http://jakarta.apache.org/commons/beanutils/)
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+Xerces Java is a library for parsing, validating and manipulating XML documents.
+It is licensed under the Apache License 2.0 and is available from :
 
-This product includes/uses software, XML Commons External Components XML APIs (http://xml.apache.org/commons/#external),
-developed by Apache Software Foundation  (http://www.apache.org/)
-License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+http://xerces.apache.org/
 
-This product includes/uses software, Commons Beanutils Core - commons-beanutils:commons-beanutils-core:jar:1.7.0
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+Xalan is an XSLT processor for transforming XML documents into HTML, 
+text, or other XML document types.
+It is licensed under the Apache License 2.0.
+The original software is available from :
 
-This product includes/uses software, Commons Logging API - commons-logging:commons-logging-api:jar:1.0.4
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+http://xml.apache.org/xalan-j/
 
-This product includes/uses software, Dom4j - dom4j:dom4j:jar:1.4
-developed by MetaStuff, Ltd. (http://www.dom4j.org/)
-License: BSD License (http://www.dom4j.org/license.html)
+Jetty is an open-source, standards-based, full-featured web server 
+implemented entirely in Java. It is used as a web server / servlet engine
+on WS-DM adapter.
+Licensed under the Apache License 2.0.
+The original software is available from :
 
-This product includes/uses software, Saxon - saxpath:saxpath:jar:1.0-FCS
-developed by Michael Kay (http://saxon.sourceforge.net/)
-License: Mozilla Public License v1.0, (http://www.opensource.org/licenses/mozilla1.0.php)
+http://www.mortbay.org/jetty/
 
+Javassist is a load-time reflective system for Java. It is a class library 
+for editing bytecodes in Java; 
+Licensend under MPL or LGPL.
+The original software is available from :
+
+http://www.jboss.org/javassist/
+
+The core library is an eclipse plugin that  contains a bytecode disassembler 
+("Disassembler") that can produce a listing of the Java assembler mnemonics ("Assembler Mnemonics") 
+for a Java method. It is needed in order to enable JSP support in Jetty.
+It is licensed under Eclipse Public License Version 1.0
+
+The JSP implementation library is used for QMan admin console that is a web application running
+on Jetty.
+It is licensed under Common Development and Distribution license version 1.0. License information
+is available from :
+
+https://glassfish.dev.java.net/public/CDDLv1.0.html
+
+The JSP API library is used is used for QMan admin console that is a web application running
+on Jetty. 
+It is licensed under Apache License Version 2.0.
+ 

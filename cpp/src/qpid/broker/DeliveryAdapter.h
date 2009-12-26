@@ -21,30 +21,31 @@
 #ifndef _DeliveryAdapter_
 #define _DeliveryAdapter_
 
-#include "DeliveryId.h"
-#include "DeliveryToken.h"
-#include "Message.h"
+#include "qpid/broker/DeliveryId.h"
+#include "qpid/broker/Message.h"
 #include "qpid/framing/amqp_types.h"
 
 namespace qpid {
 namespace broker {
 
-    /**
-     * The intention behind this interface is to separate the generic
-     * handling of some form of message delivery to clients that is
-     * contained in the version independent Channel class from the
-     * details required for a particular situation or
-     * version. i.e. where the existing adapters allow (through
-     * supporting the generated interface for a version of the
-     * protocol) inputs of a channel to be adapted to the version
-     * independent part, this does the same for the outputs.
-     */
-    class DeliveryAdapter
-    {
-    public:
-        virtual DeliveryId deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token) = 0;
-        virtual ~DeliveryAdapter(){}
-    };
+class DeliveryRecord;
+
+/**
+ * The intention behind this interface is to separate the generic
+ * handling of some form of message delivery to clients that is
+ * contained in the version independent Channel class from the
+ * details required for a particular situation or
+ * version. i.e. where the existing adapters allow (through
+ * supporting the generated interface for a version of the
+ * protocol) inputs of a channel to be adapted to the version
+ * independent part, this does the same for the outputs.
+ */
+class DeliveryAdapter
+{
+  public:
+    virtual void deliver(DeliveryRecord&, bool sync) = 0;
+    virtual ~DeliveryAdapter(){}
+};
 
 }}
 

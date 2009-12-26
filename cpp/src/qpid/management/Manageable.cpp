@@ -17,26 +17,31 @@
 // under the License.
 //
 
-#include "Manageable.h"
+#include "qpid/management/Manageable.h"
 
 using namespace qpid::management;
+using std::string;
 
-std::string Manageable::StatusText (status_t status)
+string Manageable::StatusText (status_t status, string text)
 {
+    if ((status & STATUS_USER) == STATUS_USER)
+        return text;
+
     switch (status)
     {
     case STATUS_OK                      : return "OK";
     case STATUS_UNKNOWN_OBJECT          : return "UnknownObject";
     case STATUS_UNKNOWN_METHOD          : return "UnknownMethod";
     case STATUS_NOT_IMPLEMENTED         : return "NotImplemented";
-    case STATUS_INVALID_PARAMETER       : return "InvalidParameter";
+    case STATUS_PARAMETER_INVALID       : return "InvalidParameter";
     case STATUS_FEATURE_NOT_IMPLEMENTED : return "FeatureNotImplemented";
+    case STATUS_FORBIDDEN               : return "Forbidden";
     }
 
     return "??";
 }
 
-Manageable::status_t Manageable::ManagementMethod (uint32_t, Args&)
+Manageable::status_t Manageable::ManagementMethod (uint32_t, Args&, std::string&)
 {
     return STATUS_UNKNOWN_METHOD;
 }

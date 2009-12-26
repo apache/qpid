@@ -21,47 +21,33 @@
 #ifndef _Consumer_
 #define _Consumer_
 
+#include "qpid/broker/Message.h"
+#include "qpid/broker/QueuedMessage.h"
+#include "qpid/broker/OwnershipToken.h"
+
 namespace qpid {
-    namespace broker {
-		class Queue;
+namespace broker {
+
+class Queue;
+
+class Consumer {
+    const bool acquires;
+  public:
+    typedef boost::shared_ptr<Consumer> shared_ptr;            
+    
+    framing::SequenceNumber position;
+    
+    Consumer(bool preAcquires = true) : acquires(preAcquires) {}
+    bool preAcquires() const { return acquires; }
+    virtual bool deliver(QueuedMessage& msg) = 0;
+    virtual void notify() = 0;
+    virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
+    virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
+    virtual OwnershipToken* getSession() = 0;
+    virtual ~Consumer(){}
+};
+
 }}
-
-#include "Message.h"
-#include "OwnershipToken.h"
-
-namespace qpid {
-    namespace broker {
-
-        struct QueuedMessage
-        {
-            boost::intrusive_ptr<Message> payload;
-            framing::SequenceNumber position;
-            Queue* queue;
-			
-            QueuedMessage(Queue* q, boost::intrusive_ptr<Message> msg, framing::SequenceNumber sn) : 
-			               payload(msg), position(sn), queue(q) {}
-            QueuedMessage(Queue* q) : queue(q) {}
-        };
-        
-
-        class Consumer {
-            const bool acquires;
-        public:
-            typedef shared_ptr<Consumer> ptr;            
-
-            framing::SequenceNumber position;
-
-            Consumer(bool preAcquires = true) : acquires(preAcquires) {}
-            bool preAcquires() const { return acquires; }
-            virtual bool deliver(QueuedMessage& msg) = 0;
-            virtual void notify() = 0;
-            virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
-            virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
-            virtual OwnershipToken* getSession() = 0;
-            virtual ~Consumer(){}
-        };
-    }
-}
 
 
 #endif

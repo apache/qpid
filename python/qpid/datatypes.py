@@ -17,7 +17,8 @@
 # under the License.
 #
 
-import threading, struct
+import threading, struct, datetime, time
+from exceptions import Timeout
 
 class Struct:
 
@@ -83,7 +84,7 @@ class Message:
   def get(self, name):
     if self.headers:
       for h in self.headers:
-        if h._type.name == name:
+        if h.NAME == name:
           return h
     return None
 
@@ -92,7 +93,7 @@ class Message:
       self.headers = []
     idx = 0
     while idx < len(self.headers):
-      if self.headers[idx]._type == header._type:
+      if self.headers[idx].NAME == header.NAME:
         self.headers[idx] = header
         return
       idx += 1
@@ -101,7 +102,7 @@ class Message:
   def clear(self, name):
     idx = 0
     while idx < len(self.headers):
-      if self.headers[idx]._type.name == name:
+      if self.headers[idx].NAME == name:
         del self.headers[idx]
         return
       idx += 1
@@ -125,19 +126,19 @@ def serial(o):
 class Serial:
 
   def __init__(self, value):
-    self.value = value & 0xFFFFFFFF
+    self.value = value & 0xFFFFFFFFL
 
   def __hash__(self):
     return hash(self.value)
 
   def __cmp__(self, other):
-    if other is None:
+    if other.__class__ not in (int, long, Serial):
       return 1
 
     other = serial(other)
 
-    delta = (self.value - other.value) & 0xFFFFFFFF
-    neg = delta & 0x80000000
+    delta = (self.value - other.value) & 0xFFFFFFFFL
+    neg = delta & 0x80000000L
     mag = delta & 0x7FFFFFFF
 
     if neg:
@@ -149,7 +150,10 @@ class Serial:
     return Serial(self.value + other)
 
   def __sub__(self, other):
-    return Serial(self.value - other)
+    if isinstance(other, Serial):
+      return self.value - other.value
+    else:
+      return Serial(self.value - other)
 
   def __repr__(self):
     return "serial(%s)" % self.value
@@ -168,7 +172,7 @@ class Range:
 
   def __contains__(self, n):
     return self.lower <= n and n <= self.upper
-    
+
   def __iter__(self):
     i = self.lower
     while i <= self.upper:
@@ -229,7 +233,25 @@ class RangedSet:
 
   def add(self, lower, upper = None):
     self.add_range(Range(lower, upper))
-    
+
+  def empty(self):
+    for r in self.ranges:
+      if r.lower <= r.upper:
+        return False
+    return True
+
+  def max(self):
+    if self.ranges:
+      return self.ranges[-1].upper
+    else:
+      return None
+
+  def min(self):
+    if self.ranges:
+      return self.ranges[0].lower
+    else:
+      return None
+
   def __iter__(self):
     return iter(self.ranges)
 
@@ -253,9 +275,12 @@ class Future:
 
   def get(self, timeout=None):
     self._set.wait(timeout)
-    if self._error != None:
-      raise self.exception(self._error)
-    return self.value
+    if self._set.isSet():
+      if self._error != None:
+        raise self.exception(self._error)
+      return self.value
+    else:
+      raise Timeout()
 
   def is_set(self):
     return self._set.isSet()
@@ -289,10 +314,62 @@ class UUID:
   def __cmp__(self, other):
     if isinstance(other, UUID):
       return cmp(self.bytes, other.bytes)
-    raise NotImplemented()
+    else:
+      return -1
 
   def __str__(self):
     return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack("!LHHHHL", self.bytes)
 
   def __repr__(self):
     return "UUID(%r)" % str(self)
+
+  def __hash__(self):
+    return self.bytes.__hash__()
+
+class timestamp(float):
+
+  def __new__(cls, obj=None):
+    if obj is None:
+      obj = time.time()
+    elif isinstance(obj, datetime.datetime):
+      obj = time.mktime(obj.timetuple()) + 1e-6 * obj.microsecond
+    return super(timestamp, cls).__new__(cls, obj)
+
+  def datetime(self):
+    return datetime.datetime.fromtimestamp(self)
+
+  def __add__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() + other)
+    else:
+      return timestamp(float(self) + other)
+
+  def __sub__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() - other)
+    else:
+      return timestamp(float(self) - other)
+
+  def __radd__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() + other)
+    else:
+      return timestamp(other + float(self))
+
+  def __rsub__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() - other)
+    else:
+      return timestamp(other - float(self))
+
+  def __neg__(self):
+    return timestamp(-float(self))
+
+  def __pos__(self):
+    return self
+
+  def __abs__(self):
+    return timestamp(abs(float(self)))
+
+  def __repr__(self):
+    return "timestamp(%r)" % float(self)

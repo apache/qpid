@@ -26,28 +26,18 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "qpid/client/Session.h"
+#include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
-#include "MessageListener.h"
-#include "AckPolicy.h"
+#include "qpid/client/ClientImportExport.h"
+#include "qpid/client/MessageListener.h"
+#include "qpid/client/SubscriptionImpl.h"
 
 namespace qpid {
 namespace client {
 
-///@internal
-class Subscriber : public MessageListener
-{
-    AsyncSession session;
-    MessageListener* const listener;
-    AckPolicy autoAck;
-
-public:
-    typedef boost::shared_ptr<Subscriber> shared_ptr;
-    Subscriber(const Session& session, MessageListener* listener, AckPolicy);
-    void received(Message& msg);
-    
-};
+class SubscriptionImpl;
 
 ///@internal
 typedef framing::Handler<framing::FrameSet> FrameSetHandler;
@@ -55,7 +45,7 @@ typedef framing::Handler<framing::FrameSet> FrameSetHandler;
 ///@internal
 class Dispatcher : public sys::Runnable
 {
-    typedef std::map<std::string, Subscriber::shared_ptr> Listeners;
+    typedef std::map<std::string, boost::intrusive_ptr<SubscriptionImpl>  >Listeners;
     sys::Mutex lock;
     sys::Thread worker;
     Session session;
@@ -63,22 +53,32 @@ class Dispatcher : public sys::Runnable
     bool running;
     bool autoStop;
     Listeners listeners;
-    Subscriber::shared_ptr defaultListener;
+    boost::intrusive_ptr<SubscriptionImpl> defaultListener;
     std::auto_ptr<FrameSetHandler> handler;
 
-    Subscriber::shared_ptr find(const std::string& name);
+    boost::intrusive_ptr<SubscriptionImpl> find(const std::string& name);
     bool isStopped();
+
+    boost::function<void ()> failoverHandler;
 
 public:
     Dispatcher(const Session& session, const std::string& queue = "");
+    ~Dispatcher() {}
 
     void start();
-    void run();
+    void wait();
+    // As this class is marked 'internal', no extern should be made here;
+    // however, some test programs rely on it.
+    QPID_CLIENT_EXTERN void run();
     void stop();
     void setAutoStop(bool b);
 
-    void listen(MessageListener* listener, AckPolicy autoAck=AckPolicy());
-    void listen(const std::string& destination, MessageListener* listener, AckPolicy autoAck=AckPolicy());
+    void registerFailoverHandler ( boost::function<void ()> fh )
+    {
+      failoverHandler = fh;
+    }
+
+    void listen(const boost::intrusive_ptr<SubscriptionImpl>& subscription);
     void cancel(const std::string& destination);
 };
 

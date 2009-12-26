@@ -28,6 +28,7 @@ from cStringIO import StringIO
 from spec import load
 from codec import EOF
 from compat import SHUT_RDWR
+from exceptions import VersionError
 
 class SockIO:
 
@@ -73,6 +74,9 @@ def listen(host, port, predicate = lambda: True):
     s, a = sock.accept()
     yield SockIO(s)
 
+class FramingError(Exception):
+  pass
+
 class Connection:
 
   def __init__(self, io, spec):
@@ -107,7 +111,16 @@ class Connection:
 
   def read_8_0(self):
     c = self.codec
-    type = self.spec.constants.byid[c.decode_octet()].name
+    tid = c.decode_octet()
+    try:
+      type = self.spec.constants.byid[tid].name
+    except KeyError:
+      if tid == ord('A') and c.unpack("!3s") == "MQP":
+        _, _, major, minor = c.unpack("4B")
+        raise VersionError("client: %s-%s, server: %s-%s" %
+                           (self.spec.major, self.spec.minor, major, minor))
+      else:
+        raise FramingError("unknown frame type: %s" % tid)
     channel = c.decode_short()
     body = c.decode_longstr()
     dec = codec.Codec(StringIO(body), self.spec)
@@ -121,6 +134,12 @@ class Connection:
         end = c.decode_octet()
       raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
     return frame
+
+  def write_0_9(self, frame):
+    self.write_8_0(frame)
+
+  def read_0_9(self):
+    return self.read_8_0()
 
   def write_0_10(self, frame):
     c = self.codec

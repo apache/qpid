@@ -18,6 +18,7 @@
 #under the License.
 ###########################################################
 
+export DOTNET_EXAMPLES=$CC_HOME/dotnet/client-010/bin/mono-2.0/debug
 export CLASSPATH=`find "$CC_HOME/java/build/lib" -name '*.jar' | tr '\n' ":"`
 export CPP=$CC_HOME/cpp/examples
 export JAVA=$CC_HOME/java/client/example/src/main/java
@@ -77,6 +78,7 @@ verify() {
     else dir=`dirname $1`; script=`basename $1`; fi
     cd $dir || return 1
     rm -f *.out
+    echo "Running: $dir/$script"
     { source ./$script && diff -ac $script.out $script.in ; } || fail
     test -z "$FAIL" && rm -f *.out
     return $FAIL

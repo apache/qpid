@@ -21,13 +21,13 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
-#include "AMQBody.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/AMQBody.h"
 #include "qpid/framing/ProtocolVersion.h"
-#include "qpid/shared_ptr.h"
+#include "qpid/CommonImportExport.h"
 
+#include <boost/shared_ptr.hpp>
 #include <ostream>
-
 #include <assert.h>
 
 namespace qpid {
@@ -40,7 +40,7 @@ class MethodBodyConstVisitor;
 class AMQMethodBody : public AMQBody {
   public:
     AMQMethodBody() {}
-    virtual ~AMQMethodBody();
+    QPID_COMMON_EXTERN virtual ~AMQMethodBody();
 
     virtual void accept(MethodBodyConstVisitor&) const = 0;
     
@@ -54,7 +54,7 @@ class AMQMethodBody : public AMQBody {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;
     }
 
-    virtual uint32_t size() const = 0;
+    virtual uint32_t encodedSize() const = 0;
     virtual uint8_t type() const { return METHOD_BODY; }
 
     virtual bool isSync() const { return false; /*only ModelMethods can have the sync flag set*/ }

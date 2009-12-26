@@ -20,16 +20,35 @@
  */
 
 /**
- *  listener.cpp: This program reads messages from a queue on
- *  the broker using a message listener.
+ *  listener.cpp: 
+ *
+ *  This program is one of three programs designed to be used
+ *  together. 
+ *  
+ *    create_queues.cpp:
+ *
+ *      Creates a queue named "message_queue" on a broker, binding the
+ *      queue to the "amq.direct" exchange, using the routing key
+ *      "routing_key".
+ *
+ *    direct_producer.cpp 
+ *
+ *      Publishes to the "amq.direct" exchange, specifying the routing
+ *      key "routing_key"
+ *
+ *    listener.cpp (this program):
+ *
+ *      Reads  from the "message_queue"  queue on  the broker  using a
+ *      message listener.
  */
+
 
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
+#include <qpid/client/MessageListener.h>
 #include <qpid/client/SubscriptionManager.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -60,8 +79,9 @@ void Listener::received(Message& message) {
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+
     Connection connection;
-    Message msg;
+
     try {
       connection.open(host, port);
       Session session =  connection.newSession();

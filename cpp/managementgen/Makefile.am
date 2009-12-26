@@ -1,27 +1,36 @@
-managementgendir = $(datadir)/managementgen
-dist_managementgen_SCRIPTS = \
-	main.py
-nobase_managementgen_DATA = \
-	schema.py generate.py \
-	templates/Args.h \
-	templates/Class.cpp \
-	templates/Class.h \
-	templates/Makefile.mk \
-	templates/Package.cpp \
-	templates/Package.h \
-	management-types.xml
-
-dist_bin_SCRIPTS = managementgen
-
-EXTRA_DIST = $(nobase_managementgen_DATA)
-
-# This should depend on ../../specs/management-types.xml, but can't
-# because it won't exist in a dist. This rule means that dist-gzip
-# (and rpmbuild) cannot be run purely on the cpp/ directory, the
-# cpp/../specs/ directory must exist, which is not a new dependency
-# but this is an additional instance of the dependency.
 #
-# WARNING: Because this target does not have a proper dependency
-# changes to the specs/management-types.xml will not be picked up!
-management-types.xml:
-	cp $(top_srcdir)/../specs/management-types.xml .
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+qmfpythondir = $(pythondir)
+dist_bin_SCRIPTS = \
+	qmf-gen
+nobase_qmfpython_DATA = \
+	qmfgen/__init__.py \
+	qmfgen/generate.py \
+	qmfgen/schema.py \
+	qmfgen/templates/Args.h \
+	qmfgen/templates/Class.cpp \
+	qmfgen/templates/Class.h \
+	qmfgen/templates/Event.cpp \
+	qmfgen/templates/Event.h \
+	qmfgen/templates/Makefile.mk \
+	qmfgen/templates/Package.cpp \
+	qmfgen/templates/Package.h \
+	qmfgen/management-types.xml
+
+EXTRA_DIST = $(nobase_qmfpython_DATA) CMakeLists.txt

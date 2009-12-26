@@ -31,6 +31,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.transport.util.Functions;
 
 /**
  * @author Apache Software Foundation
@@ -84,53 +85,26 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
     }
 
     public String toBodyString() throws JMSException
-    {
-        checkReadable();
+    {          
         try
         {
-            return getText();
+        	if (_data != null)
+        	{
+        		return Functions.str(_data.buf(), 100,0);
+        	}
+        	else
+        	{
+        		return "";
+        	}
+        	
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             JMSException jmse = new JMSException(e.toString());
             jmse.setLinkedException(e);
             throw jmse;
         }
-    }
-
-    /**
-     * We reset the stream before and after reading the data. This means that toString() will always output
-     * the entire message and also that the caller can then immediately start reading as if toString() had
-     * never been called.
-     *
-     * @return
-     * @throws IOException
-     */
-    private String getText() throws IOException
-    {
-        // this will use the default platform encoding
-        if (_data == null)
-        {
-            return null;
-        }
-
-        int pos = _data.position();
-        _data.rewind();
-        // one byte left is for the end of frame marker
-        if (_data.remaining() == 0)
-        {
-            // this is really redundant since pos must be zero
-            _data.position(pos);
-
-            return null;
-        }
-        else
-        {
-            String data = _data.getString(Charset.forName("UTF8").newDecoder());
-            _data.position(pos);
-
-            return data;
-        }
+        
     }
 
     /**

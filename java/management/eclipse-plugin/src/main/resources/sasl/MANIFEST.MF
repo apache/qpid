@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: jmx sasl Plug-in
-Bundle-SymbolicName: jmxremote.sasl
-Bundle-Version: 1.0.1
-Bundle-ClassPath: .
-Bundle-Vendor:
-Bundle-Localization: plugin

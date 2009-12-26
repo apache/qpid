@@ -40,7 +40,9 @@ public:
     /**
      * Recover binding. Nb: queue must have been recovered earlier.
      */
-    virtual void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args) = 0;
+    virtual void bind(const std::string& queue,
+                      const std::string& routingKey,
+                      qpid::framing::FieldTable& args) = 0;
     virtual ~RecoverableExchange() {};
 };
 

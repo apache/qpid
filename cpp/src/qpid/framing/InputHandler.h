@@ -21,7 +21,7 @@
  *
  */
 
-#include "FrameHandler.h"
+#include "qpid/framing/FrameHandler.h"
 #include <boost/noncopyable.hpp>
 
 namespace qpid {

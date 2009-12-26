@@ -26,120 +26,100 @@ import re
 import socket
 import qpid
 from threading       import Condition
-from qpid.management import managementClient
-from qpid.managementdata import Broker
+from qmf.console     import Session, Console
 from qpid.peer       import Closed
 from qpid.connection import Connection, ConnectionFailed
-from qpid.util       import connect
 from time            import sleep
 
-class mgmtObject (object):
-  """ Generic object that holds the contents of a management object with its
-      attributes set as object attributes. """
+class BrokerManager(Console):
+  def __init__(self, host):
+    self.url = host
+    self.objects = {}
+    self.filter  = None
+    self.session = Session(self, rcvEvents=False, rcvHeartbeats=False,
+                           userBindings=True, manageConnections=True)
+    self.broker  = self.session.addBroker(self.url)
+    self.firstError = True
 
-  def __init__ (self, classKey, timestamps, row):
-    self.classKey   = classKey
-    self.timestamps = timestamps
-    for cell in row:
-      setattr (self, cell[0], cell[1])
+  def setFilter(self,filter):
+    self.filter = filter
 
+  def brokerConnected(self, broker):
+    if not self.firstError:
+      print "*** Broker connected"
+    self.firstError = False
 
+  def brokerDisconnected(self, broker):
+    print "*** Broker connection lost - %s, retrying..." % broker.getError()
+    self.firstError = False
+    self.objects.clear()
 
-class BrokerManager:
-    def __init__ (self):
-        self.dest    = None
-        self.src     = None
-        self.broker  = None
-        self.objects = {}
-        self.filter  = None   
+  def objectProps(self, broker, record):
+    className = record.getClassKey().getClassName()
+    if className != "queue":
+      return
 
-    def SetBroker (self, broker):
-        self.broker = broker
+    id = record.getObjectId().__repr__()
+    if id not in self.objects:
+      self.objects[id] = (record.name, None, None)
 
-    def ConnectToBroker (self):
-        try:
-            self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn     = Connection (connect (self.broker.host, self.broker.port),
-                                    username=self.broker.username, password=self.broker.password)
-            self.conn.start ()
-            self.session  = self.conn.session(self.sessionId)
-            self.mclient  = managementClient (self.conn.spec, None, self.configCb, self.instCb)
-            self.mchannel = self.mclient.addChannel (self.session)
-        except socket.error, e:
-            print "Socket Error %s - %s" % (e[0], e[1])
-            sys.exit (1)
-        except Closed, e:
-            print "Connect Failed %d - %s" % (e[0], e[1])
-            sys.exit (1)
-        except ConnectionFailed, e:
-            print "Connect Failed %d - %s" % (e[0], e[1])
-            sys.exit(1)
+  def objectStats(self, broker, record):
+    className = record.getClassKey().getClassName()
+    if className != "queue":
+      return
 
-    def setFilter(self,filter):
-        self.filter = filter
+    id = record.getObjectId().__repr__()
+    if id not in self.objects:
+      return
 
-    def Disconnect (self):
-        self.mclient.removeChannel (self.mchannel)
-        self.session.close(timeout=10)
-        self.conn.close(timeout=10)
+    (name, first, last) = self.objects[id]
+    if first == None:
+      self.objects[id] = (name, record, None)
+      return
 
-    def configCb (self, context, classKey, row, timestamps):
-        className = classKey[1]
-        if className != "queue":
-            return
+    if len(self.filter) > 0 :
+      match = False
 
-        obj = mgmtObject (classKey, timestamps, row)
-        if obj.id not in self.objects:
-            self.objects[obj.id] = (obj.name, None, None)
+      for x in self.filter:
+        if x.match(name):                 
+          match = True
+          break
+        if match == False:
+          return
 
-    def instCb (self, context, classKey, row, timestamps):
-        className = classKey[1]
-        if className != "queue":
-            return
+    if last == None:
+      lastSample = first
+    else:
+      lastSample = last
 
-        obj = mgmtObject (classKey, timestamps, row)
-        if obj.id not in self.objects:
-            return
+    self.objects[id] = (name, first, record)
 
-        (name, first, last) = self.objects[obj.id]
-        if first == None:
-            self.objects[obj.id] = (name, obj, None)
-            return
-
-        if len(self.filter) > 0 :
-           match = False
-                    
-           for x in self.filter:
-              if x.match(name):                 
-                 match = True
-                 break
-           if match == False:
-              return
-
-        if last == None:
-            lastSample = first
-        else:
-            lastSample = last
-
-        self.objects[obj.id] = (name, first, obj)
-
-        deltaTime   = float (obj.timestamps[0] - lastSample.timestamps[0])
-        enqueueRate = float (obj.msgTotalEnqueues - lastSample.msgTotalEnqueues) / (deltaTime / 1000000000.0)
-        dequeueRate = float (obj.msgTotalDequeues - lastSample.msgTotalDequeues) / (deltaTime / 1000000000.0)
-        print "%-41s%10.2f%11d%13.2f%13.2f" % \
-            (name, deltaTime / 1000000000, obj.msgDepth, enqueueRate, dequeueRate)
+    deltaTime   = float (record.getTimestamps()[0] - lastSample.getTimestamps()[0])
+    if deltaTime < 1000000000.0:
+      return
+    enqueueRate = float (record.msgTotalEnqueues - lastSample.msgTotalEnqueues) / \
+        (deltaTime / 1000000000.0)
+    dequeueRate = float (record.msgTotalDequeues - lastSample.msgTotalDequeues) / \
+        (deltaTime / 1000000000.0)
+    print "%-41s%10.2f%11d%13.2f%13.2f" % \
+        (name, deltaTime / 1000000000, record.msgDepth, enqueueRate, dequeueRate)
+    sys.stdout.flush()
 
 
-    def Display (self):
-        self.ConnectToBroker ()
-        print "Queue Name                                     Sec       Depth     Enq Rate     Deq Rate"
-        print "========================================================================================"
-        try:
-            while True:
-                sleep (1)
-        except KeyboardInterrupt:
-            pass
-        self.Disconnect ()
+  def Display (self):
+    self.session.bindClass("org.apache.qpid.broker", "queue")
+    print "Queue Name                                     Sec       Depth     Enq Rate     Deq Rate"
+    print "========================================================================================"
+    sys.stdout.flush()
+    try:
+      while True:
+        sleep (1)
+        if self.firstError and self.broker.getError():
+          self.firstError = False
+          print "*** Error: %s, retrying..." % self.broker.getError()
+    except KeyboardInterrupt:
+      print
+    self.session.delBroker(self.broker)
 
 ##
 ## Main Program
@@ -157,8 +137,7 @@ def main():
     for s in options.filter.split(","):
         filter.append(re.compile(s))
 
-  bm  = BrokerManager ()
-  bm.SetBroker (Broker (host))
+  bm = BrokerManager(host)
   bm.setFilter(filter)
   bm.Display()
  

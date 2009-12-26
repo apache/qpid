@@ -20,14 +20,13 @@
 
 
 # XXX -Xmx512m -Xms512m -XX:NewSize=150m
-QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar
-TEST_JAR=$QPID_HOME/../../../../perftests/target/qpid-perftests-1.0-incubating-M2-SNAPSHOT.jar
+QPID_LIBS=$QPID_HOME/lib/qpid-all.jar
 
 # Set other variables used by the qpid-run script before calling
 export JAVA=java \
        JAVA_VM=-server \
        JAVA_MEM="-Xmx128m -Dlog4j.configuration=$HOME/log4j.properties" \
        JAVA_GC="-XX:-UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" \
-       QPID_CLASSPATH=$QPID_LIBS:$TEST_JAR
+       QPID_CLASSPATH=$QPID_LIBS
 
 . qpid-run -Damqj.logging.level="INFO" org.apache.qpid.oldtopic.Listener $*

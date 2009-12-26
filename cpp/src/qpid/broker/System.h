@@ -21,24 +21,26 @@
 //
 
 #include "qpid/management/Manageable.h"
-#include "qpid/management/System.h"
+#include "qmf/org/apache/qpid/broker/System.h"
 #include <boost/shared_ptr.hpp>
 #include <string>
 
 namespace qpid { 
 namespace broker {
 
+class Broker;
+
 class System : public management::Manageable
 {
   private:
 
-    management::System* mgmtObject;
+    qmf::org::apache::qpid::broker::System* mgmtObject;
 
   public:
 
     typedef boost::shared_ptr<System> shared_ptr;
 
-    System (std::string _dataDir);
+    System (std::string _dataDir, Broker* broker = 0);
 
     management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }

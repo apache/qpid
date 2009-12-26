@@ -21,13 +21,18 @@
 #ifndef _QueueRegistry_
 #define _QueueRegistry_
 
-#include <map>
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/sys/Mutex.h"
-#include "Queue.h"
 #include "qpid/management/Manageable.h"
+#include <boost/bind.hpp>
+#include <algorithm>
+#include <map>
 
 namespace qpid {
 namespace broker {
+
+class QueueEvents;
 
 /**
  * A registry of queues indexed by queue name.
@@ -36,10 +41,10 @@ namespace broker {
  * are deleted when and only when they are no longer in use.
  *
  */
-class QueueRegistry{
+class QueueRegistry {
   public:
-    QueueRegistry();
-    ~QueueRegistry();
+    QPID_BROKER_EXTERN QueueRegistry(Broker* b = 0);
+    QPID_BROKER_EXTERN ~QueueRegistry();
 
     /**
      * Declare a queue.
@@ -47,8 +52,11 @@ class QueueRegistry{
      * @return The queue and a boolean flag which is true if the queue
      * was created by this declare call false if it already existed.
      */
-    std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, bool autodelete = false, 
-                                               const OwnershipToken* owner = 0);
+    QPID_BROKER_EXTERN std::pair<Queue::shared_ptr, bool> declare
+      (const string& name,
+       bool durable = false,
+       bool autodelete = false, 
+       const OwnershipToken* owner = 0);
 
     /**
      * Destroy the named queue.
@@ -62,7 +70,7 @@ class QueueRegistry{
      * subsequent calls to find or declare with the same name.
      *
      */
-    void destroy   (const string& name);
+    QPID_BROKER_EXTERN void destroy(const string& name);
     template <class Test> bool destroyIf(const string& name, Test test)
     {
         qpid::sys::RWlock::ScopedWlock locker(lock);
@@ -77,12 +85,14 @@ class QueueRegistry{
     /**
      * Find the named queue. Return 0 if not found.
      */
-    Queue::shared_ptr find(const string& name);
+    QPID_BROKER_EXTERN Queue::shared_ptr find(const string& name);
 
     /**
      * Generate unique queue name.
      */
     string generateName();
+
+    void setQueueEvents(QueueEvents*);
 
     /**
      * Set the store to use.  May only be called once.
@@ -98,22 +108,37 @@ class QueueRegistry{
      * Register the manageable parent for declared queues
      */
     void setParent (management::Manageable* _parent) { parent = _parent; }
+
+    /** Call f for each queue in the registry. */
+    template <class F> void eachQueue(F f) const {
+        qpid::sys::RWlock::ScopedRlock l(lock);
+        for (QueueMap::const_iterator i = queues.begin(); i != queues.end(); ++i)
+            f(i->second);
+    }
+	
+	/**
+	* Change queue mode when cluster size drops to 1 node, expands again
+	* in practice allows flow queue to disk when last name to be exectuted
+	*/
+	void updateQueueClusterState(bool lastNode);
     
 private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;
-    qpid::sys::RWlock lock;
+    mutable qpid::sys::RWlock lock;
     int counter;
     MessageStore* store;
+    QueueEvents* events;
     management::Manageable* parent;
+    bool lastNode; //used to set mode on queue declare
+    Broker* broker;
 
     //destroy impl that assumes lock is already held:
     void destroyLH (const string& name);
 };
 
     
-}
-}
+}} // namespace qpid::broker
 
 
 #endif

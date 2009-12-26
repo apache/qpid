@@ -19,17 +19,35 @@
  *
  */
 
+
 /**
- *  listener.cpp: This program reads messages fro a queue on
- *  the broker using a message listener.
+ *  listener.cpp
+ *
+ *  This program is one of two programs designed to be used
+ *  together.
+ *
+ *    fanout_producer.cpp
+ *
+ *      Publishes messages to the "amq.fanout" exchange.
+ *
+ *    listener.cpp  (this program)
+ *
+ *      Creates a private queue, binds it to the "amq.fanout"
+ *      exchange, and reads messages from its queue as they
+ *      arrive. Messages sent before the listener binds the queue are
+ *      not received.
+ *
+ *      Multiple listeners can run at the same time.
+ *
  */
+
 
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
+#include <qpid/client/MessageListener.h>
 #include <qpid/client/SubscriptionManager.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -60,8 +78,8 @@ void Listener::received(Message& message) {
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+
     Connection connection;
-    Message msg;
     try {
         connection.open(host, port);
         Session session =  connection.newSession();

@@ -22,7 +22,7 @@
  *
  */
 
-#include "Waitable.h"
+#include "qpid/sys/Waitable.h"
 
 #include <queue>
 
@@ -66,14 +66,17 @@ public:
         return true;
     }
 
-    T pop() {
+    T pop(Duration timeout=TIME_INFINITE) {
         T result;
-        bool ok = pop(result);
-        assert(ok); (void) ok;  // Infinite wait.
+        bool ok = pop(result, timeout);
+        if (!ok)
+            throw Exception("Timed out waiting on a blocking queue");
         return result;
     }
         
-    /** Push a value onto the queue */
+    /** Push a value onto the queue.
+     * Note it is not an error to push onto a closed queue.
+     */
     void push(const T& t) {
         Mutex::ScopedLock l(waitable);
         queue.push(t);

@@ -54,23 +54,42 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
 
+    /**
+     * If commands are sent based on the local time (e.g. in timers), they don't have
+     * a well-defined ordering across cluster nodes.
+     * This proxy is for sending such commands. In a clustered broker it will take steps
+     * to synchronize command order across the cluster. In a stand-alone broker
+     * it is just a synonym for getProxy()
+     */  
+    framing::AMQP_ClientProxy& getClusterOrderProxy() {
+        return clusterOrderProxy.get() ? *clusterOrderProxy : proxy;
+    }
+
     virtual void handleDetach();
-    
-    // Overrides
-    void attached(const std::string& name);
+    void attached(const std::string& name);//used by 'pushing' inter-broker bridges
+    void attachAs(const std::string& name);//used by 'pulling' inter-broker bridges
 
   protected:
     virtual void setState(const std::string& sessionName, bool force);
     virtual qpid::SessionState* getState();
     virtual framing::FrameHandler* getInHandler();
-    virtual void channelException(uint16_t code, const std::string& msg);
-    virtual void connectionException(uint16_t code, const std::string& msg);
+    virtual void connectionException(framing::connection::CloseCode code, const std::string& msg);
+    virtual void channelException(framing::session::DetachCode, const std::string& msg);
+    virtual void executionException(framing::execution::ErrorCode, const std::string& msg);
+    virtual void detaching();
     virtual void readyToSend();
 
   private:
+    struct SetChannelProxy : public framing::AMQP_ClientProxy { // Proxy that sets the channel.
+        framing::ChannelHandler setChannel;
+        SetChannelProxy(uint16_t ch, framing::FrameHandler* out)
+            : framing::AMQP_ClientProxy(setChannel), setChannel(ch, out) {}
+    };
+
     Connection& connection;
     framing::AMQP_ClientProxy proxy;
     std::auto_ptr<SessionState> session;
+    std::auto_ptr<SetChannelProxy> clusterOrderProxy;
 };
 
 }} // namespace qpid::broker

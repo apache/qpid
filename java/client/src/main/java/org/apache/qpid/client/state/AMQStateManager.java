@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.io.IOException;
 
 /**
  * The state manager is responsible for managing the state of the protocol session. <p/>
@@ -86,7 +87,7 @@ public class AMQStateManager implements AMQMethodListener
         return _currentState;
     }
 
-    public void changeState(AMQState newState) throws AMQException
+    public void changeState(AMQState newState)
     {
         _logger.debug("State changing to " + newState + " from old state " + _currentState);
 
@@ -136,6 +137,22 @@ public class AMQStateManager implements AMQMethodListener
      */
     public void error(Exception error)
     {
+        if (error instanceof AMQException)
+        {
+            // AMQException should be being notified before closing the
+            // ProtocolSession. Which will change the State to CLOSED.
+            // if we have a hard error.
+            if (((AMQException)error).isHardError())
+            {
+                changeState(AMQState.CONNECTION_CLOSING);
+            }
+        }
+        else
+        {
+            // Be on the safe side here and mark the connection closed
+            changeState(AMQState.CONNECTION_CLOSED);
+        }
+
         if (_waiters.size() == 0)
         {
             _logger.error("No Waiters for error saving as last error:" + error.getMessage());
@@ -195,5 +212,10 @@ public class AMQStateManager implements AMQMethodListener
     public Exception getLastException()
     {
         return _lastException;
+    }
+
+    public void clearLastException()
+    {
+        _lastException = null;
     }
 }

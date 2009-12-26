@@ -19,8 +19,8 @@
  *
  */
 
-#include "SessionManager.h"
-#include "SessionState.h"
+#include "qpid/broker/SessionManager.h"
+#include "qpid/broker/SessionState.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 #include "qpid/log/Helpers.h"
@@ -86,9 +86,14 @@ void SessionManager::forget(const SessionId& id) {
 void SessionManager::eraseExpired() {
     // Called with lock held.
     if (!detached.empty()) {
-        Detached::iterator keep = std::lower_bound(
-            detached.begin(), detached.end(), now(),
-            boost::bind(std::less<AbsTime>(), boost::bind(&SessionState::expiry, _1), _2));
+        // This used to use a more elegant invocation of std::lower_bound
+        // but violated the strict weak ordering rule which Visual Studio
+        // enforced. See QPID-1424 for more info should you be tempted to
+        // replace the loop with something more elegant.
+        AbsTime now = AbsTime::now();
+        Detached::iterator keep = detached.begin();
+        while ((keep != detached.end()) && ((*keep).expiry < now))
+            keep++;
         if (detached.begin() != keep) {
             QPID_LOG(debug, "Expiring sessions: " << log::formatList(detached.begin(), keep));
             detached.erase(detached.begin(), keep);

@@ -43,7 +43,7 @@ template <class T> class AMQCommandControlBody : public AMQBody, public T
     virtual void decode(Buffer& buffer, uint32_t=0) {
         Codec::decode(buffer.getIterator(), static_cast<T&>(*this));
     }
-    virtual uint32_t size() const {
+    virtual uint32_t encodedSize() const {
         Codec::size(buffer.getIterator(), static_cast<const T&>(*this));
     }
 

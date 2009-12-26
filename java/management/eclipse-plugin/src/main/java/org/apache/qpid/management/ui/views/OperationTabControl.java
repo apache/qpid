@@ -22,7 +22,6 @@ package org.apache.qpid.management.ui.views;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -68,7 +67,6 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 /**
  * Control class for the MBean operations tab. It creates the required widgets
  * for the selected MBean.
- * @author Bhupendra Bhardwaj
  */
 public class OperationTabControl extends TabControl
 {
@@ -223,7 +221,7 @@ public class OperationTabControl extends TabControl
         
         // Customised parameter widgets        
         if (_mbean.isExchange() &&
-            EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(EXCHANGE_TYPE)) &&
+            DEFAULT_EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(EXCHANGE_TYPE)) &&
             _opData.getName().equalsIgnoreCase(OPERATION_CREATE_BINDING))
         {                                  
             customCreateNewBinding(); 
@@ -276,7 +274,7 @@ public class OperationTabControl extends TabControl
             }
             else if (param.getName().equals(EXCHANGE_TYPE))
             {
-                items = EXCHANGE_TYPE_VALUES;
+                items = DEFAULT_EXCHANGE_TYPE_VALUES;
             }
             else if (isUserListParameter(param))
             {
@@ -519,7 +517,7 @@ public class OperationTabControl extends TabControl
     private void populateResults(Object result)
     {
         Display display = Display.getCurrent();
-        int width = 600;
+        int width = 610;
         int height = 400;
         Shell shell = ViewUtility.createPopupShell(RESULT, width, height);
         shell.setImage(ApplicationRegistry.getImage(CONSOLE_IMAGE));
@@ -603,21 +601,37 @@ public class OperationTabControl extends TabControl
                         return;
                     }
                     
-                    // customized for passwords
-                    String securityMechanism = ApplicationRegistry.getSecurityMechanism();
-                    if ((MECH_CRAMMD5.equals(securityMechanism)) && PASSWORD.equalsIgnoreCase(param.getName()))
+                    //Custom handling for the PASSWORD field
+                    if (param.getName().equalsIgnoreCase(PASSWORD))
                     {
-                        try
+                        //Convert the String value to a character array if that is what is required.
+                        if (param.getType().equals("[C"))
                         {
-                            param.setValue(ViewUtility.getMD5HashedCharArray(param.getValue()));
-                        }
-                        catch (Exception ex)
-                        {
-                            MBeanUtility.handleException(_mbean, ex);
-                            return;
+                            // Retreive the mBean type and version.
+                            // If we have a version 1 UserManagement class mbean then it expects the password
+                            // to be sent as the hashed version.
+                            if (_mbean.getType().equals("UserManagement") && _mbean.getVersion() == 1)
+                            {
+                                try
+                                {
+                                    param.setValue(ViewUtility.getHash((String) param.getValue()));
+                                }
+                                catch (Exception hashException)
+                                {
+                                    ViewUtility.popupErrorMessage(_form.getText(),
+                                            "Unable to calculate hash for Password:"
+                                            + hashException.getMessage());
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                param.setValue(((String) param.getValue()).toCharArray());
+                            }
                         }
                     }
                     // end of customization
+
                 }
             }
             
@@ -721,7 +735,14 @@ public class OperationTabControl extends TabControl
         {
             boolean success = Boolean.parseBoolean(result.toString());
             String message = success ? OPERATION_SUCCESSFUL : OPERATION_UNSUCCESSFUL;
-            ViewUtility.popupInfoMessage(title, message);
+            if(success)
+            {
+                ViewUtility.popupInfoMessage(title, message);
+            }
+            else
+            {
+                ViewUtility.popupErrorMessage(title, message);
+            }
         }
         else if (_opData.getParameters() != null && !_opData.getParameters().isEmpty())
         {

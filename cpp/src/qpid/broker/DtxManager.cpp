@@ -18,10 +18,11 @@
  * under the License.
  *
  */
-#include "DtxManager.h"
-#include "DtxTimeout.h"
+#include "qpid/broker/DtxManager.h"
+#include "qpid/broker/DtxTimeout.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/ptr_map.h"
 
 #include <boost/format.hpp>
@@ -33,7 +34,7 @@ using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxManager::DtxManager() : store(0) {}
+DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(t) {}
 
 DtxManager::~DtxManager() {}
 
@@ -126,12 +127,11 @@ void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
     intrusive_ptr<DtxTimeout> timeout = record->getTimeout();
     if (timeout.get()) {
         if (timeout->timeout == secs) return;//no need to do anything further if timeout hasn't changed
-        timeout->cancelled = true;
+        timeout->cancel();
     }
     timeout = intrusive_ptr<DtxTimeout>(new DtxTimeout(secs, *this, xid));
     record->setTimeout(timeout);
-    timer.add(boost::static_pointer_cast<TimerTask>(timeout));
-    
+    timer.add(timeout);
 }
 
 uint32_t DtxManager::getTimeout(const std::string& xid)
@@ -160,13 +160,12 @@ void DtxManager::DtxCleanup::fire()
 {
     try {
         mgr.remove(xid);
-    } catch (ConnectionException& e) {
+    } catch (ConnectionException& /*e*/) {
         //assume it was explicitly cleaned up after a call to prepare, commit or rollback
     }
 }
 
 void DtxManager::setStore (TransactionalStore* _store)
 {
-    assert (store == 0 && _store != 0);
     store = _store;
 }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -61,8 +61,14 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
         if (!body.getPassive())
         {
-            //Perform ACL if request is not passive
-            virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+            // Perform ACL if request is not passive
+            if (!virtualHost.getAccessManager().authoriseCreateExchange(session, body.getAutoDelete(),
+                    body.getDurable(), body.getExchange(), body.getInternal(), body.getNowait(), body.getPassive(),
+                    body.getType()))
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+            }
+
         }
 
         if (_logger.isDebugEnabled())
@@ -86,11 +92,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                     try
                     {
 
-                    exchange = exchangeFactory.createExchange(body.getExchange() == null ? null : body.getExchange().intern(),
-                                                              body.getType() == null ? null : body.getType().intern(),
-                                                              body.getDurable(),
-                                                              body.getPassive(), body.getTicket());
-                    exchangeRegistry.registerExchange(exchange);
+                        exchange = exchangeFactory.createExchange(body.getExchange() == null ? null : body.getExchange().intern(),
+                                                                  body.getType() == null ? null : body.getType().intern(),
+                                                                  body.getDurable(),
+                                                                  body.getPassive(), body.getTicket());
+                        exchangeRegistry.registerExchange(exchange);
                     }
                     catch(AMQUnknownExchangeType e)
                     {

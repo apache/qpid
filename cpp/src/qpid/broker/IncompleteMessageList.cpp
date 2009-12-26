@@ -18,34 +18,67 @@
  * under the License.
  *
  */
-#include "IncompleteMessageList.h"
 
-#include "Message.h"
+#include "qpid/broker/IncompleteMessageList.h"
 
 namespace qpid {
 namespace broker {
 
+IncompleteMessageList::IncompleteMessageList() :
+    callback(boost::bind(&IncompleteMessageList::enqueueComplete, this, _1))
+{}
+
+IncompleteMessageList::~IncompleteMessageList() 
+{
+    sys::Mutex::ScopedLock l(lock);
+    for (Messages::iterator i = incomplete.begin(); i != incomplete.end(); ++i) {
+        (*i)->resetEnqueueCompleteCallback();
+        (*i)->resetDequeueCompleteCallback();
+    }
+}
+
 void IncompleteMessageList::add(boost::intrusive_ptr<Message> msg)
 {
+    sys::Mutex::ScopedLock l(lock);
+    msg->setEnqueueCompleteCallback(callback);
     incomplete.push_back(msg);
 }
 
-void IncompleteMessageList::process(CompletionListener l, bool sync)
+void IncompleteMessageList::enqueueComplete(const boost::intrusive_ptr<Message>& ) {
+    sys::Mutex::ScopedLock l(lock);
+    lock.notify();
+}
+
+void IncompleteMessageList::process(const CompletionListener& listen, bool sync)
 {
+    sys::Mutex::ScopedLock l(lock);
     while (!incomplete.empty()) {
         boost::intrusive_ptr<Message>& msg = incomplete.front();
         if (!msg->isEnqueueComplete()) {
             if (sync){
-                msg->flush();
-                msg->waitForEnqueueComplete();
+                {
+                    sys::Mutex::ScopedUnlock u(lock);
+                    msg->flush(); // Can re-enter IncompleteMessageList::enqueueComplete
+                }
+                while (!msg->isEnqueueComplete())
+                    lock.wait();
             } else {
                 //leave the message as incomplete for now
                 return;
             }            
         }
-        l(msg);
+        listen(msg);
         incomplete.pop_front();
     }
+}
+
+void IncompleteMessageList::each(const CompletionListener& listen) {
+    Messages snapshot;
+    {
+        sys::Mutex::ScopedLock l(lock);
+        snapshot = incomplete;
+    }
+    std::for_each(incomplete.begin(), incomplete.end(), listen); // FIXME aconway 2008-11-07: passed by ref or value?
 }
 
 }}

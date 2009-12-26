@@ -19,55 +19,44 @@
  *
  */
 
-#include "Message.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/MessageImpl.h"
 
 namespace qpid {
 namespace client {
 
-Message::Message(const std::string& data_,
-                 const std::string& routingKey,
-                 const std::string& exchange) : TransferContent(data_, routingKey, exchange) {}
+Message::Message(MessageImpl* mi) : impl(mi) {}
 
-std::string Message::getDestination() const 
-{ 
-    return method.getDestination(); 
-}
+Message::Message(const std::string& data, const std::string& routingKey)
+    : impl(new MessageImpl(data, routingKey)) {}
 
-bool Message::isRedelivered() const 
-{ 
-    return hasDeliveryProperties() && getDeliveryProperties().getRedelivered(); 
-}
+Message::Message(const Message& m) : impl(new MessageImpl(*m.impl)) {}
 
-void Message::setRedelivered(bool redelivered) 
-{ 
-    getDeliveryProperties().setRedelivered(redelivered); 
-}
+Message::~Message() { delete impl; }
 
-framing::FieldTable& Message::getHeaders() 
-{ 
-    return getMessageProperties().getApplicationHeaders(); 
-}
+Message& Message::operator=(const Message& m) { *impl = *m.impl; return *this; }
 
-const framing::FieldTable& Message::getHeaders() const
-{ 
-    return getMessageProperties().getApplicationHeaders(); 
-}
+void Message::swap(Message& m) { std::swap(impl, m.impl); }
 
-const framing::MessageTransferBody& Message::getMethod() const
-{
-    return method;
-}
+std::string Message::getDestination() const { return impl->getDestination(); }
+bool Message::isRedelivered() const { return impl->isRedelivered(); }
+void Message::setRedelivered(bool redelivered) { impl->setRedelivered(redelivered); }
+framing::FieldTable& Message::getHeaders() { return impl->getHeaders(); }
+const framing::FieldTable& Message::getHeaders() const { return impl->getHeaders(); }
+const framing::SequenceNumber& Message::getId() const { return impl->getId(); }
 
-const framing::SequenceNumber& Message::getId() const
-{
-    return id;
-}
+void Message::setData(const std::string& s) { impl->setData(s); }
+const std::string& Message::getData() const { return impl->getData(); }
+std::string& Message::getData() { return impl->getData(); }
 
-/**@internal for incoming messages */
-Message::Message(const framing::FrameSet& frameset) :
-    method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId())
-{
-    populate(frameset);
-}
+void Message::appendData(const std::string& s) { impl->appendData(s); }
+
+bool Message::hasMessageProperties() const { return impl->hasMessageProperties(); }
+framing::MessageProperties& Message::getMessageProperties() { return impl->getMessageProperties(); }
+const framing::MessageProperties& Message::getMessageProperties() const { return impl->getMessageProperties(); }
+
+bool Message::hasDeliveryProperties() const { return impl->hasDeliveryProperties(); }
+framing::DeliveryProperties& Message::getDeliveryProperties() { return impl->getDeliveryProperties(); }
+const framing::DeliveryProperties& Message::getDeliveryProperties() const { return impl->getDeliveryProperties(); }
 
 }}

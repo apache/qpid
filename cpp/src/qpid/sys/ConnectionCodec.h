@@ -21,35 +21,23 @@
  * under the License.
  *
  */
+#include "qpid/sys/Codec.h"
 #include "qpid/framing/ProtocolVersion.h"
-#include "OutputControl.h"
-#include <memory>
-#include <map>
 
 namespace qpid {
 
 namespace sys {
 
+class InputHandlerFactory;
+class OutputControl;
+
 /**
  * Interface of coder/decoder for a connection of a specific protocol
  * version.
  */
-class ConnectionCodec {
+class ConnectionCodec : public Codec {
   public:
     virtual ~ConnectionCodec() {}
-
-    /** Decode from buffer, return number of bytes decoded.
-     * @return may be less than size if there was incomplete
-     * data at the end of the buffer.
-     */
-    virtual size_t decode(const char* buffer, size_t size) = 0;
-
-
-    /** Encode into buffer, return number of bytes encoded */
-    virtual size_t encode(const char* buffer, size_t size) = 0;
-
-    /** Return true if we have data to encode */
-    virtual bool canEncode() = 0;
 
     /** Network connection was closed from other end. */
     virtual void closed() = 0;
@@ -57,18 +45,31 @@ class ConnectionCodec {
     virtual bool isClosed() const = 0;
 
     virtual framing::ProtocolVersion getVersion() const = 0;
-    
+
     struct Factory {
         virtual ~Factory() {}
 
+        /** Security Strength Factor - indicates the level of security provided
+         * by the underlying transport.  If zero, the transport provides no
+         * security (e.g. TCP). If non-zero, the transport provides some level
+         * of security (e.g. SSL).  The values for SSF can be interpreted as:
+         *
+         * 0 = No protection.
+         * 1 = Integrity checking only.
+         * >1 = Supports authentication, integrity and confidentiality.
+         *      The number represents the encryption key length.
+         */
+
         /** Return 0 if version unknown */
         virtual ConnectionCodec* create(
-            framing::ProtocolVersion, OutputControl&, const std::string& id
+            framing::ProtocolVersion, OutputControl&, const std::string& id,
+            unsigned int conn_ssf
         ) = 0;
 
         /** Return "preferred" codec for outbound connections. */
         virtual ConnectionCodec* create(
-            OutputControl&, const std::string& id
+            OutputControl&, const std::string& id,
+            unsigned int conn_ssf
         ) = 0;
     };
 };

@@ -22,10 +22,12 @@
 #define _HeadersExchange_
 
 #include <vector>
-#include "Exchange.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
-#include "qpid/sys/Monitor.h"
-#include "Queue.h"
+#include "qpid/sys/CopyOnWriteArray.h"
+#include "qpid/sys/Mutex.h"
+#include "qpid/broker/Queue.h"
 
 namespace qpid {
 namespace broker {
@@ -33,34 +35,57 @@ namespace broker {
 
 class HeadersExchange : public virtual Exchange {    
     typedef std::pair<qpid::framing::FieldTable, Binding::shared_ptr> HeaderMap;
-    typedef std::vector<HeaderMap> Bindings;
+    typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> Bindings;
+
+    struct MatchArgs
+    {
+        const Queue::shared_ptr queue;        
+        const qpid::framing::FieldTable* args;
+        MatchArgs(Queue::shared_ptr q, const qpid::framing::FieldTable* a);
+        bool operator()(Exchange::Binding::shared_ptr b);        
+    };
+    struct MatchKey
+    {
+        const Queue::shared_ptr queue;        
+        const std::string& key;
+        MatchKey(Queue::shared_ptr q, const std::string& k);
+        bool operator()(Exchange::Binding::shared_ptr b);        
+    };
 
     Bindings bindings;
-    qpid::sys::RWlock lock;
+    qpid::sys::Mutex lock;
 
     static std::string getMatch(const framing::FieldTable* args);
 
   public:
     static const std::string typeName;
 
-    HeadersExchange(const string& name, management::Manageable* parent = 0);
-    HeadersExchange(const string& _name, bool _durable, 
-                    const qpid::framing::FieldTable& _args,
-                    management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN HeadersExchange(const string& name,
+                                       management::Manageable* parent = 0, Broker* broker = 0);
+    QPID_BROKER_EXTERN HeadersExchange(const string& _name,
+                                       bool _durable, 
+                                       const qpid::framing::FieldTable& _args,
+                                       management::Manageable* parent = 0, Broker* broker = 0);
     
     virtual std::string getType() const { return typeName; }            
         
-    virtual bool bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
+                                         const string& routingKey,
+                                         const qpid::framing::FieldTable* args);
 
     virtual bool unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args);
 
-    virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual void route(Deliverable& msg,
+                                          const string& routingKey,
+                                          const qpid::framing::FieldTable* args);
 
-    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+    QPID_BROKER_EXTERN virtual bool isBound(Queue::shared_ptr queue,
+                                            const string* const routingKey,
+                                            const qpid::framing::FieldTable* const args);
 
-    virtual ~HeadersExchange();
+    QPID_BROKER_EXTERN virtual ~HeadersExchange();
 
-    static bool match(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
+    static QPID_BROKER_EXTERN bool match(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
     static bool equal(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
 };
 

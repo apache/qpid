@@ -17,6 +17,10 @@
 # under the License.
 #
 
+###############################################################################
+## This file is being obsoleted by qmf/console.py
+###############################################################################
+
 """
 Management API for Qpid
 """
@@ -69,6 +73,57 @@ class mgmtObject (object):
     for cell in row:
       setattr (self, cell[0], cell[1])
 
+class objectId(object):
+  """ Object that represents QMF object identifiers """
+
+  def __init__(self, codec, first=0, second=0):
+    if codec:
+      self.first  = codec.read_uint64()
+      self.second = codec.read_uint64()
+    else:
+      self.first = first
+      self.second = second
+
+  def __cmp__(self, other):
+    if other == None:
+      return 1
+    if self.first < other.first:
+      return -1
+    if self.first > other.first:
+      return 1
+    if self.second < other.second:
+      return -1
+    if self.second > other.second:
+      return 1
+    return 0
+
+
+  def index(self):
+    return (self.first, self.second)
+
+  def getFlags(self):
+    return (self.first & 0xF000000000000000) >> 60
+
+  def getSequence(self):
+    return (self.first & 0x0FFF000000000000) >> 48
+
+  def getBroker(self):
+    return (self.first & 0x0000FFFFF0000000) >> 28
+
+  def getBank(self):
+    return self.first & 0x000000000FFFFFFF
+
+  def getObject(self):
+    return self.second
+
+  def isDurable(self):
+    return self.getSequence() == 0
+
+  def encode(self, codec):
+    codec.write_uint64(self.first)
+    codec.write_uint64(self.second)
+
+
 class methodResult:
   """ Object that contains the result of a method call """
 
@@ -111,19 +166,23 @@ class managementChannel:
 
     ssn.exchange_bind (exchange="amq.direct",
                        queue=self.replyName, binding_key=self.replyName)
-    ssn.message_subscribe (queue=self.topicName, destination="tdest")
-    ssn.message_subscribe (queue=self.replyName, destination="rdest")
+    ssn.message_subscribe (queue=self.topicName, destination="tdest",
+                           accept_mode=ssn.accept_mode.none,
+                           acquire_mode=ssn.acquire_mode.pre_acquired)
+    ssn.message_subscribe (queue=self.replyName, destination="rdest",
+                           accept_mode=ssn.accept_mode.none,
+                           acquire_mode=ssn.acquire_mode.pre_acquired)
 
     ssn.incoming ("tdest").listen (self.topicCb, self.exceptionCb)
     ssn.incoming ("rdest").listen (self.replyCb)
 
     ssn.message_set_flow_mode (destination="tdest", flow_mode=1)
-    ssn.message_flow (destination="tdest", unit=0, value=0xFFFFFFFF)
-    ssn.message_flow (destination="tdest", unit=1, value=0xFFFFFFFF)
+    ssn.message_flow (destination="tdest", unit=0, value=0xFFFFFFFFL)
+    ssn.message_flow (destination="tdest", unit=1, value=0xFFFFFFFFL)
 
     ssn.message_set_flow_mode (destination="rdest", flow_mode=1)
-    ssn.message_flow (destination="rdest", unit=0, value=0xFFFFFFFF)
-    ssn.message_flow (destination="rdest", unit=1, value=0xFFFFFFFF)
+    ssn.message_flow (destination="rdest", unit=0, value=0xFFFFFFFFL)
+    ssn.message_flow (destination="rdest", unit=1, value=0xFFFFFFFFL)
 
   def setBrokerInfo (self, data):
     self.brokerInfo = data
@@ -151,9 +210,6 @@ class managementChannel:
     if self.enabled:
       self.qpidChannel.message_transfer (destination=exchange, message=msg)
 
-  def accept (self, msg):
-    self.qpidChannel.message_accept(RangedSet(msg.id))
-
   def message (self, body, routing_key="broker"):
     dp = self.qpidChannel.delivery_properties()
     dp.routing_key  = routing_key
@@ -178,8 +234,7 @@ class managementClient:
   #========================================================
   # User API - interacts with the class's user
   #========================================================
-  def __init__ (self, amqpSpec, ctrlCb=None, configCb=None, instCb=None, methodCb=None, closeCb=None):
-    self.spec     = amqpSpec
+  def __init__ (self, unused=None, ctrlCb=None, configCb=None, instCb=None, methodCb=None, closeCb=None):
     self.ctrlCb   = ctrlCb
     self.configCb = configCb
     self.instCb   = instCb
@@ -212,7 +267,7 @@ class managementClient:
 
     self.channels.append (mch)
     self.incOutstanding (mch)
-    codec = Codec (self.spec)
+    codec = Codec ()
     self.setHeader (codec, ord ('B'))
     msg = mch.message(codec.encoded)
     mch.send ("qpid.management", msg)
@@ -229,12 +284,12 @@ class managementClient:
 
   def getObjects (self, channel, userSequence, className, bank=0):
     """ Request immediate content from broker """
-    codec = Codec (self.spec)
+    codec = Codec ()
     self.setHeader (codec, ord ('G'), userSequence)
     ft = {}
     ft["_class"] = className
     codec.write_map (ft)
-    msg = channel.message(codec.encoded, routing_key="agent.%d" % bank)
+    msg = channel.message(codec.encoded, routing_key="agent.1.%d" % bank)
     channel.send ("qpid.management", msg)
 
   def syncWaitForStable (self, channel):
@@ -297,27 +352,28 @@ class managementClient:
   #========================================================
   def topicCb (self, ch, msg):
     """ Receive messages via the topic queue of a particular channel. """
-    codec = Codec (self.spec, msg.body)
-    hdr   = self.checkHeader (codec)
-    if hdr == None:
-      raise ValueError ("outer header invalid");
+    codec = Codec (msg.body)
+    while True:
+      hdr = self.checkHeader (codec)
+      if hdr == None:
+        return
 
-    if hdr[0] == 'p':
-      self.handlePackageInd (ch, codec)
-    elif hdr[0] == 'q':
-      self.handleClassInd (ch, codec)
-    elif hdr[0] == 'h':
-      self.handleHeartbeat (ch, codec)
-    else:
-      self.parse (ch, codec, hdr[0], hdr[1])
-    ch.accept(msg)
+      if hdr[0] == 'p':
+        self.handlePackageInd (ch, codec)
+      elif hdr[0] == 'q':
+        self.handleClassInd (ch, codec)
+      elif hdr[0] == 'h':
+        self.handleHeartbeat (ch, codec)
+      elif hdr[0] == 'e':
+        self.handleEvent (ch, codec)
+      else:
+        self.parse (ch, codec, hdr[0], hdr[1])
 
   def replyCb (self, ch, msg):
     """ Receive messages via the reply queue of a particular channel. """
-    codec = Codec (self.spec, msg.body)
+    codec = Codec (msg.body)
     hdr   = self.checkHeader (codec)
     if hdr == None:
-      ch.accept(msg)
       return
 
     if   hdr[0] == 'm':
@@ -332,7 +388,6 @@ class managementClient:
       self.handleClassInd (ch, codec)
     else:
       self.parse (ch, codec, hdr[0], hdr[1])
-    ch.accept(msg)
 
   def exceptCb (self, ch, data):
     if self.closeCb != None:
@@ -345,25 +400,27 @@ class managementClient:
     """ Compose the header of a management message. """
     codec.write_uint8 (ord ('A'))
     codec.write_uint8 (ord ('M'))
-    codec.write_uint8 (ord ('1'))
+    codec.write_uint8 (ord ('2'))
     codec.write_uint8 (opcode)
     codec.write_uint32  (seq)
 
   def checkHeader (self, codec):
-    """ Check the header of a management message and extract the opcode and
-    class. """
-    octet = chr (codec.read_uint8 ())
-    if octet != 'A':
+    """ Check the header of a management message and extract the opcode and class. """
+    try:
+      octet = chr (codec.read_uint8 ())
+      if octet != 'A':
+        return None
+      octet = chr (codec.read_uint8 ())
+      if octet != 'M':
+        return None
+      octet = chr (codec.read_uint8 ())
+      if octet != '2':
+        return None
+      opcode = chr (codec.read_uint8 ())
+      seq    = codec.read_uint32 ()
+      return (opcode, seq)
+    except:
       return None
-    octet = chr (codec.read_uint8 ())
-    if octet != 'M':
-      return None
-    octet = chr (codec.read_uint8 ())
-    if octet != '1':
-      return None
-    opcode = chr (codec.read_uint8 ())
-    seq    = codec.read_uint32 ()
-    return (opcode, seq)
 
   def encodeValue (self, codec, value, typecode):
     """ Encode, into the codec, a value based on its typecode. """
@@ -380,19 +437,19 @@ class managementClient:
     elif typecode == 6:
       codec.write_str8   (value)
     elif typecode == 7:
-      codec.write_vbin32 (value)
+      codec.write_str16 (value)
     elif typecode == 8:  # ABSTIME
       codec.write_uint64 (long (value))
     elif typecode == 9:  # DELTATIME
       codec.write_uint64 (long (value))
     elif typecode == 10: # REF
-      codec.write_uint64 (long (value))
+      value.encode(codec)
     elif typecode == 11: # BOOL
       codec.write_uint8  (int  (value))
     elif typecode == 12: # FLOAT
       codec.write_float  (float (value))
     elif typecode == 13: # DOUBLE
-      codec.write_double (double (value))
+      codec.write_double (float (value))
     elif typecode == 14: # UUID
       codec.write_uuid   (value)
     elif typecode == 15: # FTABLE
@@ -421,15 +478,15 @@ class managementClient:
     elif typecode == 5:
       data = codec.read_uint8 ()
     elif typecode == 6:
-      data = str (codec.read_str8 ())
+      data = codec.read_str8 ()
     elif typecode == 7:
-      data = codec.read_vbin32 ()
+      data = codec.read_str16 ()
     elif typecode == 8:  # ABSTIME
       data = codec.read_uint64 ()
     elif typecode == 9:  # DELTATIME
       data = codec.read_uint64 ()
     elif typecode == 10: # REF
-      data = codec.read_uint64 ()
+      data = objectId(codec)
     elif typecode == 11: # BOOL
       data = codec.read_uint8 ()
     elif typecode == 12: # FLOAT
@@ -469,12 +526,14 @@ class managementClient:
       if self.ctrlCb != None:
         self.ctrlCb (ch.context, self.CTRL_SCHEMA_LOADED, None)
       ch.ssn.exchange_bind (exchange="qpid.management",
-                            queue=ch.topicName, binding_key="mgmt.#")
+                            queue=ch.topicName, binding_key="console.#")
+      ch.ssn.exchange_bind (exchange="qpid.management",
+                            queue=ch.topicName, binding_key="schema.#")
 
 
   def handleMethodReply (self, ch, codec, sequence):
     status = codec.read_uint32 ()
-    sText  = str (codec.read_str8 ())
+    sText  = codec.read_str16 ()
 
     data = self.seqMgr.release (sequence)
     if data == None:
@@ -510,7 +569,7 @@ class managementClient:
 
   def handleCommandComplete (self, ch, codec, seq):
     code = codec.read_uint32 ()
-    text = str (codec.read_str8 ())
+    text = codec.read_str8 ()
     data = (seq, code, text)
     context = self.seqMgr.release (seq)
     if context == "outstanding":
@@ -530,19 +589,19 @@ class managementClient:
       self.ctrlCb (ch.context, self.CTRL_BROKER_INFO, ch.brokerInfo)
 
     # Send a package request
-    sendCodec = Codec (self.spec)
+    sendCodec = Codec ()
     seq = self.seqMgr.reserve ("outstanding")
     self.setHeader (sendCodec, ord ('P'), seq)
     smsg = ch.message(sendCodec.encoded)
     ch.send ("qpid.management", smsg)
 
   def handlePackageInd (self, ch, codec):
-    pname = str (codec.read_str8 ())
+    pname = codec.read_str8 ()
     if pname not in self.packages:
       self.packages[pname] = {}
 
       # Send a class request
-      sendCodec = Codec (self.spec)
+      sendCodec = Codec ()
       seq = self.seqMgr.reserve ("outstanding")
       self.setHeader (sendCodec, ord ('Q'), seq)
       self.incOutstanding (ch)
@@ -551,15 +610,18 @@ class managementClient:
       ch.send ("qpid.management", smsg)
 
   def handleClassInd (self, ch, codec):
-    pname = str (codec.read_str8 ())
-    cname = str (codec.read_str8 ())
-    hash  = codec.read_bin128   ()
+    kind  = codec.read_uint8()
+    if kind != 1:  # This API doesn't handle new-style events
+      return
+    pname = codec.read_str8()
+    cname = codec.read_str8()
+    hash  = codec.read_bin128()
     if pname not in self.packages:
       return
 
     if (cname, hash) not in self.packages[pname]:
       # Send a schema request
-      sendCodec = Codec (self.spec)
+      sendCodec = Codec ()
       seq = self.seqMgr.reserve ("outstanding")
       self.setHeader (sendCodec, ord ('S'), seq)
       self.incOutstanding (ch)
@@ -574,16 +636,49 @@ class managementClient:
     if self.ctrlCb != None:
       self.ctrlCb (ch.context, self.CTRL_HEARTBEAT, timestamp)
 
+  def handleEvent (self, ch, codec):
+    if self.eventCb == None:
+      return
+    timestamp = codec.read_uint64()
+    objId = objectId(codec)
+    packageName = codec.read_str8()
+    className   = codec.read_str8()
+    hash        = codec.read_bin128()
+    name        = codec.read_str8()
+    classKey    = (packageName, className, hash)
+    if classKey not in self.schema:
+      return;
+    schemaClass = self.schema[classKey]
+    row = []
+    es = schemaClass['E']
+    arglist = None
+    for ename in es:
+      (edesc, eargs) = es[ename]
+      if ename == name:
+        arglist = eargs
+    if arglist == None:
+      return
+    for arg in arglist:
+      row.append((arg[0], self.decodeValue(codec, arg[1])))
+    self.eventCb(ch.context, classKey, objId, name, row)
+
   def parseSchema (self, ch, codec):
     """ Parse a received schema-description message. """
     self.decOutstanding (ch)
-    packageName = str (codec.read_str8 ())
-    className   = str (codec.read_str8 ())
+    kind  = codec.read_uint8()
+    if kind != 1:  # This API doesn't handle new-style events
+      return
+    packageName = codec.read_str8 ()
+    className   = codec.read_str8 ()
     hash        = codec.read_bin128 ()
+    hasSupertype = 0 #codec.read_uint8()
     configCount = codec.read_uint16 ()
     instCount   = codec.read_uint16 ()
     methodCount = codec.read_uint16 ()
-    eventCount  = codec.read_uint16 ()
+    if hasSupertype != 0:
+      supertypePackage = codec.read_str8()
+      supertypeClass   = codec.read_str8()
+      supertypeHash    = codec.read_bin128()
 
     if packageName not in self.packages:
       return
@@ -597,22 +692,22 @@ class managementClient:
     configs = []
     insts   = []
     methods = {}
-    events  = []
 
     configs.append (("id", 4, "", "", 1, 1, None, None, None, None, None))
     insts.append   (("id", 4, None, None))
 
     for idx in range (configCount):
       ft = codec.read_map ()
-      name   = str (ft["name"])
-      type   = ft["type"]
-      access = ft["access"]
-      index  = ft["index"]
-      unit   = None
-      min    = None
-      max    = None
-      maxlen = None
-      desc   = None
+      name     = str (ft["name"])
+      type     = ft["type"]
+      access   = ft["access"]
+      index    = ft["index"]
+      optional = ft["optional"]
+      unit     = None
+      min      = None
+      max      = None
+      maxlen   = None
+      desc     = None
 
       for key, value in ft.items ():
         if   key == "unit":
@@ -626,7 +721,7 @@ class managementClient:
         elif key == "desc":
           desc = str (value)
 
-      config = (name, type, unit, desc, access, index, min, max, maxlen)
+      config = (name, type, unit, desc, access, index, min, max, maxlen, optional)
       configs.append (config)
 
     for idx in range (instCount):
@@ -689,11 +784,26 @@ class managementClient:
     schemaClass['C'] = configs
     schemaClass['I'] = insts
     schemaClass['M'] = methods
-    schemaClass['E'] = events
     self.schema[classKey] = schemaClass
 
     if self.schemaCb != None:
-      self.schemaCb (ch.context, classKey, configs, insts, methods, events)
+      self.schemaCb (ch.context, classKey, configs, insts, methods, {})
+
+  def parsePresenceMasks(self, codec, schemaClass):
+    """ Generate a list of not-present properties """
+    excludeList = []
+    bit = 0
+    for element in schemaClass['C'][1:]:
+      if element[9] == 1:
+        if bit == 0:
+          mask = codec.read_uint8()
+          bit  = 1
+        if (mask & bit) == 0:
+          excludeList.append(element[0])
+        bit = bit * 2
+        if bit == 256:
+          bit = 0
+    return excludeList
 
   def parseContent (self, ch, cls, codec, seq=0):
     """ Parse a received content message. """
@@ -702,8 +812,8 @@ class managementClient:
     if cls == 'I' and self.instCb == None:
       return
 
-    packageName = str (codec.read_str8 ())
-    className   = str (codec.read_str8 ())
+    packageName = codec.read_str8 ()
+    className   = codec.read_str8 ()
     hash        = codec.read_bin128 ()
     classKey    = (packageName, className, hash)
 
@@ -716,21 +826,26 @@ class managementClient:
     timestamps.append (codec.read_uint64 ())  # Current Time
     timestamps.append (codec.read_uint64 ())  # Create Time
     timestamps.append (codec.read_uint64 ())  # Delete Time
-
+    objId = objectId(codec)
     schemaClass = self.schema[classKey]
     if cls == 'C' or cls == 'B':
-      for element in schemaClass['C'][:]:
+      notPresent = self.parsePresenceMasks(codec, schemaClass)
+
+    if cls == 'C' or cls == 'B':
+      row.append(("id", objId))
+      for element in schemaClass['C'][1:]:
         tc   = element[1]
         name = element[0]
-        data = self.decodeValue (codec, tc)
-        row.append ((name, data))
+        if name in notPresent:
+          row.append((name, None))
+        else:
+          data = self.decodeValue(codec, tc)
+          row.append((name, data))
 
     if cls == 'I' or cls == 'B':
-      if cls == 'B':
-        start = 1
-      else:
-        start = 0
-      for element in schemaClass['I'][start:]:
+      if cls == 'I':
+        row.append(("id", objId))
+      for element in schemaClass['I'][1:]:
         tc   = element[1]
         name = element[0]
         data = self.decodeValue (codec, tc)
@@ -760,12 +875,15 @@ class managementClient:
 
   def method (self, channel, userSequence, objId, classId, methodName, args):
     """ Invoke a method on an object """
-    codec = Codec (self.spec)
+    codec = Codec ()
     sequence = self.seqMgr.reserve ((userSequence, classId, methodName))
     self.setHeader (codec, ord ('M'), sequence)
-    codec.write_uint64 (objId)       # ID of object
+    objId.encode(codec)
+    codec.write_str8 (classId[0])
+    codec.write_str8 (classId[1])
+    codec.write_bin128 (classId[2])
     codec.write_str8 (methodName)
-    bank = (objId & 0x0000FFFFFF000000) >> 24
+    bank = "%d.%d" % (objId.getBroker(), objId.getBank())
 
     # Encode args according to schema
     if classId not in self.schema:
@@ -795,5 +913,5 @@ class managementClient:
 
     packageName = classId[0]
     className   = classId[1]
-    msg = channel.message(codec.encoded, "agent." + str(bank))
+    msg = channel.message(codec.encoded, "agent." + bank)
     channel.send ("qpid.management", msg)

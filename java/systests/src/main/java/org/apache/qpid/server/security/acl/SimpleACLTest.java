@@ -4,7 +4,7 @@
  *  distributed with this work for additional information
  *  regarding copyright ownership.  The ASF licenses this file
  *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
+*  "License"); you may not use this file except in compliance
  *  with the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
@@ -21,65 +21,88 @@
 
 package org.apache.qpid.server.security.acl;
 
-import junit.framework.TestCase;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.*;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQConnectionFailureException;
+import org.apache.qpid.client.AMQAuthenticationException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.DeliveryMode;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.NamingException;
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-public class SimpleACLTest extends TestCase implements ConnectionListener
+public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 {
-    private String BROKER = "vm://:1";//"tcp://localhost:5672";
-
     public void setUp() throws Exception
     {
-        // Initialise ACLs.
-        final String QpidExampleHome = System.getProperty("QPID_EXAMPLE_HOME");
-        final File defaultaclConfigFile = new File(QpidExampleHome, "etc/acl.config.xml");
+    	//Performing setUp here would result in a broker with the default ACL test config
+    	
+    	//Each test now calls the private setUpACLTest to allow them to make 
+    	//individual customisations to the base ACL settings
+    }
 
-        if (!defaultaclConfigFile.exists())
+
+    public void tearDown() throws Exception
+    {
+        try
         {
-            System.err.println("Configuration file not found:" + defaultaclConfigFile);
-            fail("Configuration file not found:" + defaultaclConfigFile);
+            super.tearDown();
         }
+        catch (JMSException e)
+        {
+            //we're throwing this away as it can happen in this test as the state manager remembers exceptions
+            //that we provoked with authentication failures, where the test passes - we can ignore on con close
+        }
+    }
+    
+    private void setUpACLTest() throws Exception
+    {
+        final String QPID_HOME = System.getProperty("QPID_HOME");
 
-        if (System.getProperty("QPID_HOME") == null)                                                                                            
+        if (QPID_HOME == null)
         {
             fail("QPID_HOME not set");
         }
 
-        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(defaultaclConfigFile);
+        // Initialise ACLs.
+        _configFile = new File(QPID_HOME, "etc/config-systests-acl.xml");
 
-        ApplicationRegistry.initialise(config, 1);
-
-        TransportConnection.createVMBroker(1);
+        super.setUp();
     }
 
-    public void tearDown()
+    public String createConnectionString(String username, String password)
     {
-        ApplicationRegistry.remove(1);
-        TransportConnection.killAllVMBrokers();
+
+        return "amqp://" + username + ":" + password + "@clientid/test?brokerlist='" + getBroker() + "?retries='0''";
     }
 
-    public String createConnectionString(String username, String password, String broker)
+    public void testAccessAuthorized() throws AMQException, URLSyntaxException, Exception
     {
-
-        return "amqp://" + username + ":" + password + "@clientid/test?brokerlist='" + broker + "?retries='0''";
-    }
-
-    public void testAccessAuthorized() throws AMQException, URLSyntaxException
-    {
+    	setUpACLTest();
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -92,37 +115,91 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
         catch (Exception e)
         {
-            fail("Connection was not created due to:" + e.getMessage());
+            fail("Connection was not created due to:" + e);
         }
     }
-
-    public void testAccessNoRights() throws URLSyntaxException, JMSException
+    
+    public void testAccessVhostAuthorisedGuest() throws IOException, Exception
     {
+        //The 'guest' user has no access to the 'test' vhost, as tested below in testAccessNoRights(), and so
+        //is unable to perform actions such as connecting (and by extension, creating a queue, and consuming 
+        //from a queue etc). In order to test the vhost-wide 'access' ACL right, the 'guest' user has been given 
+        //this right in the 'test2' vhost.
+
+        setUpACLTest();
+        
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("guest", "guest", BROKER));
+            //get a connection to the 'test2' vhost using the guest user and perform various actions.
+            Connection conn = getConnection(new AMQConnectionURL(
+                    "amqp://username:password@clientid/test2?brokerlist='" + getBroker() + "'"));
+            
+            ((AMQConnection) conn).setConnectionListener(this);
+
+            Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            conn.start();
+
+            //create Queues and consumers for each
+            Queue namedQueue = sesh.createQueue("vhostAccessCreatedQueue" + getTestQueueName());
+            Queue tempQueue = sesh.createTemporaryQueue();
+            MessageConsumer consumer = sesh.createConsumer(namedQueue);
+            MessageConsumer tempConsumer = sesh.createConsumer(tempQueue);
+
+            //send a message to each queue (also causing an exchange declare)
+            MessageProducer sender = ((AMQSession)sesh).createProducer(null);
+            ((org.apache.qpid.jms.MessageProducer) sender).send(namedQueue, sesh.createTextMessage("test"),
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+            ((org.apache.qpid.jms.MessageProducer) sender).send(tempQueue, sesh.createTextMessage("test"),
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+
+            //consume the messages from the queues
+            consumer.receive(2000);
+            tempConsumer.receive(2000);
+
+            conn.close();
+        }
+        catch (Exception e)
+        {
+            fail("Test failed due to:" + e.getMessage());
+        }
+    }
+    
+    public void testAccessNoRights() throws Exception
+    {
+    	setUpACLTest();
+    	
+        try
+        {
+            Connection conn = getConnection("guest", "guest");
 
             //Attempt to do do things to test connection.
             Session sesh = conn.createSession(true, Session.SESSION_TRANSACTED);
             conn.start();
             sesh.rollback();
 
-            conn.close();
             fail("Connection was created.");
         }
-        catch (AMQException amqe)
+        catch (JMSException jmse)
         {
-            Throwable cause = amqe.getCause();
-            assertEquals("Exception was wrong type", AMQAuthenticationException.class, cause.getClass());
+            Throwable linkedException = jmse.getLinkedException();
+            assertNotNull("Cause was null", linkedException);
+
+            assertEquals("Linked Exception was wrong type", AMQConnectionFailureException.class, linkedException.getClass());
+
+            Throwable cause = linkedException.getCause();
+            assertEquals("Cause was wrong type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
         }
     }
 
-    public void testClientConsumeFromTempQueueValid() throws AMQException, URLSyntaxException
+    public void testClientConsumeFromTempQueueValid() throws AMQException, URLSyntaxException, Exception
     {
+    	setUpACLTest();
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -138,15 +215,29 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testClientConsumeFromNamedQueueInvalid() throws AMQException, URLSyntaxException
+    public void testClientConsumeFromNamedQueueInvalid() throws NamingException, Exception
     {
+    	setUpACLTest();
+    	
+    	//QPID-2081: use a latch to sync on exception causing connection close, to work 
+    	//around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             //Prevent Failover
             ((AMQConnection) conn).setConnectionListener(this);
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -162,14 +253,21 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
-    public void testClientCreateTemporaryQueue() throws JMSException, URLSyntaxException
+    public void testClientCreateTemporaryQueue() throws JMSException, URLSyntaxException, Exception
     {
+    	setUpACLTest();
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -187,16 +285,30 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testClientCreateNamedQueue() throws JMSException, URLSyntaxException, AMQException
+    public void testClientCreateNamedQueue() throws NamingException, JMSException, AMQException, Exception
     {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             //Create a Named Queue
             ((AMQSession) sesh).createQueue(new AMQShortString("IllegalQueue"), false, false, false);
 
@@ -205,15 +317,23 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
         catch (AMQAuthenticationException amqe)
         {
+            amqe.printStackTrace();
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) amqe).getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
-    public void testClientPublishUsingTransactionSuccess() throws AMQException, URLSyntaxException
+    public void testClientPublishUsingTransactionSuccess() throws AMQException, URLSyntaxException, Exception
     {
+    	setUpACLTest();
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
 
@@ -236,11 +356,13 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testClientPublishValidQueueSuccess() throws AMQException, URLSyntaxException
+    public void testClientPublishValidQueueSuccess() throws AMQException, URLSyntaxException, Exception
     {
+    	setUpACLTest();
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
 
@@ -266,13 +388,27 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testClientPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException
+    public void testClientPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException, NamingException, Exception
     {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
+            
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
 
             Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -290,7 +426,9 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
             // Test the connection with a valid consumer
             // This may fail as the session may be closed before the queue or the consumer created.
-            session.createConsumer(session.createTemporaryQueue()).close();
+            Queue temp = session.createTemporaryQueue();
+
+            session.createConsumer(temp).close();
 
             //Connection should now be closed and will throw the exception caused by the above send
             conn.close();
@@ -300,16 +438,27 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         catch (JMSException e)
         {
             Throwable cause = e.getLinkedException();
+            if (!(cause instanceof AMQAuthenticationException))
+            {
+                e.printStackTrace();
+            }
             assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+            
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
-    public void testServerConsumeFromNamedQueueValid() throws AMQException, URLSyntaxException
+    public void testServerConsumeFromNamedQueueValid() throws AMQException, URLSyntaxException, Exception
     {
+    	setUpACLTest();
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("server", "guest", BROKER));
+            Connection conn = getConnection("server", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -325,12 +474,26 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testServerConsumeFromNamedQueueInvalid() throws AMQException, URLSyntaxException
+    public void testServerConsumeFromNamedQueueInvalid() throws AMQException, URLSyntaxException, NamingException, Exception
     {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("client", "guest", BROKER));
+            Connection conn = getConnection("client", "guest");
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -347,18 +510,34 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+ 
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
-    public void testServerConsumeFromTemporaryQueue() throws AMQException, URLSyntaxException
+    public void testServerConsumeFromTemporaryQueue() throws AMQException, URLSyntaxException, NamingException, Exception
     {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("server", "guest", BROKER));
+            Connection conn = getConnection("server", "guest");
 
-            //Prevent Failover
-            ((AMQConnection) conn).setConnectionListener(this);
-
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -374,14 +553,32 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
-    public void testServerCreateNamedQueueValid() throws JMSException, URLSyntaxException
+    @Override
+    public Connection getConnection(String username, String password) throws NamingException, JMSException
     {
+        AMQConnection connection = (AMQConnection) super.getConnection(username, password);
+
+        //Prevent Failover
+        connection.setConnectionListener(this);
+
+        return (Connection) connection;
+    }
+
+    public void testServerCreateNamedQueueValid() throws JMSException, URLSyntaxException, Exception
+    {
+    	setUpACLTest();
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("server", "guest", BROKER));
+            Connection conn = getConnection("server", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -398,12 +595,26 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testServerCreateNamedQueueInvalid() throws JMSException, URLSyntaxException, AMQException
+    public void testServerCreateNamedQueueInvalid() throws JMSException, URLSyntaxException, AMQException, NamingException, Exception
     {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("server", "guest", BROKER));
+            Connection conn = getConnection("server", "guest");
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -417,28 +628,107 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         catch (AMQAuthenticationException amqe)
         {
             assertEquals("Incorrect error code thrown", 403, amqe.getErrorCode().getCode());
+            
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
-    public void testServerCreateTemporyQueueInvalid() throws JMSException, URLSyntaxException, AMQException
+    public void testServerCreateTemporaryQueueInvalid() throws NamingException, Exception
     {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+
+        Connection conn = getConnection("server", "guest");
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("server", "guest", BROKER));
 
-            Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+
+            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
 
-            ((AMQSession) sesh).createQueue(new AMQShortString("again_ensure_auto_delete_queue_for_temporary"),
-                                            true, false, false);
+            session.createTemporaryQueue();
 
             fail("Test failed as creation succeded.");
-            //conn will be automatically closed
+        }
+        catch (JMSException e)
+        {
+            Throwable cause = e.getLinkedException();
+
+            assertNotNull("There was no liked exception", cause);
+            assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
+            assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
+        }
+        finally
+        {
+        	try
+        	{
+        		conn.close();
+        	}
+        	catch (Exception e)
+        	{
+        		// This normally fails because we are denied
+        	}
+        }
+    }
+
+    public void testServerCreateAutoDeleteQueueInvalid() throws NamingException, JMSException, AMQException, Exception
+    {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
+        Connection connection = null;
+        try
+        {
+            connection = getConnection("server", "guest");
+
+            connection.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            connection.start();
+
+            ((AMQSession) session).createQueue(new AMQShortString("again_ensure_auto_delete_queue_for_temporary"),
+                                               true, false, false);
+
+            fail("Test failed as creation succeded.");
+            //connection will be automatically closed
         }
         catch (AMQAuthenticationException amqe)
         {
             assertEquals("Incorrect error code thrown", 403, amqe.getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -450,10 +740,12 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
      * @throws URLSyntaxException
      * @throws JMSException
      */
-    public void testServerPublishUsingTransactionSuccess() throws AMQException, URLSyntaxException, JMSException
+    public void testServerPublishUsingTransactionSuccess() throws AMQException, URLSyntaxException, JMSException, NamingException, Exception
     {
+    	setUpACLTest();
+    	
         //Set up the Server
-        Connection serverConnection = new AMQConnection(createConnectionString("server", "guest", BROKER));
+        Connection serverConnection = getConnection("server", "guest");
 
         ((AMQConnection) serverConnection).setConnectionListener(this);
 
@@ -466,7 +758,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         serverConnection.start();
 
         //Set up the consumer
-        Connection clientConnection = new AMQConnection(createConnectionString("client", "guest", BROKER));
+        Connection clientConnection = getConnection("client", "guest");
 
         //Send a test mesage
         Session clientSession = clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -507,26 +799,48 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             //Send the message using a transaction as this will allow us to retrieve any errors that occur on the broker.
             serverSession.commit();
 
-            serverConnection.close();
-
             //Ensure Response is received.
             Message clientResponseMsg = clientResponse.receive(2000);
             assertNotNull("Client did not receive response message,", clientResponseMsg);
             assertEquals("Incorrect message received", "Response", ((TextMessage) clientResponseMsg).getText());
 
-            clientConnection.close();
         }
         catch (Exception e)
         {
             fail("Test publish failed:" + e);
         }
+        finally
+        {
+            try
+            {
+                serverConnection.close();
+            }
+            finally
+            {
+                clientConnection.close();
+            }
+        }
     }
 
-    public void testServerPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException
+    public void testServerPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException, NamingException, Exception
     {
+    	setUpACLTest();
+    	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
-            Connection conn = new AMQConnection(createConnectionString("server", "guest", BROKER));
+            Connection conn = getConnection("server", "guest");
+            
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
 
             ((AMQConnection) conn).setConnectionListener(this);
 
@@ -559,8 +873,27 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         {
             Throwable cause = e.getLinkedException();
 
-            assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
-            assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+            if (cause == null)
+            {
+                e.printStackTrace(System.out);
+                fail("JMS Exception did not have cause");
+            }
+            else if (!(cause instanceof AMQAuthenticationException))
+            {
+                cause.printStackTrace(System.out);
+                assertEquals("Incorrect exception", IllegalStateException.class, cause.getClass());
+                System.out.println("QPID-1204 : Session became closed and we got that error rather than the authentication error.");
+            }
+            else
+            {
+                assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
+                assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+            }
+            
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 

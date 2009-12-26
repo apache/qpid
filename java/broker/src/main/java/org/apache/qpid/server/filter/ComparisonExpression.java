@@ -27,22 +27,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 
 /**
  * A filter performing a comparison of two objects
  */
-public abstract class ComparisonExpression<E extends Exception> extends BinaryExpression<E> implements BooleanExpression<E>
+public abstract class ComparisonExpression extends BinaryExpression implements BooleanExpression
 {
 
-    public static<E extends Exception> BooleanExpression<E> createBetween(Expression<E> value, Expression left, Expression<E> right)
+    public static BooleanExpression createBetween(Expression value, Expression left, Expression right)
     {
         return LogicExpression.createAND(createGreaterThanEqual(value, left), createLessThanEqual(value, right));
     }
 
-    public static<E extends Exception> BooleanExpression<E> createNotBetween(Expression<E> value, Expression<E> left, Expression<E> right)
+    public static BooleanExpression createNotBetween(Expression value, Expression left, Expression right)
     {
         return LogicExpression.createOR(createLessThan(value, left), createGreaterThan(value, right));
     }
@@ -73,7 +71,7 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
         REGEXP_CONTROL_CHARS.add(new Character('!'));
     }
 
-    static class LikeExpression<E extends Exception> extends UnaryExpression<E> implements BooleanExpression<E>
+    static class LikeExpression extends UnaryExpression implements BooleanExpression
     {
 
         Pattern likePattern;
@@ -81,7 +79,7 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
         /**
          * @param right
          */
-        public LikeExpression(Expression<E> right, String like, int escape)
+        public LikeExpression(Expression right, String like, int escape)
         {
             super(right);
 
@@ -138,7 +136,7 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
         /**
          *  org.apache.activemq.filter.Expression#evaluate(MessageEvaluationContext)
          */
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
 
             Object rv = this.getRight().evaluate(message);
@@ -158,7 +156,7 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 
-        public boolean matches(Filterable<E> message) throws E
+        public boolean matches(Filterable message)
         {
             Object object = evaluate(message);
 
@@ -236,7 +234,7 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
         return doCreateEqual(left, right);
     }
 
-    private static<E extends Exception> BooleanExpression<E> doCreateEqual(Expression<E> left, Expression<E> right)
+    private static BooleanExpression doCreateEqual(Expression left, Expression right)
     {
         return new EqualExpression(left, right);
     }
@@ -388,7 +386,7 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
         super(left, right);
     }
 
-    public Object evaluate(Filterable<E> message) throws E
+    public Object evaluate(Filterable message)
     {
         Comparable lv = (Comparable) left.evaluate(message);
         if (lv == null)
@@ -550,21 +548,21 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
 
     protected abstract boolean asBoolean(int answer);
 
-    public boolean matches(Filterable<E> message) throws E
+    public boolean matches(Filterable message)
     {
         Object object = evaluate(message);
 
         return (object != null) && (object == Boolean.TRUE);
     }
 
-    private static class EqualExpression<E extends Exception> extends ComparisonExpression<E>
+    private static class EqualExpression extends ComparisonExpression
     {
-        public EqualExpression(final Expression<E> left, final Expression<E> right)
+        public EqualExpression(final Expression left, final Expression right)
         {
             super(left, right);
         }
 
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
             Object lv = left.evaluate(message);
             Object rv = right.evaluate(message);

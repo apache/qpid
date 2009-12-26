@@ -41,12 +41,14 @@ public class ProtocolVersion  implements Comparable
 {
     private final byte _majorVersion;
     private final byte _minorVersion;
+    private final String _stringFormat;
 
 
     public ProtocolVersion(byte majorVersion, byte minorVersion)
     {
         _majorVersion = majorVersion;
         _minorVersion = minorVersion;
+        _stringFormat = _majorVersion+"-"+_minorVersion;
     }
 
     public byte getMajorVersion()
@@ -57,6 +59,22 @@ public class ProtocolVersion  implements Comparable
     public byte getMinorVersion()
     {
         return _minorVersion;
+    }
+
+    public byte getActualMinorVersion()
+    {
+        return _minorVersion > 90 ? (byte) (_minorVersion / 10) : _minorVersion;
+    }
+
+
+    public byte getRevisionVersion()
+    {
+        return _minorVersion > 90 ? (byte) (_minorVersion % 10) : (byte) 0;
+    }
+
+    public String toString()
+    {
+        return _stringFormat;
     }
 
 
@@ -131,15 +149,20 @@ public class ProtocolVersion  implements Comparable
     private static final ProtocolVersion _defaultVersion;							 
 
 	
+    public static final ProtocolVersion v0_10 = new ProtocolVersion((byte)0,(byte)10);
+
 #foreach( $version in $model.getVersionSet() )
 #set( $versionId = "v$version.getMajor()_$version.getMinor()" )
-        public static final ProtocolVersion $versionId = new ProtocolVersion((byte)$version.getMajor(),(byte)$version.getMinor());
+    public static final ProtocolVersion $versionId = new ProtocolVersion((byte)$version.getMajor(),(byte)$version.getMinor());
 #end
 	
+        
     static
     {
         SortedSet<ProtocolVersion> versions = new TreeSet<ProtocolVersion>();
 
+		versions.add(v0_10);
+		_nameToVersionMap.put("0-10", v0_10);
 #foreach( $version in $model.getVersionSet() )
 #set( $versionId = "v$version.getMajor()_$version.getMinor()" )
         versions.add($versionId);

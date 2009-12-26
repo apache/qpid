@@ -21,11 +21,12 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
-#include "AMQBody.h"
-#include "Buffer.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/AMQBody.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/MessageProperties.h"
+#include "qpid/CommonImportExport.h"
 #include <iostream>
 
 #include <boost/optional.hpp>
@@ -34,16 +35,14 @@
 namespace qpid {
 namespace framing {
 
-enum DeliveryMode { TRANSIENT = 1, PERSISTENT = 2};
-
 class AMQHeaderBody :  public AMQBody
 {
     template <class T> struct OptProps { boost::optional<T> props; };
     template <class Base, class T>
     struct PropSet : public Base, public OptProps<T> {
-        uint32_t size() const {
+        uint32_t encodedSize() const {
             const boost::optional<T>& p=this->OptProps<T>::props;
-            return (p ? p->size() : 0) + Base::size();
+            return (p ? p->encodedSize() : 0) + Base::encodedSize();
         }
         void encode(Buffer& buffer) const {
             const boost::optional<T>& p=this->OptProps<T>::props;
@@ -68,7 +67,7 @@ class AMQHeaderBody :  public AMQBody
     };
 
     struct Empty {
-        uint32_t size() const { return 0; }
+        uint32_t encodedSize() const { return 0; }
         void encode(Buffer&) const {};
         bool decode(Buffer&, uint32_t, uint16_t) const { return false; };
         void print(std::ostream&) const {}
@@ -83,12 +82,12 @@ public:
 
     inline uint8_t type() const { return HEADER_BODY; }
 
-    uint32_t size() const;
-    void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer, uint32_t size);
-    uint64_t getContentLength() const;
-    void print(std::ostream& out) const;
-    void accept(AMQBodyConstVisitor&) const;
+    QPID_COMMON_EXTERN uint32_t encodedSize() const;
+    QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
+    QPID_COMMON_EXTERN void decode(Buffer& buffer, uint32_t size);
+    QPID_COMMON_EXTERN uint64_t getContentLength() const;
+    QPID_COMMON_EXTERN void print(std::ostream& out) const;
+    QPID_COMMON_EXTERN void accept(AMQBodyConstVisitor&) const;
 
     template <class T> T* get(bool create) {
         boost::optional<T>& p=properties.OptProps<T>::props;
@@ -99,6 +98,8 @@ public:
     template <class T> const T* get() const {
         return properties.OptProps<T>::props.get_ptr();
     }
+
+    boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
 };
 
 }}

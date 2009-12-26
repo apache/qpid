@@ -22,7 +22,7 @@ package org.apache.qpid.server.virtualhost;
 
 import java.io.IOException;
 
-import org.apache.qpid.server.management.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 
 /**
  * The management interface exposed to allow management of an Exchange.
@@ -31,6 +31,7 @@ import org.apache.qpid.server.management.MBeanAttribute;
 public interface ManagedVirtualHost
 {
     static final String TYPE = "VirtualHost";
+    static final int VERSION = 1;
 
     /**
      * Returns the name of the managed virtualHost.

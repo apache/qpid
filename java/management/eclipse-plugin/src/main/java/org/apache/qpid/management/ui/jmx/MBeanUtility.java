@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -37,10 +38,14 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
@@ -173,6 +178,10 @@ public class MBeanUtility
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
         }
+        else if (ex instanceof SecurityException)
+        {
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
+        }
         else 
         {
             if (ex.getCause() != null)
@@ -266,6 +275,72 @@ public class MBeanUtility
         attributeModel.setAttributeValue(attribute, value);
         return value;
     }
+    
+
+    /**
+     * Returns a List of Object arrays containing the requested attribute values (in the same sequence requested) for each queue in the virtualhost.
+     * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-".
+     */
+    public static List<List<Object>> getQueueAttributes(List<ManagedBean> mbeans, String[] attributes)
+    {
+        List<List<Object>> results = new ArrayList<List<Object>>();
+        
+        MBeanServerConnection mbsc = null;
+        if(mbeans.isEmpty())
+        {
+            return results;
+        }
+        else
+        {
+            ManagedBean mbean = mbeans.get(0);
+            JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(mbean);
+            mbsc = serverRegistry.getServerConnection();
+        }
+        
+        if(mbsc == null)
+        {
+            return results;
+        }
+        
+        for(ManagedBean mbean : mbeans)
+        {
+            HashMap<String,Object> tempResults = new HashMap<String,Object>();
+            
+            ObjectName objName = ((JMXManagedObject)mbean).getObjectName();
+            try
+            {
+                AttributeList list = mbsc.getAttributes(objName, attributes);
+                
+                for (Attribute attr : list.toArray(new Attribute[0]))
+                {
+                    tempResults.put(attr.getName(), attr.getValue());
+                }
+                
+                List<Object> attributeValues = new ArrayList<Object>(attributes.length);
+                
+                for(int i = 0; i <attributes.length; i++)
+                {
+                    if(tempResults.containsKey(attributes[i]))
+                    {
+                        attributeValues.add(tempResults.get(attributes[i]));
+                    }
+                    else
+                    {
+                        attributeValues.add(new String("-"));
+                    }
+                }
+                
+                results.add(attributeValues);
+            }
+            catch (Exception ignore)
+            {
+                continue;
+            }
+        }
+        
+        return results;
+    }
+    
     
     /**
      * Retrieves the attribute values from MBeanSever and stores in the server registry.
@@ -437,15 +512,70 @@ public class MBeanUtility
     }
     
     /**
-     * Returns all the domains for the given server. This method can be removed as now this RCP is specific to 
-     * Qpid and domain is also fixed
+     * Classifies the management API version of the given server
+     * @return list of ManagedBeans
+     * @throws NullPointerException 
+     * @throws ManagementConsoleException
+     * @throws MalformedObjectNameException 
+     * @throws IOException 
      */
-    public static List<String> getAllDomains(ManagedServer server) throws Exception
+    public static void classifyManagementApiVersion(ManagedServer server, JMXServerRegistry serverRegistry) 
+         throws MalformedObjectNameException, NullPointerException, IOException
     {
-        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
         MBeanServerConnection mbsc = serverRegistry.getServerConnection();
-        String[] domains = mbsc.getDomains();
-        return Arrays.asList(domains);
+        
+        //Detect if the ServerInformation MBean is present, and use it to retrieve the API version.
+        ObjectName objName = new ObjectName(server.getDomain() + ":type="+ ServerInformation.TYPE + ",*");
+        Set<ObjectName> objectInstances = mbsc.queryNames(objName, null);
+        
+        if(objectInstances.size() != 0)
+        {
+            for (Iterator<ObjectName> itr = objectInstances.iterator(); itr.hasNext();)
+            {
+                ObjectName instance = (ObjectName)itr.next();
+                ServerInformation simb = (ServerInformation)
+                                         MBeanServerInvocationHandler.newProxyInstance(mbsc, 
+                                                     instance, ServerInformation.class, false);
+
+                    int major = simb.getManagementApiMajorVersion();
+                    int minor = simb.getManagementApiMinorVersion();
+                    
+                    serverRegistry.setManagementApiVersion(new ApiVersion(major, minor));
+            }
+            
+            return;
+        }
+        
+        //ServerInformation mbean was not present, so this is a older pre-v1.3 API server.
+        
+        //Detect the value of the 'version' key property on the UserManagement MBean ObjectName.
+        //If present, we have a v1.2 API server. If null, we have a v1.1 API server.
+        //Use an ObjectName pattern (the ?) to match the 'type' and allow this to work for non-admin users
+        objName = new ObjectName(server.getDomain() + ":type="+ "UserManagemen?" + ",*");
+        objectInstances = mbsc.queryNames(objName, null);
+        
+        if(objectInstances.size() != 0)
+        {
+            for (Iterator<ObjectName> itr = objectInstances.iterator(); itr.hasNext();)
+            {
+                ObjectName instance = (ObjectName)itr.next();
+                String version = instance.getKeyProperty("version");
+                
+                if(version != null)
+                {
+                    serverRegistry.setManagementApiVersion(new ApiVersion(1, 2));
+                }
+                else
+                {
+                    serverRegistry.setManagementApiVersion(new ApiVersion(1, 1));
+                }
+            }
+        }
+        else
+        {
+            //UserManagement MBean wasnt present, connected to an old server: classify as v1.0 API
+            serverRegistry.setManagementApiVersion(new ApiVersion(1, 0));
+        }
     }
     
     public static void printOutput(String statement)

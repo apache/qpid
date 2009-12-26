@@ -48,6 +48,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,9 +85,20 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
                 Properties p = new Properties();
 
                 p.load(new BufferedInputStream(new FileInputStream(file)));
+                Strings.Resolver resolver = new Strings.ChainedResolver
+                    (Strings.SYSTEM_RESOLVER, new Strings.PropertiesResolver(p));
 
-                environment.putAll(p);
-                System.getProperties().putAll(p);
+                for (Map.Entry me : p.entrySet())
+                {
+                    String key = (String) me.getKey();
+                    String value = (String) me.getValue();
+                    String expanded = Strings.expand(value, resolver);
+                    environment.put(key, expanded);
+                    if (System.getProperty(key) == null)
+                    {
+                        System.setProperty(key, expanded);
+                    }
+                }
                 _logger.info("Loaded Context Properties:" + environment.toString());
             }
             else
@@ -96,7 +108,8 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         }
         catch (IOException ioe)
         {
-            _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL));
+            _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL) +"\n" +
+                         "Due to:"+ioe.getMessage());
         }
 
         createConnectionFactories(data, environment);
@@ -126,7 +139,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(CONNECTION_FACTORY_PREFIX))
             {
                 String jndiName = key.substring(CONNECTION_FACTORY_PREFIX.length());
-                ConnectionFactory cf = createFactory(entry.getValue().toString());
+                ConnectionFactory cf = createFactory(entry.getValue().toString().trim());
                 if (cf != null)
                 {
                     data.put(jndiName, cf);
@@ -144,7 +157,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(DESTINATION_PREFIX))
             {
                 String jndiName = key.substring(DESTINATION_PREFIX.length());
-                Destination dest = createDestination(entry.getValue().toString());
+                Destination dest = createDestination(entry.getValue().toString().trim());
                 if (dest != null)
                 {
                     data.put(jndiName, dest);
@@ -162,7 +175,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(QUEUE_PREFIX))
             {
                 String jndiName = key.substring(QUEUE_PREFIX.length());
-                Queue q = createQueue(entry.getValue().toString());
+                Queue q = createQueue(entry.getValue().toString().trim());
                 if (q != null)
                 {
                     data.put(jndiName, q);
@@ -180,7 +193,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(TOPIC_PREFIX))
             {
                 String jndiName = key.substring(TOPIC_PREFIX.length());
-                Topic t = createTopic(entry.getValue().toString());
+                Topic t = createTopic(entry.getValue().toString().trim());
                 if (t != null)
                 {
                     if (_logger.isDebugEnabled())
@@ -283,7 +296,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             int i = 0;
             for (String key:keys)
             {
-                bindings[i] = new AMQShortString(key);
+                bindings[i] = new AMQShortString(key.trim());
                 i++;
             }
             // The Destination has a dual nature. If this was used for a producer the key is used

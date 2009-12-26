@@ -20,38 +20,56 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.AccessResult;
 import org.apache.qpid.server.security.access.Permission;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.commons.configuration.Configuration;
 
-public class DenyAll implements ACLPlugin
+public class DenyAll extends BasicACLPlugin
 {
-    public AccessResult authorise(AMQProtocolSession session, Permission permission, AMQMethodBody body, Object... parameters) throws AMQConnectionException
+    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
+    {
+        public boolean supportsTag(String name)
+        {
+            return false;
+        }
+
+        public ACLPlugin newInstance(Configuration config)
+        {
+            return new DenyAll();
+        }
+    };
+    
+    public AccessResult authorise(AMQProtocolSession session,
+            Permission permission, AMQMethodBody body, Object... parameters)
+            throws AMQConnectionException
     {
 
         if (ACLManager.getLogger().isInfoEnabled())
         {
+            ACLManager.getLogger().info(
+                    "Denying user:" + session.getPrincipal());
         }
-        ACLManager.getLogger().info("Denying user:" + session.getAuthorizedID() + " for :" + permission.toString()
-                                    + " on " + body.getClass().getSimpleName()
-                                    + (parameters == null || parameters.length == 0 ? "" : "-" + AllowAll.accessablesToString(parameters)));
-
-        throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "DenyAll Plugin");
+        throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
+                "DenyAll Plugin");
     }
 
     public String getPluginName()
     {
-        return "DenyAll";
+        return getClass().getSimpleName();
     }
 
-    public void setConfiguaration(Configuration config)
+    @Override 
+    protected AuthzResult getResult()
     {
-        //no-op
+        // Always deny
+        return AuthzResult.DENIED;
     }
+
 }

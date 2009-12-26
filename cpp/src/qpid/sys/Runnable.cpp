@@ -16,7 +16,7 @@
  *
  */
 
-#include "Runnable.h"
+#include "qpid/sys/Runnable.h"
 #include <boost/bind.hpp>
 
 namespace qpid {

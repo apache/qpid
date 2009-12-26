@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,9 +28,12 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(HeadersExchangeTestSuite)
-    
-QPID_AUTO_TEST_CASE(testMatchAll) 
+
+QPID_AUTO_TEST_CASE(testMatchAll)
 {
     FieldTable b, m, n;
     b.setString("x-match", "all");
@@ -43,7 +46,7 @@ QPID_AUTO_TEST_CASE(testMatchAll)
     // Ignore extras.
     m.setString("extra", "x");
     BOOST_CHECK(HeadersExchange::match(b, m));
-        
+
     // Fail mismatch, wrong value.
     m.setString("foo", "NotFoo");
     BOOST_CHECK(!HeadersExchange::match(b, m));
@@ -54,7 +57,7 @@ QPID_AUTO_TEST_CASE(testMatchAll)
     BOOST_CHECK(!HeadersExchange::match(b, n));
 }
 
-QPID_AUTO_TEST_CASE(testMatchAny) 
+QPID_AUTO_TEST_CASE(testMatchAny)
 {
     FieldTable b, m, n;
     b.setString("x-match", "any");
@@ -67,7 +70,7 @@ QPID_AUTO_TEST_CASE(testMatchAny)
     BOOST_CHECK(HeadersExchange::match(b, m));
 }
 
-QPID_AUTO_TEST_CASE(testMatchEmptyValue) 
+QPID_AUTO_TEST_CASE(testMatchEmptyValue)
 {
     FieldTable b, m;
     b.setString("x-match", "all");
@@ -82,23 +85,23 @@ QPID_AUTO_TEST_CASE(testMatchEmptyArgs)
 {
     FieldTable b, m;
     m.setString("foo", "FOO");
-        
+
     b.setString("x-match", "all");
     BOOST_CHECK(HeadersExchange::match(b, m));
     b.setString("x-match", "any");
     BOOST_CHECK(!HeadersExchange::match(b, m));
 }
-    
 
-QPID_AUTO_TEST_CASE(testMatchNoXMatch) 
+
+QPID_AUTO_TEST_CASE(testMatchNoXMatch)
 {
     FieldTable b, m;
     b.setString("foo", "FOO");
     m.setString("foo", "FOO");
     BOOST_CHECK(!HeadersExchange::match(b, m));
 }
-    
-QPID_AUTO_TEST_CASE(testBindNoXMatch) 
+
+QPID_AUTO_TEST_CASE(testBindNoXMatch)
 {
     HeadersExchange exchange("test");
     Queue::shared_ptr queue;
@@ -112,4 +115,6 @@ QPID_AUTO_TEST_CASE(testBindNoXMatch)
     }
 }
 
-QPID_AUTO_TEST_SUITE_END()    
+QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

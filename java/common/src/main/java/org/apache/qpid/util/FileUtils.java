@@ -20,7 +20,18 @@
  */
 package org.apache.qpid.util;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * FileUtils provides some simple helper methods for working with files. It follows the convention of wrapping all
@@ -48,14 +59,31 @@ public class FileUtils
 
         try
         {
-            is = new BufferedInputStream(new FileInputStream(filename));
-        }
-        catch (FileNotFoundException e)
-        {
-            throw new RuntimeException(e);
-        }
+            try
+            {
+                is = new BufferedInputStream(new FileInputStream(filename));
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new RuntimeException(e);
+            }
 
-        return readStreamAsString(is);
+            return readStreamAsString(is);
+        }
+        finally
+        {
+            if (is != null)
+            {
+                try
+                {
+                    is.close();
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     /**
@@ -168,28 +196,182 @@ public class FileUtils
     {
         try
         {
-            InputStream in = new FileInputStream(src);
-            if (!dst.exists())
-            {
-                dst.createNewFile();
-            }
-
-            OutputStream out = new FileOutputStream(dst);
-
-            // Transfer bytes from in to out
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = in.read(buf)) > 0)
-            {
-                out.write(buf, 0, len);
-            }
-
-            in.close();
-            out.close();
+            copyCheckedEx(src, dst);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Copies the specified source file to the specified destination file. If the destination file does not exist,
+     * it is created.
+     *
+     * @param src The source file name.
+     * @param dst The destination file name.
+     * @throws IOException
+     */
+    public static void copyCheckedEx(File src, File dst) throws IOException
+    {
+        InputStream in = new FileInputStream(src);
+        if (!dst.exists())
+        {
+            dst.createNewFile();
+        }
+
+        OutputStream out = new FileOutputStream(dst);
+
+        // Transfer bytes from in to out
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = in.read(buf)) > 0)
+        {
+            out.write(buf, 0, len);
+        }
+
+        in.close();
+        out.close();
+    }
+
+    /*
+     * Deletes a given file
+     */
+    public static boolean deleteFile(String filePath)
+    {
+        return delete(new File(filePath), false);
+    }
+
+    /*
+     * Deletes a given empty directory 
+     */
+    public static boolean deleteDirectory(String directoryPath)
+    {
+        File directory = new File(directoryPath);
+
+        if (directory.isDirectory())
+        {
+            if (directory.listFiles().length == 0)
+            {
+                return delete(directory, true);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Delete a given file/directory,
+     * A directory will always require the recursive flag to be set.
+     * if a directory is specified and recursive set then delete the whole tree
+     *
+     * @param file      the File object to start at
+     * @param recursive boolean to recurse if a directory is specified.
+     *
+     * @return <code>true</code> if and only if the file or directory is
+     *         successfully deleted; <code>false</code> otherwise
+     */
+    public static boolean delete(File file, boolean recursive)
+    {
+        boolean success = true;
+
+        if (file.isDirectory())
+        {
+            if (recursive)
+            {
+                File[] files = file.listFiles();
+
+                // This can occur if the file is deleted outside the JVM
+                if (files == null)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < files.length; i++)
+                {
+                    success = delete(files[i], true) && success;
+                }
+
+                return success && file.delete();
+            }
+
+            return false;
+        }
+
+        return file.delete();
+    }
+
+    public static class UnableToCopyException extends Exception
+    {
+        UnableToCopyException(String msg)
+        {
+            super(msg);
+        }
+    }
+
+    public static void copyRecursive(File source, File dst) throws FileNotFoundException, UnableToCopyException
+    {
+
+        if (!source.exists())
+        {
+            throw new FileNotFoundException("Unable to copy '" + source.toString() + "' as it does not exist.");
+        }
+
+        if (dst.exists() && !dst.isDirectory())
+        {
+            throw new IllegalArgumentException("Unable to copy '" + source.toString() + "' to '" + dst + "' a file with same name exists.");
+        }
+
+        if (source.isFile())
+        {
+            copy(source, dst);
+        }
+
+        //else we have a source directory
+        if (!dst.isDirectory() && !dst.mkdir())
+        {
+            throw new UnableToCopyException("Unable to create destination directory");
+        }
+
+        for (File file : source.listFiles())
+        {
+            if (file.isFile())
+            {
+                copy(file, new File(dst.toString() + File.separator + file.getName()));
+            }
+            else
+            {
+                copyRecursive(file, new File(dst + File.separator + file.getName()));
+            }
+        }
+
+    }
+
+    /**
+     * Checks the specified file for instances of the search string.
+     *
+     * @param file the file to search
+     * @param search the search String
+     *
+     * @throws java.io.IOException
+     * @return the list of matching entries
+     */
+    public static List<String> searchFile(File file, String search)
+            throws IOException
+    {
+
+        List<String> results = new LinkedList<String>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        while (reader.ready())
+        {
+            String line = reader.readLine();
+            if (line.contains(search))
+            {
+                results.add(line);
+            }
+        }
+
+        return results;
     }
 }

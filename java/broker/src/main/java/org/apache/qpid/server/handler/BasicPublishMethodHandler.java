@@ -87,7 +87,12 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
             }
 
             //Access Control
-            vHost.getAccessManager().authorise(session, Permission.PUBLISH, body, e);
+            if (!vHost.getAccessManager().authorisePublish(session, 
+                    body.getImmediate(), body.getMandatory(), 
+                    body.getRoutingKey(), e))
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+            }
 
             MessagePublishInfo info = session.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
             info.setExchange(exchange);

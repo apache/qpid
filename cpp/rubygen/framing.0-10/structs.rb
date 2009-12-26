@@ -1,4 +1,22 @@
 #!/usr/bin/env ruby
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 # Usage: output_directory xml_spec_file [xml_spec_file...]
 # 
 $: << '..'
@@ -26,6 +44,12 @@ class StructGen < CppGen
     "timestamp"=>8
   }
 
+  StringSizeMap={
+    "LongString"=>4,
+    "MediumString"=>2,
+    "ShortString"=>1
+  }
+  
   SizeType={
     1=>"Octet",
     2=>"Short",
@@ -153,13 +177,10 @@ class StructGen < CppGen
         genl "total += #{size};//#{f.cppname}"
       elsif (f.cpptype.name == "SequenceNumberSet")
         genl "total += #{f.cppname}.encodedSize();"
-      else 
-        encoded = f.cpptype.encoded
-        gen "total += ("
-        gen "4 + " if encoded == "LongString"
-        gen "2 + " if encoded == "MediumString"
-        gen "1 + " if encoded == "ShortString"
-        genl "#{f.cppname}.size());"
+      elsif (size = StringSizeMap[f.cpptype.encoded])
+        genl "total += #{size} + #{f.cppname}.size();"
+      else
+        genl "total += #{f.cppname}.encodedSize();"
       end
     end
   end
@@ -212,6 +233,7 @@ class StructGen < CppGen
 
     using  AMQMethodBody::accept;
     void accept(MethodBodyConstVisitor& v) const { v.visit(*this); }
+    boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
 
     ClassId amqpClassId() const { return CLASS_ID; }
     MethodId amqpMethodId() const { return METHOD_ID; }
@@ -329,15 +351,15 @@ EOS
   end
 
   def declare_packed_accessors(f)
-    genl "void set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname});";
-    genl "#{f.cpptype.ret} get#{f.name.caps}() const;"
+    genl "QPID_COMMON_EXTERN void set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname});";
+    genl "QPID_COMMON_EXTERN #{f.cpptype.ret} get#{f.name.caps}() const;"
     if (f.cpptype.name == "FieldTable")
-      genl "#{f.cpptype.name}& get#{f.name.caps}();"
+      genl "QPID_COMMON_EXTERN #{f.cpptype.name}& get#{f.name.caps}();"
     end
     if (f.type_ != "bit")
       #extra 'accessors' for packed fields:
-      genl "bool has#{f.name.caps}() const;"
-      genl "void clear#{f.name.caps}Flag();"
+      genl "QPID_COMMON_EXTERN bool has#{f.name.caps}() const;"
+      genl "QPID_COMMON_EXTERN void clear#{f.name.caps}Flag();"
     end
   end
 
@@ -359,9 +381,11 @@ EOS
       else
         inheritance = ": public AMQMethodBody"
       end
+    else
+      public_api("qpid/framing/#{classname}.h") # Non-method structs are public
     end
 
-    h_file("qpid/framing/#{classname}.h") { 
+    h_file("qpid/framing/#{classname}.h") {       
       if (s.kind_of? AmqpMethod)
         gen <<EOS
 #include "qpid/framing/AMQMethodBody.h"
@@ -377,6 +401,7 @@ EOS
 
 #include <ostream>
 #include "qpid/framing/amqp_types_full.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
@@ -416,17 +441,17 @@ EOS
     methodbody_extra_defs(s)
   end
   if (s.kind_of? AmqpStruct)
-    indent {genl "friend std::ostream& operator<<(std::ostream&, const #{classname}&);" }
+    indent {genl "QPID_COMMON_EXTERN friend std::ostream& operator<<(std::ostream&, const #{classname}&);" }
   end
 
   gen <<EOS
-    void encode(Buffer&) const;
-    void decode(Buffer&, uint32_t=0);
-    void encodeStructBody(Buffer&) const;
-    void decodeStructBody(Buffer&, uint32_t=0);
-    uint32_t size() const;
-    uint32_t bodySize() const;
-    void print(std::ostream& out) const;
+    QPID_COMMON_EXTERN void encode(Buffer&) const;
+    QPID_COMMON_EXTERN void decode(Buffer&, uint32_t=0);
+    QPID_COMMON_EXTERN void encodeStructBody(Buffer&) const;
+    QPID_COMMON_EXTERN void decodeStructBody(Buffer&, uint32_t=0);
+    QPID_COMMON_EXTERN uint32_t encodedSize() const;
+    QPID_COMMON_EXTERN uint32_t bodySize() const;
+    QPID_COMMON_EXTERN void print(std::ostream& out) const;
 }; /* class #{classname} */
 
 }}
@@ -439,9 +464,8 @@ EOS
         buffer = "/*buffer*/"
       end
       gen <<EOS
-#include "#{classname}.h"
-
-#include "reply_exceptions.h"
+#include "qpid/framing/#{classname}.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::framing;
 
@@ -528,8 +552,7 @@ EOS
     return total;
 }
 
-uint32_t #{classname}::size() const
-{
+uint32_t #{classname}::encodedSize() const {
     uint32_t total = bodySize();
 EOS
         if (s.kind_of? AmqpStruct)
@@ -583,9 +606,10 @@ EOS
     structs.each { |s| define_struct(s) }
     @amqp.methods_.each { |m| define_struct(m) }
     #generate a single include file containing the list of structs for convenience
-    h_file("qpid/framing/amqp_structs.h") { structs.each { |s| genl "#include \"#{s.cppname}.h\"" } }
+    public_api("qpid/framing/amqp_structs.h")
+    h_file("qpid/framing/amqp_structs.h") { structs.each { |s| genl "#include \"qpid/framing/#{s.cppname}.h\"" } }
   end
 end
 
-StructGen.new(ARGV[0], $amqp).generate()
+StructGen.new($outdir, $amqp).generate()
 

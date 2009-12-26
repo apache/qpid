@@ -19,15 +19,11 @@
  *
  */
 
-#include "config.h"
-#include "ExchangeRegistry.h"
-#include "DirectExchange.h"
-#include "FanOutExchange.h"
-#include "HeadersExchange.h"
-#include "TopicExchange.h"
-#ifdef HAVE_XML
-#include "XmlExchange.h"
-#endif
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/HeadersExchange.h"
+#include "qpid/broker/TopicExchange.h"
 #include "qpid/management/ManagementExchange.h"
 #include "qpid/framing/reply_exceptions.h"
 
@@ -36,42 +32,35 @@ using namespace qpid::sys;
 using std::pair;
 using qpid::framing::FieldTable;
 
-pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type) 
-    throw(UnknownExchangeTypeException){
+pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type){
 
     return declare(name, type, false, FieldTable());
 }
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type, 
-                                                           bool durable, const FieldTable& args) 
-    throw(UnknownExchangeTypeException){
+                                                           bool durable, const FieldTable& args){
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end()) {
         Exchange::shared_ptr exchange;
 
         if(type == TopicExchange::typeName){
-            exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent, broker));
         }else if(type == DirectExchange::typeName){
-            exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent, broker));
         }else if(type == FanOutExchange::typeName){
-            exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args, parent, broker));
         }else if (type == HeadersExchange::typeName) {
-            exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent, broker));
         }else if (type == ManagementExchange::typeName) {
-            exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args, parent, broker));
         }
-#ifdef HAVE_XML
-	else if (type == XmlExchange::typeName) {
-            exchange = Exchange::shared_ptr(new XmlExchange(name, durable, args, parent));
-        }
-#endif
 	else{
             FunctionMap::iterator i =  factory.find(type);
             if (i == factory.end()) {
                 throw UnknownExchangeTypeException();    
             } else {
-                exchange = i->second(name, durable, args, parent);
+                exchange = i->second(name, durable, args, parent, broker);
             }
         }
         exchanges[name] = exchange;
@@ -82,6 +71,11 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
 }
 
 void ExchangeRegistry::destroy(const string& name){
+    if (name.empty() ||
+        (name.find("amq.") == 0 &&
+         (name == "amq.direct" || name == "amq.fanout" || name == "amq.topic" || name == "amq.match")) ||
+        name == "qpid.management")
+        throw framing::NotAllowedException(QPID_MSG("Cannot delete default exchange: '" << name << "'"));
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i != exchanges.end()) {
@@ -95,6 +89,10 @@ Exchange::shared_ptr ExchangeRegistry::get(const string& name){
     if (i == exchanges.end())
         throw framing::NotFoundException(QPID_MSG("Exchange not found: " << name));
     return i->second;
+}
+
+bool ExchangeRegistry::registerExchange(const Exchange::shared_ptr& ex) {
+    return exchanges.insert(ExchangeMap::value_type(ex->getName(), ex)).second;
 }
 
 void ExchangeRegistry::registerType(const std::string& type, FactoryFunction f)

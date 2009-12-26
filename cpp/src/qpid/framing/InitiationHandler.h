@@ -23,7 +23,7 @@
 #ifndef _InitiationHandler_
 #define _InitiationHandler_
 
-#include "ProtocolInitiation.h"
+#include "qpid/framing/ProtocolInitiation.h"
 
 namespace qpid {
 namespace framing {

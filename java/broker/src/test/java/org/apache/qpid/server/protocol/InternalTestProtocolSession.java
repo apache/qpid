@@ -20,35 +20,44 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.output.ProtocolOutputConverter;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.AMQChannel;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.security.Principal;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class InternalTestProtocolSession extends AMQMinaProtocolSession implements ProtocolOutputConverter
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.transport.TestNetworkDriver;
+
+public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
     // ChannelID(LIST)  -> LinkedList<Pair>
     final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
     private AtomicInteger _deliveryCount = new AtomicInteger(0);
 
-    public InternalTestProtocolSession() throws AMQException
+    public InternalTestProtocolSession(VirtualHost virtualHost) throws AMQException
     {
-        super(new TestIoSession(),
-              ApplicationRegistry.getInstance().getVirtualHostRegistry(),
-              new AMQCodecFactory(true));
+        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkDriver());
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 
+        // Need to authenticate session for it to be representative testing.
+        setAuthorizedID(new Principal()
+        {
+            public String getName()
+            {
+                return "InternalTestProtocolSession";
+            }
+        });
+
+        setVirtualHost(virtualHost);
     }
 
     public ProtocolOutputConverter getProtocolOutputConverter()
@@ -59,6 +68,16 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
     public byte getProtocolMajorVersion()
     {
         return (byte) 8;
+    }
+
+    public void writeReturn(MessagePublishInfo messagePublishInfo,
+                            ContentHeaderBody header,
+                            MessageContentSource msgContent,
+                            int channelId,
+                            int replyCode,
+                            AMQShortString replyText) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public byte getProtocolMinorVersion()
@@ -72,7 +91,14 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
     {
         synchronized (_channelDelivers)
         {
-            List<DeliveryPair> msgs = _channelDelivers.get(channelId).get(consumerTag).subList(0, count);
+            List<DeliveryPair> all =_channelDelivers.get(channelId).get(consumerTag);
+
+            if (all == null)
+            {
+                return new ArrayList<DeliveryPair>(0);
+            }
+
+            List<DeliveryPair> msgs = all.subList(0, count);
 
             List<DeliveryPair> response = new ArrayList<DeliveryPair>(msgs);
 
@@ -92,7 +118,7 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
     {
     }
 
-    public void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag) throws AMQException
+    public void writeDeliver(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag) throws AMQException
     {
         _deliveryCount.incrementAndGet();
 
@@ -114,11 +140,11 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
                 consumers.put(consumerTag, consumerDelivers);
             }
 
-            consumerDelivers.add(new DeliveryPair(deliveryTag, message));
+            consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)entry.getMessage()));
         }
     }
 
-    public void writeGetOk(AMQMessage message, int channelId, long deliveryTag, int queueSize) throws AMQException
+    public void writeGetOk(QueueEntry message, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
     }
 

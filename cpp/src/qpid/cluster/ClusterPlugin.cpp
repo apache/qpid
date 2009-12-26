@@ -16,89 +16,157 @@
  *
  */
 
-#include "ConnectionInterceptor.h"
+#include "config.h"
+#include "qpid/cluster/Connection.h"
+#include "qpid/cluster/ConnectionCodec.h"
+#include "qpid/cluster/ClusterSettings.h"
+
+#include "qpid/cluster/Cluster.h"
+#include "qpid/cluster/ConnectionCodec.h"
+#include "qpid/cluster/UpdateClient.h"
 
 #include "qpid/broker/Broker.h"
-#include "qpid/cluster/Cluster.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
-#include "qpid/shared_ptr.h"
+#include "qpid/sys/AtomicValue.h"
+#include "qpid/log/Statement.h"
 
+#include "qpid/management/ManagementAgent.h"
+#include "qpid/management/IdAllocator.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/client/ConnectionSettings.h"
+
+#include <boost/shared_ptr.hpp>
 #include <boost/utility/in_place_factory.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace qpid {
 namespace cluster {
 
 using namespace std;
+using broker::Broker;
+using management::IdAllocator;
+using management::ManagementAgent;
 
-struct ClusterValues {
-    string name;
-    string url;
 
-    Url getUrl(uint16_t port) const {
-        if (url.empty()) return Url::getIpAddressesUrl(port);
-        return Url(url);
-    }
-};
-
-/** Note separating options from values to work around boost version differences.
+/** Note separating options from settings to work around boost version differences.
  *  Old boost takes a reference to options objects, but new boost makes a copy.
  *  New boost allows a shared_ptr but that's not compatible with old boost.
  */
 struct ClusterOptions : public Options {
-    ClusterValues& values; 
+    ClusterSettings& settings; 
 
-    ClusterOptions(ClusterValues& v) : Options("Cluster Options"), values(v) {
+    ClusterOptions(ClusterSettings& v) : Options("Cluster Options"), settings(v) {
         addOptions()
-            ("cluster-name", optValue(values.name, "NAME"), "Name of cluster to join")
-            ("cluster-url", optValue(values.url,"URL"),
+            ("cluster-name", optValue(settings.name, "NAME"), "Name of cluster to join")
+            ("cluster-url", optValue(settings.url,"URL"),
              "URL of this broker, advertized to the cluster.\n"
              "Defaults to a URL listing all the local IP addresses\n")
+            ("cluster-username", optValue(settings.username, "USER"), "Username for connections between brokers")
+            ("cluster-password", optValue(settings.password, "PASS"), "Password for connections between brokers")
+            ("cluster-mechanism", optValue(settings.mechanism, "MECH"), "Authentication mechanism for connections between brokers")
+#if HAVE_LIBCMAN_H
+            ("cluster-cman", optValue(settings.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
+#endif
+            ("cluster-size", optValue(settings.size, "N"), "Wait for N cluster members before allowing clients to connect.")
+            ("cluster-read-max", optValue(settings.readMax,"N"), "Experimental: flow-control limit  reads per connection. 0=no limit.")
             ;
+    }
+};
+
+struct UpdateClientIdAllocator : management::IdAllocator
+{
+    qpid::sys::AtomicValue<uint64_t> sequence;
+
+    UpdateClientIdAllocator() : sequence(0x4000000000000000LL) {}
+
+    uint64_t getIdFor(management::Manageable* m)
+    {
+        if (isUpdateQueue(m) || isUpdateExchange(m) || isUpdateSession(m) || isUpdateBinding(m)) {
+            return ++sequence;
+        } else {
+            return 0;
+        }
+    }
+
+    bool isUpdateQueue(management::Manageable* manageable)
+    {
+        qpid::broker::Queue* queue = dynamic_cast<qpid::broker::Queue*>(manageable);
+        return queue && queue->getName() == UpdateClient::UPDATE;
+    }
+
+    bool isUpdateExchange(management::Manageable* manageable)
+    {
+        qpid::broker::Exchange* exchange = dynamic_cast<qpid::broker::Exchange*>(manageable);
+        return exchange && exchange->getName() == UpdateClient::UPDATE;
+    }
+
+    bool isUpdateSession(management::Manageable* manageable)
+    {
+        broker::SessionState* session = dynamic_cast<broker::SessionState*>(manageable);
+        return session && session->getId().getName() == UpdateClient::UPDATE;
+    }
+
+    bool isUpdateBinding(management::Manageable* manageable)
+    {
+        broker::Exchange::Binding* binding = dynamic_cast<broker::Exchange::Binding*>(manageable);
+        return binding && binding->queue->getName() == UpdateClient::UPDATE;
     }
 };
 
 struct ClusterPlugin : public Plugin {
 
-    ClusterValues values;
+    ClusterSettings settings;
     ClusterOptions options;
-    boost::intrusive_ptr<Cluster> cluster;
+    Cluster* cluster;
+    boost::scoped_ptr<ConnectionCodec::Factory> factory;
 
-    ClusterPlugin() : options(values) {}
+    ClusterPlugin() : options(settings), cluster(0) {}
 
+    // Cluster needs to be initialized after the store 
+    int initOrder() const { return Plugin::DEFAULT_INIT_ORDER+500; }
+    
     Options* getOptions() { return &options; }
 
-    void init(broker::Broker& b) {
-        if (values.name.empty()) return;  // Only if --cluster-name option was specified.
-        if (cluster) throw Exception("Cluster plugin cannot be initialized twice in one process.");
-        cluster = new Cluster(values.name, values.getUrl(b.getPort()), b);
-        b.addFinalizer(boost::bind(&ClusterPlugin::shutdown, this));
+    void earlyInitialize(Plugin::Target& target) {
+        if (settings.name.empty()) return; // Only if --cluster-name option was specified.
+        Broker* broker = dynamic_cast<Broker*>(&target);
+        if (!broker) return;
+        cluster = new Cluster(settings, *broker);
+        broker->setConnectionFactory(
+            boost::shared_ptr<sys::ConnectionCodec::Factory>(
+                new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
+        ManagementAgent* mgmt = broker->getManagementAgent();
+        if (mgmt) {
+            std::auto_ptr<IdAllocator> allocator(new UpdateClientIdAllocator());
+            mgmt->setAllocator(allocator);
+        }
     }
 
-    template <class T> void init(T& t) {
-        if (cluster) cluster->initialize(t);
+    void disallow(ManagementAgent* agent, const string& className, const string& methodName) {
+        string message = "Management method " + className + ":" + methodName + " is not allowed on a clustered broker.";
+        agent->disallow(className, methodName, message);
     }
-    
-    template <class T> bool init(Plugin::Target& target) {
-        T* t = dynamic_cast<T*>(&target);
-        if (t) init(*t);
-        return t;
+    void disallowManagementMethods(ManagementAgent* agent) {
+        if (!agent) return;
+        disallow(agent, "queue", "purge");
+        disallow(agent, "session", "detach");
+        disallow(agent, "session", "close");
+        disallow(agent, "connection", "close");
     }
-
-    void earlyInitialize(Plugin::Target&) {}
 
     void initialize(Plugin::Target& target) {
-        if (init<broker::Broker>(target)) return;
-        if (!cluster) return;   // Remaining plugins only valid if cluster initialized.
-        if (init<broker::Connection>(target)) return;
+        Broker* broker = dynamic_cast<Broker*>(&target);
+        if (broker && cluster) {
+            disallowManagementMethods(broker->getManagementAgent());
+            cluster->initialize();
+        }
     }
-
-    void shutdown() { cluster = 0; }
 };
 
 static ClusterPlugin instance; // Static initialization.
 
-// For test purposes.
-boost::intrusive_ptr<Cluster> getGlobalCluster() { return instance.cluster; }
-    
 }} // namespace qpid::cluster

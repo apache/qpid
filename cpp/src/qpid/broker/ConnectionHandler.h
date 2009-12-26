@@ -22,68 +22,71 @@
 #define _ConnectionAdapter_
 
 #include <memory>
-#include "SaslAuthenticator.h"
+#include "qpid/broker/SaslAuthenticator.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQP_ClientOperations.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
-#include "qpid/framing/AMQP_ServerProxy.h"
+#include "qpid/framing/AMQP_AllOperations.h"
+#include "qpid/framing/AMQP_AllProxy.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
+#include "qpid/broker/AclModule.h"
 
 namespace qpid {
 namespace broker {
 
 class Connection;
+class SecureConnection;
 
 class ConnectionHandler : public framing::FrameHandler
 {
-    struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler, 
-        public framing::AMQP_ClientOperations::ConnectionHandler
+    struct Handler : public framing::AMQP_AllOperations::ConnectionHandler
     {
-        framing::AMQP_ClientProxy::Connection client;
-        framing::AMQP_ServerProxy::Connection server;
+        framing::AMQP_AllProxy::Connection proxy;
         Connection& connection;
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
-    
+        AclModule* acl;
+        SecureConnection* secured;
+
         Handler(Connection& connection, bool isClient);
         ~Handler();
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
-                     const std::string& locale); 
-        void secureOk(const std::string& response); 
-        void tuneOk(uint16_t channelMax, uint16_t frameMax, uint16_t heartbeat); 
-        void heartbeat() {}
+                     const std::string& locale);
+        void secureOk(const std::string& response);
+        void tuneOk(uint16_t channelMax, uint16_t frameMax, uint16_t heartbeat);
+        void heartbeat();
         void open(const std::string& virtualHost,
-                  const framing::Array& capabilities, bool insist); 
-        void close(uint16_t replyCode, const std::string& replyText); 
-        void closeOk(); 
+                  const framing::Array& capabilities, bool insist);
+        void close(uint16_t replyCode, const std::string& replyText);
+        void closeOk();
 
 
         void start(const qpid::framing::FieldTable& serverProperties,
                    const framing::Array& mechanisms,
                    const framing::Array& locales);
-        
+
         void secure(const std::string& challenge);
-        
+
         void tune(uint16_t channelMax,
                   uint16_t frameMax,
                   uint16_t heartbeatMin,
                   uint16_t heartbeatMax);
-        
+
         void openOk(const framing::Array& knownHosts);
-        
-        void redirect(const std::string& host, const framing::Array& knownHosts);        
+
+        void redirect(const std::string& host, const framing::Array& knownHosts);
     };
     std::auto_ptr<Handler> handler;
   public:
     ConnectionHandler(Connection& connection, bool isClient);
-    void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
+    void close(framing::connection::CloseCode code, const std::string& text);
+    void heartbeat();
     void handle(framing::AMQFrame& frame);
+    void setSecureConnection(SecureConnection* secured);
 };
 
 

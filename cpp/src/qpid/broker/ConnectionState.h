@@ -24,61 +24,97 @@
 #include <vector>
 
 #include "qpid/sys/AggregateOutput.h"
-#include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/sys/ConnectionOutputHandlerPtr.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/management/Manageable.h"
-#include "Broker.h"
+#include "qpid/Url.h"
+#include "qpid/broker/Broker.h"
 
 namespace qpid {
 namespace broker {
 
 class ConnectionState : public ConnectionToken, public management::Manageable
 {
+  protected:
+    sys::ConnectionOutputHandlerPtr out;
+
   public:
-    ConnectionState(qpid::sys::ConnectionOutputHandler* o, Broker& b) : 
-        broker(b), 
-        outputTasks(*o),
-        out(o), 
-        framemax(65535), 
+    ConnectionState(qpid::sys::ConnectionOutputHandler* o, Broker& b) :
+        out(o),
+        broker(b),
+        outputTasks(out),
+        framemax(65535),
         heartbeat(0),
-        stagingThreshold(broker.getStagingThreshold())
-        {}
-
-
+        heartbeatmax(120),
+        stagingThreshold(broker.getStagingThreshold()),
+        federationLink(true),
+        clientSupportsThrottling(false),
+        clusterOrderOut(0)
+    {}
 
     virtual ~ConnectionState () {}
 
     uint32_t getFrameMax() const { return framemax; }
     uint16_t getHeartbeat() const { return heartbeat; }
+    uint16_t getHeartbeatMax() const { return heartbeatmax; }
     uint64_t getStagingThreshold() const { return stagingThreshold; }
 
-    void setFrameMax(uint32_t fm) { framemax = fm; }
+    void setFrameMax(uint32_t fm) { framemax = std::max(fm, (uint32_t) 4096); }
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
+    void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
     void setStagingThreshold(uint64_t st) { stagingThreshold = st; }
 
     virtual void setUserId(const string& uid) {  userId = uid; }
     const string& getUserId() const { return userId; }
+
+    void setUrl(const string& _url) { url = _url; }
+    const string& getUrl() const { return url; }
+
+    void setFederationLink(bool b) {  federationLink = b; }
+    bool isFederationLink() const { return federationLink; }
+    void setFederationPeerTag(const string& tag) { federationPeerTag = string(tag); }
+    const string& getFederationPeerTag() const { return federationPeerTag; }
+    std::vector<Url>& getKnownHosts() { return knownHosts; }
     
+    void setClientThrottling(bool set=true) { clientSupportsThrottling = set; }
+    bool getClientThrottling() const { return clientSupportsThrottling; }
+
     Broker& getBroker() { return broker; }
 
     Broker& broker;
     std::vector<Queue::shared_ptr> exclusiveQueues;
-    
+
     //contained output tasks
     sys::AggregateOutput outputTasks;
 
-    sys::ConnectionOutputHandler& getOutput() const { return *out; }
+    sys::ConnectionOutputHandler& getOutput() { return out; }
     framing::ProtocolVersion getVersion() const { return version; }
+    void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out.set(o); }
 
-    void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out = o; }
+    /**
+     * If the broker is part of a cluster, this is a handler provided
+     * by cluster code. It ensures consistent ordering of commands
+     * that are sent based on criteria that are not predictably
+     * ordered cluster-wide, e.g. a timer firing.
+     */
+    framing::FrameHandler* getClusterOrderOutput() { return clusterOrderOut; }
+    void setClusterOrderOutput(framing::FrameHandler& fh) { clusterOrderOut = &fh; }
+
+    virtual void requestIOProcessing (boost::function0<void>) = 0;
 
   protected:
     framing::ProtocolVersion version;
-    sys::ConnectionOutputHandler* out;
     uint32_t framemax;
     uint16_t heartbeat;
+    uint16_t heartbeatmax;
     uint64_t stagingThreshold;
     string userId;
+    string url;
+    bool federationLink;
+    string federationPeerTag;
+    std::vector<Url> knownHosts;
+    bool clientSupportsThrottling;
+    framing::FrameHandler* clusterOrderOut;
 };
 
 }}

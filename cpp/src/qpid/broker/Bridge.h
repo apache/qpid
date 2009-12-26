@@ -21,13 +21,16 @@
 #ifndef _Bridge_
 #define _Bridge_
 
-#include "PersistableConfig.h"
+#include "qpid/broker/PersistableConfig.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/ArgsLinkBridge.h"
-#include "qpid/management/Bridge.h"
+#include "qpid/broker/Exchange.h"
+#include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
+#include "qmf/org/apache/qpid/broker/Bridge.h"
 
 #include <boost/function.hpp>
 #include <memory>
@@ -35,26 +38,31 @@
 namespace qpid {
 namespace broker {
 
+class Connection;
 class ConnectionState;
 class Link;
 class LinkRegistry;
 
-class Bridge : public PersistableConfig, public management::Manageable
+class Bridge : public PersistableConfig, public management::Manageable, public Exchange::DynamicBridge
 {
 public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
     typedef boost::function<void(Bridge*)> CancellationListener;
 
-    Bridge(Link* link, framing::ChannelId id, CancellationListener l, const management::ArgsLinkBridge& args);
+    Bridge(Link* link, framing::ChannelId id, CancellationListener l,
+           const qmf::org::apache::qpid::broker::ArgsLinkBridge& args);
     ~Bridge();
 
-    void create(ConnectionState& c);
-    void cancel();
+    void create(Connection& c);
+    void cancel(Connection& c);
+    void closed();
     void destroy();
     bool isDurable() { return args.i_durable; }
 
     management::ManagementObject* GetManagementObject() const;
-    management::Manageable::status_t ManagementMethod(uint32_t methodId, management::Args& args);
+    management::Manageable::status_t ManagementMethod(uint32_t methodId,
+                                                      management::Args& args,
+                                                      std::string& text);
 
     // PersistableConfig:
     void     setPersistenceId(uint64_t id) const;
@@ -64,18 +72,35 @@ public:
     const std::string& getName() const;
     static Bridge::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
+    // Exchange::DynamicBridge methods
+    void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin);
+    void sendReorigin();
+    void ioThreadPropagateBinding(const string& queue, const string& exchange, const string& key, framing::FieldTable args);
+    bool containsLocalTag(const std::string& tagList) const;
+    const std::string& getLocalTag() const;
+
 private:
+    struct PushHandler : framing::FrameHandler {
+        PushHandler(Connection* c) { conn = c; }
+        void handle(framing::AMQFrame& frame);
+        Connection* conn;
+    };
+
+    std::auto_ptr<PushHandler>                        pushHandler;
     std::auto_ptr<framing::ChannelHandler>            channelHandler;
     std::auto_ptr<framing::AMQP_ServerProxy::Session> session;
     std::auto_ptr<framing::AMQP_ServerProxy>          peer;
 
     Link* link;
     framing::ChannelId          id;
-    management::ArgsLinkBridge  args;
-    management::Bridge*         mgmtObject;
+    qmf::org::apache::qpid::broker::ArgsLinkBridge args;
+    qmf::org::apache::qpid::broker::Bridge*        mgmtObject;
     CancellationListener        listener;
     std::string name;
+    std::string queueName;
     mutable uint64_t  persistenceId;
+    ConnectionState* connState;
+    Connection* conn;
 };
 
 

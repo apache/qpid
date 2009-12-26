@@ -25,11 +25,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -59,6 +59,20 @@ public class DefaultExchangeFactory implements ExchangeFactory
         return _exchangeClassMap.values();
     }
 
+    public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
+            throws AMQException
+    {
+        ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(new AMQShortString(type));
+        if (exchType == null)
+        {
+
+            throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
+        }
+        Exchange e = exchType.newInstance(_host, (new AMQShortString(exchange)).intern(), durable, 0, autoDelete);
+        return e;
+
+    }
+
     public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                                    int ticket)
             throws AMQException
@@ -73,7 +87,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         return e;
     }
 
-    public void initialise(Configuration hostConfig)
+    public void initialise(VirtualHostConfiguration hostConfig)
     {
 
         if (hostConfig == null)
@@ -81,7 +95,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
             return;
         }
 
-        for(Object className : hostConfig.getList("custom-exchanges.class-name"))
+        for(Object className : hostConfig.getCustomExchanges())
         {
             try
             {
@@ -92,7 +106,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
                     return;
                 }
                 Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
-                ExchangeType type = exchangeTypeClass.newInstance();
+                ExchangeType<? extends ExchangeType> type = exchangeTypeClass.newInstance();
                 registerExchangeType(type);
             }
             catch (ClassCastException classCastEx)

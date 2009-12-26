@@ -1,4 +1,25 @@
-package $(pkg);
+package org.apache.qpid.transport;
+/*
+ * 
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ * 
+ */
+
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -7,16 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.transport.Future;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.Struct;
-
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encodable;
 import org.apache.qpid.transport.codec.Encoder;
 
 import org.apache.qpid.transport.network.Frame;
+
+import org.apache.qpid.util.Strings;
+
 
 ${
 from genutil import *
@@ -73,7 +92,7 @@ public final class $name extends $base {
         return $pack;
     }
 
-    public final boolean hasPayloadSegment() {
+    public final boolean hasPayload() {
         return $payload;
     }
 
@@ -108,7 +127,12 @@ if fields:
 ${
 for f in fields:
   if f.option: continue
-  out("        $(f.set)($(f.name));\n")
+  if f.ref_type != f.type:
+    out("        $(f.set)($(f.name));\n")
+  else:
+    out("        if($(f.name) != null) {\n")
+    out("            $(f.set)($(f.name));\n")
+    out("        }\n")
 
 if segments:
   out("        setHeader(header);\n")
@@ -126,6 +150,7 @@ if options or base == "Method":
   if base == "Method":
     out("""            case SYNC: this.setSync(true); break;
             case BATCH: this.setBatch(true); break;
+            case UNRELIABLE: this.setUnreliable(true); break;
 """)
   out("""            case NONE: break;
             default: throw new IllegalArgumentException("invalid option: " + _options[i]);
@@ -135,9 +160,13 @@ if options or base == "Method":
 }
     }
 
-    public final <C> void dispatch(C context, MethodDelegate<C> delegate) {
+${
+
+if base == "Method":
+  out("""    public <C> void dispatch(C context, MethodDelegate<C> delegate) {
         delegate.$(dromedary(name))(context, this);
-    }
+    }""")
+}
 
 ${
 for f in fields:
@@ -175,7 +204,13 @@ if not f.empty:
 }
 ${
 if pack > 0:
-  out("        packing_flags |= $(f.flag_mask(pack));")
+  if f.empty:
+    out("        if (value)\\n")
+    out("            packing_flags |= $(f.flag_mask(pack));\\n")
+    out("        else\\n")
+    out("            packing_flags &= ~$(f.flag_mask(pack));")
+  else:
+    out("        packing_flags |= $(f.flag_mask(pack));")
 }
         this.dirty = true;
         return this;
@@ -221,6 +256,26 @@ if segments:
     {
         setBody(body);
         return this;
+    }
+
+    public final byte[] getBodyBytes() {
+        ByteBuffer buf = getBody();
+        byte[] bytes = new byte[buf.remaining()];
+        buf.get(bytes);
+        return bytes;
+    }
+
+    public final void setBody(byte[] body)
+    {
+        setBody(ByteBuffer.wrap(body));
+    }
+
+    public final String getBodyString() {
+        return Strings.fromUTF8(getBodyBytes());
+    }
+
+    public final void setBody(String body) {
+        setBody(Strings.toUTF8(body));
     }
 """)
 }

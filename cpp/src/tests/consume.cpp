@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,32 +34,44 @@
 using namespace qpid;
 using namespace qpid::client;
 using namespace qpid::sys;
-using std::string;
+using namespace std;
 
-typedef std::vector<std::string> StringSet;
+namespace qpid {
+namespace tests {
+
+typedef vector<string> StringSet;
 
 struct Args : public qpid::TestOptions {
     uint count;
     uint ack;
     string queue;
+    bool declare;
+    bool summary;
+    bool print;
+    bool durable;
 
-    Args() : count(0), ack(1)
+    Args() : count(1000), ack(0), queue("publish-consume"),
+             declare(false), summary(false), print(false)
     {
         addOptions()
             ("count", optValue(count, "N"), "number of messages to publish")
             ("ack-frequency", optValue(ack, "N"), "ack every N messages (0 means use no-ack mode)")
-            ("queue", optValue(queue, "<queue name>"), "queue to consume from");
+            ("queue", optValue(queue, "<queue name>"), "queue to consume from")
+            ("declare", optValue(declare), "declare the queue")
+            ("durable", optValue(durable), "declare the queue durable, use with declare")
+            ("print-data", optValue(print), "Print the recieved data at info level")
+            ("s,summary", optValue(summary), "Print undecorated rate.");
     }
 };
 
 Args opts;
 
-struct Client 
+struct Client
 {
     Connection connection;
     Session session;
 
-    Client() 
+    Client()
     {
         opts.open(connection);
         session = connection.newSession();
@@ -67,32 +79,43 @@ struct Client
 
     void consume()
     {
-        
+        if (opts.declare)
+            session.queueDeclare(arg::queue=opts.queue, arg::durable=opts.durable);
         SubscriptionManager subs(session);
-        LocalQueue lq(AckPolicy(opts.ack));
-        subs.setAcceptMode(opts.ack > 0 ? 0 : 1);
-        subs.setFlowControl(opts.count, SubscriptionManager::UNLIMITED,
-                            false);
-        subs.subscribe(lq, opts.queue);
+        LocalQueue lq;
+        SubscriptionSettings settings;
+        settings.acceptMode = opts.ack > 0 ? ACCEPT_MODE_EXPLICIT : ACCEPT_MODE_NONE;
+        settings.flowControl = FlowControl(opts.count, SubscriptionManager::UNLIMITED,false);
+        Subscription sub = subs.subscribe(lq, opts.queue, settings);
         Message msg;
+        AbsTime begin=now();
         for (size_t i = 0; i < opts.count; ++i) {
             msg=lq.pop();
-            std::cout << "Received: " << msg.getMessageProperties().getCorrelationId() << std::endl;
+            QPID_LOG(info, "Received: " << msg.getMessageProperties().getCorrelationId());
+            if (opts.print) QPID_LOG(info, "Data: " << msg.getData());
         }
         if (opts.ack != 0)
-            subs.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
+            sub.accept(sub.getUnaccepted()); // Cumulative ack for final batch.
+        AbsTime end=now();
+        double secs(double(Duration(begin,end))/TIME_SEC);
+        if (opts.summary) cout << opts.count/secs << endl;
+        else cout << "Time: " << secs << "s Rate: " << opts.count/secs << endl;
     }
 
-    ~Client() 
+    ~Client()
     {
         try{
             session.close();
             connection.close();
-        } catch(const std::exception& e) {
-            std::cout << e.what() << std::endl;
+        } catch(const exception& e) {
+            cout << e.what() << endl;
         }
     }
 };
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char** argv)
 {
@@ -101,8 +124,8 @@ int main(int argc, char** argv)
         Client client;
         client.consume();
         return 0;
-    } catch(const std::exception& e) {
-	std::cout << e.what() << std::endl;
+    } catch(const exception& e) {
+	cout << e.what() << endl;
     }
     return 1;
 }

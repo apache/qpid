@@ -20,30 +20,28 @@
  */
 package org.apache.qpid.server.handler;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.configuration.Configured;
-
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.QueueDeclareBody;
+import org.apache.qpid.framing.QueueDeclareOkBody;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.commons.configuration.Configuration;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {
@@ -56,32 +54,28 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return _instance;
     }
 
-    @Configured(path = "queue.auto_register", defaultValue = "true")
-    public boolean autoRegister;
+    public boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
 
     private final AtomicInteger _counter = new AtomicInteger();
 
-
-    protected QueueDeclareHandler()
-    {
-        Configurator.configure(this);
-    }
-
     public void methodReceived(AMQStateManager stateManager, QueueDeclareBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        MessageStore store = virtualHost.getMessageStore();
+        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
 
         if (!body.getPassive())
         {
-            //Perform ACL if request is not passive
-            virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+            // Perform ACL if request is not passive
+            if (!virtualHost.getAccessManager().authoriseCreateQueue(session, body.getAutoDelete(), body.getDurable(),
+                    body.getExclusive(), body.getNowait(), body.getPassive(), body.getQueue()))
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+            }
         }
-
 
         final AMQShortString queueName;
 
@@ -115,11 +109,43 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 else
                 {
                     queue = createQueue(queueName, body, virtualHost, session);
+                    queue.setPrincipalHolder(session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
                         store.createQueue(queue, body.getArguments());
                     }
+                    if(body.getAutoDelete())
+                    {
+                        queue.setDeleteOnNoConsumers(true);
+                    }
                     queueRegistry.registerQueue(queue);
+                    if(body.getExclusive())
+                    {
+                        if(body.getDurable())
+                        {
+                            queue.setExclusiveOwner(session.getPrincipal().getName());
+                        }
+                        else
+                        {
+                            final AMQQueue q = queue;
+                            queue.setExclusiveOwner(session);
+                            final AMQProtocolSession.Task sessionCloseTask = new AMQProtocolSession.Task()
+                            {
+                                public void doTask(AMQProtocolSession session) throws AMQException
+                                {
+                                    q.setExclusiveOwner(null);
+                                }
+                            };
+                            session.addSessionCloseTask(sessionCloseTask);
+                            queue.addQueueDeleteTask(new AMQQueue.Task() {
+                                public void doTask(AMQQueue queue) throws AMQException
+                                {
+                                    session.removeSessionCloseTask(sessionCloseTask);
+                                }
+                            });
+                        }
+
+                    }
                     if (autoRegister)
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
@@ -129,13 +155,39 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     }
                 }
             }
-            else if (queue.getOwner() != null && !session.getContextKey().equals(queue.getOwner()))
+            else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
+            {
+                throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                  "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+            }
+            else if(!body.getPassive() && ((queue.isExclusive()) != body.getExclusive()))
+            {
+
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
+                                                  "Cannot re-declare queue '" + queue.getName() + "' with different exclusivity (was: "
+                                                    + queue.isExclusive() + " requested " + body.getExclusive() + ")");
+            }
+            else if (!body.getPassive() && body.getExclusive() && !queue.getExclusiveOwner().equals(queue.isDurable() ? session.getPrincipal().getName() : session))
             {
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "
                                                                            + "declared on another client ID('"
-                                                                           + queue.getOwner() + "')");
+                                                                           + queue.getPrincipalHolder().getPrincipal().getName() + "')");
+
             }
+            else if(!body.getPassive() && queue.isAutoDelete() != body.getAutoDelete())
+            {
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
+                                                  "Cannot re-declare queue '" + queue.getName() + "' with different auto-delete (was: "
+                                                    + queue.isAutoDelete() + " requested " + body.getAutoDelete() + ")");
+            }
+            else if(!body.getPassive() && queue.isDurable() != body.getDurable())
+            {
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
+                                                  "Cannot re-declare queue '" + queue.getName() + "' with different durability (was: "
+                                                    + queue.isDurable() + " requested " + body.getDurable() + ")");
+            }
+
 
             AMQChannel channel = session.getChannel(channelId);
 
@@ -203,12 +255,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 }
             });
         }// if exclusive and not durable
-
-        Configuration virtualHostDefaultQueueConfiguration = VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
-        if (virtualHostDefaultQueueConfiguration != null)
-        {
-            Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
-        }
 
         return queue;
     }

@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,6 +28,9 @@ using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+namespace qpid {
+namespace tests {
+
 typedef std::pair<string, boost::intrusive_ptr<PersistableMessage> > msg_queue_pair;
 
 class TestMessageStore : public NullMessageStore
@@ -35,7 +38,7 @@ class TestMessageStore : public NullMessageStore
   public:
     std::vector<boost::intrusive_ptr<PersistableMessage> > dequeued;
     std::vector<msg_queue_pair> enqueued;
-    
+
     void dequeue(TransactionContext*,
                  const boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& /*queue*/)
@@ -47,12 +50,14 @@ class TestMessageStore : public NullMessageStore
                  const boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& queue)
     {
-        msg->enqueueComplete(); 
+        msg->enqueueComplete();
         enqueued.push_back(msg_queue_pair(queue.getName(), msg));
     }
 
-    TestMessageStore() : NullMessageStore(false) {}
+    TestMessageStore() : NullMessageStore() {}
     ~TestMessageStore(){}
 };
+
+}} // namespace qpid::tests
 
 #endif

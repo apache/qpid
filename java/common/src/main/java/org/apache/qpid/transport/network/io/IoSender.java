@@ -18,20 +18,22 @@
  */
 package org.apache.qpid.transport.network.io;
 
+import static org.apache.qpid.transport.util.Functions.mod;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
 
-import static org.apache.qpid.transport.util.Functions.*;
 
-
-public final class IoSender extends Thread implements Sender<ByteBuffer>
+public final class IoSender implements Runnable, Sender<ByteBuffer>
 {
 
     private static final Logger log = Logger.get(IoSender.class);
@@ -53,7 +55,9 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
     private final Object notFull = new Object();
     private final Object notEmpty = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
-
+    private final Thread senderThread;
+    private long idleTimeout;
+    
     private volatile Throwable exception = null;
 
 
@@ -73,9 +77,18 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
             throw new TransportException("Error getting output stream for socket", e);
         }
 
-        setDaemon(true);
-        setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
-        start();
+        try
+        {
+            senderThread = Threading.getThreadFactory().createThread(this);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating IOSender thread",e);
+        }
+        
+        senderThread.setDaemon(true);
+        senderThread.setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
+        senderThread.start();
     }
 
     private static final int pof2(int n)
@@ -88,17 +101,11 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
         return result;
     }
 
-    private static final int mod(int n, int m)
-    {
-        int r = n % m;
-        return r < 0 ? m + r : r;
-    }
-
     public void send(ByteBuffer buf)
     {
         if (closed.get())
         {
-            throw new TransportException("sender is closed", exception);
+            throw new SenderException("sender is closed", exception);
         }
 
         final int size = buffer.length;
@@ -131,12 +138,12 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
 
                     if (closed.get())
                     {
-                        throw new TransportException("sender is closed", exception);
+                        throw new SenderException("sender is closed", exception);
                     }
 
                     if (head - tail >= size)
                     {
-                        throw new TransportException(String.format("write timed out: %s, %s", head, tail));
+                        throw new SenderException(String.format("write timed out: %s, %s", head, tail));
                     }
                 }
                 continue;
@@ -181,6 +188,11 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
     {
         if (!closed.getAndSet(true))
         {
+            synchronized (notFull)
+            {
+                notFull.notify();
+            }
+
             synchronized (notEmpty)
             {
                 notEmpty.notify();
@@ -188,37 +200,31 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
 
             try
             {
-                if (Thread.currentThread() != this)
+                if (Thread.currentThread() != senderThread)
                 {
-                    join(timeout);
-                    if (isAlive())
+                    senderThread.join(timeout);
+                    if (senderThread.isAlive())
                     {
-                        throw new TransportException("join timed out");
+                        throw new SenderException("join timed out");
                     }
                 }
-                transport.getReceiver().close();
-                socket.close();
+                transport.getReceiver().close(false);
             }
             catch (InterruptedException e)
             {
-                throw new TransportException(e);
-            }
-            catch (IOException e)
-            {
-                throw new TransportException(e);
+                throw new SenderException(e);
             }
 
             if (reportException && exception != null)
             {
-                throw new TransportException(exception);
+                throw new SenderException(exception);
             }
         }
     }
 
     public void run()
     {
-        final int size = buffer.length;
-
+        final int size = buffer.length;       
         while (true)
         {
             final int hd = head;
@@ -288,4 +294,16 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
         }
     }
 
+    public void setIdleTimeout(long l)
+    {
+        try
+        {
+            socket.setSoTimeout((int)l*2);
+            idleTimeout = l;
+        }
+        catch (Exception e)
+        {
+            throw new SenderException(e);
+        }
+    }
 }

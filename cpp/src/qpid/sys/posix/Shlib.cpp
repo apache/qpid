@@ -27,11 +27,11 @@ namespace qpid {
 namespace sys {
 
 void Shlib::load(const char* name) {
-    dlerror();
+    ::dlerror();
     handle = ::dlopen(name, RTLD_NOW);
     const char* error = ::dlerror();
     if (error) {
-        throw Exception(QPID_MSG(error));
+        throw Exception(QPID_MSG(error << ": " << name));
     }
 }
 
@@ -52,7 +52,7 @@ void*  Shlib::getSymbol(const char* name) {
     void* sym = ::dlsym(handle, name);
     const char* error = ::dlerror();
     if (error) 
-        throw Exception(QPID_MSG(error));
+        throw Exception(QPID_MSG(error << ": " << name));
     return sym;
 }
 

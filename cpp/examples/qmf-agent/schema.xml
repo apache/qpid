@@ -1,4 +1,4 @@
-<schema package="qmf_example">
+<schema package="org.apache.qpid.agent.example">
 
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
@@ -51,7 +51,14 @@
 
     <statistic name="count" type="count64" unit="tick" desc="Counter that increases monotonically"/>
 
-    <method name="delete"/> 
+    <method name="delete"/>
   </class>
+
+  <eventArguments>
+    <arg name="childName" type="sstr"/>
+  </eventArguments>
+
+  <event name="ChildCreated"   args="childName"/>
+  <event name="ChildDestroyed" args="childName"/>
 </schema>
 

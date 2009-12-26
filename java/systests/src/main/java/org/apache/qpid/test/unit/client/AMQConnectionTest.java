@@ -21,13 +21,20 @@
 package org.apache.qpid.test.unit.client;
 
 import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.QueueSession;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.jms.TopicSession;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionDelegate_0_10;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -187,6 +194,75 @@ public class AMQConnectionTest extends QpidTestCase
         }
     }
 
+    public void testPrefetchSystemProperty() throws Exception
+    {
+        String oldPrefetch = System.getProperty(ClientProperties.MAX_PREFETCH_PROP_NAME);
+        try
+        {
+            _connection.close();
+            System.setProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, new Integer(2).toString());
+            _connection = (AMQConnection) getConnection();
+            _connection.start();
+            // Create two consumers on different sessions
+            Session consSessA = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            MessageConsumer consumerA = consSessA.createConsumer(_queue);
+
+            Session producerSession = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            MessageProducer producer = producerSession.createProducer(_queue);
+
+            // Send 3 messages
+            for (int i = 0; i < 3; i++)
+            {
+                producer.send(producerSession.createTextMessage(new Integer(i).toString()));
+            }
+            Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            MessageConsumer consumerB = consSessB.createConsumer(_queue);
+
+            Message msg;
+            // Check that one consumer has 2 messages
+            for (int i = 0; i < 2; i++)
+            {
+                msg = consumerA.receive(1500);
+                assertNotNull(msg);
+                assertEquals(new Integer(i).toString(), ((TextMessage) msg).getText());
+            }
+            
+            msg = consumerA.receive(1500);
+            assertNull(msg);
+            
+            // Check that other consumer has last message
+            msg = consumerB.receive(1500);
+            assertNotNull(msg);
+            assertEquals(new Integer(2).toString(), ((TextMessage) msg).getText());
+        }
+        finally
+        {
+            if (oldPrefetch == null)
+            {
+                oldPrefetch = ClientProperties.MAX_PREFETCH_DEFAULT;
+            }
+            System.setProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, oldPrefetch);
+        }
+    }
+    
+    public void testGetChannelID()
+    {
+        int maxChannelID = 65536;
+        if (isBroker010())
+        {
+            maxChannelID = Integer.MAX_VALUE+1;
+        }
+        for (int j = 0; j < 3; j++)
+        {
+            for (int i = 1; i < maxChannelID; i++)
+            {
+                int id = _connection.getNextChannelID();
+                assertEquals("On iterartion "+j, i, id);
+                _connection.deregisterSession(id);
+            }
+        }
+    }
+    
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(AMQConnectionTest.class);

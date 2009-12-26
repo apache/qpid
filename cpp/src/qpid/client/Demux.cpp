@@ -19,7 +19,7 @@
  *
  */
 
-#include "Demux.h"
+#include "qpid/client/Demux.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/MessageTransferBody.h"
 

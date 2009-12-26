@@ -20,14 +20,19 @@
  */
 package org.apache.qpid.test.unit.client.BrokerDetails;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
 
 public class BrokerDetailsTest extends TestCase
 {
-
     public void testMultiParameters() throws URLSyntaxException
     {
         String url = "tcp://localhost:5672?timeout='200',immediatedelivery='true'";

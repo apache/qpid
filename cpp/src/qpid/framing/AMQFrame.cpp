@@ -18,31 +18,64 @@
  * under the License.
  *
  */
-#include "AMQFrame.h"
+#include "qpid/framing/AMQFrame.h"
 
-#include "qpid/framing/variant.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/reply_exceptions.h"
-
+#include "qpid/framing/BodyFactory.h"
+#include "qpid/framing/MethodBodyFactory.h"
 #include <boost/format.hpp>
-
 #include <iostream>
 
 namespace qpid {
 namespace framing {
 
+void AMQFrame::init() {
+    bof = eof = bos = eos = true;
+    subchannel=0;
+    channel=0;
+    encodedSizeCache = 0;
+}
+
+AMQFrame::AMQFrame(const boost::intrusive_ptr<AMQBody>& b) : body(b) { init(); }
+
+AMQFrame::AMQFrame(const AMQBody& b) : body(b.clone()) { init(); }
+
 AMQFrame::~AMQFrame() {}
 
-void AMQFrame::setBody(const AMQBody& b) { body = new BodyHolder(b); }
+AMQBody* AMQFrame::getBody() {
+    // Non-const AMQBody* may be used to modify the body.
+    encodedSizeCache = 0;
+    return body.get();
+}
 
-void AMQFrame::setMethod(ClassId c, MethodId m) { body = new BodyHolder(c,m); }
+const AMQBody* AMQFrame::getBody() const {
+    return body.get();
+}
 
-uint32_t AMQFrame::size() const {
-    return frameOverhead() + body->size();
+void AMQFrame::setMethod(ClassId c, MethodId m) {
+    encodedSizeCache = 0;
+    body = MethodBodyFactory::create(c,m);
+}
+
+uint32_t AMQFrame::encodedSize() const {
+    if (!encodedSizeCache) {
+        encodedSizeCache = frameOverhead() + body->encodedSize();
+        if (body->getMethod())
+            encodedSizeCache +=  sizeof(ClassId)+sizeof(MethodId);
+    }
+    return encodedSizeCache;
 }
 
 uint32_t AMQFrame::frameOverhead() {
     return 12 /*frame header*/;
+}
+
+uint16_t AMQFrame::DECODE_SIZE_MIN=4;
+
+uint16_t AMQFrame::decodeSize(char* data) {
+    Buffer buf(data+2, DECODE_SIZE_MIN);
+    return buf.getShort();
 }
 
 void AMQFrame::encode(Buffer& buffer) const
@@ -53,20 +86,27 @@ void AMQFrame::encode(Buffer& buffer) const
     uint8_t flags = (bof ? 0x08 : 0) | (eof ? 0x04 : 0) | (bos ? 0x02 : 0) | (eos ? 0x01 : 0);
     buffer.putOctet(flags);
     buffer.putOctet(getBody()->type());
-    buffer.putShort(size());
+    buffer.putShort(encodedSize());
     buffer.putOctet(0);
     buffer.putOctet(0x0f & track);
     buffer.putShort(channel);    
     buffer.putLong(0);
+    const AMQMethodBody* method=getMethod();
+    if (method) {
+        buffer.putOctet(method->amqpClassId());
+        buffer.putOctet(method->amqpMethodId());
+    }
     body->encode(buffer);
 }
 
 bool AMQFrame::decode(Buffer& buffer)
-{    
+{
     if(buffer.available() < frameOverhead())
         return false;
     buffer.record();
 
+    encodedSizeCache = 0;
+    uint32_t start = buffer.getPosition();
     uint8_t  flags = buffer.getOctet();
     uint8_t framing_version = (flags & 0xc0) >> 6;
     if (framing_version != 0)
@@ -98,8 +138,24 @@ bool AMQFrame::decode(Buffer& buffer)
         buffer.restore();
         return false;
     }
-    body = new BodyHolder();
-    body->decode(type,buffer, body_size);
+
+    switch(type)
+    {
+      case 0://CONTROL 
+      case METHOD_BODY: {
+          ClassId c = buffer.getOctet();
+          MethodId m = buffer.getOctet();
+          body = MethodBodyFactory::create(c, m);
+          break;
+      }
+      case HEADER_BODY: body =  BodyFactory::create<AMQHeaderBody>(); break;
+      case CONTENT_BODY: body = BodyFactory::create<AMQContentBody>(); break;
+      case HEARTBEAT_BODY: body = BodyFactory::create<AMQHeartbeatBody>(); break;
+      default:
+	throw IllegalArgumentException(QPID_MSG("Invalid frame type " << type));
+    }
+    body->decode(buffer, body_size);
+    encodedSizeCache = buffer.getPosition() - start;
     return true;
 }
 

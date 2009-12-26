@@ -16,12 +16,11 @@
  *
  */
 
-#include "Statement.h"
-#include "Logger.h"
+#include "qpid/log/Statement.h"
+#include "qpid/log/Logger.h"
 #include <boost/bind.hpp>
 #include <stdexcept>
 #include <algorithm>
-#include <syslog.h>
 #include <ctype.h>
 
 namespace qpid {
@@ -67,11 +66,6 @@ const char* names[LevelTraits::COUNT] = {
     "trace", "debug", "info", "notice", "warning", "error", "critical"
 };
 
-int priorities[LevelTraits::COUNT] = {
-    LOG_DEBUG, LOG_DEBUG, LOG_INFO, LOG_NOTICE,
-    LOG_WARNING, LOG_ERR, LOG_CRIT
-};
-
 } // namespace
 
 Level LevelTraits::level(const char* name) {
@@ -84,10 +78,6 @@ Level LevelTraits::level(const char* name) {
 
 const char* LevelTraits::name(Level l) {
     return names[l];
-}
-
-int LevelTraits::priority(Level l) {
-    return priorities[l];
 }
 
 }} // namespace qpid::log

@@ -18,15 +18,15 @@
  * under the License.
  *
  */
-#include "DeliverableMessage.h"
+#include "qpid/broker/DeliverableMessage.h"
 
 using namespace qpid::broker;
 
-DeliverableMessage::DeliverableMessage(boost::intrusive_ptr<Message>& _msg) : msg(_msg)
+DeliverableMessage::DeliverableMessage(const boost::intrusive_ptr<Message>& _msg) : msg(_msg)
 {
 }
 
-void DeliverableMessage::deliverTo(Queue::shared_ptr& queue)
+void DeliverableMessage::deliverTo(const boost::shared_ptr<Queue>& queue)
 {
     queue->deliver(msg);    
     delivered = true;

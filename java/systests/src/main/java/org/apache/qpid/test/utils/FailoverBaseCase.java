@@ -20,70 +20,99 @@
  */
 package org.apache.qpid.test.utils;
 
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.util.FileUtils;
 
-import javax.jms.Connection;
+import javax.naming.NamingException;
+import javax.jms.JMSException;
+import javax.naming.NamingException;
+
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FailoverBaseCase extends QpidTestCase
 {
-    private boolean failedOver = true;
-    
+    protected static final Logger _logger = LoggerFactory.getLogger(FailoverBaseCase.class);
+
+    public static int FAILING_VM_PORT = 2;
+    public static int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
+    public static final long DEFAULT_FAILOVER_TIME = 10000L;
+
+    protected int failingPort;
+
+    protected int getFailingPort()
+    {
+        if (_broker.equals(VM))
+        {
+            return FAILING_VM_PORT;
+        }
+        else
+        {
+        	return FAILING_PORT;
+        }
+    }
 
     protected void setUp() throws java.lang.Exception
     {
         super.setUp();
-
-        try
-        {
-            TransportConnection.createVMBroker(2);
-        }
-        catch (Exception e)
-        {
-            fail("Unable to create broker: " + e);
-        }
-
+        // Set QPID_WORK to $QPID_WORK/<getFailingPort()>
+        // or /tmp/<getFailingPort()> if QPID_WORK not set.
+        setSystemProperty("QPID_WORK", System.getProperty("QPID_WORK") + "/" + getFailingPort());
+        startBroker(getFailingPort());
     }
 
     /**
-     * We are using failover factories, Note that 0.10 code path does not yet support failover.
+     * We are using failover factories
      *
      * @return a connection 
      * @throws Exception
      */
-    public Connection getConnection() throws Exception
+    @Override
+    public AMQConnectionFactory getConnectionFactory() throws NamingException
     {
-        Connection conn;
-        if( _broker.equals(VM) )
+        _logger.info("get ConnectionFactory");
+        if (_connectionFactory == null)
         {
-            conn = getConnectionFactory("vmfailover").createConnection("guest", "guest");
+            if (Boolean.getBoolean("profile.use_ssl"))
+            {
+                _connectionFactory = getConnectionFactory("failover.ssl");
+            }
+            else
+            {
+                _connectionFactory = getConnectionFactory("failover");
+            }
         }
-        else
-        {
-            conn = getConnectionFactory("failover").createConnection("guest", "guest");
-        }
-        _connections.add(conn);
-        return conn;
+        return _connectionFactory;
     }
+
 
     public void tearDown() throws Exception
     {
-        if (!failedOver)
+        try
         {
-            TransportConnection.killVMBroker(2);
-            ApplicationRegistry.remove(2);
+            super.tearDown();
         }
-        super.tearDown();
+        finally
+        {
+            // Ensure we shutdown any secondary brokers, even if we are unable
+            // to cleanly tearDown the QTC.
+            stopBroker(getFailingPort());
+            FileUtils.deleteDirectory(System.getProperty("QPID_WORK") + "/" + getFailingPort());
+        }
     }
 
 
-    /**
-     * Only used of VM borker.
-     */
-    public void failBroker()
+    public void failBroker(int port)
     {
-        failedOver = true;
-        TransportConnection.killVMBroker(2);
-        ApplicationRegistry.remove(2);
+        try
+        {
+            stopBroker(port);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
+
+        
 }

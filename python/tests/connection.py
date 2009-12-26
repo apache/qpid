@@ -22,11 +22,10 @@ from unittest import TestCase
 from qpid.util import connect, listen
 from qpid.connection import *
 from qpid.datatypes import Message
-from qpid.testlib import testrunner
 from qpid.delegates import Server
 from qpid.queue import Queue
-from qpid.spec010 import load
 from qpid.session import Delegate
+from qpid.ops import QueueQueryResult
 
 PORT = 1234
 
@@ -52,23 +51,24 @@ class TestSession(Delegate):
     pass
 
   def queue_query(self, qq):
-    return qq._type.result.type.new((qq.queue,), {})
+    return QueueQueryResult(qq.queue)
 
-  def message_transfer(self, cmd, headers, body):
+  def message_transfer(self, cmd):
     if cmd.destination == "echo":
-      m = Message(body)
-      m.headers = headers
+      m = Message(cmd.payload)
+      m.headers = cmd.headers
       self.session.message_transfer(cmd.destination, cmd.accept_mode,
                                     cmd.acquire_mode, m)
     elif cmd.destination == "abort":
       self.session.channel.connection.sock.close()
+    elif cmd.destination == "heartbeat":
+      self.session.channel.connection_heartbeat()
     else:
-      self.queue.put((cmd, headers, body))
+      self.queue.put(cmd)
 
 class ConnectionTest(TestCase):
 
   def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10.xml"))
     self.queue = Queue()
     self.running = True
     started = Event()
@@ -76,7 +76,7 @@ class ConnectionTest(TestCase):
     def run():
       ts = TestServer(self.queue)
       for s in listen("0.0.0.0", PORT, lambda: self.running, lambda: started.set()):
-        conn = Connection(s, self.spec, ts.connection)
+        conn = Connection(s, delegate=ts.connection)
         try:
           conn.start(5)
         except Closed:
@@ -87,14 +87,15 @@ class ConnectionTest(TestCase):
     self.server.start()
 
     started.wait(3)
+    assert started.isSet()
 
   def tearDown(self):
     self.running = False
-    connect("0.0.0.0", PORT).close()
+    connect("127.0.0.1", PORT).close()
     self.server.join(3)
 
-  def connect(self):
-    return Connection(connect("0.0.0.0", PORT), self.spec)
+  def connect(self, **kwargs):
+    return Connection(connect("127.0.0.1", PORT), **kwargs)
 
   def test(self):
     c = self.connect()
@@ -133,17 +134,17 @@ class ConnectionTest(TestCase):
       ssn.message_transfer(d)
 
     for d in destinations:
-      cmd, header, body = self.queue.get(10)
+      cmd = self.queue.get(10)
       assert cmd.destination == d
-      assert header == None
-      assert body == None
+      assert cmd.headers == None
+      assert cmd.payload == None
 
     msg = Message("this is a test")
     ssn.message_transfer("four", message=msg)
-    cmd, header, body = self.queue.get(10)
+    cmd = self.queue.get(10)
     assert cmd.destination == "four"
-    assert header == None
-    assert body == msg.body
+    assert cmd.headers == None
+    assert cmd.payload == msg.body
 
     qq = ssn.queue_query("asdf")
     assert qq.queue == "asdf"
@@ -212,3 +213,10 @@ class ConnectionTest(TestCase):
     s.auto_sync = False
     s.message_transfer("echo", message=Message("test"))
     s.sync(10)
+
+  def testHeartbeat(self):
+    c = self.connect(heartbeat=10)
+    c.start(10)
+    s = c.session("test")
+    s.channel.connection_heartbeat()
+    s.message_transfer("heartbeat")

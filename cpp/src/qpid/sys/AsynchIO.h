@@ -21,15 +21,16 @@
  *
  */
 
-#include "Dispatcher.h"
-
+#include "qpid/sys/IntegerTypes.h"
+#include "qpid/CommonImportExport.h"
 #include <boost/function.hpp>
-#include <deque>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace sys {
     
 class Socket;
+class Poller;
 
 /*
  * Asynchronous acceptor: accepts connections then does a callback with the
@@ -39,44 +40,36 @@ class AsynchAcceptor {
 public:
     typedef boost::function1<void, const Socket&> Callback;
 
-private:
-    Callback acceptedCallback;
-    DispatchHandle handle;
-    const Socket& socket;
-
-public:
-    AsynchAcceptor(const Socket& s, Callback callback);
-    void start(Poller::shared_ptr poller);
-
-private:
-    void readable(DispatchHandle& handle);
+    QPID_COMMON_EXTERN static AsynchAcceptor* create(const Socket& s, Callback callback);
+    virtual ~AsynchAcceptor() {};
+    virtual void start(boost::shared_ptr<Poller> poller) = 0;
 };
 
 /*
  * Asynchronous connector: starts the process of initiating a connection and
  * invokes a callback when completed or failed.
  */
-class AsynchConnector : private DispatchHandle {
+class AsynchConnector {
 public:
     typedef boost::function1<void, const Socket&> ConnectedCallback;
-    typedef boost::function2<void, int, std::string> FailedCallback;
+    typedef boost::function3<void, const Socket&, int, const std::string&> FailedCallback;
 
-private:
-    ConnectedCallback connCallback;
-    FailedCallback failCallback;
-    const Socket& socket;
+    // Call create() to allocate a new AsynchConnector object with the
+    // specified poller, addressing, and callbacks.
+    // This method is implemented in platform-specific code to
+    // create a correctly typed object. The platform code also manages
+    // deletes. To correctly manage heaps when needed, the allocate and
+    // delete should both be done from the same class/library.
+    QPID_COMMON_EXTERN static AsynchConnector* create(const Socket& s,
+                                   boost::shared_ptr<Poller> poller,
+                                   std::string hostname,
+                                   uint16_t port,
+                                   ConnectedCallback connCb,
+                                   FailedCallback failCb);
 
-public:
-    AsynchConnector(const Socket& socket,
-                    Poller::shared_ptr poller,
-                    std::string hostname,
-                    uint16_t port,
-                    ConnectedCallback connCb,
-                    FailedCallback failCb = 0);
-
-private:
-    void connComplete(DispatchHandle& handle);
-    void failure(int, std::string);
+protected:
+    AsynchConnector() {}
+    virtual ~AsynchConnector() {}
 };
 
 struct AsynchIOBufferBase {
@@ -99,16 +92,14 @@ struct AsynchIOBufferBase {
 /*
  * Asychronous reader/writer: 
  * Reader accepts buffers to read into; reads into the provided buffers
- * and then does a callback with the buffer and amount read. Optionally it can callback
- * when there is something to read but no buffer to read it into.
+ * and then does a callback with the buffer and amount read. Optionally it
+ * can callback when there is something to read but no buffer to read it into.
  * 
  * Writer accepts a buffer and queues it for writing; can also be given
- * a callback for when writing is "idle" (ie fd is writable, but nothing to write)
- * 
- * The class is implemented in terms of DispatchHandle to allow it to be deleted by deleting
- * the contained DispatchHandle
+ * a callback for when writing is "idle" (ie fd is writable, but nothing
+ * to write).
  */
-class AsynchIO : private DispatchHandle {
+class AsynchIO {
 public:
     typedef AsynchIOBufferBase BufferBase;
 
@@ -118,47 +109,40 @@ public:
     typedef boost::function2<void, AsynchIO&, const Socket&> ClosedCallback;
     typedef boost::function1<void, AsynchIO&> BuffersEmptyCallback;
     typedef boost::function1<void, AsynchIO&> IdleCallback;
+    typedef boost::function1<void, AsynchIO&> RequestCallback;
 
-private:
-    ReadCallback readCallback;
-    EofCallback eofCallback;
-    DisconnectCallback disCallback;
-    ClosedCallback closedCallback;
-    BuffersEmptyCallback emptyCallback;
-    IdleCallback idleCallback;
-    const Socket& socket;
-    std::deque<BufferBase*> bufferQueue;
-    std::deque<BufferBase*> writeQueue;
-    bool queuedClose;
-    /**
-     * This flag is used to detect and handle concurrency between
-     * calls to notifyPendingWrite() (which can be made from any thread) and
-     * the execution of the writeable() method (which is always on the
-     * thread processing this handle.
-     */
-    volatile bool writePending;
-
+    // Call create() to allocate a new AsynchIO object with the specified
+    // callbacks. This method is implemented in platform-specific code to
+    // create a correctly typed object. The platform code also manages
+    // deletes. To correctly manage heaps when needed, the allocate and
+    // delete should both be done from the same class/library.
+    QPID_COMMON_EXTERN static AsynchIO* create(const Socket& s,
+                            ReadCallback rCb,
+                            EofCallback eofCb,
+                            DisconnectCallback disCb,
+                            ClosedCallback cCb = 0,
+                            BuffersEmptyCallback eCb = 0,
+                            IdleCallback iCb = 0);
 public:
-    AsynchIO(const Socket& s,
-        ReadCallback rCb, EofCallback eofCb, DisconnectCallback disCb,
-        ClosedCallback cCb = 0, BuffersEmptyCallback eCb = 0, IdleCallback iCb = 0);
-    void queueForDeletion();
+    virtual void queueForDeletion() = 0;
 
-    void start(Poller::shared_ptr poller);
-    void queueReadBuffer(BufferBase* buff);
-    void unread(BufferBase* buff);
-    void queueWrite(BufferBase* buff);
-    void notifyPendingWrite();
-    void queueWriteClose();
-    bool writeQueueEmpty() { return writeQueue.empty(); }
-    BufferBase* getQueuedBuffer();
+    virtual void start(boost::shared_ptr<Poller> poller) = 0;
+    virtual void queueReadBuffer(BufferBase* buff) = 0;
+    virtual void unread(BufferBase* buff) = 0;
+    virtual void queueWrite(BufferBase* buff) = 0;
+    virtual void notifyPendingWrite() = 0;
+    virtual void queueWriteClose() = 0;
+    virtual bool writeQueueEmpty() = 0;
+    virtual void startReading() = 0;
+    virtual void stopReading() = 0;
+    virtual void requestCallback(RequestCallback) = 0;
+    virtual BufferBase* getQueuedBuffer() = 0;
 
-private:
-    ~AsynchIO();
-    void readable(DispatchHandle& handle);
-    void writeable(DispatchHandle& handle);
-    void disconnected(DispatchHandle& handle);
-    void close(DispatchHandle& handle);
+protected:
+    // Derived class manages lifetime; must be constructed using the
+    // static create() method. Deletes not allowed from outside.
+    AsynchIO() {}
+    virtual ~AsynchIO() {}
 };
 
 }}

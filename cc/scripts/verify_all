@@ -35,7 +35,7 @@ run_broker()
   echo "Starting C++ broker"
   echo "******************************************************"
   echo ""
-  $CC_HOME/cpp/src/qpidd -t -d --auth no --no-data-dir --log-output $CC_HOME/broker.log
+  $CC_HOME/cpp/src/qpidd -t -d --auth no --no-data-dir --log-to-file  $CC_HOME/broker.log
 }
 
 stop_broker()
@@ -118,9 +118,49 @@ echo "-----------</Running Java/Python combination>--------"
 echo ""
 }
 
+run_dotnet_dotnet()
+{
+echo "-----------<Running .Net/.Net combination>---------"
+verify $CC_HOME/dotnet/client-010/examples/ "verify" "*.svn"
+echo "-----------</Running .Net/.Net combination>--------"
+echo ""
+}
+
+run_cpp_dotnet()
+{
+echo "-----------<Running C++/.Net combination>---------"
+verify $CC_HOME/dotnet/client-010/examples/ "verify_cpp_dotnet" "*.svn"
+verify $CC_HOME/dotnet/client-010/examples/ "verify_dotnet_cpp" "*.svn"
+echo "-----------</Running C++/.Net combination>--------"
+echo ""
+}
+
+run_java_dotnet()
+{
+echo "-----------<Running Java/.Net combination>---------"
+verify $CC_HOME/dotnet/client-010/examples/ "verify_java_dotnet" "*.svn"
+verify $CC_HOME/dotnet/client-010/examples/ "verify_dotnet_java" "*.svn"
+echo "-----------</Running Java/.Net combination>--------"
+echo ""
+}
+
+run_python_dotnet()
+{
+echo "-----------<Running Python/.Net combination>---------"
+verify $CC_HOME/dotnet/client-010/examples/ "verify_python_dotnet" "*.svn"
+verify $CC_HOME/dotnet/client-010/examples/ "verify_dotnet_python" "*.svn"
+echo "-----------</Running Python/.Net combination>--------"
+echo ""
+}
+
+
 run_python_python
 run_python_cpp_comb
 run_cpp_cpp
 run_java_java
 run_java_cpp_comb
 run_java_python_comb
+run_dotnet_dotnet
+run_cpp_dotnet
+run_java_dotnet
+run_python_dotnet

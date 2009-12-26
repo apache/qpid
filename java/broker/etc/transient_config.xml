@@ -37,6 +37,12 @@
     <management>
         <enabled>true</enabled>
         <jmxport>8999</jmxport>
+        <ssl>
+            <enabled>true</enabled>
+            <!-- Update below path to your keystore location, eg ${conf}/qpid.keystore  -->
+            <keyStorePath>${prefix}/../test_resources/ssl/keystore.jks</keyStorePath>
+            <keyStorePassword>password</keyStorePassword>
+        </ssl>
     </management>
     <advanced>
         <filterchain enableExecutorPool="true"/>

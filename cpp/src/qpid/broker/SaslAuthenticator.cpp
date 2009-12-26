@@ -19,17 +19,25 @@
  *
  */
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
 
-#include "Connection.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
+#include <boost/format.hpp>
 
 #if HAVE_SASL
 #include <sasl/sasl.h>
+#include "qpid/sys/cyrus/CyrusSecurityLayer.h"
+using qpid::sys::cyrus::CyrusSecurityLayer;
 #endif
 
 using namespace qpid::framing;
+using qpid::sys::SecurityLayer;
+using boost::format;
+using boost::str;
 
 namespace qpid {
 namespace broker {
@@ -39,12 +47,15 @@ class NullAuthenticator : public SaslAuthenticator
 {
     Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
+    std::string realm;
+    const bool encrypt;
 public:
-    NullAuthenticator(Connection& connection);
+    NullAuthenticator(Connection& connection, bool encrypt);
     ~NullAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string& response);
     void step(const std::string&) {}
+    std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
 
 #if HAVE_SASL
@@ -54,62 +65,132 @@ class CyrusAuthenticator : public SaslAuthenticator
     sasl_conn_t *sasl_conn;
     Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
+    const bool encrypt;
 
     void processAuthenticationStep(int code, const char *challenge, unsigned int challenge_len);
 
 public:
-    CyrusAuthenticator(Connection& connection);
+    CyrusAuthenticator(Connection& connection, bool encrypt);
     ~CyrusAuthenticator();
     void init();
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string& response);
     void step(const std::string& response);
+    void getUid(std::string& uid);
+    void getError(std::string& error);
+    std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
+
+bool SaslAuthenticator::available(void)
+{
+    return true;
+}
+
+// Initialize the SASL mechanism; throw if it fails.
+void SaslAuthenticator::init(const std::string& saslName)
+{
+    int code = sasl_server_init(NULL, saslName.c_str());
+    if (code != SASL_OK) {
+        // TODO: Figure out who owns the char* returned by
+        // sasl_errstring, though it probably does not matter much
+        throw Exception(sasl_errstring(code, NULL, NULL));
+    }
+}
+
+void SaslAuthenticator::fini(void)
+{
+    sasl_done();
+}
 
 #else
 
 typedef NullAuthenticator CyrusAuthenticator;
 
+bool SaslAuthenticator::available(void)
+{
+    return false;
+}
+
+void SaslAuthenticator::init(const std::string& /*saslName*/)
+{
+    throw Exception("Requested authentication but SASL unavailable");
+}
+
+void SaslAuthenticator::fini(void)
+{
+    return;
+}
+
 #endif
 
 std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c)
 {
+    static bool needWarning = true;
     if (c.getBroker().getOptions().auth) {
-        return std::auto_ptr<SaslAuthenticator>(new CyrusAuthenticator(c));
+        return std::auto_ptr<SaslAuthenticator>(new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     } else {
-        return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c));
+        QPID_LOG(debug, "SASL: No Authentication Performed");
+        needWarning = false;
+        return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     }
 }
 
-NullAuthenticator::NullAuthenticator(Connection& c) : connection(c), client(c.getOutput()) {}
+NullAuthenticator::NullAuthenticator(Connection& c, bool e) : connection(c), client(c.getOutput()), 
+                                                              realm(c.getBroker().getOptions().realm), encrypt(e) {}
 NullAuthenticator::~NullAuthenticator() {}
 
 void NullAuthenticator::getMechanisms(Array& mechanisms)
 {
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("ANONYMOUS")));
+    mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));//useful for testing
 }
 
 void NullAuthenticator::start(const string& mechanism, const string& response)
 {
-    QPID_LOG(warning, "SASL: No Authentication Performed");
+    if (encrypt) {
+        QPID_LOG(error, "Rejected un-encrypted connection.");
+        throw ConnectionForcedException("Connection must be encrypted.");
+    }
     if (mechanism == "PLAIN") { // Old behavior
-        if (response.size() > 0 && response[0] == (char) 0) {
-            string temp = response.substr(1);
-            string::size_type i = temp.find((char)0);
-            string uid = temp.substr(0, i);
-            string pwd = temp.substr(i + 1);
-            connection.setUserId(uid);
+        if (response.size() > 0) {
+            string uid;
+            string::size_type i = response.find((char)0);
+            if (i == 0 && response.size() > 1) {
+                //no authorization id; use authentication id
+                i = response.find((char)0, 1);
+                if (i != string::npos) uid = response.substr(1, i-1);
+            } else if (i != string::npos) {
+                //authorization id is first null delimited field
+                uid = response.substr(0, i);
+            }//else not a valid SASL PLAIN response, throw error?            
+            if (!uid.empty()) {
+                //append realm if it has not already been added
+                i = uid.find(realm);
+                if (i == string::npos || realm.size() + i < uid.size()) {
+                    uid = str(format("%1%@%2%") % uid % realm);
+                }
+                connection.setUserId(uid);
+            }
         }
     } else {
         connection.setUserId("anonymous");
     }   
-    client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
+    client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
+}
+
+
+std::auto_ptr<SecurityLayer> NullAuthenticator::getSecurityLayer(uint16_t)
+{
+    std::auto_ptr<SecurityLayer> securityLayer;
+    return securityLayer;
 }
 
 
 #if HAVE_SASL
 
-CyrusAuthenticator::CyrusAuthenticator(Connection& c) : sasl_conn(0), connection(c), client(c.getOutput()) 
+
+CyrusAuthenticator::CyrusAuthenticator(Connection& c, bool _encrypt) : 
+    sasl_conn(0), connection(c), client(c.getOutput()), encrypt(_encrypt)
 {
     init();
 }
@@ -145,6 +226,39 @@ void CyrusAuthenticator::init()
         // server error, when one is available
         throw ConnectionForcedException("Unable to perform authentication");
     }
+
+    sasl_security_properties_t secprops;
+    
+    //TODO: should the actual SSF values be configurable here?
+    secprops.min_ssf = encrypt ? 10: 0;
+    secprops.max_ssf = 256;
+
+    // If the transport provides encryption, notify the SASL library of
+    // the key length and set the ssf range to prevent double encryption.
+    sasl_ssf_t external_ssf = (sasl_ssf_t) connection.getSSF();
+    if (external_ssf) {
+        int result = sasl_setprop(sasl_conn, SASL_SSF_EXTERNAL, &external_ssf);
+        if (result != SASL_OK) {
+            throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external SSF: " << result));
+        }
+
+        secprops.max_ssf = secprops.min_ssf = 0;
+    }
+
+    QPID_LOG(debug, "min_ssf: " << secprops.min_ssf <<
+             ", max_ssf: " << secprops.max_ssf <<
+             ", external_ssf: " << external_ssf );
+
+    secprops.maxbufsize = 65535;
+    secprops.property_names = 0;
+    secprops.property_values = 0;
+    secprops.security_flags = 0; /* or SASL_SEC_NOANONYMOUS etc as appropriate */
+    
+    int result = sasl_setprop(sasl_conn, SASL_SEC_PROPS, &secprops);
+    if (result != SASL_OK) {
+        throw framing::InternalErrorException(QPID_MSG("SASL error: " << result));
+    }
+
 }
 
 CyrusAuthenticator::~CyrusAuthenticator()
@@ -153,6 +267,23 @@ CyrusAuthenticator::~CyrusAuthenticator()
         sasl_dispose(&sasl_conn);
         sasl_conn = 0;
     }
+}
+
+void CyrusAuthenticator::getError(string& error)
+{
+    error = string(sasl_errdetail(sasl_conn));
+}
+
+void CyrusAuthenticator::getUid(string& uid)
+{
+    int code;
+    const void* ptr;
+
+    code = sasl_getprop(sasl_conn, SASL_USERNAME, &ptr);
+    if (SASL_OK != code)
+        return;
+
+    uid = string(const_cast<char*>(static_cast<const char*>(ptr)));
 }
 
 void CyrusAuthenticator::getMechanisms(Array& mechanisms)
@@ -239,7 +370,7 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
 
         connection.setUserId(const_cast<char*>(static_cast<const char*>(uid)));
 
-        client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
+        client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
     } else if (SASL_CONTINUE == code) {
         string challenge_str(challenge, challenge_len);
 
@@ -264,6 +395,24 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
         }
     }
 }
+
+std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFrameSize)
+{
+
+    const void* value(0);
+    int result = sasl_getprop(sasl_conn, SASL_SSF, &value);
+    if (result != SASL_OK) {
+        throw framing::InternalErrorException(QPID_MSG("SASL error: " << sasl_errdetail(sasl_conn)));
+    }
+    uint ssf = *(reinterpret_cast<const unsigned*>(value));
+    std::auto_ptr<SecurityLayer> securityLayer;
+    if (ssf) {
+        QPID_LOG(info, "Installing security layer,  SSF: "<< ssf);
+        securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
+    }
+    return securityLayer;
+}
+
 #endif
 
 }}

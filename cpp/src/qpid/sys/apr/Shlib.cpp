@@ -19,8 +19,8 @@
  */
 
 #include "qpid/sys/Shlib.h"
-#include "APRBase.h"
-#include "APRPool.h"
+#include "qpid/sys/apr/APRBase.h"
+#include "qpid/sys/apr/APRPool.h"
 #include <apr_dso.h>
 
 namespace qpid {

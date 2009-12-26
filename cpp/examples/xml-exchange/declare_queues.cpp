@@ -19,10 +19,32 @@
  *
  */
 
+
+/**
+ *
+ * declare_queues.cpp
+ *
+ * This is one of three programs used to implement XML-based content
+ * routing in C++.
+ *
+ * declare_queues.cpp (this program)
+ *
+ *       Creates a queue named "message_qaueue" on the broker,
+ *       declares an XML Exchange, subscribes the queue to the XML
+ *       Exchange using an XQuery in the binding, then exits.
+ *
+ * xml_producer.cpp 
+ *
+ *       Publishes messages to the XML Exchange.
+ *
+ * listener.cpp
+ *
+ *       Reads messages from the "message_queue" queue.
+ */
+
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -59,7 +81,7 @@ int main(int argc, char** argv) {
       FieldTable binding;
       binding.setString("xquery", "declare variable $control external;"
 				  "./message/id mod 2 = 1 or $control = 'end'");
-      session.exchangeBind(arg::exchange="xml", arg::queue="message_queue", arg::bindingKey="query_name", arg::arguments=binding); 
+      session.exchangeBind(arg::exchange="xml", arg::queue="message_queue", arg::bindingKey="content_feed", arg::arguments=binding); 
 
   //-----------------------------------------------------------------------------
 

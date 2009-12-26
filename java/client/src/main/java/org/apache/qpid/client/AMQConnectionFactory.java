@@ -354,6 +354,17 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         return _connectionDetails;
     }
 
+    public String getConnectionURLString()
+    {
+        return _connectionDetails.toString();
+    }
+
+
+    public final void setConnectionURLString(String url) throws URLSyntaxException
+    {
+        _connectionDetails = new AMQConnectionURL(url);
+    }
+
     /**
      * JNDI interface to create objects from References.
      *

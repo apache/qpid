@@ -22,21 +22,25 @@
  *
  */
 
-#include "ConnectionFactory.h"
-#include "ConnectionToken.h"
-#include "DirectExchange.h"
-#include "DtxManager.h"
-#include "ExchangeRegistry.h"
-#include "MessageStore.h"
-#include "QueueRegistry.h"
-#include "LinkRegistry.h"
-#include "SessionManager.h"
-#include "Vhost.h"
-#include "System.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/ConnectionFactory.h"
+#include "qpid/broker/ConnectionToken.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/DtxManager.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/QueueRegistry.h"
+#include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/SessionManager.h"
+#include "qpid/broker/QueueCleaner.h"
+#include "qpid/broker/QueueEvents.h"
+#include "qpid/broker/Vhost.h"
+#include "qpid/broker/System.h"
+#include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/ManagementBroker.h"
-#include "qpid/management/Broker.h"
-#include "qpid/management/ArgsBrokerConnect.h"
+#include "qpid/management/ManagementAgent.h"
+#include "qmf/org/apache/qpid/broker/Broker.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerConnect.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/DataDir.h"
@@ -44,10 +48,13 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/RefCounted.h"
-#include "AclModule.h"
+#include "qpid/broker/AclModule.h"
+#include "qpid/sys/Mutex.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <string>
 #include <vector>
 
 namespace qpid { 
@@ -57,22 +64,34 @@ namespace sys {
     class Poller;
 }
 
-class Url;
+struct Url;
 
 namespace broker {
 
+class ExpiryPolicy;
+
 static const  uint16_t DEFAULT_PORT=5672;
+
+struct NoSuchTransportException : qpid::Exception
+{
+    NoSuchTransportException(const std::string& s) : Exception(s) {}
+    virtual ~NoSuchTransportException() throw() {}
+};
 
 /**
  * A broker instance. 
  */
 class Broker : public sys::Runnable, public Plugin::Target,
-               public management::Manageable, public RefCounted
+               public management::Manageable,
+               public RefCounted
 {
-  public:
+public:
 
     struct Options : public qpid::Options {
-        Options(const std::string& name="Broker Options");
+        static const std::string DEFAULT_DATA_DIR_LOCATION;
+        static const std::string DEFAULT_DATA_DIR_NAME;
+
+        QPID_BROKER_EXTERN Options(const std::string& name="Broker Options");
 
         bool noDataDir;
         std::string dataDir;
@@ -83,45 +102,82 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint64_t stagingThreshold;
         bool enableMgmt;
         uint16_t mgmtPubInterval;
+        uint16_t queueCleanInterval;
         bool auth;
         std::string realm;
         size_t replayFlushLimit;
         size_t replayHardLimit;
         uint queueLimit;
         bool tcpNoDelay;
+        bool requireEncrypted;
+        std::string knownHosts;
+        uint32_t maxSessionRate;
+        bool asyncQueueEvents;
+
+      private:
+        std::string getHome();
     };
- 
+    
+    class ConnectionCounter {
+            int maxConnections;
+            int connectionCount;
+            sys::Mutex connectionCountLock;
+        public:
+            ConnectionCounter(int mc): maxConnections(mc),connectionCount(0) {};
+            void inc_connectionCount() {    
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+                connectionCount++;
+            } 
+            void dec_connectionCount() {    
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+                connectionCount--;
+            }
+            bool allowConnection() {
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+                return (maxConnections <= connectionCount);
+            } 
+    };
+
   private:
+    typedef std::map<std::string, boost::shared_ptr<sys::ProtocolFactory> > ProtocolFactoryMap;
+
+    void declareStandardExchange(const std::string& name, const std::string& type);
+    void setStore ();
+
     boost::shared_ptr<sys::Poller> poller;
+    sys::Timer timer;
     Options config;
-    management::ManagementAgent::Singleton managementAgentSingleton;
-    std::vector< boost::shared_ptr<sys::ProtocolFactory> > protocolFactories;
-    MessageStore* store;
-	AclModule* acl;
+    std::auto_ptr<management::ManagementAgent> managementAgent;
+    ProtocolFactoryMap protocolFactories;
+    std::auto_ptr<MessageStore> store;
+    AclModule* acl;
     DataDir dataDir;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     LinkRegistry links;
-    ConnectionFactory factory;
+    boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
-    management::ManagementAgent* managementAgent;
-    management::Broker*          mgmtObject;
+    qmf::org::apache::qpid::broker::Broker* mgmtObject;
     Vhost::shared_ptr            vhostObject;
     System::shared_ptr           systemObject;
-
-    void declareStandardExchange(const std::string& name, const std::string& type);
-
-
+    QueueCleaner queueCleaner;
+    QueueEvents queueEvents;
+    std::vector<Url> knownBrokers;
+    std::vector<Url> getKnownBrokersImpl();
+    std::string federationTag;
+    bool recovery;
+    bool clusterUpdatee;
+    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
+    ConnectionCounter connectionCounter;
+    
   public:
-
-  
     virtual ~Broker();
 
-    Broker(const Options& configuration);
-    static boost::intrusive_ptr<Broker> create(const Options& configuration);
-    static boost::intrusive_ptr<Broker> create(int16_t port = DEFAULT_PORT);
+    QPID_BROKER_EXTERN Broker(const Options& configuration);
+    static QPID_BROKER_EXTERN boost::intrusive_ptr<Broker> create(const Options& configuration);
+    static QPID_BROKER_EXTERN boost::intrusive_ptr<Broker> create(int16_t port = DEFAULT_PORT);
 
     /**
      * Return listening port. If called before bind this is
@@ -129,7 +185,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
      * port, which will be different if the configured port is
      * 0.
      */
-    virtual uint16_t getPort() const;
+    virtual uint16_t getPort(const std::string& name) const;
 
     /**
      * Run the broker. Implements Runnable::run() so the broker
@@ -140,7 +196,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     /** Shut down the broker */
     virtual void shutdown();
 
-    void setStore (MessageStore*);
+    QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
     MessageStore& getStore() { return *store; }
     void setAcl (AclModule* _acl) {acl = _acl;}
     AclModule* getAcl() { return acl; }
@@ -151,21 +207,29 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DtxManager& getDtxManager() { return dtxManager; }
     DataDir& getDataDir() { return dataDir; }
     Options& getOptions() { return config; }
+    QueueEvents& getQueueEvents() { return queueEvents; }
+
+    void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
+    boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
 
     SessionManager& getSessionManager() { return sessionManager; }
+    const std::string& getFederationTag() const { return federationTag; }
 
     management::ManagementObject*     GetManagementObject (void) const;
     management::Manageable*           GetVhostObject      (void) const;
-    management::Manageable::status_t  ManagementMethod (uint32_t methodId, management::Args& args);
-    
+    management::Manageable::status_t  ManagementMethod (uint32_t methodId,
+                                                        management::Args& args,
+                                                        std::string& text);
+
     /** Add to the broker's protocolFactorys */
-    void registerProtocolFactory(boost::shared_ptr<sys::ProtocolFactory>);
+    void registerProtocolFactory(const std::string& name, boost::shared_ptr<sys::ProtocolFactory>);
 
     /** Accept connections */
-    void accept();
+    QPID_BROKER_EXTERN void accept();
 
     /** Create a connection to another broker. */
-    void connect(const std::string& host, uint16_t port, bool useSsl,
+    void connect(const std::string& host, uint16_t port, 
+                 const std::string& transport,
                  boost::function2<void, int, std::string> failed,
                  sys::ConnectionCodec::Factory* =0);
     /** Create a connection to another broker. */
@@ -173,16 +237,38 @@ class Broker : public sys::Runnable, public Plugin::Target,
                  boost::function2<void, int, std::string> failed,
                  sys::ConnectionCodec::Factory* =0);
 
-    // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
-    // For the present just return the first ProtocolFactory registered.
-    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
+    /** Move messages from one queue to another.
+        A zero quantity means to move all messages
+    */
+    uint32_t queueMoveMessages( const std::string& srcQueue, 
+			    const std::string& destQueue,
+			    uint32_t  qty); 
+
+    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(const std::string& name = TCP_TRANSPORT) const;
 
     /** Expose poller so plugins can register their descriptors. */
-    boost::shared_ptr<sys::Poller> getPoller(); 
+    boost::shared_ptr<sys::Poller> getPoller();
+
+    boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
+    void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
+
+    sys::Timer& getTimer() { return timer; }
+
+    boost::function<std::vector<Url> ()> getKnownBrokers;
+
+    static QPID_BROKER_EXTERN const std::string TCP_TRANSPORT;
+
+    void setRecovery(bool set) { recovery = set; }
+    bool getRecovery() const { return recovery; }
+
+    void setClusterUpdatee(bool set) { clusterUpdatee = set; }
+    bool isClusterUpdatee() const { return clusterUpdatee; }
+
+    management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
+    
+    ConnectionCounter& getConnectionCounter() {return connectionCounter;}
 };
 
 }}
-            
-
 
 #endif  /*!_Broker_*/

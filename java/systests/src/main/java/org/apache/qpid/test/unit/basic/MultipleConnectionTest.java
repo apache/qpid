@@ -126,7 +126,7 @@ public class MultipleConnectionTest extends QpidTestCase
             while (expected > _count)
             {
                 long timeLeft = maxWait - timeSince(start);
-                if (timeLeft < 0)
+                if (timeLeft <= 0)
                 {
                     break;
                 }
@@ -146,18 +146,6 @@ public class MultipleConnectionTest extends QpidTestCase
         {
             return _name + ": " + _count;
         }
-    }
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        TransportConnection.createVMBroker(1);
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     private static void waitForCompletion(int expected, long wait, Receiver[] receivers) throws InterruptedException

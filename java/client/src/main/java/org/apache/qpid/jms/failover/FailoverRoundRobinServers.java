@@ -30,27 +30,27 @@ public class FailoverRoundRobinServers implements FailoverMethod
     private static final Logger _logger = LoggerFactory.getLogger(FailoverRoundRobinServers.class);
 
     /** The default number of times to cycle through all servers */
-    public static final int DEFAULT_CYCLE_RETRIES = 0;
+    public static final int DEFAULT_CYCLE_RETRIES = 1;
     /** The default number of times to retry each server */
     public static final int DEFAULT_SERVER_RETRIES = 0;
 
     /** The index into the hostDetails array of the broker to which we are connected */
-    private int _currentBrokerIndex = -1;
+    private int _currentBrokerIndex = 0;
 
     /** The number of times to retry connecting for each server */
     private int _serverRetries;
 
     /** The current number of retry attempts made */
-    private int _currentServerRetry;
+    private int _currentServerRetry = 0;
 
     /** The number of times to cycle through the servers */
     private int _cycleRetries;
 
     /** The current number of cycles performed. */
-    private int _currentCycleRetries;
+    private int _currentCycleRetries = 0;
 
     /** Array of BrokerDetail used to make connections. */
-    private ConnectionURL _connectionDetails;
+    protected ConnectionURL _connectionDetails;
 
     public FailoverRoundRobinServers(ConnectionURL connectionDetails)
     {
@@ -62,10 +62,12 @@ public class FailoverRoundRobinServers implements FailoverMethod
         _connectionDetails = connectionDetails;
 
         // There is no current broker at startup so set it to -1.
-        _currentBrokerIndex = -1;
+        _currentBrokerIndex = 0;
 
         String cycleRetries = _connectionDetails.getFailoverOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE);
 
+        _cycleRetries = DEFAULT_CYCLE_RETRIES;
+        
         if (cycleRetries != null)
         {
             try
@@ -74,42 +76,39 @@ public class FailoverRoundRobinServers implements FailoverMethod
             }
             catch (NumberFormatException nfe)
             {
-                _cycleRetries = DEFAULT_CYCLE_RETRIES;
+                _logger.warn("Cannot set cycle Retries, " + cycleRetries + " is not a number. Using default: " + DEFAULT_CYCLE_RETRIES); 
             }
         }
 
         _currentCycleRetries = 0;
 
         _serverRetries = 0;
-        _currentServerRetry = -1;
+        _currentServerRetry = 0;
     }
 
     public void reset()
     {
         _currentBrokerIndex = 0;
         _currentCycleRetries = 0;
-        _currentServerRetry = -1;
+        _currentServerRetry = 0;
     }
 
     public boolean failoverAllowed()
     {
-        return ((_currentCycleRetries < _cycleRetries) || (_currentServerRetry < _serverRetries)
-                || (_currentBrokerIndex < (_connectionDetails.getBrokerCount() - 1)));
+        _logger.info("==== Checking failoverAllowed() ====");
+        _logger.info(toString());
+        _logger.info("====================================");
+        return ((_currentCycleRetries < _cycleRetries) || (_currentServerRetry < _serverRetries));
     }
 
     public void attainedConnection()
     {
         _currentCycleRetries = 0;
-        _currentServerRetry = -1;
+        _currentServerRetry = 0;
     }
 
     public BrokerDetails getCurrentBrokerDetails()
     {
-        if (_currentBrokerIndex == -1)
-        {
-            return null;
-        }
-
         return _connectionDetails.getBrokerDetails(_currentBrokerIndex);
     }
 
@@ -121,20 +120,8 @@ public class FailoverRoundRobinServers implements FailoverMethod
         {
             if (_currentServerRetry < _serverRetries)
             {
-                if (_currentBrokerIndex == -1)
-                {
-                    _currentBrokerIndex = 0;
-
-                    setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex));
-
-                    _logger.info("First run using " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
-                }
-                else
-                {
-                    _logger.info("Retrying " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
-                    doDelay=true;
-                }
-
+                _logger.info("Trying " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
+                doDelay= _currentBrokerIndex != 0;
                 _currentServerRetry++;
             }
             else
@@ -154,19 +141,8 @@ public class FailoverRoundRobinServers implements FailoverMethod
         {
             if (_currentServerRetry < _serverRetries)
             {
-                if (_currentBrokerIndex == -1)
-                {
-                    _currentBrokerIndex = 0;
-
-                    setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex));
-
-                    _logger.info("First run using " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
-                }
-                else
-                {
-                    _logger.info("Retrying " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
-                    doDelay=true;
-                }
+                _logger.info("Trying " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
+                doDelay= _currentBrokerIndex != 0;
 
                 _currentServerRetry++;
             }
@@ -198,7 +174,11 @@ public class FailoverRoundRobinServers implements FailoverMethod
         }
         else
         {
-            _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
+            // Only display if option not set. Not if deDelay==false.
+            if (delayStr == null)
+            {
+                _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
+            }
         }
 
         return broker;
@@ -225,7 +205,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
             }
         }
 
-        _currentServerRetry = -1;
+        _currentServerRetry = 0;
         _currentBrokerIndex = index;
     }
 

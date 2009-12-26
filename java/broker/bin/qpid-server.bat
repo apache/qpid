@@ -76,8 +76,8 @@ echo Using CLASSPATH: %CLASSPATH%
 goto afterQpidClasspath
 
 :noQpidClasspath
-echo Warning: Qpid classpath not set. CLASSPATH set to %QPID_HOME%\lib\qpid-incubating.jar
-set CLASSPATH=%QPID_HOME%\lib\qpid-incubating.jar
+echo Warning: Qpid classpath not set. CLASSPATH set to %QPID_HOME%\lib\qpid-all.jar
+set CLASSPATH=%QPID_HOME%\lib\qpid-all.jar
 :afterQpidClasspath
 
 REM start parsing -run arguments

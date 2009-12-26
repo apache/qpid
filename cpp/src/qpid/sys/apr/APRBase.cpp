@@ -20,7 +20,7 @@
  */
 #include <iostream>
 #include "qpid/log/Statement.h"
-#include "APRBase.h"
+#include "qpid/sys/apr/APRBase.h"
 
 using namespace qpid::sys;
 

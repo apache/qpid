@@ -21,6 +21,9 @@
 #include "test_tools.h"
 #include "qpid/sys/AtomicValue.h"
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(AtomicValueTestSuite)
 
 QPID_AUTO_TEST_CASE(test) {
@@ -47,3 +50,5 @@ QPID_AUTO_TEST_CASE(test) {
 
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

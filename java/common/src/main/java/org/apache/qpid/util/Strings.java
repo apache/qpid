@@ -22,6 +22,12 @@ package org.apache.qpid.util;
 
 import java.io.UnsupportedEncodingException;
 
+import java.util.Map;
+import java.util.Properties;
+import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
  * Strings
@@ -76,6 +82,156 @@ public final class Strings
                 bytes[i] = (byte) chars[i];
             }
             return bytes;
+        }
+    }
+
+    public static final String fromUTF8(byte[] bytes)
+    {
+        try
+        {
+            return new String(bytes, "UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static final Pattern VAR = Pattern.compile("(?:\\$\\{([^\\}]*)\\})|(?:\\$(\\$))");
+
+    public static interface Resolver
+    {
+        String resolve(String variable);
+    }
+
+    public static class MapResolver implements Resolver
+    {
+
+        private final Map<String,String> map;
+
+        public MapResolver(Map<String,String> map)
+        {
+            this.map = map;
+        }
+
+        public String resolve(String variable)
+        {
+            return map.get(variable);
+        }
+    }
+
+    public static class PropertiesResolver implements Resolver
+    {
+
+        private final Properties properties;
+
+        public PropertiesResolver(Properties properties)
+        {
+            this.properties = properties;
+        }
+
+        public String resolve(String variable)
+        {
+            return properties.getProperty(variable);
+        }
+    }
+
+    public static class ChainedResolver implements Resolver
+    {
+        private final Resolver primary;
+        private final Resolver secondary;
+
+        public ChainedResolver(Resolver primary, Resolver secondary)
+        {
+            this.primary = primary;
+            this.secondary = secondary;
+        }
+
+        public String resolve(String variable)
+        {
+            String result = primary.resolve(variable);
+            if (result == null)
+            {
+                result = secondary.resolve(variable);
+            }
+            return result;
+        }
+    }
+
+    public static final Resolver SYSTEM_RESOLVER = new Resolver()
+    {
+        public String resolve(String variable)
+        {
+            String result = System.getProperty(variable);
+            if (result == null)
+            {
+                result = System.getenv(variable);
+            }
+            return result;
+        }
+    };
+
+    public static final String expand(String input)
+    {
+        return expand(input, SYSTEM_RESOLVER);
+    }
+
+    public static final String expand(String input, Resolver resolver)
+    {
+        return expand(input, resolver, new Stack());
+    }
+
+    private static final String expand(String input, Resolver resolver, Stack<String> stack)
+    {
+        Matcher m = VAR.matcher(input);
+        StringBuffer result = new StringBuffer();
+        while (m.find())
+        {
+            String var = m.group(1);
+            if (var == null)
+            {
+                String esc = m.group(2);
+                if ("$".equals(esc))
+                {
+                    m.appendReplacement(result, Matcher.quoteReplacement("$"));
+                }
+                else
+                {
+                    throw new IllegalArgumentException(esc);
+                }
+            }
+            else
+            {
+                m.appendReplacement(result, Matcher.quoteReplacement(resolve(var, resolver, stack)));
+            }
+        }
+        m.appendTail(result);
+        return result.toString();
+    }
+
+    private static final String resolve(String var, Resolver resolver, Stack<String> stack)
+    {
+        if (stack.contains(var))
+        {
+            throw new IllegalArgumentException
+                (String.format("recursively defined variable: %s stack=%s", var,
+                               stack));
+        }
+
+        String result = resolver.resolve(var);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("no such variable: " + var);
+        }
+
+        stack.push(var);
+        try
+        {
+            return expand(result, resolver, stack);
+        }
+        finally
+        {
+            stack.pop();
         }
     }
 

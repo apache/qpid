@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.management.ui.jmx.ClientListener;
 import org.apache.qpid.management.ui.model.ManagedAttributeModel;
@@ -35,6 +36,9 @@ public abstract class ServerRegistry
 {
     private ManagedServer _managedServer = null;
     
+    // API version for the management interface on the broker
+    private ApiVersion _managementApiVersion = new ApiVersion(0,0);
+    
     // list of virtual hosts for this server
     private List<String> _virtualHosts = new ArrayList<String>();
     // map of all Connection mbeans
@@ -43,6 +47,10 @@ public abstract class ServerRegistry
     private ConcurrentMap<String,List<ManagedBean>> _exchanges = new ConcurrentHashMap<String,List<ManagedBean>>();
     // map of all queue mbenas
     private ConcurrentMap<String,List<ManagedBean>> _queues = new ConcurrentHashMap<String,List<ManagedBean>>();
+    // map of all virtual host manager mbeans
+    private ConcurrentMap<String,ManagedBean> _vhostManagers = new ConcurrentHashMap<String,ManagedBean>();
+    
+    private AtomicBoolean _serverConnectionClosed = new AtomicBoolean(false);
     
     public ServerRegistry()
     {
@@ -52,6 +60,26 @@ public abstract class ServerRegistry
     public ServerRegistry(ManagedServer server)
     {
         _managedServer = server;
+    }
+    
+    public void serverConnectionClosed()
+    {
+        _serverConnectionClosed.set(true);
+    }
+    
+    public boolean isServerConnectionClosed()
+    {
+        return _serverConnectionClosed.get();
+    }
+    
+    public void setManagementApiVersion(ApiVersion mgmtApiVersion)
+    {
+        _managementApiVersion = mgmtApiVersion;  
+    }
+    
+    public ApiVersion getManagementApiVersion()
+    {
+        return _managementApiVersion;  
     }
     
     public ManagedServer getManagedServer()
@@ -85,6 +113,22 @@ public abstract class ServerRegistry
         _queues.get(vHost).add(mbean);
     }
     
+    protected void addVirtualHostManagerMBean(ManagedBean mbean)
+    {
+        String vHost = mbean.getVirtualHostName();
+        _vhostManagers.put(vHost, mbean);
+    }
+    
+    protected void removeVirtualHostManagerMBean(ManagedBean mbean)
+    {
+        _vhostManagers.remove(mbean);
+    }
+    
+    public ManagedBean getVirtualHostManagerMBean(String virtualHost)
+    {
+        return _vhostManagers.get(virtualHost);
+    }
+    
     protected void removeConnectionMBean(ManagedBean mbean)
     {
         _connections.get(mbean.getVirtualHostName()).remove(mbean);
@@ -113,6 +157,23 @@ public abstract class ServerRegistry
     public List<ManagedBean> getQueues(String virtualHost)
     {
         return _queues.get(virtualHost);
+    }
+    
+    //returns the requested ManagedBean, or null if it cant be found
+    public ManagedBean getQueue(String queueName, String virtualHost)
+    {
+        ManagedBean requestedQueue = null;
+        
+        for(ManagedBean queue : _queues.get(virtualHost))
+        {
+            if(queueName.equals(queue.getName()))
+            {
+                requestedQueue = queue;
+                break;
+            }
+        }
+        
+        return requestedQueue;
     }
     
     public void addVirtualHost(String name)
@@ -155,6 +216,8 @@ public abstract class ServerRegistry
     public abstract String[] getConnectionNames(String vistualHostName);
     
     public abstract List<NotificationObject> getNotifications(ManagedBean mbean);
+    
+    public abstract List<NotificationObject> getNotifications(String virtualhost);
     
     public abstract boolean hasSubscribedForNotifications(ManagedBean mbean, String name, String type);
     

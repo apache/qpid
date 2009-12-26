@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "UnknownType.h"
+#include "qpid/amqp_0_10/UnknownType.h"
 #include <boost/range/iterator_range.hpp>
 #include <ostream>
 

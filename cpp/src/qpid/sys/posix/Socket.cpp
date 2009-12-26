@@ -21,8 +21,9 @@
 
 #include "qpid/sys/Socket.h"
 
-#include "check.h"
-#include "PrivatePosix.h"
+#include "qpid/sys/SocketAddress.h"
+#include "qpid/sys/posix/check.h"
+#include "qpid/sys/posix/PrivatePosix.h"
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -36,6 +37,7 @@
 #include <iostream>
 
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace qpid {
 namespace sys {
@@ -95,22 +97,33 @@ std::string getService(int fd, bool local)
 }
 
 Socket::Socket() :
-	IOHandle(new IOHandlePrivate)
-{
-	createTcp();
-}
-
-Socket::Socket(IOHandlePrivate* h) :
-	IOHandle(h)
+    IOHandle(new IOHandlePrivate),
+    nonblocking(false),
+    nodelay(false)
 {}
 
-void Socket::createTcp() const
+Socket::Socket(IOHandlePrivate* h) :
+    IOHandle(h),
+    nonblocking(false),
+    nodelay(false)
+{}
+
+void Socket::createSocket(const SocketAddress& sa) const
 {
     int& socket = impl->fd;
     if (socket != -1) Socket::close();
-    int s = ::socket (PF_INET, SOCK_STREAM, 0);
+    int s = ::socket(getAddrInfo(sa).ai_family, getAddrInfo(sa).ai_socktype, 0);
     if (s < 0) throw QPID_POSIX_ERROR(errno);
     socket = s;
+
+    try {
+        if (nonblocking) setNonblocking();
+        if (nodelay) setTcpNoDelay();
+    } catch (std::exception&) {
+        ::close(s);
+        socket = -1;
+        throw;
+    }
 }
 
 void Socket::setTimeout(const Duration& interval) const
@@ -123,40 +136,42 @@ void Socket::setTimeout(const Duration& interval) const
 }
 
 void Socket::setNonblocking() const {
-    QPID_POSIX_CHECK(::fcntl(impl->fd, F_SETFL, O_NONBLOCK));
-}
-
-namespace {
-const char* h_errstr(int e) {
-    switch (e) {
-      case HOST_NOT_FOUND: return "Host not found";
-      case NO_ADDRESS: return "Name does not have an IP address";
-      case TRY_AGAIN: return "A temporary error occurred on an authoritative name server.";
-      case NO_RECOVERY: return "Non-recoverable name server error";
-      default: return "Unknown error";
+    int& socket = impl->fd;
+    nonblocking = true;
+    if (socket != -1) {
+        QPID_POSIX_CHECK(::fcntl(socket, F_SETFL, O_NONBLOCK));
     }
 }
+
+void Socket::setTcpNoDelay() const
+{
+    int& socket = impl->fd;
+    nodelay = true;
+    if (socket != -1) {
+        int flag = 1;
+        int result = setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
+        QPID_POSIX_CHECK(result);
+    }
 }
 
 void Socket::connect(const std::string& host, uint16_t port) const
 {
-    std::stringstream namestream;
-    namestream << host << ":" << port;
-    connectname = namestream.str();
+    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    connect(sa);
+}
+
+void Socket::connect(const SocketAddress& addr) const
+{
+    connectname = addr.asString();
+
+    createSocket(addr);
 
     const int& socket = impl->fd;
-    struct sockaddr_in name;
-    name.sin_family = AF_INET;
-    name.sin_port = htons(port);
-    // TODO: Be good to make this work for IPv6 as well as IPv4
-    // Use more modern lookup functions
-    struct hostent* hp = gethostbyname ( host.c_str() );
-    if (hp == 0)
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << h_errstr(h_errno)));
-    ::memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
-    if ((::connect(socket, (struct sockaddr*)(&name), sizeof(name)) < 0) &&
-        (errno != EINPROGRESS))
-        throw qpid::Exception(QPID_MSG(strError(errno) << ": " << host << ":" << port));
+    // TODO the correct thing to do here is loop on failure until you've used all the returned addresses
+    if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) < 0) &&
+        (errno != EINPROGRESS)) {
+        throw Exception(QPID_MSG(strError(errno) << ": " << connectname));
+    }
 }
 
 void
@@ -170,18 +185,24 @@ Socket::close() const
 
 int Socket::listen(uint16_t port, int backlog) const
 {
+    SocketAddress sa("", boost::lexical_cast<std::string>(port));
+    return listen(sa, backlog);
+}
+
+int Socket::listen(const SocketAddress& sa, int backlog) const
+{
+    createSocket(sa);
+
     const int& socket = impl->fd;
     int yes=1;
     QPID_POSIX_CHECK(setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
-    struct sockaddr_in name;
-    name.sin_family = AF_INET;
-    name.sin_port = htons(port);
-    name.sin_addr.s_addr = 0;
-    if (::bind(socket, (struct sockaddr*)&name, sizeof(name)) < 0)
-        throw Exception(QPID_MSG("Can't bind to port " << port << ": " << strError(errno)));
+
+    if (::bind(socket, getAddrInfo(sa).ai_addr, getAddrInfo(sa).ai_addrlen) < 0)
+        throw Exception(QPID_MSG("Can't bind to port " << sa.asString() << ": " << strError(errno)));
     if (::listen(socket, backlog) < 0)
-        throw Exception(QPID_MSG("Can't listen on port " << port << ": " << strError(errno)));
-    
+        throw Exception(QPID_MSG("Can't listen on port " << sa.asString() << ": " << strError(errno)));
+
+    struct sockaddr_in name;
     socklen_t namelen = sizeof(name);
     if (::getsockname(socket, (struct sockaddr*)&name, &namelen) < 0)
         throw QPID_POSIX_ERROR(errno);
@@ -189,9 +210,9 @@ int Socket::listen(uint16_t port, int backlog) const
     return ntohs(name.sin_port);
 }
 
-Socket* Socket::accept(struct sockaddr *addr, socklen_t *addrlen) const
+Socket* Socket::accept() const
 {
-    int afd = ::accept(impl->fd, addr, addrlen);
+    int afd = ::accept(impl->fd, 0, 0);
     if ( afd >= 0)
         return new Socket(new IOHandlePrivate(afd));
     else if (errno == EAGAIN)
@@ -221,9 +242,10 @@ std::string Socket::getPeername() const
 
 std::string Socket::getPeerAddress() const
 {
-    if (!connectname.empty())
-        return std::string (connectname);
-    return getName(impl->fd, false, true);
+    if (connectname.empty()) {
+        connectname = getName(impl->fd, false, true);
+    }
+    return connectname;
 }
 
 std::string Socket::getLocalAddress() const
@@ -238,7 +260,7 @@ uint16_t Socket::getLocalPort() const
 
 uint16_t Socket::getRemotePort() const
 {
-    return atoi(getService(impl->fd, true).c_str());
+    return std::atoi(getService(impl->fd, true).c_str());
 }
 
 int Socket::getError() const
@@ -250,15 +272,6 @@ int Socket::getError() const
         throw QPID_POSIX_ERROR(errno);
 
     return result;
-}
-
-void Socket::setTcpNoDelay(bool nodelay) const
-{
-    if (nodelay) {
-        int flag = 1;
-        int result = setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
-        QPID_POSIX_CHECK(result);
-    }
 }
 
 }} // namespace qpid::sys

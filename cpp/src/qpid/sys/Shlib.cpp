@@ -18,7 +18,7 @@
  *
  */
 
-#include "Shlib.h"
+#include "qpid/sys/Shlib.h"
 
 #include "qpid/log/Statement.h"
 

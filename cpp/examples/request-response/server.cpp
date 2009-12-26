@@ -26,30 +26,46 @@
  *  This program is one of two programs that illustrate the
  *  request/response pattern.
  *  
- *    client.cpp 
  *
- *      Make requests of a service, print the response.
+ *  client.cpp 
+ *   
+ *     A client application that sends messages to the "amq.direct"
+ *     exchange, using the routing key "request" to route messages to
+ *     the server.
  *
- *    server.cpp (this program)
+ *     Each instance of the client creates its own private response
+ *     queue, binding it to the "amq.direct" exchange using it's
+ *     session identifier as the routing key, and places its session
+ *     identifier in the "reply-to" property of each message it sends.
  *
- *      Accept requests, reverse the letters in each message, and
- *      return it as a response.
+ *
+ *  server.cpp (this program)
+ *
+ *     A service that accepts messages from a request queue, converts
+ *     their content to upper case, and sends the result to the
+ *     original sender.
+ *
+ *     This program creates a request queue, binds it to "amq.direct"
+ *     using the routing key "request", then receives messages from
+ *     the request queue. Each incoming message is converted to upper
+ *     case, then sent to the "amq.direct" exchange using the
+ *     request's reply-to property as the routing key for the
+ *     response.
+ *
  *
  */
 
 
 #include <qpid/client/Connection.h>
-#include <qpid/client/SubscriptionManager.h>
 #include <qpid/client/Session.h>
+
 #include <qpid/client/AsyncSession.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
+#include <qpid/client/SubscriptionManager.h>
 
-
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
-#include <algorithm>
 
 #include <sstream>
 #include <string>
@@ -105,7 +121,7 @@ int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     Connection connection;
-    Message message;
+
     try {
         connection.open(host, port);
         Session session =  connection.newSession();

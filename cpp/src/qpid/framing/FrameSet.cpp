@@ -19,7 +19,7 @@
  *
  */
 
-#include "FrameSet.h"
+#include "qpid/framing/FrameSet.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/frame_functors.h"
 #include "qpid/framing/MessageProperties.h"
@@ -33,7 +33,7 @@ FrameSet::FrameSet(const SequenceNumber& _id) : id(_id),contentSize(0),recalcula
 void FrameSet::append(const AMQFrame& part)
 {
     parts.push_back(part);
-	recalculateSize = true;
+    recalculateSize = true;
 }
 
 bool FrameSet::isComplete() const
@@ -48,6 +48,11 @@ bool FrameSet::isContentBearing() const
 }
 
 const AMQMethodBody* FrameSet::getMethod() const
+{
+    return parts.empty() ? 0 : parts[0].getMethod();
+}
+
+AMQMethodBody* FrameSet::getMethod() 
 {
     return parts.empty() ? 0 : parts[0].getMethod();
 }

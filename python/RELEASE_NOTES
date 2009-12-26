@@ -1,25 +1,17 @@
-Apache Incubator Qpid Python M2 Release Notes
--------------------------------------------
+Apache Python M4 Release Notes
+------------------------------
 
-The Qpid M2 release contains support the for AMQP 0-8 specification.
-You can access the 0-8 specification using the following link.
-http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
+The Qpid M4 release of the python client contains support the for both
+ 0-8 and 0-10 of the AMQP specification as well as support for the
+non-WIP portion of the 0-9 specification.  You can access these
+specifications from:
+
+http://jira.amqp.org/confluence/display/AMQP/Download
 
 For full details of Qpid capabilities, as they currently stand, see our
-detailed project documentation at:
+project page at:
 
-http://cwiki.apache.org/confluence/pages/viewpage.action?pageId=28284
+http://cwiki.apache.org/confluence/display/qpid/Index
 
-Please take time to go through the README file provided with the distro.
-
-
-Known Issues/Outstanding Work
------------------------------
-
-There are no known issues for the Phyton client.
-
-
-M2 Tasks Completed
--------------------
-
-Bug	QPID-467 	Complete Interop Testing
+The README file provided contains some details on installing and using
+the python client that is included with this distribution.

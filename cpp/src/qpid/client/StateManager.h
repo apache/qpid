@@ -36,6 +36,7 @@ class StateManager
 public:
     StateManager(int initial);
     void setState(int state);
+    bool setState(int state, int expected);
     int getState() const ;
     void waitForStateChange(int current);
     void waitFor(std::set<int> states);

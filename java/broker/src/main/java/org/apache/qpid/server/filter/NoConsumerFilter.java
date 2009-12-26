@@ -39,4 +39,10 @@ public class NoConsumerFilter implements MessageFilter
        return true;
     }
 
+    @Override
+    public String toString()
+    {
+        return "NoConsumer";
+    }    
+
 }

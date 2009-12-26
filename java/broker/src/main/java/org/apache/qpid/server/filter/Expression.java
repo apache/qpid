@@ -20,19 +20,17 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 
 /**
  * Represents an expression
  */
-public interface Expression<E extends Exception>
+public interface Expression
 {
 
     /**
      * @return the value of this expression
      */
-    public Object evaluate(Filterable<E> message) throws E;
+    public Object evaluate(Filterable message);
 
 }

@@ -18,20 +18,23 @@
  * under the License.
  *
  */
-#include "Connector.h"
 
-#include "Bounds.h"
-#include "ConnectionImpl.h"
-#include "ConnectionSettings.h"
+#include "qpid/client/Connector.h"
+
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Codec.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Poller.h"
+#include "qpid/sys/SecurityLayer.h"
 #include "qpid/Msg.h"
 
 #include <iostream>
+#include <map>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
@@ -43,227 +46,37 @@ using namespace qpid::framing;
 using boost::format;
 using boost::str;
 
-Connector::Connector(ProtocolVersion ver,
-                     const ConnectionSettings& settings,
-                     ConnectionImpl* cimpl)
-    : maxFrameSize(settings.maxFrameSize),
-      version(ver), 
-      initiated(false),
-      closed(true),
-      joined(true),
-      timeout(0),
-      idleIn(0), idleOut(0), 
-      timeoutHandler(0),
-      shutdownHandler(0),
-      writer(maxFrameSize, cimpl),
-      aio(0),
-      impl(cimpl)
+// Stuff for the registry of protocol connectors (maybe should be moved to its own file)
+namespace {
+    typedef std::map<std::string, Connector::Factory*> ProtocolRegistry;
+
+    ProtocolRegistry& theProtocolRegistry() {
+        static ProtocolRegistry protocolRegistry;
+
+        return protocolRegistry;
+    } 
+}
+
+Connector* Connector::create(const std::string& proto, framing::ProtocolVersion v, const ConnectionSettings& s, ConnectionImpl* c)
 {
-    QPID_LOG(debug, "Connector created for " << version);
-    settings.configureSocket(socket);
-}
-
-Connector::~Connector() {
-    close();
-}
-
-void Connector::connect(const std::string& host, int port){
-    Mutex::ScopedLock l(closedLock);
-    assert(closed);
-    socket.connect(host, port);
-    identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
-    closed = false;
-    poller = Poller::shared_ptr(new Poller);
-    aio = new AsynchIO(socket,
-                       boost::bind(&Connector::readbuff, this, _1, _2),
-                       boost::bind(&Connector::eof, this, _1),
-                       boost::bind(&Connector::eof, this, _1),
-                       0, // closed
-                       0, // nobuffs
-                       boost::bind(&Connector::writebuff, this, _1));
-    writer.init(identifier, aio);
-}
-
-void Connector::init(){
-    Mutex::ScopedLock l(closedLock);
-    assert(joined);
-    ProtocolInitiation init(version);
-    writeDataBlock(init);
-    joined = false;
-    receiver = Thread(this);
-}
-
-bool Connector::closeInternal() {
-    Mutex::ScopedLock l(closedLock);
-    bool ret = !closed;
-    if (!closed) {
-        closed = true;
-        poller->shutdown();
+    ProtocolRegistry::const_iterator i = theProtocolRegistry().find(proto);
+    if (i==theProtocolRegistry().end()) {
+        throw Exception(QPID_MSG("Unknown protocol: " << proto));
     }
-    if (!joined && receiver.id() != Thread::current().id()) {
-        joined = true;
-        Mutex::ScopedUnlock u(closedLock);
-        receiver.join();
+    return (i->second)(v, s, c);
+}
+
+void Connector::registerFactory(const std::string& proto, Factory* connectorFactory)
+{
+    ProtocolRegistry::const_iterator i = theProtocolRegistry().find(proto);
+    if (i!=theProtocolRegistry().end()) {
+        QPID_LOG(error, "Tried to register protocol: " << proto << " more than once");
     }
-    return ret;
-}
-        
-void Connector::close() {
-    closeInternal();
+    theProtocolRegistry()[proto] = connectorFactory;
 }
 
-void Connector::setInputHandler(InputHandler* handler){
-    input = handler;
-}
-
-void Connector::setShutdownHandler(ShutdownHandler* handler){
-    shutdownHandler = handler;
-}
-
-OutputHandler* Connector::getOutputHandler(){ 
-    return this; 
-}
-
-void Connector::send(AMQFrame& frame) {
-    writer.handle(frame);
-}
-
-void Connector::handleClosed() {
-    if (closeInternal() && shutdownHandler)
-        shutdownHandler->shutdown();
-}
-
-struct Connector::Buff : public AsynchIO::BufferBase {
-    Buff(size_t size) : AsynchIO::BufferBase(new char[size], size) {}    
-    ~Buff() { delete [] bytes;}
-};
-
-Connector::Writer::Writer(uint16_t s, Bounds* b) : maxFrameSize(s), aio(0), buffer(0), lastEof(0), bounds(b)
+void Connector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>)
 {
 }
-
-Connector::Writer::~Writer() { delete buffer; }
-
-void Connector::Writer::init(std::string id, sys::AsynchIO* a) {
-    Mutex::ScopedLock l(lock);
-    identifier = id;
-    aio = a;
-    newBuffer(l);
-}
-void Connector::Writer::handle(framing::AMQFrame& frame) { 
-    Mutex::ScopedLock l(lock);
-    frames.push_back(frame);
-    if (frame.getEof()) {//or if we already have a buffers worth
-        lastEof = frames.size();
-        aio->notifyPendingWrite();
-    }
-    QPID_LOG(trace, "SENT " << identifier << ": " << frame);
-}
-
-void Connector::Writer::writeOne(const Mutex::ScopedLock& l) {
-    assert(buffer);
-    framesEncoded = 0;
-
-    buffer->dataStart = 0;
-    buffer->dataCount = encode.getPosition();
-    aio->queueWrite(buffer);
-    newBuffer(l);
-}
-
-void Connector::Writer::newBuffer(const Mutex::ScopedLock&) {
-    buffer = aio->getQueuedBuffer();
-    if (!buffer) buffer = new Buff(maxFrameSize);
-    encode = framing::Buffer(buffer->bytes, buffer->byteCount);
-    framesEncoded = 0;
-}
-
-// Called in IO thread.
-void Connector::Writer::write(sys::AsynchIO&) {
-    Mutex::ScopedLock l(lock);
-    assert(buffer);
-    size_t bytesWritten(0);
-    for (size_t i = 0; i < lastEof; ++i) {
-        AMQFrame& frame = frames[i];
-        uint32_t size = frame.size();
-        if (size > encode.available()) writeOne(l);
-        assert(size <= encode.available());
-        frame.encode(encode);
-        ++framesEncoded;
-        bytesWritten += size;
-    }
-    frames.erase(frames.begin(), frames.begin()+lastEof);
-    lastEof = 0;
-    if (bounds) bounds->reduce(bytesWritten);
-    if (encode.getPosition() > 0) writeOne(l);
-}
-
-void Connector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
-    framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
-
-    if (!initiated) {
-        framing::ProtocolInitiation protocolInit;
-        if (protocolInit.decode(in)) {
-            //TODO: check the version is correct
-            QPID_LOG(debug, "RECV " << identifier << " INIT(" << protocolInit << ")");
-        }
-        initiated = true;
-    }
-    AMQFrame frame;
-    while(frame.decode(in)){
-        QPID_LOG(trace, "RECV " << identifier << ": " << frame);
-        input->received(frame);
-    }
-    // TODO: unreading needs to go away, and when we can cope
-    // with multiple sub-buffers in the general buffer scheme, it will
-    if (in.available() != 0) {
-        // Adjust buffer for used bytes and then "unread them"
-        buff->dataStart += buff->dataCount-in.available();
-        buff->dataCount = in.available();
-        aio.unread(buff);
-    } else {
-        // Give whole buffer back to aio subsystem
-        aio.queueReadBuffer(buff);
-    }
-}
-
-void Connector::writebuff(AsynchIO& aio_) {
-    writer.write(aio_);
-}
-
-void Connector::writeDataBlock(const AMQDataBlock& data) {
-    AsynchIO::BufferBase* buff = new Buff(maxFrameSize);
-    framing::Buffer out(buff->bytes, buff->byteCount);
-    data.encode(out);
-    buff->dataCount = data.size();
-    aio->queueWrite(buff);
-}
-
-void Connector::eof(AsynchIO&) {
-    handleClosed();
-}
-
-// TODO: astitcher 20070908 This version of the code can never time out, so the idle processing
-// will never be called
-void Connector::run(){
-    // Keep the connection impl in memory until run() completes.
-    boost::shared_ptr<ConnectionImpl> protect = impl->shared_from_this();
-    assert(protect);
-    try {
-        Dispatcher d(poller);
-	
-        for (int i = 0; i < 32; i++) {
-            aio->queueReadBuffer(new Buff(maxFrameSize));
-        }
-	
-        aio->start(poller);
-        d.run();
-        aio->queueForDeletion();
-        socket.close();
-    } catch (const std::exception& e) {
-        QPID_LOG(error, e.what());
-        handleClosed();
-    }
-}
-
 
 }} // namespace qpid::client

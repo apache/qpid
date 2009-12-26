@@ -187,7 +187,7 @@ public class JNDICheck
             print("ConnectionURL:");
             print(factory.getConnectionURL().toString());
             print("FailoverPolicy");
-            print(new FailoverPolicy(factory.getConnectionURL()).toString());
+            print(new FailoverPolicy(factory.getConnectionURL(),null).toString());
             print("");
         }
     }

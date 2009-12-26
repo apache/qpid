@@ -26,25 +26,41 @@
  *  This program is one of two programs that illustrate the
  *  request/response pattern.
  *  
- *    client.cpp (this program)
  *
- *      Make requests of a service, print the response.
+ *  client.cpp  (this program) 
+ *   
+ *     A client application that sends messages to the "amq.direct"
+ *     exchange, using the routing key "request" to route messages to
+ *     the server.
  *
- *    service.cpp
+ *     Each instance of the client creates its own private response
+ *     queue, binding it to the "amq.direct" exchange using it's
+ *     session identifier as the routing key, and places its session
+ *     identifier in the "reply-to" property of each message it sends.
  *
- *      Accept requests, reverse the letters in each message, and
- *      return it as a response.
+ *
+ *  server.cpp
+ *
+ *     A service that accepts messages from a request queue, converts
+ *     their content to upper case, and sends the result to the
+ *     original sender.
+ *
+ *     This program creates a request queue, binds it to "amq.direct"
+ *     using the routing key "request", then receives messages from
+ *     the request queue. Each incoming message is converted to upper
+ *     case, then sent to the "amq.direct" exchange using the
+ *     request's reply-to property as the routing key for the
+ *     response.
+ *
  *
  */
 
-
 #include <qpid/client/Connection.h>
-#include <qpid/client/SubscriptionManager.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
+#include <qpid/client/SubscriptionManager.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -52,6 +68,9 @@
 
 using namespace qpid::client;
 using namespace qpid::framing;
+
+using std::stringstream;
+using std::string;
 
 class Listener : public MessageListener{
   private:
@@ -76,14 +95,11 @@ void Listener::received(Message& message) {
 }
 
 
-using std::stringstream;
-using std::string;
 
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     Connection connection;
-    Message request;
     try {
         connection.open(host, port);
         Session session =  connection.newSession();
@@ -105,6 +121,7 @@ int main(int argc, char** argv) {
 	// Each client sends the name of their own response queue so
 	// the service knows where to route messages.
 
+    	Message request;
 	request.getDeliveryProperties().setRoutingKey("request");
 	request.getMessageProperties().setReplyTo(ReplyTo("amq.direct", response_queue.str()));
 
@@ -126,9 +143,7 @@ int main(int argc, char** argv) {
 
 	for (int i=0; i<4; i++) {
             request.setData(s[i]);
-            // Asynchronous transfer sends messages as quickly as
-            // possible without waiting for confirmation.
-            async(session).messageTransfer(arg::content=request, arg::destination="amq.direct");
+            session.messageTransfer(arg::content=request, arg::destination="amq.direct");
             std::cout << "Request: " << s[i] << std::endl;
 	}
 

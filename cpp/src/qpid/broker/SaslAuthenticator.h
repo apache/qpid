@@ -24,6 +24,7 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/Exception.h"
+#include "qpid/sys/SecurityLayer.h"
 #include <memory>
 
 namespace qpid {
@@ -38,6 +39,15 @@ public:
     virtual void getMechanisms(framing::Array& mechanisms) = 0;
     virtual void start(const std::string& mechanism, const std::string& response) = 0;
     virtual void step(const std::string& response) = 0;
+    virtual void getUid(std::string&) {}
+    virtual void getError(std::string&) {}
+    virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize) = 0;
+
+    static bool available(void);
+
+    // Initialize the SASL mechanism; throw if it fails.
+    static void init(const std::string& saslName);
+    static void fini(void);
 
     static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection);
 };

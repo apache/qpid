@@ -18,9 +18,9 @@
  *
  */
 
-#include "SessionHandler.h"
-#include "SessionState.h"
-#include "Connection.h"
+#include "qpid/broker/SessionHandler.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/bind.hpp>
@@ -34,7 +34,8 @@ using namespace qpid::sys;
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c), 
-      proxy(out)
+      proxy(out),
+      clusterOrderProxy(c.getClusterOrderOutput() ? new SetChannelProxy(ch, c.getClusterOrderOutput()) : 0)
 {}
 
 SessionHandler::~SessionHandler() {}
@@ -44,12 +45,18 @@ ClassId classId(AMQMethodBody* m) { return m ? m->amqpMethodId() : 0; }
 MethodId methodId(AMQMethodBody* m) { return m ? m->amqpClassId() : 0; }
 } // namespace
 
-void SessionHandler::channelException(uint16_t, const std::string&) {
-        handleDetach();
+void SessionHandler::connectionException(framing::connection::CloseCode code, const std::string& msg) {
+    // NOTE: must tell the error listener _before_ calling connection.close()
+    if (connection.getErrorListener()) connection.getErrorListener()->connectionError(msg);
+    connection.close(code, msg);
 }
 
-void SessionHandler::connectionException(uint16_t code, const std::string& msg) {
-    connection.close(code, msg, 0, 0);
+void SessionHandler::channelException(framing::session::DetachCode, const std::string& msg) {
+    if (connection.getErrorListener()) connection.getErrorListener()->sessionError(getChannel(), msg);
+}
+
+void SessionHandler::executionException(framing::execution::ErrorCode, const std::string& msg) {
+    if (connection.getErrorListener()) connection.getErrorListener()->sessionError(getChannel(), msg);
 }
 
 ConnectionState& SessionHandler::getConnection() { return connection; }
@@ -71,6 +78,12 @@ void SessionHandler::setState(const std::string& name, bool force) {
     session = connection.broker.getSessionManager().attach(*this, id, force);
 }
 
+void SessionHandler::detaching() 
+{
+    assert(session.get());
+    session->disableOutput();
+}
+
 FrameHandler* SessionHandler::getInHandler() { return session.get() ? &session->in : 0; }
 qpid::SessionState* SessionHandler::getState() { return session.get(); }
 
@@ -78,18 +91,31 @@ void SessionHandler::readyToSend() {
     if (session.get()) session->readyToSend();
 }
 
-// TODO aconway 2008-05-12: hacky - handle attached for bridge clients.
-// We need to integrate the client code so we can run a real client
-// in the bridge.
-// 
-void SessionHandler::attached(const std::string& name) {
-    if (session.get())
-        checkName(name);
-    else {
+/**
+ * Used by inter-broker bridges to set up session id and attach
+ */
+void SessionHandler::attachAs(const std::string& name)
+{
+    SessionId id(connection.getUserId(), name);
+    SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
+    session.reset(new SessionState(connection.getBroker(), *this, id, config));
+    sendAttach(false);
+}
+
+/**
+ * TODO: this is a little ugly, fix it; its currently still relied on
+ * for 'push' bridges
+ */
+void SessionHandler::attached(const std::string& name)
+{
+    if (session.get()) {
+        amqp_0_10::SessionHandler::attached(name);
+    } else {
         SessionId id(connection.getUserId(), name);
         SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
         session.reset(new SessionState(connection.getBroker(), *this, id, config));
-}
+        markReadyToSend();
+    }
 }
     
 }} // namespace qpid::broker

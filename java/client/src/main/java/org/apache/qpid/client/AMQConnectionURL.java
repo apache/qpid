@@ -237,14 +237,7 @@ public class AMQConnectionURL implements ConnectionURL
             if (_password != null)
             {
                 sb.append(':');
-                if (_logger.isDebugEnabled())
-                {
-                    sb.append(_password);
-                }
-                else
-                {
-                    sb.append("********");
-                }
+                sb.append("********");
             }
 
             sb.append('@');

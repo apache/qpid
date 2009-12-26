@@ -54,6 +54,8 @@ struct deleter
 template <typename H>
 class DeletionManager 
 {
+    struct ThreadStatus;
+
 public:
     // Mark every thread as using the handle - it will be deleted
     // below after every thread marks the handle as unused
@@ -65,6 +67,24 @@ public:
     // handles get deleted here when no one else
     // is using them either 
     static void markAllUnusedInThisThread() {
+        ThreadStatus* threadStatus = getThreadStatus();
+        ScopedLock<Mutex> l(threadStatus->lock);
+
+        // The actual deletions will happen here when all the shared_ptr
+        // ref counts hit 0 (that is when every thread marks the handle unused)
+        threadStatus->handles.clear();
+    }
+
+    static void destroyThreadState() {
+        ThreadStatus* threadStatus = getThreadStatus();
+        allThreadsStatuses.delThreadStatus(threadStatus);
+        delete threadStatus;
+        threadStatus = 0;
+    }
+
+private:
+
+    static ThreadStatus*& getThreadStatus() {
         static __thread ThreadStatus* threadStatus = 0;
 
         // Thread local vars can't be dynamically constructed so we need
@@ -75,14 +95,9 @@ public:
             allThreadsStatuses.addThreadStatus(threadStatus);
         }
 
-        ScopedLock<Mutex> l(threadStatus->lock);
-        
-        // The actual deletions will happen here when all the shared_ptr
-        // ref counts hit 0 (that is when every thread marks the handle unused)
-        threadStatus->handles.clear();
+        return threadStatus;
     }
 
-private:
     typedef boost::shared_ptr<H> shared_ptr;
 
     // In theory we know that we never need more handles than the number of
@@ -123,6 +138,15 @@ private:
         void addThreadStatus(ThreadStatus* t) {
             ScopedLock<Mutex> l(lock);
             statuses.push_back(t);
+        }
+
+        void delThreadStatus(ThreadStatus* t) {
+            ScopedLock<Mutex> l(lock);
+            typename std::vector<ThreadStatus*>::iterator it =
+                std::find(statuses.begin(),statuses.end(), t);
+            if (it != statuses.end()) {
+                statuses.erase(it);
+            }
         }
 
         void addHandle(shared_ptr h) {

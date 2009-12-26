@@ -1,4 +1,53 @@
 {
+   Leak in TCPConnector: https://bugzilla.redhat.com/show_bug.cgi?id=520600
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_calloc
+   fun:_dl_allocate_tls
+   fun:*
+   fun:*
+   fun:*
+   fun:_ZN4qpid6client12TCPConnector7connectERKSsi
+}
+
+{
+   Leak in TCPConnector: https://bugzilla.redhat.com/show_bug.cgi?id=520600
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_calloc
+   fun:_dl_allocate_tls
+   fun:*
+   fun:*
+   fun:_ZN4qpid6client12TCPConnector7connectERKSsi
+}
+
+{
+   Reported on FC5 and RHEL5 when md5 sasl libs are installed
+   Memcheck:Leak
+   fun:*
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_error
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:*
+   fun:_sasl_get_plugin
+   fun:_sasl_load_plugins
+   fun:sasl_client_init
+}
+{
+   Benign leak in CPG - patched version.
+   Memcheck:Leak
+   fun:*
+   fun:openais_service_connect
+   fun:cpg_initialize
+}
+
+{
    Benign error in libcpg.
    Memcheck:Param
    socketcall.sendmsg(msg.msg_iov[i])
@@ -21,13 +70,6 @@
    obj:/usr/lib/libstdc++.so.6.0.8
    fun:_ZNSsC1EPKcRKSaIcE
    obj:/usr/lib/libboost_program_options.so.1.33.1
-}
-
-{
-   Bogus epoll_ctl error on i386
-   Memcheck:Param
-   epoll_ctl(event)
-   fun:epoll_ctl
 }
 
 {
@@ -193,9 +235,42 @@
 }
 
 {
-  CPG related errors - seem benign but should invesgitate.
+  CPG error - seems benign.
    Memcheck:Param
    socketcall.sendmsg(msg.msg_iov[i])
-   fun:sendmsg
-   obj:/usr/lib/openais/libcpg.so.2.0.0
+   obj:*
+   obj:*/libcpg.so.2.0.0
 }
+
+{
+   Known leak in boost.thread 1.33.1. Wildcards for 64/32 bit diffs.
+   Memcheck:Leak
+   fun:*
+   obj:/usr/*/libboost_thread.so.1.33.1
+   fun:_ZN5boost6detail3tss3setEPv
+}
+
+{
+   Shows up on RHEL5: believed benign
+   Memcheck:Cond
+   fun:__strcpy_chk
+   fun:_sasl_load_plugins
+   fun:sasl_client_init
+}
+
+{
+   Seems like a use after delete issue in boost unit_test
+   Memcheck:Addr8
+   fun:_ZN5boost9unit_test14framework_implD1Ev
+   fun:exit
+   fun:(below main)
+}
+
+{
+   Seems like a use after delete issue in boost unit_test
+   Memcheck:Addr4
+   fun:_ZN5boost9unit_test14framework_implD1Ev
+   fun:exit
+   fun:(below main)
+}
+

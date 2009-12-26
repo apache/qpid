@@ -28,13 +28,15 @@ import org.apache.qpid.management.ui.views.NumberVerifyListener;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -43,12 +45,9 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 public class AddServer extends AbstractAction implements IWorkbenchWindowActionDelegate 
 {
-    private static final String[] _domains ={"org.apache.qpid"};
-    
-    private String _transport = DEFAULT_PROTOCOL;
     private String _host;
     private String _port;
-    private String _domain;
+    private String _domain = DEFAULT_DOMAIN;
     private String _user;
     private String _password;
     
@@ -70,7 +69,7 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         {
             if (_addServer)
             {
-                getNavigationView().addNewServer(_transport, _host, Integer.parseInt(_port), _domain, _user, _password);
+                getNavigationView().addNewServer(_host, Integer.parseInt(_port), _domain, _user, _password);
             }
         }
         catch(InfoRequiredException ex)
@@ -88,7 +87,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         _addServer = false;
         _host = null;
         _port = null;
-        _domain = null;
         _user = null;
         _password = null;
     }
@@ -100,17 +98,34 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
      */
     private void createAddServerPopup()
     {
+        final Shell appShell = _window.getShell();
+
         Display display = Display.getCurrent();
         final Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE);
         shell.setText(ACTION_ADDSERVER);
         shell.setImage(ApplicationRegistry.getImage(CONSOLE_IMAGE));
         shell.setLayout(new GridLayout());
         
-        int x = display.getBounds().width;
-        int y = display.getBounds().height;
-        shell.setBounds(x/3, y/3, 425, 275);
-        
         createWidgets(shell);
+        shell.pack();
+        
+        //get current size dialog, and application window size and location
+        int appWidth = appShell.getBounds().width;
+        int appHeight = appShell.getBounds().height;
+        int appLocX = appShell.getBounds().x;
+        int appLocY = appShell.getBounds().y;
+        int currentShellWidth = shell.getSize().x;
+        int currentShellHeight = shell.getSize().y;
+        
+        //default sizes for the dialog
+        int minShellWidth = 425;
+        int minShellHeight= 265;        
+        //ensure this is large enough, increase it if its not
+        int newShellWidth =  currentShellWidth > minShellWidth ? currentShellWidth : minShellWidth;
+        int newShellHeight = currentShellHeight > minShellHeight ? currentShellHeight : minShellHeight;
+        
+        //set the final size and centre the dialog within the app window
+        shell.setBounds((appWidth - newShellWidth)/2  + appLocX, (appHeight - newShellHeight)/2 + appLocY, newShellWidth, newShellHeight);
         
         shell.open();
         _window.getShell().setEnabled(false);
@@ -173,17 +188,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         // Verify if the value entered is numeric
         textPort.addVerifyListener(new NumberVerifyListener());
         
-        
-        Label domain = new Label(composite, SWT.NONE);
-        domain.setText("Domain");
-        domain.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
-        
-        final Combo comboDomain = new Combo(composite, SWT.DROP_DOWN | SWT.READ_ONLY);
-        comboDomain.setItems(_domains);
-        comboDomain.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        comboDomain.select(0);
-        
-        
         Label user = new Label(composite, SWT.NONE);
         user.setText(USERNAME);
         user.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
@@ -201,10 +205,26 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         //textPwd.setEchoChar('*');
         textPwd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
+        //Get the text widgets
+        Control[] widgets = composite.getChildren();
+        for (int i=0; i < widgets.length; i++)
+        {
+            widgets[i].addKeyListener(new KeyAdapter()
+            {
+                public void keyPressed(KeyEvent event)
+                {
+                    if (event.character == SWT.ESC)
+                    {
+                      //Escape key acts as cancel on all widgets
+                        shell.dispose();
+                    }
+                }
+            });
+        }
+        
         Composite buttonsComposite  = new Composite(composite, SWT.NONE);
         buttonsComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
         buttonsComposite.setLayout(new GridLayout(2, true));
-        
         
         final Button connectButton = new Button(buttonsComposite, SWT.PUSH | SWT.CENTER);       
         connectButton.setText(BUTTON_CONNECT);
@@ -251,7 +271,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
                     return;
                 }
                 
-                _domain = comboDomain.getText();
                 _addServer = true;
                 shell.dispose();                                     
             }
@@ -263,12 +282,32 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         gridData.widthHint = 100;
         cancelButton.setLayoutData(gridData);
         cancelButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
-        cancelButton.addSelectionListener(new SelectionAdapter(){
+        cancelButton.addSelectionListener(new SelectionAdapter()
+        {
             public void widgetSelected(SelectionEvent event)
             {
                 shell.dispose();
             }
         });
+        
+        //Get the ok/cancel button widgets and add a new key listener
+        widgets = buttonsComposite.getChildren();
+        for (int i=0; i < widgets.length; i++)
+        {
+            widgets[i].addKeyListener(new KeyAdapter()
+            {
+                public void keyPressed(KeyEvent event)
+                {
+                    if (event.character == SWT.ESC)
+                    {
+                        //Escape key acts as cancel on all widgets
+                        shell.dispose();
+                    }
+                }
+            });
+        }
+        
+        shell.setDefaultButton(connectButton);
     }
 
 }

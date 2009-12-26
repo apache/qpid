@@ -18,21 +18,23 @@
  * under the License.
  *
  */
-#include "SessionBase_0_10.h"
+#include "qpid/client/SessionBase_0_10.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/SessionImpl.h"
+#include "qpid/client/Future.h"
 #include "qpid/framing/all_method_bodies.h"
 
 namespace qpid {
 namespace client {
+
 using namespace framing;
 
 SessionBase_0_10::SessionBase_0_10() {}
 SessionBase_0_10::~SessionBase_0_10() {}
 
-void SessionBase_0_10::close() { impl->close(); }
-
-Execution& SessionBase_0_10::getExecution()
-{
-    return *impl;
+void SessionBase_0_10::close() 
+{ 
+    if (impl) impl->close(); 
 }
 
 void SessionBase_0_10::flush()
@@ -47,6 +49,11 @@ void SessionBase_0_10::sync()
     impl->send(b).wait(*impl);
 }
 
+void SessionBase_0_10::markCompleted(const framing::SequenceSet& ids, bool notifyPeer)
+{
+    impl->markCompleted(ids, notifyPeer);
+}
+
 void SessionBase_0_10::markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer)
 {
     impl->markCompleted(id, cumulative, notifyPeer);
@@ -57,8 +64,14 @@ void SessionBase_0_10::sendCompletion()
     impl->sendCompletion();
 }
 
-SessionId SessionBase_0_10::getId() const { return impl->getId(); }
-framing::FrameSet::shared_ptr SessionBase_0_10::get() { return impl->get(); }
+uint16_t SessionBase_0_10::getChannel() const { return impl->getChannel(); }
 
+void SessionBase_0_10::suspend() { impl->suspend(); }
+void SessionBase_0_10::resume(Connection c) { impl->resume(c.impl); }
+uint32_t SessionBase_0_10::timeout(uint32_t seconds) { return impl->setTimeout(seconds); }
+
+SessionId SessionBase_0_10::getId() const { return impl->getId(); }
+
+bool SessionBase_0_10::isValid() const { return impl; }
 
 }} // namespace qpid::client

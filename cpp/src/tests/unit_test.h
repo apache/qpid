@@ -51,18 +51,6 @@
 
 #endif  // Workarounds for BOOST_AUTO_TEST_CASE|SUITE|SUITE_END
 
-// Workaround for BOOST_AUTO_TEST_SUITE_EXPECTED_FAILURES
-// 
-#if (BOOST_VERSION < 103500)
-
-// Keep the test function for compilation but do not not register it.
-// TODO aconway 2008-04-23: better workaround for expected failures.
-# define QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(test_name,n)             \
-    namespace { struct test_name { void test_method(); };  }            \
-    void test_name::test_method()
-
-#endif  // Workaround for BOOST_AUTO_TEST_SUITE_EXPECTED_FAILURES
-
 //
 // Default definitions for latest version of boost.
 //
@@ -73,10 +61,6 @@
 
 #ifndef QPID_AUTO_TEST_CASE
 # define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_TEST_CASE(name)
-#endif
-
-#ifndef QPID_AUTO_TEST_CASE_EXPECTED_FAILURES
-# define QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(name,n)  BOOST_AUTO_TEST_SUITE_EXPECTED_FAILURES(name,n)
 #endif
 
 #ifndef QPID_AUTO_TEST_SUITE_END

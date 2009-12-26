@@ -21,11 +21,13 @@
 #ifndef _TxOp_
 #define _TxOp_
 
-#include "TransactionalStore.h"
+#include "qpid/broker/TxOpVisitor.h"
+#include "qpid/broker/TransactionalStore.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
     namespace broker {
+
         class TxOp{
         public:
             typedef boost::shared_ptr<TxOp> shared_ptr;
@@ -34,9 +36,11 @@ namespace qpid {
             virtual void commit()  throw() = 0;
             virtual void rollback()  throw() = 0;
             virtual ~TxOp(){}
+
+            virtual void accept(TxOpConstVisitor&) const = 0;
         };
-    }
-}
+
+}} // namespace qpid::broker
 
 
 #endif

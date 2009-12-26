@@ -22,7 +22,7 @@
 # 
 
 from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
+from qpid.testlib import TestBase
 from Queue import Empty
 
 import sys

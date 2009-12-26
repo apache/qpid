@@ -20,24 +20,25 @@
  */
 package org.apache.qpid.client.transport;
 
+import java.io.IOException;
+
 import org.apache.mina.common.ConnectFuture;
-import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.vmpipe.QpidVmPipeConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.pool.ReadWriteThreadModel;
+import org.apache.qpid.transport.network.mina.MINANetworkDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class VmPipeTransportConnection implements ITransportConnection
 {
     private static final Logger _logger = LoggerFactory.getLogger(VmPipeTransportConnection.class);
 
     private static int _port;
+
+    private MINANetworkDriver _networkDriver;
 
     public VmPipeTransportConnection(int port)
     {
@@ -47,16 +48,16 @@ public class VmPipeTransportConnection implements ITransportConnection
     public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail) throws IOException
     {
         final VmPipeConnector ioConnector = new QpidVmPipeConnector();
-        final IoServiceConfig cfg = ioConnector.getDefaultConfig();
-
-        cfg.setThreadModel(ReadWriteThreadModel.getInstance());
 
         final VmPipeAddress address = new VmPipeAddress(_port);
         _logger.info("Attempting connection to " + address);
-        ConnectFuture future = ioConnector.connect(address, protocolHandler);
+        _networkDriver = new MINANetworkDriver(ioConnector, protocolHandler);
+        protocolHandler.setNetworkDriver(_networkDriver);
+        ConnectFuture future = ioConnector.connect(address, _networkDriver);
         // wait for connection to complete
         future.join();
         // we call getSession which throws an IOException if there has been an error connecting
         future.getSession();
+        _networkDriver.setProtocolEngine(protocolHandler);
     }
 }

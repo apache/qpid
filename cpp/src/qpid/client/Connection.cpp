@@ -18,15 +18,16 @@
  * under the License.
  *
  */
-#include "Connection.h"
-#include "ConnectionSettings.h"
-#include "Message.h"
-#include "SessionImpl.h"
-#include "SessionBase_0_10Access.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/ConnectionSettings.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/SessionImpl.h"
+#include "qpid/client/SessionBase_0_10Access.h"
+#include "qpid/Url.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 
 #include <algorithm>
@@ -35,6 +36,7 @@
 #include <functional>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
 
 using namespace qpid::framing;
 using namespace qpid::sys;
@@ -43,9 +45,45 @@ using namespace qpid::sys;
 namespace qpid {
 namespace client {
 
-Connection::Connection() : channelIdCounter(0), version(framing::highestProtocolVersion) {}
+Connection::Connection() : version(framing::highestProtocolVersion) {}
 
-Connection::~Connection(){ }
+Connection::~Connection() {}
+
+void Connection::open(
+    const Url& url,
+    const std::string& uid, const std::string& pwd, 
+    const std::string& vhost,
+    uint16_t maxFrameSize)
+{
+    ConnectionSettings settings;
+    settings.username = uid;
+    settings.password = pwd;
+    settings.virtualhost = vhost;
+    settings.maxFrameSize = maxFrameSize;
+    open(url, settings);
+}
+
+void Connection::open(const Url& url, const ConnectionSettings& settings) {
+    if (url.empty())
+        throw Exception(QPID_MSG("Attempt to open URL with no addresses."));
+    Url::const_iterator i = url.begin();
+    do {
+        const TcpAddress* tcp = i->get<TcpAddress>();
+        i++;
+        if (tcp) {
+            try {
+                ConnectionSettings cs(settings);
+                cs.host = tcp->host;
+                cs.port = tcp->port;
+                open(cs);
+                break;
+            }
+            catch (const Exception& /*e*/) {
+                if (i == url.end()) throw;
+            }
+        }
+    } while (i != url.end());
+}
 
 void Connection::open(
     const std::string& host, int port,
@@ -67,39 +105,55 @@ bool Connection::isOpen() const {
     return impl && impl->isOpen();
 }
 
+void 
+Connection::registerFailureCallback ( boost::function<void ()> fn ) {
+    failureCallback = fn;
+    if ( impl )
+        impl->registerFailureCallback ( fn );
+}
+
+
+
 void Connection::open(const ConnectionSettings& settings)
 {
     if (isOpen())
         throw Exception(QPID_MSG("Connection::open() was already called"));
 
-    impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
-    impl->open(settings.host, settings.port);
-    max_frame_size = impl->getNegotiatedSettings().maxFrameSize;
+    impl = boost::shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
+    impl->open();
+    if ( failureCallback )
+        impl->registerFailureCallback ( failureCallback );
 }
 
-Session Connection::newSession(const std::string& name) {
+const ConnectionSettings& Connection::getNegotiatedSettings()
+{
+    if (!isOpen())
+        throw Exception(QPID_MSG("Connection is not open."));
+     return impl->getNegotiatedSettings();
+}
+
+Session Connection::newSession(const std::string& name, uint32_t timeout) {
     if (!isOpen())
         throw Exception(QPID_MSG("Connection has not yet been opened"));
-    shared_ptr<SessionImpl> simpl(
-        new SessionImpl(name, impl, ++channelIdCounter, max_frame_size));
-    impl->addSession(simpl);
-    simpl->open(0);
     Session s;
-    SessionBase_0_10Access(s).set(simpl);
+    SessionBase_0_10Access(s).set(impl->newSession(name, timeout));
     return s;
 }
 
 void Connection::resume(Session& session) {
     if (!isOpen())
         throw Exception(QPID_MSG("Connection is not open."));
-
-    session.impl->setChannel(++channelIdCounter);
     impl->addSession(session.impl);
     session.impl->resume(impl);
 }
 
 void Connection::close() {
-    impl->close();
+    if ( impl )
+        impl->close();
+}
+
+std::vector<Url> Connection::getInitialBrokers() {
+    return impl ? impl->getInitialBrokers() : std::vector<Url>();
 }
 
 }} // namespace qpid::client

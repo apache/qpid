@@ -18,7 +18,8 @@
  * under the License.
  *
  */
-#include "QueueRegistry.h"
+#include "qpid/broker/QueueRegistry.h"
+#include "qpid/broker/QueueEvents.h"
 #include "qpid/log/Statement.h"
 #include <sstream>
 #include <assert.h>
@@ -26,8 +27,8 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-QueueRegistry::QueueRegistry() :
-    counter(1), store(0), parent(0) {}
+QueueRegistry::QueueRegistry(Broker* b) :
+    counter(1), store(0), events(0), parent(0), lastNode(false), broker(b) {}
 
 QueueRegistry::~QueueRegistry(){}
 
@@ -41,8 +42,10 @@ QueueRegistry::declare(const string& declareName, bool durable,
     QueueMap::iterator i =  queues.find(name);
 
     if (i == queues.end()) {
-        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent));
+        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent, broker));
         queues[name] = queue;
+        if (lastNode) queue->setLastNodeFailure();
+        if (events) queue->setQueueEventManager(*events);
 
         return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
@@ -84,10 +87,27 @@ string QueueRegistry::generateName(){
 
 void QueueRegistry::setStore (MessageStore* _store)
 {
-    assert (store == 0 && _store != 0);
     store = _store;
 }
 
 MessageStore* QueueRegistry::getStore() const {
     return store;
+}
+
+void QueueRegistry::updateQueueClusterState(bool _lastNode)
+{
+    RWlock::ScopedRlock locker(lock);
+    for (QueueMap::iterator i = queues.begin(); i != queues.end(); i++) {
+        if (_lastNode){
+            i->second->setLastNodeFailure();
+        } else {
+            i->second->clearLastNodeFailure();
+        }
+    }
+    lastNode = _lastNode;
+}
+
+void QueueRegistry::setQueueEvents(QueueEvents* e)
+{
+    events = e;
 }

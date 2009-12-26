@@ -21,13 +21,14 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.ServerMessage;
 
 public enum NotificationCheck
 {
 
     MESSAGE_COUNT_ALERT
     {
-        boolean notifyIfNecessary(AMQMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
             int msgCount;
             final long maximumMessageCount = queue.getMaximumMessageCount();
@@ -41,26 +42,19 @@ public enum NotificationCheck
     },
     MESSAGE_SIZE_ALERT(true)
     {
-        boolean notifyIfNecessary(AMQMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
             final long maximumMessageSize = queue.getMaximumMessageSize();
             if(maximumMessageSize != 0)
             {
                 // Check for threshold message size
                 long messageSize;
-                try
-                {
-                    messageSize = (msg == null) ? 0 : msg.getContentHeaderBody().bodySize;
-                }
-                catch (AMQException e)
-                {
-                    messageSize = 0;
-                }
+                messageSize = (msg == null) ? 0 : msg.getSize();
 
 
                 if (messageSize >= maximumMessageSize)
                 {
-                    listener.notifyClients(this, queue, messageSize + "b : Maximum message size threshold ("+ maximumMessageSize +") breached. [Message ID=" + msg.getMessageId() + "]");
+                    listener.notifyClients(this, queue, messageSize + "b : Maximum message size threshold ("+ maximumMessageSize +") breached. [Message ID=" + msg.getMessageNumber() + "]");
                     return true;
                 }
             }
@@ -70,7 +64,7 @@ public enum NotificationCheck
     },
     QUEUE_DEPTH_ALERT
     {
-        boolean notifyIfNecessary(AMQMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
             // Check for threshold queue depth in bytes
             final long maximumQueueDepth = queue.getMaximumQueueDepth();
@@ -91,7 +85,7 @@ public enum NotificationCheck
     },
     MESSAGE_AGE_ALERT
     {
-        boolean notifyIfNecessary(AMQMessage msg, AMQQueue queue, QueueNotificationListener listener)
+        boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
 
             final long maxMessageAge = queue.getMaximumMessageAge();
@@ -133,6 +127,6 @@ public enum NotificationCheck
         return _messageSpecific;
     }
 
-    abstract boolean notifyIfNecessary(AMQMessage msg, AMQQueue queue, QueueNotificationListener listener);
+    abstract boolean notifyIfNecessary(ServerMessage msg, AMQQueue queue, QueueNotificationListener listener);
 
 }

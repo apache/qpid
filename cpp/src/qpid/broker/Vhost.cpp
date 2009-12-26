@@ -17,23 +17,33 @@
 // under the License.
 //
 
-#include "Vhost.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid/broker/Vhost.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/management/ManagementAgent.h"
 
 using namespace qpid::broker;
 using qpid::management::ManagementAgent;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
-Vhost::Vhost (management::Manageable* parentBroker) : mgmtObject(0)
+namespace qpid { namespace management {
+class Manageable;
+}}
+
+Vhost::Vhost (qpid::management::Manageable* parentBroker, Broker* broker) : mgmtObject(0)
 {
-    if (parentBroker != 0)
+    if (parentBroker != 0 && broker != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
 
         if (agent != 0)
         {
-            mgmtObject = new management::Vhost (agent, this, parentBroker, "/");
-            agent->addObject (mgmtObject, 3, 1);
+            mgmtObject = new _qmf::Vhost(agent, this, parentBroker, "/");
+            agent->addObject (mgmtObject, 0x1000000000000003LL);
         }
     }
 }
 
+void Vhost::setFederationTag(const std::string& tag)
+{
+    mgmtObject->set_federationTag(tag);
+}

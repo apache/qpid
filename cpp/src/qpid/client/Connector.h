@@ -42,107 +42,40 @@
 namespace qpid {
 
 namespace sys {
-class Poller;
-class AsynchIO;
-class AsynchIOBufferBase;
+class SecurityLayer;
 }
-	
+
 namespace client {
 
-class Bounds;
-class ConnectionSettings;
+struct ConnectionSettings;
 class ConnectionImpl;
 
 ///@internal
-class Connector : public framing::OutputHandler, 
-                  private sys::Runnable
-{
-    struct Buff;
-
-    /** Batch up frames for writing to aio. */
-    class Writer : public framing::FrameHandler {
-        typedef sys::AsynchIOBufferBase BufferBase;
-        typedef std::vector<framing::AMQFrame> Frames;
-
-        const uint16_t maxFrameSize;
-        sys::Mutex lock;
-        sys::AsynchIO* aio;
-        BufferBase* buffer;
-        Frames frames;
-        size_t lastEof; // Position after last EOF in frames
-        framing::Buffer encode;
-        size_t framesEncoded;
-        std::string identifier;
-        Bounds* bounds;        
-        
-        void writeOne(const sys::Mutex::ScopedLock&);
-        void newBuffer(const sys::Mutex::ScopedLock&);
-
-      public:
-        
-        Writer(uint16_t maxFrameSize, Bounds*);
-        ~Writer();
-        void init(std::string id, sys::AsynchIO*);
-        void handle(framing::AMQFrame&);
-        void write(sys::AsynchIO&);
-    };
-    
-    const uint16_t maxFrameSize;
-    framing::ProtocolVersion version;
-    bool initiated;
-
-    sys::Mutex closedLock;    
-    bool closed;
-    bool joined;
-
-    sys::AbsTime lastIn;
-    sys::AbsTime lastOut;
-    sys::Duration timeout;
-    sys::Duration idleIn;
-    sys::Duration idleOut;
-
-    sys::TimeoutHandler* timeoutHandler;
-    sys::ShutdownHandler* shutdownHandler;
-    framing::InputHandler* input;
-    framing::InitiationHandler* initialiser;
-    framing::OutputHandler* output;
-
-    Writer writer;
-    
-    sys::Thread receiver;
-
-    sys::Socket socket;
-
-    sys::AsynchIO* aio;
-    boost::shared_ptr<sys::Poller> poller;
-
-    void run();
-    void handleClosed();
-    bool closeInternal();
-    
-    void readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
-    void writebuff(qpid::sys::AsynchIO&);
-    void writeDataBlock(const framing::AMQDataBlock& data);
-    void eof(qpid::sys::AsynchIO&);
-
-    std::string identifier;
-
-    ConnectionImpl* impl;
-    
+class Connector : public framing::OutputHandler
+{    
   public:
-    Connector(framing::ProtocolVersion pVersion,
-              const ConnectionSettings&, 
-              ConnectionImpl*);
-    virtual ~Connector();
-    virtual void connect(const std::string& host, int port);
-    virtual void init();
-    virtual void close();
-    virtual void setInputHandler(framing::InputHandler* handler);
-    virtual void setShutdownHandler(sys::ShutdownHandler* handler);
-    virtual sys::ShutdownHandler* getShutdownHandler() { return shutdownHandler; }
-    virtual framing::OutputHandler* getOutputHandler();
-    virtual void send(framing::AMQFrame& frame);
-    const std::string& getIdentifier() const { return identifier; }
+    // Protocol connector factory related stuff (it might be better to separate this code from the TCP Connector in the future)
+    typedef Connector* Factory(framing::ProtocolVersion, const ConnectionSettings&, ConnectionImpl*);
+    static Connector* create(const std::string& proto, framing::ProtocolVersion, const ConnectionSettings&, ConnectionImpl*);
+    static void registerFactory(const std::string& proto, Factory* connectorFactory);
+
+    virtual ~Connector() {};
+    virtual void connect(const std::string& host, int port) = 0;
+    virtual void init() {};
+    virtual void close() = 0;
+    virtual void send(framing::AMQFrame& frame) = 0;
+    virtual void abort() = 0;
+
+    virtual void setInputHandler(framing::InputHandler* handler) = 0;
+    virtual void setShutdownHandler(sys::ShutdownHandler* handler) = 0;
+    virtual sys::ShutdownHandler* getShutdownHandler() const = 0;
+    virtual framing::OutputHandler* getOutputHandler() = 0;
+    virtual const std::string& getIdentifier() const = 0;
+
+    virtual void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
+
+    virtual unsigned int getSSF() = 0;
+
 };
 
 }}

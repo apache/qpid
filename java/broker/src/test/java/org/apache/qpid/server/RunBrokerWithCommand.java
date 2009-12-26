@@ -32,7 +32,7 @@ public class RunBrokerWithCommand
 {
     public static void main(String[] args)
     {
-        //Start broker
+        //Start the broker
         try
         {
             String[] fudge = args.clone();

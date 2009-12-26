@@ -24,20 +24,21 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
 
-import java.util.List;
-import java.util.Map;
+import javax.management.JMException;
+import java.util.ArrayList;
 
-public interface Exchange
+public interface Exchange extends ExchangeReferrer
 {
     AMQShortString getName();
 
     AMQShortString getType();
 
-    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
+    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+            throws AMQException, JMException;
 
     boolean isDurable();
 
@@ -52,9 +53,11 @@ public interface Exchange
 
     void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
+
+
     void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
-    void route(IncomingMessage message) throws AMQException;
+    ArrayList<AMQQueue> route(InboundMessage message);
 
 
     /**
@@ -93,6 +96,18 @@ public interface Exchange
      */
     boolean hasBindings();
 
-    
 
+    boolean isBound(String bindingKey, AMQQueue queue);
+
+    boolean isBound(String bindingKey);
+
+    Exchange getAlternateExchange();
+
+    void setAlternateExchange(Exchange exchange);
+
+    void removeReference(ExchangeReferrer exchange);
+
+    void addReference(ExchangeReferrer exchange);
+
+    boolean hasReferrers();
 }

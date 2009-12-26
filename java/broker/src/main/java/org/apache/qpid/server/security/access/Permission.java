@@ -28,7 +28,8 @@ public enum Permission
 {
     CONSUME,
     PUBLISH,
-    CREATE,
+    CREATEQUEUE,
+    CREATEEXCHANGE,
     ACCESS,
     BIND,
     UNBIND,

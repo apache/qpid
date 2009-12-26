@@ -16,20 +16,19 @@
  *
  */
 
-#include "Logger.h"
-#include "Options.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Options.h"
+#include "qpid/log/SinkOptions.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/sys/Time.h"
 #include <boost/pool/detail/singleton.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <algorithm>
 #include <sstream>
-#include <fstream>
 #include <iomanip>
 #include <stdexcept>
-#include <syslog.h>
 #include <time.h>
 
 
@@ -43,45 +42,6 @@ typedef sys::Mutex::ScopedLock ScopedLock;
 inline void Logger::enable_unlocked(Statement* s) {
     s->enabled=selector.isEnabled(s->level, s->function);
 }
-
-struct OstreamOutput : public Logger::Output {
-    OstreamOutput(std::ostream& o) : out(&o) {}
-
-    OstreamOutput(const string& file)
-        : out(new ofstream(file.c_str(), ios_base::out | ios_base::app)),
-          mine(out)
-    {
-        if (!out->good())
-            throw std::runtime_error("Can't open log file: "+file);
-    }
-
-    void log(const Statement&, const std::string& m) {
-        *out << m << flush;
-    }
-    
-    ostream* out;
-    boost::scoped_ptr<ostream> mine;
-};
-
-struct SyslogOutput : public Logger::Output {
-    SyslogOutput(const Options& opts)
-        : name(opts.syslogName), facility(opts.syslogFacility.value)
-    {
-        ::openlog(name.c_str(), LOG_PID, facility);
-    }
-
-    ~SyslogOutput() {
-        ::closelog();
-    }
-    
-    void log(const Statement& s, const std::string& m)
-    {
-        syslog(LevelTraits::priority(s.level), "%s", m.c_str());
-    }
-    
-    std::string name;
-    int facility;
-};
 
 Logger& Logger::instance() {
     return boost::details::pool::singleton_default<Logger>::instance();
@@ -114,25 +74,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
     if (!prefix.empty())
         os << prefix << ": ";
     if (flags&TIME) 
-    {
-        const char * month_abbrevs[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
-        time_t rawtime;
-        struct tm * timeinfo;
-
-        time ( & rawtime );
-        timeinfo = localtime ( &rawtime );
-        char time_string[100];
-        sprintf ( time_string,
-                  "%d-%s-%02d %02d:%02d:%02d",
-                  1900 + timeinfo->tm_year,
-                  month_abbrevs[timeinfo->tm_mon],
-                  timeinfo->tm_mday,
-                  timeinfo->tm_hour,
-                  timeinfo->tm_min,
-                  timeinfo->tm_sec
-                );
-        os << time_string << " ";
-    }
+		qpid::sys::outputFormattedNow(os);
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
     if (flags&THREAD)
@@ -157,25 +99,6 @@ void Logger::log(const Statement& s, const std::string& msg) {
 void Logger::output(std::auto_ptr<Output> out) {
     ScopedLock l(lock);
     outputs.push_back(out.release());
-}
-
-void Logger::output(std::ostream& out) {
-    output(make_auto_ptr<Output>(new OstreamOutput(out)));
-}
-
-void Logger::syslog(const Options& opts) {
-    output(make_auto_ptr<Output>(new SyslogOutput(opts)));
-}
-
-void Logger::output(const std::string& name, const Options& opts) {
-    if (name=="stderr")
-        output(clog);
-    else if (name=="stdout")
-        output(cout);
-    else if (name=="syslog")
-        syslog(opts);
-    else 
-        output(make_auto_ptr<Output>(new OstreamOutput(name)));
 }
 
 void Logger::clear() {
@@ -212,16 +135,15 @@ void Logger::add(Statement& s) {
 }
 
 void Logger::configure(const Options& opts) {
+    options = opts;
     clear();
     Options o(opts);
     if (o.trace)
         o.selectors.push_back("trace+");
     format(o); 
     select(Selector(o));
-    void (Logger::* outputFn)(const std::string&, const Options&) = &Logger::output;
-    for_each(o.outputs.begin(), o.outputs.end(),
-             boost::bind(outputFn, this, _1, boost::cref(o)));
     setPrefix(opts.prefix);
+    options.sinkOptions->setup(this);
 }
 
 void Logger::setPrefix(const std::string& p) { prefix = p; }

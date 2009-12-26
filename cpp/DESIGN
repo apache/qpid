@@ -9,9 +9,8 @@ Project contains:
  * Client library (lib/libqpid_client): src/qpid/client
  * Broker library (lib/libqpid_broker): src/qpid/broker
  * Common classes
-  * src/qpid/concurrent: concurrecy 
   * src/qpid/framing: wire encoding/decoding
-  * src/qpid/io: reading/writing 
+  * src/qpid/sys: io, threading etc
   * src/qpid/Exception.cpp, QpidError.cpp: Exception classes.
  * Qpid Daemon (bin/qpidd): src/qpidd.cpp
 

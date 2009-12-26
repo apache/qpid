@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,25 +59,37 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
+import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
-import org.apache.qpid.client.message.*;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.CloseConsumerMessage;
+import org.apache.qpid.client.message.JMSBytesMessage;
+import org.apache.qpid.client.message.JMSMapMessage;
+import org.apache.qpid.client.message.JMSObjectMessage;
+import org.apache.qpid.client.message.JMSStreamMessage;
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.util.FlowControllingBlockingQueue;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.thread.Threading;
 import org.apache.qpid.url.AMQBindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +112,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AMQSession<C extends BasicMessageConsumer, P extends BasicMessageProducer> extends Closeable implements Session, QueueSession, TopicSession
 {
-
 
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
     {
@@ -181,24 +193,38 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
 
-
-    /** The default maximum number of prefetched message at which to suspend the channel. */
-    public static final int DEFAULT_PREFETCH_HIGH_MARK = 5000;
-
-    /** The default minimum number of prefetched messages at which to resume the channel. */
-    public static final int DEFAULT_PREFETCH_LOW_MARK = 2500;
-
     /**
      * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
      * not need to be attached to a queue.
      */
-    protected static final boolean DEFAULT_IMMEDIATE = false;
+    protected final boolean DEFAULT_IMMEDIATE = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
 
     /**
      * The default value for mandatory flag used by producers created by this session is true. That is, server will not
      * silently drop messages where no queue is connected to the exchange for the message.
      */
-    protected static final boolean DEFAULT_MANDATORY = true;
+    protected final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
+
+    protected final boolean DEFAULT_WAIT_ON_SEND = Boolean.parseBoolean(System.getProperty("qpid.default_wait_on_send", "false"));
+
+    /**
+     * The period to wait while flow controlled before sending a log message confirming that the session is still
+     * waiting on flow control being revoked
+     */
+    protected final long FLOW_CONTROL_WAIT_PERIOD = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+
+    /**
+     * The period to wait while flow controlled before declaring a failure
+     */
+    public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
+    protected final long FLOW_CONTROL_WAIT_FAILURE = Long.getLong("qpid.flow_control_wait_failure",
+                                                                  DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
+
+    protected final boolean DECLARE_QUEUES =
+        Boolean.parseBoolean(System.getProperty("qpid.declare_queues", "true"));
+
+    protected final boolean DECLARE_EXCHANGES =
+        Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
 
     /** System property to enable strict AMQP compliance. */
     public static final String STRICT_AMQP = "STRICT_AMQP";
@@ -233,10 +259,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private int _ticket;
 
     /** Holds the high mark for prefetched message, at which the session is suspended. */
-    private int _defaultPrefetchHighMark = DEFAULT_PREFETCH_HIGH_MARK;
+    private int _prefetchHighMark;
 
     /** Holds the low mark for prefetched messages, below which the session is resumed. */
-    private int _defaultPrefetchLowMark = DEFAULT_PREFETCH_LOW_MARK;
+    private int _prefetchLowMark;
 
     /** Holds the message listener, if any, which is attached to this session. */
     private MessageListener _messageListener = null;
@@ -268,6 +294,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /** Holds the highest received delivery tag. */
     private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
+    private final AtomicLong _rollbackMark = new AtomicLong(-1);
 
     /** All the not yet acknowledged message tags */
     protected ConcurrentLinkedQueue<Long> _unacknowledgedMessageTags = new ConcurrentLinkedQueue<Long>();
@@ -277,6 +304,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /** Holds the dispatcher thread for this session. */
     protected Dispatcher _dispatcher;
+
+    protected Thread _dispatcherThread;
 
     /** Holds the message factory factory for this session. */
     protected MessageFactoryRegistry _messageFactoryRegistry;
@@ -414,13 +443,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         _channelId = channelId;
         _messageFactoryRegistry = messageFactoryRegistry;
-        _defaultPrefetchHighMark = defaultPrefetchHighMark;
-        _defaultPrefetchLowMark = defaultPrefetchLowMark;
+        _prefetchHighMark = defaultPrefetchHighMark;
+        _prefetchLowMark = defaultPrefetchLowMark;
 
         if (_acknowledgeMode == NO_ACKNOWLEDGE)
         {
             _queue =
-                    new FlowControllingBlockingQueue(_defaultPrefetchHighMark, _defaultPrefetchLowMark,
+                    new FlowControllingBlockingQueue(_prefetchHighMark, _prefetchLowMark,
                                                      new FlowControllingBlockingQueue.ThresholdListener()
                                                      {
                                                          private final AtomicBoolean _suspendState = new AtomicBoolean();
@@ -428,7 +457,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                          public void aboveThreshold(int currentValue)
                                                          {
                                                              _logger.debug(
-                                                                     "Above threshold(" + _defaultPrefetchHighMark
+                                                                     "Above threshold(" + _prefetchHighMark
                                                                      + ") so suspending channel. Current value is " + currentValue);
                                                              _suspendState.set(true);
                                                              new Thread(new SuspenderRunner(_suspendState)).start();
@@ -438,7 +467,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                          public void underThreshold(int currentValue)
                                                          {
                                                              _logger.debug(
-                                                                     "Below threshold(" + _defaultPrefetchLowMark
+                                                                     "Below threshold(" + _prefetchLowMark
                                                                      + ") so unsuspending channel. Current value is " + currentValue);
                                                              _suspendState.set(false);
                                                              new Thread(new SuspenderRunner(_suspendState)).start();
@@ -448,7 +477,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            _queue = new FlowControllingBlockingQueue(_defaultPrefetchHighMark, null);
+            _queue = new FlowControllingBlockingQueue(_prefetchHighMark, null);
         }
     }
 
@@ -568,12 +597,19 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void bindQueue(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
                           final AMQShortString exchangeName, final AMQDestination destination) throws AMQException
     {
+        bindQueue(queueName, routingKey, arguments, exchangeName, destination, false);
+    }
+
+    public void bindQueue(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
+                          final AMQShortString exchangeName, final AMQDestination destination,
+                          final boolean nowait) throws AMQException
+    {
         /*new FailoverRetrySupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()*/
         new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
         {
             public Object execute() throws AMQException, FailoverException
             {
-                sendQueueBind(queueName, routingKey, arguments, exchangeName, destination);
+                sendQueueBind(queueName, routingKey, arguments, exchangeName, destination, nowait);
                 return null;
             }
         }, _connection).execute();
@@ -588,7 +624,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
-                                       final AMQShortString exchangeName, AMQDestination destination) throws AMQException, FailoverException;
+                                       final AMQShortString exchangeName, AMQDestination destination,
+                                       final boolean nowait) throws AMQException, FailoverException;
 
     /**
      * Closes the session.
@@ -608,6 +645,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     public void close(long timeout) throws JMSException
     {
+        close(timeout, true);
+    }
+
+    private void close(long timeout, boolean sendClose) throws JMSException
+    {
         if (_logger.isInfoEnabled())
         {
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -618,6 +660,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         // Ensure we only try and close an open session.
         if (!_closed.getAndSet(true))
         {
+            _closing.set(true);
             synchronized (getFailoverMutex())
             {
                 // We must close down all producers and consumers in an orderly fashion. This is the only method
@@ -629,7 +672,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
                     try
                     {
-                        sendClose(timeout);
+                        // If the connection is open or we are in the process
+                        // of closing the connection then send a cance
+                        // no point otherwise as the connection will be gone
+                        if (!_connection.isClosed() || _connection.isClosing())
+                        {
+                            if (sendClose)
+                            {
+                                sendClose(timeout);
+                            }
+                        }
                     }
                     catch (AMQException e)
                     {
@@ -674,31 +726,32 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             if (_dispatcher != null)
             {
                 // Failover failed and ain't coming back. Knife the dispatcher.
-                _dispatcher.interrupt();
+                _dispatcherThread.interrupt();
             }
-        }
+
+       }
+
+        //if we don't have an exception then we can perform closing operations  
+        _closing.set(e == null);
 
         if (!_closed.getAndSet(true))
         {
-            synchronized (getFailoverMutex())
+            synchronized (_messageDeliveryLock)
             {
-                synchronized (_messageDeliveryLock)
+                // An AMQException has an error code and message already and will be passed in when closure occurs as a
+                // result of a channel close request
+                AMQException amqe;
+                if (e instanceof AMQException)
                 {
-                    // An AMQException has an error code and message already and will be passed in when closure occurs as a
-                    // result of a channel close request
-                    AMQException amqe;
-                    if (e instanceof AMQException)
-                    {
-                        amqe = (AMQException) e;
-                    }
-                    else
-                    {
-                        amqe = new AMQException("Closing session forcibly", e);
-                    }
-
-                    _connection.deregisterSession(_channelId);
-                    closeProducersAndConsumers(amqe);
+                    amqe = (AMQException) e;
                 }
+                else
+                {
+                    amqe = new AMQException("Closing session forcibly", e);
+                }
+
+                _connection.deregisterSession(_channelId);
+                closeProducersAndConsumers(amqe);
             }
         }
     }
@@ -721,8 +774,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
+            //Check that we are clean to commit.
+            if (_failedOverDirty)
+            {
+                rollback();
 
-            // TGM FIXME: what about failover?
+                throw new TransactionRolledBackException("Connection failover has occured since last send. " +
+                                                         "Forced rollback");
+            }
+
+
             // Acknowledge all delivered messages
             while (true)
             {
@@ -740,7 +801,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (AMQException e)
         {
-            throw new JMSAMQException("Failed to commit: " + e.getMessage(), e);
+            throw new JMSAMQException("Failed to commit: " + e.getMessage() + ":" + e.getCause(), e);
         }
         catch (FailoverException e)
         {
@@ -832,7 +893,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, false,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, noLocal, false,
                                   messageSelector, null, true, true);
     }
 
@@ -840,7 +901,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, (destination instanceof Topic), null, null,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, (destination instanceof Topic), null, null,
                                   false, false);
     }
 
@@ -848,7 +909,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, true, null, null,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, true, null, null,
                                   false, false);
     }
 
@@ -856,7 +917,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, (destination instanceof Topic),
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, (destination instanceof Topic),
                                   messageSelector, null, false, false);
     }
 
@@ -865,7 +926,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, (destination instanceof Topic),
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, noLocal, (destination instanceof Topic),
                                   messageSelector, null, false, false);
     }
 
@@ -874,7 +935,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, true,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, noLocal, true,
                                   messageSelector, null, false, false);
     }
 
@@ -917,7 +978,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throws JMSException
     {
         checkNotClosed();
-        checkValidTopic(topic);
+        checkValidTopic(topic, true);
         if (_subscriptions.containsKey(name))
         {
             _subscriptions.get(name).close();
@@ -1000,6 +1061,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
             catch (URISyntaxException urlse)
             {
+                _logger.error("", urlse);
                 JMSException jmse = new JMSException(urlse.getReason());
                 jmse.setLinkedException(urlse);
 
@@ -1194,7 +1256,28 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return new TopicSubscriberAdaptor(dest, (C) createExclusiveConsumer(dest, messageSelector, noLocal));
     }
 
-    public abstract TemporaryQueue createTemporaryQueue() throws JMSException;
+    public TemporaryQueue createTemporaryQueue() throws JMSException
+    {
+        checkNotClosed();
+        try
+        {
+            AMQTemporaryQueue result = new AMQTemporaryQueue(this);
+
+            // this is done so that we can produce to a temporary queue before we create a consumer
+            result.setQueueName(result.getRoutingKey());
+            createQueue(result.getAMQQueueName(), result.isAutoDelete(),
+                        result.isDurable(), result.isExclusive());
+            bindQueue(result.getAMQQueueName(), result.getRoutingKey(),
+                    new FieldTable(), result.getExchangeName(), result);
+            return result;
+        }
+        catch (Exception e)
+        {
+           JMSException ex = new JMSException("Cannot create temporary queue");
+           ex.setLinkedException(e);
+           throw ex;
+        }
+    }
 
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
@@ -1275,17 +1358,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public int getDefaultPrefetch()
     {
-        return _defaultPrefetchHighMark;
+        return _prefetchHighMark;
     }
 
     public int getDefaultPrefetchHigh()
     {
-        return _defaultPrefetchHighMark;
+        return _prefetchHighMark;
     }
 
     public int getDefaultPrefetchLow()
     {
-        return _defaultPrefetchLowMark;
+        return _prefetchLowMark;
     }
 
     public AMQShortString getDefaultQueueExchangeName()
@@ -1430,6 +1513,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             sendRecover();
 
+            markClean();
+            
             if (!isSuspended)
             {
                 suspendChannel(false);
@@ -1497,6 +1582,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 {
                     suspendChannel(true);
                 }
+
+                // Let the dispatcher know that all the incomming messages
+                // should be rolled back(reject/release)
+                _rollbackMark.set(_highestDeliveryTag.get());
+
+                syncDispatchQueue();      
+
+                _dispatcher.rollback();
 
                 releaseForRollback();
 
@@ -1645,11 +1738,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         // if (rawSelector != null)
                         // ft.put("headers", rawSelector.getDataAsBytes());
                         // rawSelector is used by HeadersExchange and is not a JMS Selector
-                        if (rawSelector != null) 
+                        if (rawSelector != null)
                         {
                             ft.addAll(rawSelector);
                         }
-                        
+
                         if (messageSelector != null)
                         {
                             ft.put(new AMQShortString("x-filter-jms-selector"), messageSelector);
@@ -1682,6 +1775,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         }
                         catch (AMQException e)
                         {
+                            if (e instanceof AMQChannelClosedException)
+                            {
+                                close(-1, false);
+                            }
+
                             JMSException ex = new JMSException("Error registering consumer: " + e);
 
                             ex.setLinkedException(e);
@@ -1783,6 +1881,63 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     }
 
+    void failoverPrep()
+    {
+        syncDispatchQueue();
+    }
+
+    void syncDispatchQueue()
+    {
+        if (Thread.currentThread() == _dispatcherThread)
+        {
+            while (!_closed.get() && !_queue.isEmpty())
+            {
+                Dispatchable disp;
+                try
+                {
+                    disp = (Dispatchable) _queue.take();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                // Check just in case _queue becomes empty, it shouldn't but
+                // better than an NPE.
+                if (disp == null)
+                {
+                    _logger.debug("_queue became empty during sync.");
+                    break;
+                }
+
+                disp.dispatch(AMQSession.this);
+            }
+        }
+        else
+        {
+            startDispatcherIfNecessary();
+
+            final CountDownLatch signal = new CountDownLatch(1);
+
+            _queue.add(new Dispatchable()
+            {
+                public void dispatch(AMQSession ssn)
+                {
+                    signal.countDown();
+                }
+            });
+
+            try
+            {
+                signal.await();
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     /**
      * Resubscribes all producers and consumers. This is called when performing failover.
      *
@@ -1794,6 +1949,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             _failedOverDirty = true;
         }
+
+        _rollbackMark.set(-1);
         resubscribeProducers();
         resubscribeConsumers();
     }
@@ -1806,6 +1963,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     void setInRecovery(boolean inRecovery)
     {
         _inRecovery = inRecovery;
+    }
+
+    boolean isStarted()
+    {
+        return _startedAtLeastOnce.get();
     }
 
     /**
@@ -1834,7 +1996,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     void startDispatcherIfNecessary()
     {
         //If we are the dispatcher then we don't need to check we are started
-        if (Thread.currentThread() == _dispatcher)
+        if (Thread.currentThread() == _dispatcherThread)
         {
             return;
         }
@@ -1865,9 +2027,23 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         if (_dispatcher == null)
         {
             _dispatcher = new Dispatcher();
-            _dispatcher.setDaemon(true);
+            try
+            {
+                _dispatcherThread = Threading.getThreadFactory().createThread(_dispatcher);
+
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating Dispatcher thread",e);
+            }
+            _dispatcherThread.setName("Dispatcher-Channel-" + _channelId);
+            _dispatcherThread.setDaemon(true);
             _dispatcher.setConnectionStopped(initiallyStopped);
-            _dispatcher.start();
+            _dispatcherThread.start();
+            if (_dispatcherLogger.isInfoEnabled())
+            {
+                _dispatcherLogger.info(_dispatcherThread.getName() + " created");
+            }
         }
         else
         {
@@ -1967,7 +2143,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
-    protected AMQTopic checkValidTopic(Topic topic) throws JMSException
+    protected AMQTopic checkValidTopic(Topic topic, boolean durable) throws JMSException
     {
         if (topic == null)
         {
@@ -1980,6 +2156,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     "Cannot create a subscription on a temporary topic created in another session");
         }
 
+        if ((topic instanceof TemporaryDestination) && durable)
+        {
+            throw new javax.jms.InvalidDestinationException
+                ("Cannot create a durable subscription with a temporary topic: " + topic);
+        }
+
         if (!(topic instanceof AMQTopic))
         {
             throw new javax.jms.InvalidDestinationException(
@@ -1988,6 +2170,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
 
         return (AMQTopic) topic;
+    }
+
+    protected AMQTopic checkValidTopic(Topic topic) throws JMSException
+    {
+        return checkValidTopic(topic, false);
     }
 
     /**
@@ -2110,7 +2297,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private P createProducerImpl(Destination destination, boolean mandatory, boolean immediate)
             throws JMSException
     {
-        return createProducerImpl(destination, mandatory, immediate, false);
+        return createProducerImpl(destination, mandatory, immediate, DEFAULT_WAIT_ON_SEND);
     }
 
     private P createProducerImpl(final Destination destination, final boolean mandatory,
@@ -2216,7 +2403,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
-                                          final boolean noLocal)
+                                          final boolean noLocal) throws AMQException
+    {
+        return declareQueue(amqd, protocolHandler, noLocal, false);
+    }
+
+    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+                                          final boolean noLocal, final boolean nowait)
             throws AMQException
     {
         /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
@@ -2231,14 +2424,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                             amqd.setQueueName(protocolHandler.generateQueueName());
                         }
 
-                        sendQueueDeclare(amqd, protocolHandler);
+                        sendQueueDeclare(amqd, protocolHandler, nowait);
 
                         return amqd.getAMQQueueName();
                     }
                 }, _connection).execute();
     }
 
-    public abstract void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler) throws AMQException, FailoverException;
+    public abstract void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+                                          final boolean nowait) throws AMQException, FailoverException;
 
     /**
      * Undeclares the specified queue.
@@ -2351,14 +2545,21 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         AMQProtocolHandler protocolHandler = getProtocolHandler();
 
-        declareExchange(amqd, protocolHandler, false);
+        if (DECLARE_EXCHANGES)
+        {
+            declareExchange(amqd, protocolHandler, nowait);
+        }
 
-        AMQShortString queueName = declareQueue(amqd, protocolHandler, consumer.isNoLocal());
+        if (DECLARE_QUEUES || amqd.isNameRequired())
+        {
+            declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
+        }
+        AMQShortString queueName = amqd.getAMQQueueName();
 
         // store the consumer queue name
         consumer.setQueuename(queueName);
 
-        bindQueue(queueName, amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd);
+        bindQueue(queueName, amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
 
         // If IMMEDIATE_PREFETCH is not required then suspsend the channel to delay prefetch
         if (!_immediatePrefetch)
@@ -2390,11 +2591,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
-            consumeFromQueue(consumer, queueName, protocolHandler, nowait, consumer.getMessageSelector());
-        }
-        catch (JMSException e) // thrown by getMessageSelector
-        {
-            throw new AMQException(null, e.getMessage(), e);
+            consumeFromQueue(consumer, queueName, protocolHandler, nowait, consumer._messageSelector);
         }
         catch (FailoverException e)
         {
@@ -2465,9 +2662,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _consumers.clear();
 
         for (C consumer : consumers)
-        {            
-            consumer.failedOver();
+        {
+            consumer.failedOverPre();
             registerConsumer(consumer, true);
+            consumer.failedOverPost();
         }
     }
 
@@ -2570,50 +2768,67 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void setFlowControl(final boolean active)
     {
         _flowControl.setFlowControl(active);
+        _logger.warn("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
     }
 
-    public void checkFlowControl() throws InterruptedException
+    public void checkFlowControl() throws InterruptedException, JMSException
     {
+        long expiryTime = 0L;
         synchronized (_flowControl)
         {
-            while (!_flowControl.getFlowControl())
+            while (!_flowControl.getFlowControl() &&
+                   (expiryTime == 0L ? (expiryTime = System.currentTimeMillis() + FLOW_CONTROL_WAIT_FAILURE)
+                                     : expiryTime) >= System.currentTimeMillis() )
             {
-                _flowControl.wait();
+
+                _flowControl.wait(FLOW_CONTROL_WAIT_PERIOD);
+                _logger.warn("Message send delayed by " + (System.currentTimeMillis() + FLOW_CONTROL_WAIT_FAILURE - expiryTime)/1000 + "s due to broker enforced flow control");
+            }
+            if(!_flowControl.getFlowControl())
+            {
+                _logger.error("Message send failed due to timeout waiting on broker enforced flow control");
+                throw new JMSException("Unable to send message for " + FLOW_CONTROL_WAIT_FAILURE/1000 + " seconds due to broker enforced flow control");
             }
         }
 
     }
 
+    public interface Dispatchable
+    {
+        void dispatch(AMQSession ssn);
+    }
+
+    public void dispatch(UnprocessedMessage message)
+    {
+        if (_dispatcher == null)
+        {
+            throw new java.lang.IllegalStateException("dispatcher is not started");
+        }
+
+        _dispatcher.dispatchMessage(message);
+    }
+
     /** Used for debugging in the dispatcher. */
     private static final Logger _dispatcherLogger = LoggerFactory.getLogger("org.apache.qpid.client.AMQSession.Dispatcher");
-    
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
-    class Dispatcher extends Thread
+    class Dispatcher implements Runnable
     {
 
         /** Track the 'stopped' state of the dispatcher, a session starts in the stopped state. */
         private final AtomicBoolean _closed = new AtomicBoolean(false);
 
         private final Object _lock = new Object();
-        private final AtomicLong _rollbackMark = new AtomicLong(-1);
         private String dispatcherID = "" + System.identityHashCode(this);
-
-
 
         public Dispatcher()
         {
-            super("Dispatcher-Channel-" + _channelId);
-            if (_dispatcherLogger.isInfoEnabled())
-            {
-                _dispatcherLogger.info(getName() + " created");
-            }
         }
 
         public void close()
         {
             _closed.set(true);
-            interrupt();
+            _dispatcherThread.interrupt();
 
             // fixme awaitTermination
 
@@ -2692,7 +2907,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             if (_dispatcherLogger.isInfoEnabled())
             {
-                _dispatcherLogger.info(getName() + " started");
+                _dispatcherLogger.info(_dispatcherThread.getName() + " started");
             }
 
             UnprocessedMessage message;
@@ -2715,37 +2930,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             try
             {
-                while (!_closed.get() && ((message = (UnprocessedMessage) _queue.take()) != null))
+                Dispatchable disp;
+                while (!_closed.get() && ((disp = (Dispatchable) _queue.take()) != null))
                 {
-                    long deliveryTag = message.getDeliveryTag();
-
-                    synchronized (_lock)
-                    {
-
-                        while (connectionStopped())
-                        {
-                            _lock.wait();
-                        }
-
-                        if (!(message instanceof CloseConsumerMessage)
-                            && tagLE(deliveryTag, _rollbackMark.get()))
-                        {
-                            rejectMessage(message, true);
-                        }
-                        else
-                        {
-                            synchronized (_messageDeliveryLock)
-                            {
-                                dispatchMessage(message);
-                            }
-                        }
-                    }
-
-                    long current = _rollbackMark.get();
-                    if (updateRollbackMark(current, deliveryTag))
-                    {
-                        _rollbackMark.compareAndSet(current, deliveryTag);
-                    }
+                    disp.dispatch(AMQSession.this);
                 }
             }
             catch (InterruptedException e)
@@ -2755,7 +2943,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             if (_dispatcherLogger.isInfoEnabled())
             {
-                _dispatcherLogger.info(getName() + " thread terminating for channel " + _channelId);
+                _dispatcherLogger.info(_dispatcherThread.getName() + " thread terminating for channel " + _channelId);
             }
         }
 
@@ -2786,11 +2974,47 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         private void dispatchMessage(UnprocessedMessage message)
         {
-            //This if block is not needed anymore as bounce messages are handled separately
-            //if (message.getDeliverBody() != null)
-            //{
-            final C consumer =
-                    _consumers.get(message.getConsumerTag());
+            long deliveryTag = message.getDeliveryTag();
+
+            synchronized (_lock)
+            {
+
+                try
+                {
+                    while (connectionStopped())
+                    {
+                        _lock.wait();
+                    }
+                }
+                catch (InterruptedException e)
+                {
+                    // pass
+                }
+
+                if (!(message instanceof CloseConsumerMessage)
+                    && tagLE(deliveryTag, _rollbackMark.get()))
+                {
+                    rejectMessage(message, true);
+                }
+                else
+                {
+                    synchronized (_messageDeliveryLock)
+                    {
+                        notifyConsumer(message);
+                    }
+                }
+            }
+
+            long current = _rollbackMark.get();
+            if (updateRollbackMark(current, deliveryTag))
+            {
+                _rollbackMark.compareAndSet(current, deliveryTag);
+            }
+        }
+
+        private void notifyConsumer(UnprocessedMessage message)
+        {
+            final C consumer = _consumers.get(message.getConsumerTag());
 
             if ((consumer == null) || consumer.isClosed())
             {
@@ -2798,7 +3022,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 {
                     if (consumer == null)
                     {
-                        _dispatcherLogger.info("Dispatcher(" + dispatcherID + ")Received a message(" + System.identityHashCode(message) + ")" + "["
+                        _dispatcherLogger.info("Dispatcher(" + dispatcherID + ")Received a message("
+                                               + System.identityHashCode(message) + ")" + "["
                                                + message.getDeliveryTag() + "] from queue "
                                                + message.getConsumerTag() + " )without a handler - rejecting(requeue)...");
                     }
@@ -2806,7 +3031,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     {
                         if (consumer.isNoConsume())
                         {
-                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
+                            _dispatcherLogger.info("Received a message("
+                                                   + System.identityHashCode(message) + ")" + "["
                                                    + message.getDeliveryTag() + "] from queue " + " consumer("
                                                    + message.getConsumerTag() + ") is closed and a browser so dropping...");
                             //DROP MESSAGE
@@ -2815,7 +3041,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         }
                         else
                         {
-                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
+                            _dispatcherLogger.info("Received a message("
+                                                   + System.identityHashCode(message) + ")" + "["
                                                    + message.getDeliveryTag() + "] from queue " + " consumer("
                                                    + message.getConsumerTag() + ") is closed rejecting(requeue)...");
                         }
@@ -2831,7 +3058,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 consumer.notifyMessage(message);
             }
-
         }
     }
 
@@ -2888,5 +3114,28 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 _logger.warn("Unable to suspend channel");
             }
         }
+    }
+
+    /**
+     * Checks if the Session and its parent connection are closed
+     *
+     * @return <tt>true</tt> if this is closed, <tt>false</tt> otherwise.
+     */
+    @Override
+    public boolean isClosed()
+    {
+        return _closed.get() || _connection.isClosed();
+    }
+
+    /**
+     * Checks if the Session and its parent connection are capable of performing
+     * closing operations
+     *
+     * @return <tt>true</tt> if we are closing, <tt>false</tt> otherwise.
+     */
+    @Override
+    public boolean isClosing()
+    {
+        return _closing.get()|| _connection.isClosing();
     }
 }

@@ -26,17 +26,20 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.ConnectionBinding;
-import org.apache.qpid.transport.network.Disassembler;
-import org.apache.qpid.transport.network.InputHandler;
+import org.apache.qpid.transport.network.ssl.SSLReceiver;
+import org.apache.qpid.transport.network.ssl.SSLSender;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -68,21 +71,53 @@ public final class IoTransport<E>
         ("amqj.sendBufferSize", DEFAULT_READ_WRITE_BUFFER_SIZE);
 
     private Socket socket;
-    private IoSender sender;
+    private Sender<ByteBuffer> sender;
     private E endpoint;
     private IoReceiver receiver;
     private long timeout = 60000;
 
-    IoTransport(Socket socket, Binding<E,ByteBuffer> binding)
+    IoTransport(Socket socket, Binding<E,ByteBuffer> binding, boolean ssl)
     {
         this.socket = socket;
-        this.sender = new IoSender(this, 2*writeBufferSize, timeout);
-        this.endpoint = binding.endpoint(sender);
-        this.receiver = new IoReceiver(this, binding.receiver(endpoint),
-                                       2*readBufferSize, timeout);
+        
+        if (ssl)
+        {
+            SSLEngine engine = null;
+            SSLContext sslCtx;
+            try
+            {
+                sslCtx = createSSLContext();
+            }
+            catch (Exception e)
+            {
+                throw new TransportException("Error creating SSL Context", e);
+            }
+            
+            try
+            {
+                engine = sslCtx.createSSLEngine();
+                engine.setUseClientMode(true);
+            }
+            catch(Exception e)
+            {
+                throw new TransportException("Error creating SSL Engine", e);
+            }
+            
+            this.sender = new SSLSender(engine,new IoSender(this, 2*writeBufferSize, timeout));
+            this.endpoint = binding.endpoint(sender);
+            this.receiver = new IoReceiver(this, new SSLReceiver(engine,binding.receiver(endpoint),(SSLSender)sender),
+                                           2*readBufferSize, timeout);
+        }
+        else
+        {
+            this.sender = new IoSender(this, 2*writeBufferSize, timeout);
+            this.endpoint = binding.endpoint(sender);
+            this.receiver = new IoReceiver(this, binding.receiver(endpoint),
+                                           2*readBufferSize, timeout);
+        }
     }
 
-    IoSender getSender()
+    Sender<ByteBuffer> getSender()
     {
         return sender;
     }
@@ -98,22 +133,24 @@ public final class IoTransport<E>
     }
 
     public static final <E> E connect(String host, int port,
-                                      Binding<E,ByteBuffer> binding)
+                                      Binding<E,ByteBuffer> binding,
+                                      boolean ssl)
     {
         Socket socket = createSocket(host, port);
-        IoTransport<E> transport = new IoTransport<E>(socket, binding);
+        IoTransport<E> transport = new IoTransport<E>(socket, binding,ssl);
         return transport.endpoint;
     }
 
     public static final Connection connect(String host, int port,
-                                           ConnectionDelegate delegate)
+                                           ConnectionDelegate delegate,
+                                           boolean ssl)
     {
-        return connect(host, port, new ConnectionBinding(delegate));
+        return connect(host, port, ConnectionBinding.get(delegate),ssl);
     }
 
-    public static void connect_0_9(AMQVersionAwareProtocolSession session, String host, int port)
+    public static void connect_0_9(AMQVersionAwareProtocolSession session, String host, int port, boolean ssl)
     {
-        connect(host, port, new Binding_0_9(session));
+        connect(host, port, new Binding_0_9(session),ssl);
     }
 
     private static class Binding_0_9
@@ -169,6 +206,24 @@ public final class IoTransport<E>
         {
             throw new TransportException("Error connecting to broker", e);
         }
+    }
+    
+    private SSLContext createSSLContext() throws Exception
+    {
+        String trustStorePath = System.getProperty("javax.net.ssl.trustStore");
+        String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
+        String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");
+                
+        String keyStorePath = System.getProperty("javax.net.ssl.keyStore",trustStorePath);
+        String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword",trustStorePassword);
+        String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");
+        
+        SSLContextFactory sslContextFactory = new SSLContextFactory(trustStorePath,trustStorePassword,
+                                                                    trustStoreCertType,keyStorePath,
+                                                                    keyStorePassword,keyStoreCertType);
+        
+        return sslContextFactory.buildServerContext();
+        
     }
 
 }

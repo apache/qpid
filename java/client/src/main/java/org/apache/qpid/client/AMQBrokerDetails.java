@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -35,18 +36,15 @@ public class AMQBrokerDetails implements BrokerDetails
     private int _port;
     private String _transport;
 
-    private Map<String, String> _options;
+    private Map<String, String> _options = new HashMap<String, String>();
 
     private SSLConfiguration _sslConfiguration;
 
-    public AMQBrokerDetails()
-    {
-        _options = new HashMap<String, String>();
-    }
-
+    public AMQBrokerDetails(){}
+    
     public AMQBrokerDetails(String url) throws URLSyntaxException
-    {
-        this();
+    {        
+      
         // URL should be of format tcp://host:port?option='value',option='value'
         try
         {
@@ -80,6 +78,10 @@ public class AMQBrokerDetails implements BrokerDetails
                             throw URLHelper.parseError(0, transport.length(), "Unknown transport", url);
                         }
                     }
+                }
+                else if (url.indexOf("//") == -1)
+                {
+                    throw new URLSyntaxException(url, "Missing '//' after the transport In broker URL",transport.length()+1,1);
                 }
             }
             else
@@ -252,6 +254,16 @@ public class AMQBrokerDetails implements BrokerDetails
 
         return BrokerDetails.DEFAULT_CONNECT_TIMEOUT;
     }
+    
+    public boolean useSSL()
+    {
+        if (_options.containsKey(ConnectionURL.OPTIONS_SSL))
+        {
+            return Boolean.parseBoolean(_options.get(ConnectionURL.OPTIONS_SSL));
+        }
+
+        return false;
+    }    
 
     public void setTimeout(long timeout)
     {

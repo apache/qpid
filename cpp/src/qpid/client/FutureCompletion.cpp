@@ -19,7 +19,7 @@
  *
  */
 
-#include "FutureCompletion.h"
+#include "qpid/client/FutureCompletion.h"
 
 using namespace qpid::client;
 using namespace qpid::sys;

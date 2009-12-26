@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,13 +23,20 @@
  */
 
 #include "SocketProxy.h"
-#include "qpid/sys/Thread.h"
+
 #include "qpid/broker/Broker.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/client/LocalQueue.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Options.h"
+#include "qpid/sys/Thread.h"
 #include <boost/noncopyable.hpp>
+
+namespace qpid {
+namespace tests {
 
 /**
  * A fixture with an in-process broker.
@@ -42,9 +49,16 @@ struct  BrokerFixture : private boost::noncopyable {
     qpid::sys::Thread brokerThread;
 
     BrokerFixture(Broker::Options opts=Broker::Options()) {
+        // Keep the tests quiet unless logging env. vars have been set by user.
+        if (!::getenv("QPID_LOG_ENABLE") && !::getenv("QPID_TRACE")) {
+            qpid::log::Options logOpts;
+            logOpts.selectors.clear();
+            logOpts.selectors.push_back("error+");
+            qpid::log::Logger::instance().configure(logOpts);
+        }
         opts.port=0;
         // Management doesn't play well with multiple in-process brokers.
-        opts.enableMgmt=false;  
+        opts.enableMgmt=false;
         opts.workerThreads=1;
         opts.dataDir="";
         opts.auth=false;
@@ -52,26 +66,35 @@ struct  BrokerFixture : private boost::noncopyable {
         // TODO aconway 2007-12-05: At one point BrokerFixture
         // tests could hang in Connection ctor if the following
         // line is removed. This may not be an issue anymore.
-        broker->getPort();
+        broker->accept();
+        broker->getPort(qpid::broker::Broker::TCP_TRANSPORT);
         brokerThread = qpid::sys::Thread(*broker);
     };
 
-    ~BrokerFixture() {
+    void shutdownBroker()
+    {
         broker->shutdown();
+        broker = BrokerPtr();
+    }
+
+    ~BrokerFixture() {
+        if (broker) broker->shutdown();
         brokerThread.join();
     }
 
     /** Open a connection to the broker. */
     void open(qpid::client::Connection& c) {
-        c.open("localhost", broker->getPort());
+        c.open("localhost", broker->getPort(qpid::broker::Broker::TCP_TRANSPORT));
     }
 
-    uint16_t getPort() { return broker->getPort(); }
+    uint16_t getPort() { return broker->getPort(qpid::broker::Broker::TCP_TRANSPORT); }
 };
 
 /** Connection that opens in its constructor */
 struct LocalConnection : public qpid::client::Connection {
     LocalConnection(uint16_t port) { open("localhost", port); }
+    LocalConnection(const qpid::client::ConnectionSettings& s) { open(s); }
+    ~LocalConnection() { close(); }
 };
 
 /** A local client connection via a socket proxy. */
@@ -79,6 +102,11 @@ struct ProxyConnection : public qpid::client::Connection {
     SocketProxy proxy;
     ProxyConnection(int brokerPort) : proxy(brokerPort) {
         open("localhost", proxy.getPort());
+    }
+    ProxyConnection(const qpid::client::ConnectionSettings& s) : proxy(s.port) {
+        qpid::client::ConnectionSettings proxySettings(s);
+        proxySettings.port = proxy.getPort();
+        open(proxySettings);
     }
     ~ProxyConnection() { close(); }
 };
@@ -92,9 +120,15 @@ struct ClientT {
     SessionType session;
     qpid::client::SubscriptionManager subs;
     qpid::client::LocalQueue lq;
-    ClientT(uint16_t port) : connection(port), session(connection.newSession()), subs(session) {}
+    std::string name;
 
-    ~ClientT() { connection.close(); }
+    ClientT(uint16_t port, const std::string& name_=std::string())
+        : connection(port), session(connection.newSession(name_)), subs(session), name(name_) {}
+    ClientT(const qpid::client::ConnectionSettings& settings, const std::string& name_=std::string())
+        : connection(settings), session(connection.newSession(name_)), subs(session), name(name_) {}
+
+    ~ClientT() { close(); }
+    void close() { session.close(); connection.close(); }
 };
 
 typedef ClientT<> Client;
@@ -107,7 +141,7 @@ struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 
     SessionFixtureT(Broker::Options opts=Broker::Options()) :
         BrokerFixture(opts),
-        ClientT<ConnectionType,SessionType>(broker->getPort())
+        ClientT<ConnectionType,SessionType>(broker->getPort(qpid::broker::Broker::TCP_TRANSPORT))
     {}
 
 };
@@ -115,5 +149,6 @@ struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 typedef SessionFixtureT<LocalConnection> SessionFixture;
 typedef SessionFixtureT<ProxyConnection> ProxySessionFixture;
 
+}} // namespace qpid::tests
 
 #endif  /*!TESTS_BROKERFIXTURE_H*/

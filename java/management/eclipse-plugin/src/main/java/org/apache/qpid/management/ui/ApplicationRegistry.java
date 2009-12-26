@@ -20,8 +20,9 @@
  */
 package org.apache.qpid.management.ui;
 
-import java.util.HashMap;
+import java.io.File;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.eclipse.jface.resource.FontRegistry;
@@ -42,12 +43,20 @@ public abstract class ApplicationRegistry
     private static ImageRegistry imageRegistry = new ImageRegistry();
     private static FontRegistry fontRegistry = new FontRegistry();
     public static final boolean debug = Boolean.getBoolean("eclipse.consoleLog");
-    public static final String securityMechanism = System.getProperty("security", null);
-    public static final String connectorClass =  System.getProperty("jmxconnector");
-    public static final long timeout = Long.parseLong(System.getProperty("timeout", "5000"));
+    public static final long timeout = Long.parseLong(System.getProperty("timeout", "15000"));
+
+    //max supported broker management interface supported by this release of the management console
+    public static final int SUPPORTED_QPID_JMX_API_MAJOR_VERSION = 1;
+    public static final int SUPPORTED_QPID_JMX_API_MINOR_VERSION = 6;
+    
+    public static final String DATA_DIR = System.getProperty("user.home") + File.separator + ".qpidmc";
     
     static
     {
+        imageRegistry.put(Constants.SUCCESS_IMAGE, 
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/success.gif"));
+        imageRegistry.put(Constants.FAILURE_IMAGE, 
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/failure.gif"));
         imageRegistry.put(Constants.CONSOLE_IMAGE, 
                 org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/qpidmc.gif"));
         imageRegistry.put(Constants.CLOSED_FOLDER_IMAGE, 
@@ -58,6 +67,16 @@ public abstract class ApplicationRegistry
                 PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT));
         imageRegistry.put(Constants.NOTIFICATION_IMAGE,
                 org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/notifications.gif"));
+        imageRegistry.put(Constants.LOGGING_MANAGEMENT_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/logging_management.gif"));
+        imageRegistry.put(Constants.USER_MANAGEMENT_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/user_management.gif"));
+        imageRegistry.put(Constants.CONFIGURATION_MANAGEMENT_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/configuration_management.gif"));
+        imageRegistry.put(Constants.SERVER_INFO_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/server_information.gif"));
+        imageRegistry.put(Constants.VHOST_MANAGER_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/virtualhost_manager.gif"));
     }
     
     static
@@ -71,9 +90,8 @@ public abstract class ApplicationRegistry
     
     /*
      * This maps all the managed servers to the respective server registry.
-     * Server can be JMX MBeanServer or a C++ server
      */
-    private static HashMap<ManagedServer, ServerRegistry> _serverRegistryMap = new HashMap<ManagedServer, ServerRegistry>();
+    private static ConcurrentHashMap<ManagedServer, ServerRegistry> _serverRegistryMap = new ConcurrentHashMap<ManagedServer, ServerRegistry>();
     
     // This map gets updated when a server connection closes.
     private static List<ManagedServer> _closedServerList = new CopyOnWriteArrayList<ManagedServer>();    
@@ -111,7 +129,19 @@ public abstract class ApplicationRegistry
     
     public static boolean isServerConnected(ManagedServer server)
     {
-        return _serverRegistryMap.containsKey(server);
+        if(server == null)
+        {
+            //checking for null is not permitted in a CHM
+            return false;
+        }
+        
+        ServerRegistry reg = _serverRegistryMap.get(server);
+        if(reg !=null)
+        {
+            return !reg.isServerConnectionClosed();
+        }
+
+        return false;
     }
     
     // remove the server from the registry
@@ -119,6 +149,27 @@ public abstract class ApplicationRegistry
     {
         _closedServerList.add(server);
         removeServer(server);
+    }
+    
+    // remove the server from the registry
+    public static void serverConnectionClosedRemotely(ManagedServer server)
+    {
+        ServerRegistry reg = _serverRegistryMap.get(server);
+        if(reg !=null)
+        {
+            synchronized(server)
+            {
+                if(reg.isServerConnectionClosed())
+                {
+                    //the connection closure was already processed
+                    return;
+                }
+
+                reg.serverConnectionClosed();
+            }
+        }
+        
+        serverConnectionClosed(server);
     }
     
     /*
@@ -134,14 +185,5 @@ public abstract class ApplicationRegistry
         _closedServerList.clear();
         return list;
     }
-    
-    public static String getSecurityMechanism()
-    {
-        return securityMechanism;
-    }
-    
-    public static String getJMXConnectorClass()
-    {
-        return connectorClass;
-    }
+
 }

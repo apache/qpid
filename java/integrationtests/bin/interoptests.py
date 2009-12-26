@@ -27,11 +27,11 @@ interop_cases = ["InteropTestCase1DummyRun", "InteropTestCase2BasicP2P", "Intero
 interop_command = "java -cp %s org.apache.qpid.test.framework.distributedtesting.Coordinator --xml -e interop -o . -n interop org.apache.qpid.interop.testcases.%s"
 
 # TODO: read this from the ant properties file
-clientlibs = ["qpid-integrationtests-incubating-M3.jar",
-              "qpid-junit-toolkit-incubating-M3.jar",
+clientlibs = ["qpid-integrationtests-M4.jar",
+              "qpid-junit-toolkit-M4.jar",
               "junit-3.8.1.jar",
-              "qpid-systests-incubating-M3.jar",
-              "qpid-junit-toolkit-incubating-M3.jar",
+              "qpid-systests-M4.jar",
+              "qpid-junit-toolkit-M4.jar",
               "geronimo-jms_1.1_spec-1.0.jar",
               "log4j-1.2.12.jar"]
 
@@ -111,10 +111,10 @@ def start_java(javapath):
     for lib in clientlibs:
         classpath = classpath + testlibdir+"/"+lib+";"
         
-    classpath = classpath + javapath+"/lib/qpid-incubating.jar"        
+    classpath = classpath + javapath+"/lib/qpid-all.jar"        
 
     # Add qpid common since the tests need that, classpath hatefulness
-    classpath = classpath + ";"+testlibdir+"/qpid-common-incubating-M3.jar"
+    classpath = classpath + ";"+testlibdir+"/qpid-common-M4.jar"
     
     return Popen(["java", "-cp","\""+classpath+"\"",
                   "org.apache.qpid.test.framework.distributedtesting.TestClient"],

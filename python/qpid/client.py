@@ -39,11 +39,8 @@ class Client:
     if spec:
       self.spec = spec
     else:
-      try:
-        name = os.environ["AMQP_SPEC"]
-      except KeyError:
-        raise EnvironmentError("environment variable AMQP_SPEC must be set")
-      self.spec = load(name)
+      from qpid_config import amqp_spec_0_9
+      self.spec = load(amqp_spec_0_9)
     self.structs = StructFactory(self.spec)
     self.sessions = {}
 

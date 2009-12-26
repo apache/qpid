@@ -27,13 +27,14 @@ package org.apache.qpid.management.ui;
  */
 public class Constants
 {
-    public final static String APPLICATION_NAME = "Qpid Management Console";
+    public final static String APPLICATION_NAME = "Qpid JMX Management Console";
+    public static final String DEFAULT_DOMAIN = "org.apache.qpid";
     
     public final static String ACTION_REMOVE_MBEANNODE = "Remove from list";
     public final static String VALUE = "value";
     public final static String TYPE  = "type";
+    public final static String VERSION  = "version";
     public final static String NODE_TYPE_SERVER    = "server";
-    public final static String NODE_TYPE_DOMAIN    = "domain";
     public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
     // currently used only for virtual host instances, but will work as general also
     public final static String NODE_TYPE_TYPEINSTANCE = "mbeantype_instance";
@@ -77,11 +78,9 @@ public class Constants
     public final static String CONNECTION ="Connection";
     public final static String EXCHANGE = "Exchange";
     public final static String EXCHANGE_TYPE = "ExchangeType";
-    public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
+    public final static String[] DEFAULT_EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
     public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
-    public static final String[] CONNECTION_PROTOCOLS ={"RMI"};
-    public static final String DEFAULT_PROTOCOL = CONNECTION_PROTOCOLS[0];
     
     public final static String ACTION_ADDSERVER = "New Connection";
     public final static String ACTION_RECONNECT = "Reconnect";
@@ -97,11 +96,19 @@ public class Constants
     public final static String SUBSCRIBE_BUTTON   = "Subscribe";
     public final static String UNSUBSCRIBE_BUTTON = "Unsubscribe";
     
-    public final static String CONSOLE_IMAGE = "ConsoelImage";
+    
+    public final static String SUCCESS_IMAGE = "SuccessImage";
+    public final static String FAILURE_IMAGE = "FailureImage";
+    public final static String CONSOLE_IMAGE = "ConsoleImage";
     public final static String CLOSED_FOLDER_IMAGE = "ClosedFolderImage";
     public final static String OPEN_FOLDER_IMAGE = "OpenFolderImage";
     public final static String MBEAN_IMAGE = "MBeanImage";
     public final static String NOTIFICATION_IMAGE = "NotificationImage";
+    public final static String LOGGING_MANAGEMENT_IMAGE = "LoggingManagementImage";
+    public final static String USER_MANAGEMENT_IMAGE = "UserManagementImage";
+    public final static String CONFIGURATION_MANAGEMENT_IMAGE = "ConfigurationManagementImage";
+    public final static String SERVER_INFO_IMAGE = "ServerInfoImage";
+    public final static String VHOST_MANAGER_IMAGE = "VhostManagerImage";
     
     public final static String FONT_BUTTON = "ButtonFont";
     public final static String FONT_BOLD = "BoldFont";
@@ -110,7 +117,7 @@ public class Constants
     public final static String FONT_NORMAL = "Normal";
     
     public final static String BUTTON_DETAILS = "Details";
-    public final static String BUTTON_EDIT_ATTRIBUTE = "Edit Attribute";
+    public final static String BUTTON_EDIT_ATTRIBUTE = "Edit";
     public final static String BUTTON_REFRESH = "Refresh";
     public final static String BUTTON_GRAPH = "Graph";
     public final static int TIMER_INTERVAL = 5000;
@@ -133,8 +140,4 @@ public class Constants
     public final static String INFO_USERNAME = "Please enter the " + USERNAME;
     public final static String INFO_PASSWORD = "Please enter the " + PASSWORD;
     
-    public final static String MECH_CRAMMD5 = "CRAM-MD5";
-    public final static String MECH_PLAIN = "PLAIN";
-    public final static String SASL_CRAMMD5 = "SASL/CRAM-MD5";
-    public final static String SASL_PLAIN = "SASL/PLAIN";
 }

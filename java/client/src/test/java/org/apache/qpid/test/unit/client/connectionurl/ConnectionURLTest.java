@@ -375,6 +375,19 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getBrokerCount() == 1);
     }
 
+    public void testClientIDWithUnderscore() throws URLSyntaxException
+    {
+        String url = "amqp://user:pass@client_id/test?brokerlist='tcp://localhost:5672'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getUsername().equals("user"));
+        assertTrue(connectionurl.getPassword().equals("pass"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+        assertTrue(connectionurl.getClientName().equals("client_id"));
+        
+        assertTrue(connectionurl.getBrokerCount() == 1);
+    }
 
     public void testWrongOptionSeparatorInOptions()
     {
@@ -486,7 +499,8 @@ public class ConnectionURLTest extends TestCase
             assertNotNull(curl.getBrokerDetails(0));
             assertEquals(BrokerDetails.SOCKET, curl.getBrokerDetails(0).getTransport());
             assertEquals("VM-Unique-socketID", curl.getBrokerDetails(0).getHost());
-            assertEquals("URL does not toString as expected", url, curl.toString());
+            assertEquals("URL does not toString as expected",
+                         url.replace(":guest", ":********"), curl.toString());
         }
         catch (URLSyntaxException e)
         {

@@ -21,9 +21,9 @@
  * under the License.
  *
  */
+#include "qpid/sys/IntegerTypes.h"
 #include <vector>
 #include <iosfwd>
-#include <stdint.h>
 
 namespace qpid {
 namespace amqp_0_10 {

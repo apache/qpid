@@ -23,10 +23,13 @@
   <dirname property="project.root" file="${ant.file.common}"/>
 
   <property name="project.name"          value="qpid"/>
-  <property name="project.version"       value="incubating-M3"/>
+  <property name="project.version"       value="0.6"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>
 
+  <property name="resources"             location="${project.root}/resources"/>
+  <property name="test.profiles"         location="${project.root}/test-profiles"/>
   <property name="build"                 location="${project.root}/build"/>
+  <property name="build.scratch"         location="${build}/scratch"/>
   <property name="build.bin"             location="${build}/bin"/>
   <property name="build.etc"             location="${build}/etc"/>
   <property name="build.lib"             location="${build}/lib"/>
@@ -35,8 +38,9 @@
   <property name="build.report"          location="${build}/report"/>
   <property name="build.release"         location="${build}/release"/>
   <property name="build.release.prepare" location="${build.release}/prepare"/>
-  <property name="build.data"            location="${build}/data"/>
+  <property name="build.data"            location="${build.scratch}/data"/>
   <property name="build.plugins"         location="${build}/lib/plugins"/>
+  <property name="build.coveragereport"  location="${build}/coverage"/>
 
   <property name="java.target"           value="1.5"/>
   <property name="java.source"           value="1.5"/>
@@ -47,7 +51,20 @@
   <property name="tasks.classes"         location="${tasks}/classes"/>
   <property name="tasks.src"             location="${tasks}/src"/>
 
+  <property name="qpid.home"             location="${project.root}/build"/>
+  <property name="qpid.work"             location="${qpid.home}/work"/>
+
   <property name="javac.compiler.args"   value=""/>
+
+  <property name="cobertura.dir" value="${project.root}/lib/cobertura" />
+  <property name="mllib.dir" value="${project.root}/../python" />
+
+  <path id="cobertura.classpath">
+    <fileset dir="${cobertura.dir}">
+        <include name="cobertura.jar" />
+        <include name="lib/**/*.jar" />
+    </fileset>
+  </path>
 
   <macrodef name="indirect">
     <attribute name="name"/>
@@ -76,6 +93,17 @@
     </sequential>
   </macrodef>
 
+  <macrodef name="jython">
+    <attribute name="path"/>
+    <element name="args"/>
+    <sequential>
+      <java jar="${project.root}/lib/jython-2.5.0.jar" fork="true" failonerror="true">
+        <arg value="-Dpython.path=@{path}"/>
+        <args/>
+      </java>
+    </sequential>
+  </macrodef>
+
   <mkdir dir="${tasks.classes}"/>
   <javac source="${java.source}" target="${java.target}" srcdir="${tasks.src}" destdir="${tasks.classes}"  classpath="${java.class.path}">
     <compilerarg line="${javac.compiler.args}"/>
@@ -85,6 +113,19 @@
            classpath="${tasks.classes}"/>
   <taskdef name="foreach" classname="org.apache.qpid.tasks.Foreach"
            classpath="${tasks.classes}"/>
+
+  <macrodef name="copylist">
+    <attribute name="todir"/>
+    <attribute name="dir"/>
+    <attribute name="files"/>
+    <sequential>
+      <foreach property="file" list="@{files}">
+        <copy todir="@{todir}" flatten="true">
+          <fileset dir="@{dir}" includes="${file}"/>
+        </copy>
+      </foreach>
+    </sequential>
+  </macrodef>
 
   <target name="clean-tasks">
     <delete dir="${tasks.classes}"/>
@@ -103,6 +144,10 @@
       </fileset>
       <report todir="${build.report}"/>
     </junitreport>
+  </target>
+
+  <target name="cobertura-init">
+    <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
   </target>
 
   <target name="help" description="display detailed build documentation">
@@ -201,6 +246,15 @@
 
       ${release}
 
+  ant release-bin
+    
+    The release-bin target generates binary distribution archives for 
+    modules that have a specific binary package configured.
+    To enable for other modules create a target "release-bin" that 
+    depends on target "release-bin-tasks". The output is placed in: 
+
+      ${module.release}
+
   ant clean
 
     The clean target removes build artifacts. When invoked from the
@@ -210,6 +264,8 @@
       ${build}
         and
       ${release}
+	and
+      ${module.release}
 
     When invoked from a specific module, the clean target will delete
     that modules build root from underneath the project build root:

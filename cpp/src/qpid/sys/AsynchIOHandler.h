@@ -9,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,8 +21,11 @@
  *
  */
 
-#include "OutputControl.h"
-#include "ConnectionCodec.h"
+#include "qpid/sys/OutputControl.h"
+#include "qpid/sys/ConnectionCodec.h"
+#include "qpid/sys/AtomicValue.h"
+#include "qpid/sys/Mutex.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 
@@ -33,7 +36,7 @@ namespace framing {
 namespace sys {
 
 class AsynchIO;
-class AsynchIOBufferBase;
+struct AsynchIOBufferBase;
 class Socket;
 
 class AsynchIOHandler : public OutputControl {
@@ -43,29 +46,33 @@ class AsynchIOHandler : public OutputControl {
     ConnectionCodec* codec;
     bool readError;
     bool isClient;
+    AtomicValue<int32_t> readCredit;
+    static const int32_t InfiniteCredit = -1;
+    Mutex creditLock;
 
     void write(const framing::ProtocolInitiation&);
 
   public:
-    AsynchIOHandler(std::string id, ConnectionCodec::Factory* f);
-    ~AsynchIOHandler();
-    void init(AsynchIO* a, int numBuffs);
+    QPID_COMMON_EXTERN AsynchIOHandler(std::string id, ConnectionCodec::Factory* f);
+    QPID_COMMON_EXTERN ~AsynchIOHandler();
+    QPID_COMMON_EXTERN void init(AsynchIO* a, int numBuffs);
 
-    void setClient() { isClient = true; }
+    QPID_COMMON_EXTERN void setClient() { isClient = true; }
 
     // Output side
-    void close();
-    void activateOutput();
+    QPID_COMMON_EXTERN void abort();
+    QPID_COMMON_EXTERN void activateOutput();
+    QPID_COMMON_EXTERN void giveReadCredit(int32_t credit);
 
     // Input side
-    void readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
-    void eof(AsynchIO& aio);
-    void disconnect(AsynchIO& aio);
-	
+    QPID_COMMON_EXTERN void readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
+    QPID_COMMON_EXTERN void eof(AsynchIO& aio);
+    QPID_COMMON_EXTERN void disconnect(AsynchIO& aio);
+
     // Notifications
-    void nobuffs(AsynchIO& aio);
-    void idle(AsynchIO& aio);
-    void closedSocket(AsynchIO& aio, const Socket& s);
+    QPID_COMMON_EXTERN void nobuffs(AsynchIO& aio);
+    QPID_COMMON_EXTERN void idle(AsynchIO& aio);
+    QPID_COMMON_EXTERN void closedSocket(AsynchIO& aio, const Socket& s);
 };
 
 }} // namespace qpid::sys

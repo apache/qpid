@@ -21,29 +21,51 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
-public interface AMQQueue extends Managable, Comparable<AMQQueue>
+public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource
 {
+    boolean getDeleteOnNoConsumers();
+
+    void setDeleteOnNoConsumers(boolean b);
+
+
+    public interface Context
+    {
+        QueueEntry getLastSeenEntry();
+    }
 
     AMQShortString getName();
+
+    void setNoLocal(boolean b);
 
     boolean isDurable();
 
     boolean isAutoDelete();
 
     AMQShortString getOwner();
+    PrincipalHolder getPrincipalHolder();
+    void setPrincipalHolder(PrincipalHolder principalHolder);
+
+    void setExclusiveOwner(Object owner);
+    Object getExclusiveOwner();
 
     VirtualHost getVirtualHost();
 
@@ -85,17 +107,19 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     int delete() throws AMQException;
 
 
-    QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
+    QueueEntry enqueue(ServerMessage message) throws AMQException;
 
-    void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException;
+    void requeue(QueueEntry entry);
 
-    void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
+    void requeue(QueueEntryImpl storeContext, Subscription subscription);
+
+    void dequeue(QueueEntry entry);
 
 
 
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
 
-    
+
 
     void addQueueDeleteTask(final Task task);
 
@@ -110,13 +134,24 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     QueueEntry getMessageOnTheQueue(long messageId);
 
+    /**
+     * Returns a list of QueEntries from a given range of queue positions, eg messages 5 to 10 on the queue.
+     *
+     * The 'queue position' index starts from 1. Using 0 in 'from' will be ignored and continue from 1.
+     * Using 0 in the 'to' field will return an empty list regardless of the 'from' value.
+     * @param fromPosition
+     * @param toPosition
+     * @return
+     */
+    public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
+
 
     void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        StoreContext storeContext);
+                                                        ServerTransaction transaction);
 
-    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext);
+    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction transaction);
 
-    void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext);
+    void removeMessagesFromQueue(long fromMessageId, long toMessageId);
 
 
 
@@ -142,14 +177,29 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     long getMinimumAlertRepeatGap();
 
-
-    void deleteMessageFromTop(StoreContext storeContext) throws AMQException;
-
-    long clearQueue(StoreContext storeContext) throws AMQException;
+    void setMinimumAlertRepeatGap(long value);
 
 
+    long getCapacity();
 
-    void removeExpiredIfNoSubscribers() throws AMQException;
+    void setCapacity(long capacity);
+
+
+    long getFlowResumeCapacity();
+
+    void setFlowResumeCapacity(long flowResumeCapacity);
+
+    boolean isOverfull();
+
+    void deleteMessageFromTop();
+
+    long clearQueue();
+
+    /**
+     * Checks the status of messages on the queue, purging expired ones, firing age related alerts etc.
+     * @throws AMQException
+     */
+    void checkMessageStatus() throws AMQException;
 
     Set<NotificationCheck> getNotificationChecks();
 
@@ -159,6 +209,17 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void deliverAsync();
 
+    void stop();
+
+    boolean isExclusive();
+
+    Exchange getAlternateExchange();
+
+    void setAlternateExchange(Exchange exchange);
+
+    Map<String, Object> getArguments();
+
+    void checkCapacity(AMQChannel channel);
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
@@ -207,4 +268,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     {
         public void doTask(AMQQueue queue) throws AMQException;
     }
+
+    void configure(QueueConfiguration config);
+
+    ManagedObject getManagedObject();
 }

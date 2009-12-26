@@ -21,50 +21,33 @@
  * under the License.
  *
  */
-#include "AMQDataBlock.h"
-#include "AMQHeaderBody.h"
-#include "AMQContentBody.h"
-#include "AMQHeartbeatBody.h"
-#include "ProtocolVersion.h"
-#include "BodyHolder.h"
-
+#include "qpid/framing/AMQDataBlock.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/AMQContentBody.h"
+#include "qpid/framing/AMQHeartbeatBody.h"
+#include "qpid/framing/ProtocolVersion.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
 
-class BodyHolder;
-
 class AMQFrame : public AMQDataBlock
 {
   public:
-    AMQFrame(boost::intrusive_ptr<BodyHolder> b=0) : body(b) { init(); }
-    AMQFrame(const AMQBody& b) { setBody(b); init(); }
-    ~AMQFrame();
-
-    template <class InPlace>
-    AMQFrame(const InPlace& ip, typename EnableInPlace<InPlace>::type* =0) {
-        init(); setBody(ip);
-    }
+    QPID_COMMON_EXTERN AMQFrame(const boost::intrusive_ptr<AMQBody>& b=0);
+    QPID_COMMON_EXTERN AMQFrame(const AMQBody& b);
+    QPID_COMMON_EXTERN ~AMQFrame();
 
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    boost::intrusive_ptr<BodyHolder> getHolder() { return body; }
-    
-    AMQBody* getBody() { return body ? body->get() : 0; }
-    const AMQBody* getBody() const { return body ? body->get() : 0; }
+    QPID_COMMON_EXTERN AMQBody* getBody();
+    QPID_COMMON_EXTERN const AMQBody* getBody() const;
 
-    AMQMethodBody* getMethod() { return getBody()->getMethod(); }
-    const AMQMethodBody* getMethod() const { return getBody()->getMethod(); }
-
-    void setBody(const AMQBody& b);
-
-    template <class InPlace>
-    typename EnableInPlace<InPlace>::type setBody(const InPlace& ip) {
-        body = new BodyHolder(ip);
-    }
+    AMQMethodBody* getMethod() { return getBody() ? getBody()->getMethod() : 0; }
+    const AMQMethodBody* getMethod() const { return getBody() ? getBody()->getMethod() : 0; }
 
     void setMethod(ClassId c, MethodId m);
 
@@ -76,9 +59,9 @@ class AMQFrame : public AMQDataBlock
         return boost::polymorphic_downcast<const T*>(getBody());
     }
 
-    void encode(Buffer& buffer) const; 
-    bool decode(Buffer& buffer); 
-    uint32_t size() const;
+    QPID_COMMON_EXTERN void encode(Buffer& buffer) const; 
+    QPID_COMMON_EXTERN bool decode(Buffer& buffer); 
+    QPID_COMMON_EXTERN uint32_t encodedSize() const;
 
     // 0-10 terminology: first/last frame (in segment) first/last segment (in assembly)
 
@@ -104,20 +87,25 @@ class AMQFrame : public AMQDataBlock
     bool getEos() const { return eos; }
     void setEos(bool isEos) { eos = isEos; }
 
-    static uint32_t frameOverhead();
-  private:
-    void init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
+    static uint16_t DECODE_SIZE_MIN;
+    QPID_COMMON_EXTERN static uint32_t frameOverhead();
+    /** Must point to at least DECODE_SIZE_MIN bytes of data */
+    static uint16_t decodeSize(char* data);
 
-    boost::intrusive_ptr<BodyHolder> body;
+  private:
+    void init();
+
+    boost::intrusive_ptr<AMQBody> body;
     uint16_t channel : 16;
     uint8_t subchannel : 8;
     bool bof : 1;
     bool eof : 1;
     bool bos : 1;
     bool eos : 1;
+    mutable uint32_t encodedSizeCache;
 };
 
-std::ostream& operator<<(std::ostream&, const AMQFrame&);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const AMQFrame&);
 
 }} // namespace qpid::framing
 

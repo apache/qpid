@@ -148,6 +148,21 @@ class Tag(Node):
       if name == k:
         return v
 
+  def _idx(self, attr):
+    idx = 0
+    for k, v in self.attrs:
+      if k == attr:
+        return idx
+      idx += 1
+    return None
+
+  def set_attr(self, name, value):
+    idx = self._idx(name)
+    if idx is None:
+      self.attrs.append((name, value))
+    else:
+      self.attrs[idx] = (name, value)
+
   def dispatch(self, f):
     try:
       attr = "do_" + self.name

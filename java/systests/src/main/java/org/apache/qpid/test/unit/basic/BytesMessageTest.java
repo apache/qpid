@@ -29,6 +29,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.util.Waiter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,9 +132,10 @@ public class BytesMessageTest extends QpidTestCase implements MessageListener
     {
         synchronized (received)
         {
-            while (received.size() < count)
+            Waiter w = new Waiter(received, 30000);
+            while (received.size() < count && w.hasTime())
             {
-                received.wait();
+                w.await();
             }
         }
     }

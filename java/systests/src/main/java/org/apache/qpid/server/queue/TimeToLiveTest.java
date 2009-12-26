@@ -21,100 +21,58 @@
 
 package org.apache.qpid.server.queue;
 
-import junit.framework.TestCase;
-import junit.framework.Assert;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.log4j.Logger;
-
+import javax.jms.Connection;
 import javax.jms.JMSException;
-import javax.jms.Session;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
-import javax.jms.ConnectionFactory;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.naming.spi.InitialContextFactory;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import java.util.Hashtable;
+import javax.jms.Session;
 
+import junit.framework.Assert;
 
-/** Test Case provided by client Non-functional Test NF101: heap exhaustion behaviour */
-public class TimeToLiveTest extends TestCase
+import org.apache.log4j.Logger;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+
+public class TimeToLiveTest extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(TimeToLiveTest.class);
 
-
-    protected final String BROKER = "vm://:1";
-    protected final String VHOST = "/test";
     protected final String QUEUE = "TimeToLiveQueue";
 
-    private final long TIME_TO_LIVE = 1000L;
+    private final long TIME_TO_LIVE = 100L;
 
     private static final int MSG_COUNT = 50;
     private static final long SERVER_TTL_TIMEOUT = 60000L;
 
-    protected void setUp() throws Exception
+    public void testPassiveTTL() throws Exception
     {
-        super.setUp();
-
-        if (usingInVMBroker())
-        {
-            TransportConnection.createVMBroker(1);
-        }
-
-
-    }
-
-    private boolean usingInVMBroker()
-    {
-        return BROKER.startsWith("vm://");
-    }
-
-    protected void tearDown() throws Exception
-    {
-        if (usingInVMBroker())
-        {
-            TransportConnection.killVMBroker(1);
-            ApplicationRegistry.remove(1);
-        }
-        super.tearDown();
-    }
-
-    public void testPassiveTTL() throws JMSException, NamingException
-    {
-        InitialContextFactory factory = new PropertiesFileInitialContextFactory();
-
-        Hashtable<String, String> env = new Hashtable<String, String>();
-
-        env.put("connectionfactory.connection", "amqp://guest:guest@TTL_TEST_ID" + VHOST + "?brokerlist='" + BROKER + "'");
-        env.put("queue.queue", QUEUE);
-                                           
-        Context context = factory.getInitialContext(env);
-
-        Queue queue = (Queue) context.lookup("queue");
-
         //Create Client 1
-        Connection clientConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
-
+        Connection clientConnection = getConnection();
+        
         Session clientSession = clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
+        Queue queue = clientSession.createQueue(QUEUE); 
+        
+        // Create then close the consumer so the queue is actually created
+        // Closing it then reopening it ensures that the consumer shouldn't get messages
+        // which should have expired and allows a shorter sleep period. See QPID-1418
+        
         MessageConsumer consumer = clientSession.createConsumer(queue);
+        consumer.close();
 
         //Create Producer
-        Connection producerConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
+        Connection producerConnection = getConnection();
 
         producerConnection.start();
 
-        Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        // Move to a Transacted session to ensure that all messages have been delivered to broker before
+        // we start waiting for TTL
+        Session producerSession = producerConnection.createSession(true, Session.SESSION_TRANSACTED);
 
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -133,32 +91,53 @@ public class TimeToLiveTest extends TestCase
         producer.setTimeToLive(0L);
         producer.send(nextMessage(String.valueOf(msg), false, producerSession, producer));
 
-         try
+        producerSession.commit();
+
+        consumer = clientSession.createConsumer(queue);
+
+        // Ensure we sleep the required amount of time.
+        ReentrantLock waitLock = new ReentrantLock();
+        Condition wait = waitLock.newCondition();
+        final long MILLIS = 1000000L;
+
+        long waitTime = TIME_TO_LIVE * MILLIS;
+        while (waitTime > 0)
         {
-            // Sleep to ensure TTL reached
-            Thread.sleep(2000);
-        }
-        catch (InterruptedException e)
-        {
+            try
+            {
+                waitLock.lock();
+
+                waitTime = wait.awaitNanos(waitTime);
+            }
+            catch (InterruptedException e)
+            {
+                //Stop if we are interrupted
+                fail(e.getMessage());
+            }
+            finally
+            {
+                waitLock.unlock();
+            }
 
         }
 
         clientConnection.start();
 
         //Receive Message 0
-        Message received = consumer.receive(1000);
-        Assert.assertNotNull("First message not received", received);
-        Assert.assertTrue("First message doesn't have first set.", received.getBooleanProperty("first"));
-        Assert.assertEquals("First message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
+        Message receivedFirst = consumer.receive(1000);
+        Message receivedSecond = consumer.receive(1000);
+        Message receivedThird = consumer.receive(1000);
+        
+        // Only first and last messages sent should survive expiry
+        Assert.assertNull("More messages received", receivedThird); 
 
+        Assert.assertNotNull("First message not received", receivedFirst);
+        Assert.assertTrue("First message doesn't have first set.", receivedFirst.getBooleanProperty("first"));
+        Assert.assertEquals("First message has incorrect TTL.", 0L, receivedFirst.getLongProperty("TTL"));
 
-        received = consumer.receive(1000);
-        Assert.assertNotNull("Final message not received", received);
-        Assert.assertFalse("Final message has first set.", received.getBooleanProperty("first"));
-        Assert.assertEquals("Final message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
-
-        received = consumer.receive(1000);
-        Assert.assertNull("More messages received", received);
+        Assert.assertNotNull("Final message not received", receivedSecond);
+        Assert.assertFalse("Final message has first set.", receivedSecond.getBooleanProperty("first"));
+        Assert.assertEquals("Final message has incorrect TTL.", 0L, receivedSecond.getLongProperty("TTL"));
 
         clientConnection.close();
 
@@ -176,10 +155,11 @@ public class TimeToLiveTest extends TestCase
 
     /**
      * Tests the expired messages get actively deleted even on queues which have no consumers
+     * @throws Exception 
      */
-    public void testActiveTTL() throws URLSyntaxException, AMQException, JMSException, InterruptedException
+    public void testActiveTTL() throws Exception
     {
-        Connection producerConnection = new AMQConnection(BROKER,"guest","guest","activeTTLtest","test");
+        Connection producerConnection = getConnection();
         AMQSession producerSession = (AMQSession) producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = producerSession.createTemporaryQueue();
         producerSession.declareAndBind((AMQDestination) queue);

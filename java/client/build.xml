@@ -21,6 +21,9 @@
 <project name="AMQ Client" default="build">
 
   <property name="module.depends" value="common"/>
+  <property name="module.test.depends" value="common/test" />
+  <property name="module.genpom" value="true"/>
+  <property name="module.genpom.args" value="-Sgeronimo-jms_1.1_spec=provided"/>
 
   <import file="../module.xml"/>
 
@@ -33,4 +36,17 @@
             javacchome="${project.root}/lib"/>
   </target>
 
+
+  <uptodate property="doc-release.done" targetfile="${module.release}/api/index.html">
+    <srcfiles dir="${module.src}" includes="**/*.java"/>
+  </uptodate>
+
+  <target name="doc-release" depends="build" unless="doc-release.done">
+      <javadoc destdir="${module.release}/api" sourcepathref="module.src.path"
+               classpathref="module.class.path" packagenames="org.apache.qpid.jms"/>
+  </target>
+
+  <target name="release-bin" depends="release-bin-tasks"/>    
+
+  <target name="bundle" depends="bundle-tasks"/>
 </project>

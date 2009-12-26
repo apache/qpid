@@ -20,82 +20,54 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.management.ManagementConfiguration;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+
+import java.io.File;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
-
+    private String _registryName;
 
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
-        super(config(configurationURL));
+        super(new ServerConfiguration(configurationURL));
     }
 
-    // Our configuration class needs to make the interpolate method
-    // public so it can be called below from the config method.
-    private static class MyConfiguration extends CompositeConfiguration
+    public void initialise(int instanceID) throws Exception
     {
-        public String interpolate(String obj)
-        {
-            return super.interpolate(obj);
-        }
-    }
+        _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
+                                                       new Log4jMessageLogger());
 
-    private static final Configuration config(File url) throws ConfigurationException
-    {
-        // We have to override the interpolate methods so that
-        // interpolation takes place accross the entirety of the
-        // composite configuration. Without doing this each
-        // configuration object only interpolates variables defined
-        // inside itself.
-        final MyConfiguration conf = new MyConfiguration();
-        conf.addConfiguration(new SystemConfiguration()
-        {
-            protected String interpolate(String o)
-            {
-                return conf.interpolate(o);
-            }
-        });
-        conf.addConfiguration(new XMLConfiguration(url)
-        {
-            protected String interpolate(String o)
-            {
-                return conf.interpolate(o);
-            }
-        });
-        return conf;
-    }
+        _registryName = String.valueOf(instanceID);
 
-    public void initialise() throws Exception
-    {
+        // Set the Actor for current log messages
+        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
+
+        CurrentActor.get().message(BrokerMessages.BRK_STARTUP(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));
+
         initialiseManagedObjectRegistry();
 
-        _virtualHostRegistry = new VirtualHostRegistry();
+        _virtualHostRegistry = new VirtualHostRegistry(this);
 
-        _accessManager = ACLManager.loadACLManager("default", _configuration);
+        _pluginManager = new PluginManager(_configuration.getPluginDirectory());
+
+        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
 
         _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
 
@@ -105,25 +77,39 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _managedObjectRegistry.start();
 
-        _pluginManager = new PluginManager(_configuration.getString("plugin-directory"));
-
         initialiseVirtualHosts();
 
+        // Startup complete pop the current actor
+        CurrentActor.remove();
+    }
+
+    @Override
+    public void close() throws Exception
+    {
+        //Set the Actor for Broker Shutdown
+        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
+        try
+        {
+            super.close();
+        }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     private void initialiseVirtualHosts() throws Exception
     {
-        for (String name : getVirtualHostNames())
+        for (String name : _configuration.getVirtualHosts())
         {
-
-            _virtualHostRegistry.registerVirtualHost(new VirtualHost(name, getConfiguration().subset("virtualhosts.virtualhost." + name)));
+            _virtualHostRegistry.registerVirtualHost(new VirtualHostImpl(_configuration.getVirtualHostConfig(name)));
         }
+        getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
     }
 
     private void initialiseManagedObjectRegistry() throws AMQException
     {
-        ManagementConfiguration config = getConfiguredObject(ManagementConfiguration.class);
-        if (config.enabled)
+        if (_configuration.getManagementEnabled())
         {
             _managedObjectRegistry = new JMXManagedObjectRegistry();
         }
@@ -132,10 +118,4 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
             _managedObjectRegistry = new NoopManagedObjectRegistry();
         }
     }
-
-    public Collection<String> getVirtualHostNames()
-    {
-        return getConfiguration().getList("virtualhosts.virtualhost.name");
-    }
-
 }

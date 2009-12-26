@@ -7,8 +7,11 @@ dnl
 dnl This program is distributed in the hope that it will be useful, but
 dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+dnl
+dnl When updating the name/version number here, also update it in
+dnl src/qpid/Version.h
 
-AC_INIT([qpidc], [0.2], [qpid-dev@incubator.apache.org])
+AC_INIT([qpidc], [0.6], [dev@qpid.apache.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 
@@ -16,7 +19,6 @@ AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 AC_PREREQ(2.59)
 
 AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_SRCDIR([qpidc.spec.in])
 
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
@@ -85,13 +87,14 @@ else
 	AC_CHECK_DECL([__SUNPRO_CC], [SUNCC=yes], [SUNCC=no])
 	
 	# Set up for sun CC compiler
-	if test x$SUNCC = xno; then
+	if test x$SUNCC = xyes; then
 		if test "${enableval}" = yes; then
 			WARNING_FLAGS=+w
 		fi
 		CXXFLAGS="$CXXFLAGS -library=stlport4 -mt"
 		LD="$CXX"
 		LDFLAGS="$LDFLAGS -library=stlport4 -mt"
+		AC_SUBST([SUNCC_RUNTIME_LIBS], [-lCrun])
 	fi
 fi
 
@@ -109,9 +112,9 @@ gl_saved_libs=$LIBS
 LIBS=$gl_saved_libs
 
 # Set the argument to be used in "libtool -version-info ARG".
-QPID_CURRENT=1
+QPID_CURRENT=2
 QPID_REVISION=0
-QPID_AGE=1
+QPID_AGE=0
 LIBTOOL_VERSION_INFO_ARG=$QPID_CURRENT:$QPID_REVISION:$QPID_AGE
 AC_SUBST(LIBTOOL_VERSION_INFO_ARG)
 
@@ -143,13 +146,98 @@ AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 # It requires several external tools and files, which we check for here.
 
 AC_CHECK_PROG([RUBY], [ruby], [ruby])
-test -n "$RUBY" && generate=yes
-test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
+
+# Swig binding generator is needed for the script (Ruby, Python, etc.) bindings.
+AC_PROG_SWIG(1.3.26)
+test ! -x "$SWIG" && SWIG=""
+AC_ARG_WITH([swig],
+  [AS_HELP_STRING([--with-swig], [Use swig to generate qmf bindings.])],
+  [case "$withval" in
+    yes) test -z "$SWIG" && AC_MSG_ERROR([swig not found.]) ;;
+    no) SWIG="" ;;
+    *)   AC_MSG_ERROR([Bad value ${withval} for --with-swig.]) ;;
+   esac])
+AM_CONDITIONAL([HAVE_SWIG], [test -n "$SWIG"])
+
+# Ruby bindings: To build ruby wrappers, the ruby-devel files must be present.
+
+AC_PATH_PROGS(RUBY, [ruby1.8 ruby], [])
+AC_ARG_VAR(RUBY, [Ruby interpreter])
+if test -n "$RUBY" ; then
+   AC_ARG_VAR(RUBY_INC, [Directory where ruby.h can be found])
+   if test -z "$RUBY_INC" ; then
+      [RUBY_INC=`$RUBY -rrbconfig -e 'puts Config::CONFIG["rubyhdrdir"] || Config::CONFIG["archdir"]'`]
+   fi
+   AC_SUBST(RUBY_INC)
+
+   AC_ARG_VAR(RUBY_INC_ARCH, [Directory where ruby/config.h can be found (needed from Ruby 1.9)])
+   if test -z "$RUBY_INC_ARCH" ; then
+      [RUBY_INC_ARCH=`$RUBY -rrbconfig -e 'd = Config::CONFIG["rubyhdrdir"];if d != nil; print d + "/" + Config::CONFIG["arch"]; end'`]
+      dnl For earlier versions, just make it the same as RUBY_INC.
+      test x"$RUBY_INC_ARCH" != x || RUBY_INC_ARCH=$RUBY_INC
+   fi
+   AC_SUBST(RUBY_INC_ARCH)
+   AC_ARG_VAR(RUBY_LIB, [Directory to install ruby files into])
+      if test -z "$RUBY_LIB" ; then
+      dnl Kludge to install ruby files under $prefix
+      [RUBY_LIB=`$RUBY -rrbconfig -e 'puts Config::CONFIG["sitelibdir"].gsub("/usr", "${prefix}")'`]
+   fi
+   AC_SUBST(RUBY_LIB)
+
+	AC_ARG_VAR(RUBY_LIB_ARCH, [Directory to install ruby binary modules into])
+	if test -z "$RUBY_LIB_ARCH" ; then
+      dnl Kludge to install ruby files under $prefix
+	  [RUBY_LIB_ARCH=`$RUBY -rrbconfig -e 'puts Config::CONFIG["sitearchdir"].gsub("/usr", "${prefix}")'`]
+	fi
+	AC_SUBST(RUBY_LIB_ARCH)
+
+	RUBY_LIBS=
+	case $host_os in
+	cygwin*) RUBY_LIBS=-lruby ;;
+	esac
+	AC_SUBST(RUBY_LIBS)
+
+   RUBY_DLEXT=`$RUBY -rrbconfig -e 'puts Config::CONFIG[["DLEXT"]]'`
+   AC_SUBST(RUBY_DLEXT)
+fi
+AM_CONDITIONAL([HAVE_RUBY_DEVEL], [test -f $RUBY_INC/ruby.h && test -n "$SWIG"])
+
+# Python bindings: To build python wrappers, the ruby-devel files must be present.
+
+AM_PATH_PYTHON()
+if test -n "$PYTHON" ; then
+    AC_MSG_CHECKING([$PYTHON include dir])
+    if $PYTHON -c 'import distutils.sysconfig' 2>/dev/null ; then
+        PYTHON_INC=`$PYTHON -c 'import os,distutils.sysconfig;print(distutils.sysconfig.get_python_inc().replace(os.sep,"/"))'`
+	AC_SUBST(PYTHON_INC)
+    else
+        if test yes = "$with_python" ; then
+	    AC_MSG_ERROR([Couldn't import Python module distutils.sysconfig - you probably need to install a python-dev or python-devel package])
+	else
+	    AC_MSG_WARN([Couldn't import Python module distutils.sysconfig - you probably don't have a python-dev or python-devel package installed])
+	fi
+    fi
+    AC_MSG_RESULT([$PYTHON_INC])
+    AC_MSG_CHECKING([for directory to install python bindings in])
+    if test -z "$PYTHON_LIB" ; then
+	  PYTHON_LIB=`$PYTHON -c 'import os,distutils.sysconfig;print(distutils.sysconfig.get_python_lib(1).replace(os.sep,"/"))'`
+    fi
+    AC_MSG_RESULT([$PYTHON_LIB])
+    AC_ARG_VAR(PYTHON_LIB, [Directory to install python bindings in])
+
+    AC_MSG_CHECKING([for python libraries to link against])
+	PYTHON_LIBS=`$PYTHON -c 'import os,sys;print("-L"+os.path.join(sys.path[[3]],"config")+" -lpython"+sys.version[[:3]])'`
+    AC_SUBST(PYTHON_LIBS)
+    AC_MSG_RESULT([$PYTHON_LIBS])
+fi
+AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
+
 
 specdir=`pwd`/$srcdir/../specs  
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
 AC_SUBST(AMQP_FINAL_XML)
-AM_CONDITIONAL([GENERATE], [ls $AMQP_FINAL_XML >/dev/null])
+AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
+test -f $AMQP_FINAL_XML -a -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 # URL and download URL for the package.
 URL=http://rhm.et.redhat.com/qpidc
@@ -161,30 +249,51 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-# Check for optional CPG requirement.
+# Check for optional cluster requirements.
 tmp_LIBS=$LIBS
-LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
+tmp_LDFLAGS=$LDFLAGS
+LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais -L/usr/lib/corosync -L/usr/lib64/corosync"
+AC_CHECK_LIB([cpg],[cpg_local_get],[have_libcpg=yes],)
+AC_CHECK_HEADERS([openais/cpg.h corosync/cpg.h],[have_cpg_h=yes],)
 AC_ARG_WITH([cpg],  
   [AS_HELP_STRING([--with-cpg], [Build with CPG support for clustering.])],
   [case "${withval}" in
-    yes)			# yes - enable
-    with_CPG=yes
-    AC_CHECK_LIB([cpg],[cpg_local_get],,[AC_MSG_ERROR([libcpg not found, install openais])])
-    AC_CHECK_HEADERS([openais/cpg.h],,[AC_MSG_ERROR([openais/cpg.h not found, install openais-devel])])
+    yes)			# yes - require dependencies
+    test x$have_libcpg = xyes || AC_MSG_ERROR([libcpg not found, install openais-devel or corosync-devel])
+    test x$have_cpg_h = xyes || AC_MSG_ERROR([cpg.h not found, install openais-devel or corosync-devel])
+    with_cpg=yes
     ;;
-    no) with_CPG=no ;; 
+    no) with_cpg=no ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
    esac],
-   [		   # not specified - default no
-    with_CPG=no
+   [		   # not specified - use if present
+    test x$have_libcpg = xyes -a x$have_cpg_h = xyes && with_cpg=yes
    ]
 )
-LIBS=$tmp_LIBS
+AM_CONDITIONAL([HAVE_LIBCPG], [test x$with_cpg = xyes])
+# Clean up unnceccassary flags if we don't use clustering
+AS_IF([test ! x$with_cpg = xyes], [LDFLAGS=$tmp_LDFLAGS])
 
-AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
-if test x$with_CPG = xyes; then
-  CPPFLAGS+=" -DCPG"
-fi
+AC_CHECK_LIB([cman],[cman_is_quorate],have_libcman=yes,)
+AC_CHECK_HEADERS([libcman.h],have_libcman_h=yes,)
+AC_ARG_WITH([libcman],  
+  [AS_HELP_STRING([--with-libcman], [Integration with libcman quorum service.])],
+  [case "${withval}" in
+    yes)			# yes - require dependencies
+    test x$have_libcman = xyes || AC_MSG_ERROR([libcman not found, install cman-devel or cmanlib-devel])
+    test x$have_libcman_h = xyes || AC_MSG_ERROR([libcman.h not found, install cman-devel or cmanlib-devel])
+    with_libcman=yes
+    ;;
+    no) with_libcman=no ;; 
+    *) AC_MSG_ERROR([Bad value ${withval} for --with-libcman option]) ;;
+   esac],
+   [				# not specified - use if present and we're using with_cpg
+    test x$have_libcman = xyes -a x$have_libcman_h = xyes -a x$with_cpg = xyes &&   with_libcman=yes
+   ]
+)
+AM_CONDITIONAL([HAVE_LIBCMAN], [test x$with_libcman = xyes])
+
+LIBS=$tmp_LIBS
 
 # Setup --with-sasl/--without-sasl as arguments to configure
 AC_ARG_WITH([sasl],
@@ -244,7 +353,7 @@ if test $use_xml != no; then
   AC_CHECK_LIB([xerces-c], [_init], , [use_xml=no])
   AC_CHECK_HEADER([xercesc/framework/MemBufInputSource.hpp], , [use_xml=no])
   AC_CHECK_HEADER([xqilla/xqilla-simple.hpp], , [use_xml=no])
-  AC_CHECK_LIB([xqilla], [canonicalCombiningClassTable], , [use_xml=no])
+  AC_CHECK_LIB([xqilla], [_init], , [use_xml=no])
   # Remove from LIBS, we will link it explicitly in make files.
   LIBS=$tmp_LIBS
 
@@ -279,7 +388,7 @@ AC_ARG_WITH([rdma],
      ;;
    esac],
   [
-   with_RDMA=no
+   with_RDMA=yes
    AC_CHECK_LIB([ibverbs],[ibv_create_qp],,[with_RDMA=no])
    AC_CHECK_LIB([rdmacm],[rdma_create_id],,[with_RDMA=no])
    AC_CHECK_HEADERS([infiniband/verbs.h],,[with_RDMA=no])
@@ -289,6 +398,44 @@ AC_ARG_WITH([rdma],
 # Remove from LIBS, we will link it explicitly in make files.
 LIBS=$tmp_LIBS
 AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
+
+# Setup --with-ssl/--without-ssl as arguments to configure
+SSL_CFLAGS=""
+SSL_LDFLAGS=""
+AC_ARG_WITH([ssl],
+  [AS_HELP_STRING([--with-ssl], [Build with support for SSL])],
+  [case ${withval} in
+   yes)
+     with_SSL=yes
+     AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
+     AS_IF([test x$NSPR_CONFIG = x], [AC_MSG_ERROR([libnspr not found])], [])
+     AC_PATH_PROG([NSS_CONFIG], [nss-config])
+     AS_IF([test x$NSS_CONFIG = x], [AC_MSG_ERROR([libnss not found])], [])
+     SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
+     SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"
+     ;;
+   no)
+     with_SSL=no
+     ;;
+   *)
+     AC_MSG_ERROR([Bad value for --with-ssl: ${withval}])
+     ;;
+   esac],
+  [
+    with_SSL=yes
+    AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
+    AS_IF([test x$NSPR_CONFIG = x], [with_SSL=no], 
+      [AC_PATH_PROG([NSS_CONFIG], [nss-config])
+       AS_IF([test x$NSS_CONFIG = x], [with_SSL=no], 
+             [SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
+              SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"])])
+  ]
+)
+# Remove from LIBS, we will link it explicitly in make files.
+AM_CONDITIONAL([SSL], [test x$with_SSL = xyes])
+AC_SUBST([SSL_CFLAGS])
+AC_SUBST([SSL_LDFLAGS])
+
 
 poller=no
 AC_ARG_WITH([poller],
@@ -319,20 +466,65 @@ if test $poller = xno; then
   AC_MSG_ERROR([Polling mechanism not implemented for $host])
 fi
 
+#Guess host architecture, to choose platform-dependent objects
+case "$host" in
+     *sun-solaris*)
+        arch=solaris
+     ;;
+esac
+AM_CONDITIONAL([SUNOS], [test x$arch = xsolaris])
+
+# Check for some syslog capabilities not present in all systems
+AC_TRY_COMPILE([#include <sys/syslog.h>], 
+               [int v = LOG_AUTHPRIV;],
+               [AC_DEFINE([HAVE_LOG_AUTHPRIV], [1], [Set to 1 whether LOG_AUTHPRIV is supported.])],)
+
+AC_TRY_COMPILE([#include <sys/syslog.h>], 
+               [int v = LOG_FTP;],
+               [AC_DEFINE([HAVE_LOG_FTP], [1], [Set to 1 whether LOG_FTP is supported.])],)
+
+#Check if we need to include libacl to provide acl API
+gl_saved_libs=$LIBS
+  AC_SEARCH_LIBS(acl, [acl],
+                [test "$ac_cv_search_acl" = "none required" ||
+                 LIB_ACL=$ac_cv_search_acl])
+  AC_SUBST([LIB_ACL])
+LIBS=$gl_saved_libs
+
+SOCKLIBS=""
+AC_CHECK_LIB([socket],[socket],[SOCKET_LIB="-lsocket"],[SOCKET_LIB=""],[])
+AC_CHECK_LIB([nsl],[getipnodebyname],[NSL_LIB="-lnsl"],[NSL_LIB=""],[])
+SOCKLIBS="$SOCKET_LIB $NSL_LIB"
+AC_SUBST([SOCKLIBS])
+
+AM_PATH_PYTHON()
+
+# Used by env scripts to find libraries in cmake or autoconf builds.
+builddir_lib_suffix="/.libs"
+AC_SUBST([builddir_lib_suffix])
+
 # Files to generate	
 AC_CONFIG_FILES([
-  qpidc.spec
   Makefile
   examples/Makefile
   examples/direct/Makefile
   examples/fanout/Makefile
   examples/pub-sub/Makefile
   examples/request-response/Makefile
+  examples/failover/Makefile
   examples/xml-exchange/Makefile
+  examples/qmf-console/Makefile
+  examples/tradedemo/Makefile
+  examples/messaging/Makefile
+  bindings/qmf/Makefile
+  bindings/qmf/ruby/Makefile
+  bindings/qmf/python/Makefile
+  bindings/qmf/tests/Makefile
   managementgen/Makefile
   etc/Makefile
   src/Makefile
   src/tests/Makefile
+  src/tests/test_env.sh
   docs/man/Makefile
   docs/api/Makefile
   docs/api/user.doxygen

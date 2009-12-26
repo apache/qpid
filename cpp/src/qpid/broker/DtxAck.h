@@ -25,20 +25,21 @@
 #include <functional>
 #include <list>
 #include "qpid/framing/SequenceSet.h"
-#include "DeliveryRecord.h"
-#include "TxOp.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/TxOp.h"
 
 namespace qpid {
     namespace broker {
         class DtxAck : public TxOp{
-            std::list<DeliveryRecord> pending;
+            DeliveryRecords pending;
 
         public:
-            DtxAck(const framing::SequenceSet& acked, std::list<DeliveryRecord>& unacked);
+            DtxAck(const framing::SequenceSet& acked, DeliveryRecords& unacked);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();
             virtual ~DtxAck(){}
+            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
         };
     }
 }

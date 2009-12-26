@@ -24,32 +24,38 @@
 #include "qpid/framing/FieldTable.h"
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/shared_ptr.hpp>
+#include <algorithm>
 
 namespace qpid {
 namespace broker {
 
 class ExchangeRegistry;
 class Queue;
+
+struct QueueBinding{
+    std::string exchange;
+    std::string key;
+    qpid::framing::FieldTable args;
+    QueueBinding(const std::string& exchange, const std::string& key, const qpid::framing::FieldTable& args);
+};
+
 class QueueBindings
 {
-    struct Binding{
-        const std::string exchange;
-        const std::string key;
-        const qpid::framing::FieldTable args;
-        Binding(const std::string& exchange, const std::string& key, const qpid::framing::FieldTable& args);
-    };
+  public:
     
-    typedef boost::ptr_list<Binding> Bindings;
-    Bindings bindings;
-    
-public:
+    /** Apply f to each QueueBinding. */
+    template <class F> void eachBinding(F f) const { std::for_each(bindings.begin(), bindings.end(), f); }
+
     void add(const std::string& exchange, const std::string& key, const qpid::framing::FieldTable& args);
     void unbind(ExchangeRegistry& exchanges, boost::shared_ptr<Queue> queue);
+
+  private:
+    typedef std::vector<QueueBinding> Bindings;
+    Bindings bindings;
 };
 
 
-}
-}
+}} // namespace qpid::broker
 
 
 #endif

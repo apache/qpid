@@ -118,6 +118,7 @@ class AmqpRoot
   # preview; map 0-10 types to preview code generator types
   @@typemap = {
     "bit"=> CppType.new("bool").code("Octet").defval("false"),
+    "boolean"=> CppType.new("bool").code("Octet").defval("false"),
     "uint8"=>CppType.new("uint8_t").code("Octet").defval("0"), 
     "uint16"=>CppType.new("uint16_t").code("Short").defval("0"),
     "uint32"=>CppType.new("uint32_t").code("Long").defval("0"),
@@ -146,7 +147,7 @@ end
 class AmqpElement
   # convert my amqp type_ attribute to a C++ type.
   def amqp2cpp()
-    return "ArrayDomain<#{ArrayTypes[name].amqp2cpp}> " if type_=="array" 
+    return "ArrayDomain<#{array_type(name).amqp2cpp}> " if type_=="array"
     return type_.amqp2cpp
   end
 
@@ -189,7 +190,7 @@ class AmqpField
     c=containing_class
     c.struct(type_)
   end
-  def cpptype() lookup_cpptype(type_)  or raise "no cpptype #{self}" end
+  def cpptype() lookup_cpptype(type_)  or raise "no cpptype #{type_} for field #{self}" end
   def cppname() name.lcaps.cppsafe; end
   def bit?() type_ == "bit"; end
   def signature() cpptype.param+" "+cppname; end

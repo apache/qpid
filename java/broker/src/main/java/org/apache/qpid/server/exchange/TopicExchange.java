@@ -23,20 +23,22 @@ package org.apache.qpid.server.exchange;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -109,7 +111,7 @@ public class TopicExchange extends AbstractExchange
 
     private final Map<Binding, FieldTable> _bindings = new HashMap<Binding, FieldTable>();
 
-    private final Map<String, WeakReference<JMSSelectorFilter<RuntimeException>>> _selectorCache = new WeakHashMap<String, WeakReference<JMSSelectorFilter<RuntimeException>>>();
+    private final Map<String, WeakReference<JMSSelectorFilter>> _selectorCache = new WeakHashMap<String, WeakReference<JMSSelectorFilter>>();
 
     public static class Binding
     {
@@ -160,7 +162,7 @@ public class TopicExchange extends AbstractExchange
     private final class TopicExchangeResult implements TopicMatcherResult
     {
         private final Map<AMQQueue, Integer> _unfilteredQueues = new ConcurrentHashMap<AMQQueue, Integer>();
-        private final ConcurrentHashMap<AMQQueue, Map<MessageFilter<RuntimeException>,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter<RuntimeException>, Integer>>();
+        private final ConcurrentHashMap<AMQQueue, Map<MessageFilter,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter, Integer>>();
 
         public void addUnfilteredQueue(AMQQueue queue)
         {
@@ -190,12 +192,12 @@ public class TopicExchange extends AbstractExchange
         }
 
 
-        public void addFilteredQueue(AMQQueue queue, MessageFilter<RuntimeException> filter)
+        public void addFilteredQueue(AMQQueue queue, MessageFilter filter)
         {
-            Map<MessageFilter<RuntimeException>,Integer> filters = _filteredQueues.get(queue);
+            Map<MessageFilter,Integer> filters = _filteredQueues.get(queue);
             if(filters == null)
             {
-                filters = new ConcurrentHashMap<MessageFilter<RuntimeException>,Integer>();
+                filters = new ConcurrentHashMap<MessageFilter,Integer>();
                 _filteredQueues.put(queue, filters);
             }
             Integer instances = filters.get(filter);
@@ -210,23 +212,26 @@ public class TopicExchange extends AbstractExchange
 
         }
 
-        public void removeFilteredQueue(AMQQueue queue, MessageFilter<RuntimeException> filter)
+        public void removeFilteredQueue(AMQQueue queue, MessageFilter filter)
         {
-            Map<MessageFilter<RuntimeException>,Integer> filters = _filteredQueues.get(queue);
+            Map<MessageFilter,Integer> filters = _filteredQueues.get(queue);
             if(filters != null)
             {
                 Integer instances = filters.get(filter);
-                if(instances == 1)
+                if(instances != null)
                 {
-                    filters.remove(filter);
-                    if(filters.isEmpty())
+                    if(instances == 1)
                     {
-                        _filteredQueues.remove(queue);
+                        filters.remove(filter);
+                        if(filters.isEmpty())
+                        {
+                            _filteredQueues.remove(queue);
+                        }
                     }
-                }
-                else if(instances != null)
-                {
-                    filters.put(filter, instances - 1);
+                    else
+                    {
+                        filters.put(filter, instances - 1);
+                    }
                 }
 
             }
@@ -234,11 +239,11 @@ public class TopicExchange extends AbstractExchange
         }
 
         public void replaceQueueFilter(AMQQueue queue,
-                                       MessageFilter<RuntimeException> oldFilter,
-                                       MessageFilter<RuntimeException> newFilter)
+                                       MessageFilter oldFilter,
+                                       MessageFilter newFilter)
         {
-            Map<MessageFilter<RuntimeException>,Integer> filters = _filteredQueues.get(queue);
-            Map<MessageFilter<RuntimeException>,Integer> newFilters = new ConcurrentHashMap<MessageFilter<RuntimeException>,Integer>(filters);
+            Map<MessageFilter,Integer> filters = _filteredQueues.get(queue);
+            Map<MessageFilter,Integer> newFilters = new ConcurrentHashMap<MessageFilter,Integer>(filters);
             Integer oldFilterInstances = filters.get(oldFilter);
             if(oldFilterInstances == 1)
             {
@@ -260,7 +265,7 @@ public class TopicExchange extends AbstractExchange
             _filteredQueues.put(queue,newFilters);
         }
 
-        public Collection<AMQQueue> processMessage(IncomingMessage msg, Collection<AMQQueue> queues)
+        public Collection<AMQQueue> processMessage(InboundMessage msg, Collection<AMQQueue> queues)
         {
             if(queues == null)
             {
@@ -281,11 +286,11 @@ public class TopicExchange extends AbstractExchange
             queues.addAll(_unfilteredQueues.keySet());
             if(!_filteredQueues.isEmpty())
             {
-                for(Map.Entry<AMQQueue, Map<MessageFilter<RuntimeException>, Integer>> entry : _filteredQueues.entrySet())
+                for(Map.Entry<AMQQueue, Map<MessageFilter, Integer>> entry : _filteredQueues.entrySet())
                 {
                     if(!queues.contains(entry.getKey()))
                     {
-                        for(MessageFilter<RuntimeException> filter : entry.getValue().keySet())
+                        for(MessageFilter filter : entry.getValue().keySet())
                         {
                             if(filter.matches(msg))
                             {
@@ -333,7 +338,7 @@ public class TopicExchange extends AbstractExchange
             for(Map.Entry<String, List<String>> entry : bindingData.entrySet())
             {
                 Object[] bindingItemValues = {entry.getKey(), entry.getValue().toArray(new String[entry.getValue().size()]) };
-                CompositeData bindingCompositeData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
+                CompositeData bindingCompositeData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
                 _bindingList.put(bindingCompositeData);
             }
 
@@ -348,6 +353,7 @@ public class TopicExchange extends AbstractExchange
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
             }
 
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
             try
             {
                 queue.bind(TopicExchange.this, new AMQShortString(binding), null);
@@ -355,6 +361,10 @@ public class TopicExchange extends AbstractExchange
             catch (AMQException ex)
             {
                 throw new MBeanException(ex);
+            }
+            finally
+            {
+                CurrentActor.remove();
             }
         }
 
@@ -433,10 +443,10 @@ public class TopicExchange extends AbstractExchange
                 {
                     result.addUnfilteredQueue(queue);
                 }
-                _parser.addBinding(routingKey, result);    
+                _parser.addBinding(routingKey, result);
                 _topicExchangeResults.put(routingKey,result);
             }
-            else                        
+            else
             {
                 if(argumentsContainSelector(args))
                 {
@@ -453,18 +463,18 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-    private JMSSelectorFilter<RuntimeException> createSelectorFilter(final FieldTable args)
+    private JMSSelectorFilter createSelectorFilter(final FieldTable args)
             throws AMQException
     {
 
         final String selectorString = args.getString(AMQPFilterTypes.JMS_SELECTOR.getValue());
-        WeakReference<JMSSelectorFilter<RuntimeException>> selectorRef = _selectorCache.get(selectorString);
+        WeakReference<JMSSelectorFilter> selectorRef = _selectorCache.get(selectorString);
         JMSSelectorFilter selector = null;
 
         if(selectorRef == null || (selector = selectorRef.get())==null)
         {
-            selector = new JMSSelectorFilter<RuntimeException>(selectorString);
-            _selectorCache.put(selectorString, new WeakReference<JMSSelectorFilter<RuntimeException>>(selector));
+            selector = new JMSSelectorFilter(selectorString);
+            _selectorCache.put(selectorString, new WeakReference<JMSSelectorFilter>(selector));
         }
         return selector;
     }
@@ -480,7 +490,7 @@ public class TopicExchange extends AbstractExchange
         {
             routingKey = AMQShortString.EMPTY_STRING;
         }
-        
+
         AMQShortStringTokenizer routingTokens = routingKey.tokenize(TOPIC_SEPARATOR);
 
         List<AMQShortString> subscriptionList = new ArrayList<AMQShortString>();
@@ -525,10 +535,12 @@ public class TopicExchange extends AbstractExchange
         return normalizedString;
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
 
-        final AMQShortString routingKey = payload.getRoutingKey();
+        final AMQShortString routingKey = payload.getRoutingKey() == null
+                                          ? AMQShortString.EMPTY_STRING
+                                          : new AMQShortString(payload.getRoutingKey());
 
         // The copy here is unfortunate, but not too bad relevant to the amount of
         // things created and copied in getMatchedQueues
@@ -540,7 +552,7 @@ public class TopicExchange extends AbstractExchange
             _logger.info("Message routing key: " + payload.getRoutingKey() + " No routes.");
         }
 
-        payload.enqueue(queues);
+        return queues;
 
     }
 
@@ -562,7 +574,7 @@ public class TopicExchange extends AbstractExchange
             {
                 return false;
             }
-            
+
         }
     }
 
@@ -630,20 +642,17 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new TopicExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-            _logger.error("Exception occured in creating the topic exchenge mbean", ex);
-            throw new AMQException("Exception occured in creating the topic exchenge mbean", ex);
-        }
+        return new TopicExchangeMBean();
     }
 
-    private Collection<AMQQueue> getMatchedQueues(IncomingMessage message, AMQShortString routingKey)
+    public Logger getLogger()
+    {
+        return _logger;
+    }
+
+    private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)
     {
 
         Collection<TopicMatcherResult> results = _parser.parse(routingKey);

@@ -26,9 +26,9 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/OutputControl.h"
-#include "ConnectionState.h"
-#include "OwnershipToken.h"
-
+#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/OwnershipToken.h"
+#include "qpid/SessionId.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -40,9 +40,12 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
   public:
     virtual ~SessionContext(){}
     virtual bool isLocal(const ConnectionToken* t) const = 0;
+    virtual bool isAttached() const = 0;
     virtual ConnectionState& getConnection() = 0;
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
     virtual Broker& getBroker() = 0;
+    virtual uint16_t getChannel() const = 0;
+    virtual const SessionId& getSessionId() const = 0;
 };
 
 }} // namespace qpid::broker

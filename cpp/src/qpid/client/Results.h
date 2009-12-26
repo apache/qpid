@@ -38,6 +38,7 @@ public:
     typedef boost::shared_ptr<FutureResult> FutureResultPtr;
 
     Results();
+    ~Results();
     void completed(const framing::SequenceSet& set);
     void received(const framing::SequenceNumber& id, const std::string& result);
     FutureResultPtr listenForResult(const framing::SequenceNumber& point);

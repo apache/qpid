@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "Buffer.h"
-#include "FieldTable.h" 
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/FieldTable.h" 
 #include <string.h>
 #include <boost/format.hpp>
 namespace qpid {
@@ -51,12 +51,14 @@ void Buffer::reset(){
 
 void Buffer::putOctet(uint8_t i){
     data[position++] = i;
+    assert(position <= size);
 }
 
 void Buffer::putShort(uint16_t i){
     uint16_t b = i;
     data[position++] = (uint8_t) (0xFF & (b >> 8));
     data[position++] = (uint8_t) (0xFF & b);
+    assert(position <= size);
 }
 
 void Buffer::putLong(uint32_t i){
@@ -65,6 +67,7 @@ void Buffer::putLong(uint32_t i){
     data[position++] = (uint8_t) (0xFF & (b >> 16));
     data[position++] = (uint8_t) (0xFF & (b >> 8));
     data[position++] = (uint8_t) (0xFF & b);
+    assert(position <= size);
 }
 
 void Buffer::putLongLong(uint64_t i){
@@ -76,6 +79,7 @@ void Buffer::putLongLong(uint64_t i){
 
 void Buffer::putInt8(int8_t i){
     data[position++] = (uint8_t) i;
+    assert(position <= size);
 }
 
 void Buffer::putInt16(int16_t i){
@@ -110,19 +114,22 @@ void Buffer::putDouble(double f){
     putLongLong (val.i);
 }
 
-void Buffer::putBin128(uint8_t* b){
+void Buffer::putBin128(const uint8_t* b){
     memcpy (data + position, b, 16);
     position += 16;
 }
 
 uint8_t Buffer::getOctet(){ 
-    return (uint8_t) data[position++]; 
+    uint8_t octet = static_cast<uint8_t>(data[position++]);
+    assert(position <= size);
+    return octet;
 }
 
 uint16_t Buffer::getShort(){ 
     uint16_t hi = (unsigned char) data[position++];
     hi = hi << 8;
     hi |= (unsigned char) data[position++];
+    assert(position <= size);
     return hi;
 }
 
@@ -131,6 +138,7 @@ uint32_t Buffer::getLong(){
     uint32_t b = (unsigned char) data[position++];
     uint32_t c = (unsigned char) data[position++];
     uint32_t d = (unsigned char) data[position++];
+    assert(position <= size);
     a = a << 24;
     a |= b << 16;
     a |= c << 8;
@@ -146,7 +154,9 @@ uint64_t Buffer::getLongLong(){
 }
 
 int8_t Buffer::getInt8(){
-    return (int8_t) data[position++];
+    int8_t i = static_cast<int8_t>(data[position++]);
+    assert(position <= size);
+    return i;
 }
 
 int16_t Buffer::getInt16(){
@@ -220,14 +230,16 @@ void Buffer::putUInt<8>(uint64_t i) {
 }
 
 void Buffer::putShortString(const string& s){
-    uint8_t len = s.length();
+    size_t slen = s.length();
+    uint8_t len = slen < 0x100 ? (uint8_t) slen : 0xFF;
     putOctet(len);
     s.copy(data + position, len);
     position += len;    
 }
 
 void Buffer::putMediumString(const string& s){
-    uint16_t len = s.length();
+    size_t slen = s.length();
+    uint16_t len = slen < 0x10000 ? (uint16_t) slen : 0xFFFF;
     putShort(len);
     s.copy(data + position, len);
     position += len;    

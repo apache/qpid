@@ -22,8 +22,11 @@
  *
  */
 #include "qpid/framing/amqp_types.h"
-
+#include "qpid/RefCounted.h"
+#include "qpid/framing/BodyFactory.h"
+#include <boost/intrusive_ptr.hpp>
 #include <ostream>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
@@ -43,16 +46,20 @@ struct AMQBodyConstVisitor {
     virtual void visit(const AMQMethodBody&) = 0;
 };
 
-class AMQBody
-{
+class AMQBody : public RefCounted {
   public:
-    virtual ~AMQBody();
+    AMQBody() {}
+    QPID_COMMON_EXTERN virtual ~AMQBody();
+
+    // Make AMQBody copyable even though RefCounted. 
+    AMQBody(const AMQBody&) : RefCounted() {}  
+    AMQBody& operator=(const AMQBody&) { return *this; }
 
     virtual uint8_t type() const = 0;
 
     virtual void encode(Buffer& buffer) const = 0;
     virtual void decode(Buffer& buffer, uint32_t=0) = 0;
-    virtual uint32_t size() const = 0;
+    virtual uint32_t encodedSize() const = 0;
 
     virtual void print(std::ostream& out) const = 0;
     virtual void accept(AMQBodyConstVisitor&) const = 0;
@@ -62,9 +69,10 @@ class AMQBody
 
     /** Match if same type and same class/method ID for methods */
     static bool match(const AMQBody& , const AMQBody& );
+    virtual boost::intrusive_ptr<AMQBody> clone() const = 0;
 };
 
-std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
 
 enum BodyTypes {
     METHOD_BODY = 1,

@@ -19,9 +19,9 @@
  *
  */
 
-#include "SemanticState.h"
-#include "SessionContext.h"
-#include "ConnectionState.h"
+#include "qpid/broker/SemanticState.h"
+#include "qpid/broker/SessionContext.h"
+#include "qpid/broker/ConnectionState.h"
 
 namespace qpid {
 namespace broker {

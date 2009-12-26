@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "DtxTimeout.h"
-#include "DtxManager.h"
+#include "qpid/broker/DtxTimeout.h"
+#include "qpid/broker/DtxManager.h"
 #include "qpid/sys/Time.h"
 
 using namespace qpid::broker;

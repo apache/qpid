@@ -20,8 +20,69 @@
  -->
 <project name="Eclipse Plugin" default="build">
 
-    <property name="module.depends" value="broker common"/>
+    <property name="module.depends" value="broker common management/common"/>
+    <property name="module.test.depends" value="broker/test" />
 
     <import file="../../module.xml"/>
+
+    <!-- module.manifest property to invoke use of 'jar.manifest' jar target when building -->
+    <property name="module.manifest" value="${module.classes}/META-INF/MANIFEST.MF"/>
+
+    <!-- override module.xml 'libs' target, avoids cluttering the 'build/lib' dir as the 
+         MC build/packaging process does not use the libs from there -->
+    <target name="libs"/>
+
+    <target name="copy-plugin-files" description="copy eclipse management plugin files into build tree">
+        <copy todir="${module.classes}/icons" failonerror="true">
+            <fileset dir="icons/"/>
+        </copy>
+        <copy todir="${module.classes}/META-INF/" failonerror="true">
+            <fileset dir="META-INF/"/>
+        </copy>
+        <copy todir="${module.classes}" failonerror="true">
+            <fileset file="icons/splash.bmp"/>
+        </copy>
+        <copy todir="${module.classes}" failonerror="true">
+            <fileset file="plugin.properties"/>
+        </copy>
+        <copy todir="${module.classes}" failonerror="true">
+            <fileset file="plugin.xml"/>
+        </copy>
+    </target>
+
+    <target name="precompile" depends="copy-plugin-files, create-version" />
+
+    <!-- Override imported module.xml release-bin target -->
+    <target name="release-bin" depends="build">
+        <!-- linux gtk x86 -->
+        <ant antfile="build-release.xml">
+            <property file="build-release-common.properties"/>
+            <property file="build-release-linux-gtk-x86.properties"/>
+        </ant>
+
+        <!-- linux gtk x86_64 -->
+        <ant antfile="build-release.xml">
+            <property file="build-release-common.properties"/>
+            <property file="build-release-linux-gtk-x86_64.properties"/>
+        </ant>
+
+        <!-- solaris gtk sparc -->
+        <ant antfile="build-release.xml">
+            <property file="build-release-common.properties"/>
+            <property file="build-release-solaris-gtk-sparc.properties"/>
+        </ant>
+
+        <!-- mac os x -->
+        <ant antfile="build-release-macosx.xml">
+            <property file="build-release-common.properties"/>
+            <property file="build-release-macosx.properties"/>
+        </ant>
+
+        <!-- win32 win32 x86 -->
+        <ant antfile="build-release.xml">
+            <property file="build-release-common.properties"/>
+            <property file="build-release-win32-win32-x86.properties"/>
+        </ant>
+    </target>
 
 </project>

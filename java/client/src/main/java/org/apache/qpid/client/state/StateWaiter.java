@@ -113,7 +113,6 @@ public class StateWaiter extends BlockingWaiter<AMQState>
             {
                 _logger.error("Failover occured whilst waiting for states:" + _awaitStates);
 
-                e.printStackTrace();
                 return null;
             }
         }

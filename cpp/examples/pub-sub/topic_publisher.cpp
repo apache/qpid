@@ -19,25 +19,27 @@
  *
  */
 
-
 /**
  *  topic_publisher.cpp:
  *
- *  This program is one of three programs designed to be used
- *  together. These programs use the topic exchange.
- *  
- *    topic_config_queues.cpp:
+ *  This program is one of two programs designed to be used
+ *  together. These programs implement a publish-subscribe example
+ *  using the "amq.topic" exchange.
  *
- *      Creates a queue on a broker, binding a routing key to route
- *      messages to that queue.
+ *   topic_publisher.cpp (this program)
  *
- *    topic_publisher.cpp (this program):
+ *      Sends messages to the "amq.topic" exchange, using the
+ *      multipart routing keys "usa.news", "usa.weather",
+ *      "europe.news", and "europe.weather".
  *
- *      Publishes to a broker, specifying a routing key.
+ *   topic_listener.cpp 
  *
- *    topic_listener.cpp
+ *      Creates private queues for "news", "weather", "usa", and
+ *      "europe", binding them to the amq.topic exchange using
+ *      bindings that match the corresponding parts of the multipart
+ *      routing keys.
  *
- *      Reads from a queue on the broker using a message listener.
+ *      Multiple listeners can be run at the same time.
  *
  */
 
@@ -48,7 +50,6 @@
 #include <qpid/client/Message.h>
 
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -100,20 +101,20 @@ void no_more_messages(Session& session)
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+
     Connection connection;
-    Message message;
     try {
         connection.open(host, port);
         Session session =  connection.newSession();
 
   //--------- Main body of program --------------------------------------------
 
-	publish_messages(session, "usa.news");
-	publish_messages(session, "usa.weather");
-	publish_messages(session, "europe.news");
-	publish_messages(session, "europe.weather");
+        publish_messages(session, "usa.news");
+        publish_messages(session, "usa.weather");
+        publish_messages(session, "europe.news");
+        publish_messages(session, "europe.weather");
 
-	no_more_messages(session);
+        no_more_messages(session);
 
   //-----------------------------------------------------------------------------
 

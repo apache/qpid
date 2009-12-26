@@ -22,7 +22,6 @@
 package org.apache.qpid.management.ui.views;
 
 import static org.apache.qpid.management.ui.Constants.BUTTON_CLEAR;
-import static org.apache.qpid.management.ui.Constants.BUTTON_REFRESH;
 import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
 import static org.apache.qpid.management.ui.Constants.FONT_BUTTON;
 
@@ -35,7 +34,6 @@ import org.apache.qpid.management.ui.model.NotificationObject;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ILabelProviderListener;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -68,7 +66,8 @@ public class VHNotificationsTabControl extends TabControl
     protected Table _table = null;
     protected TableViewer _tableViewer  = null;
      
-    protected Thread worker = null;
+    protected Thread _worker = null;
+    protected boolean _workerRunning = false;
     
     protected List<NotificationObject> _notifications = null;
     
@@ -86,7 +85,6 @@ public class VHNotificationsTabControl extends TabControl
          };
     
     protected Button _clearButton       = null;
-    protected Button _refreshButton       = null;
     
     public VHNotificationsTabControl(TabFolder tabFolder)
     {
@@ -98,8 +96,7 @@ public class VHNotificationsTabControl extends TabControl
         gridLayout.marginHeight = 0;       
         _form.getBody().setLayout(gridLayout);
         
-        worker = new Thread(new Worker()); 
-        worker.start();
+        createWidgets();
     }
     
     protected void createWidgets()
@@ -113,10 +110,6 @@ public class VHNotificationsTabControl extends TabControl
      */
     public Control getControl()
     {
-        if (_table == null)
-        {
-            createWidgets();
-        }
         return _form;
     }
 
@@ -126,8 +119,8 @@ public class VHNotificationsTabControl extends TabControl
     protected void addButtons()
     {    
         Composite composite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
-        composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        composite.setLayout(new GridLayout(2, true));
+        composite.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
+        composite.setLayout(new GridLayout(2,false));
         
         // Add Clear Button
         _clearButton = _toolkit.createButton(composite, BUTTON_CLEAR, SWT.PUSH | SWT.CENTER);
@@ -136,30 +129,40 @@ public class VHNotificationsTabControl extends TabControl
         gridData.widthHint = 80;
         _clearButton.setLayoutData(gridData);
         _clearButton.addSelectionListener(new SelectionAdapter()
-            {
-                public void widgetSelected(SelectionEvent e)
-                {  
-                    //TODO : Get selected rows and clear those
-                    IStructuredSelection ss = (IStructuredSelection)_tableViewer.getSelection();
-                    ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
+        {
+            public void widgetSelected(SelectionEvent e)
+            {  
+                ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
+                IStructuredSelection ss = (IStructuredSelection)_tableViewer.getSelection();
+                if(!ss.isEmpty())
+                {
+                    //clear selected Notifications
                     serverRegistry.clearNotifications(null, ss.toList());
-                    refresh();
                 }
-            });
-        
-        // Add Refresh Button
-        _refreshButton = _toolkit.createButton(composite, BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
-        _refreshButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
-        gridData = new GridData(SWT.TRAIL, SWT.TOP, true, false);
-        gridData.widthHint = 80;
-        _refreshButton.setLayoutData(gridData);
-        _refreshButton.addSelectionListener(new SelectionAdapter()
-            {
-                public void widgetSelected(SelectionEvent e)
-                { 
-                    refresh();
+                else if(_notifications != null)
+                {
+                    //clear all the notifications, if there are any
+                    
+                    //check the user is certain of this clear-all operation
+                    int response = ViewUtility.popupOkCancelConfirmationMessage(
+                            "Clear Notifications", "Clear all Notifications for this VirtualHost?");
+                    if(response != SWT.OK)
+                    {
+                        return;
+                    }
+                    
+                    synchronized(this)
+                    {
+                        serverRegistry.clearNotifications(null, _notifications);
+                    }
                 }
-            });
+
+                refresh();
+            }
+        });
+        //add description
+        Label desc = _toolkit.createLabel(composite,"Clears the selected Notifications, or all if none are selected");
+        desc.setLayoutData(new GridData(SWT.LEFT,SWT.CENTER, false, false));
     }
     
     /**
@@ -201,36 +204,12 @@ public class VHNotificationsTabControl extends TabControl
     {
         createTable();
         _tableViewer = new TableViewer(_table);
-        //_tableViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         _tableViewer.setUseHashlookup(true);
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setColumnProperties(_tableTitles);
-        /*
-        CellEditor[] cellEditors = new CellEditor[_tableTitles.length];
-        TextCellEditor textEditor = new TextCellEditor(table);
-        cellEditors[0] = textEditor;
-        textEditor = new TextCellEditor(table);
-        cellEditors[1] = textEditor;
-        textEditor = new TextCellEditor(table);
-        cellEditors[2] = textEditor;
-        textEditor = new TextCellEditor(table);
-        cellEditors[3] = textEditor;
-        
-        // Assign the cell editors to the viewer 
-        _tableViewer.setCellEditors(cellEditors);
-        _tableViewer.setCellModifier(new TableCellModifier());
-        */
         
         addTableListeners();
-        
-        //_tableViewer.addSelectionChangedListener(new );
-        
-        //_notificationDetails = new Composite(_tabControl, SWT.BORDER);
-        //_notificationDetails.setLayoutData(new GridData(GridData.FILL_BOTH));
-        
-        //_tabControl.layout();
-        //viewerComposite.layout();
     }
     
     /**
@@ -311,17 +290,19 @@ public class VHNotificationsTabControl extends TabControl
     
     public void refresh()
     {        
-        _notifications = null;
-        _table.deselectAll();
-        _tableViewer.getTable().clearAll();  
-        
-        Control[] children = _form.getBody().getChildren();        
-        for (int i = 0; i < children.length; i++)
+        if(_workerRunning)
         {
-            children[i].setVisible(true);
+            //perform an single immediate-update
+            updateTableViewer();   
         }
-             
-        workerRunning = true;
+        else
+        {
+            //start a worker to do the update and keep going as required
+            _workerRunning = true;
+            _worker = new Thread(new Worker()); 
+            _worker.start();
+        }
+
         _form.layout(true);   
         _form.getBody().layout(true, true);
     }
@@ -413,10 +394,10 @@ public class VHNotificationsTabControl extends TabControl
         }
     } // end of LabelProviderImpl
     
-    protected boolean workerRunning = false;
+    
     protected void setWorkerRunning(boolean running)
     {
-        workerRunning = running;
+        _workerRunning = running;
     }
     
     /**
@@ -424,15 +405,18 @@ public class VHNotificationsTabControl extends TabControl
      */
     private class Worker implements Runnable
     {
+        private boolean keepGoing = true; 
+        
         public void run()
         {
-            Display display = _tabFolder.getDisplay();
-            while(true)
+            final Display display = _tabFolder.getDisplay();
+            
+            while(keepGoing)
             {
-                if (!workerRunning || display == null)
+                if (display == null || display.isDisposed())
                 {
-                    sleep();
-                    continue;
+                    setWorkerRunning(false);
+                    break; //stop the thread
                 }
                 
                 display.syncExec(new Runnable()
@@ -440,15 +424,27 @@ public class VHNotificationsTabControl extends TabControl
                     public void run()
                     {
                         if (_form == null || _form.isDisposed())
-                            return;
-                        setWorkerRunning(_form.isVisible());
-                        if (!workerRunning) return;
-                        
-                        updateTableViewer();
+                        {
+                            setWorkerRunning(false);
+                            keepGoing = false; //exit the loop and stop the thread
+                        }
+                        else
+                        {
+                            keepGoing = _form.isVisible();
+                            setWorkerRunning(keepGoing);
+                        }
+
+                        if (keepGoing)
+                        {
+                            updateTableViewer();
+                        }
                     }
-                });     
+                });
             
-                sleep();
+                if (keepGoing)
+                {
+                    sleep();
+                }
             }
         }
         
@@ -466,18 +462,20 @@ public class VHNotificationsTabControl extends TabControl
     }
     
     /**
-     * Updates the table with new notifications received from mbean server for all mbeans
+     * Updates the table with new notifications received from mbean server for all mbeans in this virtual host
      */
     protected void updateTableViewer()
     {
-        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());        
-        List<NotificationObject> newList = serverRegistry.getNotifications(null);
-        if (newList == null)
-            return;
+        String virtualhost = MBeanView.getVirtualHost();
         
-        _notifications = newList;
-        _tableViewer.setInput(_notifications);
-        _tableViewer.refresh();
+        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());        
+        List<NotificationObject> newList = serverRegistry.getNotifications(virtualhost);
+        
+        synchronized(this)
+        {
+            _notifications = newList;
+            _tableViewer.setInput(_notifications);
+        }
     }
 
 }

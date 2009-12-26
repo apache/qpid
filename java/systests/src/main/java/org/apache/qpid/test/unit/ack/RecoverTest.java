@@ -23,8 +23,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.test.utils.QpidTestCase;
-
+import org.apache.qpid.test.utils.FailoverBaseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,16 +34,21 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.TextMessage;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RecoverTest extends QpidTestCase
+public class RecoverTest extends FailoverBaseCase
 {
-    private static final Logger _logger = LoggerFactory.getLogger(RecoverTest.class);
+    static final Logger _logger = LoggerFactory.getLogger(RecoverTest.class);
 
     private Exception _error;
     private AtomicInteger count;
 
+    protected AMQConnection _connection;
+    protected Session _consumerSession;
+    protected MessageConsumer _consumer;
+    static final int SENT_COUNT = 4;
+
+    @Override
     protected void setUp() throws Exception
     {
         super.setUp();
@@ -52,134 +56,110 @@ public class RecoverTest extends QpidTestCase
         count = new AtomicInteger();
     }
 
-    protected void tearDown() throws Exception
+    protected void initTest() throws Exception
     {
-        super.tearDown();
-        count = null;
+        _connection = (AMQConnection) getConnection("guest", "guest");
+
+        _consumerSession = _connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = _consumerSession.createQueue(getTestQueueName());
+
+        _consumer = _consumerSession.createConsumer(queue);
+
+        _logger.info("Sending four messages");
+        sendMessage(_connection.createSession(false, Session.AUTO_ACKNOWLEDGE), queue, SENT_COUNT);
+        _logger.info("Starting connection");
+        _connection.start();
+    }
+
+    protected Message validateNextMessages(int nextCount, int startIndex) throws JMSException
+    {
+        Message message = null;
+        for (int index = 0; index < nextCount; index++)
+        {
+            message = _consumer.receive(3000);
+            assertEquals(startIndex + index, message.getIntProperty(INDEX));
+        }
+        return message;
+    }
+
+    protected void validateRemainingMessages(int remaining) throws JMSException
+    {
+        int index = SENT_COUNT - remaining;
+
+        Message message = null;
+        while (index != SENT_COUNT)
+        {
+            message =  _consumer.receive(3000);
+            assertEquals(index++, message.getIntProperty(INDEX));
+        }
+
+        if (message != null)
+        {
+            _logger.info("Received redelivery of three messages. Acknowledging last message");
+            message.acknowledge();
+        }
+
+        _logger.info("Calling acknowledge with no outstanding messages");
+        // all acked so no messages to be delivered
+        _consumerSession.recover();
+
+        message = _consumer.receiveNoWait();
+        assertNull(message);
+        _logger.info("No messages redelivered as is expected");
     }
 
     public void testRecoverResendsMsgs() throws Exception
     {
-        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
+        initTest();
 
-        Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue =
-            new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("someQ"),
-                new AMQShortString("someQ"), false, true);
-        MessageConsumer consumer = consumerSession.createConsumer(queue);
-        // force synch to ensure the consumer has resulted in a bound queue
-        // ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
-        // This is the default now
-
-        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
-        Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        MessageProducer producer = producerSession.createProducer(queue);
-
-        _logger.info("Sending four messages");
-        producer.send(producerSession.createTextMessage("msg1"));
-        producer.send(producerSession.createTextMessage("msg2"));
-        producer.send(producerSession.createTextMessage("msg3"));
-        producer.send(producerSession.createTextMessage("msg4"));
-
-        con2.close();
-
-        _logger.info("Starting connection");
-        con.start();
-        TextMessage tm = (TextMessage) consumer.receive();
-        tm.acknowledge();
+        Message message = validateNextMessages(1, 0);
+        message.acknowledge();
         _logger.info("Received and acknowledged first message");
-        consumer.receive();
-        consumer.receive();
-        consumer.receive();
+
+        _consumer.receive();
+        _consumer.receive();
+        _consumer.receive();
         _logger.info("Received all four messages. Calling recover with three outstanding messages");
         // no ack for last three messages so when I call recover I expect to get three messages back
-        consumerSession.recover();
-        tm = (TextMessage) consumer.receive(3000);
-        assertEquals("msg2", tm.getText());
 
-        tm = (TextMessage) consumer.receive(3000);
-        assertEquals("msg3", tm.getText());
+        _consumerSession.recover();
 
-        tm = (TextMessage) consumer.receive(3000);
-        assertEquals("msg4", tm.getText());
-
-        _logger.info("Received redelivery of three messages. Acknowledging last message");
-        tm.acknowledge();
-
-        _logger.info("Calling acknowledge with no outstanding messages");
-        // all acked so no messages to be delivered
-        consumerSession.recover();
-
-        tm = (TextMessage) consumer.receiveNoWait();
-        assertNull(tm);
-        _logger.info("No messages redelivered as is expected");
-
-        con.close();
+        validateRemainingMessages(3);
     }
 
     public void testRecoverResendsMsgsAckOnEarlier() throws Exception
     {
-        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
+        initTest();
 
-        Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue =
-            new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("someQ"),
-                new AMQShortString("someQ"), false, true);
-        MessageConsumer consumer = consumerSession.createConsumer(queue);
-        // force synch to ensure the consumer has resulted in a bound queue
-        // ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
-        // This is the default now
-
-        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
-        Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        MessageProducer producer = producerSession.createProducer(queue);
-
-        _logger.info("Sending four messages");
-        producer.send(producerSession.createTextMessage("msg1"));
-        producer.send(producerSession.createTextMessage("msg2"));
-        producer.send(producerSession.createTextMessage("msg3"));
-        producer.send(producerSession.createTextMessage("msg4"));
-
-        con2.close();
-
-        _logger.info("Starting connection");
-        con.start();
-        TextMessage tm = (TextMessage) consumer.receive();
-        consumer.receive();
-        tm.acknowledge();
+        Message message = validateNextMessages(2, 0);
+        message.acknowledge();
         _logger.info("Received 2 messages, acknowledge() first message, should acknowledge both");
 
-        consumer.receive();
-        consumer.receive();
+        _consumer.receive();
+        _consumer.receive();
         _logger.info("Received all four messages. Calling recover with two outstanding messages");
         // no ack for last three messages so when I call recover I expect to get three messages back
-        consumerSession.recover();
-        TextMessage tm3 = (TextMessage) consumer.receive(3000);
-        assertEquals("msg3", tm3.getText());
+        _consumerSession.recover();
 
-        TextMessage tm4 = (TextMessage) consumer.receive(3000);
-        assertEquals("msg4", tm4.getText());
+        Message message2 = _consumer.receive(3000);
+        assertEquals(2, message2.getIntProperty(INDEX));
+
+        Message message3 = _consumer.receive(3000);
+        assertEquals(3, message3.getIntProperty(INDEX));
 
         _logger.info("Received redelivery of two messages. calling acknolwedgeThis() first of those message");
-        ((org.apache.qpid.jms.Message) tm3).acknowledgeThis();
+        ((org.apache.qpid.jms.Message) message2).acknowledgeThis();
 
         _logger.info("Calling recover");
         // all acked so no messages to be delivered
-        consumerSession.recover();
+        _consumerSession.recover();
 
-        tm4 = (TextMessage) consumer.receive(3000);
-        assertEquals("msg4", tm4.getText());
-        ((org.apache.qpid.jms.Message) tm4).acknowledgeThis();
+        message3 = _consumer.receive(3000);
+        assertEquals(3, message3.getIntProperty(INDEX));
+        ((org.apache.qpid.jms.Message) message3).acknowledgeThis();
 
-        _logger.info("Calling recover");
         // all acked so no messages to be delivered
-        consumerSession.recover();
-
-        tm = (TextMessage) consumer.receiveNoWait();
-        assertNull(tm);
-        _logger.info("No messages redelivered as is expected");
-
-        con.close();
+        validateRemainingMessages(0);
     }
 
     public void testAcknowledgePerConsumer() throws Exception
@@ -188,11 +168,11 @@ public class RecoverTest extends QpidTestCase
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue =
-            new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q1"), new AMQShortString("Q1"),
-                false, true);
+                new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q1"), new AMQShortString("Q1"),
+                             false, true);
         Queue queue2 =
-            new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q2"), new AMQShortString("Q2"),
-                false, true);
+                new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q2"), new AMQShortString("Q2"),
+                             false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         MessageConsumer consumer2 = consumerSession.createConsumer(queue2);
 
@@ -231,8 +211,8 @@ public class RecoverTest extends QpidTestCase
 
         final Session consumerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue =
-            new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q3"), new AMQShortString("Q3"),
-                false, true);
+                new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q3"), new AMQShortString("Q3"),
+                             false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         MessageProducer producer = consumerSession.createProducer(queue);
         producer.send(consumerSession.createTextMessage("hello"));
@@ -240,50 +220,50 @@ public class RecoverTest extends QpidTestCase
         final Object lock = new Object();
 
         consumer.setMessageListener(new MessageListener()
+        {
+
+            public void onMessage(Message message)
             {
-
-                public void onMessage(Message message)
+                try
                 {
-                    try
+                    count.incrementAndGet();
+                    if (count.get() == 1)
                     {
-                        count.incrementAndGet();
-                        if (count.get() == 1)
+                        if (message.getJMSRedelivered())
                         {
-                            if (message.getJMSRedelivered())
-                            {
-                                setError(
+                            setError(
                                     new Exception("Message marked as redilvered on what should be first delivery attempt"));
-                            }
-
-                            consumerSession.recover();
                         }
-                        else if (count.get() == 2)
+
+                        consumerSession.recover();
+                    }
+                    else if (count.get() == 2)
+                    {
+                        if (!message.getJMSRedelivered())
                         {
-                            if (!message.getJMSRedelivered())
-                            {
-                                setError(
+                            setError(
                                     new Exception(
-                                        "Message not marked as redilvered on what should be second delivery attempt"));
-                            }
-                        }
-                        else
-                        {
-                            System.err.println(message);
-                            fail("Message delivered too many times!: " + count);
+                                            "Message not marked as redilvered on what should be second delivery attempt"));
                         }
                     }
-                    catch (JMSException e)
+                    else
                     {
-                        _logger.error("Error recovering session: " + e, e);
-                        setError(e);
-                    }
-
-                    synchronized (lock)
-                    {
-                        lock.notify();
+                        System.err.println(message);
+                        fail("Message delivered too many times!: " + count);
                     }
                 }
-            });
+                catch (JMSException e)
+                {
+                    _logger.error("Error recovering session: " + e, e);
+                    setError(e);
+                }
+
+                synchronized (lock)
+                {
+                    lock.notify();
+                }
+            }
+        });
 
         con.start();
 
@@ -322,10 +302,5 @@ public class RecoverTest extends QpidTestCase
     private void setError(Exception e)
     {
         _error = e;
-    }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(RecoverTest.class);
     }
 }

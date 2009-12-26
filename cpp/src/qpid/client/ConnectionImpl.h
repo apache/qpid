@@ -22,8 +22,9 @@
 #ifndef _ConnectionImpl_
 #define _ConnectionImpl_
 
-#include "Bounds.h"
-#include "ConnectionHandler.h"
+#include "qpid/client/Bounds.h"
+#include "qpid/client/ConnectionHandler.h"
+
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
@@ -39,7 +40,7 @@ namespace qpid {
 namespace client {
 
 class Connector;
-class ConnectionSettings;
+struct ConnectionSettings;
 class SessionImpl;
 
 class ConnectionImpl : public Bounds,
@@ -51,11 +52,16 @@ class ConnectionImpl : public Bounds,
 {
     typedef std::map<uint16_t, boost::weak_ptr<SessionImpl> > SessionMap;
 
+    static const uint16_t NEXT_CHANNEL;
+
     SessionMap sessions; 
     ConnectionHandler handler;
     boost::scoped_ptr<Connector> connector;
     framing::ProtocolVersion version;
+    uint16_t nextChannel;
     sys::Mutex lock;
+
+    boost::intrusive_ptr<qpid::sys::TimerTask> heartbeatTask;
 
     template <class F> void closeInternal(const F&);
 
@@ -65,20 +71,27 @@ class ConnectionImpl : public Bounds,
     void idleIn();
     void shutdown();
 
+    boost::function<void ()> failureCallback;
+
   public:
     ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);
     ~ConnectionImpl();
     
-    void open(const std::string& host, int port);
+    void open();
     bool isOpen() const;
 
-    void addSession(const boost::shared_ptr<SessionImpl>&);
+    boost::shared_ptr<SessionImpl> newSession(const std::string& name, uint32_t timeout, uint16_t channel=NEXT_CHANNEL);
+    void addSession(const boost::shared_ptr<SessionImpl>&, uint16_t channel=NEXT_CHANNEL);
         
     void close();
     void handle(framing::AMQFrame& frame);
     void erase(uint16_t channel);
-
     const ConnectionSettings& getNegotiatedSettings();
+
+    std::vector<Url> getInitialBrokers();
+    void registerFailureCallback ( boost::function<void ()> fn ) { failureCallback = fn; }
+
+    framing::ProtocolVersion getVersion() { return version; }
 };
 
 }}

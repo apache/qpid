@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.protocol.AMQConstant;
@@ -54,8 +55,18 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
 
-        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getMessageStore()
-        );
+        
+        // Protect the broker against out of order frame request.
+        if (virtualHost == null)
+        {
+            throw new AMQException(AMQConstant.COMMAND_INVALID, "Virtualhost has not yet been set. ConnectionOpen has not been called.", null);
+        }
+
+        final AMQChannel channel = new AMQChannel(session,channelId,
+                                                  virtualHost.getMessageStore());
+
+        
+
         session.addChannel(channel);
 
         ChannelOpenOkBody response;
@@ -90,6 +101,30 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
             // should really associate this channelId to the session
             byte[] channelName = output.toByteArray();
             
+            response = methodRegistry.createChannelOpenOkBody(channelName);
+        }
+        else if(pv.equals(ProtocolVersion.v0_91))
+        {
+            MethodRegistry_0_91 methodRegistry = (MethodRegistry_0_91) MethodRegistry.getMethodRegistry(ProtocolVersion.v0_91);
+            UUID uuid = UUID.randomUUID();
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            DataOutputStream dataOut = new DataOutputStream(output);
+            try
+            {
+                dataOut.writeLong(uuid.getMostSignificantBits());
+                dataOut.writeLong(uuid.getLeastSignificantBits());
+                dataOut.flush();
+                dataOut.close();
+            }
+            catch (IOException e)
+            {
+                // This *really* shouldn't happen as we're not doing any I/O
+                throw new RuntimeException("I/O exception when writing to byte array", e);
+            }
+
+            // should really associate this channelId to the session
+            byte[] channelName = output.toByteArray();
+
             response = methodRegistry.createChannelOpenOkBody(channelName);
         }
         else

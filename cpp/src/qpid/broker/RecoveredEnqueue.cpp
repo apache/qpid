@@ -18,12 +18,15 @@
  * under the License.
  *
  */
-#include "RecoveredEnqueue.h"
+#include "qpid/broker/RecoveredEnqueue.h"
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;
 
-RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg) {}
+RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg)
+{
+    queue->recoverPrepared(msg);
+}
 
 bool RecoveredEnqueue::prepare(TransactionContext*) throw(){
     //should never be called; transaction has already prepared if an enqueue is recovered
@@ -36,5 +39,6 @@ void RecoveredEnqueue::commit() throw(){
 }
 
 void RecoveredEnqueue::rollback() throw(){
+    queue->enqueueAborted(msg);
 }
 

@@ -22,11 +22,11 @@
 #define _RecoveryManagerImpl_
 
 #include <list>
-#include "DtxManager.h"
-#include "ExchangeRegistry.h"
-#include "QueueRegistry.h"
-#include "LinkRegistry.h"
-#include "RecoveryManager.h"
+#include "qpid/broker/DtxManager.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/QueueRegistry.h"
+#include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/RecoveryManager.h"
 
 namespace qpid {
 namespace broker {

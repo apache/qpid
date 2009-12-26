@@ -20,14 +20,23 @@
  */
 package org.apache.qpid.transport;
 
+import org.apache.qpid.transport.network.ConnectionBinding;
+import org.apache.qpid.transport.network.io.IoTransport;
 import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.util.Waiter;
+import org.apache.qpid.util.Strings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import java.nio.ByteBuffer;
+import java.util.UUID;
+
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslServer;
+
+import static org.apache.qpid.transport.Connection.State.*;
 
 
 /**
@@ -40,25 +49,220 @@ import java.nio.ByteBuffer;
  * short instead of Short
  */
 
-public class Connection
+public class Connection extends ConnectionInvoker
     implements Receiver<ProtocolEvent>, Sender<ProtocolEvent>
 {
 
     private static final Logger log = Logger.get(Connection.class);
 
-    final private Sender<ProtocolEvent> sender;
-    final private ConnectionDelegate delegate;
+    public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
+
+    class DefaultConnectionListener implements ConnectionListener
+    {
+        public void opened(Connection conn) {}
+        public void exception(Connection conn, ConnectionException exception)
+        {
+            log.error(exception, "connection exception");
+        }
+        public void closed(Connection conn) {}
+    }
+
+    private ConnectionDelegate delegate;
+    private Sender<ProtocolEvent> sender;
+
+    final private Map<Binary,Session> sessions = new HashMap<Binary,Session>();
+    final private Map<Integer,Session> channels = new HashMap<Integer,Session>();
+
+    private State state = NEW;
+    final private Object lock = new Object();
+    private long timeout = 60000;
+    private ConnectionListener listener = new DefaultConnectionListener();
+    private ConnectionException error = null;
+
     private int channelMax = 1;
+    private String locale;
+    private SaslServer saslServer;
+    private SaslClient saslClient;
+    private long idleTimeout = 0;
+    private String _authorizationID;
+
     // want to make this final
     private int _connectionId;
 
-    final private Map<Integer,Channel> channels = new HashMap<Integer,Channel>();
+    public Connection() {}
 
-    public Connection(Sender<ProtocolEvent> sender,
-                      ConnectionDelegate delegate)
+    public void setConnectionDelegate(ConnectionDelegate delegate)
+    {
+        this.delegate = delegate;
+    }
+
+    public void setConnectionListener(ConnectionListener listener)
+    {
+        if (listener == null)
+        {
+            this.listener = new DefaultConnectionListener();
+        }
+        else
+        {
+            this.listener = listener;
+        }
+    }
+
+    public Sender<ProtocolEvent> getSender()
+    {
+        return sender;
+    }
+
+    public void setSender(Sender<ProtocolEvent> sender)
     {
         this.sender = sender;
-        this.delegate = delegate;
+        sender.setIdleTimeout(idleTimeout);         
+    }
+
+    protected void setState(State state)
+    {
+        synchronized (lock)
+        {
+            this.state = state;
+            lock.notifyAll();
+        }
+    }
+
+    void setLocale(String locale)
+    {
+        this.locale = locale;
+    }
+
+    String getLocale()
+    {
+        return locale;
+    }
+
+    void setSaslServer(SaslServer saslServer)
+    {
+        this.saslServer = saslServer;
+    }
+
+    SaslServer getSaslServer()
+    {
+        return saslServer;
+    }
+
+    void setSaslClient(SaslClient saslClient)
+    {
+        this.saslClient = saslClient;
+    }
+
+    SaslClient getSaslClient()
+    {
+        return saslClient;
+    }
+
+    public void connect(String host, int port, String vhost, String username, String password)
+    {
+        connect(host, port, vhost, username, password, false);
+    }
+    
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl)
+    {
+        connect(host, port, vhost, username, password, ssl,"PLAIN");
+    }
+
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs)
+    {
+        synchronized (lock)
+        {
+            state = OPENING;
+
+            delegate = new ClientDelegate(vhost, username, password,saslMechs);
+
+            IoTransport.connect(host, port, ConnectionBinding.get(this), ssl);
+            send(new ProtocolHeader(1, 0, 10));
+
+            Waiter w = new Waiter(lock, timeout);
+            while (w.hasTime() && state == OPENING && error == null)
+            {
+                w.await();
+            }
+
+            if (error != null)
+            {
+                ConnectionException t = error;
+                error = null;
+                try
+                {
+                    close();
+                }
+                catch (ConnectionException ce)
+                {
+                    if (!(t instanceof ProtocolVersionException))
+                    {
+                        throw ce;
+                    }
+                }
+                t.rethrow();
+            }
+
+            switch (state)
+            {
+            case OPENING:
+                close();
+                throw new ConnectionException("connect() timed out");
+            case OPEN:
+                break;
+            case CLOSED:
+                throw new ConnectionException("connect() aborted");
+            default:
+                throw new IllegalStateException(String.valueOf(state));
+            }
+        }
+
+        listener.opened(this);
+    }
+
+    public Session createSession()
+    {
+        return createSession(0);
+    }
+
+    public Session createSession(long expiry)
+    {
+        return createSession(UUID.randomUUID().toString(), expiry);
+    }
+
+    public Session createSession(String name)
+    {
+        return createSession(name, 0);
+    }
+
+    public Session createSession(String name, long expiry)
+    {
+        return createSession(Strings.toUTF8(name), expiry);
+    }
+
+    public Session createSession(byte[] name, long expiry)
+    {
+        return createSession(new Binary(name), expiry);
+    }
+
+    public Session createSession(Binary name, long expiry)
+    {
+        synchronized (lock)
+        {
+            Session ssn = new Session(this, name, expiry);
+            sessions.put(name, ssn);
+            map(ssn);
+            ssn.attach();
+            return ssn;
+        }
+    }
+
+    void removeSession(Session ssn)
+    {
+        synchronized (lock)
+        {
+            sessions.remove(ssn.getName());
+        }
     }
 
     public void setConnectionId(int id)
@@ -79,20 +283,48 @@ public class Connection
     public void received(ProtocolEvent event)
     {
         log.debug("RECV: [%s] %s", this, event);
-        Channel channel = getChannel(event.getChannel());
-        channel.received(event);
+        event.delegate(this, delegate);
     }
 
     public void send(ProtocolEvent event)
     {
         log.debug("SEND: [%s] %s", this, event);
-        sender.send(event);
+        Sender s = sender;
+        if (s == null)
+        {
+            throw new ConnectionException("connection closed");
+        }
+        s.send(event);
     }
 
     public void flush()
     {
         log.debug("FLUSH: [%s]", this);
         sender.flush();
+    }
+
+    protected void invoke(Method method)
+    {
+        method.setChannel(0);
+        send(method);
+        if (!method.isBatch())
+        {
+            flush();
+        }
+    }
+
+    public void dispatch(Method method)
+    {
+        Session ssn = getSession(method.getChannel());
+        if(ssn != null)
+        {
+            ssn.received(method);
+        }
+        else
+        {
+            throw new ProtocolViolationException(
+					"Received frames for an already dettached session", null);
+        }
     }
 
     public int getChannelMax()
@@ -105,15 +337,16 @@ public class Connection
         channelMax = max;
     }
 
-    public Channel getChannel()
+    private int map(Session ssn)
     {
-        synchronized (channels)
+        synchronized (lock)
         {
             for (int i = 0; i < getChannelMax(); i++)
             {
                 if (!channels.containsKey(i))
                 {
-                    return getChannel(i);
+                    map(ssn, i);
+                    return i;
                 }
             }
 
@@ -121,61 +354,195 @@ public class Connection
         }
     }
 
-    public Channel getChannel(int number)
+    void map(Session ssn, int channel)
     {
-        synchronized (channels)
+        synchronized (lock)
         {
-            Channel channel = channels.get(number);
-            if (channel == null)
-            {
-                channel = new Channel(this, number, delegate.getSessionDelegate());
-                channels.put(number, channel);
-            }
-            return channel;
+            channels.put(channel, ssn);
+            ssn.setChannel(channel);
         }
     }
 
-    void removeChannel(int number)
+    void unmap(Session ssn)
     {
-        synchronized (channels)
+        synchronized (lock)
         {
-            channels.remove(number);
+            channels.remove(ssn.getChannel());
         }
+    }
+
+    Session getSession(int channel)
+    {
+        synchronized (lock)
+        {
+            return channels.get(channel);
+        }
+    }
+
+    public void resume()
+    {
+        synchronized (lock)
+        {
+            for (Session ssn : sessions.values())
+            {
+                map(ssn);
+                ssn.attach();
+                ssn.resume();
+            }
+        }
+    }
+
+    public void exception(ConnectionException e)
+    {
+        synchronized (lock)
+        {
+            switch (state)
+            {
+            case OPENING:
+            case CLOSING:
+                error = e;
+                lock.notifyAll();
+                return;
+            }
+        }
+
+        listener.exception(this, e);
     }
 
     public void exception(Throwable t)
     {
-        delegate.exception(t);
+        exception(new ConnectionException(t));
     }
 
     void closeCode(ConnectionClose close)
     {
-        synchronized (channels)
+        synchronized (lock)
         {
-            for (Channel ch : channels.values())
+            for (Session ssn : channels.values())
             {
-                ch.closeCode(close);
+                ssn.closeCode(close);
+            }
+            ConnectionCloseCode code = close.getReplyCode();
+            if (code != ConnectionCloseCode.NORMAL)
+            {
+                exception(new ConnectionException(close));
             }
         }
     }
 
     public void closed()
     {
-        log.debug("connection closed: %s", this);
-        synchronized (channels)
+        if (state == OPEN)
         {
-            List<Channel> values = new ArrayList<Channel>(channels.values());
-            for (Channel ch : values)
-            {
-                ch.closed();
-            }
+            exception(new ConnectionException("connection aborted"));
         }
-        delegate.closed();
+
+        log.debug("connection closed: %s", this);
+
+        synchronized (lock)
+        {
+            List<Session> values = new ArrayList<Session>(channels.values());
+            for (Session ssn : values)
+            {
+                ssn.closed();
+            }
+
+            try
+            {
+                sender.close();
+            }
+            catch(Exception e)
+            {
+                // ignore.
+            }
+            sender = null;
+            setState(CLOSED);
+        }
+
+        listener.closed(this);
     }
 
     public void close()
     {
-        sender.close();
+        synchronized (lock)
+        {
+            switch (state)
+            {
+            case OPEN:
+                state = CLOSING;
+                connectionClose(ConnectionCloseCode.NORMAL, null);
+                Waiter w = new Waiter(lock, timeout);
+                while (w.hasTime() && state == CLOSING && error == null)
+                {
+                    w.await();
+                }
+
+                if (error != null)
+                {
+                    close();
+                    throw new ConnectionException(error);
+                }
+
+                switch (state)
+                {
+                case CLOSING:
+                    close();
+                    throw new ConnectionException("close() timed out");
+                case CLOSED:
+                    break;
+                default:
+                    throw new IllegalStateException(String.valueOf(state));
+                }
+                break;
+            case CLOSED:
+                break;
+            default:
+                if (sender != null)
+                {
+                    sender.close();
+                    w = new Waiter(lock, timeout);
+                    while (w.hasTime() && sender != null && error == null)
+                    {
+                        w.await();
+                    }
+
+                    if (error != null)
+                    {
+                        throw new ConnectionException(error);
+                    }
+
+                    if (sender != null)
+                    {
+                        throw new ConnectionException("close() timed out");
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    public void setIdleTimeout(long l)
+    {
+        idleTimeout = l;       
+        if (sender != null)
+        {            
+            sender.setIdleTimeout(l);    
+        }
+    }
+    
+    public long getIdleTimeout()
+    {
+        return idleTimeout;
+    }
+
+    public void setAuthorizationID(String authorizationID)
+    {
+        _authorizationID = authorizationID;
+    }
+
+    public String getAuthorizationID()
+    {
+        return _authorizationID;
     }
 
     public String toString()

@@ -18,192 +18,46 @@
  * under the License.
  *
  */
-#include "qpid/broker/Broker.h"
-#include "qpid/broker/SignalHandler.h"
-#include "qpid/sys/posix/check.h"
-#include "qpid/broker/Daemon.h"
-#include "qpid/log/Statement.h"
-#include "qpid/log/Options.h"
-#include "qpid/log/Logger.h"
+
+#include "./qpidd.h"
 #include "qpid/Plugin.h"
-#include "qpid/sys/Shlib.h"
-#include "config.h"
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include "qpid/Version.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Statement.h"
+
 #include <iostream>
-#include <fstream>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/utsname.h>
-
-using namespace qpid;
-using namespace qpid::broker;
-using namespace qpid::sys;
-using namespace qpid::log;
+#include <memory>
 using namespace std;
-namespace fs=boost::filesystem;
-
-struct ModuleOptions : public qpid::Options {
-    string         loadDir;
-    vector<string> load;
-    bool           noLoad;
-    ModuleOptions() : qpid::Options("Module options"), loadDir("/usr/lib/qpidd"), noLoad(false)
-    {
-        struct utsname _uname;
-        if (::uname(&_uname) == 0) {
-            if (string(_uname.machine) == "x86_64")
-                loadDir = "/usr/lib64/qpidd";
-        }
-
-        addOptions()
-            ("module-dir",    optValue(loadDir, "DIR"),  "Load all .so modules in this directory")
-            ("load-module",   optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
-            ("no-module-dir", optValue(noLoad),          "Don't load modules from module directory");
-    }
-};
-
-
-struct DaemonOptions : public qpid::Options {
-    bool daemon;
-    bool quit;
-    bool check;
-    int wait;
-    std::string piddir;
-
-    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10)
-    {
-        char *home = ::getenv("HOME");
-
-        if (home == 0)
-            piddir += "/tmp";
-        else
-            piddir += home;
-        piddir += "/.qpidd";
-
-        addOptions()
-            ("daemon,d", optValue(daemon), "Run as a daemon. --log-output defaults to syslog in this mode.")
-            ("pid-dir", optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
-            ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize the daemon. If the daemon fails to initialize, prints an error and returns 1")
-            ("check,c", optValue(check), "Prints the daemon's process ID to stdout and returns 0 if the daemon is running, otherwise returns 1")
-            ("quit,q", optValue(quit), "Tells the daemon to shut down");
-    }
-};
-
-
-struct QpiddOptions : public qpid::Options {
-    CommonOptions common;
-    ModuleOptions module;
-    Broker::Options broker;
-    DaemonOptions daemon;
-    qpid::log::Options log;
-    
-    QpiddOptions(const char* argv0) : qpid::Options("Options"), common("", "/etc/qpidd.conf"), log(argv0) {
-        add(common);
-        add(module);
-        add(broker);
-        add(daemon);
-        add(log);
-        Plugin::addOptions(*this);
-    }
-
-    void usage() const {
-        cout << "Usage: qpidd [OPTIONS]" << endl << endl << *this << endl;
-    };
-};
-
-// BootstrapOptions is a minimal subset of options used for a pre-parse
-// of the command line to discover which plugin modules need to be loaded.
-// The pre-parse is necessary because plugin modules may supply their own
-// set of options.  CommonOptions is needed to properly support loading
-// from a configuration file.
-struct BootstrapOptions : public qpid::Options {
-    CommonOptions common;
-    ModuleOptions module;
-    qpid::log::Options log;     
-
-    BootstrapOptions(const char* argv0) : qpid::Options("Options"), common("", "/etc/qpidd.conf"), log(argv0) {
-        add(common);
-        add(module);
-        add(log);
-    }
-};
 
 auto_ptr<QpiddOptions> options;
-
-struct QpiddDaemon : public Daemon {
-    QpiddDaemon(std::string pidDir) : Daemon(pidDir) {}
-
-    /** Code for parent process */
-    void parent() {
-        uint16_t port = wait(options->daemon.wait);
-        if (options->broker.port == 0)
-            cout << port << endl; 
-    }
-
-    /** Code for forked child process */
-    void child() {
-        boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
-        broker::SignalHandler::setBroker(brokerPtr);
-        uint16_t port=brokerPtr->getPort();
-        ready(port);            // Notify parent.
-        brokerPtr->run();
-    }
-};
-
-void tryShlib(const char* libname, bool noThrow) {
-    try {
-        Shlib shlib(libname);
-        QPID_LOG (info, "Loaded Module: " << libname);
-    }
-    catch (const exception& e) {
-        if (!noThrow)
-            throw;
-    }
-}
-
-void loadModuleDir (string dirname, bool isDefault)
-{
-    fs::path dirPath (dirname, fs::native);
-
-    if (!fs::exists (dirPath))
-    {
-        if (isDefault)
-            return;
-        throw Exception ("Directory not found: " + dirname);
-    }
-
-    fs::directory_iterator endItr;
-    for (fs::directory_iterator itr (dirPath); itr != endItr; ++itr)
-    {
-        if (!fs::is_directory(*itr) &&
-            itr->string().find (".so") == itr->string().length() - 3)
-            tryShlib (itr->string().data(), true);
-    }
-}
-  
 
 int main(int argc, char* argv[])
 {
     try
     {
-        {
-            BootstrapOptions bootOptions(argv[0]);
-            string           defaultPath (bootOptions.module.loadDir);
-            // Parse only the common, load, and log options to see which modules need
-            // to be loaded.  Once the modules are loaded, the command line will
-            // be re-parsed with all of the module-supplied options.
+        BootstrapOptions bootOptions(argv[0]);
+        string           defaultPath (bootOptions.module.loadDir);
+        // Parse only the common, load, and log options to see which
+        // modules need to be loaded.  Once the modules are loaded,
+        // the command line will be re-parsed with all of the
+        // module-supplied options.
+        try {
             bootOptions.parse (argc, argv, bootOptions.common.config, true);
             qpid::log::Logger::instance().configure(bootOptions.log);
+        } catch (const std::exception& e) {
+            // Couldn't configure logging so write the message direct to stderr.
+            cerr << "Unexpected error: " << e.what() << endl;
+            return 1;
+        }
 
-            for (vector<string>::iterator iter = bootOptions.module.load.begin();
-                 iter != bootOptions.module.load.end();
-                 iter++)
-                tryShlib (iter->data(), false);
+        for (vector<string>::iterator iter = bootOptions.module.load.begin();
+             iter != bootOptions.module.load.end();
+             iter++)
+            qpid::tryShlib (iter->data(), false);
 
-            if (!bootOptions.module.noLoad) {
-                bool isDefault = defaultPath == bootOptions.module.loadDir;
-                loadModuleDir (bootOptions.module.loadDir, isDefault);
-            }
+        if (!bootOptions.module.noLoad) {
+            bool isDefault = defaultPath == bootOptions.module.loadDir;
+            qpid::loadModuleDir (bootOptions.module.loadDir, isDefault);
         }
 
         // Parse options
@@ -211,49 +65,22 @@ int main(int argc, char* argv[])
         options->parse(argc, argv, options->common.config);
 
         // Options that just print information.
-        if(options->common.help || options->common.version) {
+        if (options->common.help || options->common.version) {
             if (options->common.version) 
-                cout << "qpidd (" << PACKAGE_NAME << ") version "
-                     << PACKAGE_VERSION << endl;
+                cout << "qpidd (" << qpid::product << ") version "
+                     << qpid::version << endl;
             else if (options->common.help)
                 options->usage();
             return 0;
         }
 
-        // Options that affect a running daemon.
-        if (options->daemon.check || options->daemon.quit) {
-            pid_t pid = Daemon::getPid(options->daemon.piddir, options->broker.port);
-            if (pid < 0) 
-                return 1;
-            if (options->daemon.check)
-                cout << pid << endl;
-            if (options->daemon.quit && kill(pid, SIGINT) < 0)
-                throw Exception("Failed to stop daemon: " + strError(errno));
-            return 0;
-        }
-
-        // Starting the broker.
-        if (options->daemon.daemon) {
-            // For daemon mode replace default stderr with syslog.
-            if (options->log.outputs.size() == 1 && options->log.outputs[0] == "stderr") {
-                options->log.outputs[0] = "syslog";
-                qpid::log::Logger::instance().configure(options->log);
-            }
-            // Fork the daemon
-            QpiddDaemon d(options->daemon.piddir);
-            d.fork();           // Broker is stared in QpiddDaemon::child()
-        } 
-        else {                  // Non-daemon broker.
-            boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
-            broker::SignalHandler::setBroker(brokerPtr);
-            if (options->broker.port == 0)
-                cout << uint16_t(brokerPtr->getPort()) << endl; 
-            brokerPtr->run();
-        }
-        return 0;
+        // Everything else is driven by the platform-specific broker
+        // logic.
+        QpiddBroker broker;
+        return broker.execute(options.get());
     }
     catch(const exception& e) {
-        cerr << e.what() << endl;
+        QPID_LOG(critical, "Unexpected error: " << e.what());
     }
     return 1;
 }

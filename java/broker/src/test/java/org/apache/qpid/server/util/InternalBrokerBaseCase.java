@@ -21,42 +21,49 @@
 package org.apache.qpid.server.util;
 
 import junit.framework.TestCase;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.ConsumerTagNotUniqueException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.util.MockChannel;
+
 
 public class InternalBrokerBaseCase extends TestCase
 {
     protected IApplicationRegistry _registry;
     protected MessageStore _messageStore;
-    protected AMQChannel _channel;
+    protected MockChannel _channel;
     protected InternalTestProtocolSession _session;
     protected VirtualHost _virtualHost;
-    protected StoreContext _storeContext = new StoreContext();
     protected AMQQueue _queue;
     protected AMQShortString QUEUE_NAME;
 
     public void setUp() throws Exception
     {
         super.setUp();
-        _registry = new TestApplicationRegistry();
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+        _registry = new TestApplicationRegistry(new ServerConfiguration(configuration));
         ApplicationRegistry.initialise(_registry);
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
+
         _messageStore = _virtualHost.getMessageStore();
 
         QUEUE_NAME = new AMQShortString("test");
@@ -69,24 +76,24 @@ public class InternalBrokerBaseCase extends TestCase
 
         _queue.bind(defaultExchange, QUEUE_NAME, null);
 
-        _session = new InternalTestProtocolSession();
+        _session = new InternalTestProtocolSession(_virtualHost);
+        CurrentActor.set(_session.getLogActor());
 
-        _session.setVirtualHost(_virtualHost);
-
-        _channel = new AMQChannel(_session, 1, _messageStore);
+        _channel = new MockChannel(_session, 1, _messageStore);
 
         _session.addChannel(_channel);
     }
 
     public void tearDown() throws Exception
     {
-        ApplicationRegistry.removeAll();
+        CurrentActor.remove();
+        ApplicationRegistry.remove();
         super.tearDown();
     }
 
     protected void checkStoreContents(int messageCount)
     {
-        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageMetaDataMap().size());
+        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageCount());
 
         //The above publish message is sufficiently small not to fit in the header so no Body is required.
         //assertEquals("Message body count incorrect in the ContentBodyMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getContentBodyMap().size());
@@ -103,11 +110,26 @@ public class InternalBrokerBaseCase extends TestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
-        catch (ConsumerTagNotUniqueException e)
+
+        //Keep the compiler happy
+        return null;
+    }
+
+    protected AMQShortString browse(AMQChannel channel, AMQQueue queue)
+    {
+        try
+        {
+            FieldTable filters = new FieldTable();
+            filters.put(AMQPFilterTypes.NO_CONSUME.getValue(), true);
+
+            return channel.subscribeToQueue(null, queue, true, filters, false, true);
+        }
+        catch (AMQException e)
         {
             e.printStackTrace();
             fail(e.getMessage());
         }
+
         //Keep the compiler happy
         return null;
     }
@@ -144,7 +166,7 @@ public class InternalBrokerBaseCase extends TestCase
 
         for (int count = 0; count < messages; count++)
         {
-            channel.setPublishFrame(info,  _virtualHost.getExchangeRegistry().getExchange(info.getExchange()));
+            channel.setPublishFrame(info, _virtualHost.getExchangeRegistry().getExchange(info.getExchange()));
 
             //Set the body size
             ContentHeaderBody _headerBody = new ContentHeaderBody();

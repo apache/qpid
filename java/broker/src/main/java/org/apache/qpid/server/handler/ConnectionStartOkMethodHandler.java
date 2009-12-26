@@ -23,18 +23,19 @@ package org.apache.qpid.server.handler;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ConnectionSecureBody;
+import org.apache.qpid.framing.ConnectionStartOkBody;
+import org.apache.qpid.framing.ConnectionTuneBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.HeartbeatConfig;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -46,8 +47,6 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     private static final Logger _logger = Logger.getLogger(ConnectionStartOkMethodHandler.class);
 
     private static ConnectionStartOkMethodHandler _instance = new ConnectionStartOkMethodHandler();
-
-    private static final int DEFAULT_FRAME_SIZE = 65536;
 
     public static ConnectionStartOkMethodHandler getInstance()
     {
@@ -117,7 +116,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(0xFFFF,
                                                                                           getConfiguredFrameSize(),
-                                                                                          HeartbeatConfig.getInstance().getDelay());
+                                                                                          ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:
@@ -153,8 +152,8 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
     static int getConfiguredFrameSize()
     {
-        final Configuration config = ApplicationRegistry.getInstance().getConfiguration();
-        final int framesize = config.getInt("advanced.framesize", DEFAULT_FRAME_SIZE);
+        final ServerConfiguration config = ApplicationRegistry.getInstance().getConfiguration();
+        final int framesize = config.getFrameSize();
         _logger.info("Framesize set to " + framesize);
         return framesize;
     }

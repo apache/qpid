@@ -18,9 +18,11 @@
  * under the License.
  *
  */
-#include "FieldTable.h"
-#include "Buffer.h"
-#include "FieldValue.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/Array.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/Endian.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
 #include <assert.h>
@@ -28,13 +30,25 @@
 namespace qpid {
 namespace framing {
 
+FieldTable::FieldTable(const FieldTable& ft)
+{
+  *this = ft;
+}
+
+FieldTable& FieldTable::operator=(const FieldTable& ft)
+{
+  clear();
+  values = ft.values;
+  return *this;
+}
+
 FieldTable::~FieldTable() {}
 
-uint32_t FieldTable::size() const {
+uint32_t FieldTable::encodedSize() const {
     uint32_t len(4/*size field*/ + 4/*count field*/);
     for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
         // shortstr_len_byte + key size + value size
-	len += 1 + (i->first).size() + (i->second)->size();
+	len += 1 + (i->first).size() + (i->second)->encodedSize();
     }
     return len;
 }
@@ -69,16 +83,37 @@ void FieldTable::setString(const std::string& name, const std::string& value){
     values[name] = ValuePtr(new Str16Value(value));
 }
 
-void FieldTable::setInt(const std::string& name, int value){
+void FieldTable::setInt(const std::string& name, const int value){
     values[name] = ValuePtr(new IntegerValue(value));
 }
 
-void FieldTable::setTimestamp(const std::string& name, uint64_t value){
+void FieldTable::setInt64(const std::string& name, const int64_t value){
+    values[name] = ValuePtr(new Integer64Value(value));
+}
+
+void FieldTable::setTimestamp(const std::string& name, const uint64_t value){
     values[name] = ValuePtr(new TimeValue(value));
 }
 
-void FieldTable::setTable(const std::string& name, const FieldTable& value){
+void FieldTable::setUInt64(const std::string& name, const uint64_t value){
+    values[name] = ValuePtr(new Unsigned64Value(value));
+}
+
+void FieldTable::setTable(const std::string& name, const FieldTable& value)
+{
     values[name] = ValuePtr(new FieldTableValue(value));
+}
+void FieldTable::setArray(const std::string& name, const Array& value)
+{
+    values[name] = ValuePtr(new ArrayValue(value));
+}
+
+void FieldTable::setFloat(const std::string& name, const float value){
+    values[name] = ValuePtr(new FloatValue(value));
+}
+
+void FieldTable::setDouble(const std::string& name, double value){
+    values[name] = ValuePtr(new DoubleValue(value));
 }
 
 FieldTable::ValuePtr FieldTable::get(const std::string& name) const
@@ -105,24 +140,54 @@ T getValue(const FieldTable::ValuePtr value)
     return value->get<T>();
 }
 
-std::string FieldTable::getString(const std::string& name) const {
+std::string FieldTable::getAsString(const std::string& name) const {
     return getValue<std::string>(get(name));
 }
 
-int FieldTable::getInt(const std::string& name) const {
+int FieldTable::getAsInt(const std::string& name) const {
     return getValue<int>(get(name));
+}
+
+uint64_t FieldTable::getAsUInt64(const std::string& name) const {
+    return static_cast<uint64_t>( getValue<int64_t>(get(name)));
+}
+
+int64_t FieldTable::getAsInt64(const std::string& name) const {
+    return getValue<int64_t>(get(name));
+}
+
+bool FieldTable::getTable(const std::string& name, FieldTable& value) const {
+    return getEncodedValue<FieldTable>(get(name), value);
+}
+
+bool FieldTable::getArray(const std::string& name, Array& value) const {
+    return getEncodedValue<Array>(get(name), value);
+}
+
+template <class T, int width, uint8_t typecode>
+bool getRawFixedWidthValue(FieldTable::ValuePtr vptr, T& value) 
+{
+    if (vptr && vptr->getType() == typecode) {
+        value = vptr->get<T>();
+        return true;
+    }
+    return false;
+}
+
+bool FieldTable::getFloat(const std::string& name, float& value) const {    
+    return getRawFixedWidthValue<float, 4, 0x23>(get(name), value);
+}
+
+bool FieldTable::getDouble(const std::string& name, double& value) const {    
+    return getRawFixedWidthValue<double, 8, 0x33>(get(name), value);
 }
 
 //uint64_t FieldTable::getTimestamp(const std::string& name) const {
 //    return getValue<uint64_t>(name);
 //}
-//
-//void FieldTable::getTable(const std::string& name, FieldTable& value) const {
-//    value = getValue<FieldTable>(name);
-//}
 
-void FieldTable::encode(Buffer& buffer) const{    
-    buffer.putLong(size() - 4);
+void FieldTable::encode(Buffer& buffer) const {
+    buffer.putLong(encodedSize() - 4);
     buffer.putLong(values.size());
     for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
         buffer.putShortString(i->first);
@@ -131,11 +196,12 @@ void FieldTable::encode(Buffer& buffer) const{
 }
 
 void FieldTable::decode(Buffer& buffer){
+    clear();
     uint32_t len = buffer.getLong();
     if (len) {
         uint32_t available = buffer.available();
         if (available < len)
-            throw IllegalArgumentException(QPID_MSG("Not enough data for  field table."));
+            throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
         uint32_t count = buffer.getLong();
         uint32_t leftover = available - len;
         while(buffer.available() > leftover && count--){
@@ -149,7 +215,6 @@ void FieldTable::decode(Buffer& buffer){
     }
 }
 
-
 bool FieldTable::operator==(const FieldTable& x) const {
     if (values.size() != x.values.size()) return false;
     for (ValueMap::const_iterator i =  values.begin(); i != values.end(); ++i) {
@@ -160,10 +225,22 @@ bool FieldTable::operator==(const FieldTable& x) const {
     return true;
 }
 
-//void FieldTable::erase(const std::string& name) 
-//{
-//    values.erase(values.find(name));
-//}
+void FieldTable::erase(const std::string& name) 
+{
+    if (values.find(name) != values.end()) 
+        values.erase(name);
+}
+
+std::pair<FieldTable::ValueMap::iterator, bool> FieldTable::insert(const ValueMap::value_type& value)
+{
+    return values.insert(value);
+}
+
+FieldTable::ValueMap::iterator FieldTable::insert(ValueMap::iterator position, const ValueMap::value_type& value)
+{
+    return values.insert(position, value);
+}
+
 
 }
 }

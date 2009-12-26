@@ -17,7 +17,26 @@
 # under the License.
 #
 
-import os, socket, time, textwrap
+import os, socket, time, textwrap, re
+
+try:
+  from ssl import wrap_socket as ssl
+except ImportError:
+  from socket import ssl as wrap_socket
+  class ssl:
+
+    def __init__(self, sock):
+      self.sock = sock
+      self.ssl = wrap_socket(sock)
+
+    def recv(self, n):
+      return self.ssl.read(n)
+
+    def send(self, s):
+      return self.ssl.write(s)
+
+    def close(self):
+      self.sock.close()
 
 def connect(host, port):
   sock = socket.socket()
@@ -32,8 +51,8 @@ def listen(host, port, predicate = lambda: True, bound = lambda: None):
   sock = socket.socket()
   sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   sock.bind((host, port))
-  bound()
   sock.listen(5)
+  bound()
   while predicate():
     s, a = sock.accept()
     yield s
@@ -48,7 +67,9 @@ def wait(condition, predicate, timeout=None):
     start = time.time()
     while not predicate():
       if timeout is None:
-        condition.wait()
+        # using the timed wait prevents keyboard interrupts from being
+        # blocked while waiting
+        condition.wait(3)
       elif passed < timeout:
         condition.wait(timeout - passed)
       else:
@@ -76,3 +97,46 @@ def fill(text, indent, heading = None):
     init = sub
   w = textwrap.TextWrapper(initial_indent = init, subsequent_indent = sub)
   return w.fill(" ".join(text.split()))
+
+class URL:
+
+  RE = re.compile(r"""
+        # [   <scheme>://  ] [    <user>   [   / <password>   ] @]   <host>   [   :<port>   ]
+        ^ (?: ([^:/@]+)://)? (?: ([^:/@]+) (?: / ([^:/@]+)   )? @)? ([^@:/]+) (?: :([0-9]+))?$
+""", re.X)
+
+  AMQPS = "amqps"
+  AMQP = "amqp"
+
+  def __init__(self, s):
+    match = URL.RE.match(s)
+    if match is None:
+      raise ValueError(s)
+    self.scheme, self.user, self.password, self.host, port = match.groups()
+    if port is None:
+      self.port = None
+    else:
+      self.port = int(port)
+
+  def __repr__(self):
+    return "URL(%r)" % str(self)
+
+  def __str__(self):
+    s = ""
+    if self.scheme:
+      s += "%s://" % self.scheme
+    if self.user:
+      s += self.user
+      if self.password:
+        s += "/%s" % self.password
+      s += "@"
+    s += self.host
+    if self.port:
+      s += ":%s" % self.port
+    return s
+
+def default(value, default):
+  if value is None:
+    return default
+  else:
+    return value

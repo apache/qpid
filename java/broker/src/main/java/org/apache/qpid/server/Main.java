@@ -20,6 +20,18 @@
  */
 package org.apache.qpid.server;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.Properties;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Collection;
+import java.util.Arrays;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -27,36 +39,32 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoAcceptor;
-import org.apache.mina.common.FixedSizeByteBufferAllocator;
-import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
-import org.apache.mina.transport.socket.nio.SocketSessionConfig;
-import org.apache.qpid.AMQException;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.QpidLog4JConfigurator;
+import org.apache.qpid.transport.network.ConnectionBinding;
+import org.apache.qpid.transport.*;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.pool.ReadWriteThreadModel;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.management.JMXManagedObjectRegistry;
-import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
-import org.apache.qpid.server.protocol.AMQPProtocolProvider;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.information.management.ServerInformationMBean;
+import org.apache.qpid.server.logging.StartupRootMessageLogger;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.management.LoggingManagementMBean;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.protocol.AMQProtocolEngineFactory;
+import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.transport.ConnectorConfiguration;
-import org.apache.qpid.url.URLSyntaxException;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.List;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.transport.QpidAcceptor;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.network.mina.MINANetworkDriver;
+import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
 
 /**
  * Main entry point for AMQPD.
@@ -65,16 +73,17 @@ import java.util.List;
 @SuppressWarnings({"AccessStaticViaInstance"})
 public class Main
 {
-    private static final Logger _logger = Logger.getLogger(Main.class);
-    public static final Logger _brokerLogger = Logger.getLogger("Qpid.Broker");
+    private static Logger _logger;
+    private static Logger _brokerLogger;
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
-    private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
+    public static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
     private static final int IPV4_ADDRESS_LENGTH = 4;
 
     private static final char IPV4_LITERAL_SEPARATOR = '.';
+    private static final Collection<VERSION> ALL_VERSIONS = Arrays.asList(VERSION.values());
 
     protected static class InitException extends Exception
     {
@@ -125,6 +134,30 @@ public class Main
                 OptionBuilder.withArgName("port").hasArg()
                         .withDescription("listen on the specified port. Overrides any value in the config file")
                         .withLongOpt("port").create("p");
+
+        Option exclude0_10 =
+                OptionBuilder.withArgName("exclude-0-10").hasArg()
+                        .withDescription("when listening on the specified port do not accept AMQP0-10 connections. The specified port must be one specified on the command line")
+                        .withLongOpt("exclude-0-10").create();
+
+        Option exclude0_9_1 =
+                OptionBuilder.withArgName("exclude-0-9-1").hasArg()
+                        .withDescription("when listening on the specified port do not accept AMQP0-9-1 connections. The specified port must be one specified on the command line")
+                        .withLongOpt("exclude-0-9-1").create();
+
+
+        Option exclude0_9 =
+                OptionBuilder.withArgName("exclude-0-9").hasArg()
+                        .withDescription("when listening on the specified port do not accept AMQP0-9 connections. The specified port must be one specified on the command line")
+                        .withLongOpt("exclude-0-9").create();
+
+
+        Option exclude0_8 =
+                OptionBuilder.withArgName("exclude-0-8").hasArg()
+                        .withDescription("when listening on the specified port do not accept AMQP0-8 connections. The specified port must be one specified on the command line")
+                        .withLongOpt("exclude-0-8").create();
+
+
         Option mport =
                 OptionBuilder.withArgName("mport").hasArg()
                         .withDescription("listen on the specified management port. Overrides any value in the config file")
@@ -151,6 +184,10 @@ public class Main
         options.addOption(logconfig);
         options.addOption(logwatchconfig);
         options.addOption(port);
+        options.addOption(exclude0_10);
+        options.addOption(exclude0_9_1);
+        options.addOption(exclude0_9);
+        options.addOption(exclude0_8);
         options.addOption(mport);
         options.addOption(bind);
     }
@@ -192,30 +229,33 @@ public class Main
         {
             try
             {
+                CurrentActor.set(new BrokerActor(new StartupRootMessageLogger()));
                 startup();
+                CurrentActor.remove();
             }
             catch (InitException e)
             {
-                System.out.println(e.getMessage());
+                System.out.println("Initialisation Error : " + e.getMessage());
                 _brokerLogger.error("Initialisation Error : " + e.getMessage());
-
+                shutdown(1);
             }
-            catch (ConfigurationException e)
+            catch (Throwable e)
             {
-                System.out.println("Error configuring message broker: " + e);
-                _brokerLogger.error("Error configuring message broker: " + e);
+                System.out.println("Error initialising message broker: " + e);
+                _brokerLogger.error("Error initialising message broker: " + e);
                 e.printStackTrace();
-            }
-            catch (Exception e)
-            {
-                System.out.println("Error intialising message broker: " + e);
-                _brokerLogger.error("Error intialising message broker: " + e);
-                e.printStackTrace();
+                shutdown(1);
             }
         }
     }
 
-    protected void startup() throws InitException, ConfigurationException, Exception
+    protected void shutdown(int status)
+    {
+        ApplicationRegistry.removeAll();
+        System.exit(status);
+    }
+
+    protected void startup() throws Exception
     {
         final String QpidHome = System.getProperty(QPID_HOME);
         final File defaultConfigFile = new File(QpidHome, DEFAULT_CONFIG_FILE);
@@ -233,94 +273,235 @@ public class Main
         }
         else
         {
-            System.out.println("Using configuration file " + configFile.getAbsolutePath());
+            CurrentActor.get().message(BrokerMessages.BRK_CONFIG(configFile.getAbsolutePath()));
         }
 
         String logConfig = commandLine.getOptionValue("l");
         String logWatchConfig = commandLine.getOptionValue("w", "0");
+
+        int logWatchTime = 0;
+        try
+        {
+            logWatchTime = Integer.parseInt(logWatchConfig);
+        }
+        catch (NumberFormatException e)
+        {
+            System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
+                               + "a non-negative integer. Using default of zero (no watching configured");
+        }
+
+        File logConfigFile;
         if (logConfig != null)
         {
-            File logConfigFile = new File(logConfig);
-            configureLogging(logConfigFile, logWatchConfig);
+            logConfigFile = new File(logConfig);
+            configureLogging(logConfigFile, logWatchTime);
         }
         else
         {
             File configFileDirectory = configFile.getParentFile();
-            File logConfigFile = new File(configFileDirectory, DEFAULT_LOG_CONFIG_FILENAME);
-            configureLogging(logConfigFile, logWatchConfig);
+            logConfigFile = new File(configFileDirectory, DEFAULT_LOG_CONFIG_FILENAME);
+            configureLogging(logConfigFile, logWatchTime);
         }
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile);
-
-
-        updateManagementPort(config.getConfiguration(), commandLine.getOptionValue("m"));
-
-
+        ServerConfiguration serverConfig = config.getConfiguration();
+        updateManagementPort(serverConfig, commandLine.getOptionValue("m"));
 
         ApplicationRegistry.initialise(config);
 
+        // We have already loaded the BrokerMessages class by this point so we
+        // need to refresh the locale setting incase we had a different value in
+        // the configuration.
+        BrokerMessages.reload();
 
-        //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
-        // that are causing the broker build to pick up the wrong properties file and hence say
-        // Starting Qpid Client 
-        _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
-                           + " build: " + QpidProperties.getBuildVersion());
+        // AR.initialise() sets its own actor so we now need to set the actor
+        // for the remainder of the startup
+        CurrentActor.set(new BrokerActor(config.getRootMessageLogger()));
+        CurrentActor.setDefault(new BrokerActor(config.getRootMessageLogger()));
 
-        ConnectorConfiguration connectorConfig =
-                ApplicationRegistry.getInstance().getConfiguredObject(ConnectorConfiguration.class);
-
-        ByteBuffer.setUseDirectBuffers(connectorConfig.enableDirectBuffers);
-
-        // the MINA default is currently to use the pooled allocator although this may change in future
-        // once more testing of the performance of the simple allocator has been done
-        if (!connectorConfig.enablePooledAllocator)
+        try
         {
-            ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
-        }
+            configureLoggingManagementMBean(logConfigFile, logWatchTime);
+
+            ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
+            configMBean.register();
+
+            ServerInformationMBean sysInfoMBean =
+                    new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
+            sysInfoMBean.register();
+
+            //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
+            // that are causing the broker build to pick up the wrong properties file and hence say
+            // Starting Qpid Client
+            _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
+                               + " build: " + QpidProperties.getBuildVersion());
 
 
-        if(connectorConfig.useBiasedWrites)
-        {
-            System.setProperty("org.apache.qpid.use_write_biased_pool","true");
-        }
 
-        int port = connectorConfig.port;
+            String[] portStr = commandLine.getOptionValues("p");
 
-        String portStr = commandLine.getOptionValue("p");
-        if (portStr != null)
-        {
-            try
+            Set<Integer> ports = new HashSet<Integer>();
+            Set<Integer> exclude_0_10 = new HashSet<Integer>();
+            Set<Integer> exclude_0_9_1 = new HashSet<Integer>();
+            Set<Integer> exclude_0_9 = new HashSet<Integer>();
+            Set<Integer> exclude_0_8 = new HashSet<Integer>();
+
+            if(portStr == null || portStr.length == 0)
             {
-                port = Integer.parseInt(portStr);
-            }
-            catch (NumberFormatException e)
-            {
-                throw new InitException("Invalid port: " + portStr, e);
-            }
-        }
 
-        String VIRTUAL_HOSTS = "virtualhosts";
+                parsePortList(ports, serverConfig.getPorts());
+                parsePortList(exclude_0_10, serverConfig.getPortExclude010());
+                parsePortList(exclude_0_9_1, serverConfig.getPortExclude091());
+                parsePortList(exclude_0_9, serverConfig.getPortExclude09());
+                parsePortList(exclude_0_8, serverConfig.getPortExclude08());
 
-        Object virtualHosts = ApplicationRegistry.getInstance().getConfiguration().getProperty(VIRTUAL_HOSTS);
-
-        if (virtualHosts != null)
-        {
-            if (virtualHosts instanceof Collection)
-            {
-                int totalVHosts = ((Collection) virtualHosts).size();
-                for (int vhost = 0; vhost < totalVHosts; vhost++)
-                {
-                    setupVirtualHosts(configFile.getParent(), (String) ((List) virtualHosts).get(vhost));
-                }
             }
             else
             {
-                setupVirtualHosts(configFile.getParent(), (String) virtualHosts);
+                parsePortArray(ports, portStr);
+                parsePortArray(exclude_0_10, commandLine.getOptionValues("exclude-0-10"));
+                parsePortArray(exclude_0_9_1, commandLine.getOptionValues("exclude-0-9-1"));
+                parsePortArray(exclude_0_9, commandLine.getOptionValues("exclude-0-9"));
+                parsePortArray(exclude_0_8, commandLine.getOptionValues("exclude-0-8"));
+
             }
+
+
+
+
+            String bindAddr = commandLine.getOptionValue("b");
+            if (bindAddr == null)
+            {
+                bindAddr = serverConfig.getBind();
+            }
+            InetAddress bindAddress = null;
+
+
+
+            if (bindAddr.equals("wildcard"))
+            {
+                bindAddress = new InetSocketAddress(0).getAddress();
+            }
+            else
+            {
+                bindAddress = InetAddress.getByAddress(parseIP(bindAddr));
+            }
+
+            String hostName = bindAddress.getCanonicalHostName();
+
+
+            String keystorePath = serverConfig.getKeystorePath();
+            String keystorePassword = serverConfig.getKeystorePassword();
+            String certType = serverConfig.getCertType();
+            SSLContextFactory sslFactory = null;
+
+            if (!serverConfig.getSSLOnly())
+            {
+
+                for(int port : ports)
+                {
+
+                    NetworkDriver driver = new MINANetworkDriver();
+
+                    Set<VERSION> supported = new HashSet<VERSION>(ALL_VERSIONS);
+
+                    if(exclude_0_10.contains(port))
+                    {
+                        supported.remove(VERSION.v0_10);
+                    }
+
+                    if(exclude_0_9_1.contains(port))
+                    {
+                        supported.remove(VERSION.v0_9_1);
+                    }
+                    if(exclude_0_9.contains(port))
+                    {
+                        supported.remove(VERSION.v0_9);
+                    }
+                    if(exclude_0_8.contains(port))
+                    {
+                        supported.remove(VERSION.v0_8);
+                    }
+
+                    MultiVersionProtocolEngineFactory protocolEngineFactory =
+                            new MultiVersionProtocolEngineFactory(hostName, supported);
+
+
+
+                    driver.bind(port, new InetAddress[]{bindAddress}, protocolEngineFactory,
+                                serverConfig.getNetworkConfiguration(), null);
+                    ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
+                                                                  new QpidAcceptor(driver,"TCP"));
+                    CurrentActor.get().message(BrokerMessages.BRK_LISTENING("TCP", port));
+
+                }
+
+            }
+
+            if (serverConfig.getEnableSSL())
+            {
+                sslFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+                NetworkDriver driver = new MINANetworkDriver();
+                driver.bind(serverConfig.getSSLPort(), new InetAddress[]{bindAddress},
+                            new AMQProtocolEngineFactory(), serverConfig.getNetworkConfiguration(), sslFactory);
+                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, serverConfig.getSSLPort()),
+                        new QpidAcceptor(driver,"TCP"));
+                CurrentActor.get().message(BrokerMessages.BRK_LISTENING("TCP/SSL", serverConfig.getSSLPort()));
+            }
+
+            //fixme  qpid.AMQP should be using qpidproperties to get value
+            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
+                    + " build: " + QpidProperties.getBuildVersion());
+
+            CurrentActor.get().message(BrokerMessages.BRK_READY());
+
+        }
+        finally
+        {
+            // Startup is complete so remove the AR initialised Startup actor
+            CurrentActor.remove();
         }
 
-        bind(port, connectorConfig);
 
+
+    }
+
+    private void parsePortArray(Set<Integer> ports, String[] portStr)
+            throws InitException
+    {
+        if(portStr != null)
+        {
+            for(int i = 0; i < portStr.length; i++)
+            {
+                try
+                {
+                    ports.add(Integer.parseInt(portStr[i]));
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new InitException("Invalid port: " + portStr[i], e);
+                }
+            }
+        }
+    }
+
+    private void parsePortList(Set<Integer> output, List input)
+            throws InitException
+    {
+        if(input != null)
+        {
+            for(Object port : input)
+            {
+                try
+                {
+                    output.add(Integer.parseInt(String.valueOf(port)));
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new InitException("Invalid port: " + port, e);
+                }
+            }
+        }
     }
 
     /**
@@ -328,153 +509,34 @@ public class Main
      * @param configuration
      * @param managementPort The string from the command line
      */
-    private void updateManagementPort(Configuration configuration, String managementPort)
+    private void updateManagementPort(ServerConfiguration configuration, String managementPort)
     {
         if (managementPort != null)
         {
-            int mport;
-            int defaultMPort = configuration.getInt(JMXManagedObjectRegistry.MANAGEMENT_PORT_CONFIG_PATH);
             try
             {
-                mport = Integer.parseInt(managementPort);
-                configuration.setProperty(JMXManagedObjectRegistry.MANAGEMENT_PORT_CONFIG_PATH, mport);
+                configuration.setJMXManagementPort(Integer.parseInt(managementPort));
             }
             catch (NumberFormatException e)
             {
-                _logger.warn("Invalid management port: " + managementPort + " will use default:" + defaultMPort, e);
+                _logger.warn("Invalid management port: " + managementPort + " will use:" + configuration.getJMXManagementPort(), e);
             }
         }
-    }
-
-    protected void setupVirtualHosts(String configFileParent, String configFilePath)
-            throws ConfigurationException, AMQException, URLSyntaxException
-    {
-        String configVar = "${conf}";
-
-        if (configFilePath.startsWith(configVar))
-        {
-            configFilePath = configFileParent + configFilePath.substring(configVar.length());
-        }
-
-        if (configFilePath.indexOf(".xml") != -1)
-        {
-            VirtualHostConfiguration vHostConfig = new VirtualHostConfiguration(configFilePath);
-            vHostConfig.performBindings();
-        }
-        else
-        {
-            // the virtualhosts value is a path. Search it for XML files.
-
-            File virtualHostDir = new File(configFilePath);
-
-            String[] fileNames = virtualHostDir.list();
-
-            for (int each = 0; each < fileNames.length; each++)
-            {
-                if (fileNames[each].endsWith(".xml"))
-                {
-                    VirtualHostConfiguration vHostConfig =
-                            new VirtualHostConfiguration(configFilePath + "/" + fileNames[each]);
-                    vHostConfig.performBindings();
-                }
-            }
-        }
-    }
-
-    protected void bind(int port, ConnectorConfiguration connectorConfig) throws BindException
-    {
-        String bindAddr = commandLine.getOptionValue("b");
-        if (bindAddr == null)
-        {
-            bindAddr = connectorConfig.bindAddress;
-        }
-
-        try
-        {
-            // IoAcceptor acceptor = new SocketAcceptor(connectorConfig.processors);
-            IoAcceptor acceptor = connectorConfig.createAcceptor();
-            SocketAcceptorConfig sconfig = (SocketAcceptorConfig) acceptor.getDefaultConfig();
-            SocketSessionConfig sc = (SocketSessionConfig) sconfig.getSessionConfig();
-
-            sc.setReceiveBufferSize(connectorConfig.socketReceiveBufferSize);
-            sc.setSendBufferSize(connectorConfig.socketWriteBuferSize);
-            sc.setTcpNoDelay(connectorConfig.tcpNoDelay);
-
-            // if we do not use the executor pool threading model we get the default leader follower
-            // implementation provided by MINA
-            if (connectorConfig.enableExecutorPool)
-            {
-                sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
-            }
-
-            if (!connectorConfig.enableSSL || !connectorConfig.sslOnly)
-            {
-                AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
-                InetSocketAddress bindAddress;
-                if (bindAddr.equals("wildcard"))
-                {
-                    bindAddress = new InetSocketAddress(port);
-                }
-                else
-                {
-                    bindAddress = new InetSocketAddress(InetAddress.getByAddress(parseIP(bindAddr)), port);
-                }
-
-                bind(acceptor, bindAddress, handler, sconfig);
-
-                //fixme  qpid.AMQP should be using qpidproperties to get value
-                _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
-            }
-
-            if (connectorConfig.enableSSL)
-            {
-                AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
-                try
-                {
-
-                    bind(acceptor, new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
-
-                    //fixme  qpid.AMQP should be using qpidproperties to get value
-                    _brokerLogger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
-
-                }
-                catch (IOException e)
-                {
-                    _brokerLogger.error("Unable to listen on SSL port: " + e, e);
-                }
-            }
-
-            //fixme  qpid.AMQP should be using qpidproperties to get value
-            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
-                               + " build: " + QpidProperties.getBuildVersion());
-        }
-        catch (Exception e)
-        {
-            _logger.error("Unable to bind service to registry: " + e, e);
-            //fixme this need tidying up
-            throw new BindException(e.getMessage());
-        }
-    }
-
-    /**
-     * Ensure that any bound Acceptors are recorded in the registry so they can be closed later.
-     *
-     * @param acceptor
-     * @param bindAddress
-     * @param handler
-     * @param sconfig
-     *
-     * @throws IOException from the acceptor.bind command
-     */
-    private void bind(IoAcceptor acceptor, InetSocketAddress bindAddress, AMQPFastProtocolHandler handler, SocketAcceptorConfig sconfig) throws IOException
-    {
-        acceptor.bind(bindAddress, handler, sconfig);
-
-        ApplicationRegistry.getInstance().addAcceptor(bindAddress, acceptor);
     }
 
     public static void main(String[] args)
     {
+        //if the -Dlog4j.configuration property has not been set, enable the init override
+        //to stop Log4J wondering off and picking up the first log4j.xml/properties file it
+        //finds from the classpath when we get the first Loggers
+        if(System.getProperty("log4j.configuration") == null)
+        {
+            System.setProperty("log4j.defaultInitOverride", "true");
+        }
+
+        //now that the override status is know, we can instantiate the Loggers
+        _logger = Logger.getLogger(Main.class);
+        _brokerLogger = Logger.getLogger("Qpid.Broker");
 
         new Main(args);
     }
@@ -507,40 +569,61 @@ public class Main
         return ip;
     }
 
-    private void configureLogging(File logConfigFile, String logWatchConfig)
+    private void configureLogging(File logConfigFile, int logWatchTime) throws InitException, IOException
     {
-        int logWatchTime = 0;
-        try
-        {
-            logWatchTime = Integer.parseInt(logWatchConfig);
-        }
-        catch (NumberFormatException e)
-        {
-            System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
-                               + "a non-negative integer. Using default of zero (no watching configured");
-        }
-
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
+            CurrentActor.get().message(BrokerMessages.BRK_LOG_CONFIG(logConfigFile.getAbsolutePath()));
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
             if (logWatchTime > 0)
             {
                 System.out.println("log file " + logConfigFile.getAbsolutePath() + " will be checked for changes every "
                                    + logWatchTime + " seconds");
                 // log4j expects the watch interval in milliseconds
-                DOMConfigurator.configureAndWatch(logConfigFile.getAbsolutePath(), logWatchTime * 1000);
+                try
+                {
+                    QpidLog4JConfigurator.configureAndWatch(logConfigFile.getPath(), logWatchTime * 1000);
+                }
+                catch (Exception e)
+                {
+                    throw new InitException(e.getMessage(),e);
+                }
             }
             else
             {
-                DOMConfigurator.configure(logConfigFile.getAbsolutePath());
+                try
+                {
+                    QpidLog4JConfigurator.configure(logConfigFile.getPath());
+                }
+                catch (Exception e)
+                {
+                    throw new InitException(e.getMessage(),e);
+                }
             }
         }
         else
         {
             System.err.println("Logging configuration error: unable to read file " + logConfigFile.getAbsolutePath());
-            System.err.println("Using basic log4j configuration");
-            BasicConfigurator.configure();
+            System.err.println("Using the fallback internal log4j.properties configuration");
+
+            InputStream propsFile = this.getClass().getResourceAsStream("/log4j.properties");
+            if(propsFile == null)
+            {
+                throw new IOException("Unable to load the fallback internal log4j.properties configuration file");
+            }
+            else
+            {
+                Properties fallbackProps = new Properties();
+                fallbackProps.load(propsFile);
+                PropertyConfigurator.configure(fallbackProps);
+            }
         }
     }
 
+    private void configureLoggingManagementMBean(File logConfigFile, int logWatchTime) throws Exception
+    {
+        LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
+
+        blm.register();
+    }
 }

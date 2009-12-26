@@ -48,7 +48,6 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
-import org.apache.qpid.transport.network.io.IoTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +57,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     private AMQConnection _conn;
 
 
-    public void closeConneciton(long timeout) throws JMSException, AMQException
+    public void closeConnection(long timeout) throws JMSException, AMQException
     {
         _conn.getProtocolHandler().closeConnection(timeout);
 
@@ -90,15 +89,15 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
         // TODO: use system property thingy for this
-        if (System.getProperty("UseTransportIo", "false").equals("false"))   
+        if (System.getProperty("UseTransportIo", "false").equals("false"))
         {
             TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
-        } 
-        else 
+        }
+        else
         {
             _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
         }
-        
+        _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 
@@ -108,9 +107,13 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         {
             _conn._failoverPolicy.attainedConnection();
             _conn._connected = true;
+            return null;
+        } 
+        else 
+        {
+            return _conn._protocolHandler.getSuggestedProtocolVersion();
         }
 
-        return null;
     }
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode, final int prefetch)
@@ -139,7 +142,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 {
                     public org.apache.qpid.jms.Session execute() throws JMSException, FailoverException
                     {
-                        int channelId = _conn._idFactory.incrementAndGet();
+                        int channelId = _conn.getNextChannelID();
 
                         if (_logger.isDebugEnabled())
                         {
@@ -192,6 +195,18 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 }, _conn).execute();
     }
 
+    /**
+     * Create an XASession with default prefetch values of:
+     * High = MaxPrefetch
+     * Low  = MaxPrefetch / 2
+     * @return XASession
+     * @throws JMSException thrown if there is a problem creating the session.
+     */
+    public XASession createXASession() throws JMSException
+    {
+        return createXASession((int) _conn.getMaxPrefetch(), (int) _conn.getMaxPrefetch() / 2);
+    }
+
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
             throws AMQException, FailoverException
     {
@@ -203,7 +218,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         // todo Be aware of possible changes to parameter order as versions change.
         BasicQosBody basicQosBody = _conn.getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
         _conn._protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
-        
+
         if (transacted)
         {
             if (_logger.isDebugEnabled())
@@ -211,10 +226,15 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 _logger.debug("Issuing TxSelect for " + channelId);
             }
             TxSelectBody body = _conn.getProtocolHandler().getMethodRegistry().createTxSelectBody();
-            
+
             // TODO: Be aware of possible changes to parameter order as versions change.
             _conn._protocolHandler.syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
         }
+    }
+
+    public void failoverPrep()
+    {
+        // do nothing
     }
 
     /**
@@ -246,5 +266,53 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             _conn.deregisterSession(channelId);
             throw new AMQException(null, "Error reopening channel " + channelId + " after failover: " + e, e);
         }
+    }
+
+    public <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E
+    {
+        while (true)
+        {
+            try
+            {
+                _conn.blockUntilNotFailingOver();
+            }
+            catch (InterruptedException e)
+            {
+                _logger.debug("Interrupted: " + e, e);
+
+                return null;
+            }
+
+            synchronized (_conn.getFailoverMutex())
+            {
+                try
+                {
+                    return operation.execute();
+                }
+                catch (FailoverException e)
+                {
+                    _logger.debug("Failover exception caught during operation: " + e, e);
+                }
+                catch (IllegalStateException e)
+                {
+                    if (!(e.getMessage().startsWith("Fail-over interupted no-op failover support")))
+                    {
+                        throw e;
+                    }
+                }
+            }
+        }
+    }
+
+    public void setIdleTimeout(long l){}
+
+    public int getMaxChannelID()
+    {
+        return (int) (Math.pow(2, 16)-1);
+    }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return ProtocolVersion.v8_0;
     }
 }

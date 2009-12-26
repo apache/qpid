@@ -1,7 +1,22 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # Generic AMQP code generation library.
 #
-
 # TODO aconway 2008-02-21:
 #
 # The amqp_attr_reader and amqp_child_reader for each Amqp* class
@@ -15,6 +30,7 @@
 require 'delegate'
 require 'rexml/document'
 require 'pathname'
+require 'set'
 include REXML
 
 # Handy String functions for converting names.
@@ -150,7 +166,7 @@ class AmqpElement
   # The root <amqp> element.
   def root() @root ||=parent ? parent.root : self; end
 
- def to_s() "#<#{self.class}(#{fqname})>"; end
+  def to_s() "#<#{self.class}(#{fqname})>"; end
   def inspect() to_s; end
 
   # Text of doc child if there is one.
@@ -165,6 +181,21 @@ class AmqpElement
   def containing_class()
     return self if is_a? AmqpClass
     return parent && parent.containing_class
+  end
+
+  # 0-10 array domains are missing element type information, add it here.
+  ArrayTypes={
+    "str16-array" => "str-16",
+    "amqp-host-array" => "connection.amqp-host-url",
+    "command-fragments" => "session.command-fragment",
+    "in-doubt" => "dtx.xid",
+    "tx-publish" => "str-8",
+    "queues" => "str-8"
+  }
+
+  def array_type(name)
+    return  ArrayTypes[name] if ArrayTypes[name]
+    raise "Missing ArrayType entry for " + name
   end
   
 end
@@ -188,14 +219,6 @@ class AmqpEnum < AmqpElement
   def initialize(xml,parent) super; end
   amqp_child_reader :choice
 end
-
-# 0-10 array domains are missing element type information, add it here.
-ArrayTypes={
-  "str16-array" => "str-16",
-  "amqp-host-array" => "connection.amqp-host-url",
-  "command-fragments" => "session.command-fragment",
-  "in-doubt" => "dtx.xid"
-}
 
 class AmqpDomain < AmqpElement
   def initialize(xml, parent)
@@ -295,7 +318,7 @@ class AmqpFakeMethod < AmqpMethod
   def content() return "1" if @action.is_a? AmqpCommand and @action.segments end
   def index() @action.code end
   def code() @action.code end
-  def synchronous() end         # FIXME aconway 2008-04-10: ???
+  def synchronous() end     
   def on_chassis?(chassis)
     @action.received_by?(chassis)
   end
@@ -318,7 +341,14 @@ class AmqpAction < AmqpElement
   def initialize(xml,amqp) super; end
   amqp_child_reader :implement, :field, :response
   amqp_attr_reader :code
-  def implement?(role) xml.elements["./implement[@role='#{role}']"] end
+  def implement?(role)
+    # we can't use xpath for this because it triggers a bug in some
+    # versions of ruby, including version 1.8.6.110
+    xml.elements.each {|el|
+      return true if el.name == "implement" and el.attributes["role"] == role
+    }
+    return false
+  end
   def received_by?(client_or_server)
     return (implement?(client_or_server) or implement?("sender") or implement?("receiver"))
   end
@@ -434,9 +464,12 @@ end
 
 # Collect information about generated files.
 class GenFiles
-  @@files =[]
-  def GenFiles.add(f) @@files << f; end
+  @@files = Set.new
+  @@public_api = []
+  def GenFiles.add(f) @@files.add(f); end
   def GenFiles.get() @@files; end
+  def GenFiles.public_api(file) @@public_api << file; end
+  def GenFiles.public_api?(file) @@public_api.find { |f| f == file }; end
 end
 
 # Base class for code generators.
@@ -446,27 +479,27 @@ class Generator
   # Takes directory for output or "-", meaning print file names that
   # would be generated.
   def initialize (outdir, amqp)
+    @outdir=outdir[0]
+    @apidir=outdir[1]
     @amqp=amqp
-    @outdir=outdir
+    raise "outdir is not an array" unless outdir.class == Array
     @prefix=['']                # For indentation or comments.
     @indentstr='    '           # One indent level.
     @outdent=2
-    Pathname.new(@outdir).mkpath unless @outdir=="-"
   end
 
+  # Declare next file to be public API
+  def public_api(file) GenFiles.public_api(file); end
+  
   # Create a new file, set @out. 
   def file(file, &block)
-    GenFiles.add file
-    if (@outdir != "-")         
-      @path=Pathname.new "#{@outdir}/#{file}"
+    GenFiles.add(file)
+    dir = GenFiles.public_api?(file) ? @apidir : @outdir
+    if (dir != "-")         
+      @path=Pathname.new "#{dir}/#{file}"
       @path.parent.mkpath
       @out=String.new           # Generate in memory first
-      if block then yield; endfile; end
-    end
-  end
-
-  def endfile()
-    if @outdir != "-"
+      yield if block
       if @path.exist? and @path.read == @out  
         puts "Skipped #{@path} - unchanged" # Dont generate if unchanged
       else

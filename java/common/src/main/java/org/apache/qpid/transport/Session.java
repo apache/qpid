@@ -24,6 +24,7 @@ package org.apache.qpid.transport;
 import org.apache.qpid.transport.network.Frame;
 
 import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.util.Waiter;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -32,8 +33,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.qpid.transport.Option.*;
+import static org.apache.qpid.transport.Session.State.*;
 import static org.apache.qpid.transport.util.Functions.*;
 import static org.apache.qpid.util.Serial.*;
 import static org.apache.qpid.util.Strings.*;
@@ -44,57 +48,123 @@ import static org.apache.qpid.util.Strings.*;
  * @author Rafael H. Schloming
  */
 
-public class Session extends Invoker
+public class Session extends SessionInvoker
 {
 
     private static final Logger log = Logger.get(Session.class);
 
-    private static boolean ENABLE_REPLAY = false;
+    enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
 
-    static
+    class DefaultSessionListener implements SessionListener
     {
-        String enableReplay = "enable_command_replay";
-        try
+
+        public void opened(Session ssn) {}
+
+        public void resumed(Session ssn) {}
+
+        public void message(Session ssn, MessageTransfer xfr)
         {
-            ENABLE_REPLAY  = new Boolean(System.getProperties().getProperty(enableReplay, "false"));
+            log.info("message: %s", xfr);
         }
-        catch (Exception e)
+
+        public void exception(Session ssn, SessionException exc)
         {
-            ENABLE_REPLAY = false;
+            log.error(exc, "session exception");
         }
+
+        public void closed(Session ssn) {}
     }
 
-    private byte[] name;
+    public static final int UNLIMITED_CREDIT = 0xFFFFFFFF;
+
+    private Connection connection;
+    private Binary name;
+    private long expiry;
+    private int channel;
+    private SessionDelegate delegate;
+    private SessionListener listener = new DefaultSessionListener();
     private long timeout = 60000;
     private boolean autoSync = false;
 
-    // channel may be null
-    Channel channel;
-
+    private boolean incomingInit;
     // incoming command count
-    int commandsIn = 0;
+    private int commandsIn;
     // completed incoming commands
     private final Object processedLock = new Object();
-    private RangeSet processed = new RangeSet();
-    private int maxProcessed = commandsIn - 1;
-    private int syncPoint = maxProcessed;
+    private RangeSet processed;
+    private int maxProcessed;
+    private int syncPoint;
 
     // outgoing command count
     private int commandsOut = 0;
-    private Map<Integer,Method> commands = new HashMap<Integer,Method>();
+    private Method[] commands = new Method[Integer.getInteger("qpid.session.command_limit", 64*1024)];
+    private int commandBytes = 0;
+    private int byteLimit = Integer.getInteger("qpid.session.byte_limit", 1024*1024);
     private int maxComplete = commandsOut - 1;
     private boolean needSync = false;
 
-    private AtomicBoolean closed = new AtomicBoolean(false);
+    private State state = NEW;
 
-    public Session(byte[] name)
+    // transfer flow control
+    private volatile boolean flowControl = false;
+    private Semaphore credit = new Semaphore(0);
+
+    private Thread resumer = null;
+
+    protected Session(Connection connection, Binary name, long expiry)
     {
-        this.name = name;
+        this(connection, new SessionDelegate(), name, expiry);
     }
 
-    public byte[] getName()
+    protected Session(Connection connection, SessionDelegate delegate, Binary name, long expiry)
+    {
+        this.connection = connection;
+        this.delegate = delegate;
+        this.name = name;
+        this.expiry = expiry;
+        initReceiver();
+    }
+
+    public Connection getConnection()
+    {
+        return connection;
+    }
+
+    public Binary getName()
     {
         return name;
+    }
+
+    void setExpiry(long expiry)
+    {
+        this.expiry = expiry;
+    }
+
+    int getChannel()
+    {
+        return channel;
+    }
+
+    void setChannel(int channel)
+    {
+        this.channel = channel;
+    }
+
+    public void setSessionListener(SessionListener listener)
+    {
+        if (listener == null)
+        {
+            this.listener = new DefaultSessionListener();
+        }
+        else
+        {
+            this.listener = listener;
+        }
+    }
+
+    public SessionListener getSessionListener()
+    {
+        return listener;
     }
 
     public void setAutoSync(boolean value)
@@ -105,9 +175,119 @@ public class Session extends Invoker
         }
     }
 
-    public Map<Integer,Method> getOutstandingCommands()
+    void setState(State state)
     {
-        return commands;
+        synchronized (commands)
+        {
+            this.state = state;
+            commands.notifyAll();
+        }
+    }
+
+    void setFlowControl(boolean value)
+    {
+        flowControl = value;
+    }
+
+    void addCredit(int value)
+    {
+        credit.release(value);
+    }
+
+    void drainCredit()
+    {
+        credit.drainPermits();
+    }
+
+    void acquireCredit()
+    {
+        if (flowControl)
+        {
+            try
+            {
+                if (!credit.tryAcquire(timeout, TimeUnit.MILLISECONDS))
+                {
+                    throw new SessionException
+                        ("timed out waiting for message credit");
+                }
+            }
+            catch (InterruptedException e)
+            {
+                throw new SessionException
+                    ("interrupted while waiting for credit", null, e);
+            }
+        }
+    }
+
+    private void initReceiver()
+    {
+        synchronized (processedLock)
+        {
+            incomingInit = false;
+            processed = new RangeSet();
+        }
+    }
+
+    void attach()
+    {
+        initReceiver();
+        sessionAttach(name.getBytes());
+        // XXX: when the broker and client support full session
+        // recovery we should use expiry as the requested timeout
+        sessionRequestTimeout(0);
+    }
+
+    void resume()
+    {
+        synchronized (commands)
+        {
+            for (int i = maxComplete + 1; lt(i, commandsOut); i++)
+            {
+                Method m = commands[mod(i, commands.length)];
+                if (m == null)
+                {
+                    m = new ExecutionSync();
+                    m.setId(i);
+                }
+                sessionCommandPoint(m.getId(), 0);
+                send(m);
+            }
+
+            sessionCommandPoint(commandsOut, 0);
+            sessionFlush(COMPLETED);
+            resumer = Thread.currentThread();
+            state = RESUMING;
+            listener.resumed(this);
+            resumer = null;
+        }
+    }
+
+    void dump()
+    {
+        synchronized (commands)
+        {
+            for (Method m : commands)
+            {
+                if (m != null)
+                {
+                    System.out.println(m);
+                }
+            }
+        }
+    }
+
+    final void commandPoint(int id)
+    {
+        synchronized (processedLock)
+        {
+            this.commandsIn = id;
+            if (!incomingInit)
+            {
+                incomingInit = true;
+                maxProcessed = commandsIn - 1;
+                syncPoint = maxProcessed;
+            }
+        }
     }
 
     public int getCommandsOut()
@@ -127,6 +307,11 @@ public class Session extends Invoker
 
     final void identify(Method cmd)
     {
+        if (!incomingInit)
+        {
+            throw new IllegalStateException();
+        }
+
         int id = nextCommandId();
         cmd.setId(id);
 
@@ -160,11 +345,19 @@ public class Session extends Invoker
 
     public void processed(Range range)
     {
-        log.debug("%s processed(%s)", this, range);
+        log.debug("%s processed(%s) %s %s", this, range, syncPoint, maxProcessed);
 
         boolean flush;
         synchronized (processedLock)
         {
+            log.debug("%s", processed);
+
+            if (ge(range.getUpper(), commandsIn))
+            {
+                throw new IllegalArgumentException
+                    ("range exceeds max received command-id: " + range);
+            }
+
             processed.add(range);
             Range first = processed.getFirst();
             int lower = first.getLower();
@@ -174,13 +367,30 @@ public class Session extends Invoker
             {
                 maxProcessed = max(maxProcessed, upper);
             }
-            flush = lt(old, syncPoint) && ge(maxProcessed, syncPoint);
-            syncPoint = maxProcessed;
+            boolean synced = ge(maxProcessed, syncPoint);
+            flush = lt(old, syncPoint) && synced;
+            if (synced)
+            {
+                syncPoint = maxProcessed;
+            }
         }
         if (flush)
         {
             flushProcessed();
         }
+    }
+
+    void flushExpected()
+    {
+        RangeSet rs = new RangeSet();
+        synchronized (processedLock)
+        {
+            if (incomingInit)
+            {
+                rs.add(commandsIn);
+            }
+        }
+        sessionExpected(rs, null);
     }
 
     public void flushProcessed(Option ... options)
@@ -190,7 +400,15 @@ public class Session extends Invoker
         {
             copy = processed.copy();
         }
-        sessionCompleted(copy, options);
+
+        synchronized (commands)
+        {
+            if (state == DETACHED || state == CLOSING)
+            {
+                return;
+            }
+            sessionCompleted(copy, options);
+        }
     }
 
     void knownComplete(RangeSet kc)
@@ -228,21 +446,7 @@ public class Session extends Invoker
         }
     }
 
-    public void attach(Channel channel)
-    {
-        this.channel = channel;
-        channel.setSession(this);
-    }
-
-    public Method getCommand(int id)
-    {
-        synchronized (commands)
-        {
-            return commands.get(id);
-        }
-    }
-
-    boolean complete(int lower, int upper)
+    protected boolean complete(int lower, int upper)
     {
         //avoid autoboxing
         if(log.isDebugEnabled())
@@ -254,57 +458,210 @@ public class Session extends Invoker
             int old = maxComplete;
             for (int id = max(maxComplete, lower); le(id, upper); id++)
             {
-                commands.remove(id);
+                int idx = mod(id, commands.length);
+                Method m = commands[idx];
+                if (m != null)
+                {
+                    commandBytes -= m.getBodySize();
+                    m.complete();
+                    commands[idx] = null;                    
+                }
             }
             if (le(lower, maxComplete + 1))
             {
                 maxComplete = max(maxComplete, upper);
             }
-            log.debug("%s   commands remaining: %s", this, commands);
+            log.debug("%s   commands remaining: %s", this, commandsOut - maxComplete);
             commands.notifyAll();
             return gt(maxComplete, old);
         }
     }
 
+    void received(Method m)
+    {
+        m.delegate(this, delegate);
+    }
+
+    private void send(Method m)
+    {
+        m.setChannel(channel);
+        connection.send(m);
+
+        if (!m.isBatch())
+        {
+            connection.flush();
+        }
+    }
+
+    protected boolean isFull(int id)
+    {
+        return isCommandsFull(id) || isBytesFull();
+    }
+
+    protected boolean isBytesFull()
+    {
+        return commandBytes >= byteLimit;
+    }
+
+    protected boolean isCommandsFull(int id)
+    {
+        return id - maxComplete >= commands.length;
+    }
+
     public void invoke(Method m)
     {
-        if (closed.get())
-        {
-            List<ExecutionException> exc = getExceptions();
-            if (!exc.isEmpty())
-            {
-                throw new SessionException(exc);
-            }
-            else if (close != null)
-            {
-                throw new ConnectionException(close);
-            }
-            else
-            {
-                throw new SessionClosedException();
-            }
-        }
+        invoke(m,(Runnable)null);
+    }
 
+    public void invoke(Method m, Runnable postIdSettingAction)
+    {
         if (m.getEncodedTrack() == Frame.L4)
         {
+            if (m.hasPayload())
+            {
+                acquireCredit();
+            }
+
             synchronized (commands)
             {
-                int next = commandsOut++;
+                if (state == DETACHED && m.isUnreliable())
+                {
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
+                    {
+                        return;
+                    }
+                }
+
+                if (state != OPEN && state != CLOSED)
+                {
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
+                    {
+                        Waiter w = new Waiter(commands, timeout);
+                        while (w.hasTime() && (state != OPEN && state != CLOSED))
+                        {
+                            w.await();
+                        }
+                    }
+                }
+
+                switch (state)
+                {
+                case OPEN:
+                    break;
+                case RESUMING:
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
+                    {
+                        throw new SessionException
+                            ("timed out waiting for resume to finish");
+                    }
+                    break;
+                case CLOSED:
+                    ExecutionException exc = getException();
+                    if (exc != null)
+                    {
+                        throw new SessionException(exc);
+                    }
+                    else
+                    {
+                        throw new SessionClosedException();
+                    }
+                default:
+                    throw new SessionException
+                        (String.format
+                         ("timed out waiting for session to become open " +
+                          "(state=%s)", state));
+                }
+
+                int next;
+                next = commandsOut++;
                 m.setId(next);
+                if(postIdSettingAction != null)
+                {
+                    postIdSettingAction.run();
+                }
+
+                if (isFull(next))
+                {
+                    Waiter w = new Waiter(commands, timeout);
+                    while (w.hasTime() && isFull(next) && state != CLOSED)
+                    {
+                        if (state == OPEN || state == RESUMING)
+                        {
+                            try
+                            {
+                                sessionFlush(COMPLETED);
+                            }
+                            catch (SenderException e)
+                            {
+                                if (expiry > 0)
+                                {
+                                    // if expiry is > 0 then this will
+                                    // happen again on resume
+                                    log.error(e, "error sending flush (full replay buffer)");
+                                }
+                                else
+                                {
+                                    e.rethrow();
+                                }
+                            }
+                        }
+                        w.await();
+                    }
+                }
+
+                if (state == CLOSED)
+                {
+                    ExecutionException exc = getException();
+                    if (exc != null)
+                    {
+                        throw new SessionException(exc);
+                    }
+                    else
+                    {
+                        throw new SessionClosedException();
+                    }
+                }
+
+                if (isFull(next))
+                {
+                    throw new SessionException("timed out waiting for completion");
+                }
+
                 if (next == 0)
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if (ENABLE_REPLAY)
+                if ((expiry > 0 && !m.isUnreliable()) || m.hasCompletionListener())
                 {
-                    commands.put(next, m);
+                    commands[mod(next, commands.length)] = m;
+                    commandBytes += m.getBodySize();
                 }
                 if (autoSync)
                 {
                     m.setSync(true);
                 }
                 needSync = !m.isSync();
-                channel.method(m);
+                
+                try
+                {
+                    send(m);
+                }
+                catch (SenderException e)
+                {
+                    if (expiry > 0)
+                    {
+                        // if expiry is > 0 then this will happen
+                        // again on resume
+                        log.error(e, "error sending command");
+                    }
+                    else
+                    {
+                        e.rethrow();
+                    }
+                }
                 if (autoSync)
                 {
                     sync();
@@ -312,16 +669,37 @@ public class Session extends Invoker
 
                 // flush every 64K commands to avoid ambiguity on
                 // wraparound
-                if ((next % 65536) == 0)
+                if (shouldIssueFlush(next))
                 {
-                    sessionFlush(COMPLETED);
+                    try
+                    {
+                        sessionFlush(COMPLETED);
+                    }
+                    catch (SenderException e)
+                    {
+                        if (expiry > 0)
+                        {
+                            // if expiry is > 0 then this will happen
+                            // again on resume
+                            log.error(e, "error sending flush (periodic)");
+                        }
+                        else
+                        {
+                            e.rethrow();
+                        }
+                    }
                 }
             }
         }
         else
         {
-            channel.method(m);
+            send(m);
         }
+    }
+
+    protected boolean shouldIssueFlush(int next)
+    {
+        return (next % 65536) == 0;
     }
 
     public void sync()
@@ -341,31 +719,23 @@ public class Session extends Invoker
                 executionSync(SYNC);
             }
 
-            long start = System.currentTimeMillis();
-            long elapsed = 0;
-            while (!closed.get() && elapsed < timeout && lt(maxComplete, point))
+            Waiter w = new Waiter(commands, timeout);
+            while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
-                try {
-                    log.debug("%s   waiting for[%d]: %d, %s", this, point,
-                              maxComplete, commands);
-                    commands.wait(timeout - elapsed);
-                    elapsed = System.currentTimeMillis() - start;
-                }
-                catch (InterruptedException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                log.debug("%s   waiting for[%d]: %d, %s", this, point,
+                          maxComplete, commands);
+                w.await();
             }
 
             if (lt(maxComplete, point))
             {
-                if (closed.get())
+                if (state == CLOSED)
                 {
-                    throw new SessionException(getExceptions());
+                    throw new SessionException(getException());
                 }
                 else
                 {
-                    throw new RuntimeException
+                    throw new SessionException
                         (String.format
                          ("timed out waiting for sync: complete = %s, point = %s", maxComplete, point));
                 }
@@ -375,8 +745,7 @@ public class Session extends Invoker
 
     private Map<Integer,ResultFuture<?>> results =
         new HashMap<Integer,ResultFuture<?>>();
-    private List<ExecutionException> exceptions =
-        new ArrayList<ExecutionException>();
+    private ExecutionException exception = null;
 
     void result(int command, Struct result)
     {
@@ -388,11 +757,17 @@ public class Session extends Invoker
         future.set(result);
     }
 
-    void addException(ExecutionException exc)
+    void setException(ExecutionException exc)
     {
-        synchronized (exceptions)
+        synchronized (results)
         {
-            exceptions.add(exc);
+            if (exception != null)
+            {
+                throw new IllegalStateException
+                    (String.format
+                     ("too many exceptions: %s, %s", exception, exc));
+            }
+            exception = exc;
         }
     }
 
@@ -403,11 +778,11 @@ public class Session extends Invoker
         this.close = close;
     }
 
-    List<ExecutionException> getExceptions()
+    ExecutionException getException()
     {
-        synchronized (exceptions)
+        synchronized (results)
         {
-            return new ArrayList<ExecutionException>(exceptions);
+            return exception;
         }
     }
 
@@ -450,20 +825,11 @@ public class Session extends Invoker
         {
             synchronized (this)
             {
-                long start = System.currentTimeMillis();
-                long elapsed = 0;
-                while (!closed.get() && timeout - elapsed > 0 && !isDone())
+                Waiter w = new Waiter(this, timeout);
+                while (w.hasTime() && state != CLOSED && !isDone())
                 {
-                    try
-                    {
-                        log.debug("%s waiting for result: %s", Session.this, this);
-                        wait(timeout - elapsed);
-                        elapsed = System.currentTimeMillis() - start;
-                    }
-                    catch (InterruptedException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    log.debug("%s waiting for result: %s", Session.this, this);
+                    w.await();
                 }
             }
 
@@ -471,13 +837,15 @@ public class Session extends Invoker
             {
                 return result;
             }
-            else if (closed.get())
+            else if (state == CLOSED)
             {
-                throw new SessionException(getExceptions());
+                throw new SessionException(getException());
             }
             else
             {
-                return null;
+                throw new SessionException
+                    (String.format("%s timed out waiting for result: %s",
+                                   Session.this, this));
             }
         }
 
@@ -520,25 +888,29 @@ public class Session extends Invoker
 
     public void close()
     {
-        sessionRequestTimeout(0);
-        sessionDetach(name);
         synchronized (commands)
         {
-            long start = System.currentTimeMillis();
-            long elapsed = 0;
-            try
+            state = CLOSING;
+            // XXX: we manually set the expiry to zero here to
+            // simulate full session recovery in brokers that don't
+            // support it, we should remove this line when there is
+            // broker support for full session resume:
+            expiry = 0;
+            sessionRequestTimeout(0);
+            sessionDetach(name.getBytes());
+            Waiter w = new Waiter(commands, timeout);
+            while (w.hasTime() && state != CLOSED)
             {
-                while (!closed.get() && elapsed < timeout)
-                {
-                    commands.wait(timeout - elapsed);
-                    elapsed = System.currentTimeMillis() - start;
-                }
+                w.await();
             }
-            catch (InterruptedException e)
+
+            if (state != CLOSED)
             {
-                throw new RuntimeException(e);
+                throw new SessionException("close() timed out");
             }
         }
+
+        connection.removeSession(this);
     }
 
     public void exception(Throwable t)
@@ -548,28 +920,43 @@ public class Session extends Invoker
 
     public void closed()
     {
-        closed.set(true);
         synchronized (commands)
         {
-            commands.notifyAll();
-        }
-        synchronized (results)
-        {
-            for (ResultFuture<?> result : results.values())
+            if (expiry == 0 || getException() != null)
             {
-                synchronized(result)
+                state = CLOSED;
+            }
+            else
+            {
+                state = DETACHED;
+            }
+
+            commands.notifyAll();
+
+            synchronized (results)
+            {
+                for (ResultFuture<?> result : results.values())
                 {
-                    result.notifyAll();
+                    synchronized(result)
+                    {
+                        result.notifyAll();
+                    }
                 }
             }
+            if(state == CLOSED)
+            {
+                delegate.closed(this);
+            }
+            else
+            {
+                delegate.detached(this);
+            }
         }
-        channel.setSession(null);
-        channel = null;
     }
 
     public String toString()
     {
-        return String.format("ssn:%s", str(name));
+        return String.format("ssn:%s", name);
     }
 
 }

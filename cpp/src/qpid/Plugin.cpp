@@ -18,7 +18,7 @@
  *
  */
 
-#include "Plugin.h"
+#include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include <boost/bind.hpp>
 #include <algorithm>
@@ -42,7 +42,7 @@ void invoke(boost::function<void()> f) { f(); }
 Plugin::Target::~Target() { finalize(); }
 
 void Plugin::Target::finalize() {
-    for_each(finalizers.begin(), finalizers.end(), invoke);
+    std::for_each(finalizers.begin(), finalizers.end(), invoke);
     finalizers.clear();
 }
 
@@ -50,9 +50,16 @@ void Plugin::Target::addFinalizer(const boost::function<void()>& f) {
     finalizers.push_back(f);
 }
 
+namespace {
+bool initBefore(const Plugin* a, const Plugin* b) {
+    return a->initOrder() < b->initOrder();
+}
+}
+
 Plugin::Plugin() {
     // Register myself.
     thePlugins().push_back(this);
+    std::sort(thePlugins().begin(), thePlugins().end(), &initBefore);
 }
 
 Plugin::~Plugin() {}
@@ -74,7 +81,14 @@ void Plugin::addOptions(Options& opts) {
     }
 }
 
-void Plugin::earlyInitAll(Target& t) { each_plugin(boost::bind(&Plugin::earlyInitialize, _1, boost::ref(t))); }
-void Plugin::initializeAll(Target& t) { each_plugin(boost::bind(&Plugin::initialize, _1, boost::ref(t))); }
+int Plugin::initOrder() const { return DEFAULT_INIT_ORDER; }
+
+void Plugin::earlyInitAll(Target& t) {
+    each_plugin(boost::bind(&Plugin::earlyInitialize, _1, boost::ref(t)));
+}
+
+void Plugin::initializeAll(Target& t) {
+    each_plugin(boost::bind(&Plugin::initialize, _1, boost::ref(t)));
+}
 
 } // namespace qpid

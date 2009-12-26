@@ -20,29 +20,23 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
-import static org.apache.qpid.management.ui.Constants.*;
+import static org.apache.qpid.management.ui.Constants.ALL;
 
-import java.lang.reflect.Constructor;
-import java.security.Security;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.management.ListenerNotFoundException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.Notification;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.sasl.SaslClientFactory;
 
+import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
@@ -51,21 +45,14 @@ import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
-import org.apache.qpid.management.ui.sasl.JCAProvider;
-import org.apache.qpid.management.ui.sasl.SaslProvider;
-import org.apache.qpid.management.ui.sasl.UserPasswordCallbackHandler;
-import org.apache.qpid.management.ui.sasl.UsernameHashedPasswordCallbackHandler;
 
 
 public class JMXServerRegistry extends ServerRegistry
 {
-    private boolean _connected = false;
     private ObjectName _serverObjectName = null;
-    private Map<String, Object> _env = null;
-    private JMXServiceURL _jmxUrl = null;
     private JMXConnector _jmxc = null;
     private MBeanServerConnection _mbsc = null;
-    private Exception _connectionException = null;
+    private String _securityMechanism = null;
     
     private List<String> _usersList;
     // When an mbean gets removed from mbean server, then the notification listener
@@ -98,140 +85,94 @@ public class JMXServerRegistry extends ServerRegistry
     public JMXServerRegistry(ManagedServer server) throws Exception
     {
         super(server);
-        String securityMechanism = ApplicationRegistry.getSecurityMechanism();
-        String connectorClassName = ApplicationRegistry.getJMXConnectorClass();
-       
-        if ((securityMechanism != null) && (connectorClassName != null))
-        { 
-            createSASLConnector(securityMechanism, connectorClassName);
-        }
-        else
-        {
-            _jmxUrl = new JMXServiceURL(server.getUrl());
-            _jmxc = JMXConnectorFactory.connect(_jmxUrl, null);
-        }
+        
+        _jmxc = JMXConnnectionFactory.getJMXConnection(
+                ApplicationRegistry.timeout, server.getHost(),
+                server.getPort(), server.getUser(), server.getPassword());
         
         _mbsc = _jmxc.getMBeanServerConnection();
-        
+
         _clientListener = new ClientListener(server);
         _notificationListener = new ClientNotificationListener(server);
-        
-        _jmxc.addConnectionNotificationListener(_clientListener, null, null);       
+
+        _jmxc.addConnectionNotificationListener(_clientListener, null, null);
         _serverObjectName = new ObjectName("JMImplementation:type=MBeanServerDelegate");
         _mbsc.addNotificationListener(_serverObjectName, _clientListener, null, null);
+
     }
-    
+
     public MBeanServerConnection getServerConnection()
     {
         return _mbsc;
     }
-    
-    private void createSASLConnector(String mech, String className) throws Exception
+
+
+    public String getSecurityMechanism()
     {
-        String text = "Security mechanism " + mech + " is not supported.";
-        // Check if the given connector, which supports SASL is available
-        Class connectorClass = Class.forName(className);
-
-        _jmxUrl = new JMXServiceURL("jmxmp", getManagedServer().getHost(), getManagedServer().getPort());
-        _env = new HashMap<String, Object>();
-        CallbackHandler handler;
-        if (MECH_CRAMMD5.equals(mech))
-        {
-            // For SASL/CRAM-MD5
-            Map<String, Class<? extends SaslClientFactory>> map = new HashMap<String, Class<? extends SaslClientFactory>>();
-            Class<?> clazz = Class.forName("org.apache.qpid.management.ui.sasl.CRAMMD5HashedSaslClientFactory");
-            map.put("CRAM-MD5-HASHED", (Class<? extends SaslClientFactory>) clazz);
-
-            Security.addProvider(new JCAProvider(map));
-            handler = new UsernameHashedPasswordCallbackHandler(getManagedServer().getUser(),
-                                                                getManagedServer().getPassword());
-            _env.put("jmx.remote.profiles", SASL_CRAMMD5); 
-            _env.put("jmx.remote.sasl.callback.handler", handler);
-                    
-        }
-        else if (MECH_PLAIN.equals(mech))
-        {
-            // For SASL/PLAIN
-            Security.addProvider(new SaslProvider());
-            handler = new UserPasswordCallbackHandler(getManagedServer().getUser(), getManagedServer().getPassword());
-            _env.put("jmx.remote.profiles", SASL_PLAIN);
-            _env.put("jmx.remote.sasl.callback.handler", handler); 
-        }
-        else
-        {
-            MBeanUtility.printOutput(text);
-            throw new Exception(text);
-        }
-        // Now create the instance of JMXMPConnector                                               
-        Class[] paramTypes = {JMXServiceURL.class, Map.class};                           
-        Constructor cons = connectorClass.getConstructor(paramTypes);
-
-        Object[] args = {_jmxUrl, _env};           
-        Object theObject = cons.newInstance(args);
-
-        _jmxc = (JMXConnector)theObject;
-        
-        Thread connectorThread = new Thread(new ConnectorThread());
-        connectorThread.start();
-        long timeNow = System.currentTimeMillis();
-        connectorThread.join(ApplicationRegistry.timeout);
-        
-        if (_connectionException != null)
-        {
-            throw _connectionException;
-        }
-        if (!_connected)
-        {
-            if (System.currentTimeMillis() - timeNow >= ApplicationRegistry.timeout)
-                throw new Exception("Qpid server connection timed out");
-            else
-                throw new Exception("Qpid server connection failed");
-        }
+        return _securityMechanism;
     }
-    
-    private class ConnectorThread implements Runnable
-    {
-        public void run()
-        {
-            try
-            {
-                _connected = false;
-                _connectionException = null;
-                
-                _jmxc.connect();
-                _connected = true;
-            }
-            catch (Exception ex)
-            {
-                _connectionException = ex;
-                MBeanUtility.printStackTrace(ex);
-            }
-        }
-    }
+
     /**
      * removes all listeners from the mbean server. This is required when user
      * disconnects the Qpid server connection
      */
-    public void closeServerConnection() throws Exception
+    public void closeServerConnection() throws IOException
     {
+        if(isServerConnectionClosed())
+        {
+            //connection was already closed
+            return;
+        }
+        
         try
         {
+            //remove the listener from the JMXConnector
             if (_jmxc != null && _clientListener != null)
-                _jmxc.removeConnectionNotificationListener(_clientListener);
-
-            if (_mbsc != null && _clientListener != null)
-                _mbsc.removeNotificationListener(_serverObjectName, _clientListener);
-
-            // remove mbean notification listeners
-            for (String mbeanName : _subscribedNotificationMap.keySet())
             {
-                _mbsc.removeNotificationListener(new ObjectName(mbeanName), _notificationListener);
+                _jmxc.removeConnectionNotificationListener(_clientListener);
             }
         }
-        catch (ListenerNotFoundException ex)
+        catch (Exception e)
         {
-            MBeanUtility.printOutput(ex.toString());
+            //ignore
         }
+
+        try
+        {
+            //remove the listener from the MBeanServerDelegate MBean
+            if (_mbsc != null && _clientListener != null)
+            {
+                _mbsc.removeNotificationListener(_serverObjectName, _clientListener);
+            }
+        }
+        catch (Exception e)
+        {
+            //ignore
+        }
+
+        if (_mbsc != null && _clientListener != null)
+        {
+            //remove any listeners from the Qpid MBeans
+            for (String mbeanName : _subscribedNotificationMap.keySet())
+            {
+                try
+                {
+                    _mbsc.removeNotificationListener(new ObjectName(mbeanName), _notificationListener);
+                }
+                catch (Exception e)
+                {
+                    //ignore
+                }
+            }
+        }
+
+        //close the JMXConnector
+        if (_jmxc != null)
+        {
+            _jmxc.close();
+        }
+        
+        serverConnectionClosed();
     }
     
     public ManagedBean getManagedObject(String uniqueName)
@@ -253,6 +194,10 @@ public class JMXServerRegistry extends ServerRegistry
         {
             addConnectionMBean(mbean);
         }
+        else if (mbean.isVirtualHostManager())
+        {
+            addVirtualHostManagerMBean(mbean);
+        }
         
         addVirtualHost(mbean.getVirtualHostName());
         _mbeansMap.put(mbean.getUniqueName(), mbean);
@@ -260,7 +205,12 @@ public class JMXServerRegistry extends ServerRegistry
 
     public void removeManagedObject(ManagedBean mbean)
     {
-        MBeanUtility.printOutput("Removing MBean:" + mbean.getUniqueName());
+        if (mbean == null)
+        {
+            return;
+        }
+        
+        _mbeansMap.remove(mbean.getUniqueName());
         
         if (mbean.isQueue())
         {
@@ -274,8 +224,10 @@ public class JMXServerRegistry extends ServerRegistry
         {
             removeConnectionMBean(mbean);
         }
-        
-        _mbeansMap.remove(mbean.getUniqueName());
+        else if (mbean.isVirtualHostManager())
+        {
+            removeVirtualHostManagerMBean(mbean);
+        }
     }
     
     public void putMBeanInfo(ManagedBean mbean, MBeanInfo mbeanInfo)
@@ -339,6 +291,38 @@ public class JMXServerRegistry extends ServerRegistry
         {
             return _notificationsMap.get(mbean.getUniqueName());
         }
+    }
+    
+    public List<NotificationObject> getNotifications(String virtualhost)
+    {
+        List<NotificationObject> vhostNotificationsList = new ArrayList<NotificationObject>();
+
+        //iterate over all the notification lists for mbeans with subscribed notifications
+        for (List<NotificationObject> list : _notificationsMap.values())
+        {
+            if(list == null || list.isEmpty())
+            {
+                continue;
+            }
+            
+            //Check the source vhost of the first notification
+            NotificationObject notification  = list.get(0);
+            
+            if (notification != null)
+            {
+                String sourceVhost = notification.getSourceVirtualHost();
+                if(sourceVhost != null)
+                {
+                    if(sourceVhost.equalsIgnoreCase(virtualhost))
+                    {
+                        //If it matches, add the entire list as they are from the same vhost (same source mbean)
+                        vhostNotificationsList.addAll(list);
+                    }
+                }
+            }
+        }
+
+        return vhostNotificationsList;
     }
     
     public void clearNotifications(ManagedBean mbean, List<NotificationObject> list)
@@ -520,11 +504,11 @@ public class JMXServerRegistry extends ServerRegistry
     public void unregisterManagedObject(ObjectName objName)
     {
         ManagedBean mbean = _mbeansMap.get(objName.toString());
-        removeManagedObject(mbean);
         // Check if mbean was not available in the map. It can happen if mbean unregistration
         // notification is received and the mbean is not added in the map.
         if (mbean != null)
         {
+            removeManagedObject(mbean);
             _mbeansToBeRemoved.add(mbean);
         }
     }

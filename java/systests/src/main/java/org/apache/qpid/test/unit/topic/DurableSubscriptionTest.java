@@ -37,6 +37,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
 /**
@@ -50,17 +51,13 @@ import javax.jms.TopicSubscriber;
 public class DurableSubscriptionTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(DurableSubscriptionTest.class);
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-    }
-
+    
+    /** Timeout for receive() if we are expecting a message */
+    private static final long POSITIVE_RECEIVE_TIMEOUT = 2000;
+    
+    /** Timeout for receive() if we are not expecting a message */
+    private static final long NEGATIVE_RECEIVE_TIMEOUT = 1000;
+    
     public void testUnsubscribe() throws Exception
     {
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
@@ -85,16 +82,18 @@ public class DurableSubscriptionTest extends QpidTestCase
 
         Message msg;
         _logger.info("Receive message on consumer 1:expecting A");
-        msg = consumer1.receive();
+        msg = consumer1.receive(POSITIVE_RECEIVE_TIMEOUT);
+        assertNotNull("Message should have been received",msg);
         assertEquals("A", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
-        msg = consumer1.receive(1000);
+        msg = consumer1.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals(null, msg);
 
-        _logger.info("Receive message on consumer 1:expecting A");
-        msg = consumer2.receive();
+        _logger.info("Receive message on consumer 2:expecting A");
+        msg = consumer2.receive(POSITIVE_RECEIVE_TIMEOUT);
+        assertNotNull("Message should have been received",msg);
         assertEquals("A", ((TextMessage) msg).getText());
-        msg = consumer2.receive(1000);
+        msg = consumer2.receive(NEGATIVE_RECEIVE_TIMEOUT);
         _logger.info("Receive message on consumer 1 :expecting null");
         assertEquals(null, msg);
 
@@ -105,14 +104,15 @@ public class DurableSubscriptionTest extends QpidTestCase
         producer.send(session1.createTextMessage("B"));
 
         _logger.info("Receive message on consumer 1 :expecting B");
-        msg = consumer1.receive();
+        msg = consumer1.receive(POSITIVE_RECEIVE_TIMEOUT);
+        assertNotNull("Message should have been received",msg);
         assertEquals("B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
-        msg = consumer1.receive(1000);
+        msg = consumer1.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals(null, msg);
 
         _logger.info("Receive message on consumer 2 :expecting null");
-        msg = consumer2.receive(1000);
+        msg = consumer2.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals(null, msg);
 
         _logger.info("Close connection");
@@ -152,14 +152,16 @@ public class DurableSubscriptionTest extends QpidTestCase
         producer.send(session1.createTextMessage("A"));
 
         Message msg;
-        msg = consumer1.receive();
+        msg = consumer1.receive(POSITIVE_RECEIVE_TIMEOUT);
+        assertNotNull("Message should have been received",msg);
         assertEquals("A", ((TextMessage) msg).getText());
-        msg = consumer1.receive(1000);
+        msg = consumer1.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals(null, msg);
 
-        msg = consumer2.receive();
+        msg = consumer2.receive(POSITIVE_RECEIVE_TIMEOUT);
+        assertNotNull("Message should have been received",msg);
         assertEquals("A", ((TextMessage) msg).getText());
-        msg = consumer2.receive(1000);
+        msg = consumer2.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals(null, msg);
 
         consumer2.close();
@@ -229,8 +231,8 @@ public class DurableSubscriptionTest extends QpidTestCase
         msg = consumer1.receive(500);
         assertNull("There should be no more messages for consumption on consumer1.", msg);
 
-        msg = consumer2.receive();
-        assertNotNull(msg);
+        msg = consumer2.receive(POSITIVE_RECEIVE_TIMEOUT);
+        assertNotNull("Message should have been received",msg);
         assertEquals("Consumer 2 should also received the first msg.", "A", ((TextMessage) msg).getText());
         msg = consumer2.receive(500);
         assertNull("There should be no more messages for consumption on consumer2.", msg);
@@ -244,10 +246,10 @@ public class DurableSubscriptionTest extends QpidTestCase
         producer.send(session0.createTextMessage("B"));
 
         _logger.info("Receive message on consumer 1 :expecting B");
-        msg = consumer1.receive(1000);
+        msg = consumer1.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals("B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
-        msg = consumer1.receive(1000);
+        msg = consumer1.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals(null, msg);
 
         // Re-attach a new consumer to the durable subscription, and check that it gets the message that it missed.
@@ -305,7 +307,7 @@ public class DurableSubscriptionTest extends QpidTestCase
 
     	producer.send(session.createTextMessage("testDurableWithInvalidSelector2"));
     	
-    	Message msg = liveSubscriber.receive();
+    	Message msg = liveSubscriber.receive(POSITIVE_RECEIVE_TIMEOUT);
     	assertNotNull ("Message should have been received", msg);
     	assertEquals ("testDurableWithInvalidSelector2", ((TextMessage) msg).getText());
     	assertNull("Should not receive subsequent message", liveSubscriber.receive(200));
@@ -340,7 +342,7 @@ public class DurableSubscriptionTest extends QpidTestCase
     	assertNotNull("Subscriber should have been created", liveSubscriber);
     	
     	producer.send(session.createTextMessage("testDurableWithInvalidSelector2"));
-    	Message msg = liveSubscriber.receive();
+    	Message msg = liveSubscriber.receive(POSITIVE_RECEIVE_TIMEOUT);
     	assertNotNull ("Message should have been received", msg);
     	assertEquals ("testDurableWithInvalidSelector2", ((TextMessage) msg).getText());
     	assertNull("Should not receive subsequent message", liveSubscriber.receive(200));
@@ -369,13 +371,13 @@ public class DurableSubscriptionTest extends QpidTestCase
         // Send 1 matching message and 1 non-matching message
         sendMatchingAndNonMatchingMessage(session, producer);
 
-        Message rMsg = subA.receive(1000);
+        Message rMsg = subA.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelector1",
                      ((TextMessage) rMsg).getText());
         
-        rMsg = subA.receive(1000);
+        rMsg = subA.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertNull(rMsg);
         
         // Disconnect subscriber
@@ -388,15 +390,41 @@ public class DurableSubscriptionTest extends QpidTestCase
         
         // Check messages are recieved properly
         sendMatchingAndNonMatchingMessage(session, producer);
-        rMsg = subB.receive(1000);
+        rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelector2",
                      ((TextMessage) rMsg).getText());
         
-        rMsg = subB.receive(1000);
+        rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertNull(rMsg);
         session.unsubscribe("testResubscribeWithChangedSelector");
+    }
+
+    public void testDurableSubscribeWithTemporaryTopic() throws Exception
+    {
+        Connection conn = getConnection();
+        conn.start();
+        Session ssn = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = ssn.createTemporaryTopic();
+        try
+        {
+            ssn.createDurableSubscriber(topic, "test");
+            fail("expected InvalidDestinationException");
+        }
+        catch (InvalidDestinationException ex)
+        {
+            // this is expected
+        }
+        try
+        {
+            ssn.createDurableSubscriber(topic, "test", null, false);
+            fail("expected InvalidDestinationException");
+        }
+        catch (InvalidDestinationException ex)
+        {
+            // this is expected
+        }
     }
 
     private void sendMatchingAndNonMatchingMessage(Session session, MessageProducer producer) throws JMSException
@@ -412,5 +440,5 @@ public class DurableSubscriptionTest extends QpidTestCase
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(DurableSubscriptionTest.class);
-    }
+    }  
 }

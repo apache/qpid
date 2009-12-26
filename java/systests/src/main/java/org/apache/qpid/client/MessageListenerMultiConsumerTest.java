@@ -36,6 +36,7 @@ import javax.naming.Context;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
@@ -61,6 +62,7 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
     private Session _clientSession1;
     private Queue _queue;
     private final CountDownLatch _allMessagesSent = new CountDownLatch(2); // all messages Sent Lock
+    private static final String QUEUE_NAME = "queue" + UUID.randomUUID().toString();
 
     protected void setUp() throws Exception
     {
@@ -73,7 +75,7 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
 
         _clientSession1 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _queue =_clientSession1.createQueue("queue");
+        _queue =_clientSession1.createQueue(QUEUE_NAME);
 
         _consumer1 = _clientSession1.createConsumer(_queue);
 
@@ -113,12 +115,12 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
         for (int loops = 0; (msg < MSG_COUNT) || (loops < MAX_LOOPS); loops++)
         {
 
-            if (_consumer1.receive(100) != null)
+            if (_consumer1.receive(1000) != null)
             {
                 msg++;
             }
 
-            if (_consumer2.receive(100) != null)
+            if (_consumer2.receive(1000) != null)
             {
                 msg++;
             }
@@ -197,13 +199,15 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
         {
             _logger.info("Performing Receive only with two consumers on one session ");
 
-            MessageConsumer consumer2 = _clientSession1.createConsumer(_queue);
+            //Create a new consumer on session one that we don't use
+            _clientSession1.createConsumer(_queue);
 
             int msg;
             for (msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
-
+                // Attempt to receive up to half the messages
+                // The other half may have gone to the consumer above
                 final Message message = _consumer1.receive(1000);
                 if(message == null)
                 {
@@ -213,8 +217,12 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
             }
 
             _consumer1.close();
+            // This will close the unused consumer above.
             _clientSession1.close();
 
+
+            // msg will now have recorded the number received on session 1
+            // attempt to retrieve the rest on session 2
             for (; msg < MSG_COUNT ; msg++)
             {
                 assertTrue("Failed at msg id" + msg, _consumer2.receive(1000) != null);

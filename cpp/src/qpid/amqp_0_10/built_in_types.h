@@ -23,15 +23,15 @@
 
 #include "qpid/Serializer.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/Time.h"
-#include "Decimal.h"
-#include "SerializableString.h"
+#include "qpid/amqp_0_10/Decimal.h"
+#include "qpid/amqp_0_10/SerializableString.h"
 #include <boost/array.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <string>
 #include <ostream>
 #include <vector>
-#include <stdint.h>
 
 /**@file Mapping from built-in AMQP types to C++ types */
 
@@ -145,7 +145,6 @@ typedef framing::SequenceSet SequenceSet;
 // Forward declare class types.
 class Map;
 class Struct32;
-class List;
 class UnknownType;
 
 template <class T> struct  ArrayDomain;

@@ -20,49 +20,35 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.AccessResult;
-import org.apache.qpid.server.security.access.Accessable;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLPluginFactory;
 
-public class AllowAll implements ACLPlugin
+public class AllowAll extends BasicACLPlugin
 {
-    public AccessResult authorise(AMQProtocolSession session, Permission permission, AMQMethodBody body, Object... parameters)
+
+    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
     {
-        if (ACLManager.getLogger().isDebugEnabled())
+        public boolean supportsTag(String name)
         {
-            ACLManager.getLogger().debug("Allowing user:" + session.getAuthorizedID() + " for :" + permission.toString()
-                                        + " on " + body.getClass().getSimpleName()
-                                        + (parameters == null || parameters.length == 0 ? "" : "-" + accessablesToString(parameters)));
+            return false;
         }
 
-        return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
-    }
-
-    public static String accessablesToString(Object[] accessObject)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        for (Object access : accessObject)
+        public ACLPlugin newInstance(Configuration config)
         {
-            sb.append(access.getClass().getSimpleName() + ":" + access.toString() + ", ");
+            return new AllowAll();
         }
-
-        return sb.delete(sb.length() - 2, sb.length()).toString();
-    }
+    };
 
     public String getPluginName()
     {
-        return "AllowAll";
+        return this.getClass().getSimpleName();
     }
 
-    public void setConfiguaration(Configuration config)
+    @Override
+    protected AuthzResult getResult()
     {
-        //no-op
+        // Always allow
+        return AuthzResult.ALLOWED;
     }
-
 }

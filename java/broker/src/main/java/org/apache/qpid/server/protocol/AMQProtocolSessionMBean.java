@@ -37,7 +37,6 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.security.Principal;
 import java.util.Date;
 import java.util.List;
 
@@ -58,15 +57,19 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.ManagedObject;
 
 /**
@@ -76,25 +79,23 @@ import org.apache.qpid.server.management.ManagedObject;
 @MBeanDescription("Management Bean for an AMQ Broker Connection")
 public class AMQProtocolSessionMBean extends AMQManagedObject implements ManagedConnection
 {
-    private AMQMinaProtocolSession _session = null;
+    private AMQProtocolSession _protocolSession = null;
     private String _name = null;
 
     // openmbean data types for representing the channel attributes
-    private static final String[] _channelAtttibuteNames =
-        { "Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count" };
-    private static final String[] _indexNames = { _channelAtttibuteNames[0] };
+
     private static final OpenType[] _channelAttributeTypes =
-        { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER };
+        { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER, SimpleType.BOOLEAN };
     private static CompositeType _channelType = null; // represents the data type for channel data
     private static TabularType _channelsType = null; // Data type for list of channels type
     private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION =
         new AMQShortString("Broker Management Console has closed the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
-    public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws NotCompliantMBeanException, OpenDataException
+    public AMQProtocolSessionMBean(AMQProtocolSession amqProtocolSession) throws NotCompliantMBeanException, OpenDataException
     {
-        super(ManagedConnection.class, ManagedConnection.TYPE);
-        _session = session;
+        super(ManagedConnection.class, ManagedConnection.TYPE, ManagedConnection.VERSION);
+        _protocolSession = amqProtocolSession;
         String remote = getRemoteAddress();
         remote = "anonymous".equals(remote) ? (remote + hashCode()) : remote;
         _name = jmxEncode(new StringBuffer(remote), 0).toString();
@@ -120,59 +121,59 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private static void init() throws OpenDataException
     {
         _channelType =
-            new CompositeType("Channel", "Channel Details", _channelAtttibuteNames, _channelAtttibuteNames,
+            new CompositeType("Channel", "Channel Details", COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS,
                 _channelAttributeTypes);
-        _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
+        _channelsType = new TabularType("Channels", "Channels", _channelType, TABULAR_UNIQUE_INDEX);
     }
 
     public String getClientId()
     {
-        return (_session.getContextKey() == null) ? null : _session.getContextKey().toString();
+        return (_protocolSession.getContextKey() == null) ? null : _protocolSession.getContextKey().toString();
     }
 
     public String getAuthorizedId()
     {
-        return (_session.getAuthorizedID() != null ) ? _session.getAuthorizedID().getName() : null;
+        return (_protocolSession.getPrincipal() != null ) ? _protocolSession.getPrincipal().getName() : null;
     }
 
     public String getVersion()
     {
-        return (_session.getClientVersion() == null) ? null : _session.getClientVersion().toString();
+        return (_protocolSession.getClientVersion() == null) ? null : _protocolSession.getClientVersion().toString();
     }
 
     public Date getLastIoTime()
     {
-        return new Date(_session.getIOSession().getLastIoTime());
+        return new Date(_protocolSession.getLastIoTime());
     }
 
     public String getRemoteAddress()
     {
-        return _session.getIOSession().getRemoteAddress().toString();
+        return _protocolSession.getRemoteAddress().toString();
     }
 
     public ManagedObject getParentObject()
     {
-        return _session.getVirtualHost().getManagedObject();
+        return _protocolSession.getVirtualHost().getManagedObject();
     }
 
     public Long getWrittenBytes()
     {
-        return _session.getIOSession().getWrittenBytes();
+        return _protocolSession.getWrittenBytes();
     }
 
     public Long getReadBytes()
     {
-        return _session.getIOSession().getReadBytes();
+        return _protocolSession.getWrittenBytes();
     }
 
     public Long getMaximumNumberOfChannels()
     {
-        return _session.getMaximumNumberOfChannels();
+        return _protocolSession.getMaximumNumberOfChannels();
     }
 
     public void setMaximumNumberOfChannels(Long value)
     {
-        _session.setMaximumNumberOfChannels(value);
+        _protocolSession.setMaximumNumberOfChannels(value);
     }
 
     public String getObjectInstanceName()
@@ -188,19 +189,24 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void commitTransactions(int channelId) throws JMException
     {
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
-            AMQChannel channel = _session.getChannel(channelId);
+            AMQChannel channel = _protocolSession.getChannel(channelId);
             if (channel == null)
             {
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
 
-            _session.commitTransactions(channel);
+            _protocolSession.commitTransactions(channel);
         }
         catch (AMQException ex)
         {
             throw new MBeanException(ex, ex.toString());
+        }
+        finally
+        {
+            CurrentActor.remove();
         }
     }
 
@@ -212,19 +218,24 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void rollbackTransactions(int channelId) throws JMException
     {
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
-            AMQChannel channel = _session.getChannel(channelId);
+            AMQChannel channel = _protocolSession.getChannel(channelId);
             if (channel == null)
             {
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
 
-            _session.rollbackTransactions(channel);
+            _protocolSession.rollbackTransactions(channel);
         }
         catch (AMQException ex)
         {
             throw new MBeanException(ex, ex.toString());
+        }
+        finally
+        {
+            CurrentActor.remove();
         }
     }
 
@@ -237,7 +248,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public TabularData channels() throws OpenDataException
     {
         TabularDataSupport channelsList = new TabularDataSupport(_channelsType);
-        List<AMQChannel> list = _session.getChannels();
+        List<AMQChannel> list = _protocolSession.getChannels();
 
         for (AMQChannel channel : list)
         {
@@ -245,10 +256,10 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                 {
                     channel.getChannelId(), channel.isTransactional(),
                     (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName().asString() : null,
-                    channel.getUnacknowledgedMessageMap().size()
+                    channel.getUnacknowledgedMessageMap().size(), channel.getBlocking()
                 };
 
-            CompositeData channelData = new CompositeDataSupport(_channelType, _channelAtttibuteNames, itemValues);
+            CompositeData channelData = new CompositeDataSupport(_channelType, COMPOSITE_ITEM_NAMES, itemValues);
             channelsList.put(channelData);
         }
 
@@ -263,7 +274,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public void closeConnection() throws JMException
     {
 
-        MethodRegistry methodRegistry = _session.getMethodRegistry();
+        MethodRegistry methodRegistry = _protocolSession.getMethodRegistry();
         ConnectionCloseBody responseBody =
                 methodRegistry.createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),
                                                          // replyCode
@@ -272,15 +283,42 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                                                          0,
                                                          0);
 
-        _session.writeFrame(responseBody.generateFrame(0));
+        // This seems ugly but because we use closeConnection in both normal
+        // broker operation and as part of the management interface it cannot
+        // be avoided. The Current Actor will be null when this method is
+        // called via the Management interface. This is because we allow the
+        // Local API connection with JConsole. If we did not allow that option
+        // then the CurrentActor could be set in our JMX Proxy object.
+        // As it is we need to set the CurrentActor on all MBean methods
+        // Ideally we would not have a single method that can be called from
+        // two contexts.        
+        boolean removeActor = false;
+        if (CurrentActor.get() == null)
+        {
+            removeActor = true;
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        }
 
         try
         {
-            _session.closeSession();
+            _protocolSession.writeFrame(responseBody.generateFrame(0));
+
+            try
+            {
+
+                _protocolSession.closeSession();
+            }
+            catch (AMQException ex)
+            {
+                throw new MBeanException(ex, ex.toString());
+            }
         }
-        catch (AMQException ex)
+        finally
         {
-            throw new MBeanException(ex, ex.toString());
+            if (removeActor)
+            {
+                CurrentActor.remove();
+            }
         }
     }
 

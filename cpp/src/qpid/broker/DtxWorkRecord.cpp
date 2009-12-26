@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "DtxWorkRecord.h"
+#include "qpid/broker/DtxWorkRecord.h"
 #include "qpid/framing/reply_exceptions.h"
 #include <boost/format.hpp>
 #include <boost/mem_fn.hpp>
@@ -34,7 +34,7 @@ DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const 
 DtxWorkRecord::~DtxWorkRecord() 
 {
     if (timeout.get()) {  
-        timeout->cancelled = true;
+        timeout->cancel();
     }
 }
 

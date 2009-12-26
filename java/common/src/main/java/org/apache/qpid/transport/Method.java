@@ -35,6 +35,7 @@ import static org.apache.qpid.transport.util.Functions.*;
 public abstract class Method extends Struct implements ProtocolEvent
 {
 
+
     public static final Method create(int type)
     {
         // XXX: should generate separate factories for separate
@@ -43,11 +44,18 @@ public abstract class Method extends Struct implements ProtocolEvent
     }
 
     // XXX: command subclass?
+    public static interface CompletionListener
+    {
+        public void onComplete(Method method);
+    }
+
     private int id;
     private int channel;
     private boolean idSet = false;
     private boolean sync = false;
     private boolean batch = false;
+    private boolean unreliable = false;
+    private CompletionListener completionListener;
 
     public final int getId()
     {
@@ -58,6 +66,11 @@ public abstract class Method extends Struct implements ProtocolEvent
     {
         this.id = id;
         this.idSet = true;
+    }
+
+    boolean idSet()
+    {
+        return idSet;
     }
 
     public final int getChannel()
@@ -75,7 +88,7 @@ public abstract class Method extends Struct implements ProtocolEvent
         return sync;
     }
 
-    protected final void setSync(boolean value)
+    public final void setSync(boolean value)
     {
         this.sync = value;
     }
@@ -85,12 +98,22 @@ public abstract class Method extends Struct implements ProtocolEvent
         return batch;
     }
 
-    protected final void setBatch(boolean value)
+    final void setBatch(boolean value)
     {
         this.batch = value;
     }
 
-    public abstract boolean hasPayloadSegment();
+    public final boolean isUnreliable()
+    {
+        return unreliable;
+    }
+
+    final void setUnreliable(boolean value)
+    {
+        this.unreliable = value;
+    }
+
+    public abstract boolean hasPayload();
 
     public Header getHeader()
     {
@@ -112,18 +135,22 @@ public abstract class Method extends Struct implements ProtocolEvent
         throw new UnsupportedOperationException();
     }
 
+    public int getBodySize()
+    {
+        ByteBuffer body = getBody();
+        if (body == null)
+        {
+            return 0;
+        }
+        else
+        {
+            return body.remaining();
+        }
+    }
+
     public abstract byte getEncodedTrack();
 
-    public <C> void dispatch(C context, MethodDelegate<C> delegate)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public <C> void dispatch
-        (C context, org.apache.qpid.transport.v1_0.MethodDelegate<C> delegate)
-    {
-        throw new UnsupportedOperationException();
-    }
+    public abstract <C> void dispatch(C context, MethodDelegate<C> delegate);
 
     public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {
@@ -135,6 +162,26 @@ public abstract class Method extends Struct implements ProtocolEvent
         {
             delegate.control(context, this);
         }
+    }
+
+
+    public void setCompletionListener(CompletionListener completionListener)
+    {
+        this.completionListener = completionListener;
+    }
+
+    public void complete()
+    {
+        if(completionListener!= null)
+        {
+            completionListener.onComplete(this);
+            completionListener = null;            
+        }
+    }
+
+    public boolean hasCompletionListener()
+    {
+        return completionListener != null;
     }
 
     public String toString()

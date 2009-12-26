@@ -23,7 +23,7 @@
  */
 
 #include <string>
-#include "Persistable.h"
+#include "qpid/broker/Persistable.h"
 
 namespace qpid {
 namespace broker {

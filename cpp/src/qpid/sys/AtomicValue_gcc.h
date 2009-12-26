@@ -57,7 +57,7 @@ class AtomicValue
     /** If current value == testval then set to newval. Returns true if the swap was performed. */    
     bool boolCompareAndSwap(T testval, T newval) { return __sync_bool_compare_and_swap(&value, testval, newval); }
 
-    T get() const { return const_cast<AtomicValue<T>*>(this)->fetchAndAdd(0); }
+    T get() const { return const_cast<AtomicValue<T>*>(this)->fetchAndAdd(static_cast<T>(0)); }
         
   private:
     T value;

@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 
 import java.util.Map;
 import java.util.Properties;
@@ -41,7 +42,7 @@ public class PropertiesPrincipalDatabaseManager implements PrincipalDatabaseMana
         return _databases;
     }
 
-    public void initialiseManagement(Configuration config)
+    public void initialiseManagement(ServerConfiguration _configuration) throws ConfigurationException
     {
         //todo
     }

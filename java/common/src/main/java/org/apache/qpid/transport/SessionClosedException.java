@@ -33,7 +33,17 @@ public class SessionClosedException extends SessionException
 
     public SessionClosedException()
     {
-        super(Collections.EMPTY_LIST);
+        this(null);
+    }
+
+    public SessionClosedException(Throwable cause)
+    {
+        super("session closed", null, cause);
+    }
+
+    @Override public void rethrow()
+    {
+        throw new SessionClosedException(this);
     }
 
 }

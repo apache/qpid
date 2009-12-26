@@ -19,7 +19,7 @@
  *
  */
 
-#include "StateManager.h"
+#include "qpid/client/StateManager.h"
 #include "qpid/framing/amqp_framing.h"
 
 using namespace qpid::client;
@@ -58,6 +58,18 @@ void StateManager::setState(int s)
     Monitor::ScopedLock l(stateLock);
     state = s;
     stateLock.notifyAll();
+}
+
+bool StateManager::setState(int s, int expected)
+{
+    Monitor::ScopedLock l(stateLock);
+    if (state == expected) {
+        state = s;
+        stateLock.notifyAll();
+        return true;
+    } else {
+        return false;
+    }
 }
 
 int StateManager::getState() const

@@ -99,37 +99,6 @@ public class FailoverRetrySupport<T, E extends Exception> implements FailoverSup
      */
     public T execute() throws E
     {
-        while (true)
-        {
-            try
-            {
-                connection.blockUntilNotFailingOver();
-            }
-            catch (InterruptedException e)
-            {
-                _log.debug("Interrupted: " + e, e);
-
-                return null;
-            }
-
-            synchronized (connection.getFailoverMutex())
-            {
-                try
-                {
-                    return operation.execute();
-                }
-                catch (FailoverException e)
-                {
-                    _log.debug("Failover exception caught during operation: " + e, e);
-                }
-                catch (IllegalStateException e)
-                {
-                    if (!(e.getMessage().startsWith("Fail-over interupted no-op failover support")))
-                    {
-                        throw e;
-                    }
-                }
-            }
-        }
+        return connection.executeRetrySupport(operation);
     }
 }

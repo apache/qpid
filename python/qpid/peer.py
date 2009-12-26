@@ -25,7 +25,7 @@ incoming method frames to a delegate.
 """
 
 import thread, threading, traceback, socket, sys, logging
-from connection08 import EOF, Method, Header, Body, Request, Response
+from connection08 import EOF, Method, Header, Body, Request, Response, VersionError
 from message import Message
 from queue import Queue, Closed as QueueClosed
 from content import Content
@@ -95,6 +95,8 @@ class Peer:
           break
         ch = self.channel(frame.channel)
         ch.receive(frame, self.work)
+    except VersionError, e:
+      self.closed(e)
     except:
       self.fatal()
 
@@ -193,11 +195,7 @@ class Channel:
     self.futures = {}
     self.control_queue = Queue(0)#used for incoming methods that appas may want to handle themselves
 
-    # Use reliable framing if version == 0-9.
-    if spec.major == 0 and spec.minor == 9:
-      self.invoker = self.invoke_reliable
-    else:
-      self.invoker = self.invoke_method
+    self.invoker = self.invoke_method
     self.use_execution_layer = (spec.major == 0 and spec.minor == 10) or (spec.major == 99 and spec.minor == 0)
     self.synchronous = True
 
@@ -464,6 +462,6 @@ class IncomingCompletion:
       #TODO: record and manage the ranges properly
       range = [mark, mark]
       if (self.mark == -1):#hack until wraparound is implemented        
-        self.channel.execution_complete(cumulative_execution_mark=0xFFFFFFFF, ranged_execution_set=range)
+        self.channel.execution_complete(cumulative_execution_mark=0xFFFFFFFFL, ranged_execution_set=range)
       else:
         self.channel.execution_complete(cumulative_execution_mark=self.mark, ranged_execution_set=range)

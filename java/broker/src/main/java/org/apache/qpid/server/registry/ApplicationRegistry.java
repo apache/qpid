@@ -20,21 +20,24 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.mina.common.IoAcceptor;
-
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.net.InetSocketAddress;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.transport.QpidAcceptor;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -50,13 +53,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private final Map<Class<?>, Object> _configuredObjects = new HashMap<Class<?>, Object>();
 
-    protected final Configuration _configuration;
+    protected final ServerConfiguration _configuration;
 
     public static final int DEFAULT_INSTANCE = 1;
     public static final String DEFAULT_APPLICATION_REGISTRY = "org.apache.qpid.server.util.NullApplicationRegistry";
     public static String _APPLICATION_REGISTRY = DEFAULT_APPLICATION_REGISTRY;
 
-    protected final Map<InetSocketAddress, IoAcceptor> _acceptors = new HashMap<InetSocketAddress, IoAcceptor>();
+    protected final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
 
     protected ManagedObjectRegistry _managedObjectRegistry;
 
@@ -64,11 +67,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected VirtualHostRegistry _virtualHostRegistry;
 
-    protected ACLPlugin _accessManager;
+    protected ACLManager _accessManager;
 
     protected PrincipalDatabaseManager _databaseManager;
 
     protected PluginManager _pluginManager;
+
+    protected RootMessageLogger _rootMessageLogger;
 
     static
     {
@@ -97,7 +102,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             try
             {
-                instance.initialise();
+                instance.initialise(instanceID);
             }
             catch (Exception e)
             {
@@ -111,12 +116,29 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
+    public static boolean isConfigured()
+    {
+        return isConfigured(DEFAULT_INSTANCE);
+    }
+
+    public static boolean isConfigured(int instanceID)
+    {
+        return _instanceMap.containsKey(instanceID);
+    }
+
+    /**
+     * Method to cleanly shutdown the default registry running in this JVM
+     */
+    public static void remove()
+    {
+        remove(DEFAULT_INSTANCE);
+    }
+
     /**
      * Method to cleanly shutdown specified registry running in this JVM
      *
      * @param instanceID the instance to shutdown
      */
-
     public static void remove(int instanceID)
     {
         try
@@ -151,7 +173,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    protected ApplicationRegistry(Configuration configuration)
+    protected ApplicationRegistry(ServerConfiguration configuration)
     {
         _configuration = configuration;
     }
@@ -207,11 +229,26 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             virtualHost.close();
         }
 
+        // Replace above with this
+//        _virtualHostRegistry.close();
+
+//        _accessManager.close();
+
+//        _databaseManager.close();
+
+        _authenticationManager.close();
+
+//        _databaseManager.close();
+
         // close the rmi registry(if any) started for management
-        if (getManagedObjectRegistry() != null)
+        if (_managedObjectRegistry != null)
         {
-            getManagedObjectRegistry().close();
+            _managedObjectRegistry.close();
         }
+
+//        _pluginManager.close();
+
+        CurrentActor.get().message(BrokerMessages.BRK_STOPPED());
     }
 
     private void unbind()
@@ -220,43 +257,24 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             for (InetSocketAddress bindAddress : _acceptors.keySet())
             {
-                IoAcceptor acceptor = _acceptors.get(bindAddress);
-                acceptor.unbind(bindAddress);
+                QpidAcceptor acceptor = _acceptors.get(bindAddress);
+                acceptor.getNetworkDriver().close();
+                CurrentActor.get().message(BrokerMessages.BRK_SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
             }
         }
     }
 
-    public Configuration getConfiguration()
+    public ServerConfiguration getConfiguration()
     {
         return _configuration;
     }
 
-    public void addAcceptor(InetSocketAddress bindAddress, IoAcceptor acceptor)
+    public void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor)
     {
         synchronized (_acceptors)
         {
             _acceptors.put(bindAddress, acceptor);
         }
-    }
-
-    public <T> T getConfiguredObject(Class<T> instanceType)
-    {
-        T instance = (T) _configuredObjects.get(instanceType);
-        if (instance == null)
-        {
-            try
-            {
-                instance = instanceType.newInstance();
-            }
-            catch (Exception e)
-            {
-                _logger.error("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
-                throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor", e);
-            }
-            Configurator.configure(instance);
-            _configuredObjects.put(instanceType, instance);
-        }
-        return instance;
     }
 
     public static void setDefaultApplicationRegistry(String clazz)
@@ -269,9 +287,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _virtualHostRegistry;
     }
 
-    public ACLPlugin getAccessManager()
+    public ACLManager getAccessManager() throws ConfigurationException
     {
-        return _accessManager;
+        return new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
     }
 
     public ManagedObjectRegistry getManagedObjectRegistry()
@@ -294,4 +312,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _pluginManager;
     }
 
+    public RootMessageLogger getRootMessageLogger()
+    {
+        return _rootMessageLogger;
+    }
+    
 }

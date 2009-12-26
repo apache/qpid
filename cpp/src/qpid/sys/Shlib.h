@@ -21,10 +21,10 @@
  * under the License.
  *
  */
- 
+
+#include "qpid/CommonImportExport.h" 
 #include <boost/noncopyable.hpp>
 #include <iostream>
-#include <dlfcn.h>
 
 namespace qpid {
 namespace sys {
@@ -41,10 +41,10 @@ class Shlib {
     Shlib(const std::string& libname) { load(libname.c_str()); }
 
     /** Unload shared library. */
-    void unload();
+    QPID_COMMON_EXTERN void unload();
 
     /** Look up symbol. */
-    void* getSymbol(const char* symbol);
+    QPID_COMMON_EXTERN void* getSymbol(const char* symbol);
 
     /** Look up symbol in shared library, cast it to the desired
      * pointer type, void* by default.
@@ -58,7 +58,7 @@ class Shlib {
     
   private:
     void* handle;
-    void load(const char* libname);
+    QPID_COMMON_EXTERN void load(const char* libname);
 };
 
 /** A shared library handle that unloads the shlib in it's dtor */
@@ -67,7 +67,7 @@ class AutoShlib : public Shlib {
     /** Load shared library */
     AutoShlib(const std::string& libname) : Shlib(libname) {}
     /** Calls unload() */
-    ~AutoShlib() throw();
+    QPID_COMMON_EXTERN ~AutoShlib() throw();
 };
 
     

@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "SignalHandler.h"
-#include "Broker.h"
+#include "qpid/broker/SignalHandler.h"
+#include "qpid/broker/Broker.h"
 #include <signal.h>
 
 namespace qpid {
@@ -36,10 +36,9 @@ void SignalHandler::setBroker(const boost::intrusive_ptr<Broker>& b) {
     signal(SIGHUP,SIG_IGN); // TODO aconway 2007-07-18: reload config.
 
     signal(SIGCHLD,SIG_IGN); 
-    signal(SIGTSTP,SIG_IGN); 
-    signal(SIGTTOU,SIG_IGN);
-    signal(SIGTTIN,SIG_IGN);
 }
+
+void SignalHandler::shutdown() { shutdownHandler(0); }
 
 void SignalHandler::shutdownHandler(int) {
     if (broker.get()) {

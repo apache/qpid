@@ -19,7 +19,7 @@
  *
  */
 
-#include "Monitor.h"
+#include "qpid/sys/Monitor.h"
 
 namespace qpid {
 namespace sys {
@@ -51,10 +51,22 @@ public:
         count--;
     }
 
-    void release()
+    void release(uint n)
     {
         Monitor::ScopedLock l(monitor);
-        if (!count++) monitor.notifyAll();
+        if (count==0) monitor.notifyAll();
+        count+=n;
+    }
+
+    void release()
+    {
+        release(1);
+    }
+
+    void forceLock()
+    {
+        Monitor::ScopedLock l(monitor);
+        count = 0;
     }
 
 private:

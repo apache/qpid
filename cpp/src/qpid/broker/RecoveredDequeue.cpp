@@ -18,22 +18,29 @@
  * under the License.
  *
  */
-#include "RecoveredDequeue.h"
+#include "qpid/broker/RecoveredDequeue.h"
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;
 
-RecoveredDequeue::RecoveredDequeue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg) {}
+RecoveredDequeue::RecoveredDequeue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg)
+{
+    queue->recoverPrepared(msg);
+}
 
-bool RecoveredDequeue::prepare(TransactionContext*) throw(){
+bool RecoveredDequeue::prepare(TransactionContext*) throw()
+{
     //should never be called; transaction has already prepared if an enqueue is recovered
     return false;
 }
 
-void RecoveredDequeue::commit() throw(){
+void RecoveredDequeue::commit() throw()
+{
+    queue->enqueueAborted(msg);
 }
 
-void RecoveredDequeue::rollback() throw(){
+void RecoveredDequeue::rollback() throw()
+{
     msg->enqueueComplete();
     queue->process(msg);
 }

@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "QueueBindings.h"
-#include "ExchangeRegistry.h"
+#include "qpid/broker/QueueBindings.h"
+#include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/framing/reply_exceptions.h"
 
 using qpid::framing::FieldTable;
@@ -29,7 +29,7 @@ using namespace qpid::broker;
 
 void QueueBindings::add(const string& exchange, const string& key, const FieldTable& args)
 {
-    bindings.push_back(new Binding(exchange, key, args));
+    bindings.push_back(QueueBinding(exchange, key, args));
 }
 
 void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
@@ -37,11 +37,10 @@ void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); i++) {
         try {
             exchanges.get(i->exchange)->unbind(queue, i->key, &(i->args));
-        } catch (const NotFoundException&) {
-        }
+        } catch (const NotFoundException&) {}
     }
 }
 
-QueueBindings::Binding::Binding(const string& _exchange, const string& _key, const FieldTable& _args)
+QueueBinding::QueueBinding(const string& _exchange, const string& _key, const FieldTable& _args)
     : exchange(_exchange), key(_key), args(_args)
 {}

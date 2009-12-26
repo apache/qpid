@@ -34,4 +34,5 @@ public interface AuthenticationManager
 
     AuthenticationResult authenticate(SaslServer server, byte[] response);
 
+    void close();
 }

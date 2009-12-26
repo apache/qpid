@@ -33,7 +33,6 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.access.Permission;
 
 public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBody>
 {
@@ -101,9 +100,17 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         {
 
                 //Perform ACLs
-                virtualHost.getAccessManager().authorise(session, Permission.PURGE, body, queue);
+                if (!virtualHost.getAccessManager().authorisePurge(session, queue))
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+                }            
+                else if (queue.isExclusive() && queue.getExclusiveOwner() != session)
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                      "Queue is exclusive, but not created on this Connection.");
+                }
 
-                long purged = queue.clearQueue(channel.getStoreContext());
+                long purged = queue.clearQueue();
 
 
                 if(!body.getNowait())

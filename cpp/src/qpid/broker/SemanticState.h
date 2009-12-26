@@ -22,29 +22,30 @@
  *
  */
 
-#include "Consumer.h"
-#include "Deliverable.h"
-#include "DeliveryAdapter.h"
-#include "DeliveryRecord.h"
-#include "DeliveryToken.h"
-#include "DtxBuffer.h"
-#include "DtxManager.h"
-#include "NameGenerator.h"
-#include "Prefetch.h"
-#include "TxBuffer.h"
+#include "qpid/broker/Consumer.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/DeliveryAdapter.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/DtxBuffer.h"
+#include "qpid/broker/DtxManager.h"
+#include "qpid/broker/NameGenerator.h"
+#include "qpid/broker/TxBuffer.h"
 
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/AggregateOutput.h"
-#include "qpid/shared_ptr.h"
-#include "AclModule.h"
+#include "qpid/sys/Mutex.h"
+#include "qpid/sys/AtomicValue.h"
+#include "qpid/broker/AclModule.h"
+#include "qmf/org/apache/qpid/broker/Subscription.h"
 
 #include <list>
 #include <map>
 #include <vector>
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/cast.hpp>
 
 namespace qpid {
 namespace broker {
@@ -55,36 +56,54 @@ class SessionContext;
  * SemanticState holds the L3 and L4 state of an open session, whether
  * attached to a channel or suspended. 
  */
-class SemanticState : public sys::OutputTask,
-                      private boost::noncopyable
-{
-    class ConsumerImpl : public Consumer, public sys::OutputTask
+class SemanticState : private boost::noncopyable {
+  public:
+    class ConsumerImpl : public Consumer, public sys::OutputTask,
+                         public boost::enable_shared_from_this<ConsumerImpl>,
+                         public management::Manageable
     {
+        mutable qpid::sys::Mutex lock;
         SemanticState* const parent;
-        const DeliveryToken::shared_ptr token;
         const string name;
         const Queue::shared_ptr queue;
         const bool ackExpected;
-        const bool nolocal;
         const bool acquire;
         bool blocked;
         bool windowing;
+        bool exclusive;
+        string resumeId;
+        uint64_t resumeTtl;
+        framing::FieldTable arguments;
         uint32_t msgCredit;
         uint32_t byteCredit;
+        bool notifyEnabled;
+        const int syncFrequency;
+        int deliveryCount;
+        qmf::org::apache::qpid::broker::Subscription* mgmtObject;
 
         bool checkCredit(boost::intrusive_ptr<Message>& msg);
         void allocateCredit(boost::intrusive_ptr<Message>& msg);
+        bool haveCredit();
 
       public:
-        ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
+        typedef boost::shared_ptr<ConsumerImpl> shared_ptr;
+
+        ConsumerImpl(SemanticState* parent, 
                      const string& name, Queue::shared_ptr queue,
-                     bool ack, bool nolocal, bool acquire);
+                     bool ack, bool acquire, bool exclusive,
+                     const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
         ~ConsumerImpl();
         OwnershipToken* getSession();
         bool deliver(QueuedMessage& msg);            
         bool filter(boost::intrusive_ptr<Message> msg);            
         bool accept(boost::intrusive_ptr<Message> msg);            
+
+        void disableNotify();
+        void enableNotify();
         void notify();
+        bool isNotifyEnabled() const;
+
+        void requestDispatch();
 
         void setWindowMode();
         void setCreditMode();
@@ -93,50 +112,68 @@ class SemanticState : public sys::OutputTask,
         void flush();
         void stop();
         void complete(DeliveryRecord&);    
-        Queue::shared_ptr getQueue() { return queue; }
-        bool isBlocked() const { return blocked; }        
+        Queue::shared_ptr getQueue() const { return queue; }
+        bool isBlocked() const { return blocked; }
+        bool setBlocked(bool set) { std::swap(set, blocked); return set; }
 
         bool hasOutput();
         bool doOutput();
+
+        std::string getName() const { return name; }
+
+        bool isAckExpected() const { return ackExpected; }
+        bool isAcquire() const { return acquire; }
+        bool isWindowing() const { return windowing; }
+        bool isExclusive() const { return exclusive; }
+        uint32_t getMsgCredit() const { return msgCredit; }
+        uint32_t getByteCredit() const { return byteCredit; }
+        std::string getResumeId() const { return resumeId; };
+        uint64_t getResumeTtl() const { return resumeTtl; }
+        const framing::FieldTable& getArguments() const { return arguments; }
+
+        SemanticState& getParent() { return *parent; }
+        const SemanticState& getParent() const { return *parent; }
+        // Manageable entry points
+        management::ManagementObject* GetManagementObject (void) const;
+        management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
     };
 
-    typedef boost::ptr_map<std::string,ConsumerImpl> ConsumerImplMap;
+  private:
+    typedef std::map<std::string, ConsumerImpl::shared_ptr> ConsumerImplMap;
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
 
     SessionContext& session;
     DeliveryAdapter& deliveryAdapter;
-    Queue::shared_ptr defaultQueue;
     ConsumerImplMap consumers;
-    uint32_t prefetchSize;    
-    uint16_t prefetchCount;    
-    Prefetch outstanding;
     NameGenerator tagGenerator;
-    std::list<DeliveryRecord> unacked;
+    DeliveryRecords unacked;
     TxBuffer::shared_ptr txBuffer;
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
     DtxBufferMap suspendedXids;
     framing::SequenceSet accumulatedAck;
     boost::shared_ptr<Exchange> cacheExchange;
-    sys::AggregateOutput outputTasks;
     AclModule* acl;
-	
+    const bool authMsg;
+    const string userID;
+    const string defaultRealm;
+
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
-    void record(const DeliveryRecord& delivery);
-    bool checkPrefetch(boost::intrusive_ptr<Message>& msg);
     void checkDtxTimeout();
-    ConsumerImpl& find(const std::string& destination);
-    void complete(DeliveryRecord&);
+
+    bool complete(DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
-    void requestDispatch(ConsumerImpl&);
-    void cancel(ConsumerImpl&);
+    void cancel(ConsumerImpl::shared_ptr);
 
   public:
     SemanticState(DeliveryAdapter&, SessionContext&);
     ~SemanticState();
 
     SessionContext& getSession() { return session; }
+    const SessionContext& getSession() const { return session; }
+
+    ConsumerImpl& find(const std::string& destination);
     
     /**
      * Get named queue, never returns 0.
@@ -146,16 +183,13 @@ class SemanticState : public sys::OutputTask,
      */
     Queue::shared_ptr getQueue(const std::string& name) const;
     
-    uint32_t setPrefetchSize(uint32_t size){ return prefetchSize = size; }
-    uint16_t setPrefetchCount(uint16_t n){ return prefetchCount = n; }
-
     bool exists(const string& consumerTag);
 
-    /**
-     *@param tagInOut - if empty it is updated with the generated token.
-     */
-    void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, 
-                 bool nolocal, bool ackRequired, bool acquire, bool exclusive, const framing::FieldTable* = 0);
+    void consume(const string& destination, 
+                 Queue::shared_ptr queue, 
+                 bool ackRequired, bool acquire, bool exclusive,
+                 const string& resumeId=string(), uint64_t resumeTtl=0,
+                 const framing::FieldTable& = framing::FieldTable());
 
     void cancel(const string& tag);
 
@@ -166,7 +200,6 @@ class SemanticState : public sys::OutputTask,
     void flush(const std::string& destination);
     void stop(const std::string& destination);
 
-    bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
     void startTx();
     void commit(MessageStore* const store);
     void rollback();
@@ -176,17 +209,29 @@ class SemanticState : public sys::OutputTask,
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
     void recover(bool requeue);
-    DeliveryId redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);            
+    void deliver(DeliveryRecord& message, bool sync);            
     void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
     void release(DeliveryId first, DeliveryId last, bool setRedelivered);
     void reject(DeliveryId first, DeliveryId last);
     void handle(boost::intrusive_ptr<Message> msg);
-    bool hasOutput() { return outputTasks.hasOutput(); }
-    bool doOutput() { return outputTasks.doOutput(); }
 
-    //final 0-10 spec (completed and accepted are distinct):
-    void completed(DeliveryId deliveryTag, DeliveryId endTag);
-    void accepted(DeliveryId deliveryTag, DeliveryId endTag);
+    void completed(const framing::SequenceSet& commands);
+    void accepted(const framing::SequenceSet& commands);
+
+    void attached();
+    void detached();
+
+    // Used by cluster to re-create sessions
+    template <class F> void eachConsumer(F f) {
+        for(ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); ++i)
+            f(i->second);
+    }
+    DeliveryRecords& getUnacked() { return unacked; }
+    framing::SequenceSet getAccumulatedAck() const { return accumulatedAck; }
+    TxBuffer::shared_ptr getTxBuffer() const { return txBuffer; }
+    void setTxBuffer(const TxBuffer::shared_ptr& txb) { txBuffer = txb; }
+    void setAccumulatedAck(const framing::SequenceSet& s) { accumulatedAck = s; }
+    void record(const DeliveryRecord& delivery);
 };
 
 }} // namespace qpid::broker

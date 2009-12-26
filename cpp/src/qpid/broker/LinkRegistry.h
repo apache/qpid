@@ -23,23 +23,26 @@
  */
 
 #include <map>
-#include "Link.h"
-#include "Bridge.h"
-#include "MessageStore.h"
-#include "Timer.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/Address.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
 
+    class Link;
     class Broker;
     class Connection;
     class LinkRegistry {
 
         // Declare a timer task to manage the establishment of link connections and the
         // re-establishment of lost link connections.
-        struct Periodic : public TimerTask
+        struct Periodic : public sys::TimerTask
         {
             LinkRegistry& links;
 
@@ -48,28 +51,40 @@ namespace broker {
             void fire();
         };
 
-        typedef std::map<std::string, Link::shared_ptr> LinkMap;
+        typedef std::map<std::string, boost::shared_ptr<Link> > LinkMap;
         typedef std::map<std::string, Bridge::shared_ptr> BridgeMap;
+        typedef std::map<std::string, TcpAddress> AddressMap;
 
         LinkMap   links;
         LinkMap   linksToDestroy;
         BridgeMap bridges;
         BridgeMap bridgesToDestroy;
+        AddressMap reMappings;
 
         qpid::sys::Mutex lock;
         Broker* broker;
-        Timer   timer;
+        sys::Timer* timer;
+        boost::intrusive_ptr<qpid::sys::TimerTask> maintenanceTask;
         management::Manageable* parent;
         MessageStore* store;
+        bool passive;
+        bool passiveChanged;
+        std::string realm;
 
         void periodicMaintenance ();
+        bool updateAddress(const std::string& oldKey, const TcpAddress& newAddress);
+        boost::shared_ptr<Link> findLink(const std::string& key);
+        static std::string createKey(const TcpAddress& address);
 
     public:
+        LinkRegistry (); // Only used in store tests
         LinkRegistry (Broker* _broker);
-        std::pair<Link::shared_ptr, bool>
+        ~LinkRegistry();
+
+        std::pair<boost::shared_ptr<Link>, bool>
             declare(std::string& host,
                     uint16_t     port,
-                    bool         useSsl,
+                    std::string& transport,
                     bool         durable,
                     std::string& authMechanism,
                     std::string& username,
@@ -84,7 +99,9 @@ namespace broker {
                     bool         isQueue,
                     bool         isLocal,
                     std::string& id,
-                    std::string& excludes);
+                    std::string& excludes,
+                    bool         dynamic,
+                    uint16_t     sync);
 
         void destroy(const std::string& host, const uint16_t port);
         void destroy(const std::string& host,
@@ -114,6 +131,18 @@ namespace broker {
         std::string getAuthMechanism   (const std::string& key);
         std::string getAuthCredentials (const std::string& key);
         std::string getAuthIdentity    (const std::string& key);
+
+        /**
+         * Called by links failing over to new address
+         */
+        void changeAddress(const TcpAddress& oldAddress, const TcpAddress& newAddress);
+        /**
+         * Called to alter passive state. In passive state the links
+         * and bridges managed by a link registry will be recorded and
+         * updated but links won't actually establish connections and
+         * bridges won't therefore pull or push any messages.
+         */
+        void setPassive(bool);
     };
 }
 }

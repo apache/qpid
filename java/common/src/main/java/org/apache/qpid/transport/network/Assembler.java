@@ -186,10 +186,11 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         case COMMAND:
             int commandType = dec.readUint16();
             // read in the session header, right now we don't use it
-            dec.readUint16();
+            int hdr = dec.readUint16();
             command = Method.create(commandType);
+            command.setSync((0x0001 & hdr) != 0);
             command.read(dec);
-            if (command.hasPayloadSegment())
+            if (command.hasPayload())
             {
                 incomplete[channel] = command;
             }

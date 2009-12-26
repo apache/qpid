@@ -19,38 +19,37 @@
  *
  */
 
+
 /**
  *  declare_queues.cpp
  *
  *  This program is one of three programs designed to be used
- *  together. These programs use the "amq.direct" exchange.
+ *  together. 
  *  
- *  direct_config_queues.cpp (this program):
+ *    declare_queues.cpp: (this program):
  *
- *      Creates a queue on a broker, binding a routing key to route
- *      messages to that queue.
+ *      Creates a queue named "message_queue" on a broker, binding the
+ *      queue to the "amq.direct" exchange, using the routing key
+ *      "routing_key".
  *
- *  direct_producer.cpp:
+ *    direct_producer.cpp
  *
- *      Publishes to a broker, specifying a routing key.
+ *      Publishes to the "amq.direct" exchange, specifying the routing
+ *      key "routing_key"
  *
- *  listener.cpp
+ *    listener.cpp
  *
- *      Reads from a queue on the broker using a message listener.
+ *      Reads  from the "message_queue"  queue on  the broker  using a
+ *      message listener.
  *
  */
 
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 
-#include <unistd.h>
-#include <cstdlib>
-#include <iostream>
 
 using namespace qpid::client;
 using namespace qpid::framing;
-
-using std::string;
 
 
 int main(int argc, char** argv) {

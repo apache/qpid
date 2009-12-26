@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,6 +23,9 @@
 #include <boost/lexical_cast.hpp>
 #include "unit_test.h"
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(FrameTestSuite)
 
 using namespace std;
@@ -33,7 +36,7 @@ QPID_AUTO_TEST_CASE(testContentBody) {
     Frame f(42, AMQContentBody("foobar"));
     AMQBody* body=f.getBody();
     BOOST_CHECK(dynamic_cast<AMQContentBody*>(body));
-    Buffer b(f.size());
+    Buffer b(f.encodedSize();
     f.encode(b);
     b.flip();
     Frame g;
@@ -50,7 +53,7 @@ QPID_AUTO_TEST_CASE(testMethodBody) {
         42, QueueDeclareBody(ProtocolVersion(), 1, "q", "altex",
                              true, false, true, false, true, args));
     BOOST_CHECK_EQUAL(f.getChannel(), 42);
-    Buffer b(f.size());
+    Buffer b(f.encodedSize();
     f.encode(b);
     b.flip();
     Frame g;
@@ -78,3 +81,5 @@ QPID_AUTO_TEST_CASE(testLoop) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

@@ -18,12 +18,12 @@
  * under the License.
  *
  */
-#include "AMQHeaderBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 
-uint32_t qpid::framing::AMQHeaderBody::size() const {
-    return properties.size();
+uint32_t qpid::framing::AMQHeaderBody::encodedSize() const {
+    return properties.encodedSize();
 }
 
 void qpid::framing::AMQHeaderBody::encode(Buffer& buffer) const {
@@ -52,7 +52,7 @@ uint64_t qpid::framing::AMQHeaderBody::getContentLength() const
 
 void qpid::framing::AMQHeaderBody::print(std::ostream& out) const
 {
-    out << "header (" << size() << " bytes)";
+    out << "header (" << encodedSize() << " bytes)";
     out << "; properties={";
     properties.print(out);
     out << "}";

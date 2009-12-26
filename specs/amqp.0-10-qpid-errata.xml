@@ -1912,6 +1912,8 @@
         is idle. If a connection is idle for more than twice the negotiated heartbeat delay, the
         peers MAY be considered disconnected.
       </doc>
+      <implement role="client" handle="MAY" />
+      <implement role="server" handle="MAY" />
     </control>
 
     <!-- - Control: connection.close - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->

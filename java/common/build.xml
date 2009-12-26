@@ -20,18 +20,18 @@
  -->
 <project name="AMQ Common" default="build">
 
+  <property name="module.genpom" value="true"/>
+
   <import file="../module.xml"/>
 
   <property name="gentools.home" location="${project.root}/../gentools" />
   <property name="generated.package" value="org/apache/qpid/framing" />
   <property name="generated.dir" location="${module.precompiled}/${generated.package}" />
   <property name="xml.spec.dir" location="${project.root}/../specs" />
-  <property name="xml.spec.deps" value="amqp.0-8.xml amqp.0-9.xml" />
-  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/amqp.0-9.xml" />
-  <property name="mllib.dir" value="${project.root}/../python" />
+  <property name="xml.spec.deps" value="amqp.0-8.xml amqp.0-9.xml amqp0-9-1.stripped.xml" />
+  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/amqp.0-9.xml ${xml.spec.dir}/amqp0-9-1.stripped.xml" />
   <property name="gentools.timestamp" location="${generated.dir}/gentools.timestamp" />
-  <property name="jython.timestamp" location="${module.precompiled}/jython.timestamp" />
-  <property name="jython_1_0.timestamp" location="${module.precompiled}/jython_1_0.timestamp" />
+  <property name="jython.timestamp" location="${generated.dir}/jython.timestamp" />
 
   <target name="check_jython_deps">
     <uptodate property="jython.notRequired" targetfile="${jython.timestamp}">
@@ -40,41 +40,15 @@
   </target>
 
   <target name="jython" depends="check_jython_deps" unless="jython.notRequired">
-    <java classname="org.python.util.jython" fork="true" failonerror="true">
-      <arg value="-Dpython.cachedir.skip=true"/>
-      <arg value="-Dpython.path=${basedir}/jython-lib.jar/Lib${path.separator}${mllib.dir}"/>
-      <arg value="${basedir}/codegen"/>
-      <arg value="${module.precompiled}"/>
-      <arg value="${xml.spec.dir}/amqp.0-10-qpid-errata.xml"/>
-      <arg value="${basedir}"/>
-      <arg value="org/apache/qpid/transport"/>
-      <classpath>
-        <pathelement location="jython-2.2-rc2.jar"/>
-      </classpath>
-    </java>
+    <jython path="${mllib.dir}">
+      <args>
+        <arg value="${basedir}/codegen"/>
+        <arg value="${module.precompiled}"/>
+        <arg value="${xml.spec.dir}/amqp.0-10-qpid-errata.xml"/>
+        <arg value="${basedir}"/>
+      </args>
+    </jython>
     <touch file="${jython.timestamp}" />
-  </target>
-
-  <target name="check_jython_deps_1_0">
-    <uptodate property="jython.notRequired_1_0" targetfile="${jython_1_0.timestamp}">
-      <srcfiles dir="${xml.spec.dir}" includes="amqp.1-0-draft.xml" />
-    </uptodate>
-  </target>
-
-  <target name="jython_1_0" depends="check_jython_deps_1_0" unless="jython.notRequired_1_0">
-    <java classname="org.python.util.jython" fork="true" failonerror="true">
-      <arg value="-Dpython.cachedir.skip=true"/>
-      <arg value="-Dpython.path=${basedir}/jython-lib.jar/Lib${path.separator}${mllib.dir}"/>
-      <arg value="${basedir}/codegen"/>
-      <arg value="${module.precompiled}"/>
-      <arg value="${xml.spec.dir}/amqp.1-0-draft.xml"/>
-      <arg value="${basedir}"/>
-      <arg value="org/apache/qpid/transport/v1_0"/>
-      <classpath>
-        <pathelement location="jython-2.2-rc2.jar"/>
-      </classpath>
-    </java>
-    <touch file="${jython_1_0.timestamp}" />
   </target>
 
   <target name="compile_gentools">
@@ -103,30 +77,7 @@
     <touch file="${gentools.timestamp}" />
   </target>
 
-  <property name="version.file" location="${module.classes}/qpidversion.properties"/>
-  <property file="${version.file}" prefix="old."/>
+  <target name="precompile" depends="gentools,jython,create-version"/>
 
-  <target name="check-version">
-    <exec executable="svnversion" spawn="false" failifexecutionfails="false"
-          dir="${project.root}" outputproperty="qpid.svnversion">
-      <arg line="."/>
-    </exec>
-    <condition property="version.stale">
-      <not>
-        <equals arg1="${qpid.svnversion}" arg2="${old.qpid.svnversion}"/>
-      </not>
-    </condition>
-  </target>
-
-  <target name="version" depends="check-version" if="version.stale">
-    <!-- Write the version.properties out. -->
-    <echo file="${version.file}" append="true">
-      qpid.svnversion=${qpid.svnversion}
-      qpid.name=${project.name}
-      qpid.version=${project.version}
-    </echo>
-  </target>
-
-  <target name="precompile" depends="gentools,jython,jython_1_0,version"/>
-
+  <target name="bundle" depends="bundle-tasks"/>
 </project>

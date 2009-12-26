@@ -42,7 +42,7 @@ public abstract class Struct implements Encodable
         return StructFactory.create(type);
     }
 
-    protected boolean dirty = true;
+    boolean dirty = true;
 
     public boolean isDirty()
     {

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,9 +19,11 @@
  *
  */
 
-#include "NullMessageStore.h"
-#include "RecoveryManager.h"
+#include "qpid/broker/NullMessageStore.h"
+#include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/RecoveryManager.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/reply_exceptions.h"
 
 #include <iostream>
 
@@ -32,47 +34,41 @@ namespace broker{
 
 const std::string nullxid = "";
 
-class DummyCtxt : public TPCTransactionContext 
+class SimpleDummyCtxt : public TransactionContext {};
+
+class DummyCtxt : public TPCTransactionContext
 {
     const std::string xid;
 public:
     DummyCtxt(const std::string& _xid) : xid(_xid) {}
-    static std::string getXid(TransactionContext& ctxt) 
+    static std::string getXid(TransactionContext& ctxt)
     {
         DummyCtxt* c(dynamic_cast<DummyCtxt*>(&ctxt));
         return c ? c->xid : nullxid;
     }
 };
 
+NullMessageStore::NullMessageStore() : nextPersistenceId(1) {
+    QPID_LOG(info, "No message store configured, persistence is disabled.");
 }
-}
-
-using namespace qpid::broker;
-
-NullMessageStore::NullMessageStore(bool _warn) : warn(_warn), nextPersistenceId(1) {}
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
 
+void NullMessageStore::truncateInit(const bool /*pushDownStoreFiles*/) {}
+
 void NullMessageStore::create(PersistableQueue& queue, const framing::FieldTable& /*args*/)
 {
-    QPID_LOG(info, "Queue '" << queue.getName() 
-             << "' will not be durable. Persistence not enabled.");
     queue.setPersistenceId(nextPersistenceId++);
 }
 
-void NullMessageStore::destroy(PersistableQueue&)
-{
-}
+void NullMessageStore::destroy(PersistableQueue&) {}
 
 void NullMessageStore::create(const PersistableExchange& exchange, const framing::FieldTable& /*args*/)
 {
-    QPID_LOG(info, "Exchange'" << exchange.getName() 
-             << "' will not be durable. Persistence not enabled.");
     exchange.setPersistenceId(nextPersistenceId++);
 }
 
-void NullMessageStore::destroy(const PersistableExchange& )
-{}
+void NullMessageStore::destroy(const PersistableExchange& ) {}
 
 void NullMessageStore::bind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&){}
 
@@ -80,47 +76,31 @@ void NullMessageStore::unbind(const PersistableExchange&, const PersistableQueue
 
 void NullMessageStore::create(const PersistableConfig& config)
 {
-    QPID_LOG(info, "Persistence not enabled, configuration not stored.");
     config.setPersistenceId(nextPersistenceId++);
 }
 
-void NullMessageStore::destroy(const PersistableConfig&)
-{
-    QPID_LOG(info, "Persistence not enabled, configuration not stored.");
-}
+void NullMessageStore::destroy(const PersistableConfig&) {}
 
-void NullMessageStore::recover(RecoveryManager&)
-{
-    QPID_LOG(info, "Persistence not enabled, no recovery attempted.");
-}
+void NullMessageStore::recover(RecoveryManager&) {}
 
-void NullMessageStore::stage(const intrusive_ptr<PersistableMessage>&)
-{
-    QPID_LOG(info, "Can't stage message. Persistence not enabled.");
-}
+void NullMessageStore::stage(const intrusive_ptr<PersistableMessage>&) {}
 
-void NullMessageStore::destroy(PersistableMessage&)
-{
-}
+void NullMessageStore::destroy(PersistableMessage&) {}
 
-void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessage>&, const string&)
-{
-    QPID_LOG(info, "Can't append content. Persistence not enabled.");
-}
+void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessage>&, const string&) {}
 
 void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&,
                                    const intrusive_ptr<const PersistableMessage>&,
                                    string&, uint64_t, uint32_t)
 {
-    QPID_LOG(info, "Can't load content. Persistence not enabled.");
+    throw qpid::framing::InternalErrorException("Can't load content; persistence not enabled");
 }
 
 void NullMessageStore::enqueue(TransactionContext*,
                                const intrusive_ptr<PersistableMessage>& msg,
-                               const PersistableQueue& queue)
+                               const PersistableQueue&)
 {
-    msg->enqueueComplete(); 
-    QPID_LOG(info, "Message is not durably recorded on '" << queue.getName() << "'. Persistence not enabled.");
+    msg->enqueueComplete();
 }
 
 void NullMessageStore::dequeue(TransactionContext*,
@@ -130,18 +110,15 @@ void NullMessageStore::dequeue(TransactionContext*,
     msg->dequeueComplete();
 }
 
-void NullMessageStore::flush(const qpid::broker::PersistableQueue&)
-{
-}
+void NullMessageStore::flush(const qpid::broker::PersistableQueue&) {}
 
-uint32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& )
-{
+uint32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& ) {
     return 0;
 }
 
 std::auto_ptr<TransactionContext> NullMessageStore::begin()
 {
-    return std::auto_ptr<TransactionContext>();
+    return std::auto_ptr<TransactionContext>(new SimpleDummyCtxt());
 }
 
 std::auto_ptr<TPCTransactionContext> NullMessageStore::begin(const std::string& xid)
@@ -168,3 +145,21 @@ void NullMessageStore::collectPreparedXids(std::set<string>& out)
 {
     out.insert(prepared.begin(), prepared.end());
 }
+
+bool NullMessageStore::isNull() const
+{
+    return true;
+}
+
+bool NullMessageStore::isNullStore(const MessageStore* store)
+{
+    const MessageStoreModule* wrapper = dynamic_cast<const MessageStoreModule*>(store);
+    if (wrapper) {
+        return wrapper->isNull();
+    } else {
+        const NullMessageStore* test = dynamic_cast<const NullMessageStore*>(store);
+        return test && test->isNull();
+    }
+}
+
+}}  // namespace qpid::broker

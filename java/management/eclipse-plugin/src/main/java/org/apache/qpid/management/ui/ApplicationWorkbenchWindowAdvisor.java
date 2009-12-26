@@ -51,7 +51,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor
         int y = Display.getDefault().getBounds().height;
         configurer.setInitialSize(new Point(9*x/10, 8*y/10));
         configurer.setShowCoolBar(true);
-        configurer.setShowStatusLine(false);
+        configurer.setShowStatusLine(true);
         
         configurer.setTitle(Constants.APPLICATION_NAME);
     }  

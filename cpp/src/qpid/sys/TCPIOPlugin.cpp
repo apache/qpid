@@ -19,12 +19,13 @@
  *
  */
 
-#include "ProtocolFactory.h"
-#include "AsynchIOHandler.h"
-#include "AsynchIO.h"
+#include "qpid/sys/ProtocolFactory.h"
+#include "qpid/sys/AsynchIOHandler.h"
+#include "qpid/sys/AsynchIO.h"
 
 #include "qpid/Plugin.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/Poller.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"
 
@@ -45,7 +46,7 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, int16_t port,
                  ConnectionCodec::Factory*,
-                 boost::function2<void, int, std::string> failed);
+                 ConnectFailedCallback);
 
     uint16_t getPort() const;
     std::string getHost() const;
@@ -53,6 +54,7 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
   private:
     void established(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*,
                      bool isClient);
+    void connectFailed(const Socket&, int, const std::string&, ConnectFailedCallback);
 };
 
 // Static instance to initialise plugin
@@ -65,9 +67,10 @@ static class TCPIOPlugin : public Plugin {
         // Only provide to a Broker
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
-            ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, opts.tcpNoDelay));
-            QPID_LOG(info, "Listening on TCP port " << protocol->getPort());
-            broker->registerProtocolFactory(protocol);
+            ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, 
+                                                                             opts.tcpNoDelay));
+            QPID_LOG(notice, "Listening on TCP port " << protocol->getPort());
+            broker->registerProtocolFactory("tcp", protocol);
         }
     }
 } tcpPlugin;
@@ -81,19 +84,20 @@ void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socke
     AsynchIOHandler* async = new AsynchIOHandler(s.getPeerAddress(), f);
 
     if (tcpNoDelay) {
-        s.setTcpNoDelay(tcpNoDelay);
+        s.setTcpNoDelay();
         QPID_LOG(info, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
     }
 
     if (isClient)
         async->setClient();
-    AsynchIO* aio = new AsynchIO(s,
-                                 boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::eof, async, _1),
-                                 boost::bind(&AsynchIOHandler::disconnect, async, _1),
-                                 boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::nobuffs, async, _1),
-                                 boost::bind(&AsynchIOHandler::idle, async, _1));
+    AsynchIO* aio = AsynchIO::create
+      (s,
+       boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
+       boost::bind(&AsynchIOHandler::eof, async, _1),
+       boost::bind(&AsynchIOHandler::disconnect, async, _1),
+       boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
+       boost::bind(&AsynchIOHandler::nobuffs, async, _1),
+       boost::bind(&AsynchIOHandler::idle, async, _1));
 
     async->init(aio, 4);
     aio->start(poller);
@@ -110,9 +114,18 @@ std::string AsynchIOProtocolFactory::getHost() const {
 void AsynchIOProtocolFactory::accept(Poller::shared_ptr poller,
                                      ConnectionCodec::Factory* fact) {
     acceptor.reset(
-        new AsynchAcceptor(listener,
+        AsynchAcceptor::create(listener,
                            boost::bind(&AsynchIOProtocolFactory::established, this, poller, _1, fact, false)));
     acceptor->start(poller);
+}
+
+void AsynchIOProtocolFactory::connectFailed(
+    const Socket& s, int ec, const std::string& emsg,
+    ConnectFailedCallback failedCb)
+{
+    failedCb(ec, emsg);
+    s.close();
+    delete &s;
 }
 
 void AsynchIOProtocolFactory::connect(
@@ -128,9 +141,14 @@ void AsynchIOProtocolFactory::connect(
     // is no longer needed.
 
     Socket* socket = new Socket();
-    new AsynchConnector (*socket, poller, host, port,
-                         boost::bind(&AsynchIOProtocolFactory::established, this, poller, _1, fact, true),
-                         failed);
+    AsynchConnector::create(*socket,
+                            poller,
+                            host,
+                            port,
+                            boost::bind(&AsynchIOProtocolFactory::established,
+                                        this, poller, _1, fact, true),
+                            boost::bind(&AsynchIOProtocolFactory::connectFailed,
+                                        this, _1, _2, _3, failed));
 }
 
 }} // namespace qpid::sys

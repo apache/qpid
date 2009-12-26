@@ -18,23 +18,22 @@
 #
 
 from unittest import TestCase
-from qpid.testlib import testrunner
-from qpid.spec010 import load
 from qpid.datatypes import *
+from qpid.ops import DeliveryProperties, FragmentProperties, MessageProperties
 
 class SerialTest(TestCase):
 
   def test(self):
-    for s in (serial(0), serial(0x8FFFFFFF), serial(0xFFFFFFFF)):
+    for s in (serial(0), serial(0x8FFFFFFFL), serial(0xFFFFFFFFL)):
       assert s + 1 > s
       assert s - 1 < s
       assert s < s + 1
       assert s > s - 1
 
-    assert serial(0xFFFFFFFF) + 1 == serial(0)
+    assert serial(0xFFFFFFFFL) + 1 == serial(0)
 
-    assert min(serial(0xFFFFFFFF), serial(0x0)) == serial(0xFFFFFFFF)
-    assert max(serial(0xFFFFFFFF), serial(0x0)) == serial(0x0)
+    assert min(serial(0xFFFFFFFFL), serial(0x0)) == serial(0xFFFFFFFFL)
+    assert max(serial(0xFFFFFFFFL), serial(0x0)) == serial(0x0)
 
   def testIncr(self):
     s = serial(0)
@@ -44,7 +43,7 @@ class SerialTest(TestCase):
   def testIn(self):
     l = [serial(1), serial(2), serial(3), serial(4)]
     assert serial(1) in l
-    assert serial(0xFFFFFFFF + 2) in l
+    assert serial(0xFFFFFFFFL + 2) in l
     assert 4 in l
 
   def testNone(self):
@@ -54,6 +53,19 @@ class SerialTest(TestCase):
     d = {}
     d[serial(0)] = "zero"
     assert d[0] == "zero"
+
+  def testAdd(self):
+    assert serial(2) + 2 == serial(4)
+    assert serial(2) + 2 == 4
+
+  def testSub(self):
+    delta = serial(4) - serial(2)
+    assert isinstance(delta, int) or isinstance(delta, long)
+    assert delta == 2
+
+    delta = serial(4) - 2
+    assert isinstance(delta, Serial)
+    assert delta == serial(2)
 
 class RangedSetTest(TestCase):
 
@@ -136,6 +148,34 @@ class RangedSetTest(TestCase):
     assert range.lower == 0
     assert range.upper == 8
 
+  def testEmpty(self):
+    s = RangedSet()
+    assert s.empty()
+    s.add(0, -1)
+    assert s.empty()
+    s.add(0, 0)
+    assert not s.empty()
+
+  def testMinMax(self):
+    s = RangedSet()
+    assert s.max() is None
+    assert s.min() is None
+    s.add(0, 10)
+    assert s.max() == 10
+    assert s.min() == 0
+    s.add(0, 5)
+    assert s.max() == 10
+    assert s.min() == 0
+    s.add(0, 11)
+    assert s.max() == 11
+    assert s.min() == 0
+    s.add(15, 20)
+    assert s.max() == 20
+    assert s.min() == 0
+    s.add(-10, -5)
+    assert s.max() == 20
+    assert s.min() == -10
+
 class RangeTest(TestCase):
 
   def testIntersect1(self):
@@ -176,10 +216,9 @@ class UUIDTest(TestCase):
 class MessageTest(TestCase):
 
   def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10-qpid-errata.xml"))
-    self.mp = Struct(self.spec["message.message_properties"])
-    self.dp = Struct(self.spec["message.delivery_properties"])
-    self.fp = Struct(self.spec["message.fragment_properties"])
+    self.mp = MessageProperties()
+    self.dp = DeliveryProperties()
+    self.fp = FragmentProperties()
 
   def testHas(self):
     m = Message(self.mp, self.dp, self.fp, "body")
@@ -207,7 +246,7 @@ class MessageTest(TestCase):
 
   def testSetReplace(self):
     m = Message(self.mp, self.dp, self.fp, "body")
-    dp = Struct(self.spec["message.delivery_properties"])
+    dp = DeliveryProperties()
     assert m.get("delivery_properties") == self.dp
     assert m.get("delivery_properties") != dp
     m.set(dp)
@@ -223,3 +262,35 @@ class MessageTest(TestCase):
     assert m.get("fragment_properties") is None
     assert m.get("message_properties") == self.mp
     assert m.get("delivery_properties") == self.dp
+
+class TimestampTest(TestCase):
+
+  def check(self, expected, *values):
+    for v in values:
+      assert isinstance(v, timestamp)
+      assert v == expected
+      assert v == timestamp(expected)
+
+  def testAdd(self):
+    self.check(4.0,
+               timestamp(2.0) + 2.0,
+               2.0 + timestamp(2.0))
+
+  def testSub(self):
+    self.check(2.0,
+               timestamp(4.0) - 2.0,
+               4.0 - timestamp(2.0))
+
+  def testNeg(self):
+    self.check(-4.0, -timestamp(4.0))
+
+  def testPos(self):
+    self.check(+4.0, +timestamp(4.0))
+
+  def testAbs(self):
+    self.check(4.0, abs(timestamp(-4.0)))
+
+  def testConversion(self):
+    dt = timestamp(0).datetime()
+    t = timestamp(dt)
+    assert t == 0

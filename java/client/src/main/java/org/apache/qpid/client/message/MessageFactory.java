@@ -27,7 +27,8 @@ import javax.jms.JMSException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.transport.Struct;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.MessageProperties;
 
 
 public interface MessageFactory
@@ -39,7 +40,8 @@ public interface MessageFactory
         throws JMSException, AMQException;
 
      AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
-                                      Struct[] contentHeader,
+                                      MessageProperties msgProps,
+                                      DeliveryProperties deliveryProps,
                                       java.nio.ByteBuffer body)
         throws JMSException, AMQException;
 

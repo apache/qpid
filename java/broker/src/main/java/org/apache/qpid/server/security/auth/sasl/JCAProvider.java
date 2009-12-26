@@ -28,12 +28,11 @@ import javax.security.sasl.SaslServerFactory;
 
 public final class JCAProvider extends Provider
 {
-    public JCAProvider(Map<String, Class<? extends SaslServerFactory>> providerMap)
+    public JCAProvider(String name, Map<String, Class<? extends SaslServerFactory>> providerMap)
     {
-        super("AMQSASLProvider", 1.0, "A JCA provider that registers all " +
+        super(name, 1.0, "A JCA provider that registers all " +
               "AMQ SASL providers that want to be registered");
         register(providerMap);
-        //Security.addProvider(this);
     }
 
     private void register(Map<String, Class<? extends SaslServerFactory>> providerMap)

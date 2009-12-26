@@ -1,4 +1,22 @@
 #!/usr/bin/env ruby
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 # Usage: output_directory xml_spec_file [xml_spec_file...]
 # 
 $: << '..'
@@ -56,7 +74,7 @@ class OperationsInvokerGen < CppGen
       public
       genl("Invoker(#{target}& target_) : target(target_) {}")
       genl "using MethodBodyDefaultVisitor::visit;"
-      methods.each { |m| genl "void visit(const #{m.body_name}& body);" }
+      methods.each { |m| genl "QPID_COMMON_EXTERN void visit(const #{m.body_name}& body);" }
     }
   end
   
@@ -64,6 +82,7 @@ class OperationsInvokerGen < CppGen
     h_file(@filename) {
       include "qpid/framing/#{@ops}"
       include "qpid/framing/Invoker.h"
+      include "qpid/CommonImportExport.h"
       namespace("qpid::framing") {
         # AMQP_*Operations invoker.
         methods=@amqp.classes.map { |c| visit_methods(c).to_a }.flatten
@@ -93,6 +112,6 @@ class OperationsInvokerGen < CppGen
   end
 end
 
-OperationsInvokerGen.new("client",ARGV[0], $amqp).generate()
-OperationsInvokerGen.new("server",ARGV[0], $amqp).generate()
-OperationsInvokerGen.new("all",ARGV[0], $amqp).generate()
+OperationsInvokerGen.new("client",$outdir, $amqp).generate()
+OperationsInvokerGen.new("server",$outdir, $amqp).generate()
+OperationsInvokerGen.new("all",$outdir, $amqp).generate()

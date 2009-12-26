@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "Unit.h"
-#include "Codec.h"
+#include "qpid/amqp_0_10/Unit.h"
+#include "qpid/amqp_0_10/Codec.h"
 
 namespace qpid {
 namespace amqp_0_10 {

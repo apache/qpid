@@ -19,151 +19,261 @@
  *
  */
 
-#include "qpid/cluster/Cpg.h"
-#include "qpid/cluster/ShadowConnectionOutputHandler.h"
-#include "qpid/cluster/PollableQueue.h"
+#include "ClusterMap.h"
+#include "ClusterSettings.h"
+#include "Cpg.h"
+#include "Decoder.h"
+#include "ErrorCheck.h"
+#include "Event.h"
+#include "EventFrame.h"
+#include "ExpiryPolicy.h"
+#include "FailoverExchange.h"
+#include "InitialStatusMap.h"
+#include "LockedConnectionMap.h"
+#include "Multicaster.h"
+#include "NoOpConnectionOutputHandler.h"
+#include "PollableQueue.h"
+#include "PollerDispatch.h"
+#include "Quorum.h"
+#include "StoreStatus.h"
+#include "UpdateReceiver.h"
 
-#include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
-#include "qpid/sys/Dispatcher.h"
-#include "qpid/sys/Monitor.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/sys/Thread.h"
-#include "qpid/log/Logger.h"
+#include "qmf/org/apache/qpid/cluster/Cluster.h"
 #include "qpid/Url.h"
-#include "qpid/RefCounted.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/sys/Monitor.h"
 
-#include <boost/optional.hpp>
-#include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/optional.hpp>
 
+#include <algorithm>
 #include <map>
 #include <vector>
 
 namespace qpid {
+
+namespace framing {
+class AMQBody;
+class Uuid;
+}
+
 namespace cluster {
 
-class ConnectionInterceptor;
+class Connection;
+class EventFrame;
 
 /**
- * Connection to the cluster.
- * Keeps cluster membership data.
+ * Connection to the cluster
  */
-class Cluster : private Cpg::Handler, public RefCounted
-{
+class Cluster : private Cpg::Handler, public management::Manageable {
   public:
-    typedef boost::tuple<Cpg::Id, void*> ShadowConnectionId;
+    typedef boost::intrusive_ptr<Connection> ConnectionPtr;
+    typedef std::vector<ConnectionPtr> ConnectionVector;
 
-    /** Details of a cluster member */
-    struct Member {
-        Cpg::Id  id;
-        Url url;
-    };
-    
-    typedef std::vector<Member> MemberList;
+    // Public functions are thread safe unless otherwise mentioned in a comment.
 
-    /**
-     * Join a cluster.
-     * @param name of the cluster.
-     * @param url of this broker, sent to the cluster.
-     */
-    Cluster(const std::string& name, const Url& url, broker::Broker&);
-
+    // Construct the cluster in plugin earlyInitialize.
+    Cluster(const ClusterSettings&, broker::Broker&);
     virtual ~Cluster();
 
-    /** Initialize interceptors for a new connection */
-    void initialize(broker::Connection&);
+    // Called by plugin initialize: cluster start-up requires transport plugins .
+    // Thread safety: only called by plugin initialize.
+    void initialize();
+
+    // Connection map.
+    void addLocalConnection(const ConnectionPtr&); 
+    void addShadowConnection(const ConnectionPtr&); 
+    void erase(const ConnectionId&);       
     
-    /** Get the current cluster membership. */
-    MemberList getMembers() const;
+    // URLs of current cluster members.
+    std::vector<std::string> getIds() const;
+    std::vector<Url> getUrls() const;
+    boost::shared_ptr<FailoverExchange> getFailoverExchange() const { return failoverExchange; }
 
-    /** Number of members in the cluster. */
-    size_t size() const;
-
-    bool empty() const { return size() == 0; }
-    
-    /** Send frame to the cluster */
-    void send(const framing::AMQFrame&, ConnectionInterceptor*);
-
-    /** Leave the cluster */
+    // Leave the cluster - called when fatal errors occur.
     void leave();
-    
-    // Cluster frame handing functions
-    void notify(const std::string& url);
-    void connectionClose();
+
+    // Update completed - called in update thread
+    void updateInDone(const ClusterMap&);
+    void updateInRetracted();
+
+    MemberId getId() const;
+    broker::Broker& getBroker() const;
+    Multicaster& getMulticast() { return mcast; }
+
+    const ClusterSettings& getSettings() const { return settings; }
+
+    void deliverFrame(const EventFrame&);
+
+    // Called in deliverFrame thread to indicate an error from the broker.
+    void flagError(Connection&, ErrorCheck::ErrorType, const std::string& msg);
+
+    // Called only during update by Connection::shadowReady
+    Decoder& getDecoder() { return decoder; }
+
+    ExpiryPolicy& getExpiryPolicy() { return *expiryPolicy; }
+
+    UpdateReceiver& getUpdateReceiver() { return updateReceiver; }
 
   private:
-    typedef Cpg::Id Id;
-    typedef std::map<Id, Member>  MemberMap;
-    typedef std::map<ShadowConnectionId, ConnectionInterceptor*> ShadowConnectionMap;
-    typedef std::set<ConnectionInterceptor*> LocalConnectionSet;
+    typedef sys::Monitor::ScopedLock Lock;
 
-    /** Message sent over the cluster. */
-    struct Message {
-        framing::AMQFrame frame; Id from; void* connection;
-        Message(const framing::AMQFrame& f, const Id i, void* c)
-            : frame(f), from(i), connection(c) {}
-    };
-    typedef PollableQueue<Message> MessageQueue;
+    typedef PollableQueue<Event> PollableEventQueue;
+    typedef PollableQueue<EventFrame> PollableFrameQueue;
+    typedef std::map<ConnectionId, ConnectionPtr> ConnectionMap;
 
-    boost::function<void()> shutdownNext;
+    /** Version number of the cluster protocol, to avoid mixed versions. */
+    static const uint32_t CLUSTER_VERSION;
     
-    void notify();              ///< Notify cluster of my details.
+    // NB: A dummy Lock& parameter marks functions that must only be
+    // called with Cluster::lock  locked.
+ 
+    void leave(Lock&);
+    std::vector<std::string> getIds(Lock&) const;
+    std::vector<Url> getUrls(Lock&) const;
 
-    /** CPG deliver callback. */
-    void deliver(
+    // == Called in main thread from Broker destructor.
+    void brokerShutdown();
+
+    // == Called in deliverEventQueue thread
+    void deliveredEvent(const Event&); 
+
+    // == Called in deliverFrameQueue thread
+    void deliveredFrame(const EventFrame&); 
+    void processFrame(const EventFrame&, Lock&); 
+
+    // Cluster controls implement XML methods from cluster.xml.
+    void updateRequest(const MemberId&, const std::string&, Lock&);
+    void updateOffer(const MemberId& updater, uint64_t updatee, Lock&);
+    void retractOffer(const MemberId& updater, uint64_t updatee, Lock&);
+    void initialStatus(const MemberId&,
+                       uint32_t version,
+                       bool active,
+                       const framing::Uuid& clusterId,
+                       framing::cluster::StoreState,
+                       const framing::Uuid& shutdownId,
+                       Lock&);
+    void ready(const MemberId&, const std::string&, Lock&);
+    void configChange(const MemberId&, const std::string& current, Lock& l);
+    void messageExpired(const MemberId&, uint64_t, Lock& l);
+    void errorCheck(const MemberId&, uint8_t type, SequenceNumber frameSeq, Lock&);
+
+    void shutdown(const MemberId&, const framing::Uuid& shutdownId, Lock&);
+
+    // Helper functions
+    ConnectionPtr getConnection(const EventFrame&, Lock&);
+    ConnectionVector getConnections(Lock&);
+    void updateStart(const MemberId& updatee, const Url& url, Lock&);
+    void makeOffer(const MemberId&, Lock&);
+    void setReady(Lock&);
+    void memberUpdate(Lock&);
+    void setClusterId(const framing::Uuid&, Lock&);
+    void erase(const ConnectionId&, Lock&);       
+
+    void initMapCompleted(Lock&);
+
+
+
+    // == Called in CPG dispatch thread
+    void deliver( // CPG deliver callback. 
         cpg_handle_t /*handle*/,
-        struct cpg_name *group,
+        const struct cpg_name *group,
         uint32_t /*nodeid*/,
         uint32_t /*pid*/,
         void* /*msg*/,
         int /*msg_len*/);
 
-    /** CPG config change callback */
-    void configChange(
+    void deliverEvent(const Event&);
+    
+    void configChange( // CPG config change callback.
         cpg_handle_t /*handle*/,
-        struct cpg_name */*group*/,
-        struct cpg_address */*members*/, int /*nMembers*/,
-        struct cpg_address */*left*/, int /*nLeft*/,
-        struct cpg_address */*joined*/, int /*nJoined*/
+        const struct cpg_name */*group*/,
+        const struct cpg_address */*members*/, int /*nMembers*/,
+        const struct cpg_address */*left*/, int /*nLeft*/,
+        const struct cpg_address */*joined*/, int /*nJoined*/
     );
 
-    /** Callback to handle delivered frames from the deliverQueue. */
-    void deliverQueueCb(const MessageQueue::iterator& begin,
-                      const MessageQueue::iterator& end);
+    // == Called in management threads.
+    virtual qpid::management::ManagementObject* GetManagementObject() const;
+    virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
-    /** Callback to multi-cast frames from mcastQueue */
-    void mcastQueueCb(const MessageQueue::iterator& begin,
-                    const MessageQueue::iterator& end);
+    void stopClusterNode(Lock&);
+    void stopFullCluster(Lock&);
 
+    // == Called in connection IO threads .
+    void checkUpdateIn(Lock&);
 
-    /** Callback to dispatch CPG events. */
-    void dispatch(sys::DispatchHandle&);
-    /** Callback if CPG fd is disconnected. */
-    void disconnect(sys::DispatchHandle&);
+    // == Called in UpdateClient thread.
+    void updateOutDone();
+    void updateOutError(const std::exception&);
+    void updateOutDone(Lock&);
 
-    void handleMethod(Id from, ConnectionInterceptor* connection, framing::AMQMethodBody& method);
-
-    ConnectionInterceptor* getShadowConnection(const Cpg::Id&, void*);
-
-    mutable sys::Monitor lock;  // Protect access to members.
-    broker::Broker* broker;
+    // Immutable members set on construction, never changed.
+    const ClusterSettings settings;
+    broker::Broker& broker;
+    qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
     boost::shared_ptr<sys::Poller> poller;
     Cpg cpg;
-    Cpg::Name name;
-    Url url;
-    MemberMap members;
-    Id self;
-    ShadowConnectionMap shadowConnectionMap;
-    LocalConnectionSet localConnectionSet;
-    ShadowConnectionOutputHandler shadowOut;
-    sys::DispatchHandle cpgDispatchHandle;
-    MessageQueue deliverQueue;
-    MessageQueue mcastQueue;
+    const std::string name;
+    Url myUrl;
+    const MemberId self;
+    framing::Uuid clusterId;
+    NoOpConnectionOutputHandler shadowOut;
+    qpid::management::ManagementAgent* mAgent;
+    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
 
-  friend std::ostream& operator <<(std::ostream&, const Cluster&);
-  friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);
-  friend std::ostream& operator <<(std::ostream&, const MemberMap&);
+    // Thread safe members
+    Multicaster mcast;
+    PollerDispatch dispatcher;
+    PollableEventQueue deliverEventQueue;
+    PollableFrameQueue deliverFrameQueue;
+    boost::shared_ptr<FailoverExchange> failoverExchange;
+    Quorum quorum;
+    LockedConnectionMap localConnections;
+
+    // Used only in deliverEventQueue thread or when stalled for update.
+    Decoder decoder;
+    bool discarding;
+    
+
+    // Remaining members are protected by lock.
+
+    // TODO aconway 2009-03-06: Most of these members are also only used in
+    // deliverFrameQueue thread or during stall. Review and separate members
+    // that require a lock, drop lock when not needed.
+
+    mutable sys::Monitor lock;
+
+
+    //    Local cluster state, cluster map
+    enum {
+        INIT,    ///< Establishing inital cluster stattus.
+        JOINER,  ///< Sent update request, waiting for update offer.
+        UPDATEE, ///< Stalled receive queue at update offer, waiting for update to complete.
+        CATCHUP, ///< Update complete, unstalled but has not yet seen own "ready" event.
+        READY,   ///< Fully operational 
+        OFFER,   ///< Sent an offer, waiting for accept/reject.
+        UPDATER, ///< Offer accepted, sending a state update.
+        LEFT     ///< Final state, left the cluster.
+    } state;
+
+    ConnectionMap connections;
+    InitialStatusMap initMap;
+    StoreStatus store;
+    ClusterMap map;
+    MemberSet elders;
+    size_t lastSize;
+    bool lastBroker;
+    sys::Thread updateThread;
+    boost::optional<ClusterMap> updatedMap;
+    bool updateRetracted;
+    ErrorCheck error;
+    UpdateReceiver updateReceiver;
+
+  friend std::ostream& operator<<(std::ostream&, const Cluster&);
+  friend class ClusterDispatcher;
 };
 
 }} // namespace qpid::cluster

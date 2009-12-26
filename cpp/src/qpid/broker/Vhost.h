@@ -21,29 +21,28 @@
 //
 
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Vhost.h"
+#include "qmf/org/apache/qpid/broker/Vhost.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid { 
 namespace broker {
 
+class Broker;
 class Vhost : public management::Manageable
 {
   private:
 
-    management::Vhost* mgmtObject;
+    qmf::org::apache::qpid::broker::Vhost* mgmtObject;
 
   public:
 
     typedef boost::shared_ptr<Vhost> shared_ptr;
 
-    Vhost (management::Manageable* parentBroker);
+    Vhost (management::Manageable* parentBroker, Broker* broker = 0);
 
     management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }
-
-    management::Manageable::status_t ManagementMethod (uint32_t, management::Args&)
-    { return management::Manageable::STATUS_OK; }
+    void setFederationTag(const std::string& tag);
 };
 
 }}

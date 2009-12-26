@@ -1,6 +1,6 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
 /*
 *
@@ -24,6 +24,9 @@ import org.apache.qpid.server.queue.AMQMessage;
 */
 public interface FlowCreditManager
 {
+    long getMessageCredit();
+
+    long getBytesCredit();
 
     public static interface FlowCreditManagerListener
     {
@@ -34,11 +37,10 @@ public interface FlowCreditManager
 
     boolean removeListener(FlowCreditManagerListener listener);
 
-    public void addCredit(long messageCredit, long bytesCredit);
-
-    public void removeAllCredit();
+    public void restoreCredit(long messageCredit, long bytesCredit);
 
     public boolean hasCredit();
 
-    public boolean useCreditForMessage(AMQMessage msg);
+    public boolean useCreditForMessage(ServerMessage msg);
+
 }

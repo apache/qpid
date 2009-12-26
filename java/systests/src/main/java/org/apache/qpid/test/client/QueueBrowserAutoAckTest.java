@@ -47,12 +47,12 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     protected Session _clientSession;
     protected Queue _queue;
     protected static final String MESSAGE_ID_PROPERTY = "MessageIDProperty";
+    protected boolean CLUSTERED = Boolean.getBoolean("profile.clustered");
 
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Client
         _clientConnection = getConnection();
@@ -61,6 +61,9 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         setupSession();
 
+        _queue = _clientSession.createQueue(getTestQueueName());
+        _clientSession.createConsumer(_queue).close();
+        
         //Ensure there are no messages on the queue to start with.
         checkQueueDepth(0);
     }
@@ -115,7 +118,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     {
         producerConnection.start();
 
-        Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session producerSession = producerConnection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
         //Ensure _queue is created
         producerSession.createConsumer(_queue).close();
@@ -128,6 +131,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
             textMsg.setIntProperty(MESSAGE_ID_PROPERTY, messsageID);
             producer.send(textMsg);
         }
+        producerSession.commit();
 
         producerConnection.close();
     }
@@ -452,7 +456,10 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
 
         sendMessages("connection1", messages);
-        sendMessages("connection2", messages);
+        if (!CLUSTERED)
+        {
+            sendMessages("connection2", messages);
+        }
 
 
         checkQueueDepth(messages);
@@ -490,7 +497,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
             if (msgCount == failPoint)
             {
-                failBroker();
+                failBroker(getFailingPort());
             }
         }
 
@@ -517,9 +524,12 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         int messages = 50;
 
         sendMessages("connection1", messages);
-        sendMessages("connection2", messages);
+        if (!CLUSTERED)
+        {
+            sendMessages("connection2", messages);
+        }
 
-        failBroker();
+        failBroker(getFailingPort());
 
         checkQueueDepth(messages);
 

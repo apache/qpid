@@ -47,7 +47,7 @@ public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQ
     public synchronized XASession createXASession() throws JMSException
     {
         checkNotClosed();
-        return _delegate.createXASession(AMQSession.DEFAULT_PREFETCH_HIGH_MARK, AMQSession.DEFAULT_PREFETCH_HIGH_MARK);
+        return _delegate.createXASession();
     }
 
     //-- Interface  XAQueueConnection

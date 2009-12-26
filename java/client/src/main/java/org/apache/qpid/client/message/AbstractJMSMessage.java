@@ -367,13 +367,14 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
         try
         {
             StringBuffer buf = new StringBuffer("Body:\n");
+            
             buf.append(toBodyString());
             buf.append("\nJMS Correlation ID: ").append(getJMSCorrelationID());
             buf.append("\nJMS timestamp: ").append(getJMSTimestamp());
             buf.append("\nJMS expiration: ").append(getJMSExpiration());
             buf.append("\nJMS priority: ").append(getJMSPriority());
             buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
-            //buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
+            buf.append("\nJMS reply to: ").append(getReplyToString());
             buf.append("\nJMS Redelivered: ").append(_redelivered);
             buf.append("\nJMS Destination: ").append(getJMSDestination());
             buf.append("\nJMS Type: ").append(getJMSType());
@@ -392,7 +393,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
                 while(propertyNames.hasMoreElements())
                 {
                     String propertyName = (String) propertyNames.nextElement();
-                    buf.append(propertyName).append(":\t").append(getObjectProperty(propertyName));
+                    buf.append("\t").append(propertyName).append(" = ").append(getObjectProperty(propertyName)).append("\n");
                 }
 
             }
@@ -401,7 +402,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
         }
         catch (JMSException e)
         {
-            return e.toString();
+            throw new RuntimeException(e);
         }
     }
 

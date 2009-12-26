@@ -26,20 +26,45 @@ package org.apache.qpid.transport;
  *
  */
 
-public class ConnectionException extends RuntimeException
+public class ConnectionException extends TransportException
 {
 
     private ConnectionClose close;
 
+    public ConnectionException(String message, ConnectionClose close, Throwable cause)
+    {
+        super(message, cause);
+        this.close = close;
+    }
+
+    public ConnectionException(String message)
+    {
+        this(message, null, null);
+    }
+
+    public ConnectionException(String message, Throwable cause)
+    {
+        this(message, null, cause);
+    }
+
+    public ConnectionException(Throwable cause)
+    {
+        this(cause.getMessage(), null, cause);
+    }
+
     public ConnectionException(ConnectionClose close)
     {
-        super(close.getReplyText());
-        this.close = close;
+        this(close.getReplyText(), close, null);
     }
 
     public ConnectionClose getClose()
     {
         return close;
+    }
+
+    @Override public void rethrow()
+    {
+        throw new ConnectionException(getMessage(), close, this);
     }
 
 }

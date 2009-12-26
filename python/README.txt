@@ -1,32 +1,50 @@
-= RUNNING THE PYTHON TESTS =
+= INSTALLATION =
 
-The tests/ directory contains a collection of python unit tests to
-exercise functions of a broker.
+Extract the release archive into a directory of your choice and set
+your PYTHONPATH accordingly:
 
-Simplest way to run the tests:
+  tar -xzf qpid-python-<version>.tar.gz -C <install-prefix>
+  export PYTHONPATH=<install-prefix>/qpid-<version>/python
 
- * Run a broker on the default port
+= GETTING STARTED =
 
- * ./run-tests
+The python client includes a simple hello-world example that publishes
+and consumes a message:
 
-For additional options: ./run-tests --help
+  cp <install-prefix>/qpid-<version>/python/hello-world .
+  ./hello-world
 
+= EXAMPLES =
 
-== Expected failures ==
+More comprehensive examples can be found here:
 
-Until we complete functionality, tests may fail because the tested
-functionality is missing in the broker. To skip expected failures
-in the C++ or Java brokers:
+  cd <install-prefix>/qpid-<version>/python/examples
 
- ./run-tests -I <file_name>
+= RUNNING THE TESTS =
 
-=== File List ===
+The "tests" directory contains a collection of unit tests for the
+python client. The "tests_0-10", "tests_0-9", and "tests_0-8"
+directories contain protocol level conformance tests for AMQP brokers
+of the specified version.
 
-1. cpp_failing_0-10.txt
-2. cpp_failing_0-9.txt
-3. cpp_failing_0-8.txt
-4. java_failing_0-9.txt
-5. java_failing_0-8.txt
-6. cpp_failing_0-10_preview.txt  -- will be depricated soon.
+The qpid-python-test script may be used to run these tests. It will by
+default run the python unit tests and the 0-10 conformance tests:
 
-If you fix a failure, please remove it from the corresponding list.
+  1. Run a broker on the default port
+
+  2. ./qpid-python-test
+
+If you wish to run the 0-8 or 0-9 conformence tests, they may be
+selected as follows:
+
+  1. Run a broker on the default port
+
+  2. ./qpid-python-test tests_0-8.*
+
+        -- or --
+
+     ./qpid-python-test tests_0-9.*
+
+See the qpid-python-test usage for for additional options:
+
+  ./qpid-python-test -h

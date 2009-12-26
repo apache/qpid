@@ -19,17 +19,35 @@
  *
  */
 
+
 /**
- *  listener.cpp: This program reads messages fro a queue on
- *  the broker using a message listener.
+ *
+ * listener.cpp
+ *
+ * This is one of three programs used to implement XML-based content
+ * routing in C++.
+ *
+ * declare_queues.cpp 
+ *
+ *       Creates a queue named "message_qaueue" on the broker,
+ *       declares an XML Exchange, subscribes the queue to the XML
+ *       Exchange using an XQuery in the binding, then exits.
+ *
+ * xml_producer.cpp 
+ *
+ *       Publishes messages to the XML Exchange.
+ *
+ * listener.cpp (this program)
+ *
+ *       Reads messages from the "message_queue" queue.
  */
+
 
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/SubscriptionManager.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -50,7 +68,7 @@ Listener::Listener(SubscriptionManager& subs) : subscriptions(subs)
 
 void Listener::received(Message& message) {
   std::cout << "Message: " << message.getData() << std::endl;
-  if (message.getHeaders().getString("control") == "end") {
+  if (message.getHeaders().getAsString("control") == "end") {
       std::cout << "Shutting down listener for " << message.getDestination()
                 << std::endl;
       subscriptions.cancel(message.getDestination());
@@ -60,8 +78,8 @@ void Listener::received(Message& message) {
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+
     Connection connection;
-    Message msg;
     try {
       connection.open(host, port);
       Session session =  connection.newSession();

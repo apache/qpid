@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,24 +19,32 @@
  *
  */
 
-#include "MessageStoreModule.h"
+#include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/NullMessageStore.h"
 #include <iostream>
 
 // This transfer protects against the unloading of the store lib prior to the handling of the exception
 #define TRANSFER_EXCEPTION(fn) try { fn; } catch (std::exception& e) { throw Exception(e.what()); }
 
 using boost::intrusive_ptr;
-using namespace qpid::broker;
 using qpid::framing::FieldTable;
 
-MessageStoreModule::MessageStoreModule(MessageStore* _store) : store(_store) {}
+namespace qpid {
+namespace broker {
+
+MessageStoreModule::MessageStoreModule(boost::shared_ptr<MessageStore>& _store)
+  : store(_store) {}
 
 MessageStoreModule::~MessageStoreModule()
 {
-    delete store;
 }
 
 bool MessageStoreModule::init(const Options*) { return true; }
+
+void MessageStoreModule::truncateInit(const bool pushDownStoreFiles)
+{
+    TRANSFER_EXCEPTION(store->truncateInit(pushDownStoreFiles));
+}
 
 void MessageStoreModule::create(PersistableQueue& queue, const FieldTable& args)
 {
@@ -58,13 +66,13 @@ void MessageStoreModule::destroy(const PersistableExchange& exchange)
     TRANSFER_EXCEPTION(store->destroy(exchange));
 }
 
-void MessageStoreModule::bind(const PersistableExchange& e, const PersistableQueue& q, 
+void MessageStoreModule::bind(const PersistableExchange& e, const PersistableQueue& q,
                               const std::string& k, const framing::FieldTable& a)
 {
     TRANSFER_EXCEPTION(store->bind(e, q, k, a));
 }
 
-void MessageStoreModule::unbind(const PersistableExchange& e, const PersistableQueue& q, 
+void MessageStoreModule::unbind(const PersistableExchange& e, const PersistableQueue& q,
                                 const std::string& k, const framing::FieldTable& a)
 {
     TRANSFER_EXCEPTION(store->unbind(e, q, k, a));
@@ -102,7 +110,7 @@ void MessageStoreModule::appendContent(const intrusive_ptr<const PersistableMess
 }
 
 void MessageStoreModule::loadContent(
-    const qpid::broker::PersistableQueue& queue, 
+    const qpid::broker::PersistableQueue& queue,
     const intrusive_ptr<const PersistableMessage>& msg,
     string& data, uint64_t offset, uint32_t length)
 {
@@ -162,3 +170,10 @@ void MessageStoreModule::collectPreparedXids(std::set<std::string>& xids)
 {
     TRANSFER_EXCEPTION(store->collectPreparedXids(xids));
 }
+
+bool MessageStoreModule::isNull() const
+{
+    return NullMessageStore::isNullStore(store.get());
+}
+
+}} // namespace qpid::broker

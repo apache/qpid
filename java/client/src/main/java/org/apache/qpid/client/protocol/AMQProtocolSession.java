@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.client.protocol;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.mina.common.CloseFuture;
-import org.apache.mina.common.IdleStatus;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.common.WriteFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +28,7 @@ import javax.security.sasl.SaslClient;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -64,10 +60,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     protected static final String AMQ_CONNECTION = "AMQConnection";
 
     protected static final String SASL_CLIENT = "SASLClient";
-
-    protected final IoSession _minaProtocolSession;
-
-    protected WriteFuture _lastWriteFuture;
 
     /**
      * The handler from which this session was created and which is used to handle protocol events. We send failover
@@ -102,28 +94,15 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     protected final AMQConnection _connection;
 
+    private ConnectionTuneParameters _connectionTuneParameters;
+
+    private SaslClient _saslClient;
+
     private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
-
-    public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
-    {
-        _protocolHandler = protocolHandler;
-        _minaProtocolSession = protocolSession;
-        _minaProtocolSession.setAttachment(this);
-        // properties of the connection are made available to the event handlers
-        _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
-        // fixme - real value needed
-        _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
-        _protocolVersion = connection.getProtocolVersion();
-        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
-                                                                           this);
-        _connection = connection;
-
-    }
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, AMQConnection connection)
     {
         _protocolHandler = protocolHandler;
-        _minaProtocolSession = null;
         _protocolVersion = connection.getProtocolVersion();
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
                                                                            this);
@@ -134,7 +113,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
-        _minaProtocolSession.write(new ProtocolInitiation(_connection.getProtocolVersion()));
+        _protocolHandler.writeFrame(new ProtocolInitiation(_connection.getProtocolVersion()));
     }
 
     public String getClientID()
@@ -175,14 +154,9 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         return getAMQConnection().getPassword();
     }
 
-    public IoSession getIoSession()
-    {
-        return _minaProtocolSession;
-    }
-
     public SaslClient getSaslClient()
     {
-        return (SaslClient) _minaProtocolSession.getAttribute(SASL_CLIENT);    
+        return _saslClient;
     }
 
     /**
@@ -192,28 +166,21 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      */
     public void setSaslClient(SaslClient client)
     {
-        if (client == null)
-        {
-            _minaProtocolSession.removeAttribute(SASL_CLIENT);
-        }
-        else
-        {
-            _minaProtocolSession.setAttribute(SASL_CLIENT, client);
-        }
+        _saslClient = client;
     }
 
     public ConnectionTuneParameters getConnectionTuneParameters()
     {
-        return (ConnectionTuneParameters) _minaProtocolSession.getAttribute(CONNECTION_TUNE_PARAMETERS);
+        return _connectionTuneParameters;
     }
 
     public void setConnectionTuneParameters(ConnectionTuneParameters params)
     {
-        _minaProtocolSession.setAttribute(CONNECTION_TUNE_PARAMETERS, params);
+        _connectionTuneParameters = params;
         AMQConnection con = getAMQConnection();
         con.setMaximumChannelCount(params.getChannelMax());
         con.setMaximumFrameSize(params.getFrameMax());
-        initHeartbeats((int) params.getHeartbeat());
+        _protocolHandler.initHeartbeats((int) params.getHeartbeat());
     }
 
     /**
@@ -225,7 +192,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      * @throws AMQException if this was not expected
      */
     public void unprocessedMessageReceived(final int channelId, UnprocessedMessage message) throws AMQException
-    {        
+    {
         if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
         {
             _channelId2UnprocessedMsgArray[channelId] = message;
@@ -335,21 +302,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      */
     public void writeFrame(AMQDataBlock frame)
     {
-        writeFrame(frame, false);
+        _protocolHandler.writeFrame(frame);
     }
 
     public void writeFrame(AMQDataBlock frame, boolean wait)
     {
-        WriteFuture f = _minaProtocolSession.write(frame);
-        if (wait)
-        {
-            // fixme -- time out?
-            f.join();
-        }
-        else
-        {
-            _lastWriteFuture = f;
-        }
+        _protocolHandler.writeFrame(frame, wait);
     }
 
     /**
@@ -407,33 +365,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public AMQConnection getAMQConnection()
     {
-        return (AMQConnection) _minaProtocolSession.getAttribute(AMQ_CONNECTION);
+        return _connection;
     }
 
     public void closeProtocolSession() throws AMQException
     {
-        closeProtocolSession(true);
-    }
-
-    public void closeProtocolSession(boolean waitLast) throws AMQException
-    {
-        _logger.debug("Waiting for last write to join.");
-        if (waitLast && (_lastWriteFuture != null))
-        {
-            _lastWriteFuture.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
-        }
-
-        _logger.debug("Closing protocol session");
-        
-        final CloseFuture future = _minaProtocolSession.close();
-
-        // There is no recovery we can do if the join on the close failes so simply mark the connection CLOSED
-        // then wait for the connection to close.
-        // ritchiem: Could this release BlockingWaiters to early? The close has been done as much as possible so any
-        // error now shouldn't matter.
-
-        _protocolHandler.getStateManager().changeState(AMQState.CONNECTION_CLOSED);
-        future.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
+        _protocolHandler.closeConnection(0);
     }
 
     public void failover(String host, int port)
@@ -449,20 +386,9 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             id = _queueId++;
         }
         // get rid of / and : and ; from address for spec conformance
-        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(), "/;:", "");
+        String localAddress = StringUtils.replaceChars(_protocolHandler.getLocalAddress().toString(), "/;:", "");
 
         return new AMQShortString("tmp_" + localAddress + "_" + id);
-    }
-
-    /** @param delay delay in seconds (not ms) */
-    void initHeartbeats(int delay)
-    {
-        if (delay > 0)
-        {
-            _minaProtocolSession.setIdleTime(IdleStatus.WRITER_IDLE, delay);
-            _minaProtocolSession.setIdleTime(IdleStatus.READER_IDLE, HeartbeatConfig.CONFIG.getTimeout(delay));
-            HeartbeatDiagnostics.init(delay, HeartbeatConfig.CONFIG.getTimeout(delay));
-        }
     }
 
     public void confirmConsumerCancelled(int channelId, AMQShortString consumerTag)
@@ -477,9 +403,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _protocolVersion = pv;
         _methodRegistry = MethodRegistry.getMethodRegistry(pv);
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(pv, this);
-
-        //  _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);
-    }
+  }
 
     public byte getProtocolMinorVersion()
     {
@@ -495,11 +419,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         return _protocolVersion;
     }
-
-//    public VersionSpecificRegistry getRegistry()
-//    {
-//        return _registry;
-//    }
 
     public MethodRegistry getMethodRegistry()
     {
@@ -530,7 +449,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void methodFrameReceived(final int channel, final AMQMethodBody amqMethodBody) throws AMQException
     {
-        _protocolHandler.methodBodyReceived(channel, amqMethodBody, _minaProtocolSession);
+        _protocolHandler.methodBodyReceived(channel, amqMethodBody);
     }
 
     public void notifyError(Exception error)
@@ -541,5 +460,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public void setSender(Sender<java.nio.ByteBuffer> sender)
     {
         // No-op, interface munging
+    }
+
+
+    @Override
+    public String toString()
+    {
+        return "AMQProtocolSession[" + _connection + ']';
     }
 }
