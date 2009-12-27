@@ -21,7 +21,7 @@ require "thread"
 require "qpid/peer"
 require "qpid/queue"
 
-module Qpid
+module Qpid08
 
   class Client
     def initialize(host, port, spec, vhost = "/")
@@ -97,6 +97,7 @@ module Qpid
   end
 
   class ClientDelegate
+
     include Delegate
 
     def initialize(client)

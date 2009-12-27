@@ -19,10 +19,12 @@
 
 require "thread"
 require "qpid/queue"
-require "qpid/connection"
+require "qpid/connection08"
 require "qpid/fields"
 
-module Qpid
+module Qpid08
+
+  Queue = Qpid::Queue
 
   class Peer
 
@@ -60,9 +62,9 @@ module Qpid
       @mutex.synchronize do
         @channels.each_value do |ch|
           ch.close()
-          @outgoing.close()
-          @work.close()
         end
+        @outgoing.close()
+        @work.close()
       end
     end
 
@@ -95,22 +97,22 @@ module Qpid
 
     def writer()
       while true
-        @conn.write(@outgoing.pop())
+        @conn.write(@outgoing.get())
       end
     end
 
     def worker()
       while true
-        dispatch(@work.pop())
+        dispatch(@work.get())
       end
     end
 
     def dispatch(queue)
-      frame = queue.pop()
+      frame = queue.get()
       ch = channel(frame.channel)
       payload = frame.payload
       if payload.method.content?
-        content = Qpid::read_content(queue)
+        content = Qpid08::read_content(queue)
       else
         content = nil
       end
@@ -161,9 +163,9 @@ module Qpid
 
     def method_missing(name, *args)
       method = @spec.find_method(name)
-       if method.nil?
-         raise NoMethodError.new("undefined method '#{name}' for #{self}:#{self.class}")
-       end
+      if method.nil?
+        raise NoMethodError.new("undefined method '#{name}' for #{self}:#{self.class}")
+      end
 
       if args.size == 1 and args[0].instance_of? Hash
         kwargs = args[0]
@@ -205,7 +207,7 @@ module Qpid
       nowait = args[method.fields.index(f)] unless f.nil?
 
       unless nowait or method.responses.empty?
-        resp = @responses.pop().payload
+        resp = @responses.get().payload
         if resp.method.content?
           content = read_content(@responses)
         else
@@ -230,8 +232,8 @@ module Qpid
 
   end
 
-  def Qpid.read_content(queue)
-    frame = queue.pop()
+  def Qpid08.read_content(queue)
+    frame = queue.get()
     header = frame.payload
     children = []
     1.upto(header.weight) { children << read_content(queue) }
@@ -239,7 +241,7 @@ module Qpid
     read = 0
     buf = ""
     while read < size
-      body = queue.pop()
+      body = queue.get()
       content = body.payload.content
       buf << content
       read += content.size

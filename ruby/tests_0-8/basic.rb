@@ -23,13 +23,13 @@ require "qpid"
 
 class Basic < Test::Unit::TestCase
 
-  include Qpid::Test
+  include Qpid08::Test
 
   def publish(body, headers = {})
     cli = connect()
     ch = cli.channel(1)
     ch.channel_open()
-    content = Qpid::Content.new(headers, body)
+    content = Qpid08::Content.new(headers, body)
     ch.basic_publish(:content => content)
     msg = ch.channel_close()
     assert msg.method.qname == :channel_close_ok
@@ -42,7 +42,7 @@ class Basic < Test::Unit::TestCase
     ch.queue_declare(:queue => "test-queue")
     ch.queue_bind(:queue_name => "test-queue")
     ch.basic_consume(:queue => "test-queue", :consumer_tag => "ctag")
-    content = Qpid::Content.new(headers, body)
+    content = Qpid08::Content.new(headers, body)
     ch.basic_publish(:routing_key => "test-queue", :content => content)
     queue = cli.queue("ctag")
     msg = queue.pop()

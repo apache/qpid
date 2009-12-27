@@ -1,19 +1,15 @@
-Apache Incubator Qpid  Ruby M2 Release Notes
----------------------------------------------
+Apache Qpid Ruby M4 Release Notes
+---------------------------------
 
-The Qpid M2 release contains support the for AMQP 0-8 specification.
-You can access the 0-8 specification using the following link.
-http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
+The Qpid M4 release of the ruby client contains support the for AMQP
+0-10 & 0-8 specifications. See:
 
-For full details of Qpid capabilities, as they currently stand, see our
-detailed project documentation at:
+http://jira.amqp.org/confluence/display/AMQP/Download
 
-http://cwiki.apache.org/confluence/pages/viewpage.action?pageId=28284
+For full details of Qpid capabilities, as they currently stand, see
+our project page at:
 
-Please take time to go through the README file provided with the distro.
+http://cwiki.apache.org/confluence/display/qpid/Index
 
-
-Known Issues/Outstanding Work
------------------------------
-
-Bug  	 QPID-467  	 Complete Interop Testing 
+The README file provided contains some details on installing and using
+the ruby client that is included with this distribution.

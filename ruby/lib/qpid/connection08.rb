@@ -18,11 +18,9 @@
 #
 
 require "socket"
-require "qpid/codec"
+require "qpid/codec08"
 
-include Codec
-
-module Qpid
+module Qpid08
 
   class Connection
 
@@ -48,7 +46,7 @@ module Qpid
     end
 
     def write(frame)
-#      puts "OUT #{frame.inspect()}"
+      #      puts "OUT #{frame.inspect()}"
       @out.octet(@spec.constants[frame.payload.type].id)
       @out.short(frame.channel)
       frame.payload.encode(@out)
@@ -64,7 +62,7 @@ module Qpid
         raise Exception.new("framing error: expected #{frame_end}, got #{oct}")
       end
       frame = Frame.new(channel, payload)
-#      puts " IN #{frame.inspect}"
+      #      puts " IN #{frame.inspect}"
       return frame
     end
 
