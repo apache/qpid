@@ -115,6 +115,7 @@ public class DerbyMessageStore extends AbstractMessageStore
     private static final String DELETE_FROM_MESSAGE_CONTENT = "DELETE FROM " + MESSAGE_CONTENT_TABLE_NAME + " WHERE message_id = ?";
     private static final String INSERT_INTO_EXCHANGE = "INSERT INTO " + EXCHANGE_TABLE_NAME + " ( name, type, autodelete ) VALUES ( ?, ?, ? )";
     private static final String DELETE_FROM_EXCHANGE = "DELETE FROM " + EXCHANGE_TABLE_NAME + " WHERE name = ?";
+    private static final String FIND_EXCHANGE = "SELECT name FROM " + EXCHANGE_TABLE_NAME + " WHERE name = ?";
     private static final String INSERT_INTO_BINDINGS = "INSERT INTO " + BINDINGS_TABLE_NAME + " ( exchange_name, queue_name, binding_key, arguments ) values ( ?, ?, ?, ? )";
     private static final String DELETE_FROM_BINDINGS = "DELETE FROM " + BINDINGS_TABLE_NAME + " WHERE exchange_name = ? AND queue_name = ? AND binding_key = ?";
     private static final String INSERT_INTO_QUEUE = "INSERT INTO " + QUEUE_TABLE_NAME + " (name, owner) VALUES (?, ?)";
@@ -588,13 +589,22 @@ public class DerbyMessageStore extends AbstractMessageStore
                 {
                     conn = newConnection();
 
-                    PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_EXCHANGE);
+                    PreparedStatement stmt = conn.prepareStatement(FIND_EXCHANGE);
                     stmt.setString(1, exchange.getName().toString());
-                    stmt.setString(2, exchange.getType().toString());
-                    stmt.setShort(3, exchange.isAutoDelete() ? (short) 1 : (short) 0);
-                    stmt.execute();
-                    stmt.close();
-                    conn.commit();
+
+                    ResultSet rs = stmt.executeQuery();
+
+                    // If we don't have any data in the result set then we can add this exchange
+                    if (!rs.next())
+                    {
+                        stmt = conn.prepareStatement(INSERT_INTO_EXCHANGE);
+                        stmt.setString(1, exchange.getName().toString());
+                        stmt.setString(2, exchange.getType().toString());
+                        stmt.setShort(3, exchange.isAutoDelete() ? (short) 1 : (short) 0);
+                        stmt.execute();
+                        stmt.close();
+                        conn.commit();
+                    }
 
                 }
                 finally
