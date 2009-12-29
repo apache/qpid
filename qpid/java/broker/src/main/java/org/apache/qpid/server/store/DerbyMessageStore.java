@@ -481,7 +481,7 @@ public class DerbyMessageStore extends AbstractMessageStore
                     FieldTable argumentsFT = null;
                     if(arguments != null)
                     {
-                        byte[] argumentBytes = arguments.getBytes(0, (int) arguments.length());
+                        byte[] argumentBytes = arguments.getBytes(1, (int) arguments.length());
                         ByteBuffer buf = ByteBuffer.wrap(argumentBytes);
                         argumentsFT = new FieldTable(buf,arguments.length());
                     }
