@@ -202,6 +202,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                     exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type),
                                                                durable, false, 0);
                     _exchangeRegistry.registerExchange(exchange);
+                    if (durable)
+                    {
+                        _messageStore.createExchange(exchange);
+                    }
                 }
                 else
                 {

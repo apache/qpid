@@ -457,6 +457,10 @@ public class MessageStoreTest extends TestCase
         try
         {
             _virtualHost.getExchangeRegistry().registerExchange(exchange);
+            if (durable)
+            {
+                _virtualHost.getMessageStore().createExchange(exchange);
+            }
         }
         catch (AMQException e)
         {

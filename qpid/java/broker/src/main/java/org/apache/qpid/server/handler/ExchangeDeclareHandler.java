@@ -92,11 +92,16 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                     try
                     {
 
-                    exchange = exchangeFactory.createExchange(body.getExchange() == null ? null : body.getExchange().intern(),
-                                                              body.getType() == null ? null : body.getType().intern(),
-                                                              body.getDurable(),
-                                                              body.getPassive(), body.getTicket());
-                    exchangeRegistry.registerExchange(exchange);
+                        exchange = exchangeFactory.createExchange(body.getExchange() == null ? null : body.getExchange().intern(),
+                                                                  body.getType() == null ? null : body.getType().intern(),
+                                                                  body.getDurable(),
+                                                                  body.getPassive(), body.getTicket());
+                        exchangeRegistry.registerExchange(exchange);
+                        
+                        if (exchange.isDurable())
+                        {
+                            virtualHost.getMessageStore().createExchange(exchange);
+                        }
                     }
                     catch(AMQUnknownExchangeType e)
                     {

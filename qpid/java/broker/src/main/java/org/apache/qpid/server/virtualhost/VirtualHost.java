@@ -332,6 +332,11 @@ public class VirtualHost implements Accessable
 
             Exchange newExchange = _exchangeFactory.createExchange(exchangeName, type, durable, autodelete, 0);
             _exchangeRegistry.registerExchange(newExchange);
+
+            if (newExchange.isDurable())
+            {
+                _messageStore.createExchange(newExchange);
+            }
         }
     }
 

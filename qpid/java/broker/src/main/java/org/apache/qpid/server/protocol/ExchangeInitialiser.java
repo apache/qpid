@@ -27,25 +27,32 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.store.MessageStore;
 
 public class ExchangeInitialiser
 {
-    public void initialise(ExchangeFactory factory, ExchangeRegistry registry) throws AMQException{
+    public void initialise(ExchangeFactory factory, ExchangeRegistry registry, MessageStore store) throws AMQException{
         for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
         {
-            define (registry, factory, type.getDefaultExchangeName(), type.getName());
+            define (registry, factory, type.getDefaultExchangeName(), type.getName(), store);
         }
         
-        define(registry, factory, ExchangeDefaults.DEFAULT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
+        define(registry, factory, ExchangeDefaults.DEFAULT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, store);
         registry.setDefaultExchange(registry.getExchange(ExchangeDefaults.DEFAULT_EXCHANGE_NAME));
     }
 
     private void define(ExchangeRegistry r, ExchangeFactory f,
-                        AMQShortString name, AMQShortString type) throws AMQException
+                        AMQShortString name, AMQShortString type, MessageStore store) throws AMQException
     {
         if(r.getExchange(name)== null)
         {
-            r.registerExchange(f.createExchange(name, type, true, false, 0));
+            Exchange exchange = f.createExchange(name, type, true, false, 0);
+            r.registerExchange(exchange);
+            
+            if(exchange.isDurable())
+            {
+                store.createExchange(exchange);
+            }
         }
     }
 }

@@ -54,7 +54,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void initialise() throws AMQException
     {
-        new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this);
+        new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this, getMessageStore());
     }
 
     public MessageStore getMessageStore()
@@ -65,10 +65,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public void registerExchange(Exchange exchange) throws AMQException
     {
         _exchangeMap.put(exchange.getName(), exchange);
-        if (exchange.isDurable())
-        {
-            getMessageStore().createExchange(exchange);
-        }
     }
 
     public void setDefaultExchange(Exchange exchange)
