@@ -1419,6 +1419,19 @@ public class DerbyMessageStore extends AbstractMessageStore
                 AMQShortString queueName = new AMQShortString(rs.getString(1));
 
                 AMQQueue queue = queues.get(queueName);
+
+                // If the matching queue was not already found in the store, check in case a queue
+                // with the same name exists in the virtualhost, otherwise we will create a duplicate
+                // queue and generate a JMX InstanceAlreadyExistsException, preventing startup.
+                if (queue == null)
+                {
+                    queue = _virtualHost.getQueueRegistry().getQueue(queueName);
+                    if (queue != null)
+                    {
+                        queues.put(queueName, queue);
+                    }
+                }
+                
                 if (queue == null)
                 {
                     queue = AMQQueueFactory.createAMQQueueImpl(queueName, false, null, false, _virtualHost, null);
