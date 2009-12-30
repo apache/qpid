@@ -923,7 +923,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 AMQMessage message = entry.getMessage();
 
-                if (message.isPersistent() && toQueue.isDurable())
+                if (message.isPersistent())
                 {
                     store.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
@@ -1014,7 +1014,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 AMQMessage message = entry.getMessage();
 
-                if (message.isReferenced() && message.isPersistent() && toQueue.isDurable())
+                if (message.isReferenced() && message.isPersistent())
                 {
                     store.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
