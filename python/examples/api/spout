@@ -43,8 +43,9 @@ parser.add_option("-t", "--timeout", type=float, default=None,
 parser.add_option("-i", "--id", help="use the supplied id instead of generating one")
 parser.add_option("-r", "--reply-to", help="specify reply-to address")
 parser.add_option("-P", "--property", dest="properties", action="append", default=[],
-                  help="specify message property")
+                  metavar="NAME=VALUE", help="specify message property")
 parser.add_option("-M", "--map", dest="entries", action="append", default=[],
+                  metavar="KEY=VALUE",
                   help="specify map entry for message body")
 
 opts, args = parser.parse_args()
