@@ -82,7 +82,7 @@ tools.libs=${client.libs}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${slf4j-log4j} ${xalan} ${felix.libs} ${derby-db}
 
-broker-plugins.libs=${common.libs} ${felix.libs} 
+broker-plugins.libs=${common.libs} ${felix.libs}  ${log4j}
 management-client.libs=${jsp.libs} ${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
 
 management-agent.libs=${client.libs} ${commons-logging} ${geronimo-jms}
@@ -95,7 +95,7 @@ perftests.libs=${systests.libs}
 integrationtests.libs=${systests.libs}
 
 client-example.libs=${client.libs}
-testkit.libs=${client.libs}
+testkit.libs=${client.libs} ${log4j}
 
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
 ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar
