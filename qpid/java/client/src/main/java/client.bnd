@@ -1,4 +1,4 @@
-ver: 0.6.0
+ver: 0.7.0
 
 Bundle-SymbolicName: qpid-client
 Bundle-Version: ${ver}
