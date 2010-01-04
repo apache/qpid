@@ -47,8 +47,8 @@ if (WIN32)
   # The WCF/C++ client is built separately (it doesn't build via CMake)
   # but is installed with the C++ components on Windows.
   install (PROGRAMS
-           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Channel.dll
-           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Interop.dll
+           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Release/Apache.Qpid.Channel.dll
+           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Release/Apache.Qpid.Interop.dll
            DESTINATION ${QPID_INSTALL_LIBDIR}
            COMPONENT ${QPID_COMPONENT_CLIENT})
   install (DIRECTORY ${CMAKE_SOURCE_DIR}/../wcf/samples/Channel
