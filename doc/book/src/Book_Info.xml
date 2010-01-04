@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+
+<bookinfo id="book-Messaging_Installation_Guide-Messaging_Installation_Guide">
+        <title>Apache Qpid</title>
+        <subtitle>
+        <edition>1</edition>
+        <pubsnumber>0</pubsnumber>
+        <productname>Apache Qpid</productname>
+        <productnumber>6</productnumber>
+        <abstract>
+                <para>This is the user documentation for Apache Qpid. It describes how to download and install###.
+                        <corpauthor>
+                                <inlinemediaobject>
+                                        <imageobject>
+                                                <imagedata fileref="Common_Content/images/qpid-logo.png" format="PNG" />
+                                        </imageobject>
+                                </inlinemediaobject>
+                        </corpauthor>
+                        <copyright>
+                                <year>&YEAR;</year>
+                                <holder>The Apache Software Foundation</holder>
+                        </copyright>
+                        <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
+                        <xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
+                </bookinfo>
+                
