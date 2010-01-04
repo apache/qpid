@@ -196,11 +196,13 @@ class managementChannel:
     """ Receive messages via the topic queue on this channel. """
     if self.enabled:
       self.tcb (self, msg)
+    self.ssn.message_accept(RangedSet(msg.id))
 
   def replyCb (self, msg):
     """ Receive messages via the reply queue on this channel. """
     if self.enabled:
       self.rcb (self, msg)
+    self.ssn.message_accept(RangedSet(msg.id))
 
   def exceptionCb (self, data):
     if self.ecb != None:
