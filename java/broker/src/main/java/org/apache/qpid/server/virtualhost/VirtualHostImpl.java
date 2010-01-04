@@ -363,6 +363,11 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
             Exchange newExchange = _exchangeFactory.createExchange(exchangeName, type, durable, autodelete, 0);
             _exchangeRegistry.registerExchange(newExchange);
+
+            if (newExchange.isDurable())
+            {
+                _durableConfigurationStore.createExchange(newExchange);
+            }
         }
     }
 
