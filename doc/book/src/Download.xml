@@ -26,7 +26,7 @@
 <table><thead><tr><td> Component </td><td> Download </td><td> AMQP 0-10 </td><td> AMQP 0-8/0-9 </td></tr></thead>
 <tbody>
 <tr><td> Full release &amp; keys </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/">http://www.apache.org/dist/qpid/0.5/</ulink> </td><td> Y </td><td> Y </td></tr>
-<tr><td> C+\+ broker &amp; client </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz</ulink> </td><td> Y </td><td> </td></tr>
+<tr><td> C++ broker &amp; client </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz</ulink> </td><td> Y </td><td> </td></tr>
 <tr><td> Java broker, client &amp; tools </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-0.5.tar.gz</ulink> </td><td> client </td><td> Y </td></tr>
 </tbody></table>
 </section>
@@ -47,7 +47,7 @@
 <title>Client</title>
 <thead><tr><td> Language </td><td> Download </td><td> AMQP 0-10 </td><td> AMQP 0-8/0-9 </td></tr></thead>
 <tbody>
-<tr><td> C# (.NET, WCF, Excel) 0-10 client (C+\+ Broker Compatible) </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip">http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip</ulink> </td><td> Y </td><td> </td></tr>
+<tr><td> C# (.NET, WCF, Excel) 0-10 client (C++ Broker Compatible) </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip">http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip</ulink> </td><td> Y </td><td> </td></tr>
 <tr><td> C# (.NET) 0-8 client (Java Broker Compatible) </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-8-0.5.zip">http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-8-0.5.zip</ulink> </td><td> </td><td> Y </td></tr>
 <tr><td> Java </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-client-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-client-0.5.tar.gz</ulink> </td><td> Y </td><td> Y </td></tr>
 <tr><td> Python </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz</ulink> </td><td> Y </td><td> Y </td></tr>
@@ -57,7 +57,7 @@
 
 
 <table>
-<title>C+\+ broker management</title>
+<title>C++ broker management</title>
 <thead><tr><td> Component </td><td> Download </td><td> AMQP 0-10 </td></tr></thead>
 <tbody>
 <tr><td> cmd line (packaged with python) </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz</ulink> </td><td> Y </td></tr>
@@ -101,7 +101,7 @@
 <programlisting>
 # yum install qpidd
 </programlisting>
-<para>To install C+\+ and Python clients:</para>
+<para>To install C++ and Python clients:</para>
 <programlisting>
 # yum install qpidc-devel
 </programlisting>
@@ -122,9 +122,9 @@
 
 <section><title>Windows Installer</title>
 
-<para>The Windows installer is available from <ulink url="http://www.apache.org/dist/qpid/0.5-windows/qpidc-0.5.msi">http://www.apache.org/dist/qpid/0.5-windows/qpidc-0.5.msi</ulink>. It is built from the 0.5 C+\+ broker and client source distribution listed above. It has been tested for Windows XP SP2 and above.</para>
+<para>The Windows installer is available from <ulink url="http://www.apache.org/dist/qpid/0.5-windows/qpidc-0.5.msi">http://www.apache.org/dist/qpid/0.5-windows/qpidc-0.5.msi</ulink>. It is built from the 0.5 C++ broker and client source distribution listed above. It has been tested for Windows XP SP2 and above.</para>
 
-<para>The Windows executables require the Visual C+\+ 2008 SP1 run-time components. If the Visual C+\+ 2008 SP1 runtime is not available, the Qpid broker will not execute. If you intend to run the broker and Visual C+\+ 2008 is not installed, you must install the Visual C+\+ 2008 SP1 Redistributable. Please see <ulink url="http://www.microsoft.com/downloads/details.aspx?familyid=A5C84275-3B97-4AB7-A40D-3802B2AF5FC2&amp;displaylang=en">http://www.microsoft.com/downloads/details.aspx?familyid=A5C84275-3B97-4AB7-A40D-3802B2AF5FC2&amp;displaylang=en</ulink> for download and installation instructions.</para>
+<para>The Windows executables require the Visual C++ 2008 SP1 run-time components. If the Visual C++ 2008 SP1 runtime is not available, the Qpid broker will not execute. If you intend to run the broker and Visual C++ 2008 is not installed, you must install the Visual C++ 2008 SP1 Redistributable. Please see <ulink url="http://www.microsoft.com/downloads/details.aspx?familyid=A5C84275-3B97-4AB7-A40D-3802B2AF5FC2&amp;displaylang=en">http://www.microsoft.com/downloads/details.aspx?familyid=A5C84275-3B97-4AB7-A40D-3802B2AF5FC2&amp;displaylang=en</ulink> for download and installation instructions.</para>
 
 <para>If you intend to develop Qpid client applications using this kit, you should install <ulink url="http://www.boostpro.com/download/boost_1_35_0_setup.exe">Boost version 1.35</ulink> (please be sure to select VC9 support when installing) in addition to Visual Studio 2008 SP1.</para>
 
