@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+        <xi:include href="Book_Info.xml"/>
+        <xi:include href="Introduction.xml"/>
+        <xi:include href="Getting_Started.xml"/>
+        <xi:include href="AMQP.xml"/>
+        <xi:include href="Brokers.xml"/>
+        <xi:include href="Clients.xml"/>
+        <xi:include href="Interoperability.xml"/>
+<!--        <xi:include href="FAQ.xml"/> -->
+</book>
+
+<!--
+Documentation
+Getting Started
+
+    * Download
+    * Getting Started
+
+AMQP (Advanced Message Queueing Protocol)
+
+    * Toward a Commodity Enterprise Middleware
+    * AMQP (Advanced Message Queueing Protocol)
+
+Qpid AMQP Brokers
+
+    * AMQP Messaging Broker (implemented in C++)
+    * AMQP Messaging Broker (implemented in Java)
+
+Qpid AMQP Clients
+
+    * AMQP Java JMS Messaging Client
+    * AMQP C++ Messaging Client
+    * AMQP .NET Messaging Client
+    * AMQP Python Messaging Client
+    * AMQP Ruby Messaging Client
+
+Interoperability
+
+    * AMQP Compatibility
+    * SASL Interoperability
+
+FAQ
+
+    * Frequently Asked Questions
+-->
