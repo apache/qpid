@@ -3,7 +3,7 @@ Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
 Bundle-ManifestVersion: 2
 Bundle-Name: Qpid JMX Management Console Plug-in
 Bundle-SymbolicName: org.apache.qpid.management.ui; singleton:=true
-Bundle-Version: 0.6.0
+Bundle-Version: 0.7.0
 Bundle-Activator: org.apache.qpid.management.ui.Activator
 Bundle-Vendor: Apache Software Foundation
 Bundle-Localization: plugin
