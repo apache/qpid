@@ -398,7 +398,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         exchange.setAlternateExchange(alternate);
                     }
 
-                    if (exchange.isDurable() && !exchange.isAutoDelete())
+                    if (exchange.isDurable())
                     {
                         DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
                         store.createExchange(exchange);
