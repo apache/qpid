@@ -189,27 +189,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         // This needs to be after the RT has been defined as it creates the default durable exchanges.
         _exchangeRegistry.initialise();
 
-        // We don't need to store the Default queues in the store as we always
-        // create them first on start up so don't clear them from the startup
-        // configuration here. This also ensures that we don't attempt to
-        // perform a createExchange twice with the same details in the
-        // MessageStore(RoutingTable) as some instances may not like that.
-        // Derby being one.
-        // todo this can be removed with the resolution fo QPID-2096
-        configFileRT.exchange.clear();
-
         initialiseModel(hostConfig);
-
-        //todo REMOVE Work Around for QPID-2096
-        // This means that all durable exchanges declared in the configuration
-        // will not be stored in the MessageStore.
-        // They will still be created/registered/available on startup for as
-        // long as they are contained in the configuration. However, when they
-        // are removed from the configuration they will no longer exist.
-        // This differs from durable queues as they will be writen to to the
-        // store. After QPID-2096 has been resolved exchanges will mirror that
-        // functionality.
-        configFileRT.exchange.clear();
 
         if (store != null)
         {
