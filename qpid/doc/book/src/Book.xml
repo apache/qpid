@@ -6,6 +6,7 @@
         <xi:include href="Book_Info.xml"/>
         <xi:include href="Introduction.xml"/>
         <xi:include href="Getting_Started.xml"/>
+        <xi:include href="Download.xml"/>
         <xi:include href="AMQP.xml"/>
         <xi:include href="Brokers.xml"/>
         <xi:include href="Clients.xml"/>
