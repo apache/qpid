@@ -56,10 +56,12 @@ map_receiver_LDADD=$(CLIENT_LIB)
 EXTRA_DIST=                  \
 	CMakeLists.txt \
 	messaging_client.vcproj \
+	messaging_drain.vcproj \
 	messaging_map_receiver.vcproj \
 	messaging_map_sender.vcproj \
 	messaging_queue_receiver.vcproj \
 	messaging_queue_sender.vcproj \
 	messaging_server.vcproj \
+	messaging_spout.vcproj \
 	messaging_topic_receiver.vcproj \
 	messaging_topic_sender.vcproj
