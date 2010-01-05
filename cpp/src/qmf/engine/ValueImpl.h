@@ -30,6 +30,12 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
+namespace qpid {
+namespace framing {
+    class FieldTable;
+}
+}
+
 namespace qmf {
 namespace engine {
 
@@ -142,6 +148,10 @@ namespace engine {
         Value* arrayItem(uint32_t idx);
         void appendToArray(Value* val);
         void deleteArrayItem(uint32_t idx);
+
+    private:
+        void mapToFieldTable(qpid::framing::FieldTable& ft) const;
+        void initMap(const qpid::framing::FieldTable& ft);
     };
 }
 }

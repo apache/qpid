@@ -35,6 +35,118 @@ from qmfengine import (TYPE_ABSTIME, TYPE_ARRAY, TYPE_BOOL, TYPE_DELTATIME,
 from qmfengine import (O_EQ, O_NE, O_LT, O_LE, O_GT, O_GE, O_RE_MATCH, O_RE_NOMATCH,
                        E_NOT, E_AND, E_OR, E_XOR)
 
+
+def qmf_to_native(val):
+    typecode = val.getType()
+    if typecode == TYPE_UINT8:  return val.asUint()
+    elif typecode == TYPE_UINT16:  return val.asUint()
+    elif typecode == TYPE_UINT32:  return val.asUint()
+    elif typecode == TYPE_UINT64:  return val.asUint64()
+    elif typecode == TYPE_SSTR:  return val.asString()
+    elif typecode == TYPE_LSTR:  return val.asString()
+    elif typecode == TYPE_ABSTIME:  return val.asInt64()
+    elif typecode == TYPE_DELTATIME:  return val.asUint64()
+    elif typecode == TYPE_REF:  return ObjectId(val.asObjectId())
+    elif typecode == TYPE_BOOL:  return val.asBool()
+    elif typecode == TYPE_FLOAT:  return val.asFloat()
+    elif typecode == TYPE_DOUBLE:  return val.asDouble()
+    elif typecode == TYPE_UUID:  return val.asUuid()
+    elif typecode == TYPE_INT8:  return val.asInt()
+    elif typecode == TYPE_INT16:  return val.asInt()
+    elif typecode == TYPE_INT32:  return val.asInt()
+    elif typecode == TYPE_INT64:  return val.asInt64()
+    elif typecode == TYPE_MAP: return value_to_dict(val)
+    else:
+        # when TYPE_OBJECT
+        # when TYPE_LIST
+        # when TYPE_ARRAY
+        logging.error( "Unsupported type for get_attr? '%s'" % str(val.getType()) )
+        return None
+
+
+def native_to_qmf(target, value):
+    val = None
+    typecode = None
+    if target.__class__ == qmfengine.Value:
+        val = target
+        typecode = val.getType()
+    else:
+        typecode = target
+        val = qmfengine.Value(typecode)
+
+    if typecode == TYPE_UINT8: val.setUint(value)
+    elif typecode == TYPE_UINT16: val.setUint(value)
+    elif typecode == TYPE_UINT32: val.setUint(value)
+    elif typecode == TYPE_UINT64: val.setUint64(value)
+    elif typecode == TYPE_SSTR:
+        if value: val.setString(value)
+        else: val.setString('')
+    elif typecode == TYPE_LSTR:
+        if value: val.setString(value) 
+        else: val.setString('')
+    elif typecode == TYPE_ABSTIME: val.setInt64(value)
+    elif typecode == TYPE_DELTATIME: val.setUint64(value)
+    elif typecode == TYPE_REF: val.setObjectId(value.impl)
+    elif typecode == TYPE_BOOL: val.setBool(value)
+    elif typecode == TYPE_FLOAT: val.setFloat(value)
+    elif typecode == TYPE_DOUBLE: val.setDouble(value)
+    elif typecode == TYPE_UUID: val.setUuid(value)
+    elif typecode == TYPE_INT8: val.setInt(value)
+    elif typecode == TYPE_INT16: val.setInt(value)
+    elif typecode == TYPE_INT32: val.setInt(value)
+    elif typecode == TYPE_INT64: val.setInt64(value)
+    elif typecode == TYPE_MAP: dict_to_value(val, value)
+    else:
+        # when TYPE_MAP
+        # when TYPE_OBJECT
+        # when TYPE_LIST
+        # when TYPE_ARRAY
+        logging.error("Unsupported type for get_attr? '%s'" % str(val.getType()))
+        return None
+    return val
+
+
+def pick_qmf_type(value):
+    if value.__class__ == int:
+        if value >= 0:
+            if value < 0x100000000: return TYPE_UINT32
+            return TYPE_UINT64
+        else:
+            if value > -0xffffffff: return TYPE_INT32
+            return TYPE_INT64
+
+    if value.__class__ == long:
+        if value >= 0: return TYPE_UINT64
+        return TYPE_INT64
+
+    if value.__class__ == str:
+        if len(value) < 256: return TYPE_SSTR
+        return TYPE_LSTR
+
+    if value.__class__ == float: return TYPE_DOUBLE
+    if value.__class__ == bool:  return TYPE_BOOL
+    if value == None:            return TYPE_BOOL
+    if value.__class__ == dict:  return TYPE_MAP
+
+    raise "QMF type not known for native type %s" % value.__class__
+
+
+def value_to_dict(val):
+    if not val.isMap(): raise "value_to_dict must be given a map value"
+    mymap = {}
+    for i in range(val.keyCount()):
+        key = val.key(i)
+        mymap[key] = qmf_to_native(val.byKey(key))
+    return mymap
+    
+
+def dict_to_value(val, mymap):
+    for key, value in mymap.items():
+        if key.__class__ != str:  raise "QMF map key must be a string"
+        typecode = pick_qmf_type(value)
+        val.insert(key, native_to_qmf(typecode, value))
+
+
   ##==============================================================================
   ## CONNECTION
   ##==============================================================================
@@ -293,64 +405,12 @@ class QmfObject(object):
     
     def get_attr(self, name):
         val = self._value(name)
-        vType = val.getType()
-        if vType == TYPE_UINT8:  return val.asUint()
-        elif vType == TYPE_UINT16:  return val.asUint()
-        elif vType == TYPE_UINT32:  return val.asUint()
-        elif vType == TYPE_UINT64:  return val.asUint64()
-        elif vType == TYPE_SSTR:  return val.asString()
-        elif vType == TYPE_LSTR:  return val.asString()
-        elif vType == TYPE_ABSTIME:  return val.asInt64()
-        elif vType == TYPE_DELTATIME:  return val.asUint64()
-        elif vType == TYPE_REF:  return ObjectId(val.asObjectId())
-        elif vType == TYPE_BOOL:  return val.asBool()
-        elif vType == TYPE_FLOAT:  return val.asFloat()
-        elif vType == TYPE_DOUBLE:  return val.asDouble()
-        elif vType == TYPE_UUID:  return val.asUuid()
-        elif vType == TYPE_INT8:  return val.asInt()
-        elif vType == TYPE_INT16:  return val.asInt()
-        elif vType == TYPE_INT32:  return val.asInt()
-        elif vType == TYPE_INT64:  return val.asInt64()
-        else:
-            # when TYPE_MAP
-            # when TYPE_OBJECT
-            # when TYPE_LIST
-            # when TYPE_ARRAY
-            logging.error( "Unsupported type for get_attr? '%s'" % str(val.getType()) )
-            return None
+        return qmf_to_native(val)
     
     
     def set_attr(self, name, v):
         val = self._value(name)
-        vType = val.getType()
-        if vType == TYPE_UINT8: return val.setUint(v)
-        elif vType == TYPE_UINT16: return val.setUint(v)
-        elif vType == TYPE_UINT32: return val.setUint(v)
-        elif vType == TYPE_UINT64: return val.setUint64(v)
-        elif vType == TYPE_SSTR:
-            if v: return val.setString(v)
-            else: return val.setString('')
-        elif vType == TYPE_LSTR:
-            if v: return val.setString(v) 
-            else: return val.setString('')
-        elif vType == TYPE_ABSTIME: return val.setInt64(v)
-        elif vType == TYPE_DELTATIME: return val.setUint64(v)
-        elif vType == TYPE_REF: return val.setObjectId(v.impl)
-        elif vType == TYPE_BOOL: return val.setBool(v)
-        elif vType == TYPE_FLOAT: return val.setFloat(v)
-        elif vType == TYPE_DOUBLE: return val.setDouble(v)
-        elif vType == TYPE_UUID: return val.setUuid(v)
-        elif vType == TYPE_INT8: return val.setInt(v)
-        elif vType == TYPE_INT16: return val.setInt(v)
-        elif vType == TYPE_INT32: return val.setInt(v)
-        elif vType == TYPE_INT64: return val.setInt64(v)
-        else:
-            # when TYPE_MAP
-            # when TYPE_OBJECT
-            # when TYPE_LIST
-            # when TYPE_ARRAY
-            logging.error("Unsupported type for get_attr? '%s'" % str(val.getType()))
-            return None
+        native_to_qmf(val, v)
     
     
     def __getitem__(self, name):
@@ -577,7 +637,8 @@ class Arguments(object):
         key_count = self.map.keyCount()
         a = 0
         while a < key_count:
-            self._by_hash[self.map.key(a)] = self.by_key(self.map.key(a))
+            key = self.map.key(a)
+            self._by_hash[key] = qmf_to_native(self.map.byKey(key))
             a += 1
     
     
@@ -615,70 +676,9 @@ class Arguments(object):
         return super.__setattr__(self, name, value)
 
 
-    def by_key(self, key):
-        val = self.map.byKey(key)
-        vType = val.getType()
-        if vType == TYPE_UINT8: return val.asUint()
-        elif vType == TYPE_UINT16: return val.asUint()
-        elif vType == TYPE_UINT32: return val.asUint()
-        elif vType == TYPE_UINT64: return val.asUint64()
-        elif vType == TYPE_SSTR: return val.asString()
-        elif vType == TYPE_LSTR: return val.asString()
-        elif vType == TYPE_ABSTIME:   return val.asInt64()
-        elif vType == TYPE_DELTATIME: return val.asUint64()
-        elif vType == TYPE_REF:  return ObjectId(val.asObjectId())
-        elif vType == TYPE_BOOL: return val.asBool()
-        elif vType == TYPE_FLOAT:  return val.asFloat()
-        elif vType == TYPE_DOUBLE: return val.asDouble()
-        elif vType == TYPE_UUID: return val.asUuid()
-        elif vType == TYPE_INT8: return val.asInt()
-        elif vType == TYPE_INT16: return val.asInt()
-        elif vType == TYPE_INT32: return val.asInt()
-        elif vType == TYPE_INT64: return val.asInt64()
-        else:
-            # when TYPE_MAP
-            # when TYPE_OBJECT
-            # when TYPE_LIST
-            # when TYPE_ARRAY
-            logging.error( "Unsupported Type for Get? '%s'" % str(val.getType()))
-            return None
-    
-    
     def set(self, key, value):
         val = self.map.byKey(key)
-        vType = val.getType()
-        if vType == TYPE_UINT8: return val.setUint(value)
-        elif vType == TYPE_UINT16: return val.setUint(value)
-        elif vType == TYPE_UINT32: return val.setUint(value)
-        elif vType == TYPE_UINT64: return val.setUint64(value)
-        elif vType == TYPE_SSTR: 
-            if value:
-                return val.setString(value)
-            else:
-                return val.setString('')
-        elif vType == TYPE_LSTR:
-            if value:
-                return val.setString(value)
-            else:
-                return val.setString('')
-        elif vType == TYPE_ABSTIME: return val.setInt64(value)
-        elif vType == TYPE_DELTATIME: return val.setUint64(value)
-        elif vType == TYPE_REF: return val.setObjectId(value.impl)
-        elif vType == TYPE_BOOL: return val.setBool(value)
-        elif vType == TYPE_FLOAT: return val.setFloat(value)
-        elif vType == TYPE_DOUBLE: return val.setDouble(value)
-        elif vType == TYPE_UUID: return val.setUuid(value)
-        elif vType == TYPE_INT8: return val.setInt(value)
-        elif vType == TYPE_INT16: return val.setInt(value)
-        elif vType == TYPE_INT32: return val.setInt(value)
-        elif vType == TYPE_INT64: return val.setInt64(value)
-        else:
-            # when TYPE_MAP
-            # when TYPE_OBJECT
-            # when TYPE_LIST
-            # when TYPE_ARRAY
-            logging.error("Unsupported Type for Set? '%s'" % str(val.getType()))
-            return None
+        native_to_qmf(val, value)
 
 
 

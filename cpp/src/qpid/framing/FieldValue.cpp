@@ -28,7 +28,7 @@
 namespace qpid {
 namespace framing {
 
-uint8_t FieldValue::getType()
+uint8_t FieldValue::getType() const
 {
     return typeOctet;
 }

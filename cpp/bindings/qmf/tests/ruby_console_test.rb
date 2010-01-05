@@ -177,6 +177,44 @@ class ConsoleTest < ConsoleTestBase
     end
   end
 
+  def test_C_basic_types_map
+    parent = @qmfc.object(:class =>"parent")
+    assert(parent, "Number of parent objects")
+
+    result = parent.set_numerics("big")
+    assert_equal(result.status, 0, "Method Response Status")
+    assert_equal(result.text, "OK", "Method Response Text")
+
+    parent.update
+
+    map = parent.mapval
+
+    assert_equal(map['u64'], 0x9494949449494949)
+    assert_equal(map['u32'], 0xA5A55A5A)
+    assert_equal(map['u16'], 0xB66B)
+    assert_equal(map['u8'],  0xC7)
+
+    assert_equal(map['i64'], 1000000000000000000)
+    assert_equal(map['i32'], 1000000000)
+    assert_equal(map['i16'], 10000)
+    assert_equal(map['i8'],  100)
+
+    assert_equal(map['sstr'], "Short String")
+
+    submap = map['map']
+    assert_equal(submap['first'], "FIRST")
+    assert_equal(submap['second'], "SECOND")
+
+    result = parent.set_map({'first' => 'FIRST', 'sub' => {'subfirst' => 25}})
+    assert_equal(result.status, 0, "Method Response Status")
+    assert_equal(result.text, "OK", "Method Response Text")
+
+    rmap = result.args.output
+    assert_equal(rmap['first'], "FIRST")
+    assert_equal(rmap['sub']['subfirst'], 25)
+    assert_equal(rmap['added'], 'Added Text')
+  end
+
   def test_D_userid_for_method
     parent = @qmfc.object(:class => "parent")
     assert(parent, "Number of parent objects")

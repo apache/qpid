@@ -41,6 +41,12 @@ class Model:
         self.parent_class.add_property(qmf.SchemaProperty("int16val", qmf.TYPE_INT16))
         self.parent_class.add_property(qmf.SchemaProperty("int8val", qmf.TYPE_INT8))
 
+        self.parent_class.add_property(qmf.SchemaProperty("sstrval", qmf.TYPE_SSTR))
+        self.parent_class.add_property(qmf.SchemaProperty("lstrval", qmf.TYPE_LSTR))
+
+        self.parent_class.add_property(qmf.SchemaProperty("mapval", qmf.TYPE_MAP))
+
+
         self.parent_class.add_statistic(qmf.SchemaStatistic("queryCount", qmf.TYPE_UINT32, {"unit":"query", "desc":"Query count"}))
 
         _method = qmf.SchemaMethod("echo", {"desc":"Check responsiveness of the agent object"})
@@ -49,6 +55,19 @@ class Model:
 
         _method = qmf.SchemaMethod("set_numerics", {"desc":"Set the numeric values in the object"})
         _method.add_argument(qmf.SchemaArgument("test", qmf.TYPE_SSTR, {"dir":qmf.DIR_IN}))
+        self.parent_class.add_method(_method)
+
+        _method = qmf.SchemaMethod("set_map", {"desc":"Set the map value in the object"})
+        _method.add_argument(qmf.SchemaArgument("value", qmf.TYPE_MAP, {"dir":qmf.DIR_IN}))
+        _method.add_argument(qmf.SchemaArgument("output", qmf.TYPE_MAP, {"dir":qmf.DIR_OUT}))
+        self.parent_class.add_method(_method)
+
+        _method = qmf.SchemaMethod("set_short_string", {"desc":"Set the short string value in the object"})
+        _method.add_argument(qmf.SchemaArgument("value", qmf.TYPE_SSTR, {"dir":qmf.DIR_IN_OUT}))
+        self.parent_class.add_method(_method)
+
+        _method = qmf.SchemaMethod("set_long_string", {"desc":"Set the long string value in the object"})
+        _method.add_argument(qmf.SchemaArgument("value", qmf.TYPE_LSTR, {"dir":qmf.DIR_IN_OUT}))
         self.parent_class.add_method(_method)
 
         _method = qmf.SchemaMethod("create_child", {"desc":"Create a new child object"})
@@ -97,6 +116,12 @@ class App(qmf.AgentHandler):
         if name == "echo":
             self._agent.method_response(context, 0, "OK", args)
 
+        elif name == "set_map":
+            map = args['value']
+            map['added'] = "Added Text"
+            args['output'] = map
+            self._agent.method_response(context, 0, "OK", args)
+
         elif name == "set_numerics":
             _retCode = 0
             _retText = "OK"
@@ -114,6 +139,17 @@ class App(qmf.AgentHandler):
                 self._parent.set_attr("int32val", 1000000000)
                 self._parent["int16val"] = 10000
                 self._parent.set_attr("int8val",  100)
+
+                self._parent.set_attr("mapval", {'u64'  : self._parent['uint64val'],
+                                                 'u32'  : self._parent['uint32val'],
+                                                 'u16'  : self._parent['uint16val'],
+                                                 'u8'   : self._parent['uint8val'],
+                                                 'i64'  : self._parent['int64val'],
+                                                 'i32'  : self._parent['int32val'],
+                                                 'i16'  : self._parent['int16val'],
+                                                 'i8'   : self._parent['int8val'],
+                                                 'sstr' : "Short String",
+                                                 'map'  : {'first' : 'FIRST', 'second' : 'SECOND'}})
 
                 ## Test the __getattr__ implementation:
                 ## @todo: remove once python_client implements this
@@ -149,6 +185,14 @@ class App(qmf.AgentHandler):
                 _retText = "Invalid argument value for test"
 
             self._agent.method_response(context, _retCode, _retText, args)
+
+        elif name == "set_short_string":
+            self._parent.set_attr('sstrval', args['value'])
+            self._agent.method_response(context, 0, "OK", args)
+
+        elif name == "set_long_string":
+            self._parent.set_attr('lstrval', args['value'])
+            self._agent.method_response(context, 0, "OK", args)
 
         elif name == "create_child":
             #
@@ -199,7 +243,7 @@ class App(qmf.AgentHandler):
 
         ## @todo how do we force a test failure?
         # verify the properties() and statistics() object methods:
-        assert len(self._parent.properties()) == 10
+        assert len(self._parent.properties()) == 13
         assert len(self._parent.statistics()) == 1
 
         self._parent.set_attr("name", "Parent One")

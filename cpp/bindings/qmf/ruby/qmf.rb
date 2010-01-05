@@ -31,6 +31,112 @@ module Qmf
     end
   end
 
+  class Util
+    def qmf_to_native(val)
+      case val.getType
+      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
+      when TYPE_UINT64                          then val.asUint64
+      when TYPE_SSTR, TYPE_LSTR                 then val.asString
+      when TYPE_ABSTIME                         then val.asInt64
+      when TYPE_DELTATIME                       then val.asUint64
+      when TYPE_REF                             then ObjectId.new(val.asObjectId)
+      when TYPE_BOOL                            then val.asBool
+      when TYPE_FLOAT                           then val.asFloat
+      when TYPE_DOUBLE                          then val.asDouble
+      when TYPE_UUID                            then val.asUuid
+      when TYPE_INT8, TYPE_INT16, TYPE_INT32    then val.asInt
+      when TYPE_INT64                           then val.asInt64
+      when TYPE_MAP                             then value_to_dict(val)
+      when TYPE_OBJECT
+      when TYPE_LIST
+      when TYPE_ARRAY
+      end
+    end
+
+    def native_to_qmf(target, value)
+      if target.class == Qmfengine::Value
+        val = target
+        typecode = val.getType
+      else
+        typecode = target
+        val = Qmfengine::Value.new(typecode)
+      end
+
+      case typecode
+      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(value)
+      when TYPE_UINT64 then val.setUint64(value)
+      when TYPE_SSTR, TYPE_LSTR then value ? val.setString(value) : val.setString('')
+      when TYPE_ABSTIME then val.setInt64(value)
+      when TYPE_DELTATIME then val.setUint64(value)
+      when TYPE_REF then val.setObjectId(value.impl)
+      when TYPE_BOOL then value ? val.setBool(value) : val.setBool(0)
+      when TYPE_FLOAT then val.setFloat(value)
+      when TYPE_DOUBLE then val.setDouble(value)
+      when TYPE_UUID then val.setUuid(value)
+      when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(value)
+      when TYPE_INT64 then val.setInt64(value)
+      when TYPE_MAP then dict_to_value(val, value)
+      when TYPE_OBJECT
+      when TYPE_LIST
+      when TYPE_ARRAY
+      end
+      return val
+    end
+
+    def pick_qmf_type(value)
+      if value.class == Fixnum
+        if value >= 0
+          return TYPE_UINT32 if value < 0x100000000
+          return TYPE_UINT64
+        else
+          return TYPE_INT32 if value > -0xffffffff
+          return TYPE_INT64
+        end
+      end
+
+      if value.class == Bignum
+        return TYPE_UINT64 if value >= 0
+        return TYPE_INT64
+      end
+
+      if value.class == String
+        return TYPE_SSTR if value.length < 256
+        return TYPE_LSTR
+      end
+
+      return TYPE_DOUBLE if value.class == Float
+
+      return TYPE_BOOL if value.class == TrueClass
+      return TYPE_BOOL if value.class == FalseClass
+      return TYPE_BOOL if value.class == NilClass
+
+      return TYPE_MAP if value.class == Hash
+
+      raise ArgumentError, "QMF type not known for native type #{value.class}"
+    end
+
+    def value_to_dict(val)
+      # Assume val is of type Qmfengine::Value
+      raise ArgumentError, "value_to_dict must be given a map value" if !val.isMap
+      map = {}
+      for i in 0...val.keyCount
+        key = val.key(i)
+        map[key] = qmf_to_native(val.byKey(key))
+      end
+      return map
+    end
+
+    def dict_to_value(val, map)
+      map.each do |key, value|
+        raise ArgumentError, "QMF map key must be a string" if key.class != String
+        typecode = pick_qmf_type(value)
+        val.insert(key, native_to_qmf(typecode, value))
+      end
+    end
+  end
+
+  $util = Util.new
+
   ##==============================================================================
   ## CONNECTION
   ##==============================================================================
@@ -246,46 +352,12 @@ module Qmf
 
     def get_attr(name)
       val = value(name)
-      case val.getType
-      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
-      when TYPE_UINT64 then val.asUint64
-      when TYPE_SSTR, TYPE_LSTR then val.asString
-      when TYPE_ABSTIME then val.asInt64
-      when TYPE_DELTATIME then val.asUint64
-      when TYPE_REF then ObjectId.new(val.asObjectId)
-      when TYPE_BOOL then val.asBool
-      when TYPE_FLOAT then val.asFloat
-      when TYPE_DOUBLE then val.asDouble
-      when TYPE_UUID then val.asUuid
-      when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.asInt
-      when TYPE_INT64 then val.asInt64
-      when TYPE_MAP
-      when TYPE_OBJECT
-      when TYPE_LIST
-      when TYPE_ARRAY
-      end
+      $util.qmf_to_native(val)
     end
 
     def set_attr(name, v)
       val = value(name)
-      case val.getType
-      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(v)
-      when TYPE_UINT64 then val.setUint64(v)
-      when TYPE_SSTR, TYPE_LSTR then v ? val.setString(v) : val.setString('')
-      when TYPE_ABSTIME then val.setInt64(v)
-      when TYPE_DELTATIME then val.setUint64(v)
-      when TYPE_REF then val.setObjectId(v.impl)
-      when TYPE_BOOL then v ? val.setBool(v) : val.setBool(0)
-      when TYPE_FLOAT then val.setFloat(v)
-      when TYPE_DOUBLE then val.setDouble(v)
-      when TYPE_UUID then val.setUuid(v)
-      when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(v)
-      when TYPE_INT64 then val.setInt64(v)
-      when TYPE_MAP
-      when TYPE_OBJECT
-      when TYPE_LIST
-      when TYPE_ARRAY
-      end
+      $util.native_to_qmf(val, v)
     end
 
     def [](name)
@@ -488,7 +560,8 @@ module Qmf
       key_count = @map.keyCount
       a = 0
       while a < key_count
-        @by_hash[@map.key(a)] = by_key(@map.key(a))
+        key = @map.key(a)
+        @by_hash[key] = $util.qmf_to_native(@map.byKey(key))
         a += 1
       end
     end
@@ -514,48 +587,9 @@ module Qmf
       super.method_missing(name, args)
     end
 
-    def by_key(key)
-      val = @map.byKey(key)
-      case val.getType
-      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
-      when TYPE_UINT64                          then val.asUint64
-      when TYPE_SSTR, TYPE_LSTR                 then val.asString
-      when TYPE_ABSTIME                         then val.asInt64
-      when TYPE_DELTATIME                       then val.asUint64
-      when TYPE_REF                             then ObjectId.new(val.asObjectId)
-      when TYPE_BOOL                            then val.asBool
-      when TYPE_FLOAT                           then val.asFloat
-      when TYPE_DOUBLE                          then val.asDouble
-      when TYPE_UUID                            then val.asUuid
-      when TYPE_INT8, TYPE_INT16, TYPE_INT32    then val.asInt
-      when TYPE_INT64                           then val.asInt64
-      when TYPE_MAP
-      when TYPE_OBJECT
-      when TYPE_LIST
-      when TYPE_ARRAY
-      end
-    end
-
     def set(key, value)
       val = @map.byKey(key)
-      case val.getType
-      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(value)
-      when TYPE_UINT64 then val.setUint64(value)
-      when TYPE_SSTR, TYPE_LSTR then value ? val.setString(value) : val.setString('')
-      when TYPE_ABSTIME then val.setInt64(value)
-      when TYPE_DELTATIME then val.setUint64(value)
-      when TYPE_REF then val.setObjectId(value.impl)
-      when TYPE_BOOL then value ? val.setBool(value) : val.setBool(0)
-      when TYPE_FLOAT then val.setFloat(value)
-      when TYPE_DOUBLE then val.setDouble(value)
-      when TYPE_UUID then val.setUuid(value)
-      when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(value)
-      when TYPE_INT64 then val.setInt64(value)
-      when TYPE_MAP
-      when TYPE_OBJECT
-      when TYPE_LIST
-      when TYPE_ARRAY
-      end
+      $util.native_to_qmf(val, value)
     end
   end
 

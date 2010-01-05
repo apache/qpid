@@ -19,16 +19,19 @@
 
 #include "qmf/engine/ValueImpl.h"
 #include <qpid/framing/FieldTable.h>
+#include <qpid/framing/FieldValue.h>
 
 using namespace std;
 using namespace qmf::engine;
 using qpid::framing::Buffer;
+using qpid::framing::FieldTable;
+using qpid::framing::FieldValue;
 
 ValueImpl::ValueImpl(Typecode t, Buffer& buf) : typecode(t)
 {
     uint64_t first;
     uint64_t second;
-    qpid::framing::FieldTable ft;
+    FieldTable ft;
 
     switch (typecode) {
     case TYPE_UINT8     : value.u32 = (uint32_t) buf.getOctet();  break;
@@ -55,6 +58,7 @@ ValueImpl::ValueImpl(Typecode t, Buffer& buf) : typecode(t)
 
     case TYPE_MAP:
         ft.decode(buf);
+        initMap(ft);
         break;
 
     case TYPE_LIST:
@@ -90,8 +94,111 @@ ValueImpl::~ValueImpl()
 {
 }
 
+void ValueImpl::initMap(const FieldTable& ft)
+{
+    for (FieldTable::ValueMap::const_iterator iter = ft.begin();
+         iter != ft.end(); iter++) {
+        const string&     name(iter->first);
+        const FieldValue& fvalue(*iter->second);
+        uint8_t amqType = fvalue.getType();
+
+        if (amqType == 0x32) {
+            Value* subval(new Value(TYPE_UINT64));
+            subval->setUint64(fvalue.get<int64_t>());
+            insert(name.c_str(), subval);
+        } else if ((amqType & 0xCF) == 0x02) {
+            Value* subval(new Value(TYPE_UINT32));
+            switch (amqType) {
+            case 0x02 : subval->setUint(fvalue.get<int>()); break;
+            case 0x12 : subval->setUint(fvalue.get<int>()); break;
+            case 0x22 : subval->setUint(fvalue.get<int>()); break;
+            }
+            insert(name.c_str(), subval);
+        } else if ((amqType & 0xCF) == 0x01) {
+            Value* subval(new Value(TYPE_INT64));
+            subval->setInt64(fvalue.get<int64_t>());
+            insert(name.c_str(), subval);
+        } else if (amqType == 0x85 || amqType == 0x95) {
+            Value* subval(new Value(TYPE_LSTR));
+            subval->setString(fvalue.get<string>().c_str());
+            insert(name.c_str(), subval);
+        } else if (amqType == 0x23 || amqType == 0x33) {
+            Value* subval(new Value(TYPE_DOUBLE));
+            subval->setDouble(fvalue.get<double>());
+            insert(name.c_str(), subval);
+        } else {
+            FieldTable subFt;
+            bool valid = qpid::framing::getEncodedValue<FieldTable>(iter->second, subFt);
+            if (valid) {
+                Value* subval(new Value(TYPE_MAP));
+                subval->impl->initMap(subFt);
+                insert(name.c_str(), subval);
+            }
+        }
+    }
+}
+
+void ValueImpl::mapToFieldTable(FieldTable& ft) const
+{
+    FieldTable subFt;
+
+    for (map<string, Value>::const_iterator iter = mapVal.begin();
+         iter != mapVal.end(); iter++) {
+        const string& name(iter->first);
+        const Value& subval(iter->second);
+
+        switch (subval.getType()) {
+        case TYPE_UINT8:
+        case TYPE_UINT16:
+        case TYPE_UINT32:
+            ft.setUInt64(name, (uint64_t) subval.asUint());
+            break;
+        case TYPE_UINT64:
+        case TYPE_DELTATIME:
+            ft.setUInt64(name, subval.asUint64());
+            break;
+        case TYPE_SSTR:
+        case TYPE_LSTR:
+            ft.setString(name, subval.asString());
+            break;
+        case TYPE_INT64:
+        case TYPE_ABSTIME:
+            ft.setInt64(name, subval.asInt64());
+            break;
+        case TYPE_BOOL:
+            ft.setInt(name, subval.asBool() ? 1 : 0);
+            break;
+        case TYPE_FLOAT:
+            ft.setFloat(name, subval.asFloat());
+            break;
+        case TYPE_DOUBLE:
+            ft.setDouble(name, subval.asDouble());
+            break;
+        case TYPE_INT8:
+        case TYPE_INT16:
+        case TYPE_INT32:
+            ft.setInt(name, subval.asInt());
+            break;
+        case TYPE_MAP:
+            subFt.clear();
+            subval.impl->mapToFieldTable(subFt);
+            ft.setTable(name, subFt);
+            break;
+        case TYPE_LIST:
+        case TYPE_ARRAY:
+        case TYPE_OBJECT:
+        case TYPE_UUID:
+        case TYPE_REF:
+        default:
+            break;
+        }
+    }
+ }
+
 void ValueImpl::encode(Buffer& buf) const
 {
+    FieldTable ft;
+
     switch (typecode) {
     case TYPE_UINT8     : buf.putOctet((uint8_t) value.u32);        break;
     case TYPE_UINT16    : buf.putShort((uint16_t) value.u32);       break;
@@ -110,7 +217,10 @@ void ValueImpl::encode(Buffer& buf) const
     case TYPE_INT64     : buf.putLongLong(value.s64);               break;
     case TYPE_UUID      : buf.putBin128(value.uuidVal);             break;
     case TYPE_REF       : refVal.impl->encode(buf);                 break;
-    case TYPE_MAP: // TODO
+    case TYPE_MAP:
+        mapToFieldTable(ft);
+        ft.encode(buf);
+        break;
     case TYPE_LIST:
     case TYPE_ARRAY:
     case TYPE_OBJECT:
@@ -127,7 +237,7 @@ bool ValueImpl::keyInMap(const char* key) const
 Value* ValueImpl::byKey(const char* key)
 {
     if (keyInMap(key)) {
-        map<std::string, Value>::iterator iter = mapVal.find(key);
+        map<string, Value>::iterator iter = mapVal.find(key);
         if (iter != mapVal.end())
             return &iter->second;
     }
@@ -137,7 +247,7 @@ Value* ValueImpl::byKey(const char* key)
 const Value* ValueImpl::byKey(const char* key) const
 {
     if (keyInMap(key)) {
-        map<std::string, Value>::const_iterator iter = mapVal.find(key);
+        map<string, Value>::const_iterator iter = mapVal.find(key);
         if (iter != mapVal.end())
             return &iter->second;
     }
@@ -157,7 +267,7 @@ void ValueImpl::insert(const char* key, Value* val)
 
 const char* ValueImpl::key(uint32_t idx) const
 {
-    map<std::string, Value>::const_iterator iter = mapVal.begin();
+    map<string, Value>::const_iterator iter = mapVal.begin();
     for (uint32_t i = 0; i < idx; i++) {
         if (iter == mapVal.end())
             break;
