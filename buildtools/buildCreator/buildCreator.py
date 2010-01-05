@@ -538,7 +538,7 @@ def postProcess(item, destination):
                         extractcommand=TAR_BIN+" -vxjf "+root+PATH_SEP+file+" -C " + builddir
 
                     if firstline.find(ZIP_DATA) != -1:
-                       extractcommand=ZIP_BIN+" -v "+root+PATH_SEP+file+" -d "+ builddir
+                       extractcommand=UNZIP_BIN+" -v "+root+PATH_SEP+file+" -d "+ builddir
 
                     if firstline.find(TAR_DATA) != -1:
                        extractcommand=TAR_BIN+" -vxf "+root+PATH_SEP+file+" -C "+ builddir
@@ -722,6 +722,8 @@ def performScript(build, scriptName):
 
         script = peformSubstitutionsInScript(build, script)
 
+        debug(script)
+
         runScript(script)
 
     else:
@@ -753,6 +755,12 @@ def sourceDefined(name):
 
 def runScript(script):
     (returncode, stdout, stderr) = runCommandWithOutput(script)
+
+    if _debug:
+        for line in stdout:            
+            debug(line)
+        for line in stderr:            
+            debug(line)
 
     if returncode != 0:
         for line in stdout:            
@@ -1144,7 +1152,7 @@ def downloadSource(source, destination):
                         if url.startswith(FTP):
                             command = WGET_BIN+" -P "+targetdir+" "+url
                         else:
-                            command = CP_BIN+" "+url+" "+targetdir
+                            command = CP_BIN+" -R "+url+" "+targetdir
     else:
         warn("Target directory(" + targetdir + ") is not empty please ensure contents are valid or run 'clean "+name+"'")
 
