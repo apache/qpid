@@ -17,18 +17,5 @@
 # under the License.
 #
 
-LIBTOOL_DEPS = @LIBTOOL_DEPS@
-
-AUTOMAKE_OPTIONS = 1.9.2 foreign
-ACLOCAL_AMFLAGS = -I m4
-
 EXTRA_DIST = \
-  LICENSE NOTICE README SSL RELEASE_NOTES DESIGN \
-  xml/cluster.xml INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
-  packaging/NSIS
-
-SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf
-
-# Update libtool, if needed.
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status --recheck
+  qpid-icon.ico qpid-icon.png qpid-install-banner.bmp qpid-install-banner.png
