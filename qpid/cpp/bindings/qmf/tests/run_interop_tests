@@ -101,6 +101,18 @@ if test -d ${PYTHON_DIR} ;  then
             echo "FAIL qmf interop tests (Ruby Console/Ruby Agent)";
             TESTS_FAILED=1
         fi
+
+        if test -d ${PYTHON_LIB_DIR} ; then
+            echo "    Python Agent (external storage) vs. Ruby Console"
+            start_python_agent
+            ruby -I${MY_DIR} -I${MY_DIR}/../ruby -I${RUBY_LIB_DIR} ${MY_DIR}/ruby_console_test.rb localhost $BROKER_PORT $@
+            RETCODE=$?
+            stop_python_agent
+            if test x$RETCODE != x0; then
+                echo "FAIL qmf interop tests (Ruby Console/Python Agent)";
+                TESTS_FAILED=1
+            fi
+        fi
     fi
 
     # Also against the Pure-Python console:

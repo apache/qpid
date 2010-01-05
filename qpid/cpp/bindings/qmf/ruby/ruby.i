@@ -76,7 +76,7 @@
     if (TYPE($input) == T_BIGNUM)
         $1 = NUM2ULL($input);
     else
-        $1 = (uint64_t) FIX2LONG($input);
+        $1 = (uint64_t) FIX2ULONG($input);
 }
 
 %typemap (out) uint64_t

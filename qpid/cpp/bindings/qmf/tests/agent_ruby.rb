@@ -43,6 +43,8 @@ class Model
     @parent_class.add_property(Qmf::SchemaProperty.new("sstrval", Qmf::TYPE_SSTR))
     @parent_class.add_property(Qmf::SchemaProperty.new("lstrval", Qmf::TYPE_LSTR))
 
+    @parent_class.add_property(Qmf::SchemaProperty.new("mapval", Qmf::TYPE_MAP))
+
     @parent_class.add_statistic(Qmf::SchemaStatistic.new("queryCount", Qmf::TYPE_UINT32, :unit => "query", :desc => "Query count"))
 
     method = Qmf::SchemaMethod.new("echo", :desc => "Check responsiveness of the agent object")
@@ -51,6 +53,11 @@ class Model
 
     method = Qmf::SchemaMethod.new("set_numerics", :desc => "Set the numeric values in the object")
     method.add_argument(Qmf::SchemaArgument.new("test", Qmf::TYPE_SSTR, :dir => Qmf::DIR_IN))
+    @parent_class.add_method(method)
+
+    method = Qmf::SchemaMethod.new("set_map", :desc => "Set the map value in the object")
+    method.add_argument(Qmf::SchemaArgument.new("value", Qmf::TYPE_MAP, :dir => Qmf::DIR_IN))
+    method.add_argument(Qmf::SchemaArgument.new("output", Qmf::TYPE_MAP, :dir => Qmf::DIR_OUT))
     @parent_class.add_method(method)
 
     method = Qmf::SchemaMethod.new("set_short_string", :desc => "Set the short string value in the object")
@@ -101,18 +108,36 @@ class App < Qmf::AgentHandler
     if name == "echo"
       @agent.method_response(context, 0, "OK", args)
 
+    elsif name == "set_map"
+
+      map = args['value']
+
+      map['added'] = 'Added Text'
+      args['output'] = map
+
     elsif name == "set_numerics"
 
       if args['test'] == "big"
         @parent.uint64val = 0x9494949449494949
         @parent.uint32val = 0xa5a55a5a
         @parent.uint16val = 0xb66b
-        @parent.uint8val  =  0xc7
+        @parent.uint8val  = 0xc7
 
         @parent.int64val = 1000000000000000000
         @parent.int32val = 1000000000
         @parent.int16val = 10000
         @parent.int8val  = 100
+
+        @parent.mapval = {'u64'  => @parent.uint64val,
+                          'u32'  => @parent.uint32val,
+                          'u16'  => @parent.uint16val,
+                          'u8'   => @parent.uint8val,
+                          'i64'  => @parent.int64val,
+                          'i32'  => @parent.int32val,
+                          'i16'  => @parent.int16val,
+                          'i8'   => @parent.int8val,
+                          'sstr' => "Short String",
+                          'map'  => {'first' => 'FIRST', 'second' => 'SECOND'}}
 
       elsif args['test'] == "small"
         @parent.uint64val = 4
