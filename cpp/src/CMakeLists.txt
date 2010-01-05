@@ -708,6 +708,9 @@ if (WIN32)
     if (EXISTS ${DTC_PLUGIN_SOURCE})
         add_library (qpidxarm SHARED ${DTC_PLUGIN_SOURCE})
         target_link_libraries (qpidxarm qpidclient qpidcommon)
+        install (TARGETS qpidxarm
+                 DESTINATION ${QPID_INSTALL_LIBDIR}
+                 COMPONENT ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${DTC_PLUGIN_SOURCE})
 endif (WIN32)
 
