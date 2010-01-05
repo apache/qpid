@@ -23,7 +23,8 @@
 
 if HAVE_DOXYGEN
 
-EXTRA_DIST = html user.doxygen developer.doxygen html.timestamp CMakeLists.txt
+EXTRA_DIST = html user.doxygen developer.doxygen html.timestamp CMakeLists.txt \
+             header.html footer.html
 
 html: html.timestamp
 
