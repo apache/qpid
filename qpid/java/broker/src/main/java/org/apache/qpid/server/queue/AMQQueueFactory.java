@@ -33,6 +33,7 @@ import java.util.HashMap;
 public class AMQQueueFactory
 {
     public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
+    public static final AMQShortString X_QPID_CONFLATION_KEY = new AMQShortString ("x-qpid-conflation-key");
 
     private abstract static class QueueProperty
     {
@@ -133,9 +134,14 @@ public class AMQQueueFactory
             throws AMQException
     {
         final int priorities = arguments == null ? 1 : arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
+        final String conflationKey = arguments == null ? null : arguments.containsKey(X_QPID_CONFLATION_KEY) ? arguments.getString(X_QPID_CONFLATION_KEY) : null;
 
         AMQQueue q = null;
-        if(priorities > 1)
+        if(conflationKey != null)
+        {
+            q = new ConflationQueue(name, durable, owner, autoDelete, virtualHost, new AMQShortString(conflationKey));
+        }
+        else if(priorities > 1)
         {
             q = new AMQPriorityQueue(name, durable, owner, autoDelete, virtualHost, priorities);
         }
@@ -183,6 +189,15 @@ public class AMQQueueFactory
                 priorities = 10;
             }
             arguments.put(new AMQShortString("x-qpid-priorities"), priorities);
+        }
+        String conflationKey = config.getConflationKey();
+        if(conflationKey != null)
+        {
+            if(arguments == null)
+            {
+                arguments = new FieldTable();
+            }
+            arguments.put(new AMQShortString("x-qpid-conflation-key"), conflationKey);
         }
 
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);

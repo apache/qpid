@@ -68,6 +68,11 @@ public class QueueConfiguration
         return _config.getInt("priorities", -1);
     }
 
+    public String getConflationKey()
+    {
+        return _config.getString("conflationKey", null);
+    }
+
     public String getExchange()
     {
         return _config.getString("exchange", null);

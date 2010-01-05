@@ -375,7 +375,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             try
             {
-                entry = _entries.add(message);
+                entry = _entries.add(message, storeContext);
 
                 deliverToSubscription(exclusiveSub, entry);
 
@@ -394,7 +394,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
         else
         {
-            entry = _entries.add(message);
+            entry = _entries.add(message, storeContext);
             /*
 
             iterate over subscriptions and if any is at the end of the queue and can deliver this message, then deliver the message
@@ -589,7 +589,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
         // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
-        while (subscriberIter.advance())
+        while (subscriberIter.advance() && entry.isAvailable())
         {
             Subscription sub = subscriberIter.getNode().getSubscription();
 

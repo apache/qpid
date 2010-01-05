@@ -292,6 +292,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
+                public boolean isAvailable()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
                 public boolean acquire()
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.

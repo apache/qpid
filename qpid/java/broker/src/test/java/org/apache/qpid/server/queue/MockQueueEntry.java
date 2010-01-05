@@ -114,6 +114,11 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
+    public boolean isAvailable()
+    {
+        return false;
+    }
+
     public boolean isDeleted()
     {
         return false;

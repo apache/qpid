@@ -22,7 +22,6 @@ package org.apache.qpid.server;
 
 import junit.framework.TestCase;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
-import org.apache.qpid.server.queue.MockQueueEntry;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleQueueEntryList;
 import org.apache.qpid.server.queue.MockAMQMessage;
@@ -38,7 +37,6 @@ import org.apache.qpid.AMQException;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.Iterator;
 
 /**
  * QPID-1385 : Race condition between added to unacked map and resending due to a rollback.
@@ -78,7 +76,7 @@ public class ExtractResendAndRequeueTest extends TestCase
         {
             AMQMessage msg = new MockAMQMessage(id);
 
-            list.add(msg);
+            list.add(msg, new StoreContext());
 
             //Increment ID;
             id++;

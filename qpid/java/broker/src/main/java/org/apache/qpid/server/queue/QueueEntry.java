@@ -143,6 +143,8 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     boolean isAcquired();
 
+    boolean isAvailable();
+
     boolean acquire();
     boolean acquire(Subscription sub);
 

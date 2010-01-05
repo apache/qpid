@@ -1,5 +1,7 @@
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.store.StoreContext;
+
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /*
@@ -74,9 +76,9 @@ public class SimpleQueueEntryList implements QueueEntryList
     }
 
 
-    public QueueEntry add(AMQMessage message)
+    public QueueEntry add(AMQMessage message, final StoreContext storeContext)
     {
-        QueueEntryImpl node = new QueueEntryImpl(this, message);
+        QueueEntryImpl node = createQueueEntry(message);
         for (;;)
         {
             QueueEntryImpl tail = _tail;
@@ -99,6 +101,11 @@ public class SimpleQueueEntryList implements QueueEntryList
                 }
             }
         }
+    }
+
+    protected QueueEntryImpl createQueueEntry(AMQMessage message) 
+    {
+        return new QueueEntryImpl(this, message);
     }
 
     public QueueEntry next(QueueEntry node)

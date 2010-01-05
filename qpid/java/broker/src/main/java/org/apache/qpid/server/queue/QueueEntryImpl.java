@@ -137,6 +137,13 @@ public class QueueEntryImpl implements QueueEntry
         return _state.getState() == State.ACQUIRED;
     }
 
+
+    public boolean isAvailable()
+    {
+        return _state.getState() == State.AVAILABLE;
+    }
+
+
     public boolean acquire()
     {
         return acquire(NON_SUBSCRIPTION_ACQUIRED_STATE);

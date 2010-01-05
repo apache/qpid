@@ -34,83 +34,83 @@ import org.apache.qpid.server.store.MemoryMessageStore;
 
 public class VirtualHostConfiguration
 {
-	private Configuration _config;
-	private String _name;
-	private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
-	private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private Configuration _config;
+    private String _name;
+    private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
+    private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
 
-	public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
-	{
-		_config = config;
-		_name = name;
-		Iterator i = _config.getList("queues.queue.name").iterator();
-		
-		while (i.hasNext())
-		{
-			String queueName = (String) i.next();
-			CompositeConfiguration mungedConf = new CompositeConfiguration();
-			mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
-			mungedConf.addConfiguration(_config.subset("queues"));
-			_queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
+    public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
+    {
+        _config = config;
+        _name = name;
+        Iterator i = _config.getList("queues.queue.name").iterator();
+        
+        while (i.hasNext())
+        {
+            String queueName = (String) i.next();
+            CompositeConfiguration mungedConf = new CompositeConfiguration();
+            mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
+            mungedConf.addConfiguration(_config.subset("queues"));
+            _queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
         }
 
-		i = _config.getList("exchanges.exchange.name").iterator();
-		int count = 0;
-		while (i.hasNext())
+        i = _config.getList("exchanges.exchange.name").iterator();
+        int count = 0;
+        while (i.hasNext())
         {
-			CompositeConfiguration mungedConf = new CompositeConfiguration();
-			mungedConf.addConfiguration(config.subset("exchanges.exchange(" + count++ + ")"));
-			mungedConf.addConfiguration(_config.subset("exchanges"));
-			String exchName = (String) i.next();
-			_exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
+            CompositeConfiguration mungedConf = new CompositeConfiguration();
+            mungedConf.addConfiguration(config.subset("exchanges.exchange(" + count++ + ")"));
+            mungedConf.addConfiguration(_config.subset("exchanges"));
+            String exchName = (String) i.next();
+            _exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
         }
 
     }
 
-	public String getName()
-	{
+    public String getName()
+    {
         return _name;
     }
 
-	public long getHousekeepingExpiredMessageCheckPeriod()
-	{
-		return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
-	}
+    public long getHousekeepingExpiredMessageCheckPeriod()
+    {
+        return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
+    }
 
-	public String getAuthenticationDatabase()
-	{
-		return _config.getString("security.authentication.name");
-	}
-	
-	public List getCustomExchanges()
-	{
-		return _config.getList("custom-exchanges.class-name");
-	}
-	
-	public SecurityConfiguration getSecurityConfiguration()
-	{
-		return new SecurityConfiguration(_config.subset("security"));
-	}
+    public String getAuthenticationDatabase()
+    {
+        return _config.getString("security.authentication.name");
+    }
+    
+    public List getCustomExchanges()
+    {
+        return _config.getList("custom-exchanges.class-name");
+    }
+    
+    public SecurityConfiguration getSecurityConfiguration()
+    {
+        return new SecurityConfiguration(_config.subset("security"));
+    }
 
-	public Configuration getStoreConfiguration()
-	{
-		return _config.subset("store");
-	}
+    public Configuration getStoreConfiguration()
+    {
+        return _config.subset("store");
+    }
 
-	public String getMessageStoreClass()
-	{
-		return _config.getString("store.class", MemoryMessageStore.class.getName());
-	}
+    public String getMessageStoreClass()
+    {
+        return _config.getString("store.class", MemoryMessageStore.class.getName());
+    }
 
-	public List getExchanges()
-	{
-		return _config.getList("exchanges.exchange.name");
-	}
+    public List getExchanges()
+    {
+        return _config.getList("exchanges.exchange.name");
+    }
 
-	public String[] getQueueNames()
-	{
-		return _queues.keySet().toArray(new String[_queues.size()]);
-	}
+    public String[] getQueueNames()
+    {
+        return _queues.keySet().toArray(new String[_queues.size()]);
+    }
 
     public ExchangeConfiguration getExchangeConfiguration(String exchangeName)
     {
@@ -165,7 +165,6 @@ public class VirtualHostConfiguration
     {
         return _config.getLong("queues.minimumAlertRepeatGap", 0);
     }
-
 
     public long getCapacity()
     {
