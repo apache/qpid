@@ -102,8 +102,8 @@ class AddressParser(Parser):
 
     result = {}
     while True:
-      if self.matches(ID):
-        n, v = self.nameval()
+      if self.matches(NUMBER, STRING, ID, LBRACE, LBRACK):
+        n, v = self.keyval()
         result[n] = v
         if self.matches(COMMA):
           self.eat(COMMA)
@@ -114,16 +114,17 @@ class AddressParser(Parser):
       elif self.matches(RBRACE):
         break
       else:
-        raise ParseError(self.next(), ID, RBRACE)
+        raise ParseError(self.next(), NUMBER, STRING, ID, LBRACE, LBRACK,
+                         RBRACE)
 
     self.eat(RBRACE)
     return result
 
-  def nameval(self):
-    name = self.eat(ID).value
+  def keyval(self):
+    key = self.value()
     self.eat(COLON)
     val = self.value()
-    return (name, val)
+    return (key, val)
 
   def value(self):
     if self.matches(NUMBER, STRING, ID):

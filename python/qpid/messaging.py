@@ -22,8 +22,6 @@ A candidate high level messaging API for python.
 
 Areas that still need work:
 
-  - asynchronous send
-  - asynchronous error notification
   - definition of the arguments for L{Session.sender} and L{Session.receiver}
   - standard L{Message} properties
   - L{Message} content encoding
@@ -247,8 +245,180 @@ class Session:
 
   """
   Sessions provide a linear context for sending and receiving
-  messages, and manage various Senders and Receivers.
-  """
+  L{Messages<Message>}. L{Messages<Message>} are sent and received
+  using the L{Sender.send} and L{Receiver.fetch} methods of the
+  L{Sender} and L{Receiver} objects associated with a Session.
+
+  Each L{Sender} and L{Receiver} is created by supplying either a
+  target or source address to the L{sender} and L{receiver} methods of
+  the Session. The address is supplied via a string syntax documented
+  below.
+
+  Addresses
+  =========
+
+  An address identifies a source or target for messages. In its
+  simplest form this is just a name. In general a target address may
+  also be used as a source address, however not all source addresses
+  may be used as a target, e.g. a source might additionally have some
+  filtering criteria that would not be present in a target.
+
+  A subject may optionally be specified along with the name. When an
+  address is used as a target, any subject specified in the address is
+  used as the default subject of outgoing messages for that target.
+  When an address is used as a source, any subject specified in the
+  address is pattern matched against the subject of available messages
+  as a filter for incoming messages from that source.
+
+  The options map contains additional information about the address
+  including:
+
+    - policies for automatically creating, and deleting the node to
+      which an address refers
+
+    - policies for asserting facts about the node to which an address
+      refers
+
+    - extension points that can be used for sender/receiver
+      configuration
+
+  Mapping to AMQP 0-10
+  --------------------
+  The name is resolved to either an exchange or a queue by querying
+  the broker.
+
+  The subject is set as a property on the message. Additionally, if
+  the name refers to an exchange, the routing key is set to the
+  subject.
+
+  Syntax
+  ------
+  The following regular expressions define the tokens used to parse
+  addresses::
+    LBRACE: \\{
+    RBRACE: \\}
+    LBRACK: \\[
+    RBRACK: \\]
+    COLON:  :
+    SEMI:   ;
+    SLASH:  /
+    COMMA:  ,
+    NUMBER: [+-]?[0-9]*\\.?[0-9]+
+    ID:     [a-zA-Z_](?:[a-zA-Z0-9_-]*[a-zA-Z0-9_])?
+    STRING: "(?:[^\\\\"]|\\\\.)*"|\'(?:[^\\\\\']|\\\\.)*\'
+    ESC:    \\\\[^ux]|\\\\x[0-9a-fA-F][0-9a-fA-F]|\\\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]
+    SYM:    [.#*%@$^!+-]
+    WSPACE: [ \\n\\r\\t]+
+
+  The formal grammar for addresses is given below::
+    address = name [ "/" subject ] [ ";" options ]
+       name = ( part | quoted )+
+    subject = ( part | quoted | "/" )*
+     quoted = STRING / ESC
+       part = LBRACE / RBRACE / COLON / COMMA / NUMBER / ID / SYM
+    options = map
+        map = "{" ( keyval ( "," keyval )* )? "}"
+     keyval = ID ":" value
+      value = NUMBER / STRING / ID / map / list
+       list = "[" ( value ( "," value )* )? "]"
+
+  This grammar resuls in the following informal syntax::
+
+    <name> [ / <subject> ] [ ; <options> ]
+
+  Where options is::
+
+    { <key> : <value>, ... }
+
+  And values may be:
+    - numbers
+    - single, double, or non quoted strings
+    - maps (dictionaries)
+    - lists
+
+  Options
+  -------
+  The options map permits the following parameters::
+
+    <name> [ / <subject> ] {
+      create: <create-policy>,
+      delete: <delete-policy>,
+      assert: <assert-policy>,
+      node-properties: {
+        type: <node-type>,
+        durable: <node-durability>,
+        x-properties: {
+          bindings: ["<exchange>/<key>", ...],
+          <passthrough-key>: <passthrough-value>
+        }
+      }
+    }
+
+  The create, delete, and assert policies specify who should perfom
+  the associated action:
+
+   - I{always}: the action will always be performed
+   - I{sender}: the action will only be performed by the sender
+   - I{receiver}: the action will only be performed by the receiver
+   - I{never}: the action will never be performed (this is the default)
+
+  The node-type is one of:
+
+    - I{topic}: a topic node will default to the topic exchange,
+      x-properties may be used to specify other exchange types
+    - I{queue}: this is the default node-type
+
+  The x-properties map permits arbitrary additional keys and values to
+  be specified. These keys and values are passed through when creating
+  a node or asserting facts about an existing node. Any passthrough
+  keys and values that do not match a standard field of the underlying
+  exchange or queue declare command will be sent in the arguments map.
+
+  Examples
+  --------
+  A simple name resolves to any named node, usually a queue or a
+  topic::
+
+    my-queue-or-topic
+
+  A simple name with a subject will also resolve to a node, but the
+  presence of the subject will cause a sender using this address to
+  set the subject on outgoing messages, and receivers to filter based
+  on the subject::
+
+    my-queue-or-topic/my-subject
+
+  A subject pattern can be used and will cause filtering if used by
+  the receiver. If used for a sender, the literal value gets set as
+  the subject::
+
+    my-queue-or-topic/my-*
+
+  In all the above cases, the address is resolved to an existing node.
+  If you want the node to be auto-created, then you can do the
+  following. By default nonexistent nodes are assumed to be queues::
+
+    my-queue; {create: always}
+
+  You can customize the properties of the queue::
+
+    my-queue; {create: always, node-properties: {durable: True}}
+
+  You can create a topic instead if you want::
+
+    my-queue; {create: always, node-properties: {type: topic}}
+
+  You can assert that the address resolves to a node with particular
+  properties::
+
+    my-transient-topic; {
+      assert: always,
+      node-properties: {
+        type: topic,
+        durable: False
+      }
+    }
+ """
 
   def __init__(self, connection, name, transactional):
     self.connection = connection
