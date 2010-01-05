@@ -1810,6 +1810,8 @@ class Broker:
       elif opcode == 'c': self.session._handleContentInd      (self, codec, seq, prop=True)
       elif opcode == 'i': self.session._handleContentInd      (self, codec, seq, stat=True)
       elif opcode == 'g': self.session._handleContentInd      (self, codec, seq, prop=True, stat=True)
+    self.session.receiver._completed.add(msg.id)
+    self.session.channel.session_completed(self.session.receiver._completed)
 
   def _exceptionCb(self, data):
     self.connected = False
