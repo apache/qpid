@@ -50,7 +50,7 @@ build: $(TARGETS)
 
 doc:
 	@mkdir -p $(BUILD)
-	PYTHONPATH=. epydoc qpid.messaging -o $(BUILD)/doc --no-private --no-sourcecode --include-log
+	PYTHONPATH=. epydoc -v qpid.messaging -o $(BUILD)/doc --no-private --no-sourcecode --include-log
 
 install: build
 	install -d $(PYTHON_LIB)

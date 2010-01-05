@@ -136,12 +136,13 @@ class AddressTests(ParserBase, Test):
 
   def testBadOptions1(self):
     self.invalid("name/subject; {",
-                 "expecting (ID, RBRACE), got EOF line:1,15:name/subject; {")
+                 "expecting (NUMBER, STRING, ID, LBRACE, LBRACK, RBRACE), "
+                 "got EOF line:1,15:name/subject; {")
 
   def testBadOptions2(self):
     self.invalid("name/subject; { 3",
-                 "expecting (ID, RBRACE), got NUMBER('3') "
-                 "line:1,16:name/subject; { 3")
+                 "expecting COLON, got EOF "
+                 "line:1,17:name/subject; { 3")
 
   def testBadOptions3(self):
     self.invalid("name/subject; { key:",
@@ -160,7 +161,7 @@ class AddressTests(ParserBase, Test):
 
   def testBadOptions6(self):
     self.invalid("name/subject; { key: value,",
-                 "expecting (ID, RBRACE), got EOF "
+                 "expecting (NUMBER, STRING, ID, LBRACE, LBRACK, RBRACE), got EOF "
                  "line:1,27:name/subject; { key: value,")
 
   def testBadOptions7(self):
@@ -197,3 +198,14 @@ class AddressTests(ParserBase, Test):
   def testBadList4(self):
     self.invalid("name/subject; { key: [ 1 2 ] }", "expecting (COMMA, RBRACK), "
                  "got NUMBER('2') line:1,25:name/subject; { key: [ 1 2 ] }")
+
+  def testMap1(self):
+    self.valid("name/subject; { 'key': value }",
+               "name", "subject", {"key": "value"})
+
+  def testMap2(self):
+    self.valid("name/subject; { 1: value }", "name", "subject", {1: "value"})
+
+  def testMap3(self):
+    self.valid('name/subject; { "foo.bar": value }',
+               "name", "subject", {"foo.bar": "value"})
