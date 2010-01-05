@@ -98,6 +98,7 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementge
 
 else (EXISTS ${AMQP_SPEC})
   message(STATUS "No AMQP spec... presume generated sources are included")
+  set(QPID_GENERATED_HEADERS_IN_SOURCE ON)
   include (rubygen.cmake)
   include (managementgen.cmake)
 endif (EXISTS ${AMQP_SPEC})
@@ -680,10 +681,18 @@ set_target_properties (qpidclient PROPERTIES VERSION ${qpidc_version})
 install (TARGETS qpidclient
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
-install (DIRECTORY ../include/qpid ${CMAKE_CURRENT_BINARY_DIR}/../include/qpid
+install (DIRECTORY ../include/qpid
          DESTINATION ${QPID_INSTALL_INCLUDEDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
          PATTERN ".svn" EXCLUDE)
+# Released source artifacts from Apache have the generated headers included in
+# the source tree, not the binary tree. So don't attempt to grab them when
+# they're not supposed to be there.
+if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
+  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../include/qpid
+           DESTINATION ${QPID_INSTALL_INCLUDEDIR}
+           COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
+endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 if (WIN32)
     install (PROGRAMS
              ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.dll
