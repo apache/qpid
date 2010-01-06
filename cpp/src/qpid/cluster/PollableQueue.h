@@ -55,7 +55,7 @@ template <class T> class PollableQueue : public sys::PollableQueue<T> {
             return i;
         }
         catch (const std::exception& e) {
-            QPID_LOG(error, message << ": " << e.what());
+            QPID_LOG(critical, message << ": " << e.what());
             this->stop();
             error();
             return values.end();
