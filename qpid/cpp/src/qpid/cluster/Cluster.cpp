@@ -687,11 +687,15 @@ void Cluster::initialStatus(const MemberId& member, uint32_t version, bool activ
 }
 
 void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
-    if (map.ready(id, Url(url))) 
-        memberUpdate(l);
-    if (state == CATCHUP && id == self) {
-        setReady(l);
-        QPID_LOG(notice, *this << " caught up.");
+    try {
+        if (map.ready(id, Url(url)))
+            memberUpdate(l);
+        if (state == CATCHUP && id == self) {
+            setReady(l);
+            QPID_LOG(notice, *this << " caught up.");
+        }
+    } catch (const Url::Invalid& e) {
+        QPID_LOG(error, "Invalid URL in cluster ready command: " << url);
     }
 }
 
