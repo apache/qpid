@@ -147,7 +147,7 @@ if SSL
 include ssl.mk
 endif
 
-# receiver, sender are installed and therefore built as part of make, not make check
+# Test programs that are installed and therefore built as part of make, not make check
 qpidtest_PROGRAMS += receiver
 receiver_SOURCES = \
   receiver.cpp \
@@ -162,43 +162,49 @@ sender_SOURCES = \
   ConnectionOptions.h
 sender_LDADD = $(lib_client)
 
-#
-# Other test programs
-#
-check_PROGRAMS+=perftest
+qpidtest_PROGRAMS+=perftest
 perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 perftest_INCLUDES=$(PUBLIC_INCLUDES)
 perftest_LDADD=$(lib_client) 
 
-check_PROGRAMS+=txtest
+qpidtest_PROGRAMS+=txtest
 txtest_INCLUDES=$(PUBLIC_INCLUDES)
 txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
 txtest_LDADD=$(lib_client) 
 
-check_PROGRAMS+=latencytest
+qpidtest_PROGRAMS+=latencytest
 latencytest_INCLUDES=$(PUBLIC_INCLUDES)
 latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
 latencytest_LDADD=$(lib_client) 
 
-check_PROGRAMS+=echotest
-echotest_INCLUDES=$(PUBLIC_INCLUDES)
-echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
-echotest_LDADD=$(lib_client) 
-
-check_PROGRAMS+=client_test
+qpidtest_PROGRAMS+=client_test
 client_test_INCLUDES=$(PUBLIC_INCLUDES)
 client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
 client_test_LDADD=$(lib_client) 
 
-check_PROGRAMS+=topic_listener
+qpidtest_PROGRAMS+=topic_listener
 topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
 topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
 topic_listener_LDADD=$(lib_client) 
 
-check_PROGRAMS+=topic_publisher
+qpidtest_PROGRAMS+=topic_publisher
 topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
 topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
 topic_publisher_LDADD=$(lib_client) 
+
+qpidtest_PROGRAMS+=qpid_ping
+qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_ping_SOURCES=qpid_ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
+qpid_ping_LDADD=$(lib_client)
+
+#
+# Other test programs
+#
+
+check_PROGRAMS+=echotest
+echotest_INCLUDES=$(PUBLIC_INCLUDES)
+echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
+echotest_LDADD=$(lib_client)
 
 check_PROGRAMS+=publish
 publish_INCLUDES=$(PUBLIC_INCLUDES)
@@ -252,11 +258,6 @@ PollerTest_LDADD=$(lib_common) $(SOCKLIBS)
 check_PROGRAMS+=DispatcherTest
 DispatcherTest_SOURCES=DispatcherTest.cpp
 DispatcherTest_LDADD=$(lib_common) $(SOCKLIBS)
-
-check_PROGRAMS+=qpid_ping
-qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
-qpid_ping_SOURCES=qpid_ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
-qpid_ping_LDADD=$(lib_client) 
 
 check_PROGRAMS+=datagen
 datagen_SOURCES=datagen.cpp
