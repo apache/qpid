@@ -68,7 +68,7 @@ public class PlainSaslServer implements SaslServer
 
             // we do not currently support authcid in any meaningful way
             // String authcid = new String(response, 0, authzidNullPosition, "utf8");
-            String authzid = new String(response, authzidNullPosition + 1, authcidNullPosition - 1, "utf8");
+            String authzid = new String(response, authzidNullPosition + 1, authcidNullPosition - authzidNullPosition - 1, "utf8");
 
             // we do not care about the prompt but it throws if null
             NameCallback nameCb = new NameCallback("prompt", authzid);
