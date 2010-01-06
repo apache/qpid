@@ -65,9 +65,9 @@ struct ClusterOptions : public Options {
             ("cluster-url", optValue(settings.url,"URL"),
              "URL of this broker, advertized to the cluster.\n"
              "Defaults to a URL listing all the local IP addresses\n")
-            ("cluster-username", optValue(settings.username, "USER"), "Username for connections between brokers")
-            ("cluster-password", optValue(settings.password, "PASS"), "Password for connections between brokers")
-            ("cluster-mechanism", optValue(settings.mechanism, "MECH"), "Authentication mechanism for connections between brokers")
+            ("cluster-username", optValue(settings.username, ""), "Username for connections between brokers")
+            ("cluster-password", optValue(settings.password, ""), "Password for connections between brokers")
+            ("cluster-mechanism", optValue(settings.mechanism, ""), "Authentication mechanism for connections between brokers")
 #if HAVE_LIBCMAN_H
             ("cluster-cman", optValue(settings.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
