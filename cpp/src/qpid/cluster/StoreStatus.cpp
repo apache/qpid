@@ -31,7 +31,7 @@ namespace cluster {
 using framing::Uuid;
 using namespace framing::cluster;
 namespace fs=boost::filesystem;
-using std::ostream;
+using namespace std;
 
 StoreStatus::StoreStatus(const std::string& d)
     : state(STORE_STATE_NO_STORE), dataDir(d), configSeq(0)
@@ -44,10 +44,16 @@ const char* CLUSTER_ID_FILE="cluster.uuid";
 const char* SHUTDOWN_ID_FILE="shutdown.uuid";
 const char* CONFIG_SEQ_FILE="config.seq";
 
+void throw_exceptions(ios& ios) {
+    // Have stream throw an exception on error.
+    ios.exceptions(std::ios::badbit | std::ios::failbit);
+}
+
 Uuid loadUuid(const fs::path& path) {
     Uuid ret;
     if (exists(path)) {
         fs::ifstream i(path);
+        throw_exceptions(i);
         i >> ret;
     }
     return ret;
@@ -55,7 +61,18 @@ Uuid loadUuid(const fs::path& path) {
 
 void saveUuid(const fs::path& path, const Uuid& uuid) {
     fs::ofstream o(path);
+    throw_exceptions(o);
     o << uuid;
+}
+
+framing::SequenceNumber loadSeqNum(const fs::path& path) {
+    uint32_t n = 0;
+    if (exists(path)) {
+        fs::ifstream i(path);
+        throw_exceptions(i);
+        i >> n;
+    }
+    return framing::SequenceNumber(n);
 }
 
 } // namespace
@@ -67,10 +84,7 @@ void StoreStatus::load() {
         create_directory(dir);
         clusterId = loadUuid(dir/CLUSTER_ID_FILE);
         shutdownId = loadUuid(dir/SHUTDOWN_ID_FILE);
-        fs::ifstream is(dir/CONFIG_SEQ_FILE);
-        uint32_t n;
-        is >> n;
-        configSeq = framing::SequenceNumber(n);
+        configSeq = loadSeqNum(dir/CONFIG_SEQ_FILE);
         if (clusterId && shutdownId) state = STORE_STATE_CLEAN_STORE;
         else if (clusterId) state = STORE_STATE_DIRTY_STORE;
         else state = STORE_STATE_EMPTY_STORE;
@@ -86,8 +100,9 @@ void StoreStatus::save() {
         create_directory(dir);
         saveUuid(dir/CLUSTER_ID_FILE, clusterId);
         saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
-        fs::ofstream os(dir/CONFIG_SEQ_FILE);
-        os << configSeq.getValue();
+        fs::ofstream o(dir/CONFIG_SEQ_FILE);
+        throw_exceptions(o);
+        o << configSeq.getValue();
     }
     catch (const std::exception&e) {
         throw Exception(QPID_MSG("Cannot save cluster store status: " << e.what()));
