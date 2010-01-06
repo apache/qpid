@@ -108,6 +108,11 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         return UserManagement.TYPE;
     }
 
+    public boolean setPassword(String username, String password)
+    {
+        return setPassword(username, password.toCharArray());
+    }
+    
     public boolean setPassword(String username, char[] password)
     {
         try
@@ -195,6 +200,11 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
 
         return true;
+    }
+    
+    public boolean createUser(String username, String password, boolean read, boolean write, boolean admin)
+    {
+        return createUser(username, password.toCharArray(), read, write, admin);
     }
 
     public boolean createUser(String username, char[] password, boolean read, boolean write, boolean admin)

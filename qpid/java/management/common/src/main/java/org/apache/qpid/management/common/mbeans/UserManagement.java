@@ -45,6 +45,25 @@ public interface UserManagement
      * set password for user.
      * 
      * Since Qpid JMX API 1.2 this operation expects plain text passwords to be provided. Prior to this, MD5 hashed passwords were supplied.
+     * 
+     * @deprecated since Qpid JMX API 1.7
+     *
+     * @param username The username to create
+     * @param password The password for the user
+     *
+     * @return The result of the operation
+     */
+    @Deprecated
+    @MBeanOperation(name = "setPassword", description = "Set password for user.",
+                    impact = MBeanOperationInfo.ACTION)
+    boolean setPassword(@MBeanOperationParameter(name = "username", description = "Username")String username,
+                        //NOTE: parameter name was changed to 'passwd' in Qpid JMX API 1.7 to protect against older, incompatible management clients
+                        @MBeanOperationParameter(name = "passwd", description = "Password")char[] password);
+
+    /**
+     * Set password for a given user.
+     * 
+     * @since Qpid JMX API 1.7
      *
      * @param username The username to create
      * @param password The password for the user
@@ -54,8 +73,8 @@ public interface UserManagement
     @MBeanOperation(name = "setPassword", description = "Set password for user.",
                     impact = MBeanOperationInfo.ACTION)
     boolean setPassword(@MBeanOperationParameter(name = "username", description = "Username")String username,
-                        @MBeanOperationParameter(name = "passwd", description = "Password")char[] password);
-
+                        @MBeanOperationParameter(name = "password", description = "Password")String password);
+    
     /**
      * set rights for users with given details
      *
@@ -78,6 +97,8 @@ public interface UserManagement
      *
      * Since Qpid JMX API 1.2 this operation expects plain text passwords to be provided. Prior to this, MD5 hashed passwords were supplied.
      * 
+     * @deprecated since Qpid JMX API 1.7
+     * 
      * @param username The username to create
      * @param password The password for the user
      * @param read     The set of permission to give the new user
@@ -86,14 +107,37 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
+    @Deprecated
     @MBeanOperation(name = "createUser", description = "Create new user from system.",
                     impact = MBeanOperationInfo.ACTION)
     boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
+                       //NOTE: parameter name was changed to 'passwd' in Qpid JMX API 1.7 to protect against older, incompatible management clients
                        @MBeanOperationParameter(name = "passwd", description = "Password")char[] password,
                        @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
                        @MBeanOperationParameter(name = "readAndWrite", description = "Administration write")boolean write,
                        @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin);
 
+    /**
+     * Create users with given details.
+     * 
+     * @since Qpid JMX API 1.7
+     * 
+     * @param username The username to create
+     * @param password The password for the user
+     * @param read     The set of permission to give the new user
+     * @param write    The set of permission to give the new user
+     * @param admin    The set of permission to give the new user
+     *
+     * @return The result of the operation
+     */
+    @MBeanOperation(name = "createUser", description = "Create a new user.",
+                    impact = MBeanOperationInfo.ACTION)
+    boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
+                       @MBeanOperationParameter(name = "password", description = "Password")String password,
+                       @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
+                       @MBeanOperationParameter(name = "readAndWrite", description = "Administration write")boolean write,
+                       @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin);
+    
     /**
      * View users returns all the users that are currently available to the system.
      *

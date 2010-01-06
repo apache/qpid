@@ -792,7 +792,17 @@ public class UserManagementTabControl extends TabControl
                 shell.dispose();
                 try
                 {
-                    boolean result = _ummb.createUser(username, passwordChars, read, write, admin);
+                    boolean result = false;
+                    // If we have Qpid JMX API 1.7 or above, use newer createUser method with String based password.
+                    if (_ApiVersion.greaterThanOrEqualTo(1,7))
+                    {
+                        result = _ummb.createUser(username, password, read, write, admin);
+                    }
+                    else
+                    {
+                        result = _ummb.createUser(username, passwordChars, read, write, admin);
+                    }
+                    
                     ViewUtility.operationResultFeedback(result, "Created user", "Failed to create user");
                 }
                 catch(Exception e5)
