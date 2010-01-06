@@ -109,7 +109,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     
     public LoggingManagementMBean(String log4jConfigFileName, int log4jLogWatchInterval) throws JMException
     {
-        super(LoggingManagement.class, LoggingManagement.TYPE, LoggingManagement.VERSION);
+        super(LoggingManagement.class, LoggingManagement.TYPE);
         _log4jConfigFileName = log4jConfigFileName;
         _log4jLogWatchInterval = log4jLogWatchInterval;
     }

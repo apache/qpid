@@ -28,7 +28,6 @@ public interface ConfigurationManagement
 {
 
     String TYPE = "ConfigurationManagement";
-    int VERSION = 1;
     
     /**
      * Reload the 

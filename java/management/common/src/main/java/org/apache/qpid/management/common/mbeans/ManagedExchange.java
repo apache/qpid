@@ -39,7 +39,6 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 public interface ManagedExchange
 {
     static final String TYPE = "Exchange";
-    static final int VERSION = 1;
     
     //TabularType and contained CompositeType key/description info for DIRECT/TOPIC/FANOUT exchanges.
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
