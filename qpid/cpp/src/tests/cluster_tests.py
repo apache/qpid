@@ -185,7 +185,7 @@ class StoreTests(BrokerTest):
         self.assertEqual(c.get_message("q").content, "2")
         # Shut down the entire cluster cleanly and bring it back up
         a.send_message("q", Message("3", durable=True))
-        qpid_cluster.main(["qpid-cluster", "-kf", a.host_port()])      
+        self.assertEqual(0, qpid_cluster.main(["qpid-cluster", "-kf", a.host_port()]))
         a = cluster.start("a", wait=False)
         b = cluster.start("b", wait=False)
         c = cluster.start("c", wait=True)
@@ -203,7 +203,7 @@ class StoreTests(BrokerTest):
         b.kill()
         self.assertEqual(c.get_message("q").content, "4")
         c.send_message("q", Message("clean", durable=True))
-        qpid_cluster.main(["qpid-cluster", "-kf", c.host_port()])              
+        self.assertEqual(0, qpid_cluster.main(["qpid-cluster", "-kf", c.host_port()]))
         a = cluster.start("a", wait=False)
         b = cluster.start("b", wait=False)
         c = cluster.start("c", wait=True)
