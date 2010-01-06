@@ -20,7 +20,7 @@
 # Support library for tests that start multiple brokers, e.g. cluster
 # or federation
 
-import os, signal, string, tempfile, popen2, socket, threading, time, imp
+import os, signal, string, tempfile, popen2, socket, threading, time, imp, re
 import qpid, traceback
 from qpid import connection, messaging, util
 from qpid.compat import format_exc
@@ -163,6 +163,13 @@ class Broker(Popen):
     "A broker process. Takes care of start, stop and logging."
     _broker_count = 0
 
+    def find_log(self):
+        self.log = "%s.log" % self.name
+        i = 1
+        while (os.path.exists(self.log)):
+            self.log = "%s-%d.log" % (self.name, i)
+            i += 1
+
     def __init__(self, test, args=[], name=None, expect=EXPECT_RUNNING):
         """Start a broker daemon. name determines the data-dir and log
         file names."""
@@ -174,7 +181,7 @@ class Broker(Popen):
         else:
             self.name = "broker%d" % Broker._broker_count
             Broker._broker_count += 1
-        self.log = self.name+".log"
+        self.find_log()
         cmd += ["--log-to-file", self.log, "--log-prefix", self.name]
         cmd += ["--log-to-stderr=no"] 
         self.datadir = self.name
@@ -182,7 +189,7 @@ class Broker(Popen):
         Popen.__init__(self, cmd, expect)
         test.cleanup_stop(self)
         self.host = "localhost"
-        log.debug("Started broker %s (%s)" % (self.name, self.pname))
+        log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
 
     def port(self):
         # Read port from broker process stdout if not already read.
@@ -240,8 +247,21 @@ class Broker(Popen):
         return m
 
     def host_port(self): return "%s:%s" % (self.host, self.port())
+
+    def search_log(self, regex):
+        """Search for regular expression in broker log, return match"""
+        return regex.search(file(self.log).read())
+
+    def get_member_id(self):
+        """Search log file for cluster member ID"""
+        match = self.search_log(re.compile(r"cluster\(([0-9.:]*) INIT\)"))
+        if not match: raise Exception("No cluster member-id found in "+log)
+        return match.group(1)
     
-        
+    def ready(self):
+        """Wait till broker is ready to serve clients"""
+        self.connect().close()
+
 class Cluster:
     """A cluster of brokers in a test."""
 
@@ -333,7 +353,7 @@ class BrokerTest(TestCase):
     def wait():
         """Wait for all brokers in the cluster to be ready"""
         for b in _brokers: b.connect().close()
-        
+
 class RethrownException(Exception):
     """Captures the original stack trace to be thrown later""" 
     def __init__(self, e, msg=""):

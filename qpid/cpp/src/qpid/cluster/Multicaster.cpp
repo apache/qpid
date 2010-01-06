@@ -55,15 +55,8 @@ void Multicaster::mcastBuffer(const char* data, size_t size, const ConnectionId&
 void Multicaster::mcast(const Event& e) {
     {
         sys::Mutex::ScopedLock l(lock);
-        if (!ready) {
-            if (e.isConnection()) holdingQueue.push_back(e);
-            else {
-                iovec iov = e.toIovec();
-                // FIXME aconway 2009-11-23: configurable retry --cluster-retry
-                if (!cpg.mcast(&iov, 1))
-                    throw Exception("CPG flow control error during initialization");
-                QPID_LOG(trace, "MCAST (direct) " << e);
-            }
+        if (!ready && e.isConnection()) {
+            holdingQueue.push_back(e);
             return;
         }
     }

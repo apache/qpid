@@ -193,7 +193,8 @@ class StoreTests(BrokerTest):
         a.terminate()
         cluster2 = self.cluster(1, args=self.args())
         try:
-            a = cluster2.start("a", expect=EXPECT_EXIT_FAIL)
+            a = cluster2.start("a", expect=EXPECT_EXIT_OK)
+            a.ready()
             self.fail("Expected exception")
         except: pass
 
@@ -214,8 +215,10 @@ class StoreTests(BrokerTest):
         self.assertEqual(c.wait(), 0)
 
         # Mix members from both shutdown events, they should fail
-        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
-        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=False)
+        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait=False)
+        self.assertRaises(Exception, lambda: a.ready())
+        self.assertRaises(Exception, lambda: b.ready())
 
     def test_total_failure(self):
         # Verify we abort with sutiable error message if no clean stores.
@@ -224,10 +227,14 @@ class StoreTests(BrokerTest):
         b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=True)
         a.kill()
         b.kill()
-        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
-        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=False)
-        assert a.wait() != 0
-        assert b.wait() != 0
+        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait=False)
+        self.assertRaises(Exception, lambda: a.ready())
+        self.assertRaises(Exception, lambda: b.ready())
         msg = re.compile("critical.*no clean store")
-        assert msg.search(file(a.log).read())
-        assert msg.search(file(b.log).read())
+        assert a.search_log(msg)
+        assert b.search_log(msg)
+        # FIXME aconway 2009-12-03: verify correct store ID in log message
+        # FIXME aconway 2009-12-03: verify manual restore procedure
+
+
