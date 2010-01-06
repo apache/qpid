@@ -47,7 +47,7 @@ public abstract class ApplicationRegistry
 
     //max supported broker management interface supported by this release of the management console
     public static final int SUPPORTED_QPID_JMX_API_MAJOR_VERSION = 1;
-    public static final int SUPPORTED_QPID_JMX_API_MINOR_VERSION = 6;
+    public static final int SUPPORTED_QPID_JMX_API_MINOR_VERSION = 7;
     
     public static final String DATA_DIR = System.getProperty("user.home") + File.separator + ".qpidmc";
     

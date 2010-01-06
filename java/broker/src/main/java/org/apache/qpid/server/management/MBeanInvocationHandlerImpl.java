@@ -38,7 +38,6 @@ import javax.management.MBeanOperationInfo;
 import javax.management.JMException;
 import javax.management.NotificationListener;
 import javax.management.Notification;
-import javax.management.OperationsException;
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -140,8 +139,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
         Principal principal = principals.iterator().next();
         String identity = principal.getName();
-        
-        checkCompatibility(proxy, method, args);
 
         if (isAdminMethod(args))
         {
@@ -169,49 +166,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         }
 
         throw new SecurityException("Access denied");
-    }
-
-    private void checkCompatibility(final Object proxy, final Method method, final Object[] args) throws Throwable
-    {
-        if (args[0] instanceof ObjectName && method.getName().equals("invoke"))
-        {        
-            //get the ObjectName and invoked Method name
-            final ObjectName objectName = (ObjectName) args[0];
-            
-            final String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
-            if (mbeanMethod == null)
-            {
-                return;
-            }
-            
-            //UserManagement MBean compatibility checks
-            if(objectName.getKeyProperty("type").equals(UserManagement.TYPE))
-            {
-                if (mbeanMethod.equals("createUser") || mbeanMethod.equals("setPassword"))
-                {
-                    //get the provided argument values and types for the method
-                    if( args.length > 2 && args[2] != null && args[2] instanceof Object[] &&
-                        args.length > 3 && args[3] != null && args[3] instanceof String[])
-                    {
-                        //check the 2nd argument value is a char[]
-                        final Object[] argValues = (Object[]) args[2];
-                        final String[] argTypes = (String[]) args[3];
-                        
-                        final Object actualValue = (argValues.length > 1) ? argValues[1] : null;
-                        final String expectedType = (argTypes.length > 1) ? (String) argTypes[1] : null;
-                        
-                        if (expectedType != null && expectedType.equals("[C"))
-                        {     
-                            if (actualValue != null && actualValue instanceof String)
-                            {
-                                throw new OperationsException("Incorrect parameter type provided.\n" +
-                                "Please upgrade to a newer management console release to correct this issue.");
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private boolean isAdminMethod(Object[] args)
