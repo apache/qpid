@@ -255,8 +255,8 @@ class StoreTests(BrokerTest):
         self.assertRaises(Exception, lambda: a.ready())
         self.assertRaises(Exception, lambda: b.ready())
         msg = re.compile("critical.*no clean store")
-        assert a.search_log(msg)
-        assert b.search_log(msg)
+        assert msg.search(file(a.log).read())
+        assert msg.search(file(b.log).read())
 
         # FIXME aconway 2009-12-03: verify manual restore procedure
 
