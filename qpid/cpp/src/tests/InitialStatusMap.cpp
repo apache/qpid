@@ -37,15 +37,15 @@ QPID_AUTO_TEST_SUITE(InitialStatusMapTestSuite)
 typedef InitialStatusMap::Status Status;
 
 Status activeStatus(const Uuid& id=Uuid()) {
-    return Status(ProtocolVersion(), 0, true, id, STORE_STATE_NO_STORE, Uuid());
+    return Status(ProtocolVersion(), 0, true, id, STORE_STATE_NO_STORE, Uuid(), 0);
 }
 
 Status newcomerStatus(const Uuid& id=Uuid()) {
-    return Status(ProtocolVersion(), 0, false, id, STORE_STATE_NO_STORE, Uuid());
+    return Status(ProtocolVersion(), 0, false, id, STORE_STATE_NO_STORE, Uuid(), 0);
 }
 
 Status storeStatus(bool active, StoreState state, Uuid start=Uuid(), Uuid stop=Uuid()) {
-    return Status(ProtocolVersion(), 0, active, start, state, stop);
+    return Status(ProtocolVersion(), 0, active, start, state, stop, 0);
 }
 
 QPID_AUTO_TEST_CASE(testFirstInCluster) {
@@ -241,7 +241,6 @@ QPID_AUTO_TEST_CASE(testEmptyAlone) {
 }
 
 // FIXME aconway 2009-11-20: consistency tests for mixed stores,
-// tests for manual intervention case.
 
 QPID_AUTO_TEST_SUITE_END()
 

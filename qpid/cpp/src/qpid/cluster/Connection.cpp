@@ -322,9 +322,12 @@ void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const str
     output.setSendMax(sendMax);
 }
 
-void Connection::membership(const FieldTable& joiners, const FieldTable& members, const framing::SequenceNumber& frameSeq) {
+void Connection::membership(const FieldTable& joiners, const FieldTable& members,
+                            const framing::SequenceNumber& frameSeq,
+                            const framing::SequenceNumber& configSeq)
+{
     QPID_LOG(debug, cluster << " incoming update complete on connection " << *this);
-    cluster.updateInDone(ClusterMap(joiners, members, frameSeq));
+    cluster.updateInDone(ClusterMap(joiners, members, frameSeq, configSeq));
     consumerNumbering.clear();
     self.second = 0;        // Mark this as completed update connection.
 }

@@ -57,15 +57,17 @@ void assignFieldTable(FieldTable& ft, const ClusterMap::Map& map) {
 
 }
 
-ClusterMap::ClusterMap() : frameSeq(0) {}
+ClusterMap::ClusterMap() : frameSeq(0), configSeq(0) {}
 
-ClusterMap::ClusterMap(const Map& map) : frameSeq(0) {
+ClusterMap::ClusterMap(const Map& map) : frameSeq(0), configSeq(0) {
     transform(map.begin(), map.end(), inserter(alive, alive.begin()), bind(&Map::value_type::first, _1));
     members = map;
 }
 
-ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt, framing::SequenceNumber frameSeq_)
-  : frameSeq(frameSeq_)
+ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt,
+                       framing::SequenceNumber frameSeq_,
+                       framing::SequenceNumber configSeq_)
+    : frameSeq(frameSeq_), configSeq(configSeq_)
 {
     for_each(joinersFt.begin(), joinersFt.end(), bind(&addFieldTableValue, _1, ref(joiners), ref(alive)));
     for_each(membersFt.begin(), membersFt.end(), bind(&addFieldTableValue, _1, ref(members), ref(alive)));
@@ -81,6 +83,7 @@ void ClusterMap::toMethodBody(framing::ClusterConnectionMembershipBody& b) const
     b.getMembers().clear();
     for_each(members.begin(), members.end(), bind(&insertFieldTableFromMapValue, ref(b.getMembers()), _1));
     b.setFrameSeq(frameSeq);
+    b.setConfigSeq(configSeq);
 }
 
 Url ClusterMap::getUrl(const Map& map, const  MemberId& id) {
@@ -133,6 +136,7 @@ ostream& operator<<(ostream& o, const ClusterMap& m) {
         else o << "(unknown)";
         o << " ";
     }
+    o << "frameSeq=" << m.getFrameSeq() << " configSeq=" << m.getConfigSeq();
     return o;
 }
 
@@ -153,6 +157,7 @@ bool ClusterMap::ready(const MemberId& id, const Url& url) {
 }
 
 bool ClusterMap::configChange(const Set& update) {
+    ++configSeq;
     bool memberChange = false;
     Set removed;
     set_difference(alive.begin(), alive.end(),

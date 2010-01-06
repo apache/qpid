@@ -49,7 +49,8 @@ class ClusterMap {
 
     ClusterMap();
     ClusterMap(const Map& map);
-    ClusterMap(const framing::FieldTable& joiners, const framing::FieldTable& members, framing::SequenceNumber frameSeq);
+    ClusterMap(const framing::FieldTable& joiners, const framing::FieldTable& members,
+               framing::SequenceNumber frameSeq, framing::SequenceNumber configSeq);
 
     /** Update from config change.
      *@return true if member set changed.
@@ -83,8 +84,10 @@ class ClusterMap {
     /**@return true If this is a new member */ 
     bool ready(const MemberId& id, const Url&);
 
-    framing::SequenceNumber getFrameSeq() { return frameSeq; }
+    framing::SequenceNumber getFrameSeq() const { return frameSeq; }
     framing::SequenceNumber incrementFrameSeq() { return ++frameSeq; }
+    framing::SequenceNumber getConfigSeq() const { return configSeq; }
+    void resetConfigSeq() { configSeq = 0; }
     
     /** Clear out all knowledge of joiners & members, just keep alive set */
     void clearStatus() { joiners.clear(); members.clear(); }
@@ -94,7 +97,7 @@ class ClusterMap {
     
     Map joiners, members;
     Set alive;
-    framing::SequenceNumber frameSeq;
+    framing::SequenceNumber frameSeq, configSeq;
 
   friend std::ostream& operator<<(std::ostream&, const Map&);
   friend std::ostream& operator<<(std::ostream&, const ClusterMap&);
