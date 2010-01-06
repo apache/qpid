@@ -137,9 +137,13 @@ ostream& operator<<(ostream& o, const ClusterMap& m) {
 }
 
 bool ClusterMap::updateRequest(const MemberId& id, const string& url) {
-    if (isAlive(id)) {
-        joiners[id] = Url(url);
-        return true;
+    try {
+        if (isAlive(id)) {
+            joiners[id] = Url(url);
+            return true;
+        }
+    } catch (const Url::Invalid&) {
+        QPID_LOG(error, "Invalid URL in cluster update request: " << url);
     }
     return false;
 }
