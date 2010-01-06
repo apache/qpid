@@ -32,7 +32,7 @@ public class ConfigurationManagementMBean extends AMQManagedObject implements Co
 
     public ConfigurationManagementMBean() throws NotCompliantMBeanException
     {
-        super(ConfigurationManagement.class, ConfigurationManagement.TYPE, ConfigurationManagement.VERSION);
+        super(ConfigurationManagement.class, ConfigurationManagement.TYPE);
     }
 
     public String getObjectInstanceName()

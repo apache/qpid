@@ -42,8 +42,6 @@ public interface ManagedBroker
 {
     static final String TYPE = "VirtualHostManager";
 
-    static final int VERSION = 1 ;
-
     /**
      * Returns an array of the exchange types available for creation.
      * @since Qpid JMX API 1.3

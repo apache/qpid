@@ -39,15 +39,13 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
     private Class<?> _managementInterface;
 
     private String _typeName;
-    private int _version;
 
-    protected DefaultManagedObject(Class<?> managementInterface, String typeName, int version)
+    protected DefaultManagedObject(Class<?> managementInterface, String typeName)
         throws NotCompliantMBeanException
     {
         super(managementInterface);
         _managementInterface = managementInterface;
         _typeName = typeName;
-        _version = version;
     }
 
     public String getType()
@@ -117,10 +115,6 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         objectName.append(getHierarchicalName(this));
         objectName.append("name=").append(name);
 
-        objectName.append(",");
-        objectName.append("version=").append(_version);
-
-
         return new ObjectName(objectName.toString());
     }
 
@@ -138,9 +132,6 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             objectName.append(hierarchyName.substring(0, hierarchyName.lastIndexOf(",")));
         }
 
-        objectName.append(",");
-        objectName.append("version=").append(_version);
-        
         return new ObjectName(objectName.toString());
     }
 

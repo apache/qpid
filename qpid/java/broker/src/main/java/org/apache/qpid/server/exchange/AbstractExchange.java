@@ -83,7 +83,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         
         public ExchangeMBean() throws NotCompliantMBeanException
         {
-            super(ManagedExchange.class, ManagedExchange.TYPE, ManagedExchange.VERSION);
+            super(ManagedExchange.class, ManagedExchange.TYPE);
         }
 
         protected void init() throws OpenDataException

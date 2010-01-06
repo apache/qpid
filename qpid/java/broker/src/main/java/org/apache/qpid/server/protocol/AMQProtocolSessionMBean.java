@@ -94,7 +94,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
     public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws NotCompliantMBeanException, OpenDataException
     {
-        super(ManagedConnection.class, ManagedConnection.TYPE, ManagedConnection.VERSION);
+        super(ManagedConnection.class, ManagedConnection.TYPE);
         _session = session;
         String remote = getRemoteAddress();
         remote = "anonymous".equals(remote) ? (remote + hashCode()) : remote;

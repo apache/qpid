@@ -37,7 +37,7 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
     
     public ServerInformationMBean(String buildVersion, String productVersion) throws JMException
     {
-        super(ServerInformation.class, ServerInformation.TYPE, ServerInformation.VERSION);
+        super(ServerInformation.class, ServerInformation.TYPE);
         this.buildVersion = buildVersion;
         this.productVersion = productVersion;
     }

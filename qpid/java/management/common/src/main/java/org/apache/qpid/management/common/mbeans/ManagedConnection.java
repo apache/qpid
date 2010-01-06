@@ -41,7 +41,6 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 public interface ManagedConnection
 {
     static final String TYPE = "Connection";
-    static final int VERSION = 2;
     
     //TabularType and contained CompositeType key/description information
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 

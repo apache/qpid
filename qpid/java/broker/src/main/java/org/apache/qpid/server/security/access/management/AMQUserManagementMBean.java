@@ -100,7 +100,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
     public AMQUserManagementMBean() throws JMException
     {
-        super(UserManagement.class, UserManagement.TYPE, UserManagement.VERSION);
+        super(UserManagement.class, UserManagement.TYPE);
     }
 
     public String getObjectInstanceName()

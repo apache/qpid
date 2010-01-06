@@ -56,10 +56,10 @@ public abstract class AMQManagedObject extends DefaultManagedObject
 
     protected LogActor _logActor;
 
-    protected AMQManagedObject(Class<?> managementInterface, String typeName, int version)
+    protected AMQManagedObject(Class<?> managementInterface, String typeName)
         throws NotCompliantMBeanException
     {
-        super(managementInterface, typeName, version);
+        super(managementInterface, typeName);
         // CurrentActor will be defined as these objects are created during
         // broker startup.
         _logActor = new ManagementActor(CurrentActor.get().getRootMessageLogger());
