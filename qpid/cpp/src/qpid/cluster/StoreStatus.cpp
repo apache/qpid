@@ -79,6 +79,7 @@ framing::SequenceNumber loadSeqNum(const fs::path& path) {
 
 
 void StoreStatus::load() {
+    if (dataDir.empty()) return;
     fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
     try {
         create_directory(dir);
@@ -95,6 +96,7 @@ void StoreStatus::load() {
 }
 
 void StoreStatus::save() {
+    if (dataDir.empty()) return;
     fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
     try {
         create_directory(dir);
