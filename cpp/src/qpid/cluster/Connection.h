@@ -125,7 +125,9 @@ class Connection :
     
     void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment, uint32_t sendMax);
 
-    void membership(const framing::FieldTable&, const framing::FieldTable&, const framing::SequenceNumber& frameSeq);
+    void membership(const framing::FieldTable&, const framing::FieldTable&,
+                    const framing::SequenceNumber& frameSeq,
+                    const framing::SequenceNumber& configSeq);
 
     void retractOffer();
 

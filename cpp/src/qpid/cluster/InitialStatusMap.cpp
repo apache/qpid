@@ -20,7 +20,9 @@
  */
 #include "InitialStatusMap.h"
 #include "StoreStatus.h"
+#include "qpid/log/Statement.h"
 #include <algorithm>
+#include <vector>
 #include <boost/bind.hpp>
 
 namespace qpid {
@@ -138,7 +140,7 @@ MemberSet InitialStatusMap::getElders() {
 }
 
 // Get cluster ID from an active member or the youngest newcomer.
-framing::Uuid InitialStatusMap::getClusterId() {
+Uuid InitialStatusMap::getClusterId() {
     assert(isComplete());
     assert(!map.empty());
     Map::iterator i = find_if(map.begin(), map.end(), &isActive);
@@ -166,6 +168,7 @@ void InitialStatusMap::checkConsistent() {
     Uuid shutdownId;
 
     for (Map::iterator i = map.begin(); i != map.end(); ++i) {
+        assert(i->second);
         if (i->second->getActive()) ++active;
         switch (i->second->getStoreState()) {
           case STORE_STATE_NO_STORE: ++none; break;
@@ -187,10 +190,11 @@ void InitialStatusMap::checkConsistent() {
     // Can't mix transient and persistent members.
     if (none && (clean+dirty+empty))
         throw Exception("Mixing transient and persistent brokers in a cluster");
+
     // If there are no active members and there are dirty stores there
     // must be at least one clean store.
     if (!active && dirty && !clean)
-        throw Exception("Cannot recover, no clean store");
+        throw Exception("Cannot recover, no clean store.");
 }
 
 

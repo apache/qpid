@@ -23,6 +23,7 @@
  */
 
 #include "qpid/framing/Uuid.h"
+#include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/enum.h"
 #include <iosfwd>
 
@@ -43,9 +44,11 @@ class StoreStatus
     framing::cluster::StoreState getState() const { return state; }
     const Uuid& getClusterId() const { return clusterId; }
     const Uuid& getShutdownId() const { return shutdownId; }
+    framing::SequenceNumber getConfigSeq() const { return configSeq; }
 
     void dirty(const Uuid& start); // Start using the store.
     void clean(const Uuid& stop); // Stop using the store.
+    void setConfigSeq(framing::SequenceNumber seq); // Update the config seq number.
 
     void load();
     void save();
@@ -56,8 +59,11 @@ class StoreStatus
     framing::cluster::StoreState state;
     Uuid clusterId, shutdownId;
     std::string dataDir;
+    framing::SequenceNumber configSeq;
 };
 
+const char* stateName(framing::cluster::StoreState);
+std::ostream& operator<<(std::ostream&, framing::cluster::StoreState);
 std::ostream& operator<<(std::ostream&, const StoreStatus&);
 }} // namespace qpid::cluster
 

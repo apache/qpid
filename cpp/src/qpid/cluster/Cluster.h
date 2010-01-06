@@ -154,6 +154,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
                        const framing::Uuid& clusterId,
                        framing::cluster::StoreState,
                        const framing::Uuid& shutdownId,
+                       const framing::SequenceNumber& configSeq,
                        Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);

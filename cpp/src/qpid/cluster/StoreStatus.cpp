@@ -34,7 +34,7 @@ namespace fs=boost::filesystem;
 using std::ostream;
 
 StoreStatus::StoreStatus(const std::string& d)
-    : state(STORE_STATE_NO_STORE), dataDir(d)
+    : state(STORE_STATE_NO_STORE), dataDir(d), configSeq(0)
 {}
 
 namespace {
@@ -42,6 +42,7 @@ namespace {
 const char* SUBDIR="cluster";
 const char* CLUSTER_ID_FILE="cluster.uuid";
 const char* SHUTDOWN_ID_FILE="shutdown.uuid";
+const char* CONFIG_SEQ_FILE="config.seq";
 
 Uuid loadUuid(const fs::path& path) {
     Uuid ret;
@@ -62,23 +63,39 @@ void saveUuid(const fs::path& path, const Uuid& uuid) {
 
 void StoreStatus::load() {
     fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
-    create_directory(dir);
-    clusterId = loadUuid(dir/CLUSTER_ID_FILE);
-    shutdownId = loadUuid(dir/SHUTDOWN_ID_FILE);
-
-    if (clusterId && shutdownId) state = STORE_STATE_CLEAN_STORE;
-    else if (clusterId) state = STORE_STATE_DIRTY_STORE;
-    else state = STORE_STATE_EMPTY_STORE;
+    try {
+        create_directory(dir);
+        clusterId = loadUuid(dir/CLUSTER_ID_FILE);
+        shutdownId = loadUuid(dir/SHUTDOWN_ID_FILE);
+        fs::ifstream is(dir/CONFIG_SEQ_FILE);
+        uint32_t n;
+        is >> n;
+        configSeq = framing::SequenceNumber(n);
+        if (clusterId && shutdownId) state = STORE_STATE_CLEAN_STORE;
+        else if (clusterId) state = STORE_STATE_DIRTY_STORE;
+        else state = STORE_STATE_EMPTY_STORE;
+    }
+    catch (const std::exception&e) {
+        throw Exception(QPID_MSG("Cannot load cluster store status: " << e.what()));
+    }
 }
 
 void StoreStatus::save() {
     fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
-    create_directory(dir);
-    saveUuid(dir/CLUSTER_ID_FILE, clusterId);
-    saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
+    try {
+        create_directory(dir);
+        saveUuid(dir/CLUSTER_ID_FILE, clusterId);
+        saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
+        fs::ofstream os(dir/CONFIG_SEQ_FILE);
+        os << configSeq.getValue();
+    }
+    catch (const std::exception&e) {
+        throw Exception(QPID_MSG("Cannot save cluster store status: " << e.what()));
+    }
 }
 
 void StoreStatus::dirty(const Uuid& clusterId_) {
+    assert(clusterId_);
     clusterId = clusterId_;
     shutdownId = Uuid();
     state = STORE_STATE_DIRTY_STORE;
@@ -86,22 +103,38 @@ void StoreStatus::dirty(const Uuid& clusterId_) {
 }
 
 void StoreStatus::clean(const Uuid& shutdownId_) {
+    assert(shutdownId_);
     state = STORE_STATE_CLEAN_STORE;
     shutdownId = shutdownId_;
     save();
 }
 
+void StoreStatus::setConfigSeq(framing::SequenceNumber seq) {
+    configSeq = seq;
+    save();
+}
+
+const char* stateName(StoreState s) {
+    switch (s) {
+      case STORE_STATE_NO_STORE: return "none";
+      case STORE_STATE_EMPTY_STORE: return "empty";
+      case STORE_STATE_DIRTY_STORE: return "dirty";
+      case STORE_STATE_CLEAN_STORE: return "clean";
+    }
+    assert(0);
+    return "unknown";
+}
+
+ostream& operator<<(ostream& o, framing::cluster::StoreState s) { return o << stateName(s); }
+
 ostream& operator<<(ostream& o, const StoreStatus& s) {
-    switch (s.getState()) {
-      case STORE_STATE_NO_STORE: o << "no store"; break;
-      case STORE_STATE_EMPTY_STORE: o << "empty store"; break;
-      case STORE_STATE_DIRTY_STORE:
-        o << "dirty store, cluster-id=" << s.getClusterId();
-        break;
-      case STORE_STATE_CLEAN_STORE:
-        o << "clean store, cluster-id=" << s.getClusterId()
+    o << s.getState();
+    if (s.getState() ==  STORE_STATE_DIRTY_STORE)
+        o << " cluster-id=" << s.getClusterId()
+          << " config-sequence=" << s.getConfigSeq();
+    if (s.getState() == STORE_STATE_CLEAN_STORE) {
+        o << " cluster-id=" << s.getClusterId()
           << " shutdown-id=" << s.getShutdownId();
-        break;
     }
     return o;
 }

@@ -248,16 +248,6 @@ class Broker(Popen):
 
     def host_port(self): return "%s:%s" % (self.host, self.port())
 
-    def search_log(self, regex):
-        """Search for regular expression in broker log, return match"""
-        return regex.search(file(self.log).read())
-
-    def get_member_id(self):
-        """Search log file for cluster member ID"""
-        match = self.search_log(re.compile(r"cluster\(([0-9.:]*) INIT\)"))
-        if not match: raise Exception("No cluster member-id found in "+log)
-        return match.group(1)
-    
     def ready(self):
         """Wait till broker is ready to serve clients"""
         self.connect().close()
@@ -275,6 +265,7 @@ class Cluster:
         # Use unique cluster name
         self.args = copy(args)
         self.args += [ "--cluster-name", "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
+        self.args += [ "--log-enable=info+", "--log-enable=debug+:cluster"]
         assert BrokerTest.cluster_lib
         self.args += [ "--load-module", BrokerTest.cluster_lib ]
         self.start_n(count, expect=expect, wait=wait)

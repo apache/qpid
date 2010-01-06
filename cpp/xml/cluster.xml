@@ -64,6 +64,7 @@
       <field name="cluster-id" type="uuid"/>>
       <field name="store-state" type="store-state"/>
       <field name="shutdown-id" type="uuid"/>
+      <field name="config-seq" type="sequence-no"/>
     </control>
 
     <!-- New member or updater is ready as an active member. -->
@@ -201,6 +202,7 @@
       <field name="joiners" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
       <field name="frame-seq" type="sequence-no"/> <!-- frame sequence number -->
+      <field name="config-seq" type="sequence-no"/> <!-- config change seq no.-->
     </control>
 
     <!-- Updater cannot fulfill an update offer. -->

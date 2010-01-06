@@ -85,6 +85,29 @@ class ShortTests(BrokerTest):
         os.remove("direct.dump")
         os.remove("updatee.dump")
         
+    def test_config_change_seq(self):
+        """Check that cluster members have the correct config change sequence numbers"""
+        cluster = self.cluster(0)
+        cluster.start()
+        cluster.start(expect=EXPECT_EXIT_OK)
+        cluster[1].terminate(); cluster[1].wait()
+        cluster.start()
+
+        update_re = re.compile(r"member update: (.*) frameSeq=[0-9]+ configSeq=([0-9]+)")
+        matches = [ update_re.search(file(b.log).read()) for b in cluster ]
+        sequences = [ m.group(2) for m in matches]
+        self.assertEqual(sequences, ["0", "1", "3"])
+
+        # Check that configurations with same seq. number match
+        configs={}
+        for b in cluster:
+            matches = update_re.findall(file(b.log).read())
+            for m in matches:
+                seq=m[1]
+                config=re.sub("\((member|unknown)\)", "", m[0])
+                if not seq in configs: configs[seq] = config
+                else: self.assertEqual(configs[seq], config)
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):
@@ -234,7 +257,7 @@ class StoreTests(BrokerTest):
         msg = re.compile("critical.*no clean store")
         assert a.search_log(msg)
         assert b.search_log(msg)
-        # FIXME aconway 2009-12-03: verify correct store ID in log message
+
         # FIXME aconway 2009-12-03: verify manual restore procedure
 
 
