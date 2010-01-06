@@ -31,7 +31,6 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 public interface ServerInformation
 {
     String TYPE = "ServerInformation";
-    int VERSION = 1;
     
     /* API version info for the brokers JMX management interface
      * 

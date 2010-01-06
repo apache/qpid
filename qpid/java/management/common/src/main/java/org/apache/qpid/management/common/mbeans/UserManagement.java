@@ -30,7 +30,6 @@ public interface UserManagement
 {
 
     String TYPE = "UserManagement";
-    int VERSION = 2;
     
     //TabularType and contained CompositeType key/description information.
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set.

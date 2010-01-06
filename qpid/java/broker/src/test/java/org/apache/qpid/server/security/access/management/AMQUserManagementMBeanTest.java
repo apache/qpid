@@ -160,19 +160,6 @@ public class AMQUserManagementMBeanTest extends TestCase
         }
     }
 
-    public void testMBeanVersion()
-    {
-        try
-        {
-            ObjectName name = _amqumMBean.getObjectName();
-            assertEquals(AMQUserManagementMBean.VERSION, Integer.parseInt(name.getKeyProperty("version")));
-        }
-        catch (MalformedObjectNameException e)
-        {
-            fail(e.getMessage());
-        }
-    }
-
     public void testSetAccessFileWithMissingFile()
     {
         try

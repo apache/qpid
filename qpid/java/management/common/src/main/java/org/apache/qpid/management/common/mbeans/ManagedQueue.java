@@ -40,7 +40,6 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 public interface ManagedQueue
 {
     static final String TYPE = "Queue";
-    static final int VERSION = 3;
 
     //TabularType and contained CompositeType key/description information for message list
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 

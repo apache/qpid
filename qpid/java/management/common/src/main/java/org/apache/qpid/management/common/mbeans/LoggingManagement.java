@@ -36,7 +36,6 @@ import javax.management.openmbean.TabularData;
 public interface LoggingManagement
 {
     String TYPE = "LoggingManagement";
-    int VERSION = 2;
     
     //TabularType and contained CompositeType key/description information
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
