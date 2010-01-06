@@ -544,9 +544,14 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     framing::SequenceNumber sequence(1);
     QueuedMessage qmsg(queue.get(), msg1, sequence);
     QueuedMessage qmsg2(queue.get(), msg2, ++sequence);
+    framing::SequenceNumber sequence1(10);
+    QueuedMessage qmsg3(queue.get(), 0, sequence1);
 
     BOOST_CHECK(!queue->acquire(qmsg));
     BOOST_CHECK(queue->acquire(qmsg2));
+    // Acquire the massage again to test failure case.
+    BOOST_CHECK(!queue->acquire(qmsg2));
+    BOOST_CHECK(!queue->acquire(qmsg3));
 
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
 

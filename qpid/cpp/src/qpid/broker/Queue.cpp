@@ -263,9 +263,10 @@ bool Queue::acquire(const QueuedMessage& msg) {
     Mutex::ScopedLock locker(messageLock);
     QPID_LOG(debug, "attempting to acquire " << msg.position);
     Messages::iterator i = findAt(msg.position); 
-    if ((i != messages.end() && !lastValueQueue) // note that in some cases payload not be set
-        || (lastValueQueue && (i->position == msg.position) && 
-            msg.payload.get() == checkLvqReplace(*i).payload.get()) )  {
+    if ((i != messages.end() && i->position == msg.position) && // note that in some cases payload not be set
+        (!lastValueQueue ||
+        (lastValueQueue && msg.payload.get() == checkLvqReplace(*i).payload.get()) ) // note this is safe for no payload set 0==0
+        )  {
 
         clearLVQIndex(msg);
         QPID_LOG(debug,
@@ -273,9 +274,7 @@ bool Queue::acquire(const QueuedMessage& msg) {
                  i->position << " == " << msg.position);
         messages.erase(i);
         return true;
-    } else {
-        QPID_LOG(debug, "No match: " << i->position << " != " << msg.position);
-    }
+    } 
     
     QPID_LOG(debug, "Acquire failed for " << msg.position);
     return false;
