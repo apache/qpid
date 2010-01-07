@@ -151,6 +151,11 @@ if (BUILD_CLUSTER)
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
 
+  add_library (watchdog MODULE qpid/cluster/WatchDogPlugin.cpp)
+  set_target_properties (watchdog PROPERTIES PREFIX "")
+
+  add_executable(qpidd_watchdog qpid/cluster/qpidd_watchdog.cpp)
+
 endif (BUILD_CLUSTER)
 
 # Distribute all sources.
