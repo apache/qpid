@@ -1,4 +1,4 @@
- /*
+/*
  *
  * Copyright (c) 2006 The Apache Software Foundation
  *
@@ -39,8 +39,18 @@ QPID_AUTO_TEST_SUITE(StoreStatusTestSuite)
 
 const char* TEST_DIR = "StoreStatus.tmp";
 
+struct TestDir {
+    TestDir() {
+        remove_all(TEST_DIR);
+        create_directory(TEST_DIR);
+    }
+    ~TestDir() {
+        remove_all(TEST_DIR);
+    }
+};
+
 QPID_AUTO_TEST_CASE(testLoadEmpty) {
-    create_directory(TEST_DIR);
+    TestDir td;
     StoreStatus ss(TEST_DIR);
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_NO_STORE);
     BOOST_CHECK(!ss.getClusterId());
@@ -48,11 +58,10 @@ QPID_AUTO_TEST_CASE(testLoadEmpty) {
     ss.load();
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_EMPTY_STORE);
     BOOST_CHECK(!ss.getShutdownId());
-    remove_all(TEST_DIR);
 }
 
 QPID_AUTO_TEST_CASE(testSaveLoadDirty) {
-    create_directory(TEST_DIR);
+    TestDir td;
     Uuid clusterId = Uuid(true);
     StoreStatus ss(TEST_DIR);
     ss.load();
@@ -64,11 +73,10 @@ QPID_AUTO_TEST_CASE(testSaveLoadDirty) {
     BOOST_CHECK_EQUAL(ss2.getState(), STORE_STATE_DIRTY_STORE);
     BOOST_CHECK_EQUAL(ss2.getClusterId(), clusterId);
     BOOST_CHECK(!ss2.getShutdownId());
-    remove_all(TEST_DIR);
 }
 
 QPID_AUTO_TEST_CASE(testSaveLoadClean) {
-    create_directory(TEST_DIR);
+    TestDir td;
     Uuid clusterId = Uuid(true);
     Uuid shutdownId = Uuid(true);
     StoreStatus ss(TEST_DIR);
@@ -82,12 +90,11 @@ QPID_AUTO_TEST_CASE(testSaveLoadClean) {
     BOOST_CHECK_EQUAL(ss2.getState(), STORE_STATE_CLEAN_STORE);
     BOOST_CHECK_EQUAL(ss2.getClusterId(), clusterId);
     BOOST_CHECK_EQUAL(ss2.getShutdownId(), shutdownId);
-    remove_all(TEST_DIR);
 }
 
 QPID_AUTO_TEST_CASE(testMarkDirty) {
     // Save clean then mark to dirty.
-    create_directory(TEST_DIR);
+    TestDir td;
     Uuid clusterId = Uuid(true);
     Uuid shutdownId = Uuid(true);
     StoreStatus ss(TEST_DIR);
@@ -101,9 +108,8 @@ QPID_AUTO_TEST_CASE(testMarkDirty) {
     BOOST_CHECK_EQUAL(ss2.getState(), STORE_STATE_DIRTY_STORE);
     BOOST_CHECK_EQUAL(ss2.getClusterId(), clusterId);
     BOOST_CHECK(!ss2.getShutdownId());
-    remove_all(TEST_DIR);
 }
 
 QPID_AUTO_TEST_SUITE_END()
 
-}} // namespace qpid::tests
+    }} // namespace qpid::tests
