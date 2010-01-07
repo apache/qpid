@@ -24,6 +24,7 @@ import getopt
 import sys
 import locale
 from qmf.console import Session
+import io
 
 _recursive         = False
 _host              = "localhost"
@@ -43,6 +44,7 @@ _order             = None
 _msgSequence       = False
 _ive               = False
 _eventGeneration   = None
+_file              = None
 
 FILECOUNT = "qpid.file_count"
 FILESIZE  = "qpid.file_size"
@@ -65,6 +67,8 @@ def Usage ():
     print "        qpid-config [OPTIONS] add queue <name> [AddQueueOptions]"
     print "        qpid-config [OPTIONS] del queue <name> [DelQueueOptions]"
     print "        qpid-config [OPTIONS] bind   <exchange-name> <queue-name> [binding-key]"
+    print "                  <for type xml>     [-f -|filename]"
+    print "                  <for type header>  [all|any] k1=v1 [, k2=v2...]"
     print "        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"
     print
     print "Options:"
@@ -133,6 +137,46 @@ def Usage ():
     print "                         queues."
     print
     sys.exit (1)
+
+
+#
+# helpers for the arg parsing in bind().  return multiple values; "ok"
+# followed by the resultant args
+
+#
+# accept -f followed by either
+# a filename or "-", for stdin.  pull the bits into a string, to be 
+# passed to the xml binding.
+#
+def snarf_xquery_args():
+    if not _file:
+        print "Invalid args to bind xml:  need an input file or stdin"
+        return [False]
+    if _file == "-":
+        res = sys.stdin.read()
+    else:
+        f = io.open(_file)   # let this signal if it can't find it
+        res = f.read()
+        f.close()
+    return [True, res]
+    
+#
+# look for "any"/"all" and grok the rest of argv into a map
+#
+def snarf_header_args(cargs):
+    if len(cargs) < 2:
+        print "Invalid args to bind headers:  need 'any'/'all' plus conditions"
+        return [False]
+    op = cargs[0]
+    if op == "all" or op == "any":
+        kv = {}
+        for thing in cargs[1:]:
+            k_and_v = thing.split("=")
+            kv[k_and_v[0]] = k_and_v[1]
+        return [True, op, kv]
+    else:
+        print "Invalid condition arg to bind headers, need 'any' or 'all', not '" + op + "'"
+        return [False]
 
 class BrokerManager:
     def __init__ (self):
@@ -344,7 +388,36 @@ class BrokerManager:
         key   = ""
         if len (args) > 2:
             key = args[2]
-        self.broker.getAmqpSession().exchange_bind (queue=qname, exchange=ename, binding_key=key)
+
+        # query the exchange to determine its type.
+        res = self.broker.getAmqpSession().exchange_query(ename)
+
+        # type of the xchg determines the processing of the rest of
+        # argv.  if it's an xml xchg, we want to find a file
+        # containing an x-query, and pass that.  if it's a headers
+        # exchange, we need to pass either "any" or all, followed by a
+        # map containing key/value pairs.  if neither of those, extra
+        # args are ignored.
+        ok = True
+        args = None
+        if res.type == "xml":
+            # this checks/imports the -f arg
+            [ok, xquery] = snarf_xquery_args()
+            args = { "xquery" : xquery }
+            # print args
+        else:
+            if res.type == "headers":
+                [ok, op, kv] = snarf_header_args(cargs[4:])
+                args = kv
+                args["x-match"] = op
+
+        if not ok:
+            sys.exit(1)
+
+        self.broker.getAmqpSession().exchange_bind (queue=qname,
+                                                    exchange=ename,
+                                                    binding_key=key,
+                                                    arguments=args)
 
     def Unbind (self, args):
         if len (args) < 2:
@@ -383,8 +456,8 @@ try:
     longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
                 "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
                 "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
-                "force_if_used", "alternate-exchange=", "passive", "timeout=")
-    (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
+                "force_if_used", "alternate-exchange=", "passive", "timeout=", "file=")
+    (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:bf:", longOpts)
 except:
     Usage ()
 
@@ -399,6 +472,8 @@ for opt in optlist:
         _recursive = True
     if opt[0] == "-a" or opt[0] == "--broker-addr":
         _host = opt[1]
+    if opt[0] == "-f" or opt[0] == "--file":
+        _file = opt[1]
     if opt[0] == "--timeout":
         _connTimeout = int(opt[1])
         if _connTimeout == 0:
@@ -488,6 +563,9 @@ try:
             Usage ()
 except KeyboardInterrupt:
     print
+except IOError, e:
+    print e
+    sys.exit(1)
 except Exception,e:
     print "Failed: %s: %s" % (e.__class__.__name__, e)
     sys.exit(1)
