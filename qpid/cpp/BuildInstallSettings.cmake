@@ -129,4 +129,6 @@ if (UNIX)
        "Directory to load client plug-in modules from")
   set (QPIDD_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/daemon CACHE STRING
        "Directory to load broker plug-in modules from")
+  set (QPID_LIBEXEC_DIR libexec/qpid CACHE STRING
+       "Directory for executables used by qpid libs")
 endif (UNIX)

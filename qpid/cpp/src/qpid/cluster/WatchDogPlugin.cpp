@@ -38,6 +38,7 @@
    clients of the stuck process to fail over to other members.
 
 */
+#include "config.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/log/Statement.h"
@@ -114,7 +115,7 @@ struct WatchDogPlugin : public qpid::Plugin, public qpid::sys::Fork {
 
     void child() {              // Child of fork
         const char* watchdog = ::getenv("QPID_WATCHDOG_EXEC"); // For use in tests
-        if (!watchdog) watchdog=QPID_EXEC_DIR "/qpidd_watchdog";
+        if (!watchdog) watchdog=QPID_LIBEXEC_DIR "/qpidd_watchdog";
         std::string interval = boost::lexical_cast<std::string>(settings.interval);
         ::execl(watchdog, watchdog, interval.c_str(), NULL);
         QPID_LOG(critical, "Failed to exec watchdog program " << watchdog );
