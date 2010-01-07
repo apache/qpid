@@ -99,6 +99,116 @@ class CliTests(TestBase010):
                 found = True
         self.assertEqual(found, False)
 
+        # helpers for some of the test methods
+    def helper_find_exchange(self, xchgname, typ, expected=True):
+        xchgs = self.qmf.getObjects(_class = "exchange")
+        found = False
+        for xchg in xchgs:
+            if xchg.name == xchgname:
+                if typ:
+                    self.assertEqual(xchg.type, typ)
+                found = True
+        self.assertEqual(found, expected)
+
+    def helper_create_exchange(self, xchgname, typ="direct", opts=""):
+        foo = self.command(opts + " add exchange " + typ + " " + xchgname)
+        # print foo
+        ret = os.system(foo)
+        self.assertEqual(ret, 0)
+        self.helper_find_exchange(xchgname, typ, True)
+
+    def helper_destroy_exchange(self, xchgname):
+        foo = self.command(" del exchange " + xchgname)
+        # print foo
+        ret = os.system(foo)
+        self.assertEqual(ret, 0)
+        self.helper_find_exchange(xchgname, False, expected=False)
+
+    def helper_find_queue(self, qname, expected=True):
+        queues = self.qmf.getObjects(_class="queue")
+        found = False
+        for queue in queues:
+            if queue.name == qname:
+                self.assertEqual(queue.durable, False)
+                found = True
+        self.assertEqual(found, expected)
+
+    def helper_create_queue(self, qname):
+        foo = self.command(" add queue " + qname)
+        # print foo
+        ret = os.system(foo)
+        self.assertEqual(ret, 0)
+        self.helper_find_queue(qname, True)
+
+    def helper_destroy_queue(self, qname):
+        foo = self.command(" del queue " + qname)
+        # print foo
+        ret = os.system(foo)
+        self.assertEqual(ret, 0)
+        self.helper_find_queue(qname, False)
+
+
+        # test the bind-queue-to-header-exchange functionality
+    def test_qpid_config_headers(self):
+        self.startQmf();
+        qmf = self.qmf
+        qname = "test_qpid_config"
+        xchgname = "test_xchg"
+
+        # first create a header xchg
+        self.helper_create_exchange(xchgname, typ="headers")
+
+        # create the queue
+        self.helper_create_queue(qname)
+
+        # now bind the queue to the xchg
+        foo = self.command(" bind " + xchgname + " " + qname + 
+                                     " key all foo=bar baz=quux")
+        # print foo
+        ret = os.system(foo)
+        self.assertEqual(ret, 0)
+
+        # he likes it, mikey.  Ok, now tear it all down.  first the binding
+        ret = os.system(self.command(" unbind " + xchgname + " " + qname +
+                                     " key"))
+        self.assertEqual(ret, 0)
+
+        # then the queue 
+        self.helper_destroy_queue(qname)
+
+        # then the exchange
+        self.helper_destroy_exchange(xchgname)
+
+        # test the bind-queue-xml-filter functionality
+    def test_qpid_config_xml(self):
+        self.startQmf();
+        qmf = self.qmf
+        qname = "test_qpid_config"
+        xchgname = "test_xchg"
+
+        # first create a header xchg
+        self.helper_create_exchange(xchgname, typ="xml")
+
+        # create the queue
+        self.helper_create_queue(qname)
+
+        # now bind the queue to the xchg
+        foo = self.command("-f test.xquery bind " + xchgname + " " + qname)
+        # print foo
+        ret = os.system(foo)
+        self.assertEqual(ret, 0)
+
+        # he likes it, mikey.  Ok, now tear it all down.  first the binding
+        ret = os.system(self.command(" unbind " + xchgname + " " + qname +
+                                     " key"))
+        self.assertEqual(ret, 0)
+
+        # then the queue 
+        self.helper_destroy_queue(qname)
+
+        # then the exchange
+        self.helper_destroy_exchange(xchgname)
+
     def test_qpid_config_durable(self):
         self.startQmf();
         qmf = self.qmf
