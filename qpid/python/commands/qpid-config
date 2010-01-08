@@ -24,7 +24,6 @@ import getopt
 import sys
 import locale
 from qmf.console import Session
-import io
 
 _recursive         = False
 _host              = "localhost"
@@ -155,7 +154,7 @@ def snarf_xquery_args():
     if _file == "-":
         res = sys.stdin.read()
     else:
-        f = io.open(_file)   # let this signal if it can't find it
+        f = open(_file)   # let this signal if it can't find it
         res = f.read()
         f.close()
     return [True, res]
