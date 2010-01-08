@@ -65,9 +65,9 @@ public class Functions
         StringBuilder str = new StringBuilder();
         str.append('"');
 
-        for (int i = 0; i < min(buf.remaining(), limit); i++)
+        for (int i = start; i < min(buf.limit(), limit); i++)
         {
-            byte c = buf.get(start + i);
+            byte c = buf.get(i);
 
             if (c > 31 && c < 127 && c != '\\')
             {
