@@ -43,9 +43,8 @@ class Buffer
     uint32_t position;
     uint32_t r_position;
 
-    void checkAvailable(uint32_t count) { if (position + count > size) throw OutOfBounds(); }
-
   public:
+    void checkAvailable(uint32_t count) { if (position + count > size) throw OutOfBounds(); }
 
     /** Buffer input/output iterator.
      * Supports using an amqp_0_10::Codec with a framing::Buffer.

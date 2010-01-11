@@ -138,10 +138,21 @@ void UpdateClient::update() {
     session.queueDelete(arg::queue=UPDATE);
     session.close();
 
-    // Update queue listeners: must come after sessions so consumerNumbering is populated.
+    // Update queue listeners: must come after sessions so consumerNumbering is populated
     b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueueListeners, this, _1));
 
     ClusterConnectionProxy(session).expiryId(expiry.getId());
+
+    // FIXME aconway 2010-01-08: we should enforce that all cluster members 
+    // have mgmt enabled or none of them do.
+
+    management::ManagementAgent* agent = updaterBroker.getManagementAgent();
+    if (agent) {
+        string schemaData;
+        agent->exportSchemas(schemaData);
+        ClusterConnectionProxy(session).managementSchema(schemaData);
+    }
+
     ClusterConnectionMembershipBody membership;
     map.toMethodBody(membership);
     AMQFrame frame(membership);

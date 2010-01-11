@@ -97,7 +97,13 @@ public:
 
     /** Disallow a method. Attempts to call it will receive an exception with message. */
     void disallow(const std::string& className, const std::string& methodName, const std::string& message);
-                  
+
+    /** Serialize my schemas as a binary blob into schemaOut */
+    void exportSchemas(std::string& schemaOut);
+
+    /** Decode a serialized schemas and add to my schema cache */
+    void importSchemas(framing::Buffer& inBuf);
+
 private:
     struct Periodic : public qpid::sys::TimerTask
     {
@@ -140,6 +146,10 @@ private:
     {
         std::string name;
         uint8_t     hash[16];
+
+        void encode(framing::Buffer& buffer) const;
+        void decode(framing::Buffer& buffer);
+        uint32_t encodedSize() const;
     };
 
     struct SchemaClassKeyComp
@@ -156,20 +166,24 @@ private:
         }
     };
 
+
     struct SchemaClass
     {
         uint8_t  kind;
         ManagementObject::writeSchemaCall_t writeSchemaCall;
+        std::string data;
         uint32_t pendingSequence;
-        size_t   bufferLen;
-        uint8_t* buffer;
 
-        SchemaClass(uint8_t _kind, uint32_t seq) :
-            kind(_kind), writeSchemaCall(0), pendingSequence(seq), bufferLen(0), buffer(0) {}
+        SchemaClass(uint8_t _kind=0, uint32_t seq=0) :
+            kind(_kind), writeSchemaCall(0), pendingSequence(seq) {}
         SchemaClass(uint8_t _kind, ManagementObject::writeSchemaCall_t call) :
-            kind(_kind), writeSchemaCall(call), pendingSequence(0), bufferLen(0), buffer(0) {}
-        bool hasSchema () { return (writeSchemaCall != 0) || (buffer != 0); }
+            kind(_kind), writeSchemaCall(call), pendingSequence(0) {}
+        bool hasSchema () { return (writeSchemaCall != 0) || !data.empty(); }
         void appendSchema (framing::Buffer& buf);
+
+        void encode(framing::Buffer& buffer) const;
+        void decode(framing::Buffer& buffer);
+        uint32_t encodedSize() const;
     };
 
     typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;

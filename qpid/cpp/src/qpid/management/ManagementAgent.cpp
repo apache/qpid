@@ -706,8 +706,7 @@ void ManagementAgent::handleClassIndLH (Buffer& inBuffer, string replyToKey, uin
 
         encodeHeader (outBuffer, 'S', sequence);
         outBuffer.putShortString(packageName);
-        outBuffer.putShortString(key.name);
-        outBuffer.putBin128(key.hash);
+        key.encode(outBuffer);
         outLen = MA_BUFFER_SIZE - outBuffer.available ();
         outBuffer.reset ();
         sendBuffer (outBuffer, outLen, dExchange, replyToKey);
@@ -730,7 +729,7 @@ void ManagementAgent::SchemaClass::appendSchema(Buffer& buf)
     if (writeSchemaCall != 0)
         writeSchemaCall(buf);
     else
-        buf.putRawData(buffer, bufferLen);
+        buf.putRawData(reinterpret_cast<uint8_t*>(&data[0]), data.size());
 }
 
 void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, string replyToKey, uint32_t sequence)
@@ -739,8 +738,7 @@ void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, string replyToKey,
     SchemaClassKey key;
 
     inBuffer.getShortString (packageName);
-    inBuffer.getShortString (key.name);
-    inBuffer.getBin128      (key.hash);
+    key.decode(inBuffer);
 
     QPID_LOG(trace, "RECV SchemaRequest class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) <<
              "), replyTo=" << replyToKey << " seq=" << sequence);
@@ -780,8 +778,7 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, string /*replyToK
     inBuffer.record();
     inBuffer.getOctet();
     inBuffer.getShortString(packageName);
-    inBuffer.getShortString(key.name);
-    inBuffer.getBin128(key.hash);
+    key.decode(inBuffer);
     inBuffer.restore();
 
     QPID_LOG(trace, "RECV SchemaResponse class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) << ")" << " seq=" << sequence);
@@ -796,9 +793,8 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, string /*replyToK
                 QPID_LOG(warning, "Management Agent received invalid schema response: " << packageName << "." << key.name);
                 cMap.erase(key);
             } else {
-                cIter->second.buffer    = (uint8_t*) malloc(length);
-                cIter->second.bufferLen = length;
-                inBuffer.getRawData(cIter->second.buffer, cIter->second.bufferLen);
+                cIter->second.data.resize(length);
+                inBuffer.getRawData(reinterpret_cast<uint8_t*>(&cIter->second.data[0]), length);
 
                 // Publish a class-indication message
                 Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
@@ -1171,8 +1167,7 @@ void ManagementAgent::encodeClassIndication(Buffer&              buf,
 
     buf.putOctet((*cIter).second.kind);
     buf.putShortString((*pIter).first);
-    buf.putShortString(key.name);
-    buf.putBin128(key.hash);
+    key.encode(buf);
 }
 
 size_t ManagementAgent::validateSchema(Buffer& inBuffer, uint8_t kind)
@@ -1293,3 +1288,72 @@ uint64_t ManagementAgent::allocateId(Manageable* object)
 void ManagementAgent::disallow(const std::string& className, const std::string& methodName, const std::string& message) {
     disallowed[std::make_pair(className, methodName)] = message;
 }
+
+void ManagementAgent::SchemaClassKey::encode(framing::Buffer& buffer) const {
+    buffer.checkAvailable(encodedSize());
+    buffer.putShortString(name);
+    buffer.putBin128(hash);
+}
+
+void ManagementAgent::SchemaClassKey::decode(framing::Buffer& buffer) {
+    buffer.checkAvailable(encodedSize());
+    buffer.getShortString(name);
+    buffer.getBin128(hash);
+}
+
+uint32_t ManagementAgent::SchemaClassKey::encodedSize() const {
+    return 1 + name.size() + 16 /* bin128 */;
+}
+
+void ManagementAgent::SchemaClass::encode(framing::Buffer& outBuf) const {
+    outBuf.checkAvailable(encodedSize());
+    outBuf.putOctet(kind);
+    outBuf.putLong(pendingSequence);
+    outBuf.putLongString(data);
+}
+
+void ManagementAgent::SchemaClass::decode(framing::Buffer& inBuf) {
+    inBuf.checkAvailable(encodedSize());
+    kind = inBuf.getOctet();
+    pendingSequence = inBuf.getLong();
+    inBuf.getLongString(data);
+}
+
+uint32_t ManagementAgent::SchemaClass::encodedSize() const {
+    return sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint32_t) + data.size();
+}
+
+void ManagementAgent::exportSchemas(std::string& out) {
+    out.clear();
+    for (PackageMap::const_iterator i = packages.begin(); i != packages.end(); ++i) {
+        string name = i->first;
+        const ClassMap& classes = i ->second;
+        for (ClassMap::const_iterator j = classes.begin(); j != classes.end(); ++j) {
+            const SchemaClassKey& key = j->first;
+            const SchemaClass& klass = j->second;
+            if (klass.writeSchemaCall == 0) { // Ignore built-in schemas.
+                // Encode name, schema-key, schema-class
+                size_t encodedSize = 1+name.size()+key.encodedSize()+klass.encodedSize();
+                size_t end = out.size();
+                out.resize(end + encodedSize);
+                framing::Buffer outBuf(&out[end], encodedSize);
+                outBuf.putShortString(name);
+                key.encode(outBuf);
+                klass.encode(outBuf);
+            }
+        }
+    }
+}
+
+void ManagementAgent::importSchemas(framing::Buffer& inBuf) {
+    while (inBuf.available()) {
+        string package;
+        SchemaClassKey key;
+        SchemaClass klass;
+        inBuf.getShortString(package);
+        key.decode(inBuf);
+        klass.decode(inBuf);
+        packages[package][key] = klass;
+    }
+}
+

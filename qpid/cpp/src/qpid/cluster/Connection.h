@@ -167,6 +167,7 @@ class Connection :
     OutputInterceptor& getOutput() { return output; }
 
     void addQueueListener(const std::string& queue, uint32_t listener);
+    void managementSchema(const std::string& data);
 
   private:
     struct NullFrameHandler : public framing::FrameHandler {
