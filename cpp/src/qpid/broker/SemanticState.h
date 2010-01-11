@@ -156,7 +156,8 @@ class SemanticState : private boost::noncopyable {
     AclModule* acl;
     const bool authMsg;
     const string userID;
-    const string defaultRealm;
+    const string userName;
+    const bool isDefaultRealm;
 
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void checkDtxTimeout();
