@@ -226,5 +226,10 @@
       <field name="queue" type="str8"/>
       <field name="consumer" type="uint32"/>
     </control>
+
+    <!-- Replicate management agent schema -->
+    <control name="management-schema" code="0x35">
+      <field name="data" type="vbin32"/>
+    </control>
   </class>
 </amqp>

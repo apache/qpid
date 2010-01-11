@@ -40,6 +40,7 @@
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
 #include "qpid/log/Statement.h"
+#include "qpid/management/ManagementAgent.h"
 
 #include <boost/current_function.hpp>
 
@@ -476,6 +477,15 @@ void Connection::addQueueListener(const std::string& q, uint32_t listener) {
     if (listener >= consumerNumbering.size())
         throw Exception(QPID_MSG("Invalid listener ID: " << listener));
     findQueue(q)->getListeners().addListener(consumerNumbering[listener]);
+}
+
+void Connection::managementSchema(const std::string& data) {
+    management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
+    if (!agent)
+        throw Exception(QPID_MSG("Management schema update but no management agent."));
+    framing::Buffer buf(const_cast<char*>(data.data()), data.size());
+    agent->importSchemas(buf);
+    QPID_LOG(debug, cluster << " updated management schemas");
 }
 
 }} // Namespace qpid::cluster
