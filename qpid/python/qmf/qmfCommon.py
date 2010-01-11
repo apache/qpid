@@ -34,11 +34,10 @@ except ImportError:
 ## Constants
 ##
 
-AMQP_QMF_TOPIC = "amq.topic"
-AMQP_QMF_DIRECT = "amq.direct"
-AMQP_QMF_NAME_SEPARATOR = "/"
-AMQP_QMF_AGENT_LOCATE = "amq.topic/agent.locate"
-AMQP_QMF_AGENT_INDICATION = "amq.topic/agent.ind"
+
+AMQP_QMF_AGENT_LOCATE = "agent.locate"
+AMQP_QMF_AGENT_INDICATION = "agent.ind"
+
 
 AMQP_QMF_SUBJECT = "qmf"
 AMQP_QMF_VERSION = 4
@@ -49,6 +48,7 @@ class MsgKey(object):
     query = "query"
     package_info = "package_info"
     schema_id = "schema_id"
+    schema = "schema"
 
 
 class OpCode(object):
@@ -108,26 +108,71 @@ class Notifier(object):
 
 
 ##==============================================================================
-## Agent Identification
+## Addressing
 ##==============================================================================
 
-class AgentId(object):
+class QmfAddress(object):
     """
-    Uniquely identifies a management agent within the entire management domain.
-    
-    Map format:
-    map["vendor"] = str, name of vendor of the agent
-    map["product"] = str, name of product using agent
-    map["name"] = str, name of agent, unique within vendor and product.
+    TBD
+    """
+    TYPE_DIRECT = "direct"
+    TYPE_TOPIC = "topic"
+
+    ADDRESS_FMT = "qmf.%s.%s/%s"
+    DEFAULT_DOMAIN = "default"
+
+
+    def __init__(self, name, domain, type_):
+        self._name = name
+        self._domain = domain
+        self._type = type_
+
+    def _direct(cls, name, _domain=None):
+        if _domain is None:
+            _domain = QmfAddress.DEFAULT_DOMAIN
+        return cls(name, _domain, type_=QmfAddress.TYPE_DIRECT)
+    direct = classmethod(_direct)
+
+    def _topic(cls, name, _domain=None):
+        if _domain is None:
+            _domain = QmfAddress.DEFAULT_DOMAIN
+        return cls(name, _domain, type_=QmfAddress.TYPE_TOPIC)
+    topic = classmethod(_topic)
+
+
+    def get_address(self):
+        return str(self)
+
+    def __repr__(self):
+        return QmfAddress.ADDRESS_FMT % (self._domain, self._type, self._name)
+
+
+
+
+class AgentName(object):
+    """
+    Uniquely identifies a management agent within the management domain.
     """
     _separator = ":"
-    def __init__(self, vendor, product, name):
+
+    def __init__(self, vendor, product, name, str_=None):
         """
         Note: this object must be immutable, as it is used to index into a dictionary
         """
-        self._vendor = vendor
-        self._product = product
-        self._name = name
+        if str_:
+            # construct from string representation
+            if _str.count(AgentId._separator) < 2:
+                raise TypeError("AgentId string format must be 'vendor.product.name'")
+            self._vendor, self._product, self._name = param.split(AgentId._separator)
+        else:
+            self._vendor = vendor
+            self._product = product
+            self._name = name
+
+
+    def _from_str(cls, str_):
+        return cls(None, None, None, str_=str_)
+    from_str = classmethod(_from_str)
 
     def vendor(self):
         return self._vendor
@@ -138,15 +183,8 @@ class AgentId(object):
     def name(self):
         return self._name
 
-    def mapEncode(self):
-        _map = {}
-        _map["vendor"] = self._vendor
-        _map["product"] = self._product
-        _map["name"] = self._name
-        return _map
-
     def __cmp__(self, other):
-        if not isinstance(other, AgentId) :
+        if not isinstance(other, AgentName) :
             raise TypeError("Invalid types for compare")
             # return 1
         me = str(self)
@@ -162,39 +200,9 @@ class AgentId(object):
         return (self._vendor, self._product, self._name).__hash__()
 
     def __repr__(self):
-        return self._vendor + AgentId._separator + \
-            self._product + AgentId._separator + \
+        return self._vendor + AgentName._separator + \
+            self._product + AgentName._separator + \
             self._name
-
-    def __str__(self):
-        return self.__repr__()
-
-
-
-def AgentIdFactory( param ):
-    """
-    Factory for constructing an AgentId class from various sources.
-
-    @type param: various
-    @param param: object to use for constructing AgentId
-    @rtype: AgentId
-    @returns: a new AgentId instance
-    """
-    if type(param) == str:
-        if param.count(AgentId._separator) < 2:
-            raise TypeError("AgentId string format must be 'vendor:product:name'")
-        vendor, product, name = param.split(AgentId._separator)
-        return AgentId(vendor, product, name)
-    if type(param) == dict:
-        # construct from map encoding
-        if not "vendor" in param:
-            raise TypeError("requires 'vendor' value")
-        if not "product" in param:
-            raise TypeError("requires 'product' value")
-        if not "name" in param:
-            raise TypeError("requires 'name' value")
-        return AgentId( param["vendor"], param["product"], param["name"] )
-    raise TypeError("Invalid type for AgentId construction")
 
 
 
@@ -203,149 +211,273 @@ def AgentIdFactory( param ):
 ##==============================================================================
 
 
-
-class ObjectId(object):
+class _mapEncoder(object):
+    """ 
+    virtual base class for all objects that support being converted to a map
     """
-    An instance of managed object must be uniquely identified within the
-    management system.  Each managed object is given a key that is unique
-    within the domain of the object's managing Agent.  Note that these
-    keys are not unique across Agents.  Therefore, a globally unique name
-    for an instance of a managed object is the concatenation of the
-    object's key and the managing Agent's AgentId.
 
-    Map format:
-    map["agent_id"] = map representation of AgentId
-    map["primary_key"] = str, key for managed object
-    """
-    def __init__(self, agentid, name):
-        if not isinstance(agentid, AgentId):
-            raise TypeError("requires an AgentId class")
-        self._agentId = agentid;
-        self._name = name;
-
-    def getAgentId(self):
-        """
-        @rtype: class AgentId
-        @returns: Id of agent that manages the object.
-        """
-        return self._agentId
-
-    def getPrimaryKey(self):
-        """
-        @rtype: str
-        @returns: Key of managed object.
-        """
-        return self._name
-
-    def mapEncode(self):
-        _map = {}
-        _map["agent_id"] = self._agentId.mapEncode()
-        _map["primary_key"] = self._name
-        return _map
-
-    def __repr__(self):
-        return "%s:%s" % (self._agentId, self._name)
-
-    def __cmp__(self, other):    
-        if not isinstance(other, ObjectId) :
-            raise TypeError("Invalid types for compare")
-
-        if self._agentId < other._agentId:
-            return -1
-        if self._agentId > other._agentId:
-            return 1
-        if self._name < other._name:
-            return -1
-        if self._name > other._name:
-            return 1
-        return 0
-
-    def __hash__(self):
-        return (hash(self._agentId), self._name).__hash__()
+    def map_encode(self):
+        raise Exception("The map_encode method my be overridden.")
 
 
-def ObjectIdFactory( param ):
-    """
-    Factory for constructing ObjectIds from various sources
-
-    @type param: various
-    @param param: object to use for constructing ObjectId
-    @rtype: ObjectId
-    @returns: a new ObjectId instance
-    """
-    if type(param) == dict:
-        # construct from map
-        if "agent_id" not in param:
-            raise TypeError("requires 'agent_id' value")
-        if "primary_key" not in param:
-            raise TypeError("requires 'primary_key' value")
-
-        return ObjectId( AgentIdFactory(param["agent_id"]), param["primary_key"] )
-
-    else:
-        raise TypeError("Invalid type for ObjectId construction")
-
-
-
-
-class QmfData(object):
+class QmfData(_mapEncoder):
     """
     Base data class representing arbitrarily structure data.  No schema or 
     managing agent is associated with data of this class.
 
     Map format:
-    map["properties"] = map of unordered "name"=<value> pairs (optional)
+    map["_values"] = map of unordered "name"=<value> pairs (optional)
+    map["_subtype"] = map of unordered "name"="subtype string" pairs (optional)
+    map["_tag"] = application-specific tag for this instance (optional)
     """
-    def __init__(self, _props={}, _const=False):
+    KEY_VALUES = "_values"
+    KEY_SUBTYPES = "_subtypes"
+    KEY_TAG="_tag"
+    KEY_OBJECT_ID = "_object_id"
+    KEY_SCHEMA_ID = "_schema_id"
+    KEY_UPDATE_TS = "_update_ts"
+    KEY_CREATE_TS = "_create_ts"
+    KEY_DELETE_TS = "_delete_ts"
+
+    def __init__(self,
+                 _values={}, _subtypes={}, _tag=None, _object_id=None,
+                 _ctime = 0, _utime = 0, _dtime = 0,
+                 _map=None,
+                 _schema=None, _const=False):
         """
-        @type _props: dict
-        @param _props: dictionary of initial name=value pairs for object's property data.
+        @type _values: dict
+        @param _values: dictionary of initial name=value pairs for object's
+        named data. 
+        @type _subtypes: dict
+        @param _subtype: dictionary of subtype strings for each of the object's
+        named data. 
+        @type _desc: string
+        @param _desc: Human-readable description of this data object.
         @type _const: boolean
         @param _const: if true, this object cannot be modified
         """
-        self._properties = _props.copy()
+        self._schema_id = None
+        if _map is not None:
+            # construct from map
+            _tag = _map.get(self.KEY_TAG, _tag)
+            _values = _map.get(self.KEY_VALUES, _values)
+            _subtypes = _map.get(self.KEY_SUBTYPES, _subtypes)
+            _object_id = _map.get(self.KEY_OBJECT_ID, _object_id)
+            sid = _map.get(self.KEY_SCHEMA_ID)
+            if sid:
+                self._schema_id = SchemaClassId(_map=sid)
+            _ctime = long(_map.get(self.KEY_CREATE_TS, _ctime))
+            _utime = long(_map.get(self.KEY_UPDATE_TS, _utime))
+            _dtime = long(_map.get(self.KEY_DELETE_TS, _dtime))
+
+        self._values = _values.copy()
+        self._subtypes = _subtypes.copy()
+        self._tag = _tag
+        self._ctime = _ctime
+        self._utime = _utime
+        self._dtime = _dtime
         self._const = _const
-        self._managed = False  # not managed by an Agent
-        self._described = False  # not described by a schema
 
-    def isManaged(self):
-        return self._managed
+        if _object_id is not None:
+            self._object_id = str(_object_id)
+        else:
+            self._object_id = None
 
-    def isDescribed(self):
-        return self._described
+        if _schema is not None:
+            self._set_schema(_schema)
+        else:
+            # careful: map constructor may have already set self._schema_id, do
+            # not override it!
+            self._schema = None
 
-    def getProperties(self):
-        return self._properties.copy()
+    def _create(cls, values, _subtypes={}, _tag=None, _object_id=None,
+                _schema=None, _const=False):
+        # timestamp in millisec since epoch UTC
+        ctime = long(time.time() * 1000)
+        return cls(_values=values, _subtypes=_subtypes, _tag=_tag,
+                   _ctime=ctime, _utime=ctime,
+                   _object_id=_object_id, _schema=_schema, _const=_const)
+    create = classmethod(_create)
 
-    def getProperty(self, _name):
-        return self._properties[_name]
+    def _from_map(cls, map_, _schema=None, _const=False):
+        return cls(_map=map_, _schema=_schema, _const=_const)
+    from_map = classmethod(_from_map)
 
-    def hasProperty(self, _name):
-        return _name in self._properties
+    def is_managed(self):
+        return self._object_id is not None
 
-    def setProperty(self, _name, _value):
+    def is_described(self):
+        return self._schema_id is not None
+
+    def get_tag(self):
+        return self._tag
+
+    def get_value(self, name):
+        # meta-properties:
+        if name == SchemaClassId.KEY_PACKAGE:
+            if self._schema_id:
+                return self._schema_id.get_package_name()
+            return None
+        if name == SchemaClassId.KEY_CLASS:
+            if self._schema_id:
+                return self._schema_id.get_class_name()
+            return None
+        if name == SchemaClassId.KEY_TYPE:
+            if self._schema_id:
+                return self._schema_id.get_type()
+            return None
+        if name == SchemaClassId.KEY_HASH:
+            if self._schema_id:
+                return self._schema_id.get_hash_string()
+            return None
+        if name == self.KEY_SCHEMA_ID:
+            return self._schema_id
+        if name == self.KEY_OBJECT_ID:
+            return self._object_id
+        if name == self.KEY_TAG:
+            return self._tag
+        if name == self.KEY_UPDATE_TS:
+            return self._utime
+        if name == self.KEY_CREATE_TS:
+            return self._ctime
+        if name == self.KEY_DELETE_TS:
+            return self._dtime
+
+        return self._values.get(name)
+
+    def has_value(self, name):
+
+        if name in [SchemaClassId.KEY_PACKAGE, SchemaClassId.KEY_CLASS,
+                    SchemaClassId.KEY_TYPE, SchemaClassId.KEY_HASH,
+                    self.KEY_SCHEMA_ID]:
+            return self._schema_id is not None
+        if name in [self.KEY_UPDATE_TS, self.KEY_CREATE_TS,
+                    self.KEY_DELETE_TS]:
+            return True
+        if name == self.KEY_OBJECT_ID:
+            return self._object_id is not None
+        if name == self.KEY_TAG:
+            return self._tag is not None
+
+        return name in self._values
+
+    def set_value(self, _name, _value, _subType=None):
         if self._const:
             raise Exception("cannot modify constant data object")
-        self._properties[_name] = _value
+        self._values[_name] = _value
+        if _subType:
+            self._subtypes[_name] = _subType
         return _value
 
-    def mapEncode(self):
-        return self._properties.copy()
+    def get_subtype(self, _name):
+        return self._subtypes.get(_name)
+
+    def get_schema_class_id(self): 
+        """
+        @rtype: class SchemaClassId
+        @returns: the identifier of the Schema that describes the structure of the data.
+        """
+        return self._schema_id
+
+    def get_object_id(self): 
+        """
+        Get the instance's identification string.
+        @rtype: str
+        @returns: the identification string, or None if not assigned and id. 
+        """
+        if self._object_id:
+            return self._object_id
+
+        # if object id not assigned, see if schema defines a set of field
+        # values to use as an id
+        if not self._schema: 
+            return None
+
+        ids = self._schema.get_id_names()
+        if not ids:
+            return None
+
+        if not self._validated:
+            self._validate()
+
+        result = u""
+        for key in ids:
+            try:
+                result += unicode(self._values[key])
+            except:
+                logging.error("get_object_id(): cannot convert value '%s'."
+                              % key)
+                return None
+        self._object_id = result
+        return result
+
+    def map_encode(self):
+        _map = {}
+        if self._tag:
+            _map[self.KEY_TAG] = self._tag
+
+        # data in the _values map may require recursive map_encode()
+        vmap = {}
+        for name,val in self._values.iteritems():
+            if isinstance(val, _mapEncoder):
+                vmap[name] = val.map_encode()
+            else:
+                # otherwise, just toss in the native type...
+                vmap[name] = val
+
+        _map[self.KEY_VALUES] = vmap
+        # subtypes are never complex, so safe to just copy
+        _map[self.KEY_SUBTYPES] = self._subtypes.copy()
+        if self._object_id:
+            _map[self.KEY_OBJECT_ID] = self._object_id
+        if self._schema_id:
+            _map[self.KEY_SCHEMA_ID] = self._schema_id.map_encode()
+        return _map
+
+    def _set_schema(self, schema):
+        self._validated = False
+        self._schema = schema
+        if schema:
+            self._schema_id = schema.get_class_id()
+            if self._const:
+                self._validate()
+        else:
+            self._schema_id = None
+
+    def _validate(self):
+        """
+        Compares this object's data against the associated schema.  Throws an 
+        exception if the data does not conform to the schema.
+        """
+        props = self._schema.get_properties()
+        for name,val in props.iteritems():
+            # @todo validate: type compatible with amqp_type?
+            # @todo validate: primary keys have values
+            if name not in self._values:
+                if val._isOptional:
+                    # ok not to be present, put in dummy value
+                    # to simplify access
+                    self._values[name] = None
+                else:
+                    raise Exception("Required property '%s' not present." % name)
+        self._validated = True
 
     def __repr__(self):
-        return str(self.mapEncode())
+        return "QmfData=<<" + str(self.map_encode()) + ">>"
+        
 
     def __setattr__(self, _name, _value):
         # ignore private data members
         if _name[0] == '_':
-            return super.__setattr__(self, _name, _value)
-        if _name in self._properties:
-            return self.setProperty(_name, _value)
-        return super.__setattr__(self, _name, _value)
+            return super(QmfData, self).__setattr__(_name, _value)
+        if _name in self._values:
+            return self.set_value(_name, _value)
+        return super(QmfData, self).__setattr__(_name, _value)
 
     def __getattr__(self, _name):
-        if _name in self._properties: return self.getProperty(_name)
-        raise AttributeError("no item named '%s' in this object" % _name)
+        if _name != "_values" and _name in self._values: 
+            return self._values[_name]
+        raise AttributeError("no value named '%s' in this object" % _name)
 
     def __getitem__(self, _name):
         return self.__getattr__(_name)
@@ -354,300 +486,18 @@ class QmfData(object):
         return self.__setattr__(_name, _value)
 
 
-def QmfDataFactory( param, const=False ):
-    """
-    Factory for constructing an QmfData class from various sources.
 
-    @type param: various
-    @param param: object to use for constructing QmfData instance
-    @rtype: QmfData
-    @returns: a new QmfData instance
-    """
-    if type(param) == dict:
-        # construct from map
-        return QmfData( _props=param, _const=const )
-
-    else:
-        raise TypeError("Invalid type for QmfData construction")
-
-
-
-class QmfDescribed(QmfData):
-    """
-    Data that has a formally defined structure is represented by the
-    QmfDescribed class.  This class extends the QmfData class by
-    associating the data with a formal schema (SchemaObjectClass).
-
-    Map format:
-    map["schema_id"] = map representation of a SchemaClassId instance
-    map["properties"] = map representation of a QmfData instance
-    """
-    def __init__(self, _schema=None, _schemaId=None, _props={}, _const=False ):
-        """
-        @type _schema: class SchemaClass or derivative
-        @param _schema: an instance of the schema used to describe this object.
-        @type _schemaId: class SchemaClassId
-        @param _schemaId: if schema instance not available, this is mandatory.
-        @type _props: dict
-        @param _props: dictionary of initial name=value pairs for object's property data.
-        @type _const: boolean
-        @param _const: if true, this object cannot be modified
-        """
-        super(QmfDescribed, self).__init__(_props, _const)
-        self._validated = False
-        self._described = True
-        self._schema = _schema
-        if _schema:
-            self._schemaId = _schema.getClassId()
-            if self._const:
-                self._validate()
-        else:
-            if _schemaId:
-                self._schemaId = _schemaId
-            else:
-                raise Exception("A SchemaClass or SchemaClassId must be provided")
-
-
-    def getSchemaClassId(self): 
-        """
-        @rtype: class SchemaClassId
-        @returns: the identifier of the Schema that describes the structure of the data.
-        """
-        return self._schemaId
-
-    def setSchema(self, _schema):
-        """
-        @type _schema: class SchemaClass or derivative
-        @param _schema: instance of schema used to describe the structure of the data.
-        """
-        if self._schemaId != _schema.getClassId():
-            raise Exception("Cannot reset current schema to a different schema")
-        oldSchema = self._schema
-        self._schema = _schema
-        if not oldSchema and self._const:
-            self._validate()
-
-    def getPrimaryKey(self): 
-        """
-        Get a string composed of the object's primary key properties.
-        @rtype: str
-        @returns: a string composed from primary key property values. 
-        """
-        if not self._schema: 
-            raise Exception("schema not available")
-
-        if not self._validated:
-            self._validate()
-
-        if self._schema._pkeyNames == 0:
-            if len(self._properties) != 1:
-                raise Exception("no primary key defined")
-            return str(self._properties.values()[0])
-
-        result = u""
-        for pkey in self._schema._pkeyNames:
-            if result != u"":
-                result += u":"
-            try:
-                valstr = unicode(self._properties[pkey])
-            except:
-                valstr = u"<undecodable>"
-            result += valstr
-        return result
-
-
-    def getProperty(self, name):
-        # meta-properties
-        if name == QmfQuery._PRED_PACKAGE:
-            return self._schemaId.getClassId().getPackageName()
-        if name == QmfQuery._PRED_CLASS:
-            return self._schemaId.getClassId().getClassName()
-        if name == QmfQuery._PRED_TYPE:
-            return self._schemaId.getClassId().getType()
-        if name == QmfQuery._PRED_HASH:
-            return self._schemaId.getClassId().getHashString()
-        if name == QmfQuery._PRED_SCHEMA_ID:
-            return self._schemaId.getClassId()
-        if name == QmfQuery._PRED_PRIMARY_KEY:
-            return self.getPrimaryKey()
-
-        return super(QmfDescribed, self).getProperty(name)
-
-
-    def hasProperty(self, name):
-        if name in [QmfQuery._PRED_PACKAGE, QmfQuery._PRED_CLASS, QmfQuery._PRED_TYPE,
-                    QmfQuery._PRED_HASH, QmfQuery._PRED_SCHEMA_ID, QmfQuery._PRED_PRIMARY_KEY]:
-            return True
-
-        return super(QmfDescribed, self).hasProperty(name)
-
-
-    def mapEncode(self):
-        _map = {}
-        _map["schema_id"] = self._schemaId.mapEncode()
-        _map["properties"] = super(QmfDescribed, self).mapEncode()
-        return _map
-
-    def _validate(self):
-        """
-        Compares this object's data against the associated schema.  Throws an 
-        exception if the data does not conform to the schema.
-        """
-        for name,val in self._schema._properties.iteritems():
-            # @todo validate: type compatible with amqp_type?
-            # @todo validate: primary keys have values
-            if name not in self._properties:
-                if val._isOptional:
-                    # ok not to be present, put in dummy value
-                    # to simplify access
-                    self._properties[name] = None
-                else:
-                    raise Exception("Required property '%s' not present." % name)
-        self._validated = True
-
-
-
-def QmfDescribedFactory( param, _schema=None ):
-    """
-    Factory for constructing an QmfDescribed class from various sources.
-
-    @type param: various
-    @param param: object to use for constructing QmfDescribed instance
-    @type _schema: SchemaClass
-    @param _schema: instance of the SchemaClass that describes this instance
-    @rtype: QmfDescribed
-    @returns: a new QmfDescribed instance
-    """
-    if type(param) == dict:
-        # construct from map
-        if "schema_id" not in param:
-            raise TypeError("requires 'schema_id' value")
-        if "properties" not in param:
-            raise TypeError("requires 'properties' value")
-
-        return QmfDescribed( _schema=_schema, _schemaId=SchemaClassIdFactory( param["schema_id"] ),
-                             _props = param["properties"] )
-    else:
-        raise TypeError("Invalid type for QmfDescribed construction")
-
-
-
-class QmfManaged(QmfDescribed):
-    """
-    Data that has a formally defined structure, and for which each
-    instance of the data is managed by a particular Agent is represented 
-    by the QmfManaged class.  This class extends the QmfDescribed class by
-    associating the described data with a particular Agent.
-
-    Map format:
-    map["object_id"] = map representation of an ObjectId value
-    map["schema_id"] = map representation of a SchemaClassId instance
-    map["qmf_data"] = map representation of a QmfData instance
-    map["timestamps"] = array of AMQP timestamps. [0] = time of last update, 
-    [1] = creation timestamp, [2] = deletion timestamp or zero.
-    """
-    _ts_update = 0
-    _ts_create = 1
-    _ts_delete = 2
-    def __init__( self, _agentId=None, _schema=None, _schemaId=None,
-                  _props={}, _const=False ):
-        """
-        @type _agentId: class AgentId
-        @param _agentId: globally unique identifier of the managing agent.
-        @type _schema: class SchemaClass or derivative
-        @param _schema: an instance of the schema used to describe this object.
-        @type _schemaId: class SchemaClassId
-        @param _schemaId: if schema instance not available, this is mandatory.
-        @type _props: dict
-        @param _props: dictionary of initial name=value pairs for object's property data.
-        @type _const: boolean
-        @param _const: if true, this object cannot be modified
-        """
-        super(QmfManaged, self).__init__(_schema=_schema, _schemaId=_schemaId,
-                                         _props=_props, _const=_const)
-        self._managed = True
-        self._agentId = _agentId
-        # timestamp, in millisec since epoch UTC
-        _ctime = long(time.time() * 1000)
-        self._timestamps = [_ctime,_ctime,0]
-
-
-    def getObjectId(self):
-        """
-        @rtype: class ObjectId
-        @returns: the ObjectId that uniquely identifies this managed object.
-        """
-        return ObjectId(self._agentId, self.getPrimaryKey())
-
-    def isDeleted(self): 
-        return self._timestamps[QmfManaged._ts_delete] == 0
-
-
-    def getProperty(self, name):
-        # meta-properties
-        if name == QmfQuery._PRED_OBJECT_ID:
-            return self.getObjectId()
-        if name == QmfQuery._PRED_UPDATE_TS:
-            return self._timestamps[QmfManaged._ts_update]
-        if name == QmfQuery._PRED_CREATE_TS:
-            return self._timestamps[QmfManaged._ts_create]
-        if name == QmfQuery._PRED_DELETE_TS:
-            return self._timestamps[QmfManaged._ts_delete]
-
-        return super(QmfManaged, self).getProperty(name)
-
-
-    def hasProperty(self, name):
-        if name in [QmfQuery._PRED_OBJECT_ID, QmfQuery._PRED_UPDATE_TS,
-                    QmfQuery._PRED_CREATE_TS, QmfQuery._PRED_DELETE_TS]:
-            return True
-
-        return super(QmfManaged, self).hasProperty(name)
-
-
-    def mapEncode(self):
-        _map = super(QmfManaged, self).mapEncode()
-        _map["agent_id"] = self._agentId.mapEncode()
-        _map["timestamps"] = self._timestamps[:]
-        return _map
-
-
-
-def QmfManagedFactory( param, _schema=None ):
-    """
-    Factory for constructing an QmfManaged instance from various sources.
-
-    @type param: various
-    @param param: object to use for constructing QmfManaged instance
-    @type _schema: SchemaClass
-    @param _schema: instance of the SchemaClass that describes this instance
-    @rtype: QmfManaged
-    @returns: a new QmfManaged instance
-    """
-    if type(param) == dict:
-        # construct from map
-        if "agent_id" not in param:
-            raise TypeError("requires 'agent_id' value")
-        _qd = QmfDescribedFactory( param, _schema )
-
-        return QmfManaged( _agentId = AgentIdFactory(param["agent_id"]),
-                           _schema=_schema, _schemaId=_qd._schemaId,
-                           _props = _qd._properties )
-    else:
-        raise TypeError("Invalid type for QmfManaged construction")
-
-
-
-class QmfEvent(QmfDescribed):
+class QmfEvent(QmfData):
     """
     A QMF Event is a type of described data that is not managed. Events are 
     notifications that are sent by Agents. An event notifies a Console of a 
     change in some aspect of the system under managment.
     """
-    def __init__(self, _map=None,
-                 _timestamp=None, _agentId=None, 
-                 _schema=None, _schemaId=None,
-                 _props={}, _const=False):
+    KEY_TIMESTAMP = "_timestamp"
+
+    def __init__(self, _timestamp=None, _values={}, _subtypes={}, _tag=None,
+                 _map=None,
+                 _schema=None, _const=True):
         """
         @type _map: dict
         @param _map: if not None, construct instance from map representation. 
@@ -661,237 +511,49 @@ class QmfEvent(QmfDescribed):
         @type _schemaId: class SchemaClassId (event)
         @param _schemaId: identi
         """
-        if _map:
-            if type(_map) != dict:
-                raise TypeError("parameter '_map' must be of type 'dict'")
-            if "timestamp" not in _map:
-                pass
-            if "agent_id" not in _map:
-                pass
-            _qe = QmfDescribedFactory( _map, _schema )
-            super(QmfEvent, self).__init__( _schema=_qe._schema, _schemaId=_qe._schemaId,
-                                            _props=_qe._properties, _const=_qe._const )
-            self._timestamp = long(_map["timestamp"])
-            self._agentId = AgentIdFactory(_map["agent_id"])
+
+        if _map is not None:
+            # construct from map
+            super(QmfEvent, self).__init__(_map=_map, _schema=_schema,
+                                           _const=_const)
+            _timestamp = _map.get(self.KEY_TIMESTAMP, _timestamp)
         else:
-            super(QmfEvent, self).__init__(_schema=_schema, _schemaId=_schemaId,
-                                           _props=_props, _const=_const)
+            super(QmfEvent, self).__init__(_values=_values,
+                                           _subtypes=_subtypes, _tag=_tag,
+                                           _schema=_schema, _const=_const)
+        if _timestamp is None:
+            raise TypeError("QmfEvent: a valid timestamp is required.")
+
+        try:
             self._timestamp = long(_timestamp)
-            self._agentId = _agentId
+        except:
+            raise TypeError("QmfEvent: a numeric timestamp is required.")
 
-    def getTimestamp(self): return self._timestamp
+    def _create(cls, timestamp, values,
+                _subtypes={}, _tag=None, _schema=None, _const=False):
+        return cls(_timestamp=timestamp, _values=values, _subtypes=_subtypes,
+                _tag=_tag, _schema=_schema, _const=_const)
+    create = classmethod(_create)
 
-    def getAgentId(self): return self._agentId
+    def _from_map(cls, map_, _schema=None, _const=False):
+        return cls(_map=map_, _schema=_schema, _const=_const)
+    from_map = classmethod(_from_map)
 
-    def mapEncode(self):
-        _map = super(QmfEvent, self).mapEncode()
-        _map["timestamp"] = self._timestamp
-        _map["agent_id"] = self._agentId.mapEncode()
+    def get_timestamp(self): 
+        return self._timestamp
+
+    def map_encode(self):
+        _map = super(QmfEvent, self).map_encode()
+        _map[self.KEY_TIMESTAMP] = self._timestamp
         return _map
 
 
 
+
+
 #==============================================================================
 #==============================================================================
 #==============================================================================
-
-
-
-class QmfObject(object):
-     # attr_reader :impl, :object_class
-     def __init__(self, cls, kwargs={}):
-         pass
-#         self._cv = Condition()
-#         self._sync_count = 0
-#         self._sync_result = None
-#         self._allow_sets = False
-#         if kwargs.has_key("broker"):
-#             self._broker = kwargs["broker"]
-#         else:
-#             self._broker = None
-#         if cls:
-#             self.object_class = cls
-#             self.impl = qmfengine.Object(self.object_class.impl)
-#         elif kwargs.has_key("impl"):
-#             self.impl = qmfengine.Object(kwargs["impl"])
-#             self.object_class = SchemaObjectClass(None,
-#                                                   None,
-#                                                   {"impl":self.impl.getClass()})
-#         else:
-#             raise Exception("Argument error: required parameter ('impl') not supplied")
-    
-    
-#     def destroy(self):
-#         self.impl.destroy()
-    
-    
-#     def object_id(self):
-#         return ObjectId(self.impl.getObjectId())
-    
-    
-#     def set_object_id(self, oid):
-#         self.impl.setObjectId(oid.impl)
-
-
-#     def properties(self):
-#         list = []
-#         for prop in self.object_class.properties:
-#             list.append([prop, self.get_attr(prop.name())])
-#         return list
-
-
-#     def statistics(self):
-#         list = []
-#         for stat in self.object_class.statistics:
-#             list.append([stat, self.get_attr(stat.name())])
-#         return list
-    
-    
-#     def get_attr(self, name):
-#         val = self._value(name)
-#         vType = val.getType()
-#         if vType == TYPE_UINT8:  return val.asUint()
-#         elif vType == TYPE_UINT16:  return val.asUint()
-#         elif vType == TYPE_UINT32:  return val.asUint()
-#         elif vType == TYPE_UINT64:  return val.asUint64()
-#         elif vType == TYPE_SSTR:  return val.asString()
-#         elif vType == TYPE_LSTR:  return val.asString()
-#         elif vType == TYPE_ABSTIME:  return val.asInt64()
-#         elif vType == TYPE_DELTATIME:  return val.asUint64()
-#         elif vType == TYPE_REF:  return ObjectId(val.asObjectId())
-#         elif vType == TYPE_BOOL:  return val.asBool()
-#         elif vType == TYPE_FLOAT:  return val.asFloat()
-#         elif vType == TYPE_DOUBLE:  return val.asDouble()
-#         elif vType == TYPE_UUID:  return val.asUuid()
-#         elif vType == TYPE_INT8:  return val.asInt()
-#         elif vType == TYPE_INT16:  return val.asInt()
-#         elif vType == TYPE_INT32:  return val.asInt()
-#         elif vType == TYPE_INT64:  return val.asInt64()
-#         else:
-#             # when TYPE_MAP
-#             # when TYPE_OBJECT
-#             # when TYPE_LIST
-#             # when TYPE_ARRAY
-#             logging.error( "Unsupported type for get_attr? '%s'" % str(val.getType()) )
-#             return None
-    
-    
-#     def set_attr(self, name, v):
-#         val = self._value(name)
-#         vType = val.getType()
-#         if vType == TYPE_UINT8: return val.setUint(v)
-#         elif vType == TYPE_UINT16: return val.setUint(v)
-#         elif vType == TYPE_UINT32: return val.setUint(v)
-#         elif vType == TYPE_UINT64: return val.setUint64(v)
-#         elif vType == TYPE_SSTR:
-#             if v: return val.setString(v)
-#             else: return val.setString('')
-#         elif vType == TYPE_LSTR:
-#             if v: return val.setString(v) 
-#             else: return val.setString('')
-#         elif vType == TYPE_ABSTIME: return val.setInt64(v)
-#         elif vType == TYPE_DELTATIME: return val.setUint64(v)
-#         elif vType == TYPE_REF: return val.setObjectId(v.impl)
-#         elif vType == TYPE_BOOL: return val.setBool(v)
-#         elif vType == TYPE_FLOAT: return val.setFloat(v)
-#         elif vType == TYPE_DOUBLE: return val.setDouble(v)
-#         elif vType == TYPE_UUID: return val.setUuid(v)
-#         elif vType == TYPE_INT8: return val.setInt(v)
-#         elif vType == TYPE_INT16: return val.setInt(v)
-#         elif vType == TYPE_INT32: return val.setInt(v)
-#         elif vType == TYPE_INT64: return val.setInt64(v)
-#         else:
-#             # when TYPE_MAP
-#             # when TYPE_OBJECT
-#             # when TYPE_LIST
-#             # when TYPE_ARRAY
-#             logging.error("Unsupported type for get_attr? '%s'" % str(val.getType()))
-#             return None
-    
-    
-#     def __getitem__(self, name):
-#         return self.get_attr(name)
-    
-    
-#     def __setitem__(self, name, value):
-#         self.set_attr(name, value)
-    
-    
-#     def inc_attr(self, name, by=1):
-#         self.set_attr(name, self.get_attr(name) + by)
-    
-    
-#     def dec_attr(self, name, by=1):
-#         self.set_attr(name, self.get_attr(name) - by)
-    
-    
-
-
-#     def _invokeMethod(self, name, argMap):
-#         """
-#         Private: Helper function that invokes an object's method, and waits for the result.
-#         """
-#         self._cv.acquire()
-#         try:
-#             timeout = 30
-#             self._sync_count = 1
-#             self.impl.invokeMethod(name, argMap, self)
-#             if self._broker:
-#                 self._broker.conn.kick()
-#             self._cv.wait(timeout)
-#             if self._sync_count == 1:
-#                 raise Exception("Timed out: waiting for response to method call.")
-#         finally:
-#             self._cv.release()
-
-#         return self._sync_result
-
-
-#     def _method_result(self, result):
-#         """
-#         Called to return the result of a method call on an object
-#         """
-#         self._cv.acquire();
-#         try:
-#             self._sync_result = result
-#             self._sync_count -= 1
-#             self._cv.notify()
-#         finally:
-#             self._cv.release()
-
-
-#     def _marshall(schema, args):
-#         '''
-#         Private: Convert a list of arguments (positional) into a Value object of type "map".
-#         Used to create the argument parameter for an object's method invokation.
-#         '''
-#         # Build a map of the method's arguments
-#         map = qmfengine.Value(TYPE_MAP)
-#         for arg in schema.arguments:
-#             if arg.direction == DIR_IN or arg.direction == DIR_IN_OUT:
-#                 map.insert(arg.name, qmfengine.Value(arg.typecode))
-
-#         # install each argument's value into the map
-#         marshalled = Arguments(map)
-#         idx = 0
-#         for arg in schema.arguments:
-#             if arg.direction == DIR_IN or arg.direction == DIR_IN_OUT:
-#                 if args[idx]:
-#                     marshalled[arg.name] = args[idx]
-#                 idx += 1
-
-#         return marshalled.map
-
-
-#     def _value(self, name):
-#         val = self.impl.getValue(name)
-#         if not val:
-#             raise Exception("Argument error: attribute named '%s' not defined for package %s, class %s" % 
-#                             (name,
-#                              self.object_class.impl.getClassKey().getPackageName(),
-#                              self.object_class.impl.getClassKey().getClassName()))
-#         return val
-
 
 
 
@@ -1092,7 +754,7 @@ class MethodResponse(object):
 
 
 
-class QmfQuery(object):
+class QmfQuery(_mapEncoder):
 
     _TARGET="what"
     _PREDICATE="where"
@@ -1223,18 +885,19 @@ class QmfQuery(object):
     def getPredicate(self):
         return self._predicate
 
-    def mapEncode(self):
+    def map_encode(self):
         _map = {}
         _map[self._TARGET] = self._target_map
-        _map[self._PREDICATE] = self._predicate.mapEncode()
+        if self._predicate is not None:
+            _map[self._PREDICATE] = self._predicate.map_encode()
         return _map
 
     def __repr__(self):
-        return str(self.mapEncode())
+        return "QmfQuery=<<" + str(self.map_encode()) + ">>"
 
 
 
-class QmfQueryPredicate(object):
+class QmfQueryPredicate(_mapEncoder):
     """
     Class for Query predicates.
     """
@@ -1255,7 +918,6 @@ class QmfQueryPredicate(object):
         logic_op = False
         if type(pmap) == dict:
             for key in pmap.iterkeys():
-                logging.error("key = %s" % key)
                 if key in self._valid_cmp_ops:
                     # coparison operation - may have "name" and "value"
                     self._oper = key
@@ -1283,7 +945,6 @@ class QmfQueryPredicate(object):
         """
         Append another operand to a predicate expression
         """
-        logging.error("Appending: '%s'" % str(operand))
         self._operands.append(operand)
 
 
@@ -1311,15 +972,16 @@ class QmfQueryPredicate(object):
             # @todo: support regular expression match
             name = self._operands[0]
             logging.debug("looking for: '%s'" % str(name))
-            if not qmfData.hasProperty(name):
-                logging.warning("Malformed query, attribute '%s' not present." % name)
+            if not qmfData.has_value(name):
+                logging.warning("Malformed query, attribute '%s' not present."
+                          % name)
                 return False
-            arg1 = qmfData.getProperty(name)
-            arg1Type = type(arg1)
+
+            arg1 = qmfData.get_value(name)
+            arg2 = self._operands[1]
             logging.debug("query evaluate %s: '%s' '%s' '%s'" % 
-                          (name, str(arg1), self._oper, str(self._operands[1])))
+                          (name, str(arg1), self._oper, str(arg2)))
             try:
-                arg2 = arg1Type(self._operands[1])
                 if self._oper == QmfQuery._CMP_EQ: return arg1 == arg2
                 if self._oper == QmfQuery._CMP_NE: return arg1 != arg2
                 if self._oper == QmfQuery._CMP_LT: return arg1 < arg2
@@ -1342,7 +1004,7 @@ class QmfQueryPredicate(object):
                 return False
             name = self._operands[0]
             logging.debug("query evaluate PRESENT: [%s]" % str(name))
-            return qmfData.hasProperty(name)
+            return qmfData.has_value(name)
 
         if self._oper == QmfQuery._LOGIC_AND:
             logging.debug("query evaluate AND: '%s'" % str(self._operands))
@@ -1369,12 +1031,12 @@ class QmfQueryPredicate(object):
         return False
 
     
-    def mapEncode(self):
+    def map_encode(self):
         _map = {}
         _list = []
         for exp in self._operands:
             if isinstance(exp, QmfQueryPredicate):
-                _list.append(exp.mapEncode())
+                _list.append(exp.map_encode())
             else:
                 _list.append(exp)
         _map[self._oper] = _list
@@ -1382,7 +1044,7 @@ class QmfQueryPredicate(object):
 
 
     def __repr__(self):
-        return str(self.mapEncode())
+        return "QmfQueryPredicate=<<" + str(self.map_encode()) + ">>"
     
 
 
@@ -1390,15 +1052,6 @@ class QmfQueryPredicate(object):
 ## SCHEMA
 ##==============================================================================
 
-# known schema types
-
-SchemaTypeData = "data"
-SchemaTypeEvent = "event"
-
-# format convention for schema hash
-
-_schemaHashStrFormat = "%08x-%08x-%08x-%08x"
-_schemaHashStrDefault = "00000000-00000000-00000000-00000000"
 
 # Argument typecodes, access, and direction qualifiers
 
@@ -1458,7 +1111,7 @@ def _toBool( param ):
 
 
 
-class SchemaClassId(object):
+class SchemaClassId(_mapEncoder):
     """ 
     Unique identifier for an instance of a SchemaClass.
 
@@ -1470,20 +1123,40 @@ class SchemaClassId(object):
     map["hash_str"] = str, hash value in standard format or None 
     if hash is unknown.
     """
-    def __init__(self, pname, cname, stype=SchemaTypeData, hstr=None):
+    KEY_PACKAGE="_package_name"
+    KEY_CLASS="_class_name"
+    KEY_TYPE="_type"
+    KEY_HASH="_hash_str"
+
+    TYPE_DATA = "_data"
+    TYPE_EVENT = "event"
+
+    _valid_types=[TYPE_DATA, TYPE_EVENT]
+    _schemaHashStrFormat = "%08x-%08x-%08x-%08x"
+    _schemaHashStrDefault = "00000000-00000000-00000000-00000000"
+
+    def __init__(self, pname=None, cname=None, stype=TYPE_DATA, hstr=None,
+                 _map=None): 
         """
         @type pname: str
         @param pname: the name of the class's package
         @type cname: str
         @param cname: name of the class
         @type stype: str
-        @param stype: schema type [SchemaTypeData | SchemaTypeEvent]
+        @param stype: schema type [data | event]
         @type hstr: str
         @param hstr: the hash value in '%08x-%08x-%08x-%08x' format
         """
+        if _map is not None:
+            # construct from map
+            pname = _map.get(self.KEY_PACKAGE, pname)
+            cname = _map.get(self.KEY_CLASS, cname)
+            stype = _map.get(self.KEY_TYPE, stype)
+            hstr = _map.get(self.KEY_HASH, hstr)
+
         self._pname = pname
         self._cname = cname
-        if stype != SchemaTypeData and stype != SchemaTypeEvent:
+        if stype not in SchemaClassId._valid_types:
             raise TypeError("Invalid SchemaClassId type: '%s'" % stype)
         self._type = stype
         self._hstr = hstr
@@ -1498,8 +1171,17 @@ class SchemaClassId(object):
             except:
                 raise Exception("Invalid SchemaClassId format: bad hash string: '%s':"
                                 % hstr)
+    # constructor
+    def _create(cls, pname, cname, stype=TYPE_DATA, hstr=None):
+        return cls(pname=pname, cname=cname, stype=stype, hstr=hstr)
+    create = classmethod(_create)
 
-    def getPackageName(self): 
+    # map constructor 
+    def _from_map(cls, map_):
+        return cls(_map=map_)
+    from_map = classmethod(_from_map)
+
+    def get_package_name(self): 
         """ 
         Access the package name in the SchemaClassId.
 
@@ -1508,7 +1190,7 @@ class SchemaClassId(object):
         return self._pname
 
 
-    def getClassName(self): 
+    def get_class_name(self): 
         """ 
         Access the class name in the SchemaClassId
 
@@ -1517,7 +1199,7 @@ class SchemaClassId(object):
         return self._cname
 
 
-    def getHashString(self): 
+    def get_hash_string(self): 
         """ 
         Access the schema's hash as a string value
 
@@ -1526,7 +1208,7 @@ class SchemaClassId(object):
         return self._hstr
 
 
-    def getType(self):
+    def get_type(self):
         """ 
         Returns the type code associated with this Schema
 
@@ -1534,27 +1216,25 @@ class SchemaClassId(object):
         """
         return self._type
 
-    def mapEncode(self):
+    def map_encode(self):
         _map = {}
-        _map["package_name"] = self._pname
-        _map["class_name"] = self._cname
-        _map["type"] = self._type
-        if self._hstr: _map["hash_str"] = self._hstr
+        _map[self.KEY_PACKAGE] = self._pname
+        _map[self.KEY_CLASS] = self._cname
+        _map[self.KEY_TYPE] = self._type
+        if self._hstr: _map[self.KEY_HASH] = self._hstr
         return _map
 
     def __repr__(self):
-        if self._type == SchemaTypeEvent:
-            stype = "event"
-        else:
-            stype = "data"
-        hstr = self.getHashString()
+        hstr = self.get_hash_string()
         if not hstr:
-            hstr = _schemaHashStrDefault
-        return self._pname + ":" + self._cname + ":" + stype +  "(" + hstr  + ")"
+            hstr = SchemaClassId._schemaHashStrDefault
+        return self._pname + ":" + self._cname + ":" + self._type +  "(" + hstr  + ")"
 
 
     def __cmp__(self, other):
-        if not isinstance(other, SchemaClassId) :
+        if isinstance(other, dict):
+            other = SchemaClassId.from_map(other)
+        if not isinstance(other, SchemaClassId):
             raise TypeError("Invalid types for compare")
             # return 1
         me = str(self)
@@ -1571,55 +1251,7 @@ class SchemaClassId(object):
 
 
 
-def SchemaClassIdFactory( param ):
-    """
-    Factory for constructing SchemaClassIds from various sources
-
-    @type param: various
-    @param param: object to use for constructing SchemaClassId
-    @rtype: SchemaClassId
-    @returns: a new SchemaClassId instance
-    """
-    if type(param) == str:
-        # construct from __repr__/__str__ representation
-        try:
-            pname, cname, rest = param.split(":")
-            stype,rest = rest.split("(");
-            hstr = rest.rstrip(")");
-            if hstr == _schemaHashStrDefault:
-                hstr = None
-            return SchemaClassId( pname, cname, stype, hstr )
-        except:
-            raise TypeError("Invalid string format: '%s'" % param)
-
-    if type(param) == dict:
-        # construct from map representation
-        if "package_name" in param:
-            pname = param["package_name"]
-        else:
-            raise TypeError("'package_name' attribute is required")
-
-        if "class_name" in param:
-            cname = param["class_name"]
-        else:
-            raise TypeError("'class_name' attribute is required")
-
-        hstr = None
-        if "hash_str" in param:
-            hstr = param["hash_str"]
-
-        stype = "data"
-        if "type" in param:
-            stype = param["type"]
-
-        return SchemaClassId( pname, cname, stype, hstr )
-
-    else:
-        raise TypeError("Invalid type for SchemaClassId construction")
-
-
-
-class SchemaProperty(object):
+class SchemaProperty(_mapEncoder):
     """
     Describes the structure of a Property data object.
     Map format:
@@ -1641,8 +1273,17 @@ class SchemaProperty(object):
     """
     __hash__ = None
     _access_strings = ["RO","RW","RC"]
-    def __init__(self, typeCode, kwargs={}):
-        self._type = typeCode
+    _dir_strings = ["I", "O", "IO"]
+    def __init__(self, _type_code=None, _map=None, kwargs={}):
+        if _map is not None:
+            # construct from map
+            _type_code = _map.get("amqp_type", _type_code)
+            kwargs = _map
+            if not _type_code:
+                raise TypeError("SchemaProperty: amqp_type is a mandatory"
+                                " parameter")
+
+        self._type = _type_code
         self._access  = "RO"
         self._isIndex   = False
         self._isOptional = False
@@ -1653,6 +1294,8 @@ class SchemaProperty(object):
         self._desc    = None
         self._reference = None
         self._isParentRef  = False
+        self._dir = None
+        self._default = None
 
         for key, value in kwargs.items():
             if key == "access":
@@ -1669,6 +1312,22 @@ class SchemaProperty(object):
             elif key == "desc"    : self._desc    = value
             elif key == "reference" : self._reference = value
             elif key == "parent_ref"   : self._isParentRef = _toBool(value)
+            elif key == "dir":
+                value = str(value).upper()
+                if value not in self._dir_strings:
+                    raise TypeError("invalid value for direction parameter: '%s'" % value)
+                self._dir = value
+            elif key == "default" : self._default = value
+
+    # constructor
+    def _create(cls, type_code, kwargs={}):
+        return cls(_type_code=type_code, kwargs=kwargs)
+    create = classmethod(_create)
+
+    # map constructor
+    def _from_map(cls, map_):
+        return cls(_map=map_)
+    from_map = classmethod(_from_map)
 
     def getType(self): return self._type
 
@@ -1692,7 +1351,11 @@ class SchemaProperty(object):
 
     def isParentRef(self): return self._isParentRef
 
-    def mapEncode(self):
+    def getDirection(self): return self._dir
+
+    def getDefault(self): return self._default
+
+    def map_encode(self):
         """
         Return the map encoding of this schema.
         """
@@ -1708,9 +1371,12 @@ class SchemaProperty(object):
         if self._desc: _map["desc"] = self._desc
         if self._reference: _map["reference"] = self._reference
         _map["parent_ref"] = self._isParentRef
+        if self._dir: _map["dir"] = self._dir
+        if self._default: _map["default"] = self._default
         return _map
 
-    def __repr__(self): return str(self.mapEncode())
+    def __repr__(self): 
+        return "SchemaProperty=<<" + str(self.map_encode()) + ">>"
 
     def _updateHash(self, hasher):
         """
@@ -1722,122 +1388,21 @@ class SchemaProperty(object):
         if self._access: hasher.update(self._access)
         if self._unit: hasher.update(self._unit)
         if self._desc: hasher.update(self._desc)
+        if self._dir: hasher.update(self._dir)
+        if self._default: hasher.update(self._default)
 
 
 
-def SchemaPropertyFactory( _map ):
-    """
-    Factory for constructing SchemaProperty from a map
-
-    @type _map: dict
-    @param _map: from mapEncode() of SchemaProperty
-    @rtype: SchemaProperty
-    @returns: a new SchemaProperty instance
-    """
-    if type(_map) == dict:
-        # construct from map
-        if "amqp_type" not in _map:
-            raise TypeError("requires 'amqp_type' value")
-
-        return SchemaProperty( _map["amqp_type"], _map )
-
-    else:
-        raise TypeError("Invalid type for SchemaProperty construction")
-
-
-
-
-class SchemaArgument(object):
-    """
-    Describes the structure of an Argument to a Method call.
-    Map format:
-    map["amqp_type"] = int, type code indicating argument's data type
-    map["dir"] = str, direction for an argument associated with a 
-    Method, "I"|"O"|"IO", default value: "I"
-    optional:
-    map["desc"] = str, human-readable description of this argument
-    map["default"] = by amqp_type, default value to use if none provided
-    """
-    __hash__ = None
-    _dir_strings = ["I", "O", "IO"]
-    def __init__(self, typeCode, kwargs={}):
-        self._type = typeCode
-        self._dir   = "I"
-        self._desc    = None
-        self._default = None
-
-        for key, value in kwargs.items():
-            if key == "dir":
-                value = str(value).upper()
-                if value not in self._dir_strings:
-                    raise TypeError("invalid value for dir parameter: '%s'" % value)
-                self._dir = value
-            elif key == "desc"    : self._desc    = value
-            elif key == "default" : self._default = value
-
-    def getType(self): return self._type
-
-    def getDirection(self): return self._dir
-
-    def getDesc(self): return self._desc
-
-    def getDefault(self): return self._default
-
-    def mapEncode(self):
-        """
-        Return the map encoding of this schema.
-        """
-        _map = {}
-        _map["amqp_type"] = self._type
-        _map["dir"] = self._dir
-        # optional:
-        if self._default: _map["default"] = self._default
-        if self._desc: _map["desc"] = self._desc
-        return _map
-
-    def __repr__(self): return str(self.mapEncode())
-
-    def _updateHash(self, hasher):
-        """
-        Update the given hash object with a hash computed over this schema.
-        """
-        hasher.update(str(self._type))
-        hasher.update(self._dir)
-        if self._desc: hasher.update(self._desc)
-
-
-
-def SchemaArgumentFactory( param ):
-    """
-    Factory for constructing SchemaArguments from various sources
-
-    @type param: various
-    @param param: object to use for constructing SchemaArgument
-    @rtype: SchemaArgument
-    @returns: a new SchemaArgument instance
-    """
-    if type(param) == dict:
-        # construct from map
-        if not "amqp_type" in param:
-            raise TypeError("requires 'amqp_type' value")
-
-        return SchemaArgument( param["amqp_type"], param )
-
-    else:
-        raise TypeError("Invalid type for SchemaArgument construction")
-
-
-
-class SchemaMethod(object):
+class SchemaMethod(_mapEncoder):
     """ 
     The SchemaMethod class describes the method's structure, and contains a
     SchemaProperty class for each argument declared by the method.
 
     Map format:
-    map["arguments"] = map of "name"=<SchemaArgument> pairs.
+    map["arguments"] = map of "name"=<SchemaProperty> pairs.
     map["desc"] = str, description of the method
     """
-    def __init__(self, args={}, _desc=None):
+    def __init__(self, args={}, _desc=None, _map=None):
         """
         Construct a SchemaMethod.
 
@@ -1846,8 +1411,21 @@ class SchemaMethod(object):
         @type _desc: str
         @param _desc: Human-readable description of the schema
         """
+        if _map is not None:
+            _desc = _map.get("desc")
+            margs = _map.get("arguments", args)
+            # margs are in map format - covert to SchemaProperty
+            args = {}
+            for name,val in margs.iteritems():
+                args[name] = SchemaProperty.from_map(val)
+
         self._arguments = args.copy()
         self._desc = _desc
+
+    # map constructor
+    def _from_map(cls, map_):
+        return cls(_map=map_)
+    from_map = classmethod(_from_map)
 
     def getDesc(self): return self._desc
 
@@ -1857,7 +1435,7 @@ class SchemaMethod(object):
 
     def getArgument(self, name): return self._arguments[name]
 
-    def addArgument(self, name, schema):
+    def add_argument(self, name, schema):
         """
         Add an argument to the list of arguments passed to this method.  
         Used by an agent for dynamically creating method schema.
@@ -1871,29 +1449,28 @@ class SchemaMethod(object):
             raise TypeError("argument must be a SchemaProperty class")
         self._arguments[name] = schema
 
-    def mapEncode(self):
+    def map_encode(self):
         """
         Return the map encoding of this schema.
         """
         _map = {}
         _args = {}
         for name,val in self._arguments.iteritems():
-            _args[name] = val.mapEncode()
+            _args[name] = val.map_encode()
         _map["arguments"] = _args
         if self._desc: _map["desc"] = self._desc
         return _map
 
     def __repr__(self):
-        result = "("
+        result = "SchemaMethod=<<args=("
         first = True
         for name,arg in self._arguments.iteritems():
-            if arg._dir.find("I") != -1:
-                if first:
-                    first = False
-                else:
-                    result += ", "
-                result += name
-        result += ")"
+            if first:
+                first = False
+            else:
+                result += ", "
+            result += name
+        result += ")>>"
         return result
 
     def _updateHash(self, hasher):
@@ -1907,89 +1484,77 @@ class SchemaMethod(object):
 
 
 
-def SchemaMethodFactory( param ):
-    """
-    Factory for constructing a SchemaMethod from various sources
-
-    @type param: various
-    @param param: object to use for constructing a SchemaMethod
-    @rtype: SchemaMethod
-    @returns: a new SchemaMethod instance
-    """
-    if type(param) == dict:
-        # construct from map
-        args = {}
-        desc = None
-        if "arguments" in param:
-            for name,val in param["arguments"].iteritems():
-                args[name] = SchemaArgumentFactory(val)
-        if "desc" in param:
-            desc = param["desc"]
-
-        return SchemaMethod( args, desc )
-
-    else:
-        raise TypeError("Invalid type for SchemaMethod construction")
-
-
-
 class SchemaClass(QmfData):
     """
     Base class for Data and Event Schema classes.
+
+    Map format:
+    map(QmfData), plus:
+    map["_schema_id"] = map representation of a SchemaClassId instance
+    map["_primary_key_names"] = order list of primary key names
     """
-    def __init__(self, pname, cname, stype, desc=None, hstr=None):
+    KEY_SCHEMA_ID="_schema_id"
+    KEY_PRIMARY_KEY_NAMES="_primary_key_names"
+    KEY_DESC = "_desc"
+
+    SUBTYPE_PROPERTY="qmfProperty"
+    SUBTYPE_METHOD="qmfMethod"
+
+    def __init__(self, _classId=None, _desc=None, _map=None):
         """
         Schema Class constructor.
 
-        @type pname: str
-        @param pname: package name
-        @type cname: str
-        @param cname: class name
-        @type stype: str
-        @param stype: type of schema, either "data" or "event"
-        @type desc: str
-        @param desc: Human-readable description of the schema
-        @type hstr: str
-        @param hstr: hash computed over the schema body, else None
+        @type classId: class SchemaClassId
+        @param classId: Identifier for this SchemaClass
+        @type _desc: str
+        @param _desc: Human-readable description of the schema
         """
-        self._pname = pname
-        self._cname = cname
-        self._type = stype
-        self._desc = desc
-        if hstr:
-            self._classId = SchemaClassId( pname, cname, stype, hstr )
+        if _map is not None:
+            super(SchemaClass, self).__init__(_map=_map)
+
+            # decode each value based on its type
+            for name,value in self._values.iteritems():
+                if self._subtypes.get(name) == self.SUBTYPE_METHOD:
+                    self._values[name] = SchemaMethod.from_map(value)
+                else:
+                    self._values[name] = SchemaProperty.from_map(value)
+            cid = _map.get(self.KEY_SCHEMA_ID)
+            if cid:
+                _classId = SchemaClassId.from_map(cid)
+            self._object_id_names = _map.get(self.KEY_PRIMARY_KEY_NAMES,[])
+            _desc = _map.get(self.KEY_DESC)
         else:
-            self._classId = None
-        self._properties = {}
-        self._methods = {}
-        self._pkeyNames = []
+            super(SchemaClass, self).__init__()
+            self._object_id_names = []
 
+        self._classId = _classId
+        self._desc = _desc
 
-    def getClassId(self): 
-        if not self._classId:
-            self.generateHash()
+    def get_class_id(self): 
+        if not self._classId.get_hash_string():
+            self.generate_hash()
         return self._classId
 
-    def getDesc(self): return self._desc
+    def get_desc(self): return self._desc
 
-    def generateHash(self): 
+    def generate_hash(self): 
         """
         generate an md5 hash over the body of the schema,
         and return a string representation of the hash
         in format "%08x-%08x-%08x-%08x"
         """
         md5Hash = _md5Obj()
-        md5Hash.update(self._pname)
-        md5Hash.update(self._cname)
-        md5Hash.update(self._type)
-        for name,x in self._properties.iteritems():
+        md5Hash.update(self._classId.get_package_name())
+        md5Hash.update(self._classId.get_class_name())
+        md5Hash.update(self._classId.get_type())
+        for name,x in self._values.iteritems():
             md5Hash.update(name)
             x._updateHash( md5Hash )
-        for name,x in self._methods.iteritems():
+        for name,value in self._subtypes.iteritems():
             md5Hash.update(name)
-            x._updateHash( md5Hash )
+            md5Hash.update(value)
         idx = 0
-        for name in self._pkeyNames:
+        for name in self._object_id_names:
             md5Hash.update(str(idx) + name)
             idx += 1
         hstr = md5Hash.hexdigest()[0:8] + "-" +\
@@ -1997,65 +1562,70 @@ class SchemaClass(QmfData):
             md5Hash.hexdigest()[16:24] + "-" +\
             md5Hash.hexdigest()[24:32]
         # update classId with new hash value
-        self._classId = SchemaClassId( self._pname,
-                                       self._cname,
-                                       self._type,
-                                       hstr )
+        self._classId._hstr = hstr
         return hstr
 
 
-    def getPropertyCount(self): return len(self._properties)
-    def getProperties(self): return self._properties.copy()
-    def addProperty(self, name, prop):
-        self._properties[name] = prop
+    def get_property_count(self): 
+        count = 0
+        for value in self._subtypes.itervalues():
+            if value == self.SUBTYPE_PROPERTY:
+                count += 1
+        return count
+
+    def get_properties(self): 
+        props = {}
+        for name,value in self._subtypes.iteritems():
+            if value == self.SUBTYPE_PROPERTY:
+                props[name] = self._values.get(name)
+        return props
+
+    def get_property(self, name):
+        if self._subtypes.get(name) == self.SUBTYPE_PROPERTY:
+            return self._values.get(name)
+        return None
+
+    def add_property(self, name, prop):
+        self.set_value(name, prop, self.SUBTYPE_PROPERTY)
         # need to re-generate schema hash
-        self._classId = None
+        self._classId._hstr = None
 
-    def getProperty(self, name):
+    def get_value(self, name):
         # check for meta-properties first
-        if name == QmfQuery._PRED_PACKAGE:
-            return self._pname
-        if name == QmfQuery._PRED_CLASS:
-            return self._cname
-        if name == QmfQuery._PRED_TYPE:
-            return self._type
-        if name == QmfQuery._PRED_HASH:
-            return self.getClassId().getHashString()
-        if name == QmfQuery._PRED_SCHEMA_ID:
-            return self.getClassId()
-        return super(SchemaClass, self).getProperty(name)
+        if name == SchemaClassId.KEY_PACKAGE:
+            return self._classId.get_package_name()
+        if name == SchemaClassId.KEY_CLASS:
+            return self._classId.get_class_name()
+        if name == SchemaClassId.KEY_TYPE:
+            return self._classId.get_type()
+        if name == SchemaClassId.KEY_HASH:
+            return self.get_class_id().get_hash_string()
+        if name == self.KEY_SCHEMA_ID:
+            return self.get_class_id()
+        if name == self.KEY_PRIMARY_KEY_NAMES:
+            return self._object_id_names[:]
+        return super(SchemaClass, self).get_value(name)
 
-    def hasProperty(self, name):
-        if name in [QmfQuery._PRED_PACKAGE, QmfQuery._PRED_CLASS, 
-                    QmfQuery._PRED_TYPE, QmfQuery._PRED_HASH, QmfQuery._PRED_SCHEMA_ID]:
+    def has_value(self, name):
+        if name in [SchemaClassId.KEY_PACKAGE, SchemaClassId.KEY_CLASS, SchemaClassId.KEY_TYPE,
+                    SchemaClassId.KEY_HASH, self.KEY_SCHEMA_ID, self.KEY_PRIMARY_KEY_NAMES]:
             return True
-        super(SchemaClass, self).hasProperty(name)
+        super(SchemaClass, self).has_value(name)
 
-    def mapEncode(self):
+    def map_encode(self):
         """
         Return the map encoding of this schema.
         """
-        _map = {}
-        _map["schema_id"] = self.getClassId().mapEncode()
-        _map["desc"] = self._desc
-        if len(self._properties):
-            _props = {}
-            for name,val in self._properties.iteritems():
-                _props[name] = val.mapEncode()
-            _map["properties"] = _props
-
-        if len(self._methods):
-            _meths = {}
-            for name,val in self._methods.iteritems():
-                _meths[name] = val.mapEncode()
-            _map["methods"] = _meths
-
-        if len(self._pkeyNames):
-            _map["primary_key"] = self._pkeyNames[:]
+        _map = super(SchemaClass,self).map_encode()
+        _map[self.KEY_SCHEMA_ID] = self.get_class_id().map_encode()
+        if self._object_id_names:
+            _map[self.KEY_PRIMARY_KEY_NAMES] = self._object_id_names[:]
+        if self._desc:
+            _map[self.KEY_DESC] = self._desc
         return _map
 
     def __repr__(self):
-        return str(self.getClassId())
+        return str(self.get_class_id())
 
 
 
@@ -2067,14 +1637,11 @@ class SchemaObjectClass(SchemaClass):
     all properties named in the primary key list.
     
     Map format:
-    map["schema_id"] = map, SchemaClassId map for this object.
-    map["desc"] = human readable description of this schema.
-    map["primary_key"] = ordered list of property names used to construct the Primary Key"
-    map["properties"] = map of "name":SchemaProperty instances.
-    map["methods"] = map of "name":SchemaMethods instances.
+    map(SchemaClass)
     """
-    def __init__( self, pname, cname, desc=None, _hash=None, 
-                  _props={}, _pkey=[], _methods={}): 
+    def __init__(self, _classId=None, _desc=None, 
+                 _props={}, _methods={}, _object_id_names=None, 
+                 _map=None):
         """
         @type pname: str
         @param pname: name of package this schema belongs to
@@ -2091,64 +1658,46 @@ class SchemaObjectClass(SchemaClass):
         @type _methods: map of 'name':<SchemaMethod> objects
         @param _methods: all methods provided by this schema
         """
-        super(SchemaObjectClass, self).__init__(pname, 
-                                                cname, 
-                                                SchemaTypeData,
-                                                desc,
-                                                _hash)
-        self._properties = _props.copy()
-        self._pkeyNames = _pkey[:]
-        self._methods = _methods.copy()
+        if _map is not None:
+            super(SchemaObjectClass,self).__init__(_map=_map)
+        else:
+            super(SchemaObjectClass, self).__init__(_classId=_classId, _desc=_desc)
+            self._object_id_names = _object_id_names
+            for name,value in _props.iteritems():
+                self.set_value(name, value, self.SUBTYPE_PROPERTY)
+            for name,value in _methods.iteritems():
+                self.set_value(name, value, self.SUBTYPE_METHOD)
 
-    def getPrimaryKeyList(self): return self._pkeyNames[:]
+        if self._classId.get_type() != SchemaClassId.TYPE_DATA:
+            raise TypeError("Invalid ClassId type for data schema: %s" % self._classId)
 
-    def getMethodCount(self): return len(self._methods)
-    def getMethods(self): return self._methods.copy()
-    def getMethod(self, name): return self._methods[name]
-    def addMethod(self, name, method): 
-        self._methods[name] = method
-        self._classId = None
+    def get_id_names(self): 
+        return self._object_id_names[:]
 
+    def get_method_count(self):
+        count = 0
+        for value in self._subtypes.itervalues():
+            if value == self.SUBTYPE_METHOD:
+                count += 1
+        return count
 
+    def get_methods(self):
+        meths = {}
+        for name,value in self._subtypes.iteritems():
+            if value == self.SUBTYPE_METHOD:
+                meths[name] = self._values.get(name)
+        return meths
 
-def SchemaObjectClassFactory( param ):
-    """
-    Factory for constructing a SchemaObjectClass from various sources.
+    def get_method(self, name):
+        if self._subtypes.get(name) == self.SUBTYPE_METHOD:
+            return self._values.get(name)
+        return None
 
-    @type param: various
-    @param param: object to use for constructing a SchemaObjectClass instance
-    @rtype: SchemaObjectClass
-    @returns: a new SchemaObjectClass instance
-    """
-    if type(param) == dict:
-        classId = None
-        properties = {}
-        methods = {}
-        pkey = []
-        if "schema_id" in param:
-            classId = SchemaClassIdFactory(param["schema_id"])
-        if (not classId) or (classId.getType() != SchemaTypeData):
-            raise TypeError("Invalid SchemaClassId specified: %s" % classId)
-        if "desc" in param:
-            desc = param["desc"]
-        if "primary_key" in param:
-            pkey = param["primary_key"]
-        if "properties" in param:
-            for name,val in param["properties"].iteritems():
-                properties[name] = SchemaPropertyFactory(val)
-        if "methods" in param:
-            for name,val in param["methods"].iteritems():
-                methods[name] = SchemaMethodFactory(val)
+    def add_method(self, name, method): 
+        self.set_value(name, method, self.SUBTYPE_METHOD)
+        # need to re-generate schema hash
+        self._classId._hstr = None
 
-        return SchemaObjectClass( classId.getPackageName(),
-                                  classId.getClassName(),
-                                  desc,
-                                  _hash = classId.getHashString(),
-                                  _props = properties, _pkey = pkey,
-                                  _methods = methods)
-
-    else:
-        raise TypeError("Invalid type for SchemaObjectClass construction")
 
 
 
@@ -2162,46 +1711,21 @@ class SchemaEventClass(SchemaClass):
     map["desc"] = string description of this schema
     map["properties"] = map of "name":SchemaProperty values.
     """
-    def __init__( self, pname, cname, desc=None, _props={}, _hash=None ):
-        super(SchemaEventClass, self).__init__(pname, 
-                                               cname, 
-                                               SchemaTypeEvent,
-                                               desc,
-                                               _hash )
-        self._properties = _props.copy()
+    def __init__(self, _classId=None, _desc=None, _props={},
+                 _map=None):
+        if _map is not None:
+            super(SchemaEventClass,self).__init__(_map=_map)
+        else:
+            super(SchemaEventClass, self).__init__(_classId=_classId,
+                                                   _desc=_desc)
+            for name,value in _props.iteritems():
+                self.set_value(name, value, self.SUBTYPE_PROPERTY)
+
+        if self._classId.get_type() != SchemaClassId.TYPE_EVENT:
+            raise TypeError("Invalid ClassId type for event schema: %s" %
+                            self._classId)
 
 
-
-def SchemaEventClassFactory( param ):
-    """
-    Factory for constructing a SchemaEventClass from various sources.
-
-    @type param: various
-    @param param: object to use for constructing a SchemaEventClass instance
-    @rtype: SchemaEventClass
-    @returns: a new SchemaEventClass instance
-    """
-    if type(param) == dict:
-        logging.debug( "constructing SchemaEventClass from map '%s'" % param )
-        classId = None
-        properties = {}
-        if "schema_id" in param:
-            classId = SchemaClassIdFactory(param["schema_id"])
-        if (not classId) or (classId.getType() != SchemaTypeEvent):
-            raise TypeError("Invalid SchemaClassId specified: %s" % classId)
-        if "desc" in param:
-            desc = param["desc"]
-        if "properties" in param:
-            for name,val in param["properties"].iteritems():
-                properties[name] = SchemaPropertyFactory(val)
-
-        return SchemaEventClass( classId.getPackageName(),
-                                  classId.getClassName(),
-                                  desc,
-                                  _hash = classId.getHashString(),
-                                  _props = properties )
-    else:
-        raise TypeError("Invalid type for SchemaEventClass construction")
 
 
 

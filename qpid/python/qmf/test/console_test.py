@@ -4,7 +4,7 @@ from threading import Semaphore
 
 
 from qpid.messaging import *
-from qmfCommon import (Notifier, QmfQuery)
+from qmfCommon import (Notifier, QmfQuery, MsgKey, SchemaClassId, SchemaClass)
 from qmfConsole import Console
 
 
@@ -16,18 +16,18 @@ class ExampleNotifier(Notifier):
         self._sema4.release()
 
     def waitForWork(self):
-        logging.error("Waiting for event...")
+        print("Waiting for event...")
         self._sema4.acquire()
-        logging.error("...event present")
+        print("...event present")
 
 
 logging.getLogger().setLevel(logging.INFO)
 
-logging.info( "Starting Connection" )
+print( "Starting Connection" )
 _c = Connection("localhost")
 _c.connect()
 
-logging.info( "Starting Console" )
+print( "Starting Console" )
 
 _notifier = ExampleNotifier()
 _myConsole = Console(notifier=_notifier)
@@ -40,30 +40,65 @@ _myConsole.addConnection( _c )
 _query = {QmfQuery._TARGET: 
           {QmfQuery._TARGET_AGENT:None},
           QmfQuery._PREDICATE:
-              {QmfQuery._LOGIC_AND: 
-               [{QmfQuery._CMP_EQ: ["vendor",  "redhat.com"]},
-                {QmfQuery._CMP_EQ: ["product", "qmf"]}]}}
+              {QmfQuery._CMP_EQ: ["_name",  "qmf.testAgent"]}}
 _query = QmfQuery(_query)
 
 _myConsole.enableAgentDiscovery(_query)
 
 _done = False
 while not _done:
-    try:
-        _notifier.waitForWork()
+#    try:
+    _notifier.waitForWork()
 
-        _wi = _myConsole.get_next_workitem(timeout=0)
-        while _wi:
-            print("!!! work item received %d:%s" % (_wi.getType(), str(_wi.getParams())))
-            _wi = _myConsole.get_next_workitem(timeout=0)
-    except:
-        logging.info( "shutting down..." )
-        _done = True
+    _wi = _myConsole.getNextWorkItem(timeout=0)
+    while _wi:
+        print("!!! work item received %d:%s" % (_wi.getType(),
+                                                str(_wi.getParams())))
 
-logging.info( "Removing connection" )
+
+        if _wi.getType() == _wi.AGENT_ADDED:
+            _agent = _wi.getParams().get("agent")
+            if not _agent:
+                print("!!!! AGENT IN REPLY IS NULL !!! ")
+
+            _query = QmfQuery( {QmfQuery._TARGET: 
+                                {QmfQuery._TARGET_PACKAGES:None}} )
+
+            _reply = _myConsole.doQuery(_agent, _query)
+
+            package_list = _reply.get(MsgKey.package_info)
+            for pname in package_list:
+                print("!!! Querying for schema from package: %s" % pname)
+                _query = QmfQuery({QmfQuery._TARGET: 
+                                   {QmfQuery._TARGET_SCHEMA_ID:None},
+                                   QmfQuery._PREDICATE:
+                                       {QmfQuery._CMP_EQ: 
+                                        [SchemaClassId.KEY_PACKAGE, pname]}})
+
+                _reply = _myConsole.doQuery(_agent, _query)
+
+                schema_id_list = _reply.get(MsgKey.schema_id)
+                for sid_map in schema_id_list:
+                    _query = QmfQuery({QmfQuery._TARGET: 
+                                       {QmfQuery._TARGET_SCHEMA:None},
+                                       QmfQuery._PREDICATE:
+                                           {QmfQuery._CMP_EQ: 
+                                            [SchemaClass.KEY_SCHEMA_ID, sid_map]}})
+
+                    _reply = _myConsole.doQuery(_agent, _query)
+
+
+
+        _myConsole.releaseWorkItem(_wi)
+        _wi = _myConsole.getNextWorkItem(timeout=0)
+#    except:
+#        logging.info( "shutting down..." )
+#        _done = True
+
+print( "Removing connection" )
 _myConsole.removeConnection( _c, 10 )
 
-logging.info( "Destroying console:" )
+print( "Destroying console:" )
 _myConsole.destroy( 10 )
 
-logging.info( "******** console test done ********" )
+print( "******** console test done ********" )
