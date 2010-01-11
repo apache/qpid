@@ -68,9 +68,17 @@ public class ClientProperties
      * by the broker in TuneOK it will be used as the heartbeat interval.
      * If not a warning will be printed and the max value specified for
      * heartbeat in TuneOK will be used
+     * 
+     * The default idle timeout is set to 120 secs
      */
     public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
-
+    public static final long DEFAULT_IDLE_TIMEOUT = 120000;
+    /**
+     * This value will be used to determine the default destination syntax type.
+     * Currently the two types are Binding URL (java only) and the Addressing format (used by
+     * all clients). 
+     */
+    public static final String DEST_SYNTAX = "dest_syntax";
 
      /**
      * ==========================================================

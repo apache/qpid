@@ -163,7 +163,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             else
             {
                 // use the default value set for all connections
-                this.setIdleTimeout(Long.getLong(ClientProperties.IDLE_TIMEOUT_PROP_NAME,0));
+                this.setIdleTimeout(Long.getLong(ClientProperties.IDLE_TIMEOUT_PROP_NAME,ClientProperties.DEFAULT_IDLE_TIMEOUT));
             }
             
             String saslMechs = brokerDetail.getProperty("sasl_mechs")!= null?
