@@ -22,6 +22,8 @@ package org.apache.qpid.transport;
 
 import static org.apache.qpid.transport.Connection.State.OPEN;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,9 +75,13 @@ public class ClientDelegate extends ConnectionDelegate
 
     @Override public void connectionStart(Connection conn, ConnectionStart start)
     {
-        Map clientProperties = new HashMap();
+        Map<String,Object> clientProperties = new HashMap<String,Object>();
         clientProperties.put("qpid.session_flow", 1);
-
+        clientProperties.put("qpid.client_pid",getPID());
+        clientProperties.put("qpid.client_pid",clientProperties.get("qpid.client_pid"));
+        clientProperties.put("qpid.client_process",
+                System.getProperty("qpid.client_process","Qpid Java Client"));
+        
         List<Object> mechanisms = start.getMechanisms();
         if (mechanisms == null || mechanisms.isEmpty())
         {
@@ -172,5 +178,29 @@ public class ClientDelegate extends ConnectionDelegate
             		" using the brokers max value %s", l,max);
             return max;
         }
+    }
+    
+    private int getPID()
+    {
+        RuntimeMXBean rtb = ManagementFactory.getRuntimeMXBean();
+        String processName = rtb.getName();       
+        if (processName != null && processName.indexOf('@')>0)
+        {
+            try
+            {
+                return Integer.parseInt(processName.substring(0,processName.indexOf('@')));
+            }
+            catch(Exception e)
+            {
+                log.warn("Unable to get the client PID due to error",e);
+                return -1;
+            }
+        }
+        else
+        {
+            log.warn("Unable to get the client PID due to unsupported format : " + processName);
+            return -1;
+        }
+
     }
 }
