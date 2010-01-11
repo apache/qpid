@@ -30,7 +30,8 @@ $(generated_file_list): ruby.i $(top_srcdir)/src/saslwrapper.i
 	$(SWIG) -c++ -ruby -Wall -I/usr/include $(INCLUDES) -o saslwrapper.cpp $(srcdir)/ruby.i
 
 rubylibdir = $(RUBY_LIB)
-lib_LTLIBRARIES = saslwrapper.la
+rubylibarchdir = $(RUBY_LIB_ARCH)
+rubylibarch_LTLIBRARIES = saslwrapper.la
 
 saslwrapper_la_LDFLAGS = -avoid-version -module -shared ".$(RUBY_DLEXT)"
 saslwrapper_la_LIBADD = $(RUBY_LIBS) $(top_builddir)/src/libsaslwrapper.la -lsasl2
