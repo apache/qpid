@@ -194,13 +194,14 @@ class ACLTests(TestBase010):
         if (result.text.find("contains illegal characters",0,len(result.text)) == -1):
             self.fail(result)
 
-    def test_user_without_realm(self):
+    def test_user_domain(self):
         """
         Test a user defined without a realm
         Ex. group admin rajith
         """
         aclf = ACLFile()
-        aclf.write('group admin bob\n')
+        aclf.write('group test joe@EXAMPLE.com\n') # should be allowed
+        aclf.write('group admin bob\n') # shouldn't be allowed
         aclf.write('acl deny admin bind exchange\n')
         aclf.write('acl allow all all')
         aclf.close()
