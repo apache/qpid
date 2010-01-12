@@ -1210,6 +1210,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _username;
     }
 
+    public void setUsername(String id)
+    {
+        _username = id;
+    }
+    
     public String getPassword()
     {
         return _password;
@@ -1587,11 +1592,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public String getSyncPublish()
     {
         return _syncPublish;
-    }
-
-    public void setIdleTimeout(long l)
-    {
-        _delegate.setIdleTimeout(l);
     }
 
     public int getNextChannelID()

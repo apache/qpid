@@ -85,7 +85,8 @@ public class Connection extends ConnectionInvoker
     private SaslClient saslClient;
     private long idleTimeout = 0;
     private String _authorizationID;
-
+    private String userID;
+    
     // want to make this final
     private int _connectionId;
 
@@ -173,7 +174,7 @@ public class Connection extends ConnectionInvoker
         synchronized (lock)
         {
             state = OPENING;
-
+            userID = username;
             delegate = new ClientDelegate(vhost, username, password,saslMechs);
 
             IoTransport.connect(host, port, ConnectionBinding.get(this), ssl);
@@ -543,6 +544,16 @@ public class Connection extends ConnectionInvoker
     public String getAuthorizationID()
     {
         return _authorizationID;
+    }
+    
+    public String getUserID()
+    {
+        return userID;
+    }
+    
+    public void setUserID(String id)
+    {
+        userID = id;
     }
 
     public String toString()
