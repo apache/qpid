@@ -86,7 +86,7 @@ end
 #
 
 PKG_FILES = FileList[
-  "DISCLAIMER", "LICENSE.txt", "NOTICE.txt",
+  "LICENSE.txt", "NOTICE.txt",
   "Rakefile", "RELEASE_NOTES",
   "lib/**/*.rb", "lib/*/spec_cache/*.rb*", "tests/**/*", "examples/**", "ext/**/*.[ch]",
   "ext/**/MANIFEST", "ext/**/extconf.rb"
@@ -105,6 +105,7 @@ SPEC = Gem::Specification.new do |s|
   s.files = PKG_FILES
   s.required_ruby_version = '>= 1.8.1'
   s.description = "Ruby client for Qpid"
+  s.extensions << 'ext/sasl/extconf.rb'
 end
 
 Rake::GemPackageTask.new(SPEC) do |pkg|
