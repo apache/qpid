@@ -137,6 +137,8 @@ An example using xquery based filtering with the xml exchange:
 
 TODO:
 
+* auto-creating exchanges of different types
+
 * xml content in the xquery example
 
 * 'durable' and 'reliable' subscriptions

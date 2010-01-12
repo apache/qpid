@@ -25,6 +25,7 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
+#include "qpid/framing/enum.h"
 
 namespace qpid {
 namespace client {
@@ -32,20 +33,25 @@ namespace amqp0_10 {
 
 using qpid::messaging::Address;
 using qpid::messaging::MessageImplAccess;
+using namespace qpid::framing::message;
 
 void OutgoingMessage::convert(const qpid::messaging::Message& from)
 {
     //TODO: need to avoid copying as much as possible
     message.setData(from.getContent());
     message.getMessageProperties().setContentType(from.getContentType());
+    message.getMessageProperties().setCorrelationId(from.getCorrelationId());
+    message.getMessageProperties().setUserId(from.getUserId());
     const Address& address = from.getReplyTo();
     if (address) {
         message.getMessageProperties().setReplyTo(AddressResolution::convert(address));
     }
     translate(from.getHeaders(), message.getMessageProperties().getApplicationHeaders());
-    //TODO: set other message properties
-    message.getDeliveryProperties().setRoutingKey(from.getSubject());
-    //TODO: set other delivery properties
+    message.getDeliveryProperties().setTtl(from.getTtl());
+    if (from.getDurable()) {
+        message.getDeliveryProperties().setDeliveryMode(DELIVERY_MODE_PERSISTENT);
+    }
+
 }
 
 namespace {

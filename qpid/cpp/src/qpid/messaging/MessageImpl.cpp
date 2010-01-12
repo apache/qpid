@@ -28,8 +28,18 @@ namespace {
 const std::string EMPTY_STRING = "";
 }
 
-MessageImpl::MessageImpl(const std::string& c) : bytes(c), internalId(0) {}
-MessageImpl::MessageImpl(const char* chars, size_t count) : bytes(chars, count), internalId(0) {}
+MessageImpl::MessageImpl(const std::string& c) : 
+    ttl(0),
+    durable(false),
+    redelivered(false),
+    bytes(c),
+    internalId(0) {}
+MessageImpl::MessageImpl(const char* chars, size_t count) : 
+    ttl(0),
+    durable (false),
+    redelivered(false),
+    bytes(chars, count),
+    internalId(0) {}
 
 void MessageImpl::setReplyTo(const Address& d) { replyTo = d; }
 const Address& MessageImpl::getReplyTo() const { return replyTo; }

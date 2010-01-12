@@ -41,6 +41,23 @@ const std::string& Message::getSubject() const { return impl->getSubject(); }
 void Message::setContentType(const std::string& s) { impl->setContentType(s); }
 const std::string& Message::getContentType() const { return impl->getContentType(); }
 
+void Message::setMessageId(const std::string& id) { impl->messageId = id; }
+const std::string& Message::getMessageId() const { return impl->messageId; }
+
+void Message::setUserId(const std::string& id) { impl->userId = id; }
+const std::string& Message::getUserId() const { return impl->userId; }
+
+void Message::setCorrelationId(const std::string& id) { impl->correlationId = id; }
+const std::string& Message::getCorrelationId() const { return impl->correlationId; }
+
+void Message::setTtl(uint64_t ttl) { impl->ttl = ttl; }
+uint64_t Message::getTtl() const { return impl->ttl; }
+
+void Message::setDurable(bool durable) { impl->durable = durable; }
+bool Message::getDurable() const { return impl->durable; }
+
+bool Message::isRedelivered() const { return impl->redelivered; }
+
 const VariantMap& Message::getHeaders() const { return impl->getHeaders(); }
 VariantMap& Message::getHeaders() { return impl->getHeaders(); }
 
