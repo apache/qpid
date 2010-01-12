@@ -34,6 +34,11 @@ import javax.security.sasl.SaslException;
 
 import org.apache.qpid.security.UsernamePasswordCallbackHandler;
 import org.apache.qpid.transport.util.Logger;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
 
 
 /**
@@ -45,6 +50,15 @@ public class ClientDelegate extends ConnectionDelegate
 {
     private static final Logger log = Logger.get(ClientDelegate.class);
 
+    private static final String KRB5_OID_STR = "1.2.840.113554.1.2.2";
+    protected static Oid KRB5_OID;
+    
+    static {
+        try {
+            KRB5_OID = new Oid(KRB5_OID_STR);
+        } catch (GSSException ignore) {}
+    }
+    
     private String vhost;
     private String username;
     private String password;
@@ -144,6 +158,11 @@ public class ClientDelegate extends ConnectionDelegate
 
     @Override public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
     {
+        SaslClient sc = conn.getSaslClient();
+        if (sc.getMechanismName().equals("GSSAPI") && getUserID() != null)
+        {
+            conn.setUserID(getUserID());
+        }
         conn.setState(OPEN);
     }
 
@@ -202,5 +221,37 @@ public class ClientDelegate extends ConnectionDelegate
             return -1;
         }
 
+    }
+    
+    private String getUserID()
+    {
+        log.debug("Obtaining userID from kerberos");
+        String service = protocol + "@" + serverName;
+        GSSManager manager = GSSManager.getInstance();
+        
+        try 
+        {
+            GSSName acceptorName = manager.createName(service,
+                GSSName.NT_HOSTBASED_SERVICE, KRB5_OID);
+        
+            GSSContext secCtx = manager.createContext(acceptorName,
+                                                      KRB5_OID,
+                                                      null,
+                                                      GSSContext.INDEFINITE_LIFETIME);
+            
+            secCtx.initSecContext(new byte[0], 0, 1);            
+            
+            if (secCtx.getSrcName() != null)
+            {
+                return secCtx.getSrcName().toString();
+            }            
+            
+        } 
+        catch (GSSException e) 
+        {
+            log.warn("Unable to retrieve userID from Kerberos due to error",e);
+        }
+        
+        return null;
     }
 }
