@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : RASC
+    </title>
+
+    <section role="h2" id="RASC-BuildingtheC-5CBrokerandClientLibraries"><title>
+            Building the
+            C++ Broker and Client Libraries
+          </title>
+          <para>
+            The root directory for the C++ distribution is named
+            qpidc-0.4. The README file in that directory gives
+            instructions for building the broker and client libraries. In
+            most cases you will do the following:
+          </para>
+            <programlisting>
+[qpidc-0.4]$ ./configure}}
+[qpidc-0.4]$ make
+</programlisting>
+    <!--h2--></section>
+    <section role="h2" id="RASC-RunningtheC-5CBroker"><title>
+            Running the C++ Broker
+          </title>
+          <para>
+            Once you have built the broker and client libraries, you can
+            start the broker from the command line:
+          </para>
+            <programlisting>
+[qpidc-0.4]$ src/qpidd
+</programlisting>
+          <para>
+            Use the --daemon option to run the broker as a daemon
+            process:
+          </para>
+            <programlisting>
+[qpidc-0.4]$ src/qpidd --daemon
+</programlisting>
+          <para>
+            You can stop a running daemon with the --quit option:
+          </para>
+            <programlisting>
+[qpidc-0.4]$ src/qpidd --quit
+</programlisting>
+          <para>
+            You can see all available options with the --help option
+          </para>
+            <programlisting>
+[qpidc-0.4]$ src/qpidd --help
+</programlisting>
+    <!--h2--></section>
+    <section role="h2" id="RASC-Mostcommonquestionsgettingqpiddrunning"><title>
+            Most
+            common questions getting qpidd running
+          </title>
+          <section role="h3" id="RASC-Errorwhenstartingbroker-3A-22nodatadirectory-22"><title>
+            Error
+            when starting broker: "no data directory"
+          </title>
+          <para>
+            The qpidd broker requires you to set a data directory or specify
+            --no-data-dir (see help for more details). The data
+            directory is used for the journal, so it is important when
+            reliability counts. Make sure your process has write permission
+            to the data directory.
+          </para><para>
+            The default location is
+          </para>
+            <programlisting>
+/lib/var/qpidd
+</programlisting>
+          <para>
+            An alternate location can be set with --data-dir
+          </para>
+	  <!--h3--></section>
+	  <section role="h3" id="RASC-Errorwhenstartingbroker-3A-22thatprocessislocked-22"><title>
+            Error
+            when starting broker: "that process is locked"
+          </title>
+          <para>
+            Note that when qpidd starts it creates a lock file is data
+            directory are being used. If you have a un-controlled exit,
+            please mail
+            the trace from the core to the dev@qpid.apache.org mailing list.
+            To clear the lock run
+          </para>
+            <programlisting>
+./qpidd -q
+</programlisting>
+          <para>
+            It should also be noted that multiple brokers can be run on the
+            same host. To do so set alternate data directories for each qpidd
+            instance.
+          </para>
+	  <!--h3--></section>
+	  <section role="h3" id="RASC-Usingaconfigurationfile"><title>
+            Using a configuration
+            file
+          </title>
+          <para>
+            Each option that can be specified on the command line can also be
+            specified in a configuration file. To see available options, use
+            --help on the command line:
+          </para>
+            <programlisting>
+./qpidd --help
+</programlisting>
+          <para>
+            A configuration file uses name/value pairs, one on each line. To
+            convert a command line option to a configuration file entry:
+          </para><para>
+            a.) remove the '--' from the beginning of the option.
+            b.) place a '=' between the option and the value (use
+            <emphasis>yes</emphasis> or <emphasis>true</emphasis> to enable options that take no
+            value when specified on the command line).
+            c.) place one option per line.
+          </para><para>
+            For instance, the --daemon option takes no value, the
+            --log-to-syslog option takes the values yes or
+            no. The following configuration file sets these two
+            options:
+          </para>
+            <programlisting>
+daemon=yes
+log-to-syslog=yes
+</programlisting>
+	  <!--h3--></section>
+          <section role="h3" id="RASC-CanIuseanyLanguageclientwiththeC-5CBroker-3F"><title>
+            Can I use
+            any Language client with the C++ Broker?
+          </title>
+          <para>
+            Yes, all the clients work with the C++ broker; it is written in
+            C+<emphasis>, but uses the AMQP wire protocol. Any broker can be used
+            with any client that uses the same AMQP version. When running the
+            C</emphasis>+ broker, it is highly recommended to run AMQP 0-10.
+          </para><para>
+            Note that JMS also works with the C++ broker. For more details on
+            using the Java client refer to these pages:
+          </para><itemizedlist>
+            <listitem><para>
+              <xref linkend="qpid_How-20to-20Use-20JNDI"/>
+            </para></listitem>
+            <listitem><para>
+              <xref linkend="qpid_URL-20Formats"/>
+            </para></listitem>
+            <listitem><para>
+              <xref linkend="qpid_Example-20Classes"/>
+            </para></listitem>
+          </itemizedlist>
+	  <!--h3--></section>
+	<!--h2--></section>
+	  <section role="h2" id="RASC-Authentication"><title>
+            Authentication
+          </title>
+          <section role="h3" id="RASC-Linux"><title>
+            Linux
+          </title>
+          <para>
+            The PLAIN authentication is done on a username+password, which is
+            stored in the sasldb_path file. Usernames and passwords can be
+            added to the file using the command:
+          </para>
+            <programlisting>
+saslpasswd2 -f /var/lib/qpidd/qpidd.sasldb -u &lt;REALM&gt; &lt;USER&gt;
+</programlisting>
+          <para>
+            The REALM is important and should be the same as the
+            --auth-realm
+            option to the broker. This lets the broker properly find the user
+            in
+            the sasldb file.
+          </para><para>
+            Existing user accounts may be listed with:
+          </para>
+            <programlisting>
+sasldblistusers2 -f /var/lib/qpidd/qpidd.sasldb
+</programlisting>
+          <para>
+            NOTE: The sasldb file must be readable by the user running the
+            qpidd daemon, and should be readable only by that user.
+          </para>
+	  <!--h3--></section>
+	  <section role="h3" id="RASC-Windows"><title>
+            Windows
+          </title>
+          <para>
+            On Windows, the users are authenticated against the local
+            machine. You should add the appropriate users using the standard
+            Windows tools (Control Panel-&gt;User Accounts). To run many of
+            the examples, you will need to create a user "guest" with
+            password "guest".
+          </para><para>
+            If you cannot or do not want to create new users, you can run
+            without authentication by specifying the no-auth option to the
+            broker.
+          </para>
+	  <!--h3--></section>
+	  <!--h2--></section>
+
+	  <section role="h2" id="RASC-Slightlymorecomplexconfiguration"><title>
+            Slightly more
+            complex configuration
+          </title>
+          <para>
+            The easiest way to get a full listing of the broker's options are
+            to use the --help command, run it locally for the latest set of
+            options. These options can then be set in the conf file for
+            convenience (see above)
+          </para>
+            <programlisting>
+./qpidd --help
+
+Usage: qpidd OPTIONS
+Options:
+  -h [ --help ]                    Displays the help message
+  -v [ --version ]                 Displays version information
+  --config FILE (/etc/qpidd.conf)  Reads configuration from FILE
+
+Module options:
+  --module-dir DIR (/usr/lib/qpidd)  Load all .so modules in this directory
+  --load-module FILE                 Specifies additional module(s) to be loaded
+  --no-module-dir                    Don't load modules from module directory
+
+Broker Options:
+  --data-dir DIR (/var/lib/qpidd)   Directory to contain persistent data generated by the broker
+  --no-data-dir                     Don't use a data directory.  No persistent
+                                    configuration will be loaded or stored
+  -p [ --port ] PORT (5672)         Tells the broker to listen on PORT
+  --worker-threads N (3)            Sets the broker thread pool size
+  --max-connections N (500)         Sets the maximum allowed connections
+  --connection-backlog N (10)       Sets the connection backlog limit for the
+                                    server socket
+  --staging-threshold N (5000000)   Stages messages over N bytes to disk
+  -m [ --mgmt-enable ] yes|no (1)   Enable Management
+  --mgmt-pub-interval SECONDS (10)  Management Publish Interval
+  --ack N (0)                       Send session.ack/solicit-ack at least every
+                                    N frames. 0 disables voluntary ack/solitict
+                                   -ack
+
+Daemon options:
+  -d [ --daemon ]             Run as a daemon.
+  -w [ --wait ] SECONDS (10)  Sets the maximum wait time to initialize the
+                              daemon. If the daemon fails to initialize, prints
+                              an error and returns 1
+  -c [ --check ]              Prints the daemon's process ID to stdout and
+                              returns 0 if the daemon is running, otherwise
+                              returns 1
+  -q [ --quit ]               Tells the daemon to shut down
+Logging options:
+  --log-output FILE (stderr)  Send log output to FILE. FILE can be a file name
+                              or one of the special values:
+                              stderr, stdout, syslog
+  -t [ --trace ]              Enables all logging
+  --log-enable RULE (error+)  Enables logging for selected levels and component
+                              s. RULE is in the form 'LEVEL+:PATTERN'
+                              Levels are one of:
+                              trace debug info notice warning error critical
+                              For example:
+                              '--log-enable warning+' logs all warning, error
+                              and critical messages.
+                              '--log-enable debug:framing' logs debug messages
+                              from the framing namespace. This option can be
+                              used multiple times
+  --log-time yes|no (1)       Include time in log messages
+  --log-level yes|no (1)      Include severity level in log messages
+  --log-source yes|no (0)     Include source file:line in log messages
+  --log-thread yes|no (0)     Include thread ID in log messages
+  --log-function yes|no (0)   Include function signature in log messages
+</programlisting>
+	  <!--h2--></section>
+          <section role="h2" id="RASC-Loadingextramodules"><title>
+            Loading extra modules
+          </title>
+          <para>
+            By default the broker will load all the modules in the module
+            directory, however it will NOT display options for modules that
+            are not loaded. So to see the options for extra modules loaded
+            you need to load the module and then add the help command like
+            this:
+          </para>
+            <programlisting>
+./qpidd --load-module libbdbstore.so --help
+Usage: qpidd OPTIONS
+Options:
+  -h [ --help ]                    Displays the help message
+  -v [ --version ]                 Displays version information
+  --config FILE (/etc/qpidd.conf)  Reads configuration from FILE
+
+
+ / .... non module options would be here ... /
+
+
+Store Options:
+  --store-directory DIR     Store directory location for persistence (overrides
+                            --data-dir)
+  --store-async yes|no (1)  Use async persistence storage - if store supports
+                            it, enables AIO O_DIRECT.
+  --store-force yes|no (0)  Force changing modes of store, will delete all
+                            existing data if mode is changed. Be SURE you want
+                            to do this!
+  --num-jfiles N (8)        Number of files in persistence journal
+  --jfile-size-pgs N (24)   Size of each journal file in multiples of read
+                            pages (1 read page = 64kiB)
+</programlisting>
+<!--h2--></section>
+</chapter>

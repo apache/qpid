@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<section>
+  <title>
+            General
+            User Guides
+          </title>
+  <itemizedlist>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java%20Broker%20Feature%20Guide.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20FAQ.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Getting%20Started%20Guide.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java%20Environment%20Variables.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Troubleshooting%20Guide.html"/>
+      </para>
+    </listitem>
+  </itemizedlist>
+  <bridgehead id="AMQPMessagingBroker%28implementedinJava%29-HowTos"><anchor id="AMQPMessagingBroker%28implementedinJava%29-HowTos"/>How Tos
+          </bridgehead>
+  <itemizedlist>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Add%20New%20Users.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20ACLs.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20Java%20Qpid%20to%20use%20a%20SSL%20connection..html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20Log4j%20CompositeRolling%20Appender.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20the%20Broker%20via%20config.xml.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20the%20Virtual%20Hosts%20via%20virtualhosts.xml.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Debug%20using%20log4j.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How%20to%20Tune%20M3%20Java%20Broker%20Performance.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20Build%20How%20To.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Use%20Priority%20Queues.html"/>
+      </para>
+    </listitem>
+  </itemizedlist>
+  <bridgehead id="AMQPMessagingBroker%28implementedinJava%29-ManagementTools"><anchor id="AMQPMessagingBroker%28implementedinJava%29-ManagementTools"/>Management
+            Tools
+          </bridgehead>
+  <itemizedlist>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20JMX%20Management%20Console.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="MessageStore%20Tool.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20Broker%20Management%20CLI.html"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Management%20Design%20notes.html"/>
+      </para>
+    </listitem>
+  </itemizedlist>
+  <informaltable>
+    <tgroup cols="1">
+      <colspec colnum="1" colname="col1"/>
+      <thead>
+        <row>
+          <entry>
+            <anchor id="comment-5144724"/>
+            <para>
+                  Replaces <ulink url="http://cwiki.apache.org/confluence/display/qpid/Java+Broker">
+                  http://cwiki.apache.org/confluence/display/qpid/Java+Broker</ulink></para>
+            <para>
+                  Identical content, changing title and location.
+                </para>
+          </entry>
+        </row>
+      </thead>
+      <tbody/>
+    </tgroup>
+  </informaltable>
+</section>

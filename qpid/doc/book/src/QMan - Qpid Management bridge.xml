@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : QMan - Qpid Management bridge
+    </title><section role="h1" id="QMan-QpidManagementbridge-QMan-3AQpidManagementBridge"><title>
+            QMan
+            : Qpid Management Bridge
+          </title>
+           <para>
+            QMan is a management bridge for Qpid. It allows external clients
+            to manage and monitor one or more Qpid brokers.
+          </para>
+	  <para>
+            Please note: All WS-DM related concerns have to be considered
+            part of M5 release.
+          </para><para>
+            QMan exposes the broker management interfaces using Java
+            Management Extensions (JMX) and / or OASIS Web Services
+            Distributed Management (WSDM). While the first one is supposed to
+            be used by java based clients only the latter is an interoperable
+            protocol that enables management clients to access and receive
+            notifications of management-enabled resources using Web Services.
+          </para><para>
+            QMan can be easily integrated in your preexisting system in
+            different ways :
+          </para><itemizedlist>
+            <listitem><para>As a standalone application : in this case it runs as a
+            server. More specifically it enables communication via RMI (for
+            JMX) or via HTTP (for WS-DM); Note that when the WS-DM adapter is
+            used the JMX interface is not exposed;
+            </para></listitem>
+            <listitem><para>As a deployable unit : it is also available as a standard
+            Java web application (war); This is useful when there's a
+            preexisting Application Server in your environment and you don't
+            want start another additional server in order to run QMan.
+            </para></listitem>
+          </itemizedlist>
+
+	  <section role="h2" id="QMan-QpidManagementbridge-UserDocumentation"><title>
+            User
+            Documentation
+          </title>
+           <para>
+            With "User Documentation" we mean all information that you need
+            to know in order to use QMan from a user perspective. Those
+            information include :
+          </para><table><title/><tgroup cols="2">
+            <tbody>
+              <row>
+                <entry>
+                  Section
+                </entry>
+                <entry>
+                  Description
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <xref linkend="qpid_Get-20me-20up-20and-20running"/>
+                </entry>
+                <entry>
+                  How to install &amp; start QMan.
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <xref linkend="qpid_QMan-20User-20Guide"/>
+                </entry>
+                <entry>
+                  QMan (WS-DM version only) Administration Console.
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <xref linkend="qpid_JMX-20Interface-20Specification"/>
+                </entry>
+                <entry>
+                  Describes each JMX interface exposed by QMan.
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <xref linkend="qpid_WS-DM-20Interface-20Specification"/>
+                </entry>
+                <entry>
+                  Describes each WS-DM interface exposed by QMan.
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <xref linkend="qpid_QMan-20Messages-20Catalogue"/>
+                </entry>
+                <entry>
+                  Informational / Debug / Error / Warning messages catalogue.
+                </entry>
+              </row>
+            </tbody>
+          </tgroup></table>
+	  <!--h2--></section>
+
+
+	  <section role="h2" id="QMan-QpidManagementbridge-TechnicalDocumentation"><title>
+            Technical
+            Documentation
+          </title>
+           <para>
+            If you are interested in technical details about QMan and related
+            technologies this is a good starting point. In general this
+            section provides information about QMan design, interfaces,
+            patterns and so on...
+          </para>
+
+	  <table><title/><tgroup cols="2">
+            <tbody>
+              <row>
+                <entry>
+                  Section
+                </entry>
+                <entry>
+                  Description
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <xref linkend="qpid_QMan-20System-20Overview"/>
+                </entry>
+                <entry>
+                  A short introduction about QMan deployment context.
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <xref linkend="qpid_QMan-20Components-20View"/>
+                </entry>
+                <entry>
+                  Describes QMan components, their interactions and
+                  responsibilities.
+                </entry>
+              </row>
+            </tbody>
+          </tgroup></table>
+            
+<!--h2--></section>
+<!--h1--></section>
+
+</chapter>

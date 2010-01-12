@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<section><title>
+            ACL Formats
+          </title>Apache Qpid : Qpid ACLs
+            This page last changed on Nov 18, 2008 by ritchiem.
+          <para>
+            The Qpid project has two ACL implementations. An initial version
+            of ACLs was added to the Java Broker for M2.1 that uses XML
+            configuration. For M4 a new format was designed to be implemented
+            by both C++ and Java brokers. M4 release includes the initial C++
+            implementation and M5 is expected to include the Java
+            implementation.
+          </para><bridgehead id="QpidACLs-Specifications"><anchor id="QpidACLs-Specifications"/>Specifications
+          </bridgehead><para>
+            The specifications for each of the ACL formats are linked here:
+          </para><para><xref linkend="JavaXMLACLs-specification"/><xref linkend="ACL-specification"/></para><bridgehead id="QpidACLs-UserGuides"><anchor id="QpidACLs-UserGuides"/>User Guides
+          </bridgehead><para>
+            To aid users in defining their ACLs we have a user guide for each
+            of the ACL formats.
+          </para><para><xref linkend="JavaXMLACLs-userguide"/><xref linkend="ACL-userguide"/></para></section>
