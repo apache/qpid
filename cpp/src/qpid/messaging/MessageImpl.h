@@ -33,6 +33,12 @@ struct MessageImpl
     Address replyTo;
     std::string subject;
     std::string contentType;
+    std::string messageId;
+    std::string userId;
+    std::string correlationId;
+    uint64_t ttl;
+    bool durable;
+    bool redelivered;
     Variant::Map headers;
 
     std::string bytes;

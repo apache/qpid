@@ -264,22 +264,32 @@ void IncomingMessages::MessageTransfer::retrieve(qpid::messaging::Message* messa
     parent.retrieve(content, message);
 }
 
+
+namespace {
+//TODO: unify conversion to and from 0-10 message that is currently
+//split between IncomingMessages and OutgoingMessage
+const std::string SUBJECT("subject");
+}
+
 void populateHeaders(qpid::messaging::Message& message, 
                      const DeliveryProperties* deliveryProperties, 
                      const MessageProperties* messageProperties)
 {
     if (deliveryProperties) {
-        message.setSubject(deliveryProperties->getRoutingKey());
-        //TODO: convert other delivery properties
+        message.setTtl(deliveryProperties->getTtl());
+        message.setDurable(deliveryProperties->getDeliveryMode() == DELIVERY_MODE_PERSISTENT);
+        MessageImplAccess::get(message).redelivered = deliveryProperties->getRedelivered();
     }
     if (messageProperties) {
         message.setContentType(messageProperties->getContentType());
         if (messageProperties->hasReplyTo()) {
             message.setReplyTo(AddressResolution::convert(messageProperties->getReplyTo()));
         }
+        message.setSubject(messageProperties->getApplicationHeaders().getAsString(SUBJECT));
         message.getHeaders().clear();
         translate(messageProperties->getApplicationHeaders(), message.getHeaders());
-        //TODO: convert other message properties
+        message.setCorrelationId(messageProperties->getCorrelationId());
+        message.setUserId(messageProperties->getUserId());
     }
 }
 

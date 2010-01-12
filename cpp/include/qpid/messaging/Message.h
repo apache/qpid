@@ -58,6 +58,23 @@ class Message
     QPID_CLIENT_EXTERN void setContentType(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getContentType() const;
 
+    QPID_CLIENT_EXTERN void setMessageId(const std::string&);
+    QPID_CLIENT_EXTERN const std::string& getMessageId() const;
+
+    QPID_CLIENT_EXTERN void setUserId(const std::string&);
+    QPID_CLIENT_EXTERN const std::string& getUserId() const;
+
+    QPID_CLIENT_EXTERN void setCorrelationId(const std::string&);
+    QPID_CLIENT_EXTERN const std::string& getCorrelationId() const;
+
+    QPID_CLIENT_EXTERN void setTtl(uint64_t ttl);
+    QPID_CLIENT_EXTERN uint64_t getTtl() const;
+
+    QPID_CLIENT_EXTERN void setDurable(bool durable);
+    QPID_CLIENT_EXTERN bool getDurable() const;
+
+    QPID_CLIENT_EXTERN bool isRedelivered() const;
+
     QPID_CLIENT_EXTERN const Variant::Map& getHeaders() const;
     QPID_CLIENT_EXTERN Variant::Map& getHeaders();
 
