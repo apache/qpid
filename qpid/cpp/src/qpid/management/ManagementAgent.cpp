@@ -1289,13 +1289,13 @@ void ManagementAgent::disallow(const std::string& className, const std::string& 
     disallowed[std::make_pair(className, methodName)] = message;
 }
 
-void ManagementAgent::SchemaClassKey::encode(framing::Buffer& buffer) const {
+void ManagementAgent::SchemaClassKey::encode(qpid::framing::Buffer& buffer) const {
     buffer.checkAvailable(encodedSize());
     buffer.putShortString(name);
     buffer.putBin128(hash);
 }
 
-void ManagementAgent::SchemaClassKey::decode(framing::Buffer& buffer) {
+void ManagementAgent::SchemaClassKey::decode(qpid::framing::Buffer& buffer) {
     buffer.checkAvailable(encodedSize());
     buffer.getShortString(name);
     buffer.getBin128(hash);
@@ -1305,14 +1305,14 @@ uint32_t ManagementAgent::SchemaClassKey::encodedSize() const {
     return 1 + name.size() + 16 /* bin128 */;
 }
 
-void ManagementAgent::SchemaClass::encode(framing::Buffer& outBuf) const {
+void ManagementAgent::SchemaClass::encode(qpid::framing::Buffer& outBuf) const {
     outBuf.checkAvailable(encodedSize());
     outBuf.putOctet(kind);
     outBuf.putLong(pendingSequence);
     outBuf.putLongString(data);
 }
 
-void ManagementAgent::SchemaClass::decode(framing::Buffer& inBuf) {
+void ManagementAgent::SchemaClass::decode(qpid::framing::Buffer& inBuf) {
     inBuf.checkAvailable(encodedSize());
     kind = inBuf.getOctet();
     pendingSequence = inBuf.getLong();
@@ -1345,7 +1345,7 @@ void ManagementAgent::exportSchemas(std::string& out) {
     }
 }
 
-void ManagementAgent::importSchemas(framing::Buffer& inBuf) {
+void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
     while (inBuf.available()) {
         string package;
         SchemaClassKey key;
