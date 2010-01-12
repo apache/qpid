@@ -24,6 +24,8 @@ import static org.apache.qpid.transport.Connection.State.OPEN;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +64,7 @@ public class ClientDelegate extends ConnectionDelegate
     private String vhost;
     private String username;
     private String password;
-    private String[] saslMechs;
+    private List<String> clientMechs;
     private String protocol;
     private String serverName;
     
@@ -71,7 +73,7 @@ public class ClientDelegate extends ConnectionDelegate
         this.vhost = vhost;
         this.username = username;
         this.password = password;
-        this.saslMechs = saslMechs.split(" ");
+        this.clientMechs = Arrays.asList(saslMechs.split(" "));
         
         // Looks kinda of silly but the Sun SASL Kerberos client uses the 
         // protocol + servername as the service key.
@@ -96,24 +98,41 @@ public class ClientDelegate extends ConnectionDelegate
         clientProperties.put("qpid.client_process",
                 System.getProperty("qpid.client_process","Qpid Java Client"));
         
-        List<Object> mechanisms = start.getMechanisms();
-        if (mechanisms == null || mechanisms.isEmpty())
+        List<Object> brokerMechs = start.getMechanisms();
+        if (brokerMechs == null || brokerMechs.isEmpty())
         {
             conn.connectionStartOk
                 (clientProperties, null, null, conn.getLocale());
             return;
         }
-
-        String[] mechs = new String[mechanisms.size()];
-        mechanisms.toArray(mechs);
-
+        
+        List<String> choosenMechs = new ArrayList<String>();
+        for (String mech:clientMechs)
+        {
+            if (brokerMechs.contains(mech)) 
+            {
+                choosenMechs.add(mech);
+            }
+        }
+        
+        if (choosenMechs.size() == 0)
+        {
+            conn.exception(new ConnectionException("The following SASL mechanisms " +
+                    clientMechs.toString()  + 
+                    " specified by the client are not supported by the broker"));
+            return;
+        }
+        
+        String[] mechs = new String[choosenMechs.size()];
+        choosenMechs.toArray(mechs); 
+        
         try
         {
             UsernamePasswordCallbackHandler handler =
                 new UsernamePasswordCallbackHandler();
             handler.initialise(username, password);
             SaslClient sc = Sasl.createSaslClient
-                (saslMechs, null, protocol, serverName, null, handler);
+                (mechs, null, protocol, serverName, null, handler);
             conn.setSaslClient(sc);
 
             byte[] response = sc.hasInitialResponse() ?
