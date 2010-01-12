@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Starting a cluster
+    </title><section role="h1" id="Startingacluster-RunningaQpiddcluster"><title>
+            Running a
+            Qpidd cluster
+          </title>
+          <para>
+            There are several pre-requisites to running a qpidd cluster:
+          </para><section role="h2" id="Startingacluster-Installandconfigureopenais-2Fcorosync"><title>
+            Install
+            and configure openais/corosync
+          </title>
+          <para>
+            Qpid clustering uses a multicast protocol provided by the
+            corosync (formerly called openais) library. Install whichever is
+            available on your OS.
+            E.g. in fedora10: yum install corosync.
+          </para><para>
+            The configuration file is /etc/ais/openais.conf on openais,
+            /etc/corosync.conf on early corosync versions and
+            /etc/corosync/corosync.conf on recent corosync versions. You will
+            need to edit the default file created when you installed
+          </para><para>
+            Here is an example, with places marked that you will
+            change. ( Below, I will describe how to change the file. )
+          </para>
+            <programlisting>
+# Please read the openais.conf.5 manual page
+
+totem {
+        version: 2
+        secauth: off
+        threads: 0
+        interface {
+                ringnumber: 0
+                ## You must change this address ##
+                bindnetaddr: 20.0.100.0
+                mcastaddr: 226.94.32.36
+                mcastport: 5405
+        }
+}
+
+logging {
+        debug: off
+        timestamp: on
+        to_file: yes
+        logfile: /tmp/aisexec.log
+}
+
+amf {
+        mode: disabled
+}
+</programlisting>
+          <para>
+            You must sent the bindnetaddr entry in the configuration file to
+            the network address of your network interface. This must be a
+            real network interface, not the loopback address 127.0.0.1
+          </para><para>
+            You can find your network interface by running ifconfig. This
+            will list the address and the mask, e.g.
+          </para>
+            <programlisting>
+inet addr:20.0.20.32  Bcast:20.0.20.255  Mask:255.255.255.0
+</programlisting>
+          <para>
+            The bindnetaddr is the logical AND of the inet addr and mask
+            values, in the example above 20.0.20.0
+          </para>
+<!--h2--></section>
+
+	  <section role="h2" id="Startingacluster-Openyourfirewall"><title>
+            Open your
+            firewall
+          </title>
+          <para>
+            In the above example file, I use mcastport 5405.
+            This implies that your firewall must allow UDP
+            protocol over port 5405, or that you disable the firewall
+          </para>
+	  <!--h2--></section>
+
+	  <section role="h2" id="Startingacluster-Usetheproperidentity."><title>
+            Use the
+            proper identity.
+          </title>
+          <para>
+            The qpidd process must be started with the correct identity in
+            order to use the corosync/openais library.
+          </para><para>
+            For openais and early corosync versions the installation of
+            openAIS/corosync on your system will create a new
+            group called "ais". The user that starts the qpidd processes of
+            the cluster
+            must have "ais" as its effective group id. You can create a user
+            specifically for this purpose with ais as the primary group,
+            or
+            a user that has ais as a secondary group can use "newgrp" to set
+            the primary group to ais when running qpidd.
+          </para><para>
+            For recent corosync versions you no longer need to set your group
+            to "ais" but you do need to create a file in
+            /etc/corosync/uidgid.d/ to allow access for whatever user/group
+            ID you want to use. For example create
+            /etc/corosync/uidgid.d/qpid th the contents:
+          </para>
+            <programlisting>
+uidgid {
+   uid: qpid
+   gid: qpid
+}
+</programlisting>
+<!--h2--></section>
+
+
+          <section role="h2" id="Startingacluster-StartingaCluster"><title>
+            Starting a
+            Cluster
+          </title>
+          <para>
+            To be a member of a cluster you must pass the --cluster-name
+            argument to qpidd. This is the only required option to join
+            a  cluster, other options can be set as for a normal qpidd.
+          </para><para>
+            For example to start a cluster of 3 brokers on the current
+            host
+            Here is an example of starting a cluster of 3 members, all on the
+            current host but with different ports and different log files:
+          </para>
+            <programlisting>
+qpidd -p5672 --cluster-name=MY_CLUSTER --log-output=cluster0.log -d --no-data-dir --auth=no
+qpidd -p5673 --cluster-name=MY_CLUSTER --log-output=cluster0.log -d --no-data-dir --auth=no
+qpidd -p5674 --cluster-name=MY_CLUSTER --log-output=cluster0.log -d --no-data-dir --auth=no
+</programlisting>
+          <para>
+            In a deployed system, cluster members will normally be on
+            different hosts but for development its useful to be able to
+            create a cluster on a single host.
+          </para>
+	  <!--h2--></section>
+
+	  <section role="h2" id="Startingacluster-SELinuxconflicts"><title>
+            SELinux conflicts
+          </title>
+          <para>
+            Developers will often start openais/corosync as a service like
+            this:
+          </para><para>
+            service openais start
+          </para><para>
+            But will then will start a cluster-broker without using the
+            service script like this:
+          </para><para>
+            /usr/sbin/qpidd --cluster-name my_cluster ...
+          </para><para>
+            If SELinux is in enforcing mode this may cause qpidd to hang due
+            because of the different SELinux contexts.
+            There are 3 ways to resolve this:
+          </para><itemizedlist>
+            <listitem><para>run both qpidd and openais/corosync as services.
+            </para></listitem>
+            <listitem><para>run both qpidd and openais/corosync as user processes.
+            </para></listitem>
+            <listitem><para>make selinux permissive:
+            </para></listitem>
+          </itemizedlist><para>
+            To check what mode selinux is running:
+          </para>
+            <programlisting>
+# getenforce
+</programlisting>
+          <para>
+            To change the mode:
+          </para>
+            <programlisting>
+# setenforce permissive
+</programlisting>
+          <para>
+            Note that in a deployed system both openais/corosync and qpidd
+            should be started as services, in which case there is no problem
+            with SELinux running in enforcing mode.
+          </para>
+	  <!--h2--></section>
+
+	  <section role="h2" id="Startingacluster-Troubleshootingchecklist."><title>
+            Troubleshooting
+            checklist.
+          </title>
+          <para>
+            If you have trouble starting your cluster, make sure that:
+          </para><para>
+            1. You have edited the correct openais/corosync configuration
+            file and set bindnetaddr correctly
+            1. Your firewall allows UDP on the openais/corosync
+            mcastport
+            2. Your effective group is "ais" (openais/old corosync) or you
+            have created an appropriate ID file (new corosync)
+            3. Your firewall allows TCP on the ports used by qpidd.
+            4. If you're starting openais as a service but running qpidd
+            directly, ensure selinux is in permissive mode
+          </para>
+<!--h2--></section>
+<!--h1--></section>
+</chapter>

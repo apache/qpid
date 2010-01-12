@@ -1,5 +1,21 @@
 <?xml version="1.0"?>
 <locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <uri resource="SSL.xml" typeId="DocBook"/>
+  <uri resource="Using Broker Federation.xml" typeId="DocBook"/>
+  <uri resource="Cheat Sheet for configuring Exchange Options.xml" typeId="DocBook"/>
+  <uri resource="foo.xml" typeId="DocBook"/>
+  <uri resource="Download.xml" typeId="DocBook"/>
+  <uri resource="Download.xml" typeId="DocBook"/>
+  <uri resource="Starting a cluster.xml" typeId="DocBook"/>
+  <uri resource="queue state replication.xml" typeId="DocBook"/>
+  <uri resource="LVQ.xml" typeId="DocBook"/>
+  <uri resource="LVQ.xml" typeId="DocBook"/>
+  <uri resource="Cheat Sheet for configuring Queue Options.xml" typeId="DocBook"/>
+  <uri resource="Cheat Sheet for configuring Exchange Options.xml" typeId="DocBook"/>
+  <uri resource="Cheat Sheet for configuring Exchange Options.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Messaging-Broker-CPP.xml" typeId="DocBook"/>
+  <uri resource="RASC.xml" typeId="DocBook"/>
+  <uri resource="Brokers.xml" typeId="DocBook"/>
   <uri resource="AMQP.xml" typeId="DocBook"/>
   <uri resource="qpid-book.xml" typeId="DocBook"/>
 </locatingRules>

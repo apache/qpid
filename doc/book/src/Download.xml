@@ -23,7 +23,8 @@
 
 <section><title>Multiple Component Packages</title>
 
-<table><thead><tr><td> Component </td><td> Download </td><td> AMQP 0-10 </td><td> AMQP 0-8/0-9 </td></tr></thead>
+<table>
+<thead><tr><td> Component </td><td> Download </td><td> AMQP 0-10 </td><td> AMQP 0-8/0-9 </td></tr></thead>
 <tbody>
 <tr><td> Full release &amp; keys </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/">http://www.apache.org/dist/qpid/0.5/</ulink> </td><td> Y </td><td> Y </td></tr>
 <tr><td> C++ broker &amp; client </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz</ulink> </td><td> Y </td><td> </td></tr>
@@ -137,6 +138,5 @@
 </para>
 </section>
 
-<!-- ##################### -->
 
 </chapter>

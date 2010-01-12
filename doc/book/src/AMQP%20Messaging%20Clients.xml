@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<section>
+  <title/>
+  <para>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Java%20JMS%20Messaging%20Client.html"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="4589059.html"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20.NET%20Messaging%20Client.html"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Python%20Messaging%20Client.html"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Ruby%20Messaging%20Client.html"/>
+  </para>
+</section>

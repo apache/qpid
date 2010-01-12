@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Cheat Sheet for configuring Queue Options
+    </title>
+
+    <section role="h2" id="CheatSheetforconfiguringQueueOptions-ConfiguringQueueOptions"><title>
+            Configuring
+            Queue Options
+          </title>
+
+	  <para>
+            The C++ Broker M4 or later supports the following additional
+            Queue constraints.
+          </para>
+            <itemizedlist>
+              <listitem><para>
+                <xref linkend="CheatSheetforconfiguringQueueOptions-ConfiguringQueueOptions"/>
+              </para></listitem>
+              <listitem><para>
+                <itemizedlist>
+                  <listitem><para>
+                    <xref linkend="CheatSheetforconfiguringQueueOptions-ApplyingQueueSizingConstraints"/>
+                  </para></listitem>
+                  <listitem><para>
+                    <xref linkend="CheatSheetforconfiguringQueueOptions-ChangingtheQueueorderingBehaviors-28FIFO-2FLVQ-29"/>
+                  </para></listitem>
+                  <listitem><para>
+                    <xref linkend="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"/>
+                  </para></listitem>
+                  <listitem><para>
+                    <itemizedlist>
+                      <listitem><para>
+                        <xref linkend="CheatSheetforconfiguringQueueOptions-PersistLastNode"/>
+                      </para></listitem>
+                      <listitem><para>
+                        <xref linkend="CheatSheetforconfiguringQueueOptions-Queueeventgeneration"/>
+                      </para></listitem>
+                    </itemizedlist>
+                  </para></listitem>
+                  <listitem><para>
+                    <xref linkend="CheatSheetforconfiguringQueueOptions-OtherClients"/>
+                  </para></listitem>
+                </itemizedlist>
+              </para></listitem>
+            </itemizedlist>
+          <section role="h3" id="CheatSheetforconfiguringQueueOptions-ApplyingQueueSizingConstraints"><title>
+            Applying Queue Sizing Constraints
+          </title>
+
+	  <para>
+            This allows to specify how to size a queue and what to do when
+            the sizing constraints have been reached. The queue size can be
+            limited by the number messages (message depth) or byte depth on
+            the queue.
+          </para><para>
+            Once the Queue meets/ exceeds these constraints the follow
+            policies can be applied
+          </para><itemizedlist>
+            <listitem><para>REJECT - Reject the published message
+            </para></listitem>
+            <listitem><para>FLOW_TO_DISK - Flow the messages to disk, to preserve memory
+            </para></listitem>
+            <listitem><para>RING - start overwriting messages in a ring based on sizing.
+            If head meets tail, advance head
+            </para></listitem>
+            <listitem><para>RING_STRICT - start overwriting messages in a ring based on
+            sizing. If head meets tail, AND the consumer has the tail message
+            acquired it will reject
+            </para></listitem>
+          </itemizedlist><para>
+            Examples:
+          </para><para>
+            Create a queue an auto delete queue that will support 100 000
+            bytes, and then REJECT
+          </para>
+            <programlisting>
+#include "qpid/client/QueueOptions.h"
+
+    QueueOptions qo;
+    qo.setSizePolicy(REJECT,100000,0);
+
+    session.queueDeclare(arg::queue=queue, arg::autoDelete=true, arg::arguments=qo);
+</programlisting>
+          <para>
+            Create a queue that will support 1000 messages into a RING buffer
+          </para>
+            <programlisting>
+#include "qpid/client/QueueOptions.h"
+
+    QueueOptions qo;
+    qo.setSizePolicy(RING,0,1000);
+
+    session.queueDeclare(arg::queue=queue, arg::arguments=qo);
+</programlisting>
+	  <!--h3--></section>
+          <section role="h3" id="CheatSheetforconfiguringQueueOptions-ChangingtheQueueorderingBehaviors-28FIFO-2FLVQ-29"><title>
+            Changing the Queue ordering Behaviors (FIFO/LVQ)
+          </title>
+          <para>
+            The default ordering in a queue in Qpid is FIFO. However
+            additional ordering semantics can be used namely LVQ (Last Value
+            Queue). Last Value Queue is define as follows.
+          </para><para>
+            If I publish symbols RHT, IBM, JAVA, MSFT, and then publish RHT
+            before the consumer is able to consume RHT, that message will be
+            over written in the queue and the consumer will receive the last
+            published value for RHT.
+          </para><para>
+            Example:
+          </para>
+            <programlisting>
+#include "qpid/client/QueueOptions.h"
+
+    QueueOptions qo;
+    qo.setOrdering(LVQ);
+
+    session.queueDeclare(arg::queue=queue, arg::arguments=qo);
+
+    .....
+    string key;
+    qo.getLVQKey(key);
+
+    ....
+    for each message, set the into application headers before transfer
+    message.getHeaders().setString(key,"RHT");
+    
+</programlisting>
+          <para>
+            Notes:
+          </para><itemizedlist>
+            <listitem><para>Messages that are dequeued and the re-queued will have the
+            following exceptions. a.) if a new message has been queued with
+            the same key, the re-queue from the consumer, will combine these
+            two messages. b.) If an update happens for a message of the same
+            key, after the re-queue, it will not update the re-queued
+            message. This is done to protect a client from being able to
+            adversely manipulate the queue.
+            </para></listitem>
+            <listitem><para>Acquire: When a message is acquired from the queue, no matter
+            it's position, it will behave the same as a dequeue
+            </para></listitem>
+            <listitem><para>LVQ does not support durable messages. If the queue or
+            messages are declared durable on an LVQ, the durability will be
+            ignored.
+            </para></listitem>
+          </itemizedlist><para>
+            A fully worked <xref linkend="qpid_LVQ-20Example"/> can be found here
+          </para>
+	  <!--h3--></section>
+	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"><title>
+            Setting additional behaviors
+          </title>
+          <section role="h4" id="CheatSheetforconfiguringQueueOptions-PersistLastNode"><title>
+            Persist
+            Last Node
+          </title>
+          <para>
+            This option is used in conjunction with clustering. It allows for
+            a queue configured with this option to persist transient messages
+            if the cluster fails down to the last node. If additional nodes
+            in the cluster are restored it will stop persisting transient
+            messages.
+          </para><para>
+            Note
+          </para><itemizedlist>
+            <listitem><para>if a cluster is started with only one active node, this mode
+            will not be triggered. It is only triggered the first time the
+            cluster fails down to 1 node.
+            </para></listitem>
+            <listitem><para>The queue MUST be configured durable
+            </para></listitem>
+          </itemizedlist><para>
+            Example:
+          </para>
+            <programlisting>
+#include "qpid/client/QueueOptions.h"
+
+    QueueOptions qo;
+    qo.clearPersistLastNode();
+
+    session.queueDeclare(arg::queue=queue, arg::durable=true, arg::arguments=qo);
+</programlisting>
+	  <!--h4--></section>
+          <section role="h4" id="CheatSheetforconfiguringQueueOptions-Queueeventgeneration"><title>
+            Queue
+            event generation
+          </title>
+          <para>
+            This option is used to determine whether enqueue/dequeue events
+            representing changes made to queue state are generated. These
+            events can then be processed by plugins such as that used for
+            <xref linkend="qpid_queue-20state-20replication"/>.
+          </para><para>
+            Example:
+          </para>
+            <programlisting>
+#include "qpid/client/QueueOptions.h"
+
+    QueueOptions options;
+    options.enableQueueEvents(1);
+    session.queueDeclare(arg::queue="my-queue", arg::arguments=options);
+</programlisting>
+          <para>
+            The boolean option indicates whether only enqueue events should
+            be generated. The key set by this is
+            'qpid.queue_event_generation' and the value is and integer value
+            of 1 (to replicate only enqueue events) or 2 (to replicate both
+            enqueue and dequeue events).
+          </para>
+	  <!--h3--></section>
+	  <!--h4--></section>
+	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-OtherClients"><title>
+            Other
+            Clients
+          </title>
+          <para>
+            Note that these options can be set from any client. QueueOptions
+            just correctly formats the arguments passed to the QueueDeclare()
+            method.
+          </para>
+
+	  <!--h3--></section>
+	  
+	<!--h2--></section>
+
+
+</chapter>

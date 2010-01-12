@@ -4,14 +4,23 @@
 
 <book xmlns:xi="http://www.w3.org/2001/XInclude">
         <xi:include href="Book_Info.xml"/>
-        <xi:include href="Introduction.xml"/>
-        <xi:include href="Getting_Started.xml"/>
-        <xi:include href="Download.xml"/>
-        <xi:include href="AMQP.xml"/>
-        <xi:include href="Brokers.xml"/>
-        <xi:include href="Clients.xml"/>
+	<part>
+	  <title>Basics</title>
+	  <xi:include href="Introduction.xml"/>
+	  <xi:include href="AMQP.xml"/>
+	  <xi:include href="Getting_Started.xml"/>
+	  <xi:include href="Download.xml"/>
+	</part>
+	<xi:include href="Brokers.xml"/>
+	<part>
+	  <title>Clients</title>
+	  <xi:include href="Clients.xml"/>
+	</part>
+	<part>
+	  <title>Appendices</title>
         <xi:include href="Interoperability.xml"/>
 <!--        <xi:include href="FAQ.xml"/> -->
+	</part>
 </book>
 
 <!--
