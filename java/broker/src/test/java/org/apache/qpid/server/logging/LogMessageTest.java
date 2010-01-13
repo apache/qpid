@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging;
 
 import junit.framework.TestCase;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -31,7 +32,7 @@ public class LogMessageTest extends TestCase
     /**
      * Test that the US local has a loadable bundle.
      * No longer have a specific en_US bundle so cannot verify that that version
-     * is loaded.
+     * is loaded. Can only verify that we get a ResourceBundle loaded.
      */
     public void testBundle()
     {
@@ -44,7 +45,7 @@ public class LogMessageTest extends TestCase
     }
 
     /**
-     * Test that loading an undefined locale will result in loadig of the
+     * Test that loading an undefined locale will result in loading of the
      * default US locale.
      */
     public void testUndefinedLocale()
@@ -65,6 +66,103 @@ public class LogMessageTest extends TestCase
         catch (Throwable t)
         {
             fail(t.getMessage());
+        }
+    }
+
+    /**
+     * test Simultaneous log message generation.
+     * QPID-2137 highlighted that log message generation was not thread-safe.
+     * Test to ensure that simultaneous logging is possible and does not throw an exception.
+     * @throws InterruptedException if there is a problem joining logging threads.
+     */
+    public void testSimultaneousLogging() throws InterruptedException
+    {
+        int LOGGERS = 10;
+        int LOG_COUNT = 10;
+        LogGenerator[] logGenerators = new LogGenerator[LOGGERS];
+        Thread[] threads = new Thread[LOGGERS];
+
+        //Create Loggers
+        for (int i = 0; i < LOGGERS; i++)
+        {
+            logGenerators[i] = new LogGenerator(LOG_COUNT);
+            threads[i] = new Thread(logGenerators[i]);
+        }
+
+        //Run Loggers
+        for (int i = 0; i < LOGGERS; i++)
+        {
+            threads[i].start();
+        }
+
+        //End Loggers
+        for (int i = 0; i < LOGGERS; i++)
+        {
+            threads[i].join();
+            Exception e = logGenerators[i].getThrowException();
+            // If we have an exception something went wrong.
+            // Check and see if it was QPID-2137
+            if (e != null)
+            {
+                // Just log out if we find the usual exception causing QPID-2137
+                if (e instanceof StringIndexOutOfBoundsException)
+                {
+                    System.err.println("Detected QPID-2137");
+                }
+                fail("Exception thrown during log generation:" + e);
+            }
+        }
+    }
+
+    /**
+     * Inner class used by testSimultaneousLogging.
+     *
+     * This class creates a given number of LogMessages using the BrokerMessages package.
+     * BRK_CONFIG and BRK_LISTENING messages are both created per count.
+     *
+     * This class is run multiple times simultaneously so that we increase the chance of
+     * reproducing QPID-2137. This is reproduced when the pattern string used in the MessageFormat
+     * class is changed whilst formatting is taking place.
+     *
+     */
+    class LogGenerator implements Runnable
+    {
+        private Exception _exception = null;
+        private int _count;
+
+        /**
+         * @param count The number of Log Messages to generate
+         */
+        LogGenerator(int count)
+        {
+            _count = count;
+        }
+
+        public void run()
+        {
+            try
+            {
+                // try and generate _count iterations of Config & Listening messages.
+                for (int i = 0; i < _count; i++)
+                {
+                    BrokerMessages.BRK_CONFIG("Config");
+                    BrokerMessages.BRK_LISTENING("TCP", 1234);
+                }
+            }
+            catch (Exception e)
+            {
+                // if something goes wrong recorded it for later analysis.
+                _exception = e;
+            }
+        }
+
+        /**
+         * Return any exception that was thrown during the log generation.
+         * @return Exception
+         */
+        public Exception getThrowException()
+        {
+            return _exception;
         }
     }
 
