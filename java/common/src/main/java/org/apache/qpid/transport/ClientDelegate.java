@@ -178,7 +178,7 @@ public class ClientDelegate extends ConnectionDelegate
     @Override public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
     {
         SaslClient sc = conn.getSaslClient();
-        if (sc.getMechanismName().equals("GSSAPI") && getUserID() != null)
+        if (sc != null && sc.getMechanismName().equals("GSSAPI") && getUserID() != null)
         {
             conn.setUserID(getUserID());
         }
