@@ -26,7 +26,8 @@ module Qmf
 
   # Pull all the TYPE_* constants into Qmf namespace.  Maybe there's an easier way?
   Qmfengine.constants.each do |c|
-    if c.index('TYPE_') == 0 or c.index('ACCESS_') == 0 or c.index('DIR_') == 0 or c.index('CLASS_') == 0
+    if c.index('TYPE_') == 0 or c.index('ACCESS_') == 0 or c.index('DIR_') == 0 or
+        c.index('CLASS_') == 0 or c.index('SEV_') == 0
       const_set(c, Qmfengine.const_get(c))
     end
   end
@@ -307,8 +308,89 @@ module Qmf
   end
 
   ##==============================================================================
-  ## OBJECTS
+  ## OBJECTS and EVENTS
   ##==============================================================================
+
+  class QmfEvent
+    attr_reader :impl, :event_class
+    def initialize(cls, kwargs={})
+      @broker = kwargs[:broker] if kwargs.include?(:broker)
+      @allow_sets = :true
+
+      if cls:
+        @event_class = cls
+        @impl = Qmfengine::Event.new(@event_class.impl)
+      elsif kwargs.include?(:impl)
+        @impl = Qmfengine::Event.new(kwargs[:impl])
+        @event_class = SchemaEventClass.new(nil, nil, :impl => @impl.getClass)
+      end
+    end
+
+    def arguments
+      list = []
+      @event_class.arguments.each do |arg|
+        list << [arg, get_attr(arg.name)]
+      end
+      return list
+    end
+
+    def get_attr(name)
+      val = value(name)
+      $util.qmf_to_native(val)
+    end
+
+    def set_attr(name, v)
+      val = value(name)
+      $util.native_to_qmf(val, v)
+    end
+
+    def [](name)
+      get_attr(name)
+    end
+
+    def []=(name, value)
+      set_attr(name, value)
+    end
+
+    def method_missing(name_in, *args)
+      #
+      # Convert the name to a string and determine if it represents an
+      # attribute assignment (i.e. "attr=")
+      #
+      name = name_in.to_s
+      attr_set = (name[name.length - 1] == 61)
+      name = name[0..name.length - 2] if attr_set
+      raise "Sets not permitted on this object" if attr_set && !@allow_sets
+
+      #
+      # If the name matches an argument name, set or return the value of the argument.
+      #
+      @event_class.arguments.each do |arg|
+        if arg.name == name
+          if attr_set
+            return set_attr(name, args[0])
+          else
+            return get_attr(name)
+          end
+        end
+      end
+
+      #
+      # This name means nothing to us, pass it up the line to the parent
+      # class's handler.
+      #
+      super.method_missing(name_in, args)
+    end
+
+    private
+    def value(name)
+      val = @impl.getValue(name.to_s)
+      if val.nil?
+        raise ArgumentError, "Attribute '#{name}' not defined for event #{@event_class.impl.getClassKey.getPackageName}:#{@object_class.impl.getClassKey.getClassName}"
+      end
+      return val
+    end
+  end
 
   class QmfObject
     include MonitorMixin
@@ -845,7 +927,7 @@ module Qmf
 
   class SchemaEventClass
     attr_reader :impl, :arguments
-    def initialize(package, name, kwargs={})
+    def initialize(package, name, sev, kwargs={})
       @arguments = []
       if kwargs.include?(:impl)
         @impl = kwargs[:impl]
@@ -853,7 +935,7 @@ module Qmf
           @arguments << SchemaArgument.new(nil, nil, :impl => @impl.getArgument(i))
         end
       else
-        @impl = Qmfengine::SchemaEventClass.new(package, name)
+        @impl = Qmfengine::SchemaEventClass.new(package, name, sev)
         @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
       end
     end
@@ -1286,6 +1368,10 @@ module Qmf
 
     def alloc_object_id(low = 0, high = 0)
       ObjectId.new(@impl.allocObjectId(low, high))
+    end
+
+    def raise_event(event)
+      @impl.raiseEvent(event.impl)
     end
 
     def query_response(context, object)

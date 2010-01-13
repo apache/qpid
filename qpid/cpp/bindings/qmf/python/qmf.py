@@ -34,6 +34,8 @@ from qmfengine import (TYPE_ABSTIME, TYPE_ARRAY, TYPE_BOOL, TYPE_DELTATIME,
                        TYPE_UINT8, TYPE_UUID)
 from qmfengine import (O_EQ, O_NE, O_LT, O_LE, O_GT, O_GE, O_RE_MATCH, O_RE_NOMATCH,
                        E_NOT, E_AND, E_OR, E_XOR)
+from qmfengine import (SEV_EMERG, SEV_ALERT, SEV_CRIT, SEV_ERROR, SEV_WARN, SEV_NOTICE,
+                       SEV_INFORM, SEV_DEBUG)
 
 
 def qmf_to_native(val):
@@ -351,8 +353,102 @@ class Session:
 
 
   ##==============================================================================
-  ## OBJECTS
+  ## OBJECTS and EVENTS
   ##==============================================================================
+
+class QmfEvent(object):
+    # attr_reader :impl, :event_class
+    def __init__(self, cls, kwargs={}):
+        self._allow_sets = True
+        if kwargs.has_key("broker"):
+            self._broker = kwargs["broker"]
+        else:
+            self._broker = None
+        if cls:
+            self.event_class = cls
+            self.impl = qmfengine.Event(self.event_class.impl)
+        elif kwargs.has_key("impl"):
+            self.impl = qmfengine.Event(kwargs["impl"])
+            self.event_class = SchemaEventClass(None, None, 0,
+                                                {"impl":self.impl.getClass()})
+        else:
+            raise Exception("Argument error: required parameter ('impl') not supplied")
+    
+    
+    def arguments(self):
+        list = []
+        for arg in self.event_class.arguments:
+            list.append([arg, self.get_attr(arg.name())])
+        return list
+
+
+    def get_attr(self, name):
+        val = self._value(name)
+        return qmf_to_native(val)
+    
+    
+    def set_attr(self, name, v):
+        val = self._value(name)
+        native_to_qmf(val, v)
+    
+    
+    def __getitem__(self, name):
+        return self.get_attr(name)
+    
+    
+    def __setitem__(self, name, value):
+        self.set_attr(name, value)
+    
+    
+    def __setattr__(self, name, value):
+        #
+        # Ignore the internal attributes, set them normally...
+        #
+        if (name[0] == '_' or
+            name == 'impl' or
+            name == 'event_class'):
+            return super.__setattr__(self, name, value)
+
+        if not self._allow_sets:
+            raise Exception("'Set' operations not permitted on this object")
+
+        #
+        # If the name matches an argument name, set the value of the argument.
+        #
+        # print "set name=%s" % str(name)
+        for arg in self.event_class.arguments:
+            if arg.name() == name:
+                return self.set_attr(name, value)
+
+        # unrecognized name?  should I raise an exception?
+        super.__setattr__(self, name, value)
+
+
+    def __getattr__(self, name, *args):
+        #
+        # If the name matches an argument name, return the value of the argument.
+        #
+        for arg in self.event_class.arguments:
+            if arg.name() == name:
+                return self.get_attr(name)
+
+        #
+        # This name means nothing to us, pass it up the line to the parent
+        # class's handler.
+        #
+        # print "__getattr__=%s" % str(name)
+        super.__getattr__(self, name)
+
+
+    def _value(self, name):
+        val = self.impl.getValue(name)
+        if not val:
+            raise Exception("Argument error: attribute named '%s' not defined for package %s, class %s" % 
+                            (name,
+                             self.event_class.impl.getClassKey().getPackageName(),
+                             self.event_class.impl.getClassKey().getClassName()))
+        return val
+
 
 class QmfObject(object):
     # attr_reader :impl, :object_class
@@ -922,14 +1018,14 @@ class SchemaObjectClass:
 
 class SchemaEventClass:
     # attr_reader :impl :arguments
-    def __init__(self, package, name, kwargs={}):
+    def __init__(self, package, name, sev, kwargs={}):
       self.arguments = []
       if "impl" in kwargs:
           self.impl = kwargs["impl"]
           for i in range(self.impl.getArgumentCount()):
               self.arguments.append(SchemaArgument(nil, nil, {"impl":self.impl.getArgument(i)}))
       else:
-          self.impl = qmfengine.SchemaEventClass(package, name)
+          self.impl = qmfengine.SchemaEventClass(package, name, sev)
           if kwargs.has_key("desc"): self.impl.setDesc(kwargs["desc"])
     
     
@@ -1026,7 +1122,7 @@ class Console(Thread):
                 if kind == CLASS_OBJECT:
                     clist.append(SchemaObjectClass(None, None, {"impl":self.impl.getObjectClass(key)}))
                 elif kind == CLASS_EVENT:
-                    clist.append(SchemaEventClass(None, None, {"impl":self.impl.getEventClass(key)}))
+                    clist.append(SchemaEventClass(None, None, 0, {"impl":self.impl.getEventClass(key)}))
         return clist
     
     
@@ -1436,7 +1532,10 @@ class Agent(ConnectionHandler):
     def alloc_object_id(self, low = 0, high = 0):
         return ObjectId(self.impl.allocObjectId(low, high))
     
-    
+
+    def raise_event(self, event):
+        self.impl.raiseEvent(event.impl)
+
     def query_response(self, context, obj):
         self.impl.queryResponse(context, obj.impl)
     

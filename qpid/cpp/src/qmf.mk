@@ -73,6 +73,8 @@ libqmfengine_la_SOURCES =			\
   qmf/engine/ConnectionSettingsImpl.h		\
   qmf/engine/ConsoleImpl.cpp			\
   qmf/engine/ConsoleImpl.h			\
+  qmf/engine/EventImpl.cpp			\
+  qmf/engine/EventImpl.h			\
   qmf/engine/MessageImpl.cpp			\
   qmf/engine/MessageImpl.h			\
   qmf/engine/ObjectIdImpl.cpp			\

@@ -1,5 +1,5 @@
-#ifndef _QmfEngineEvent_
-#define _QmfEngineEvent_
+#ifndef _QmfEngineEventImpl_
+#define _QmfEngineEventImpl_
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,28 +20,32 @@
  * under the License.
  */
 
+#include <qmf/engine/Event.h>
+#include <qmf/engine/Schema.h>
+#include <qpid/framing/Buffer.h>
+#include <boost/shared_ptr.hpp>
+#include <map>
+
 namespace qmf {
 namespace engine {
 
-    class SchemaEventClass;
-    class Value;
-    struct EventImpl;
+    struct EventImpl {
+        typedef boost::shared_ptr<Value> ValuePtr;
+        const SchemaEventClass* eventClass;
+        mutable std::map<std::string, ValuePtr> arguments;
 
-    class Event {
-    public:
-        Event(const SchemaEventClass* type);
-        Event(const Event& from);
-        ~Event();
+        EventImpl(const SchemaEventClass* type);
+        EventImpl(const SchemaEventClass* type, qpid::framing::Buffer& buffer);
+        static Event* factory(const SchemaEventClass* type, qpid::framing::Buffer& buffer);
 
-        const SchemaEventClass* getClass() const;
+        const SchemaEventClass* getClass() const { return eventClass; }
         Value* getValue(const char* key) const;
 
-    private:
-        friend struct EventImpl;
-        friend struct AgentImpl;
-        Event(EventImpl* impl);
-        EventImpl* impl;
+        void encodeSchemaKey(qpid::framing::Buffer& buffer) const;
+        void encode(qpid::framing::Buffer& buffer) const;
+        std::string getRoutingKey(uint32_t brokerBank, uint32_t agentBank) const;
     };
+
 }
 }
 

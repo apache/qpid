@@ -201,10 +201,11 @@ namespace engine {
         mutable bool hasHash;
         std::auto_ptr<SchemaClassKey> classKey;
         std::string description;
+        Severity severity;
         std::vector<const SchemaArgument*> arguments;
 
-        SchemaEventClassImpl(const char* p, const char* n) :
-            package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)) {}
+    SchemaEventClassImpl(const char* p, const char* n, Severity sev) :
+        package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)), severity(sev) {}
         SchemaEventClassImpl(qpid::framing::Buffer& buffer);
         static SchemaEventClass* factory(qpid::framing::Buffer& buffer);
 
@@ -213,6 +214,7 @@ namespace engine {
         void setDesc(const char* desc) { description = desc; }
 
         const SchemaClassKey* getClassKey() const;
+        Severity getSeverity() const { return severity; }
         int getArgumentCount() const { return arguments.size(); }
         const SchemaArgument* getArgument(int idx) const;
     };

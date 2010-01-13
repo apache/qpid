@@ -23,6 +23,7 @@ from qpid.testlib import TestBase010
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from time import sleep
+import qmf.console
 
 class QmfInteropTests(TestBase010):
 
@@ -165,6 +166,43 @@ class QmfInteropTests(TestBase010):
 
         for binding in bindings:
             self.assertEqual(binding.exchangeRef, mgmt_exchange.getObjectId())
+
+    def test_F_events(self):
+        class Handler(qmf.console.Console):
+            def __init__(self):
+                self.queue = []
+
+            def event(self, broker, event):
+                if event.getClassKey().getClassName() == "test_event":
+                    self.queue.append(event)
+
+        handler = Handler()
+        self.startQmf(handler)
+
+        parents = self.qmf.getObjects(_class="parent")
+        self.assertEqual(len(parents), 1)
+        parent = parents[0]
+
+        parent.set_numerics("big")
+        parent.set_numerics("small")
+        parent.set_numerics("negative")
+        parent.set_short_string("TEST")
+        parent.set_long_string("LONG_TEST")
+        parent.probe_userid()
+
+        queue = handler.queue
+        self.assertEqual(len(queue), 5)
+        self.assertEqual(queue[0].arguments["uint32val"], 0xA5A55A5A)
+        self.assertEqual(queue[0].arguments["strval"], "Unused")
+        self.assertEqual(queue[1].arguments["uint32val"], 5)
+        self.assertEqual(queue[1].arguments["strval"], "Unused")
+        self.assertEqual(queue[2].arguments["uint32val"], 0)
+        self.assertEqual(queue[2].arguments["strval"], "Unused")
+        self.assertEqual(queue[3].arguments["uint32val"], 0)
+        self.assertEqual(queue[3].arguments["strval"], "TEST")
+        self.assertEqual(queue[4].arguments["uint32val"], 0)
+        self.assertEqual(queue[4].arguments["strval"], "LONG_TEST")
+        
 
     def getProperty(self, msg, name):
         for h in msg.headers:

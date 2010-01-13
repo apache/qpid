@@ -21,6 +21,7 @@
 #include "qmf/engine/MessageImpl.h"
 #include "qmf/engine/SchemaImpl.h"
 #include "qmf/engine/Typecode.h"
+#include "qmf/engine/EventImpl.h"
 #include "qmf/engine/ObjectImpl.h"
 #include "qmf/engine/ObjectIdImpl.h"
 #include "qmf/engine/QueryImpl.h"
@@ -476,9 +477,19 @@ const ObjectId* AgentImpl::allocObjectId(uint32_t persistIdLo, uint32_t persistI
     return allocObjectId(((uint64_t) persistIdHi) << 32 | (uint64_t) persistIdLo);
 }
 
-void AgentImpl::raiseEvent(Event&)
+void AgentImpl::raiseEvent(Event& event)
 {
     Mutex::ScopedLock _lock(lock);
+    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
+    Protocol::encodeHeader(buffer, Protocol::OP_EVENT_INDICATION);
+
+    event.impl->encodeSchemaKey(buffer);
+    buffer.putLongLong(uint64_t(Duration(now())));
+    event.impl->encode(buffer);
+    string key(event.impl->getRoutingKey(assignedBrokerBank, assignedAgentBank));
+
+    sendBufferLH(buffer, QMF_EXCHANGE, key);
+    QPID_LOG(trace, "SENT EventIndication");
 }
 
 AgentEventImpl::Ptr AgentImpl::eventDeclareQueue(const string& name)

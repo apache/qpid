@@ -29,6 +29,7 @@ namespace engine {
     enum Access { ACCESS_READ_CREATE = 1, ACCESS_READ_WRITE = 2, ACCESS_READ_ONLY = 3 };
     enum Direction { DIR_IN = 1, DIR_OUT = 2, DIR_IN_OUT = 3 };
     enum ClassKind { CLASS_OBJECT = 1, CLASS_EVENT = 2 };
+    enum Severity { SEV_EMERG = 0, SEV_ALERT = 1, SEV_CRIT = 2, SEV_ERROR = 3, SEV_WARN = 4, SEV_NOTICE = 5, SEV_INFORM = 6, SEV_DEBUG = 7 };
 
     struct SchemaArgumentImpl;
     struct SchemaMethodImpl;
@@ -186,13 +187,14 @@ namespace engine {
      */
     class SchemaEventClass {
     public:
-        SchemaEventClass(const char* package, const char* name);
+        SchemaEventClass(const char* package, const char* name, Severity severity);
         SchemaEventClass(const SchemaEventClass& from);
         ~SchemaEventClass();
         void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc);
 
         const SchemaClassKey* getClassKey() const;
+        Severity getSeverity() const;
         int getArgumentCount() const;
         const SchemaArgument* getArgument(int idx) const;
 

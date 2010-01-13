@@ -110,6 +110,7 @@ namespace engine {
         friend struct ValueImpl;
         friend class  BrokerProxyImpl;
         friend struct ObjectImpl;
+        friend struct EventImpl;
         friend class  AgentImpl;
         Value(ValueImpl* impl);
         ValueImpl* impl;

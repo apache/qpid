@@ -37,6 +37,7 @@
 %include <qmf/engine/Value.h>
 %include <qmf/engine/ObjectId.h>
 %include <qmf/engine/Object.h>
+%include <qmf/engine/Event.h>
 
 
 %inline {

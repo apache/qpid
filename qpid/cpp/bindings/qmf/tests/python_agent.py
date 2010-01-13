@@ -82,10 +82,15 @@ class Model:
         self.child_class = qmf.SchemaObjectClass("org.apache.qpid.qmf", "child")
         self.child_class.add_property(qmf.SchemaProperty("name", qmf.TYPE_SSTR, {"index":True}))
 
+        self.event_class = qmf.SchemaEventClass("org.apache.qpid.qmf", "test_event", qmf.SEV_NOTICE)
+        self.event_class.add_argument(qmf.SchemaArgument("uint32val", qmf.TYPE_UINT32))
+        self.event_class.add_argument(qmf.SchemaArgument("strval", qmf.TYPE_LSTR))
+
 
     def register(self, agent):
         agent.register_class(self.parent_class)
         agent.register_class(self.child_class)
+        agent.register_class(self.event_class)
 
 
 
@@ -151,6 +156,12 @@ class App(qmf.AgentHandler):
                                                  'sstr' : "Short String",
                                                  'map'  : {'first' : 'FIRST', 'second' : 'SECOND'}})
 
+                event = qmf.QmfEvent(self._model.event_class)
+                event.uint32val = self._parent.get_attr("uint32val")
+                event.strval = "Unused"
+
+                self._agent.raise_event(event)
+
                 ## Test the __getattr__ implementation:
                 ## @todo: remove once python_client implements this
                 ## form of property access
@@ -169,6 +180,11 @@ class App(qmf.AgentHandler):
                 self._parent.set_attr("int16val", 10)
                 self._parent.set_attr("int8val",  11)
 
+                event = qmf.QmfEvent(self._model.event_class)
+                event.uint32val = self._parent.uint32val
+                event.strval = "Unused"
+                self._agent.raise_event(event)
+
             elif args['test'] == "negative":
                 self._parent.set_attr("uint64val", 0)
                 self._parent.set_attr("uint32val", 0)
@@ -180,6 +196,11 @@ class App(qmf.AgentHandler):
                 self._parent.set_attr("int16val", -1000)
                 self._parent.set_attr("int8val",  -100)
 
+                event = qmf.QmfEvent(self._model.event_class)
+                event.uint32val = self._parent.uint32val
+                event.strval = "Unused"
+                self._agent.raise_event(event)
+
             else:
                 _retCode = 1
                 _retText = "Invalid argument value for test"
@@ -188,10 +209,20 @@ class App(qmf.AgentHandler):
 
         elif name == "set_short_string":
             self._parent.set_attr('sstrval', args['value'])
+            event = qmf.QmfEvent(self._model.event_class)
+            event.uint32val = 0
+            event.strval = self._parent.sstrval
+            self._agent.raise_event(event)
+
             self._agent.method_response(context, 0, "OK", args)
 
         elif name == "set_long_string":
             self._parent.set_attr('lstrval', args['value'])
+            event = qmf.QmfEvent(self._model.event_class)
+            event.uint32val = 0
+            event.strval = self._parent.lstrval
+            self._agent.raise_event(event)
+
             self._agent.method_response(context, 0, "OK", args)
 
         elif name == "create_child":
