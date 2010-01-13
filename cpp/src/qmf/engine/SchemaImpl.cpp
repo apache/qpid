@@ -459,7 +459,6 @@ SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) : hasHash(true), clas
     buffer.getShortString(package);
     buffer.getShortString(name);
     hash.decode(buffer);
-    buffer.putOctet(0); // No parent class
 
     uint16_t argCount = buffer.getShort();
 
@@ -598,13 +597,14 @@ const SchemaProperty* SchemaObjectClass::getProperty(int idx) const { return imp
 const SchemaStatistic* SchemaObjectClass::getStatistic(int idx) const { return impl->getStatistic(idx); }
 const SchemaMethod* SchemaObjectClass::getMethod(int idx) const { return impl->getMethod(idx); }
 
-SchemaEventClass::SchemaEventClass(const char* package, const char* name) : impl(new SchemaEventClassImpl(package, name)) {}
+SchemaEventClass::SchemaEventClass(const char* package, const char* name, Severity s) : impl(new SchemaEventClassImpl(package, name, s)) {}
 SchemaEventClass::SchemaEventClass(SchemaEventClassImpl* i) : impl(i) {}
 SchemaEventClass::SchemaEventClass(const SchemaEventClass& from) : impl(new SchemaEventClassImpl(*(from.impl))) {}
 SchemaEventClass::~SchemaEventClass() { delete impl; }
 void SchemaEventClass::addArgument(const SchemaArgument* argument) { impl->addArgument(argument); }
 void SchemaEventClass::setDesc(const char* desc) { impl->setDesc(desc); }
 const SchemaClassKey* SchemaEventClass::getClassKey() const { return impl->getClassKey(); }
+Severity SchemaEventClass::getSeverity() const { return impl->getSeverity(); }
 int SchemaEventClass::getArgumentCount() const { return impl->getArgumentCount(); }
 const SchemaArgument* SchemaEventClass::getArgument(int idx) const { return impl->getArgument(idx); }
 

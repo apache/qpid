@@ -23,7 +23,7 @@ require 'qmf'
 require 'socket'
 
 class Model
-  attr_reader :parent_class, :child_class
+  attr_reader :parent_class, :child_class, :event_class
 
   def initialize
     @parent_class = Qmf::SchemaObjectClass.new("org.apache.qpid.qmf", "parent")
@@ -79,11 +79,16 @@ class Model
 
     @child_class = Qmf::SchemaObjectClass.new("org.apache.qpid.qmf", "child")
     @child_class.add_property(Qmf::SchemaProperty.new("name", Qmf::TYPE_SSTR, :index => true))
+
+    @event_class = Qmf::SchemaEventClass.new("org.apache.qpid.qmf", "test_event", Qmf::SEV_INFORM)
+    @event_class.add_argument(Qmf::SchemaArgument.new("uint32val", Qmf::TYPE_UINT32))
+    @event_class.add_argument(Qmf::SchemaArgument.new("strval", Qmf::TYPE_LSTR))
   end
 
   def register(agent)
     agent.register_class(@parent_class)
     agent.register_class(@child_class)
+    agent.register_class(@event_class)
   end
 end
 
@@ -139,6 +144,11 @@ class App < Qmf::AgentHandler
                           'sstr' => "Short String",
                           'map'  => {'first' => 'FIRST', 'second' => 'SECOND'}}
 
+        event = Qmf::QmfEvent.new(@model.event_class)
+        event.uint32val = @parent.uint32val
+        event.strval = "Unused"
+        @agent.raise_event(event)
+
       elsif args['test'] == "small"
         @parent.uint64val = 4
         @parent.uint32val = 5
@@ -149,6 +159,11 @@ class App < Qmf::AgentHandler
         @parent.int32val = 9
         @parent.int16val = 10
         @parent.int8val  = 11
+
+        event = Qmf::QmfEvent.new(@model.event_class)
+        event.uint32val = @parent.uint32val
+        event.strval = "Unused"
+        @agent.raise_event(event)
 
       elsif args['test'] == "negative"
         @parent.uint64val = 0
@@ -161,6 +176,11 @@ class App < Qmf::AgentHandler
         @parent.int16val = -1000
         @parent.int8val  = -100
 
+        event = Qmf::QmfEvent.new(@model.event_class)
+        event.uint32val = @parent.uint32val
+        event.strval = "Unused"
+        @agent.raise_event(event)
+
       else
         retCode = 1
         retText = "Invalid argument value for test"
@@ -169,8 +189,18 @@ class App < Qmf::AgentHandler
     elsif name == "set_short_string"
       @parent.sstrval = args['value']
 
+      event = Qmf::QmfEvent.new(@model.event_class)
+      event.uint32val = 0
+      event.strval = @parent.sstrval
+      @agent.raise_event(event)
+
     elsif name == "set_long_string"
       @parent.lstrval = args['value']
+
+      event = Qmf::QmfEvent.new(@model.event_class)
+      event.uint32val = 0
+      event.strval = @parent.lstrval
+      @agent.raise_event(event)
 
     elsif name == "create_child"
       oid = @agent.alloc_object_id(2)

@@ -39,6 +39,8 @@
 #include <set>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/noncopyable.hpp>
+#include <unistd.h>
+#include <fcntl.h>
 
 using namespace std;
 using namespace qmf::engine;
@@ -330,6 +332,10 @@ void ResilientConnectionImpl::unbind(SessionHandle handle,
 void ResilientConnectionImpl::setNotifyFd(int fd)
 {
     notifyFd = fd;
+    if (notifyFd > 0) {
+        int original = fcntl(notifyFd, F_GETFL);
+        fcntl(notifyFd, F_SETFL, O_NONBLOCK | original);
+    }
 }
 
 void ResilientConnectionImpl::run()
@@ -403,13 +409,16 @@ void ResilientConnectionImpl::EnqueueEvent(ResilientConnectionEvent::EventKind k
                                            const MessageImpl& message,
                                            const string& errorText)
 {
-    Mutex::ScopedLock _lock(lock);
-    ResilientConnectionEventImpl event(kind, message);
+    {
+        Mutex::ScopedLock _lock(lock);
+        ResilientConnectionEventImpl event(kind, message);
 
-    event.sessionContext = sessionContext;
-    event.errorText      = errorText;
+        event.sessionContext = sessionContext;
+        event.errorText      = errorText;
 
-    eventQueue.push_back(event);
+        eventQueue.push_back(event);
+    }
+
     if (notifyFd != -1)
     {
         int unused_ret;    //Suppress warnings about ignoring return value.
