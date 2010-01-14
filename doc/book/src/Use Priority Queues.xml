@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Use Priority Queues
+    </title>
+
+    
+    <section role="h2" id="UsePriorityQueues-GeneralInformation"><title>
+            General
+            Information
+          </title>
+	  <para>
+            The Qpid M3 release introduces priority queues into the Java
+            Messaging Broker, supporting JMS clients who wish to make use of
+            priorities in their messaging implementation.
+          </para><para>
+            There are some key points around the use of priority queues in
+            Qpid, discussed in the sections below.
+          </para>
+<!--h2--></section>
+    <section role="h2" id="UsePriorityQueues-DefiningPriorityQueues"><title>
+            Defining
+            Priority Queues
+          </title>
+	  <para>
+            You must define a priority queue specifically before you start to
+            use it. You cannot subsequently change a queue to/from a priority
+            queue (without deleting it and re-creating).
+          </para><para>
+            You define a queue as a priority queue in the virtualhost
+            configuration file, which the broker loads at startup. When
+            defining the queue, add a &lt;priority&gt;true&lt;/priority&gt;
+            element. This will ensure that the queue has 10 distinct
+            priorities, which is the number supported by JMS.
+          </para><para>
+            If you require fewer priorities, it is possible to specify a
+            &lt;priorities&gt;int&lt;/priorities&gt; element (where int is a
+            valid integer value between 2 and 10 inclusive) which will give
+            the queue that number of distinct priorities. When messages are
+            sent to that queue, their effective priority will be calculated
+            by partitioning the priority space. If the number of effective
+            priorities is 2, then messages with priority 0-4 are treated the
+            same as "lower priority" and messages with priority 5-9 are
+            treated equivalently as "higher priority".
+          </para>
+            <programlisting>
+&lt;queue&gt;
+    &lt;name&gt;test&lt;/name&gt;
+    &lt;test&gt;
+        &lt;exchange&gt;amq.direct&lt;/exchange&gt;
+        &lt;priority&gt;true&lt;/priority&gt;
+    &lt;/test&gt;
+&lt;/queue&gt;
+</programlisting>
+<!--h2--></section>
+          
+    <section role="h2" id="UsePriorityQueues-Clientconfiguration-2Fmessagingmodelforpriorityqueues"><title>
+            Client configuration/messaging model for priority queues
+          </title>
+	  <para>
+            There are some other configuration &amp; paradigm changes which
+            are required in order that priority queues work as expected.
+          </para>
+    <section role="h3" id="UsePriorityQueues-Setlowprefetch"><title>
+            Set low pre-fetch
+          </title>
+	  <para>
+            Qpid clients receive buffered messages in batches, sized
+            according to the pre-fetch value. The current default is 5000.
+          </para><para>
+            However, if you use the default value you will probably
+            <emphasis>not</emphasis> see desirable behaviour with messages of different
+            priority. This is because a message arriving after the pre-fetch
+            buffer has filled will not leap frog messages of lower priority.
+            It will be delivered at the front of the next batch of buffered
+            messages (if that is appropriate), but this is most likely NOT
+            what you need.
+          </para><para>
+            So, you need to set the prefetch values for your client
+            (consumer) to make this sensible. To do this set the java system
+            property max_prefetch on the client environment (using -D) before
+            creating your consumer.
+          </para><para>
+            Setting the Qpid pre-fetch to 1 for your client means that
+            message priority will be honoured by the Qpid broker as it
+            dispatches messages to your client. A default for all client
+            connections can be set via a system property:
+          </para>
+            <programlisting>
+-Dmax_prefetch=1
+</programlisting>
+          <para>
+            The prefetch can be also be adjusted on a per connection basis by
+            adding a 'maxprefetch' value to the <xref linkend="qpid_Connection-20URL-20Format"/>
+          </para>
+            <programlisting>
+amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://localhost:5672'
+</programlisting>
+          <para>
+            There is a slight performance cost here if using the receive()
+            method and you could test with a slightly higher pre-fetch (up to
+            10) if the trade-off between throughput and prioritisation is
+            weighted towards the former for your application. (If you're
+            using OnMessage() then this is not a concern.)
+          </para>
+<!--h3--></section>
+    <section role="h3" id="UsePriorityQueues-Singleconsumerpersession"><title>
+            Single
+            consumer per session
+          </title>
+	  <para>
+            If you are using the receive() method to consume messages then
+            you should also only use one consumer per session with priority
+            queues. If you're using OnMessage() then this is not a concern.
+          </para>
+<!--h3--></section>
+<!--h2--></section>
+</chapter>

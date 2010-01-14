@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : MessageStore Tool
+    </title><section role="h2" id="MessageStoreTool-MessageStoreTool"><title>
+            MessageStore Tool
+          </title>
+
+	 <para>
+            We have a number of implementations of the Qpid MessageStore
+            interface. This tool allows the interrogation of these stores
+            while the broker is offline.
+          </para>
+
+	  <section role="h3" id="MessageStoreTool-MessageStoreImplementations"><title>
+            MessageStore
+            Implementations
+          </title>
+
+	 <itemizedlist>
+            <listitem><para>
+              <xref linkend="qpid_BDBMessageStore-20-3rd-20Party-"/>
+            </para></listitem>
+            <listitem><para>
+              <xref linkend="qpid_JDBCStore"/>
+            </para></listitem>
+            <listitem><para>
+              <xref linkend="qpid_MemoryMessageStore"/>
+            </para></listitem>
+          </itemizedlist>
+<!--h3--></section>
+
+	  <section role="h3" id="MessageStoreTool-Introduction"><title>
+            Introduction
+          </title>
+
+	 <para>
+            Each of the MessageStore implementations provide different back
+            end storage for their messages and so would need a different tool
+            to be able to interrogate their contents at the back end.
+          </para><para>
+            What this tool does is to utilise the Java broker code base to
+            access the contents of the storage providing the user with a
+            consistent means to inspect the storage contents in broker
+            memory. The tool allows the current messages in the store to be
+            inspected and copied/moved between queues. The tool uses the
+            message instance in memory for all its access paths, but changes
+            made will be reflected in the physical store (if one exists).
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="MessageStoreTool-Usage"><title>
+            Usage
+          </title>
+
+	 <para>
+            The tools-distribution currently includes a unix shell command
+            'msTool.sh' this script will launch the java tool.
+          </para><para>
+            The tool loads $QPID_HOME/etc/config.xml by default. If an
+            alternative broker configuration is required this should be
+            provided on the command line as would be done for the broker.
+          </para>
+            <programlisting>
+msTool.sh -c &lt;path to different config.xml&gt;
+</programlisting>
+          <para>
+            On startup the user is present with a command prompt
+          </para>
+            <programlisting>
+$ msTool.sh
+MessageStoreTool - for examining Persistent Qpid Broker MessageStore instances
+bdb$ 
+</programlisting>
+<!--h3--></section>
+
+          <section role="h3" id="MessageStoreTool-AvailableCommands"><title>
+            Available
+            Commands
+          </title>
+
+	 <para>
+            The available commands in the tool can be seen through the use of
+            the 'help' command.
+          </para>
+            <programlisting>
+bdb$ help
++----------------------------------------------------------------+
+|                       Available Commands                       |
++----------------------------------------------------------------+
+| Command | Description                                          |
++----------------------------------------------------------------+
+| quit    | Quit the tool.                                       |
+| list    | list available items.                                |
+| dump    | Dump selected message content. Default: show=content |
+| load    | Loads specified broker configuration file.           |
+| clear   | Clears any selection.                                |
+| show    | Shows the messages headers.                          |
+| select  | Perform a selection.                                 |
+| help    | Provides detailed help on commands.                  |
++----------------------------------------------------------------+
+bdb$
+</programlisting>
+          <para>
+            A brief description is displayed and further usage information is
+            shown with 'help &lt;command&gt;'
+          </para>
+            <programlisting>
+bdb$ help list
+list availble items.
+Usage:list queues [&lt;exchange&gt;] | exchanges | bindings [&lt;exchange&gt;] | all
+bdb$
+</programlisting>
+<!--h3--></section>
+
+
+          <section role="h3" id="MessageStoreTool-FutureWork"><title>
+            Future Work
+          </title>
+
+	 <para>
+            Currently the tool only works whilst the broker is offline i.e.
+            it is up, but not accepting AMQP connections. This requires a
+            stop/start of the broker. If this functionality was incorporated
+            into the broker then a telnet functionality could be provided
+            allowing online management.
+          </para>
+<!--h3--></section>
+<!--h2--></section>
+</chapter>

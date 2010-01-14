@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+      Apache Qpid : Configure the Broker via config.xml
+    </title>
+  <section role="h2" id="ConfiguretheBrokerviaconfig.xml-Brokerconfig.xmlOverview">
+    <title>
+            Broker
+            config.xml Overview
+          </title>
+  <para>
+            The broker config.xml file which is shipped in the etc directory
+            of any Qpid binary distribution details various options and
+            configuration for the Java Qpid broker implementation.
+          </para>
+  <para>
+            In tandem with the virtualhosts.xml file, the config.xml file
+            allows you to control much of the deployment detail for your Qpid
+            broker in a flexible fashion.
+          </para>
+  <para>
+            Note that you can pass the config.xml you wish to use for your
+            broker instance to the broker using the -c command line option.
+            In turn, you can specify the paths for the broker password file
+            and virtualhosts.xml files in your config.xml for simplicity.
+          </para>
+  <para>
+            For more information about command line configuration options
+            please see <xref linkend="QpidDesign-Configuration-ConfigurationMethods"/>.
+          </para>
+    <!--h2-->
+  </section>
+
+  <section role="h2" id="ConfiguretheBrokerviaconfig.xml-QpidVersion">
+    <title>
+            Qpid
+            Version
+          </title>
+  <para>
+            The config format has changed between versions here you can find
+            the configuration details on a per version basis.
+          </para>
+  <para>
+            <xref linkend="qpid_M2-20--20config.xml"/>
+            <xref linkend="qpid_M2.1-20--20config.xml"/>
+          </para>
+    <!--h2-->
+  </section>
+
+</chapter>

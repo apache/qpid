@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Configure Java Qpid to use a SSL connection.
+    </title>
+
+    <section role="h2" id="ConfigureJavaQpidtouseaSSLconnection.-UsingSSLconnectionwithQpidJava."><title>
+            Using SSL connection with Qpid Java.
+          </title>
+	  <para>
+            This section will show how to use SSL to enable secure
+            connections between a Java client and broker.
+          </para>
+<!--h2--></section>
+    <section role="h2" id="ConfigureJavaQpidtouseaSSLconnection.-Setup"><title>
+            Setup
+          </title>
+    <section role="h3" id="ConfigureJavaQpidtouseaSSLconnection.-BrokerSetup"><title>
+            Broker
+            Setup
+          </title>
+	  <para>
+            The broker configuration file (config.xml) needs to be updated to
+            include the SSL keystore location details.
+          </para>
+                        
+<programlisting>
+&lt;!-- Additions required to Connector Section --&gt;
+
+&lt;ssl&gt;
+    &lt;enabled&gt;true&lt;/enabled&gt;
+    &lt;sslOnly&gt;true&lt;/sslOnly&gt;
+    &lt;keystorePath&gt;/path/to/keystore.ks&lt;/keystorePath&gt;
+    &lt;keystorePassword&gt;keystorepass&lt;/keystorePassword&gt;
+&lt;/ssl&gt;
+</programlisting>
+            
+          <para>
+            The sslOnly option is included here for completeness however this
+            will disable the unencrypted port and leave only the SSL port
+            listening for connections.
+          </para>
+<!--h3--></section>
+    <section role="h3" id="ConfigureJavaQpidtouseaSSLconnection.-ClientSetup"><title>
+            Client
+            Setup
+          </title>
+	  <para>
+            The best place to start looking is class
+            <emphasis>SSLConfiguration</emphasis> this is provided to the connection
+            during creation however there is currently no example that
+            demonstrates its use.
+          </para>
+<!--h3--></section>
+<!--h2--></section>
+
+    <section role="h2" id="ConfigureJavaQpidtouseaSSLconnection.-Performingtheconnection."><title>
+            Performing
+            the connection.
+          </title>
+	  <para/>
+    <!--h2--></section>
+</chapter>

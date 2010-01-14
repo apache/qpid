@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Debug using log4j
+    </title>
+
+    <section role="h2" id="Debugusinglog4j-Debuggingwithlog4jconfigurations"><title>
+            Debugging
+            with log4j configurations
+          </title>
+	 <para>
+            Unfortunately setting of logging in the Java Broker is not simply
+            a matter of setting one of WARN,INFO,DEBUG. At some point in the
+            future we may have more BAU logging that falls in to that
+            category but more likely is that we will have a varioius config
+            files that can be swapped in (dynamically) to understand what is
+            going on.
+          </para><para>
+            This page will be host to a variety of useful configuration
+            setups that will allow a user or developer to extract only the
+            information they are interested in logging. Each section will be
+            targeted at logging in a particular area and will include a full
+            log4j file that can be used. In addition the logging
+            <emphasis>category</emphasis> elements will be presented and discussed so
+            that the user can create their own file.
+          </para><para>
+            Currently the configuration that is available has not been fully
+            documented and as such there are gaps in what is desired and what
+            is available. Some times this is due to the desire to reduce the
+            overhead in message processing, but sometimes it is simply an
+            oversight. Hopefully in future releases the latter will be
+            addressed but care needs to be taken when adding logging to the
+            'Message Flow' path as this will have performance implications.
+          </para>
+
+	  <section role="h3" id="Debugusinglog4j-LoggingConnectionState-5CDeprecated-5C"><title>
+            Logging
+            Connection State *Deprecated*
+          </title>
+	 <para>
+            <emphasis>deprecation notice</emphasis> Version 0.6 of the Java broker includes
+            <xref linkend="qpid_Configure-20Operational-20Status-20Logging"/> functionality which improves upon these messages and
+            as such enabling status logging would be more beneficial.
+            The configuration file has been left here for assistence with
+            broker versions prior to 0.6.
+          </para><para>
+            The goals of this configuration are to record:
+          </para><itemizedlist>
+            <listitem><para>New Connections
+            </para></listitem>
+            <listitem><para>New Consumers
+            </para></listitem>
+            <listitem><para>Identify slow consumers
+            </para></listitem>
+            <listitem><para>Closing of Consumers
+            </para></listitem>
+            <listitem><para>Closing of Connections
+            </para></listitem>
+          </itemizedlist><para>
+            An additional goal of this configuration is to minimise any
+            impact to the 'message flow' path. So it should not adversely
+            affect production systems.
+          </para>
+<programlisting>
+<![CDATA[
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    <appender name="FileAppender" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/>
+        <param name="Append" value="false"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+        </layout>
+
+    </appender>
+
+    <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+        </layout>
+    </appender>
+
+    <category name="Qpid.Broker">
+
+        <priority value="debug"/>
+    </category>
+
+
+    <!-- Provide warnings to standard output -->
+    <category name="org.apache.qpid">
+        <priority value="warn"/>
+    </category>
+
+
+    <!-- Connection Logging -->
+
+    <!-- Log details of client starting connection -->
+    <category name="org.apache.qpid.server.handler.ConnectionStartOkMethodHandler">
+        <priority value="info"/>
+    </category>
+    <!-- Log details of client closing connection -->
+    <category name="org.apache.qpid.server.handler.ConnectionCloseMethodHandler">
+        <priority value="info"/>
+    </category>
+    <!-- Log details of client responding to be asked to closing connection -->
+
+    <category name="org.apache.qpid.server.handler.ConnectionCloseOkMethodHandler">
+        <priority value="info"/>
+    </category>
+
+
+    <!-- Consumer Logging -->
+    <!-- Provide details of Consumers connecting-->
+    <category name="org.apache.qpid.server.handler.BasicConsumeMethodHandler">
+        <priority value="debug"/>
+    </category>
+
+    <!-- Provide details of Consumers disconnecting, if the call it-->
+    <category name="org.apache.qpid.server.handler.BasicCancelMethodHandler">
+        <priority value="debug"/>
+    </category>
+    <!-- Provide details of when a channel closes to attempt to match to the Consume as a Cancel is not always issued-->
+    <category name="org.apache.qpid.server.handler.ChannelCloseHandler">
+        <priority value="info"/>
+    </category>
+
+    <!-- Provide details of Consumers starting to consume-->
+    <category name="org.apache.qpid.server.handler.ChannelFlowHandler">
+        <priority value="debug"/>
+    </category>
+    <!-- Provide details of what consumers are going to be consuming-->
+    <category name="org.apache.qpid.server.handler.QueueBindHandler">
+        <priority value="info"/>
+    </category>
+
+    <!-- No way of determining if publish message is returned, client log should show it.-->
+
+    <root>
+        <priority value="debug"/>
+        <appender-ref ref="STDOUT"/>      
+        <appender-ref ref="FileAppender"/>
+    </root>
+
+</log4j:configuration>
+]]>
+</programlisting>
+	  <!--h3--></section>
+
+	  <section role="h3" id="Debugusinglog4j-DebuggingMyApplication"><title>
+            Debugging My
+            Application
+          </title>
+	 <para>
+            This is the most often asked for set of configuration. The goals
+            of this configuration are to record:
+          </para><itemizedlist>
+            <listitem><para>New Connections
+            </para></listitem>
+            <listitem><para>New Consumers
+            </para></listitem>
+            <listitem><para>Message Publications
+            </para></listitem>
+            <listitem><para>Message Consumption
+            </para></listitem>
+            <listitem><para>Identify slow consumers
+            </para></listitem>
+            <listitem><para>Closing of Consumers
+            </para></listitem>
+            <listitem><para>Closing of Connections
+            </para></listitem>
+          </itemizedlist><para>
+            NOTE: This configuration enables message logging on the 'message
+            flow' path so should only be used were message volume is
+            low.
+            <emphasis>Every message that is sent to the broker will generate at
+            least four logging statements</emphasis>
+          </para>
+<programlisting>
+<![CDATA[
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    <appender name="FileAppender" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/>
+        <param name="Append" value="false"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+        </layout>
+
+    </appender>
+
+    <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+        </layout>
+    </appender>
+
+    <category name="Qpid.Broker">
+
+        <priority value="debug"/>
+    </category>
+
+
+    <!-- Provide warnings to standard output -->
+    <category name="org.apache.qpid">
+        <priority value="warn"/>
+    </category>
+
+
+    <!-- Connection Logging -->
+
+    <!-- Log details of client starting connection -->
+    <category name="org.apache.qpid.server.handler.ConnectionStartOkMethodHandler">
+        <priority value="info"/>
+    </category>
+    <!-- Log details of client closing connection -->
+    <category name="org.apache.qpid.server.handler.ConnectionCloseMethodHandler">
+        <priority value="info"/>
+    </category>
+    <!-- Log details of client responding to be asked to closing connection -->
+
+    <category name="org.apache.qpid.server.handler.ConnectionCloseOkMethodHandler">
+        <priority value="info"/>
+    </category>
+
+    <!-- Consumer Logging -->
+    <!-- Provide details of Consumers connecting-->
+    <category name="org.apache.qpid.server.handler.BasicConsumeMethodHandler">
+        <priority value="debug"/>
+    </category>
+
+    <!-- Provide details of Consumers disconnecting, if the call it-->
+    <category name="org.apache.qpid.server.handler.BasicCancelMethodHandler">
+        <priority value="debug"/>
+    </category>
+    <!-- Provide details of when a channel closes to attempt to match to the Consume as a Cancel is not always issued-->
+    <category name="org.apache.qpid.server.handler.ChannelCloseHandler">
+        <priority value="info"/>
+    </category>
+
+    <!-- Provide details of Consumers starting to consume-->
+    <category name="org.apache.qpid.server.handler.ChannelFlowHandler">
+        <priority value="debug"/>
+    </category>
+    <!-- Provide details of what consumers are going to be consuming-->
+    <category name="org.apache.qpid.server.handler.QueueBindHandler">
+        <priority value="info"/>
+    </category>
+
+    <!-- No way of determining if publish message is returned, client log should show it.-->
+
+    <!-- WARNING DO NOT ENABLE THIS IN PRODUCTION -->
+    <!-- Will generate minimum one log statements per published message -->
+    <!-- Will generate will log receiving of all body frame, count will vary on size of message.-->
+    <!-- Empty Message = no body, Body is up to 64kb of data -->
+    <!-- Will generate three log statements per recevied message -->
+
+    <!-- Log messages flow-->
+    <category name="org.apache.qpid.server.AMQChannel">
+
+        <priority value="debug"/>
+    </category>
+
+    <root>
+        <priority value="debug"/>
+        <appender-ref ref="STDOUT"/>      
+        <appender-ref ref="FileAppender"/>
+    </root>
+
+</log4j:configuration>
+]]>
+</programlisting>
+
+<!--h3--></section>            
+<!--h2--></section>
+</chapter>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+      Apache Qpid : How to Tune M3 Java Broker Performance
+    </title>
+  <section role="h3" id="HowtoTuneM3JavaBrokerPerformance-ProblemStatement">
+    <title>
+            Problem
+            Statement
+          </title>
+  <para>
+            During destructive testing of the Qpid M3 Java Broker, we tested
+            some tuning techniques and deployment changes to improve the Qpid
+            M3 Java Broker's capacity to maintain high levels of throughput,
+            particularly in the case of a slower consumer than produceer
+            (i.e. a growing backlog).
+          </para>
+  <para>
+            The focus of this page is to detail the results of tuning &amp;
+            deployment changes trialled.
+          </para>
+  <para>
+            The successful tuning changes are applicable for any deployment
+            expecting to see bursts of high volume throughput (1000s of
+            persistent messages in large batches). Any user wishing to use
+            these options <emphasis>must test them thoroughly in their own
+            environment with representative volumes</emphasis>.
+          </para>
+  <!--h3-->
+  </section>
+
+  <section role="h3" id="HowtoTuneM3JavaBrokerPerformance-SuccessfulTuningOptions">
+    <title>
+            Successful
+            Tuning Options
+          </title>
+  <para>
+            The key scenario being taregetted by these changes is a broker
+            under heavy load (processing a large batch of persistent
+            messages)can be seen to perform slowly when filling up with an
+            influx of high volume transient messages which are queued behind
+            the persistent backlog. However, the changes suggested will be
+            equally applicable to general heavy load scenarios.
+          </para>
+  <para>
+            The easiest way to address this is to separate streams of
+            messages. Thus allowing the separate streams of messages to be
+            processed, and preventing a backlog behind a particular slow
+            consumer.
+          </para>
+  <para>
+            These strategies have been successfully tested to mitigate this
+            problem:
+          </para>
+  <table>
+    <title/>
+    <tgroup cols="2">
+            <tbody>
+              <row>
+                <entry>
+                  Strategy
+                </entry>
+                <entry>
+                  Result
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  Seperate connections to one broker for separate streams of
+                  messages.
+                </entry>
+                <entry>
+                  Messages processed successfully, no problems experienced
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  Seperate brokers for transient and persistent messages.
+                </entry>
+                <entry>
+                  Messages processed successfully, no problems experienced
+                </entry>
+              </row>
+            </tbody>
+          </tgroup>
+  </table>
+  <para>
+            <emphasis>Separate Connections</emphasis>
+            Using separate connections effectively means that the two streams
+            of data are not being processed via the same buffer, and thus the
+            broker gets &amp; processes the transient messages while
+            processing the persistent messages. Thus any build up of
+            unprocessed data is minimal and transitory.
+          </para>
+  <para>
+            <emphasis>Separate Brokers</emphasis>
+            Using separate brokers may mean more work in terms of client
+            connection details being changed, and from an operational
+            perspective. However, it is certainly the most clear cut way of
+            isolating the two streams of messages and the heaps impacted.
+          </para>
+  <section role="h4" id="HowtoTuneM3JavaBrokerPerformance-Additionaltuning">
+    <title>
+            Additional
+            tuning
+          </title>
+  <para>
+            It is worth testing if changing the size of the Qpid read/write
+            thread pool improves performance (eg. by setting
+            JAVA_OPTS="-Damqj.read_write_pool_size=32" before running
+            qpid-server). By default this is equal to the number of CPU
+            cores, but a higher number may show better performance with some
+            work loads.
+          </para>
+  <para>
+            It is also important to note that you should give the Qpid broker
+            plenty of memory - for any serious application at least a -Xmx of
+            3Gb. If you are deploying on a 64 bit platform, a larger heap is
+            definitely worth testing with. We will be testing tuning options
+            around a larger heap shortly.
+          </para>
+    <!--h4-->
+  </section>
+    <!--h3-->
+  </section>
+
+  <section role="h3" id="HowtoTuneM3JavaBrokerPerformance-NextSteps">
+    <title>
+            Next
+            Steps
+          </title>
+  <para>
+            These two options have been testing using a Qpid test case, and
+            demonstrated that for a test case with a profile of persistent
+            heavy load following by constant transient high load traffic they
+            provide significant improvment.
+          </para>
+  <para>
+            However, the deploying project <emphasis>must</emphasis> complete their own
+            testing, using the same destructive test cases, representative
+            message paradigms &amp; volumes, in order to verify the proposed
+            mitigation options.
+          </para>
+  <para>
+            The using programme should then choose the option most applicable
+            for their deployment and perform BAU testing before any
+            implementation into a production or pilot environment.
+          </para>
+    <!--h3-->
+  </section>
+</chapter>

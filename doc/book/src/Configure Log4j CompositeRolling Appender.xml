@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Configure Log4j CompositeRolling Appender
+    </title>
+    <section role="h2" id="ConfigureLog4jCompositeRollingAppender-HowtoconfiguretheCompositeRollinglog4jAppender"><title>
+            How to configure the CompositeRolling log4j Appender
+          </title>
+	  <para>
+            There are several sections of our default log4j file that will
+            need your attention if you wish to fully use this Appender.
+          </para>
+
+	  <orderedlist>
+	    <listitem>
+	  <para>Enable the Appender</para>
+	  <para>
+            The default log4j.xml file uses the FileAppender, swap this for
+            the ArchivingFileAppender as follows:
+          </para>
+            <programlisting>
+    &lt;!-- Log all info events to file --&gt;
+    &lt;root&gt;
+        &lt;priority value="info"/&gt;
+
+        &lt;appender-ref ref="ArchivingFileAppender"/&gt;
+    &lt;/root&gt;
+</programlisting>
+	    </listitem>
+	    <listitem>
+          <para>
+            Configure the Appender
+          </para>
+
+	  <para>
+            The Appender has a number of parameters that can be adjusted
+            depending on what you are trying to achieve. For clarity lets
+            take a quick look at the complete default appender:
+          </para>
+            <programlisting>
+  &lt;appender name="ArchivingFileAppender" class="org.apache.log4j.QpidCompositeRollingAppender"&gt;
+        &lt;!-- Ensure that logs allways have the dateFormat set--&gt;
+        &lt;param name="StaticLogFileName" value="false"/&gt;
+        &lt;param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/&gt;
+        &lt;param name="Append" value="false"/&gt;
+        &lt;!-- Change the direction so newer files have bigger numbers --&gt;
+        &lt;!-- So log.1 is written then log.2 etc This prevents a lot of file renames at log rollover --&gt;
+        &lt;param name="CountDirection" value="1"/&gt;
+        &lt;!-- Use default 10MB --&gt;
+        &lt;!--param name="MaxFileSize" value="100000"/--&gt;
+        &lt;param name="DatePattern" value="'.'yyyy-MM-dd-HH-mm"/&gt;
+        &lt;!-- Unlimited number of backups --&gt;
+        &lt;param name="MaxSizeRollBackups" value="-1"/&gt;
+        &lt;!-- Compress(gzip) the backup files--&gt;
+        &lt;param name="CompressBackupFiles" value="true"/&gt;
+        &lt;!-- Compress the backup files using a second thread --&gt;
+        &lt;param name="CompressAsync" value="true"/&gt;
+        &lt;!-- Start at zero numbered files--&gt;
+        &lt;param name="ZeroBased" value="true"/&gt;
+        &lt;!-- Backup Location --&gt;
+        &lt;param name="backupFilesToPath" value="${QPID_WORK}/backup/log"/&gt;
+
+        &lt;layout class="org.apache.log4j.PatternLayout"&gt;
+            &lt;param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/&gt;
+        &lt;/layout&gt;
+    &lt;/appender&gt;
+</programlisting>
+          <para>
+            The appender configuration has three groups of parameter
+            configuration.
+          </para><para>
+            The first group is for configuration of the file name. The
+            default is to write a log file to QPID_WORK/log/qpid.log
+            (Remembering you can use the logprefix and logsuffix values to
+            modify the file name, see Property Config).
+          </para>
+            <programlisting>
+        &lt;!-- Ensure that logs always have the dateFormat set--&gt;
+        &lt;param name="StaticLogFileName" value="false"/&gt;
+        &lt;param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/&gt;
+        &lt;param name="Append" value="false"/&gt;
+</programlisting>
+          <para>
+            The second section allows the specification of a Maximum File
+            Size and a DatePattern that will be used to move on to the next
+            file.
+          </para><para>
+            When MaxFileSize is reached a new log file will be created
+            The DataPattern is used to decide when to create a new log file,
+            so here a new file will be created for every minute and every
+            10Meg of data. So if 15MB of data is made every minute then there
+            will be two log files created each minute. One at the start of
+            the minute and a second when the file hit 10MB. When the next
+            minute arrives a new file will be made even though it only has
+            5MB of content. For a production system it would be expected to
+            be changed to something like 'yyyy-MM-dd' which would make a new
+            log file each day and keep the files to a max of 10MB.
+          </para><para>
+            The final MaxSizeRollBackups allows you to limit the amount of
+            disk you are using by only keeping the last n backups.
+          </para>
+            <programlisting>
+        &lt;!-- Change the direction so newer files have bigger numbers --&gt;
+        &lt;!-- So log.1 is written then log.2 etc This prevents a lot of file renames at log rollover --&gt;
+        &lt;param name="CountDirection" value="1"/&gt;
+        &lt;!-- Use default 10MB --&gt;
+        &lt;!--param name="MaxFileSize" value="100000"/--&gt;
+        &lt;param name="DatePattern" value="'.'yyyy-MM-dd-HH-mm"/&gt;
+        &lt;!-- Unlimited number of backups --&gt;
+        &lt;param name="MaxSizeRollBackups" value="-1"/&gt;
+</programlisting>
+          <para>
+            The final section allows the old log files to be compressed and
+            copied to a new location.
+          </para>
+            <programlisting>
+        &lt;!-- Compress(gzip) the backup files--&gt;
+        &lt;param name="CompressBackupFiles" value="true"/&gt;
+        &lt;!-- Compress the backup files using a second thread --&gt;
+        &lt;param name="CompressAsync" value="true"/&gt;
+        &lt;!-- Start at zero numbered files--&gt;
+        &lt;param name="ZeroBased" value="true"/&gt;
+        &lt;!-- Backup Location --&gt;
+        &lt;param name="backupFilesToPath" value="${QPID_WORK}/backup/log"/&gt;
+</programlisting>
+</listitem>
+</orderedlist>
+<!--h2--></section>
+</chapter>

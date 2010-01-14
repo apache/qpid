@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+      Apache Qpid : Configure ACLs
+    </title>
+  <section role="h2" id="ConfigureACLs-ConfigureACLs">
+    <title>
+            Configure ACLs
+          </title>
+  <section role="h3" id="ConfigureACLs-Specification">
+    <title>
+            Specification
+          </title>
+  <itemizedlist>
+            <listitem><para>
+              <xref linkend="qpid_Java-20XML-20ACLs"/>
+            </para></listitem>
+            <listitem><para>
+              <xref linkend="qpid_ACL"/>
+            </para></listitem>
+          </itemizedlist>
+
+    <!--h3-->
+  </section>
+
+  <section role="h3" id="ConfigureACLs-CBroker">
+    <title>
+            C++ Broker
+          </title>
+  <para>
+            The C++ broker supports <xref linkend="qpid_ACL"/> of the ACLs
+          </para>
+
+    <!--h3-->
+  </section>
+
+  <section role="h3" id="ConfigureACLs-JavaBroker">
+    <title>
+            Java Broker
+          </title>
+
+	  <itemizedlist>
+            <listitem><para>
+              <xref linkend="qpid_Java-20XML-20ACLs"/>
+            </para></listitem>
+            <listitem><para>Support for Version 2 specification is in progress.
+            </para></listitem>
+          </itemizedlist>
+
+	  <!--h3-->
+  </section>
+
+  <!--h2-->
+  </section>
+
+</chapter>
