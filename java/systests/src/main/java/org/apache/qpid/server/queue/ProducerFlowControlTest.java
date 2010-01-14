@@ -409,8 +409,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         consumer.receive();
         
         //perform a synchronous op on the connection
-        ((AMQSession) consumerSession).declareExchange(
-                new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
+        ((AMQSession) consumerSession).sync();
         
         assertFalse("Queue should not be overfull", queueMBean.isFlowOverfull());
         
@@ -436,12 +435,15 @@ public class ProducerFlowControlTest extends AbstractTestLogging
             producer.send(nextMessage(msg, producerSession));
             _sentMessages.incrementAndGet();
 
+
             try
             {
-                Thread.sleep(sleepPeriod);
+                ((AMQSession)producerSession).sync();
             }
-            catch (InterruptedException e)
+            catch (AMQException e)
             {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
     }

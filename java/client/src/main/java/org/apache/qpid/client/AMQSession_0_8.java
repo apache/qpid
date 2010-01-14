@@ -584,5 +584,10 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     {
         return AMQMessageDelegateFactory.FACTORY_0_8;
     }
+    
+    public void sync() throws AMQException
+    {    
+        declareExchange(new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
+    }
 
 }
