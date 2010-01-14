@@ -922,6 +922,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         return Serial.lt((int) currentMark, (int) deliveryTag);
     }
+    
+    public void sync() throws AMQException
+    {
+        _qpidSession.sync();
+    }
 
     public AMQMessageDelegateFactory getMessageDelegateFactory()
     {
