@@ -116,7 +116,6 @@ class SemanticState : private boost::noncopyable {
         bool isBlocked() const { return blocked; }
         bool setBlocked(bool set) { std::swap(set, blocked); return set; }
 
-        bool hasOutput();
         bool doOutput();
 
         std::string getName() const { return name; }

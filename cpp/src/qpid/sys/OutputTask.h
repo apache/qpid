@@ -32,13 +32,6 @@ namespace sys {
          *@return true if output was generated, false if there is no work to do.
          */
         virtual bool doOutput() = 0;
-
-        /** Check if there may be work to do, but don't do it.
-         * @return True if there may be work to do, false if there is none.
-         * Can to return a false positive, to allow implementations to do a
-         * faster check than doOutput(). Must never return a false negative.
-         */
-        virtual bool hasOutput() = 0;
     };
 
 }

@@ -659,10 +659,6 @@ void SemanticState::reject(DeliveryId first, DeliveryId last)
     unacked.erase(range.start, range.end);
 }
 
-bool SemanticState::ConsumerImpl::hasOutput() {
-    return queue->checkForMessages(shared_from_this());
-}
-
 bool SemanticState::ConsumerImpl::doOutput()
 {
     return haveCredit() && queue->dispatch(shared_from_this());
