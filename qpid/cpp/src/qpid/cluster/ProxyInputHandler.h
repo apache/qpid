@@ -46,7 +46,6 @@ class ProxyInputHandler : public sys::ConnectionInputHandler
     void idleOut() { target->idleOut(); }
     void idleIn() { target->idleIn(); }
     bool doOutput() { return target->doOutput(); }
-    bool hasOutput() { return target->hasOutput(); }
     
   private:
     boost::intrusive_ptr<cluster::Connection> target;

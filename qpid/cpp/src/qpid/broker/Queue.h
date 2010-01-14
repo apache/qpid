@@ -167,13 +167,6 @@ namespace qpid {
             QPID_BROKER_EXTERN ~Queue();
 
             QPID_BROKER_EXTERN bool dispatch(Consumer::shared_ptr);
-            /**
-             * Check whether there would be a message available for
-             * dispatch to this consumer. If not, the consumer will be
-             * notified of events that may have changed this
-             * situation.
-             */
-            bool checkForMessages(Consumer::shared_ptr);
 
             void create(const qpid::framing::FieldTable& settings);
 

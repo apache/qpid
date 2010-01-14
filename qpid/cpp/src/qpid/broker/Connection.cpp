@@ -260,8 +260,6 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
     }
 }
 
-bool Connection::hasOutput() { return outputTasks.hasOutput(); }
-
 bool Connection::doOutput() {
     try {
         {

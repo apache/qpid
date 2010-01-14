@@ -309,32 +309,6 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
     }
 }
 
-bool Queue::checkForMessages(Consumer::shared_ptr c)
-{
-    Mutex::ScopedLock locker(messageLock);
-    if (messages.empty()) {
-        //no message available, register consumer for notification
-        //when this changes
-        listeners.addListener(c);
-        return false;
-    } else {
-        QueuedMessage msg = getFront();
-        if (store && !msg.payload->isEnqueueComplete()) {
-            //though a message is on the queue, it has not yet been
-            //enqueued and so is not available for consumption yet,
-            //register consumer for notification when this changes
-            listeners.addListener(c);
-            return false;            
-        } else {
-            //check that consumer has sufficient credit for the
-            //message (if it does not, no need to register it for
-            //notification as the consumer itself will handle the
-            //credit allocation required to change this condition).
-            return c->accept(msg.payload);
-        }
-    }
-}
-
 Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
     while (true) {

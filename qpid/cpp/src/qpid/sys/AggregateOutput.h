@@ -61,7 +61,6 @@ class AggregateOutput : public OutputTask, public OutputControl
 
     // These functions must not be called concurrently with each other.
     QPID_COMMON_EXTERN bool doOutput();
-    QPID_COMMON_EXTERN bool hasOutput();
     QPID_COMMON_EXTERN void removeOutputTask(OutputTask* t);
     QPID_COMMON_EXTERN void removeAll();
 

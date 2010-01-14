@@ -95,7 +95,6 @@ class Connection :
     void received(framing::AMQFrame&);
     void closed();
     bool doOutput();
-    bool hasOutput() { return connection.hasOutput(); }
     void idleOut() { connection.idleOut(); }
     void idleIn() { connection.idleIn(); }
 

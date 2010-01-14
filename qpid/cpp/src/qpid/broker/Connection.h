@@ -92,7 +92,6 @@ class Connection : public sys::ConnectionInputHandler,
     void received(framing::AMQFrame& frame);
     void idleOut();
     void idleIn();
-    bool hasOutput();
     bool doOutput();
     void closed();
 
