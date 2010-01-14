@@ -156,7 +156,7 @@
             connection tree, disconnecting the selected server connection,
             and removing the server from the connection tree.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113098.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113098.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
             
             
             Beside these buttons is a combo for selecting the refresh
@@ -180,7 +180,7 @@
             hostname, management port, and a username and password. An
             example is shown below:
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113099.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113099.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             
             Once all the required details are entered, pressing Connect will
@@ -192,7 +192,7 @@
             VirtualHosts present on the server, as can be seen in the figure
             below.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113100.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113100.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             
             If the server supports a newer management API than the console in
@@ -262,7 +262,7 @@
             the left side of the application. To open a particular MBean from
             the tree for viewing, simply select it in the tree and it will be
             opened in the main view.
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113101.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113101.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             As there may be vast numbers of Queues, Connections, and
             Exchanges on the server these MBeans are not automatically added
@@ -280,7 +280,7 @@
             from the tree by right clicking on them to expose a context menu
             allowing deletion.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113102.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113102.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             As an alternative way to open a particular MBean for viewing,
             without first adding it to the tree, you can simply double click
@@ -312,7 +312,7 @@
             without a restart, and can be performed by clicking the Execute
             button and confirming the prompt which follows.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113103.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113103.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para>
 <!--h1--></section>
 
@@ -340,7 +340,7 @@
 
 	 <para>
             
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113104.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113104.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             The Runtime Options tab allows manipulation of the logging
             settings without affecting the configuration files (this means
@@ -373,7 +373,7 @@
             parent by setting it to an INHERITED level that removes any
             previously set Level of its own.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113105.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113105.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             In order to set one of more Loggers to a new Level, they should
             be selected in the table (or double click an individual Logger to
@@ -414,7 +414,7 @@
             Loggers and use the button to load the dialog to set the new
             Level.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113106.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113106.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             One issue to note of when reloading the configuration file
             settings, either automatically using LogWatch or manually, is
@@ -447,7 +447,7 @@
 
 	 <para>
             
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113107.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113107.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             The ServerInformation MBean currently only conveys various pieces
             of version information to allow precise identification of the
@@ -468,13 +468,13 @@
             allows manipulation of existing user accounts and creation of new
             user accounts.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113108.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113108.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             
             To add a new user, press the <emphasis>Add New User</emphasis> button, which
             will load the dialog shown below.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113109.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113109.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             Here you may enter the new users Username, Password, and select
             their JMX Management Rights. This controls whether or not they
@@ -539,7 +539,7 @@
             The console will prompt for confirmation before undertaking the
             operation.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113110.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113110.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             Clicking the <emphasis>Create</emphasis> button in the Exchange section will
             open a dialog allowing specification of the Name, Type, and
@@ -580,7 +580,7 @@
             MBeans in that VirtualHost. An example of this can be seen in the
             figure below.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113111.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113111.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             All received Notifications will be displayed until such time as
             the user removes them, either in this aggregated view, or in the
@@ -616,7 +616,7 @@
             Attributes</emphasis> button at the bottom right corner of the
             table)<emphasis>.</emphasis>
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113112.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113112.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             Upon opening a Queue MBean, the Attributes tab is displayed, as
             shown below. This allows viewing the value all attributes,
@@ -625,7 +625,7 @@
             their purpose, and graphing certain numerical attribute values as
             they change over time.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113113.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113113.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             The next tab contains the operations that can be performed on the
             queue. The main table serves as a means of viewing the messages
@@ -642,7 +642,7 @@
             information to show this (unless only a single message position
             is requested).
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113114.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113114.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             Upon selecting a message in the table, its header properties and
             redelivery status are updated in the area below the table. Double
@@ -678,7 +678,7 @@
             fashion as described for Queues, again showing an Attributes tab
             initially, with the Operations tab next:
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113115.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113115.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             Of the four default Exchange Types <emphasis>(direct, fanout, headers,
             and topic)</emphasis> all but <emphasis>headers</emphasis> have their bindings
@@ -689,12 +689,12 @@
             button opens a dialog allowing association of an existing queue
             with the entered Binding.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113116.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113116.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             The <emphasis>headers</emphasis> Exchange type (default instantiation
             <emphasis>amq.match or amq.headers</emphasis>) is presented as below:
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113117.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113117.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             In the previous figure, the left table indicates the binding
             number, and the Queue associated with the binding. Selecting one
@@ -702,7 +702,7 @@
             the header values that control when the binding matches an
             incoming message.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113118.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113118.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
           </para><para>
             Pressing the <emphasis>Create</emphasis> button when managing a
             <emphasis>headers</emphasis> Exchange opens a dialog allowing creation of a
@@ -738,7 +738,7 @@
             Notifications. The Operations tab can be seen in the figure
             below.
           </para><para>
-            <mediaobject><imageobject><imagedata fileref="attachments/91960/3113119.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
+            <mediaobject><imageobject><imagedata fileref="images/jmx_console/3113119.png" format="PNG" scalefit="1"/></imageobject><textobject><phrase/></textobject><caption><para/></caption></mediaobject>
             The main table shows the properties of all the Channels that are
             present on the Connection, including whether they are
             <emphasis>Transactional</emphasis>, the <emphasis>Number of Unacked Messages</emphasis>
