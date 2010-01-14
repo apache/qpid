@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Management Console Security
+    </title><section role="h1" id="ManagementConsoleSecurity-ManagementConsoleSecurity"><title>
+            Management
+            Console Security
+          </title>
+            <itemizedlist>
+              <listitem><para>
+                <xref linkend="ManagementConsoleSecurity-SSLencryptedRMI-280.5andabove-29"/>
+              </para></listitem>
+              <listitem><para>
+                <xref linkend="ManagementConsoleSecurity-JMXMP-28M4andprevious-29"/>
+              </para></listitem>
+              <listitem><para>
+                <xref linkend="ManagementConsoleSecurity-UserAccounts-26AccessRights"/>
+              </para></listitem>
+            </itemizedlist>
+          <section role="h2" id="ManagementConsoleSecurity-SSLencryptedRMI-280.5andabove-29"><title>
+            SSL
+            encrypted RMI (0.5 and above)
+          </title>
+	  <para>
+            Current versions of the broker make use of SSL encryption to
+            secure their RMI based JMX ConnectorServer for security purposes.
+            This ships enabled by default, although the test SSL keystore
+            used during development is not provided for security reasons
+            (using this would provide no security as anyone could have access
+            to it).
+          </para><section role="h3" id="ManagementConsoleSecurity-BrokerConfiguration"><title>
+            Broker
+            Configuration
+          </title>
+
+	  <para>
+            The broker configuration must be updated before the broker will
+            start. This can be done either by disabling the SSL support,
+            utilizing a purchased SSL certificate to create a keystore of
+            your own, or using the example 'create-example-ssl-stores' script
+            in the brokers bin/ directory to generate a self-signed keystore.
+          </para><para>
+            The broker must be configured with a keystore containing the
+            private and public keys associated with its SSL certificate. This
+            is accomplished by setting the Java environment properties
+            <emphasis>javax.net.ssl.keyStore</emphasis> and
+            <emphasis>javax.net.ssl.keyStorePassword</emphasis> respectively with the
+            location and password of an appropriate SSL keystore. Entries for
+            these properties exist in the brokers main configuration file
+            alongside the other management settings (see below), although the
+            command line options will still work and take precedence over the
+            configuration file.
+          </para>
+            <programlisting>
+&lt;management&gt;
+    &lt;ssl&gt;
+        &lt;enabled&gt;true&lt;/enabled&gt;
+        &lt;!-- Update below path to your keystore location, eg ${conf}/qpid.keystore  --&gt;
+        &lt;keyStorePath&gt;${prefix}/../test_resources/ssl/keystore.jks&lt;/keyStorePath&gt;
+        &lt;keyStorePassword&gt;password&lt;/keyStorePassword&gt;
+    &lt;/ssl&gt;
+&lt;/management&gt;
+</programlisting>
+<!--h3--></section>
+
+          <section role="h3" id="ManagementConsoleSecurity-JMXManagementConsoleConfiguration"><title>
+            JMX
+            Management Console Configuration
+          </title>
+
+	  <para>
+            If the broker makes use of an SSL certificate signed by a known
+            signing CA (Certification Authority), the management console
+            needs no extra configuration, and will make use of Java's
+            built-in CA
+            truststore for certificate verification (you may however have to
+            update the system-wide default truststore if your CA is not
+            already present in it).
+          </para><para>
+            If however you wish to use a self-signed SSL certificate, then
+            the management console must be provided with an SSL truststore
+            containing a record for the SSL certificate so that it is able to
+            validate it when presented by the broker. This is performed by
+            setting the <emphasis>javax.net.ssl.trustStore</emphasis> and
+            <emphasis>javax.net.ssl.trustStorePassword</emphasis> environment variables
+            when starting the console. This can be done at the command line,
+            or alternatively an example configuration has been made within
+            the console's qpidmc.ini launcher configuration file that may
+            pre-configured in advance for repeated usage. See the <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/> for more
+            information on this configuration process.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="ManagementConsoleSecurity-JConsoleConfiguration"><title>
+            JConsole
+            Configuration
+          </title>
+
+	  <para>
+            As with the JMX Management Console above, if the broker is using
+            a self-signed SSL certificate then in order to connect remotely
+            using JConsole, an appropriate trust store must be provided at
+            startup. See <xref linkend="qpid_JConsole"/> for further details on configuration.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="ManagementConsoleSecurity-AdditionalInformation"><title>
+            Additional
+            Information
+          </title>
+
+	  <para>
+            More information on Java's handling of SSL certificate
+            verification and customizing the keystores can be found in the
+            <xref linkend="qpid_JSSERefGuide"/> .
+          </para>
+<!--h3--></section>
+<!--h2--></section>
+
+	  
+
+	  <section role="h2" id="ManagementConsoleSecurity-JMXMP-28M4andprevious-29"><title>
+            JMXMP
+            (M4 and previous)
+          </title>
+
+	  <para>
+            In previous releases of Qpid (M4 and below) the broker, can make
+            use of Sun's Java Management Extensions Messaging Protocol
+            (JMXMP) to provide encryption of the JMX connection, offering
+            increased security over the default unencrypted RMI based JMX
+            connection.
+          </para><section role="h3" id="ManagementConsoleSecurity-DownloadandInstall"><title>
+            Download and
+            Install
+          </title>
+
+	  <para>
+            This is possible by adding the jmxremote_optional.jar as provided
+            by Sun. This jar is covered by the Sun Binary Code License and is
+            not compatible with the Apache License which is why this
+            component is not bundled with Qpid.
+          </para><para>
+            Download the JMX Remote API 1.0.1_04 Reference Implementation
+            from <xref linkend="qpid_download.jsp"/>. The included
+            'jmxremote-1_0_1-bin\lib\jmxremote_optional.jar' file must be
+            added to the broker classpath:
+          </para><para>
+            First set your classpath to something like this:
+          </para>
+            <programlisting>
+CLASSPATH=jmxremote_optional.jar
+</programlisting>
+          <para>
+            Then, run qpid-server passing the following additional flag:
+          </para>
+            <programlisting>
+qpid-server -run:external-classpath=first
+</programlisting>
+          <para>
+            Following this the configuration option can be updated to enabled
+            use of the JMXMP based JMXConnectorServer.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="ManagementConsoleSecurity-BrokerConfiguration"><title>
+            Broker
+            Configuration
+          </title>
+
+	  <para>
+            To enabled this security option change the
+            <emphasis>security-enabled</emphasis> value in your broker configuration
+            file.
+          </para>
+            <programlisting>
+    &lt;management&gt;
+        &lt;security-enabled&gt;true&lt;/security-enabled&gt;
+    &lt;/management&gt;
+</programlisting>
+          <para>
+            You may also (for M2 and earlier) need to set the following
+            system properties using the environment variable QPID_OPTS:
+          </para><para>
+            QPID_OPTS="-Dcom.sun.management.jmxremote
+            -Dcom.sun.management.jmxremote.port=8999
+            -Dcom.sun.management.jmxremote.authenticate=false
+            -Dcom.sun.management.jmxremote.ssl=false"
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="ManagementConsoleSecurity-JMXManagementConsoleConfiguration"><title>
+            JMX
+            Management Console Configuration
+          </title>
+
+	  <para>
+            If you wish to connect to a broker configured to use JMXMP then
+            the console also requires provision of the Optional sections of
+            the JMX Remote API that are not included within the JavaSE
+            platform.
+          </para><para>
+            In order to make it available to the console, place the
+            'jmxremote_optional.jar' (rename the file if any additional
+            information is present in the file name) jar file within the
+            'plugins/jmxremote.sasl_1.0.1/' folder of the console release (on
+            Mac OS X you will need to select 'Show package contents' from the
+            context menu whilst selecting the management console bundle in
+            order to reveal the inner file tree).
+          </para><para>
+            Following the the console will automatically load the JMX Remote
+            Optional classes and attempt the JMXMP connection when connecting
+            to a JMXMP enabled broker.
+          </para>
+<!--h3--></section>
+<!--h2--></section>
+
+	  <section role="h2" id="ManagementConsoleSecurity-UserAccounts-26AccessRights"><title>
+            User
+            Accounts &amp; Access Rights
+          </title>
+
+	  <para>
+            In order to access the management operations via JMX, users must
+            have an account and have been assigned appropriate access rights.
+            See <xref linkend="qpid_Configuring-20Management-20Users"/>
+          </para>
+<!--h2--></section>
+<!--h1--></section>
+
+	  
+</chapter>

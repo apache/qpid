@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+      Apache Qpid : Java Environment Variables
+    </title>
+  <section role="h2" id="JavaEnvironmentVariables-SettingQpidEnvironmentVariables">
+    <title>
+            Setting
+            Qpid Environment Variables
+          </title>
+
+  <section role="h3" id="JavaEnvironmentVariables-QpidDeploymentPathVariables">
+    <title>
+            Qpid
+            Deployment Path Variables
+          </title>
+  <para>
+            There are two main Qpid environment variables which are required
+            to be set for Qpid deployments, QPID_HOME and QPID_WORK.
+          </para>
+  <para>
+            QPID_HOME - This variable is used to tell the Qpid broker where
+            it's installed home is, which is in turn used to find dependency
+            JARs which Qpid uses.
+          </para>
+  <para>
+            QPID_WORK - This variable is used by Qpid when creating all
+            'writeable' directories that it uses. This includes the log
+            directory and the storage location for any BDB instances in use
+            by your deployment (if you're using persistence with BDB). If you
+            do not set this variable, then the broker will default (in the
+            qpid-server script) to use the current user's homedir as the root
+            directory for creating the writeable locations that it uses.
+          </para>
+
+    <!--h3-->
+  </section>
+
+  <section role="h3" id="JavaEnvironmentVariables-SettingMaxMemoryforthebroker">
+    <title>
+            Setting
+            Max Memory for the broker
+          </title>
+  <para>
+            If you simply start the Qpid broker, it will default to use a
+            -Xmx setting of 1024M for the broker JVM. However, we would
+            recommend that you make the maximum -Xmx heap size available, if
+            possible, of 3Gb (for 32-bit platforms).
+          </para>
+  <para>
+            You can control the memory setting for your broker by setting the
+            QPID_JAVA_MEM variable before starting the broker e.g. -Xmx3668m
+            . Enclose your value within quotes if you also specify a -Xms
+            value. The value in use is echo'd by the qpid-server script on
+            startup.
+          </para>
+    <!--h3-->
+  </section>
+
+    <!--h2-->
+  </section>
+
+</chapter>

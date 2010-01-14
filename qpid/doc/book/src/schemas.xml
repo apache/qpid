@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <uri resource="Configure the Broker via config.xml.xml" typeId="DocBook"/>
   <uri resource="SSL.xml" typeId="DocBook"/>
   <uri resource="Using Broker Federation.xml" typeId="DocBook"/>
   <uri resource="Cheat Sheet for configuring Exchange Options.xml" typeId="DocBook"/>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Qpid Java Broker Management CLI
+    </title>
+	  <section role="h2" id="QpidJavaBrokerManagementCLI-HowtobuildApacheQpidCLI"><title>
+            How to
+            build Apache Qpid CLI
+          </title>
+
+	 
+	  <section role="h3" id="QpidJavaBrokerManagementCLI-BuildInstructionsGeneral"><title>
+            Build
+            Instructions - General
+          </title>
+
+	 <para>
+            At the very beginning please build Apache Qpid by refering this
+            installation guide from here <xref linkend="qpid_qpid-java-build-how-to"/>.
+          </para><para>
+            After successfully build Apache Qpid you'll be able to start
+            Apache Qpid Java broker,then only you are in a position to use
+            Qpid CLI.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaBrokerManagementCLI-CheckouttheSource"><title>
+            Check
+            out the Source
+          </title>
+
+	 <para>
+            First check out the source from subversion repository. Please
+            visit the following link for more information about different
+            versions of Qpid CLI.
+          </para><para>
+            <xref linkend="qpid_list"/>
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaBrokerManagementCLI-Prerequisites"><title>
+            Prerequisites
+          </title>
+
+	 <para>
+            For the broker code you need JDK 1.5.0_15 or later. You should
+            set JAVA_HOME and include the bin directory in your PATH.
+          </para><para>
+            Check it's ok by executing java -v !
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaBrokerManagementCLI-BuildingApacheQpidCLI"><title>
+            Building
+            Apache Qpid CLI
+          </title>
+
+	 <para>
+            This project is currently having only an ant build system.Please
+            install ant build system before trying to install Qpid CLI.
+          </para>
+<!--h3--></section>
+
+
+
+	  <section role="h3" id="QpidJavaBrokerManagementCLI-Compiling"><title>
+            Compiling
+          </title>
+
+	 <para>
+            To compile the source please run following command
+          </para>
+            <programlisting>
+ant compile 
+</programlisting>
+          <para>
+            To compile the test source run the following command
+          </para>
+            <programlisting>
+ant compile-tests 
+</programlisting>
+<!--h3--></section>
+
+          
+	  <section role="h3" id="QpidJavaBrokerManagementCLI-RunningCLI"><title>
+            Running CLI
+          </title>
+
+	 <para>
+            After successful compilation set QPID_CLI environment variable to
+            the main source directory.(set the environment variable to the
+            directory where ant build script stored in the SVN
+            checkout).Please check whether the Qpid Java broker is up an
+            running in the appropriate location and run the following command
+            to start the Qpid CLI by running the qpid-cli script in the bin
+            directory.
+          </para><para>
+            $QPID_CLI/bin/qpid-cli -h &lt;hostname of the broker&gt; -p
+            &lt;broker running port&gt;
+            For more details please have a look in to README file which ships
+            with source package of Qpid CLI.
+          </para>
+<!--h3--></section>
+
+
+	  <section role="h3" id="QpidJavaBrokerManagementCLI-Otheranttargets"><title>
+            Other
+            ant targets
+          </title>
+
+	  <para>For now we are supporting those ant targets.</para>
+
+	  <variablelist>
+	    <varlistentry>
+	      <term>ant clean</term>
+	      <listitem><para>Clean the complete build including CLI build and test build.</para></listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>ant jar</term>
+	      <listitem><para>Create the jar file for the project without test cases.</para></listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>ant init</term>
+	      <listitem><para>Create the directory structure for build.</para></listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>ant compile-tests </term>
+	      <listitem><para>This compiles all the test source.</para></listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term>ant test </term>
+	      <listitem><para>Run all the test cases.</para></listitem>
+	    </varlistentry>
+            
+          </variablelist>
+
+<!--h3--></section>
+<!--h2--></section>
+</chapter>

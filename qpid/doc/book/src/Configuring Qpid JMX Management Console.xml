@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Configuring Qpid JMX Management Console
+    </title><section role="h2" id="ConfiguringQpidJMXManagementConsole-ConfiguringQpidJMXManagementConsole"><title>
+            Configuring Qpid JMX Management Console
+          </title>
+
+	  <para>
+            Qpid has a JMX management interface that exposes a number of
+            components of the running broker.
+            You can find out more about the features exposed by the JMX
+            interfaces <xref linkend="qpid_Qpid-20Management-20Features"/>.
+          </para><para>
+            
+          </para>
+
+	  <section role="h3" id="ConfiguringQpidJMXManagementConsole-InstallingtheQpidJMXManagementConsole"><title>
+            Installing the Qpid JMX Management Console
+          </title>
+
+	 <orderedlist>
+            <listitem><para>Unzip the archive to a suitable location.</para>
+
+	    <note><title>SSL encrypted connections</title>
+                      <para>
+                        Recent versions of the broker can make use of SSL to
+                        encrypt their RMI based JMX connections. If a broker
+                        being connected to is making use of this ability then
+                        additional console configuration may be required,
+                        particularly when using self-signed certificates. See
+                        <xref linkend="qpid_Management-20Console-20Security"/> for details.
+                      </para>
+	    </note>
+	  </listitem>
+          </orderedlist>
+
+	  <note>
+	    <title>JMXMP based connections</title>
+	    <para>
+	      In previous releases of Qpid (M4 and below) the broker
+	      JMX connections could make use of the JMXMPConnector for
+	      additional security over its default RMI based JMX
+	      configuration. This is no longer the case, with SSL
+	      encrypted RMI being the favored approach going forward.
+	      However, if you wish to connect to an older broker using
+	      JMXMP the console will support this so long as the
+	      <emphasis>jmxremote_optional.jar</emphasis> file is provided to it.
+	      For details see <xref linkend="qpid_Management-20Console-20Security"/>.
+	    </para>
+	  </note>
+<!--h3--></section>
+
+          
+	  <section role="h3" id="ConfiguringQpidJMXManagementConsole-RunningtheQpidJMXManagementConsole"><title>
+            Running the Qpid JMX Management Console
+          </title>
+
+	 <para>
+            The console can be started in the following way, depending on
+            platform:
+          </para><itemizedlist>
+            <listitem><para>Windows: by running the 'qpidmc.exe' executable file.
+            </para></listitem>
+          </itemizedlist><itemizedlist>
+            <listitem><para>Linux: by running the 'qpidmc' executable.
+            </para></listitem>
+          </itemizedlist><itemizedlist>
+            <listitem><para>Mac OS X: by launching the consoles application bundle (.app
+            file).
+            </para></listitem>
+          </itemizedlist>
+<!--h3--></section>
+
+
+	  <section role="h3" id="ConfiguringQpidJMXManagementConsole-UsingtheQpidJMXManagementConsole"><title>
+            Using the Qpid JMX Management Console
+          </title>
+
+	 <para>
+            Please see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/> for details on using this Eclipse RCP
+            application.
+          </para>
+
+<!--h3--></section>
+<!--h2--></section>
+
+	  <section role="h2" id="ConfiguringQpidJMXManagementConsole-UsingJConsole"><title>
+            Using
+            JConsole
+          </title>
+
+	 <para>
+            See <xref linkend="qpid_JConsole"/>
+          </para>
+<!--h2--></section>
+
+
+	  <section role="h2" id="ConfiguringQpidJMXManagementConsole-UsingHermesJMS"><title>
+            Using
+            HermesJMS
+          </title>
+
+	 <para>
+            HermesJMS also offers integration with the Qpid management
+            interfaces. You can get instructions and more information from
+            <xref linkend="qpid_HermesJMS"/>.
+          </para>
+<!--h2--></section>
+
+	  <section role="h2" id="ConfiguringQpidJMXManagementConsole-UsingMC4J"><title>
+            Using
+            MC4J
+          </title>
+
+	 <para>
+            <xref linkend="qpid_www.mc4j.org"/> is an alternative
+            management tool. It provide a richer "dashboard" that can
+            customise the raw MBeans.
+          </para>
+	  <section role="h4" id="ConfiguringQpidJMXManagementConsole-Installation"><title>
+            Installation
+          </title>
+
+	 <itemizedlist>
+            <listitem><para>First download and install MC4J for your platform. Version
+            1.2 beta 9 is the latest version that has been tested.
+            </para></listitem>
+            <listitem><para>Copy the directory blaze/java/management/mc4j into
+            the directory &lt;MC4J-Installation&gt;/dashboards
+            </para></listitem>
+          </itemizedlist>
+<!--h4--></section>
+
+	  <section role="h4" id="ConfiguringQpidJMXManagementConsole-Configuration"><title>
+            Configuration
+          </title>
+
+	 <para>
+            You should create a connection the JVM to be managed. Using the
+            Management-&gt;Create Server Connection menu option. The
+            connection URL should be of the form:
+            service:jmx:rmi:///jndi/rmi://localhost:8999/jmxrmi
+            making the appropriate host and post changes.
+          </para>
+<!--h4--></section>
+
+	  <section role="h4" id="ConfiguringQpidJMXManagementConsole-Operation"><title>
+            Operation
+          </title>
+
+	 <para>
+            You can view tabular summaries of the queues, exchanges and
+            connections using the Global Dashboards-&gt;QPID tree view. To
+            drill down on individual beans you can right click on the bean.
+            This will show any available graphs too.
+          </para>
+<!--h4--></section>
+<!--h2--></section>
+</chapter>

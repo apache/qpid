@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Add New Users
+    </title><para>
+            The Qpid Java Broker has a single reference source (<xref linkend="qpid_PrincipalDatabase"/>) that
+            defines all the users in the system.
+          </para><para>
+            To add a new user to the broker the password file must be
+            updated. The details about adding entries and when these updates
+            take effect are dependent on the file format each of which are
+            described below.
+          </para>
+
+	  <section role="h2" id="AddNewUsers-AvailablePasswordfileformats"><title>
+            Available
+            Password file formats
+          </title>
+	  <para>
+            There are currently two different file formats available for use
+            depending on the PrincipalDatabase that is desired. In all cases
+            the clients need not be aware of the type of PrincipalDatabase in
+            use they only need support the SASL mechanisms they provide.
+          </para><itemizedlist>
+            <listitem><para>
+              <xref linkend="AddNewUsers-plain"/>
+            </para></listitem>
+            <listitem><para>
+              <xref linkend="AddNewUsers-base64md5"/>
+            </para></listitem>
+          </itemizedlist><para>
+            
+          </para>
+
+	  <section role="h3" id="AddNewUsers-Plain"><title>
+            Plain
+          </title>
+	  <para>
+            The plain file has the following format:
+          </para>
+            <programlisting>
+# Plain password authentication file.
+# default name : passwd
+# Format &lt;username&gt;:&lt;password&gt;
+#e.g.
+martin:password
+</programlisting>
+          <para>
+            As the contents of the file are plain text and the password is
+            taken to be everything to the right of the ':'(colon). The
+            password, therefore, cannot contain a ':' colon, but this can be
+            used to delimit the password.
+          </para><para>
+            Lines starting with a '#' are treated as comments.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="AddNewUsers-Whereisthepasswordfileformybroker-3F"><title>
+            Where is
+            the password file for my broker ?
+          </title>
+	  <para>
+            The location of the password file in use for your broker is as
+            configured in your config.xml file.
+          </para>
+            <programlisting>
+&lt;principal-databases&gt;
+            &lt;principal-database&gt;
+                &lt;name&gt;passwordfile&lt;/name&gt;
+                &lt;class&gt;org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase&lt;/class&gt;
+                &lt;attributes&gt;
+                    &lt;attribute&gt;
+                        &lt;name&gt;passwordFile&lt;/name&gt;
+                        &lt;value&gt;${conf}/passwd&lt;/value&gt;
+                    &lt;/attribute&gt;
+                &lt;/attributes&gt;
+            &lt;/principal-database&gt;
+        &lt;/principal-databases&gt;
+</programlisting>
+          <para>
+            So in the example config.xml file this password file lives in the
+            directory specified as the conf directory (at the top of your
+            config.xml file).
+          </para><para>
+            If you wish to use Base64 encoding for your password file, then
+            in the &lt;class&gt; element above you should specify
+            org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase
+          </para><para>
+            The default is:
+          </para>
+            <programlisting>
+ &lt;conf&gt;${prefix}/etc&lt;/conf&gt;
+</programlisting>
+<!--h3--></section>
+
+
+	  <section role="h3" id="AddNewUsers-Base64MD5PasswordFileFormat"><title>
+            Base64MD5
+            Password File Format
+          </title>
+	  <para>
+            This format can be used to ensure that SAs cannot read the plain
+            text password values from your password file on disk.
+          </para><para>
+            The Base64MD5 file uses the following format:
+          </para>
+            <programlisting>
+# Base64MD5 password authentication file
+# default name : qpid.passwd
+# Format &lt;username&gt;:&lt;Base64 Encoded MD5 hash of the users password&gt;
+#e.g.
+martin:X03MO1qnZdYdgyfeuILPmQ==
+</programlisting>
+          <para>
+            As with the Plain format the line is delimited by a ':'(colon).
+            The password field contains the MD5 Hash of the users password
+            encoded in Base64.
+          </para><para>
+            This file is read on broker start-up and is not re-read.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="AddNewUsers-HowcanIupdateaBase64MD5passwordfile-3F"><title>
+            How can
+            I update a Base64MD5 password file ?
+          </title>
+	  <para>
+            To update the file there are two options:
+          </para><orderedlist>
+            <listitem><para>Edit the file by hand using the <emphasis>qpid-passwd</emphasis> tool
+            that will generate the required lines. The output from the tool
+            is the text that needs to be copied in to your active password
+            file. This tool is located in the broker bin directory.
+              Eventually it is planned for this tool to emulate the
+              functionality of <xref linkend="qpid_htpasswd"/>
+              for qpid passwd files.
+              <emphasis>NOTE:</emphasis> For the changes to be seen by the broker you must
+              either restart the broker or reload the data with the
+              management tools (see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>)
+            </para></listitem>
+            <listitem><para>Use the management tools to create a new user. The changes
+            will be made by the broker to the password file and the new user
+            will be immediately available to the system (see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>).
+            </para></listitem>
+          </orderedlist>
+<!--h3--></section>
+<!--h2--></section>
+	  
+
+	  <section role="h2" id="AddNewUsers-Dynamicchangestopasswordfiles."><title>
+            Dynamic
+            changes to password files.
+          </title>
+	  <para>
+            The Plain password file and the Base64MD5 format file are both
+            only read once on start up.
+          </para><para>
+            To make changes dynamically there are two options, both require
+            administrator access via the Management Console (see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>)
+          </para><orderedlist>
+            <listitem><para>You can replace the file and use the console to reload its
+            contents.
+            </para></listitem>
+            <listitem><para>The management console provides an interface to create,
+            delete and amend the users. These changes are written back to the
+            active password file.
+            </para></listitem>
+          </orderedlist>
+<!--h2--></section>
+
+	  <section role="h2" id="AddNewUsers-HowpasswordfilesandPrincipalDatabasesrelatetoauthenticationmechanisms"><title>
+            How password files and PrincipalDatabases relate to
+            authentication mechanisms
+          </title>
+	  <para>
+            For each type of password file a PrincipalDatabase exists that
+            parses the contents. These PrincipalDatabases load various SASL
+            mechanism based on their supportability. e.g. the Base64MD5 file
+            format can't support Plain authentication as the plain password
+            is not available. Any client connecting need only be concerned
+            about the SASL module they support and not the type of
+            PrincipalDatabase. So I client that understands CRAM-MD5 will
+            work correctly with a Plain and Base64MD5 PrincipalDatabase.
+          </para><table><title/><tgroup cols="2">
+            <tbody>
+              <row>
+                <entry>
+                  FileFormat/PrincipalDatabase
+                </entry>
+                <entry>
+                  SASL
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  Plain
+                </entry>
+                <entry>
+                  AMQPLAIN PLAIN CRAM-MD5
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  Base64MD5
+                </entry>
+                <entry>
+                  CRAM-MD5 CRAM-MD5-HASHED
+                </entry>
+              </row>
+            </tbody>
+          </tgroup></table><para>
+            For details of SASL support see <xref linkend="qpid_Qpid-20Interoperability-20Documentation"/>
+          </para>
+<!--h2--></section>
+
+</chapter>

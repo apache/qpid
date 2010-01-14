@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+      Apache Qpid : Java Broker Feature Guide
+    </title>
+  <section role="h3" id="JavaBrokerFeatureGuide-TheQpidpureJavabrokercurrentlysupportsthefollowingfeatures-3A">
+    <title>
+            The Qpid pure Java broker currently supports the following
+            features:
+          </title>
+  <itemizedlist>
+            <listitem><para>All features required by the Sun JMS 1.1 specification, fully
+            tested
+            </para></listitem>
+            <listitem><para>Transaction support
+            </para></listitem>
+            <listitem><para>Persistence using a pluggable layer
+            </para></listitem>
+            <listitem><para>Pluggable security using SASL
+            </para></listitem>
+            <listitem><para>Management using JMX and an Eclipse Management Console
+            application
+            </para></listitem>
+            <listitem><para>High performance header-based routing for messages
+            </para></listitem>
+            <listitem><para>Message Priorities
+            </para></listitem>
+            <listitem><para>Configurable logging and log archiving
+            </para></listitem>
+            <listitem><para>Threshold alerting
+            </para></listitem>
+            <listitem><para>ACLs
+            </para></listitem>
+            <listitem><para>Extensively tested on each release, including performance
+            &amp; reliability testing
+            </para></listitem>
+            <listitem><para>Automatic client failover using configurable connection
+            properties
+            </para></listitem>
+            <listitem><para>Durable Queues/Subscriptions
+            </para></listitem>
+          </itemizedlist>
+  <section role="h3" id="JavaBrokerFeatureGuide-Upcomingfeatures-3A">
+    <title>
+            Upcoming
+            features:
+          </title>
+  <itemizedlist>
+            <listitem><para>Flow To Disk
+            </para></listitem>
+            <listitem><para>IP Whitelist
+            </para></listitem>
+            <listitem><para>AMQP 0-10 Support (for interoperability)
+            </para></listitem>
+          </itemizedlist>
+
+    <!--h3-->
+  </section>
+
+    <!--h3-->
+  </section>
+
+</chapter>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+      Apache Qpid : Qpid Management Features
+    </title>
+  <para>
+            <emphasis>Management tool:</emphasis> See our <xref linkend="qpid_Qpid-20JMX-20Management-20Console"/> for
+            details of how to use various console options with the Qpid
+            management features.
+          </para>
+  <para>
+            The management of QPID is categorised into following types-
+          </para>
+  <orderedlist>
+            <listitem><para>Exchange
+            </para></listitem>
+            <listitem><para>Queue
+            </para></listitem>
+            <listitem><para>Connection
+            </para></listitem>
+            <listitem><para>Broker
+            </para></listitem>
+          </orderedlist>
+  <para>
+             <emphasis>1) Managing and Monitoring Exchanges</emphasis>: Following is
+            the list of features, which we can have available for managing
+            and monitoring an Exchange running on a Qpid Server Domain-
+          </para>
+  <orderedlist>
+            <listitem><para>Displaying the following information for monitoring purpose-
+              <orderedlist>
+                <listitem><para>The list of queues bound to the exchange along with the
+                routing keys.
+                </para></listitem>
+                <listitem><para>
+                  General Exchange properties(like name,
+                  durable etc).
+                </para></listitem>
+              </orderedlist>
+            </para></listitem>
+            <listitem><para>
+              Binding an existing queue with the
+              exchange.
+            </para></listitem>
+          </orderedlist>
+  <para>
+            <emphasis>2) Managing and Monitoring
+            Queues</emphasis>:  Following are the
+            features, which we can have for a Queue on a Qpid Server
+            Domain-
+          </para>
+  <orderedlist>
+            <listitem><para>
+              Displaying the following information about
+              the queue for monitoring purpose-
+              <orderedlist>
+                <listitem><para>
+                  General Queue properties(like name,
+                  durable, etc.)
+                </para></listitem>
+                <listitem><para>
+                  The maximum size of a message that can
+                  be accepted from the message producer.
+                </para></listitem>
+                <listitem><para>
+                  The number of the active consumers
+                  accessing the Queue.
+                </para></listitem>
+                <listitem><para>
+                  The total number of
+                  consumers (Active and Suspended).
+                </para></listitem>
+                <listitem><para>
+                  The number of undelivered messages
+                  in the Queue.
+                </para></listitem>
+                <listitem><para>
+                  The total number of messages received
+                  on the Queue since startup.
+                </para></listitem>
+                <listitem><para>
+                  The maximum number of bytes for
+                  the Queue that can be stored on the Server.
+                </para></listitem>
+                <listitem><para>The maximum number of messages for the Queue that can be
+                stored on the Server.
+                </para></listitem>
+              </orderedlist>
+            </para></listitem>
+            <listitem><para>
+              Viewing the messages on the Queue.
+            </para></listitem>
+            <listitem><para>
+              Deleting message from top of the
+              Queue.
+            </para></listitem>
+            <listitem><para>
+              Clearing the Queue.
+            </para></listitem>
+            <listitem><para>
+              Browsing the DeadMessageQueue - Messages
+              which are expired or undelivered because of some reason are
+              routed to the DeadMessageQueue.  This queue can not be
+              deleted.  [Note: The is open because it depends on how
+              these kind of messages will be handeled?]
+            </para></listitem>
+          </orderedlist>
+  <para>
+            <emphasis>3) Managing and Monitoring
+            Connections</emphasis>: Following are the
+            features, which we can have for a connection on a QPID
+            Server Domain-
+          </para>
+  <orderedlist>
+            <listitem><para>
+              Displaying general connection
+              properties(like remote address, etc.).
+            </para></listitem>
+            <listitem><para>Setting maximum number of channels allowed for a
+            connection.
+            </para></listitem>
+            <listitem><para>View all related channels and channel properties.
+            </para></listitem>
+            <listitem><para>Closing a channel.
+            </para></listitem>
+            <listitem><para>Commit or Rollback transactions of a channel, if the channel
+            is transactional.
+            </para></listitem>
+            <listitem><para>Notification for exceeding the maximum number of
+            channels.
+            </para></listitem>
+            <listitem><para>Dropping a connection.
+            </para></listitem>
+            <listitem><para>The work for <xref linkend="qpid_Network-20IO-20Interface"/> implies that
+            there are potentially some additional requirements
+              <orderedlist>
+                <listitem><para>Alert when tcp flow control kicks in
+                </para></listitem>
+                <listitem><para>Information available about current memory usage
+                available through JMX interface
+                </para></listitem>
+                <listitem><para>Dynamic removal of buffer bounds? (fundamentally not
+                possible with TransportIO)
+                </para></listitem>
+                <listitem><para>Management functionality added to JMX interface - UI
+                changes?
+                </para></listitem>
+              </orderedlist>
+            </para></listitem>
+          </orderedlist>
+  <para>
+            <emphasis>4) Managing the Broker</emphasis>: Features for the Broker-
+          </para>
+  <orderedlist>
+            <listitem><para>Creating an Exchange.
+            </para></listitem>
+            <listitem><para>Unregistering an Exchange.
+            </para></listitem>
+            <listitem><para>Creating a Queue.
+            </para></listitem>
+            <listitem><para>Deleting a
+            Queue.        
+            </para></listitem>
+          </orderedlist>
+</chapter>

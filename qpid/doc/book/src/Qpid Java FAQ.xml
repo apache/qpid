@@ -1,0 +1,925 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Qpid Java FAQ
+    </title>
+
+    <section role="h2" id="QpidJavaFAQ-Purpose">
+      <title>Purpose</title>
+	  <para>
+            Here are a list of commonly asked questions and answers. Click on
+            the the bolded questions for the answer to unfold. If you have
+            any questions which are not on this list, please email our
+            qpid-user list.
+          </para>
+
+	  <section role="h3" id="QpidJavaFAQ-WhatisQpid-3F"><title>
+            What is Qpid ?
+          </title>
+
+	  <para>
+            The java implementation of Qpid is a pure Java message broker
+            that implements the AMQP protocol. Essentially, Qpid is a robust,
+            performant middleware component that can handle your messaging
+            traffic.
+          </para><para>
+            It currently supports the following features:
+          </para><itemizedlist>
+            <listitem><para>High performance header-based routing for messages
+            </para></listitem>
+            <listitem><para>All features required by the JMS 1.1 specification. Qpid
+            passes all tests in the Sun JMS compliance test suite
+            </para></listitem>
+            <listitem><para>Transaction support
+            </para></listitem>
+            <listitem><para>Persistence using the high performance Berkeley DB Java
+            Edition. The persistence layer is also pluggable should an
+            alternative implementation be required. The BDB store is
+            available from the <xref linkend="qpid_3rd-20Party-20Libraries"/> page
+            </para></listitem>
+            <listitem><para>Pluggable security using SASL. Any Java SASL provider can be
+            used
+            </para></listitem>
+            <listitem><para>Management using JMX and a custom management console built
+            using Eclipse RCP
+            </para></listitem>
+            <listitem><para>Naturally, interoperability with other clients including the
+            Qpid .NET, Python, Ruby and C++ implementations
+            </para></listitem>
+          </itemizedlist>
+	  <!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-WhyamIgettingaConfigurationExceptionatbrokerstartup-3F"><title>
+            Why am I getting a ConfigurationException at broker startup ?
+          </title>
+
+	  <section role="h4" id="QpidJavaFAQ-InvocationTargetException"><title>
+            InvocationTargetException
+          </title>
+	  <para>
+            If you get a java.lang.reflect.InvocationTargetException on
+            startup, wrapped as ConfigurationException like this:
+          </para>
+            <programlisting>
+Error configuring message broker: org.apache.commons.configuration.ConfigurationException: java.lang.reflect.InvocationTargetException 
+2008-09-26 15:14:56,529 ERROR [main] server.Main (Main.java:206) - Error configuring message broker: org.apache.commons.configuration.ConfigurationException: java.lang.reflect.InvocationTargetException 
+org.apache.commons.configuration.ConfigurationException: java.lang.reflect.InvocationTargetException 
+at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager.initialisePrincipalDatabase(ConfigurationFilePrincipalDatabaseManager.java:158) 
+at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager.initialisePrincipalDatabases(ConfigurationFilePrincipalDatabaseManager.java:87) 
+at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager.&lt;init&gt;(ConfigurationFilePrincipalDatabaseManager.java:56) 
+at org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry.initialise(ConfigurationFileApplicationRegistry.java:117) 
+at org.apache.qpid.server.registry.ApplicationRegistry.initialise(ApplicationRegistry.java:79) 
+at org.apache.qpid.server.registry.ApplicationRegistry.initialise(ApplicationRegistry.java:67) 
+at org.apache.qpid.server.Main.startup(Main.java:260) 
+at org.apache.qpid.server.Main.execute(Main.java:196) 
+at org.apache.qpid.server.Main.&lt;init&gt;(Main.java:96) 
+at org.apache.qpid.server.Main.main(Main.java:454) 
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) 
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) 
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) 
+at java.lang.reflect.Method.invoke(Method.java:597) 
+at com.intellij.rt.execution.application.AppMain.main(AppMain.java:90) 
+Caused by: java.lang.reflect.InvocationTargetException 
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) 
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) 
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) 
+at java.lang.reflect.Method.invoke(Method.java:597) 
+at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager.initialisePrincipalDatabase(ConfigurationFilePrincipalDatabaseManager.java:148) 
+</programlisting>
+          <para>
+            .. then it means you have a missing password file.
+          </para><para>
+            You need to create a password file for your deployment and update
+            your config.xml to reflect the location of the password file for
+            your instance.
+          </para><para>
+            The config.xml can be a little confusing in terms of element
+            names and file names for passwords.
+          </para><para>
+            To do this, you need to edit the passwordDir element for the
+            broker, which may have a comment to that effect:
+          </para>
+            <programlisting>
+&lt;passwordDir&gt;&lt;!-- Change to the location --&gt;&lt;/passwordDir&gt;
+</programlisting>
+          <para>
+            The file should be named passwd by default but if you want to you
+            can change this by editing this element:
+          </para>
+            <programlisting>
+&lt;value&gt;${passwordDir}/passwd&lt;/value&gt;
+</programlisting>
+	  <!--h4--></section>
+
+
+	  <section role="h4" id="QpidJavaFAQ-Cannotlocateconfigurationsourcenull-2Fvirtualhosts.xml"><title>
+            Cannot locate configuration source null/virtualhosts.xml
+          </title>
+
+	  <para>
+            If you get this message, wrapped inside a ConfigurationException
+            then you've come across a known issue, see JIRA <xref linkend="qpid_QPID-431"/>
+          </para><para>
+            The work around is to use a qualified path as the parameter value
+            for your -c option, rather than (as you migth be) starting the
+            broker from your installed etc directory. Even going up one level
+            and using a path relative to your Â£QPID_HOME directory
+            would sort this e.g qpid-server -c ./etc/myconfig.xml
+          </para>
+<!--h4--></section>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIruntheQpidbroker-3F"><title>
+            How do I run
+            the Qpid broker ?
+          </title>
+
+	  <para>
+            The broker comes with a script for unix/linux/cygwin called
+            qpid-server, which can be found in the bin directory of the
+            installed package. This command can be executed without any
+            paramters and will then use the default configuration file
+            provided on install.
+          </para><para>
+            For the Windows OS, please use qpid-server.bat.
+          </para><para>
+            There's no need to set your classpath for QPID as the scripts
+            take care of that by adding jar's with classpath defining
+            manifest files to your classpath.
+          </para><para>
+            For more information on running the broker please see our
+            <xref linkend="qpid_Getting-20Started"/> page.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowcanIcreateaconnectionusingaURL-3F"><title>
+            How can I
+            create a connection using a URL ?
+          </title>
+
+	  <para>
+            Please see the <xref linkend="qpid_Connection-20URL-20Format"/> documentation.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIrepresentaJMSDestinationstringwithQPID-3F"><title>
+            How
+            do I represent a JMS Destination string with QPID ?
+          </title>
+
+	  <section role="h4" id="QpidJavaFAQ-Queues"><title>
+            Queues
+          </title>
+
+	  <para>
+            A queue can be created in QPID using the following URL format.
+          </para><para>
+            direct://amq.direct/&lt;Destination&gt;/&lt;Queue
+            Name&gt;
+          </para><para>
+            For example:
+            direct://amq.direct/&lt;Destination&gt;/simpleQueue
+          </para><para>
+            Queue names may consist of any mixture of digits, letters, and
+            underscores.
+          </para><para>
+            The <xref linkend="qpid_BindingURLFormat"/> is described in more
+            detail on it's own page.
+          </para>
+<!--h4--></section>
+
+	  <section role="h4" id="QpidJavaFAQ-Topics"><title>
+            Topics
+          </title>
+
+	  <para>
+            A topic can be created in QPID using the following URL format.
+          </para><para>
+            topic://amq.topic/&lt;Topic Subscription&gt;/
+          </para><para>
+            The topic subscription may only contain the letters A-Z and a-z
+            and digits 0-9.
+          </para><para>
+            The topic subscription is formed from a series of words that may
+            only contain the letters A-Z and a-z and digits 0-9.
+            The words are delimited by dots. Each dot represents a new level.
+          </para><para>
+            For example: stocks.nyse.ibm
+          </para><para>
+            Wildcards can be used on subscription with the following meaning.
+          </para><itemizedlist>
+            <listitem><para>match a single level
+              # match zero or more levels
+            </para></listitem>
+          </itemizedlist><para>
+            For example:
+            With two clients
+            1 - stocks.*.ibm
+            2 - stocks.#.ibm
+          </para><para>
+            Publishing stocks.nyse.ibm will be received by both
+            clients but stocks.ibm and stocks.world.us.ibm
+            will only be received by client 2.
+          </para><para>
+            The topic currently does not support wild cards.
+          </para>
+<!--h4--></section>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIconnecttothebrokerusingJNDI-3F"><title>
+            How do I
+            connect to the broker using JNDI ?
+          </title>
+
+	  <para>
+            see <xref linkend="qpid_How-20to-20Use-20JNDI"/>
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-I-27musingSpringandWeblogiccanyouhelpmewiththeconfigurationformovingovertoQpid-3F"><title>
+            I'm using Spring and Weblogic - can you help me with the
+            configuration for moving over to Qpid ?
+          </title>
+
+	  <para>
+            Here is a donated Spring configuration file <xref linkend="qpid_2264.zip"/> which shows the
+            config for Qpid side by side with Weblogic. HtH !
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIconfigurethelogginglevelforQpid-3F"><title>
+            How do
+            I configure the logging level for Qpid ?
+          </title>
+
+	  <para>
+            The system property
+          </para>
+            <programlisting>
+amqj.logging.level
+</programlisting>
+          <para>
+            can be used to configure the logging level.
+            For the broker, you can use the environment variable
+            AMQJ_LOGGING_LEVEL which is picked up by the qpid-run script
+            (called by qpid-server to start the broker) at runtime.
+          </para><para>
+            For client code that you've written, simply pass in a system
+            property to your command line to set it to the level you'd like
+            i.e.
+          </para>
+            <programlisting>
+-Damqj.logging.level=INFO
+</programlisting>
+          <para>
+            The log level for the broker defaults to INFO if the env variable
+            is not set, but you may find that your log4j properties affect
+            this. Setting the property noted above should address this.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowcanIconfiguremyapplicationtouseQpidclientlogging-3F"><title>
+            How can I configure my application to use Qpid client
+            logging?
+          </title>
+
+	  <para>
+            If you don't already have a logging implementation in your
+            classpath you should add slf4-log4j12-1.4.0.jar and
+            log4j-1.2.12.jar.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowcanIconfigurethebroker-3F"><title>
+            How can I
+            configure the broker ?
+          </title>
+
+	  <para>
+            The broker configuration is contained in the
+            &lt;installed-dir&gt;/etc/config.xml file. You can copy and edit
+            this file and then specify your own configuration file as a
+            parameter to the startup script using the -c flag i.e.
+            qpid-server -c &lt;your_config_file's_path&gt;
+          </para><para>
+            For more detailed information on configuration, please see
+            <xref linkend="qpid_Qpid-20Design-20--20Configuration"/>
+          </para><para>
+            
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-Whatportsdoesthebrokeruse-3F"><title>
+            What ports
+            does the broker use?
+          </title>
+
+	  <para>
+            The broker defaults to use port 5672 at startup for AMQP
+            traffic.
+            If the management interface is enabled it starts on port 8999 by
+            default.
+          </para><para>
+            The JMX management interface actually requires 2 ports to
+            operate, the second of which is indicated to the client
+            application during connection initiation to the main (default:
+            8999) port. Previously this second port has been chosen at random
+            during broker startup, however since Qpid 0.5 this has been fixed
+            to a port 100 higher than the main port(ie Default:9099) in order
+            to ease firewall navigation.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowcanIchangetheportthebrokerusesatruntime-3F"><title>
+            How
+            can I change the port the broker uses at runtime ?
+          </title>
+
+	  <para>
+            The broker defaults to use port 5672 at startup for AMQP
+            traffic.
+            The broker also uses port 8999 for the JMX Management interface.
+          </para><para>
+            To change the AMQP traffic port use the -p flag at startup. To
+            change the management port use -m
+            i.e. qpid-server -p &lt;port_number_to_use&gt; -m
+            &lt;port_number_to_use&gt;
+          </para><para>
+            Use this to get round any issues on your host server with port
+            5672/8999 being in use/unavailable.
+          </para><para>
+            For additional details on what ports the broker uses see <xref linkend="QpidJavaFAQ-Whatportsdoesthebrokeruse"/> FAQ
+            entry.
+            For more detailed information on configuration, please see
+            <xref linkend="qpid_Qpid-20Design-20--20Configuration"/>
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-WhatcommandlineoptionscanIpassintotheqpidserverscript-3F"><title>
+            What command line options can I pass into the qpid-server
+            script ?
+          </title>
+
+	  <para>
+            The following command line options are available:
+          </para>
+
+	  <para>
+            The following options are available:
+          </para><table>
+	  <title>
+            Command Line Options
+          </title>
+
+	  <tgroup cols="3">
+            <tbody>
+              <row>
+                <entry>
+                  Option
+                </entry>
+                <entry>
+                  Long Option
+                </entry>
+                <entry>
+                  Description
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  b
+                </entry>
+                <entry>
+                  bind
+                </entry>
+                <entry>
+                  Bind to the specified address overriding any value in the
+                  config file
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  c
+                </entry>
+                <entry>
+                  config
+                </entry>
+                <entry>
+                  Use the given configuration file
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  h
+                </entry>
+                <entry>
+                  help
+                </entry>
+                <entry>
+                  Prints list of options
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  l
+                </entry>
+                <entry>
+                  logconfig
+                </entry>
+                <entry>
+                  Use the specified log4j.xml file rather than that in the
+                  etc directory
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  m
+                </entry>
+                <entry>
+                  mport
+                </entry>
+                <entry>
+                  Specify port to listen on for the JMX Management. Overrides
+                  value in config file
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  p
+                </entry>
+                <entry>
+                  port
+                </entry>
+                <entry>
+                  Specify port to listen on. Overrides value in config file
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  v
+                </entry>
+                <entry>
+                  version
+                </entry>
+                <entry>
+                  Print version information and exit
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  w
+                </entry>
+                <entry>
+                  logwatch
+                </entry>
+                <entry>
+                  Specify interval for checking for logging config changes.
+                  Zero means no checking
+                </entry>
+              </row>
+            </tbody>
+          </tgroup></table>
+	  </section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIauthenticatewiththebroker-3FWhatuserid-26passwordshouldIuse-3F"><title>
+            How do I authenticate with the broker ? What user id &amp;
+            password should I use ?
+          </title>
+
+	  <para>
+            You should login as user guest with password guest
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIcreatequeuesthatwillalwaysbeinstantiatedatbrokerstartup-3F"><title>
+            How do I create queues that will always be instantiated at
+            broker startup ?
+          </title>
+
+	  <para>
+            You can configure queues which will be created at broker startup
+            by tailoring a copy of the virtualhosts.xml file provided in the
+            installed qpid-version/etc directory.
+          </para><para>
+            So, if you're using a queue called 'devqueue' you can ensure that
+            it is created at startup by using an entry something like this:
+          </para>
+            <programlisting>
+&lt;virtualhosts&gt;
+  &lt;default&gt;test&lt;/default&gt;
+  &lt;virtualhost&gt;
+   &lt;name&gt;test&lt;/name&gt;
+   &lt;test&gt;
+   &lt;queue&gt;
+      &lt;name&gt;devqueue&lt;/name&gt;
+      &lt;devqueue&gt;
+        &lt;exchange&gt;amq.direct&lt;/exchange&gt;
+        &lt;maximumQueueDepth&gt;4235264&lt;/maximumQueueDepth&gt;  &lt;!-- 4Mb --&gt;
+        &lt;maximumMessageSize&gt;2117632&lt;/maximumMessageSize&gt; &lt;!-- 2Mb --&gt;
+        &lt;maximumMessageAge&gt;600000&lt;/maximumMessageAge&gt;  &lt;!-- 10 mins --&gt;
+      &lt;/devqueue&gt;
+   &lt;/queue&gt;
+   &lt;/test&gt;
+  &lt;/virtualhost&gt;
+&lt;/virtualhosts&gt;
+</programlisting>
+          <para>
+            Note that the name (in thie example above the name is 'test')
+            element should match the virtualhost that you're using to create
+            connections to the broker. This is effectively a namespace used
+            to prevent queue name clashes etc. You can also see that we've
+            set the 'test' virtual host to be the default for any connections
+            which do not specify a virtual host (in the &lt;default&gt; tag).
+          </para><para>
+            You can amend the config.xml to point at a different
+            virtualhosts.xml file by editing the &lt;virtualhosts/&gt;
+            element.
+          </para><para>
+            So, for example, you could tell the broker to use a file in your
+            home directory by creating a new config.xml file with the
+            following entry:
+          </para><para>
+            &lt;virtualhosts&gt;/home/myhomedir/virtualhosts.xml&lt;/virtualhosts&gt;
+          </para><para>
+            You can then pass this amended config.xml into the broker at
+            startup using the -c flag i.e.
+            qpid-server -c &lt;path&gt;/config.xml
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIcreatequeuesatruntime-3F"><title>
+            How do I
+            create queues at runtime?
+          </title>
+
+	  <para>
+            Queues can be dynamically created at runtime by creating a
+            consumer for them. After they have been created and bound (which
+            happens automatically when a JMS Consumer is created) a publisher
+            can send messages to them.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoItunethebroker-3F"><title>
+            How do I tune
+            the broker?
+          </title>
+
+	  <para>
+            There are a number of tuning options available, please see the
+            <xref linkend="qpid_How-20to-20Tune-20M3-20Java-20Broker-20Performance"/> page for more information.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-Wheredoundeliverablemessagesendup-3F"><title>
+            Where do
+            undeliverable messages end up ?
+          </title>
+
+	  <para>
+            At present, messages with an invalid routing key will be returned
+            to the sender. If you register an exception listener for your
+            publisher (easiest to do by making your publisher implement the
+            ExceptionListener interface and coding the onException method)
+            you'll see that you end up in onException in this case. You can
+            expect to be catching a subclass of
+            org.apache.qpid.AMQUndeliveredException.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-CanIconfigurethenameoftheQpidbrokerlogfileatruntime-3F"><title>
+            Can I configure the name of the Qpid broker log file at
+            runtime ?
+          </title>
+
+	  <para>
+            If you simply start the Qpid broker using the default
+            configuration, then the log file is written to
+            $QPID_WORK/log/qpid.log
+          </para><para>
+            This is not ideal if you want to run several instances from one
+            install, or acrhive logs to a shared drive from several hosts.
+          </para><para>
+            To make life easier, there are two optional ways to configure the
+            naming convention used for the broker log.
+          </para>
+
+	  <section role="h4" id="QpidJavaFAQ-Settingaprefixorsuffix"><title>
+            Setting a prefix
+            or suffix
+          </title>
+
+	  <para>
+            Users should set the following environment variables before
+            running qpid-server:
+          </para><para>
+            QPID_LOG_PREFIX - will prefix the log file name with the
+            specified value e.g. if you set this value to be the name of your
+            host (for example) it could look something like host123qpid.log
+          </para><para>
+            QPID_LOG_SUFFIX - will suffix the file name with the specified
+            value e.g. if you set this value to be the name of your
+            application (for example) if could look something like
+            qpidMyApp.log
+          </para>
+<!--h4--></section>
+
+	  <section role="h4" id="QpidJavaFAQ-IncludingthePID"><title>
+            Including the PID
+          </title>
+
+	  <para>
+            Setting either of these variables to the special value PID will
+            introduce the process id of the java process into the file name
+            as a prefix or suffix as specified**
+          </para>
+<!--h4--></section>
+<!--h3--></section>          
+
+	  <section role="h3" id="QpidJavaFAQ-Myclientapplicationappearstohavehung-3F"><title>
+            My
+            client application appears to have hung?
+          </title>
+
+	  <para>
+            The client code currently has various timeouts scattered
+            throughout the code. These can cause your client to appear like
+            it has hung when it is actually waiting for the timeout ot
+            compelete. One example is when the broker becomes non-responsive,
+            the client code has a hard coded 2 minute timeout that it will
+            wait when closing a connection. These timeouts need to be
+            consolidated and exposed. see <xref linkend="qpid_QPID-429"/>
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIcontacttheQpidteam-3F"><title>
+            How do I
+            contact the Qpid team ?
+          </title>
+
+	  <para>
+            For general questions, please subscribe to the
+            users@qpid.apache.org mailing list (<xref linkend="qpid_"/>).
+          </para><para>
+            For development questions, please subscribe to the
+            dev@qpid.apache.org mailing list (<xref linkend="qpid_"/>).
+          </para><para>
+            More details on these lists are available on our <xref linkend="qpid_Mailing-20Lists"/>
+            page.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowcanIchangeauser-27spasswordwhilethebrokerisup-3F"><title>
+            How can I change a user's password while the broker is up ?
+          </title>
+
+	  <para>
+            You can do this via the <xref linkend="qpid_Qpid-20JMX-20Management-20Console"/>. To
+            do this simply log in to the management console as an admin user
+            (you need to have created an admin account in the
+            jmxremote.access file first) and then select the 'UserManagement'
+            mbean. Select the user in the table and click the Set Password
+            button. Alternatively, update the password file and use the
+            management console to reload the file with the button at the
+            bottom of the 'UserManagement' view. In both cases, this will
+            take effect when the user next logs in i.e. will not cause them
+            to be disconnected if they are already connected.
+          </para><para>
+            For more information on the Management Console please see our
+            <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIknowifthereisaconsumerforamessageIamgoingtosend-3F"><title>
+            How do I know if there is a consumer for a message I am going
+            to send?
+          </title>
+
+	  <para>
+            Knowing that there is a consumer for a message is quite tricky.
+            That said using the qpid.jms.Session#createProducer with
+            immediate and mandatory set to true will get you part of the way
+            there.
+          </para><para>
+            If you are publishing to a well known queue then immediate will
+            let you know if there is any consumer able to pre-fetch that
+            message at the time you send it. If not it will be returned to
+            you on your connection listener.
+          </para><para>
+            If you are sending to a queue that the consumer creates then the
+            mandatory flag will let you know if they have not yet created
+            that queue.
+          </para><para>
+            These flags will not be able to tell you if the consuming
+            application has received the message and is able to process it.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowdoIuseanInVMBrokerformyowntests-3F"><title>
+            How do I
+            use an InVM Broker for my own tests?
+          </title>
+
+	  <para>
+            I would take a look at the testPassiveTTL in <xref linkend="qpid_TimeToLiveTest.java?revision=683950&amp;view=markup"/>
+          </para><para>
+            The setUp and tearDown methods show how to correctly start up a
+            broker for InVM testing. If you write your tests using a file for
+            the JNDI you can then very easily swap between running your tests
+            InVM and against a real broker.
+          </para><para>
+            See our <xref linkend="qpid_How-20to-20Use-20JNDI"/> on how to confgure it
+          </para><para>
+            Basically though you just need to set two System Properites:
+          </para><para>
+            java.naming.factory.initial =
+            org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+            java.naming.provider.url = &lt;your JNDI file&gt;
+          </para><para>
+            and call getInitialContext() in your code.
+          </para><para>
+            You will of course need to have the broker libraries on your
+            class path for this to run.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-HowcanIinspectthecontentsofmyMessageStore-3F"><title>
+            How
+            can I inspect the contents of my MessageStore?
+          </title>
+
+	  <para>
+            There are two possibilities here:
+          </para><para>
+            1) The management console can be used to interogate an active
+            broker and browse the contents of a queue.See the <xref linkend="qpid_Qpid-20JMX-20Management-20Console"/>
+            page for further details.
+          </para><para>
+            2) The <xref linkend="qpid_MessageStore-20Tool"/> can be used to inspect
+            the contents of a persistent message store. Note: this can
+            currently only be used when the broker is offline.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-Whyaremytransientmessagesbeingsoslow-3F"><title>
+            Why are
+            my transient messages being so slow?
+          </title>
+
+	  <para>
+            You should check that you aren't sending persistent messages,
+            this is the default. If you want to send transient messages you
+            must explicitly set this option when instantiating your
+            MessageProducer or on the send() method.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-Whydoesmyproducerfillupthebrokerwithmessages-3F"><title>
+            Why
+            does my producer fill up the broker with messages?
+          </title>
+
+	  <para>
+            The Java broker does not currently implement producer flow
+            control. Publishes are currently asynchronous, so there is no
+            ability to rate limit this automatically. While this is something
+            which will be addressed in the future, it is currently up to
+            applications to ensure that they do not publish faster than the
+            messages are being consumed for signifcant periods of time.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-ThebrokerkeepsthrowinganOutOfMemoryexception-3F"><title>
+            The
+            broker keeps throwing an OutOfMemory exception?
+          </title>
+
+	  <para>
+            The broker can no longer store any more messages in memory. This
+            is particular evident if you are using the MemoryMessageStore. To
+            alleviate this issue you should ensure that your clients are
+            consuming all the messages from the broker.
+          </para><para>
+            You may also want to increase the memory allowance to the broker
+            though this will only delay the exception if you are publishing
+            messages faster than you are consuming. See <xref linkend="qpid_Java-20Environment-20Variables"/> for
+            details of changing the memory settings.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-WhyamIgettingabrokersideexceptionwhenItrytopublishtoaqueueoratopic-3F"><title>
+            Why am I getting a broker side exception when I try to
+            publish to a queue or a topic ?
+          </title>
+
+	  <para>
+            If you get a stack trace like this when you try to publish, then
+            you may have typo'd the exchange type in your queue or topic
+            declaration. Open your virtualhosts.xml and check that the
+          </para>
+            <programlisting>
+&lt;exchange&gt;amq.direct&lt;/exchange&gt;
+</programlisting>
+          
+            <programlisting>
+2009-01-12 15:26:27,957 ERROR [pool-11-thread-2] protocol.AMQMinaProtocolSession (AMQMinaProtocolSession.java:365) - Unexpected exception while processing frame. Closing connection. 
+java.lang.NullPointerException 
+        at org.apache.qpid.server.security.access.PrincipalPermissions.authorise(PrincipalPermissions.java:398) 
+        at org.apache.qpid.server.security.access.plugins.SimpleXML.authorise(SimpleXML.java:302) 
+        at org.apache.qpid.server.handler.QueueBindHandler.methodReceived(QueueBindHandler.java:111) 
+        at org.apache.qpid.server.handler.ServerMethodDispatcherImpl.dispatchQueueBind(ServerMethodDispatcherImpl.java:498) 
+        at org.apache.qpid.framing.amqp_8_0.QueueBindBodyImpl.execute(QueueBindBodyImpl.java:167) 
+        at org.apache.qpid.server.state.AMQStateManager.methodReceived(AMQStateManager.java:204) 
+        at org.apache.qpid.server.protocol.AMQMinaProtocolSession.methodFrameReceived(AMQMinaProtocolSession.java:295) 
+        at org.apache.qpid.framing.AMQMethodBodyImpl.handle(AMQMethodBodyImpl.java:93) 
+        at org.apache.qpid.server.protocol.AMQMinaProtocolSession.frameReceived(AMQMinaProtocolSession.java:235) 
+        at org.apache.qpid.server.protocol.AMQMinaProtocolSession.dataBlockReceived(AMQMinaProtocolSession.java:191) 
+        at org.apache.qpid.server.protocol.AMQPFastProtocolHandler.messageReceived(AMQPFastProtocolHandler.java:244) 
+        at org.apache.mina.common.support.AbstractIoFilterChain$TailFilter.messageReceived(AbstractIoFilterChain.java:703) 
+        at org.apache.mina.common.support.AbstractIoFilterChain.callNextMessageReceived(AbstractIoFilterChain.java:362) 
+        at org.apache.mina.common.support.AbstractIoFilterChain.access$1200(AbstractIoFilterChain.java:54) 
+        at org.apache.mina.common.support.AbstractIoFilterChain$EntryImpl$1.messageReceived(AbstractIoFilterChain.java:800) 
+        at org.apache.qpid.pool.PoolingFilter.messageReceived(PoolingFilter.java:371) 
+        at org.apache.mina.filter.ReferenceCountingIoFilter.messageReceived(ReferenceCountingIoFilter.java:96) 
+        at org.apache.mina.common.support.AbstractIoFilterChain.callNextMessageReceived(AbstractIoFilterChain.java:362) 
+        at org.apache.mina.common.support.AbstractIoFilterChain.access$1200(AbstractIoFilterChain.java:54) 
+        at org.apache.mina.common.support.AbstractIoFilterChain$EntryImpl$1.messageReceived(AbstractIoFilterChain.java:800) 
+        at org.apache.mina.filter.codec.support.SimpleProtocolDecoderOutput.flush(SimpleProtocolDecoderOutput.java:60) 
+        at org.apache.mina.filter.codec.QpidProtocolCodecFilter.messageReceived(QpidProtocolCodecFilter.java:174) 
+        at org.apache.mina.common.support.AbstractIoFilterChain.callNextMessageReceived(AbstractIoFilterChain.java:362) 
+        at org.apache.mina.common.support.AbstractIoFilterChain.access$1200(AbstractIoFilterChain.java:54) 
+        at org.apache.mina.common.support.AbstractIoFilterChain$EntryImpl$1.messageReceived(AbstractIoFilterChain.java:800) 
+        at org.apache.qpid.pool.Event$ReceivedEvent.process(Event.java:86) 
+        at org.apache.qpid.pool.Job.processAll(Job.java:110) 
+        at org.apache.qpid.pool.Job.run(Job.java:149) 
+        at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:885) 
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:907) 
+        at java.lang.Thread.run(Thread.java:619) 
+</programlisting>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-WhyistherealotofAnonymousIoServicethreads"><title>
+            Why
+            is there a lot of AnonymousIoService threads
+          </title>
+
+	  <para>
+            These threads are part of the thread pool used by Mina to process
+            the socket. In the future we may provide tuning guidelines but at
+            this point we have seen no performance implications from the
+            current configuration. As the threads are part of a pool they
+            should remain inactive until required.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ--22unabletocertifytheprovidedSSLcertificateusingthecurrentSSLtruststore-22whenconnectingtheManagementConsoletothebroker."><title>
+            "unable to certify the provided SSL certificate using the
+            current SSL trust store" when connecting the Management Console
+            to the broker.
+          </title>
+
+	  <para>
+            You have not configured the console's SSL trust store properly,
+            see <xref linkend="qpid_Management-20Console-20Security"/> for
+            more details.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-Clientkeepsthrowing-27Serverdidnotrespondinatimelyfashion-27-5Cerrorcode408-3ARequestTimeout-5C."><title>
+            Client keeps throwing 'Server did not respond in a timely
+            fashion' [error code 408: Request Timeout].
+          </title>
+
+	  <para>
+            Certain operations wait for a response from the Server. One such
+            operations is commit. If the server does not respond to the
+            commit request within a set time a Request Timeout [error code:
+            408] exception is thrown (Server did not respond in a timely
+            fashion). This is to ensure that a server that has hung does not
+            cause the client process to be come unresponsive.
+          </para><para>
+            However, it is possible that the server just needs a long time to
+            process a give request. For example, sending a large persistent
+            message when using a persistent store will take some time to a)
+            Transfer accross the network and b) to be fully written to disk.
+          </para><para>
+            These situations require that the default timeout value be
+            increased. A cilent <xref linkend="qpid_System-20Properties"/> 'amqj.default_syncwrite_timeout' can be set
+            on the client to increase the wait time. The default in 0.5 is
+            30000 (30s).
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-CanauseTCPKEEPALIVEorAMQPheartbeatingtokeepmyconnectionopen-3F"><title>
+            Can a use TCP_KEEPALIVE or AMQP heartbeating to keep my
+            connection open?
+          </title>
+
+	  <para>
+            See <xref linkend="qpid_Configure-20Broker-20and-20Client-20Heartbeating"/>
+          </para>
+
+<!--h3--></section>            
+<!--h2--></section>
+
+	            
+
+</chapter>

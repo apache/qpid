@@ -9,7 +9,7 @@
       <listitem><para>Implemented in Java - Fully JMS compliant, runs on any Java platform.</para></listitem>
     </itemizedlist>
 
-    <para>Both AMQP messaging brokers support clients in multiple languages, as long as the messaging client and the messaging broker use the same version of AMQP. See <link linkend="###AMQP-Compatibility"/> to see which messaging clients work with each broker.</para>
+    <para>Both AMQP messaging brokers support clients in multiple languages, as long as the messaging client and the messaging broker use the same version of AMQP. See <link linkend="AMQP-Compatibility"/> to see which messaging clients work with each broker.</para>
   </partintro>
 
   <xi:include href="AMQP-Messaging-Broker-CPP.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

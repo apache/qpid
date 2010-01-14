@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Qpid Troubleshooting Guide
+    </title><para>
+            Contents
+          </para>
+            <itemizedlist>
+              <listitem><para>
+                <xref linkend="QpidTroubleshootingGuide-I-27mgettingajava.lang.UnsupportedClassVersionErrorwhenItrytostartthebroker.Whatdoesthismean-3F"/>
+              </para></listitem>
+              <listitem><para>
+                <xref linkend="QpidTroubleshootingGuide-I-27mhavingaproblembindingtotherequiredhost-3Aportatbrokerstartup-3F"/>
+              </para></listitem>
+              <listitem><para>
+                <xref linkend="QpidTroubleshootingGuide-I-27mhavingproblemswithmyclasspath.HowcanIensurethatmyclasspathisok-3F"/>
+              </para></listitem>
+              <listitem><para>
+                <xref linkend="QpidTroubleshootingGuide-Ican-27tgetthebrokertostart.HowcanIdiagnosetheproblem-3F"/>
+              </para></listitem>
+              <listitem><para>
+                <xref linkend="QpidTroubleshootingGuide-WhenItrytosendmessagestoaqueueI-27mgettingaerrorasthequeuedoesnotexist.WhatcanIdo-3F"/>
+              </para></listitem>
+            </itemizedlist>
+          <section role="h2" id="QpidTroubleshootingGuide-I-27mgettingajava.lang.UnsupportedClassVersionErrorwhenItrytostartthebroker.Whatdoesthismean-3F"><title>
+            I'm getting a java.lang.UnsupportedClassVersionError when I
+            try to start the broker. What does this mean ?
+          </title>
+
+	  <para>
+            The QPID broker requires JDK 1.5 or later. If you're seeing this
+            exception you don't have that version in your path. Set JAVA_HOME
+            to the correct version and ensure the bin directory is on your
+            path.
+          </para><para>
+            java.lang.UnsupportedClassVersionError:
+            org/apache/qpid/server/Main (Unsupported major.minor version
+            49.0)
+            at
+            java.lang.ClassLoader.defineClass(Ljava.lang.String;[BIILjava.security.ProtectionDomain;)Ljava.lang.Class;(Unknown
+            Source)
+            at
+            java.security.SecureClassLoader.defineClass(Ljava.lang.String;[BIILjava.security.CodeSource;)Ljava.lang.Class;(SecureClassLoader.java:123)
+
+            at
+            java.net.URLClassLoader.defineClass(Ljava.lang.String;Lsun.misc.Resource;)Ljava.lang.Class;(URLClassLoader.java:251)
+
+            at
+            java.net.URLClassLoader.access$100(Ljava.net.URLClassLoader;Ljava.lang.String;Lsun.misc.Resource;)Ljava.lang.Class;(URLClassLoader.java:55)
+
+            at java.net.URLClassLoader$1.run()Ljava.lang.Object;
+            (URLClassLoader.java:194)
+            at
+            jrockit.vm.AccessController.do_privileged_exc(Ljava.security.PrivilegedExceptionAction;Ljava.security.AccessControlContext;I)Ljava.lang.Object;(Unknown
+            Source)
+            at
+            jrockit.vm.AccessController.doPrivileged(Ljava.security.PrivilegedExceptionAction;Ljava.security.AccessControlContext;)Ljava.lang.Object;(Unknown
+            Source)
+            at
+            java.net.URLClassLoader.findClass(Ljava.lang.String;)Ljava.lang.Class;(URLClassLoader.java:187)
+
+            at
+            java.lang.ClassLoader.loadClass(Ljava.lang.String;Z)Ljava.lang.Class;
+            (Unknown Source)
+            at
+            sun.misc.Launcher$AppClassLoader.loadClass(Ljava.lang.String;Z)Ljava.lang.Class;(Launcher.java:274)
+
+            at
+            java.lang.ClassLoader.loadClass(Ljava.lang.String;)Ljava.lang.Class;
+
+            (Unknown Source)
+            at
+            java.lang.ClassLoader.loadClassFromNative(II)Ljava.lang.Class;
+
+            (Unknown Source)
+          </para>
+
+<!--h2--></section>
+
+	  <section role="h2" id="QpidTroubleshootingGuide-I-27mhavingaproblembindingtotherequiredhost-3Aportatbrokerstartup-3F"><title>
+            I'm having a problem binding to the required host:port at
+            broker startup ?
+          </title>
+	  <para>
+            This error probably indicates that another process is using the
+            port you the broker is trying to listen on. If you haven't
+            amended the default configuration this will be 5672. To check
+            what process is using the port you can use 'netstat -an |grep
+            5672'.
+          </para><para>
+            To change the port your broker uses, either edit the config.xml
+            you are using. You can specify an alternative config.xml from the
+            one provided in /etc by using the -c flag i.e. qpid-server -c
+            &lt;my config file path&gt;.
+          </para><para>
+            You can also amend the port more simply using the -p option to
+            qpid-server i.e. qpid-server -p &lt;my port number'
+          </para>
+<!--h2--></section>
+
+	  <section role="h2" id="QpidTroubleshootingGuide-I-27mhavingproblemswithmyclasspath.HowcanIensurethatmyclasspathisok-3F"><title>
+            I'm having problems with my classpath. How can I ensure that
+            my classpath is ok ?
+          </title>
+	  <para>
+            When you are running the broker the classpath is taken care of
+            for you, via the manifest entries in the launch jars that the
+            qpid-server configuration file adds to the classpath.
+          </para><para>
+            However, if you are running your own client code and experiencing
+            classspath errors you need to ensure that the client-launch.jar
+            from the installed Qpid lib directory is on your classpath. The
+            manifest for this jar includes the common-launch.jar, and thus
+            all the code you need to run a client application.
+          </para>
+
+	  <section role="h2" id="QpidTroubleshootingGuide-Ican-27tgetthebrokertostart.HowcanIdiagnosetheproblem-3F"><title>
+            I can't get the broker to start. How can I diagnose the
+            problem ?
+          </title>
+	  <para>
+            Firstly have a look at the broker log file - either on stdout or
+            in $QPID_WORK/log/qpid.log or in $HOME/log/qpid.log if you
+            haven't set QPID_WORK.
+          </para><para>
+            You should see the problem logged in here via log4j and a stack
+            trace. Have a look at the other entries on this page for common
+            problems. If the log file includes a line like:
+          </para><para>
+            "2006-10-13 09:58:14,672 INFO [main] server.Main (Main.java:343)
+            - Qpid.AMQP listening on non-SSL address 0.0.0.0/0.0.0.0:5672"
+          </para><para>
+            ... then you know the broker started up. If not, then it didn't.
+          </para>
+<!--h2--></section>
+
+	  <section role="h2" id="QpidTroubleshootingGuide-WhenItrytosendmessagestoaqueueI-27mgettingaerrorasthequeuedoesnotexist.WhatcanIdo-3F"><title>
+            When I try to send messages to a queue I'm getting a error as
+            the queue does not exist. What can I do ?
+          </title>
+	  <para>
+            In Qpid queues need a consumer before they really exist, unless
+            you have used the virtualhosts.xml file to specify queues which
+            should always be created at broker startup. If you don't want to
+            use this config, then simply ensure that you consume first from
+            queue before staring to publish to it. See the entry on our
+            <xref linkend="qpid_Qpid-20Java-20FAQ"/> for more details of using the virtualhosts.xml route.
+          </para>
+<!--h2--></section>
+</chapter>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+      Apache Qpid : Qpid JMX Management Console FAQ
+    </title>
+<!--
+h3. {toggle-cloak:id=qManagementConsoleSecurity} How do I connect the management console to my broker using security ?
+{cloak:id=qManagementConsoleSecurity}
+
+The [Management Console Security] page will give you the instructions that you should use to set this up.
+{cloak}
+
+
+h3. {toggle-cloak:id=rmiServerHostname} I am unable to connect Qpid JMX MC/JConsole to a remote broker running on Linux, but connecting to localhost on that machine works ?
+{cloak:id=rmiServerHostname}
+
+The RMI based JMX ConnectorServer used by the broker requries two ports to operate. The console connects to an RMI Registry running on the primary (default 8999) port and retrieves the information actually needed to connect to the JMX Server. This information embeds the hostname of the remote machine, and if this is incorrect or unreachable by the connecting client the connection will fail.
+
+This situation arises due to the hostname configuration on Linux and is generally encountered when the remote machine does not have a DNS hostname entry on the local network, causing the hostname command to return a loopback IP instead of a fully qualified domain name or IP address accessible by remote client machines. It is described in further detail at: http://java.sun.com/javase/6/docs/technotes/guides/management/faq.html#linux1
+
+To remedy this issue you can set the _java.rmi.server.hostname_ system property to control the hostname/ip reported to the RMI runtime when advertising the JMX ConnectorServer. This can also be used to dictate the address returned on a computer with multiple network interfaces to control reachability. To do so, add the value _-Djava.rmi.server.hostname=<desired hostname/ip>_ to the QPID_OPTS environment variable before starting the _qpid-server_ script.
+-->
+          
+	  <section role="h2" id="QpidJMXManagementConsoleFAQ-Errors"><title>
+            Errors
+          </title>
+	  
+	  <section role="h3" id="QpidJMXManagementConsoleFAQ-HowdoIconnectthemanagementconsoletomybrokerusingsecurity-3F"><title>
+             How do I connect the management console to
+            my broker using security ?
+          </title>
+
+	  <para>
+            The <xref linkend="qpid_Management-20Console-20Security"/> page will give you the instructions that you should
+            use to set this up.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJMXManagementConsoleFAQ-IamunabletoconnectQpidJMXMC-2FJConsoletoaremotebrokerrunningonLinux-2Cbutconnectingtolocalhostonthatmachineworks-3F"><title>
+             I am unable to connect Qpid JMX MC/JConsole
+            to a remote broker running on Linux, but connecting to localhost
+            on that machine works ?
+          </title>
+
+	  <para>
+            The RMI
+            based JMX ConnectorServer used by the broker requries two ports
+            to operate. The console connects to an RMI Registry running on
+            the primary (default 8999) port and retrieves the information
+            actually needed to connect to the JMX Server. This information
+            embeds the hostname of the remote machine, and if this is
+            incorrect or unreachable by the connecting client the connection
+            will fail.
+          </para><para>
+            This
+            situation arises due to the hostname configuration on Linux and
+            is generally encountered when the remote machine does not have a
+            DNS hostname entry on the local network, causing the hostname
+            command to return a loopback IP instead of a fully qualified
+            domain name or IP address accessible by remote client machines.
+            It is described in further detail at: <xref linkend="qpid_faq"/>
+          </para><para>
+            To
+            remedy this issue you can set the
+            <emphasis>java.rmi.server.hostname</emphasis> system property to control the
+            hostname/ip reported to the RMI runtime when advertising the JMX
+            ConnectorServer. This can also be used to dictate the address
+            returned on a computer with multiple network interfaces to
+            control reachability. To do so, add the value
+            <emphasis>-Djava.rmi.server.hostname=&lt;desired hostname/ip&gt;</emphasis>
+            to the QPID_OPTS environment variable before starting the
+            <emphasis>qpid-server</emphasis> script.
+          </para>
+<!--h3--></section>
+<!--h2--></section>
+</chapter>
