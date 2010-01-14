@@ -206,7 +206,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
         Thread.sleep(10000);
         List<String> results = _monitor.findMatches("Message send delayed by");
-        assertEquals("Incorrect number of delay messages logged by client",3,results.size());
+        assertTrue("Incorrect number of delay messages logged by client - expect at least 3, got " + results.size(),3 <= results.size());
         results = _monitor.findMatches("Message send failed due to timeout waiting on broker enforced flow control");
         assertEquals("Incorrect number of send failure messages logged by client",1,results.size());
 
@@ -407,8 +407,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         consumer.receive();
         
         //perform a synchronous op on the connection
-        ((AMQSession) consumerSession).declareExchange(
-                new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
+        ((AMQSession) consumerSession).sync();
         
         assertFalse("Queue should not be overfull", queueMBean.isFlowOverfull());
         
@@ -434,12 +433,15 @@ public class ProducerFlowControlTest extends AbstractTestLogging
             producer.send(nextMessage(msg, producerSession));
             _sentMessages.incrementAndGet();
 
+
             try
             {
-                Thread.sleep(sleepPeriod);
+                ((AMQSession)producerSession).sync();
             }
-            catch (InterruptedException e)
+            catch (AMQException e)
             {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
     }

@@ -1340,6 +1340,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         declareExchange(name, type, getProtocolHandler(), nowait);
     }
 
+    abstract public void sync() throws AMQException;
+
     public int getAcknowledgeMode() throws JMSException
     {
         checkNotClosed();
