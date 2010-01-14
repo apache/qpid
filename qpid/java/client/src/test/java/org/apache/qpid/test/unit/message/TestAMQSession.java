@@ -171,4 +171,8 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     {
 
     }
+
+    public void sync()
+    {
+    }
 }
