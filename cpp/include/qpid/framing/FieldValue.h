@@ -99,6 +99,7 @@ class FieldValue {
 
     template <class T, int W> T getIntegerValue() const;
     template <class T, int W> T getFloatingPointValue() const;
+    template <int W> void getFixedWidthValue(unsigned char*) const;
     template <class T> bool get(T&) const;
 
   protected:
@@ -204,6 +205,16 @@ inline T FieldValue::getFloatingPointValue() const {
         uint8_t* const target = reinterpret_cast<uint8_t*>(&value);
         for (uint i = 0; i < W; ++i) target[i] = octets[i];
         return value;
+    } else {
+        throw InvalidConversionException();
+    }
+}
+
+template <int W> void FieldValue::getFixedWidthValue(unsigned char* value) const
+{
+    FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
+    if (fwv) {
+        for (uint i = 0; i < W; ++i) value[i] = fwv->rawOctets()[i];
     } else {
         throw InvalidConversionException();
     }
@@ -415,6 +426,11 @@ class ListValue : public FieldValue {
   public:
     typedef List ValueType;
     QPID_COMMON_EXTERN ListValue(const List&);
+};
+
+class UuidValue : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN UuidValue(const unsigned char*);
 };
 
 template <class T>

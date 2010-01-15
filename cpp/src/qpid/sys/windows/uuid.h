@@ -34,5 +34,6 @@ QPID_COMMON_EXTERN void uuid_generate (uuid_t out);
 QPID_COMMON_EXTERN int  uuid_is_null (const uuid_t uu);          // Returns 1 if null, else 0
 QPID_COMMON_EXTERN int  uuid_parse (const char *in, uuid_t uu);  // Returns 0 on success, else -1
 QPID_COMMON_EXTERN void uuid_unparse (const uuid_t uu, char *out);
+QPID_COMMON_EXTERN void uuid_compare (const uuid_t a, const uuid_t b);
 
 #endif  /*!_sys_windows_uuid_h*/

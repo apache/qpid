@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
         colours.push_back(Variant("green"));
         colours.push_back(Variant("white"));
         content["colours"] = colours;
+        content["uuid"] = Uuid(true);
         content.encode();
 	
         sender.send(message);

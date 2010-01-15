@@ -705,6 +705,7 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/Sender.cpp			\
   qpid/messaging/Receiver.cpp			\
   qpid/messaging/Session.cpp			\
+  qpid/messaging/Uuid.cpp			\
   qpid/messaging/Variant.cpp			\
   qpid/messaging/ConnectionImpl.h 		\
   qpid/messaging/SenderImpl.h			\
@@ -812,6 +813,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Receiver.h 	        \
   ../include/qpid/messaging/Session.h 		\
+  ../include/qpid/messaging/Uuid.h 		\
   ../include/qpid/messaging/Variant.h 		\
   ../include/qpid/client/amqp0_10/Codecs.h
 

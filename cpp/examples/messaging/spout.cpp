@@ -26,7 +26,6 @@
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/messaging/Variant.h>
-#include <qpid/framing/Uuid.h>
 #include <qpid/Exception.h>
 #include <qpid/Options.h>
 #include <qpid/log/Logger.h>
@@ -39,7 +38,6 @@
 #include <boost/format.hpp>
 
 using namespace qpid::messaging;
-using qpid::framing::Uuid;
 using qpid::sys::AbsTime;
 using qpid::sys::now;
 using qpid::sys::TIME_INFINITE;
