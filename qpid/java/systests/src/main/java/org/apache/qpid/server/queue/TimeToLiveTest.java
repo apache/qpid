@@ -124,10 +124,16 @@ public class TimeToLiveTest extends QpidTestCase
         clientConnection.start();
 
         //Receive Message 0
-        Message receivedFirst = consumer.receive(1000);
-        Message receivedSecond = consumer.receive(1000);
+        // Set 5s receive time for messages we expect to receive.
+        Message receivedFirst = consumer.receive(5000);
+        Message receivedSecond = consumer.receive(5000);
         Message receivedThird = consumer.receive(1000);
         
+        // Log the messages to help diagnosis incase of failure
+        _logger.info("First:"+receivedFirst);
+        _logger.info("Second:"+receivedSecond);
+        _logger.info("Third:"+receivedThird);
+
         // Only first and last messages sent should survive expiry
         Assert.assertNull("More messages received", receivedThird); 
 
