@@ -112,6 +112,13 @@ void setEncodingFor(Variant& out, uint8_t code)
     }
 }
 
+qpid::messaging::Uuid getUuid(FieldValue& value)
+{
+    unsigned char data[16];
+    value.getFixedWidthValue<16>(data);
+    return qpid::messaging::Uuid(data);
+}
+
 Variant toVariant(boost::shared_ptr<FieldValue> in)
 {
     Variant out;
@@ -123,19 +130,21 @@ Variant toVariant(boost::shared_ptr<FieldValue> in)
       case 0x03: out = in->getIntegerValue<uint8_t, 1>(); break;
       case 0x04: break; //TODO: iso-8859-15 char
       case 0x08: out = in->getIntegerValue<bool, 1>(); break;
-      case 0x010: out.setEncoding(amqp0_10_binary);
-      case 0x011: out = in->getIntegerValue<int16_t, 2>(); break;
-      case 0x012: out = in->getIntegerValue<uint16_t, 2>(); break;
-      case 0x020: out.setEncoding(amqp0_10_binary);
-      case 0x021: out = in->getIntegerValue<int32_t, 4>(); break;
-      case 0x022: out = in->getIntegerValue<uint32_t, 4>(); break;
-      case 0x023: out = in->get<float>(); break;
-      case 0x027: break; //TODO: utf-32 char
-      case 0x030: out.setEncoding(amqp0_10_binary);
-      case 0x031: out = in->getIntegerValue<int64_t, 8>(); break;
-      case 0x038: out.setEncoding(amqp0_10_datetime); //treat datetime as uint64_t, but set encoding
-      case 0x032: out = in->getIntegerValue<uint64_t, 8>(); break;
-      case 0x033:out = in->get<double>(); break;
+      case 0x10: out.setEncoding(amqp0_10_binary);
+      case 0x11: out = in->getIntegerValue<int16_t, 2>(); break;
+      case 0x12: out = in->getIntegerValue<uint16_t, 2>(); break;
+      case 0x20: out.setEncoding(amqp0_10_binary);
+      case 0x21: out = in->getIntegerValue<int32_t, 4>(); break;
+      case 0x22: out = in->getIntegerValue<uint32_t, 4>(); break;
+      case 0x23: out = in->get<float>(); break;
+      case 0x27: break; //TODO: utf-32 char
+      case 0x30: out.setEncoding(amqp0_10_binary);
+      case 0x31: out = in->getIntegerValue<int64_t, 8>(); break;
+      case 0x38: out.setEncoding(amqp0_10_datetime); //treat datetime as uint64_t, but set encoding
+      case 0x32: out = in->getIntegerValue<uint64_t, 8>(); break;
+      case 0x33: out = in->get<double>(); break;
+
+      case 0x48: out = getUuid(*in); break;
 
         //TODO: figure out whether and how to map values with codes 0x40-0xd8
 
@@ -197,12 +206,11 @@ boost::shared_ptr<FieldValue> toFieldValue(const Variant& in)
       case VAR_DOUBLE: out = boost::shared_ptr<FieldValue>(new DoubleValue(in.asDouble())); break;
         //TODO: check encoding (and length?) when deciding what AMQP type to treat string as
       case VAR_STRING: out = boost::shared_ptr<FieldValue>(new Str16Value(in.asString())); break;
+      case VAR_UUID: out = boost::shared_ptr<FieldValue>(new UuidValue(in.asUuid().data())); break;
       case VAR_MAP: 
-        //out = boost::shared_ptr<FieldValue>(toFieldValueCollection<FieldTableValue>(in.asMap(), &toFieldTableEntry));
         out = boost::shared_ptr<FieldValue>(toFieldTableValue(in.asMap()));
         break;
       case VAR_LIST: 
-        //out = boost::shared_ptr<FieldValue>(toFieldValueCollection<ListValue>(in.asList(), &toFieldValue));
         out = boost::shared_ptr<FieldValue>(toListValue(in.asList()));
         break;
     }

@@ -652,6 +652,7 @@ set (qpidclient_SOURCES
      qpid/messaging/SessionImpl.h
      qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
+     qpid/messaging/Uuid.cpp
      qpid/messaging/Variant.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp

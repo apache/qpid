@@ -136,12 +136,14 @@ QPID_AUTO_TEST_CASE(testMap)
     const std::string red("red");
     const float pi(3.14f);
     const int16_t x(1000);
+    const Uuid u(true);
 
     Variant value = Variant::Map();
     value.asMap()["colour"] = red;
     value.asMap()["pi"] = pi;
     value.asMap()["my-key"] = x;
-    BOOST_CHECK_EQUAL(3u, value.asMap().size());
+    value.asMap()["id"] = u;
+    BOOST_CHECK_EQUAL(4u, value.asMap().size());
 
     BOOST_CHECK_EQUAL(VAR_STRING, value.asMap()["colour"].getType());
     BOOST_CHECK_EQUAL(red, value.asMap()["colour"].asString());
@@ -151,6 +153,9 @@ QPID_AUTO_TEST_CASE(testMap)
 
     BOOST_CHECK_EQUAL(VAR_INT16, value.asMap()["my-key"].getType());
     BOOST_CHECK_EQUAL(x, value.asMap()["my-key"].asInt16());
+
+    BOOST_CHECK_EQUAL(VAR_UUID, value.asMap()["id"].getType());
+    BOOST_CHECK_EQUAL(u, value.asMap()["id"].asUuid());
 
     value.asMap()["my-key"] = "now it's a string";
     BOOST_CHECK_EQUAL(VAR_STRING, value.asMap()["my-key"].getType());

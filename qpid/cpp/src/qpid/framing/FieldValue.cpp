@@ -197,6 +197,9 @@ Integer8Value::Integer8Value(int8_t v) :
 Integer16Value::Integer16Value(int16_t v) :
     FieldValue(0x11, new FixedWidthValue<2>(v))
 {}
+UuidValue::UuidValue(const unsigned char* v) :
+    FieldValue(0x48, new FixedWidthValue<16>(v))
+{}
 
 void FieldValue::print(std::ostream& out) const {
     data->print(out);

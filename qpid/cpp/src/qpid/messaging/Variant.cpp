@@ -52,6 +52,7 @@ class VariantImpl
     VariantImpl(const std::string&);
     VariantImpl(const Variant::Map&);
     VariantImpl(const Variant::List&);
+    VariantImpl(const Uuid&);
     ~VariantImpl();
 
     VariantType getType() const;
@@ -68,6 +69,7 @@ class VariantImpl
     float asFloat() const;
     double asDouble() const;
     std::string asString() const;
+    Uuid asUuid() const;
 
     const Variant::Map& asMap() const;
     Variant::Map& asMap();
@@ -130,6 +132,7 @@ VariantImpl::VariantImpl(double d) : type(VAR_DOUBLE) { value.d = d; }
 VariantImpl::VariantImpl(const std::string& s) : type(VAR_STRING) { value.v = new std::string(s); }
 VariantImpl::VariantImpl(const Variant::Map& m) : type(VAR_MAP) { value.v = new Variant::Map(m); }
 VariantImpl::VariantImpl(const Variant::List& l) : type(VAR_LIST) { value.v = new Variant::List(l); }
+VariantImpl::VariantImpl(const Uuid& u) : type(VAR_UUID) { value.v = new Uuid(u); }
 
 VariantImpl::~VariantImpl() { 
     switch (type) {
@@ -141,6 +144,9 @@ VariantImpl::~VariantImpl() {
         break;
       case VAR_LIST:
         delete reinterpret_cast<Variant::List*>(value.v);
+        break;
+      case VAR_UUID:
+        delete reinterpret_cast<Uuid*>(value.v);
         break;
       default:
         break;
@@ -312,9 +318,17 @@ std::string VariantImpl::asString() const
       case VAR_DOUBLE: return boost::lexical_cast<std::string>(value.d);
       case VAR_FLOAT: return boost::lexical_cast<std::string>(value.f);
       case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
+      case VAR_UUID: return reinterpret_cast<Uuid*>(value.v)->str();
       case VAR_LIST: return toString(asList());
       case VAR_MAP: return toString(asMap());
       default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_STRING)));
+    }
+}
+Uuid VariantImpl::asUuid() const
+{
+    switch(type) {
+      case VAR_UUID: return *reinterpret_cast<Uuid*>(value.v);
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UUID)));
     }
 }
 
@@ -336,6 +350,8 @@ bool VariantImpl::isEqualTo(VariantImpl& other) const
           case VAR_FLOAT: return value.f == other.value.f;
           case VAR_STRING: return *reinterpret_cast<std::string*>(value.v) 
                 == *reinterpret_cast<std::string*>(other.value.v);
+          case VAR_UUID: return *reinterpret_cast<Uuid*>(value.v) 
+                == *reinterpret_cast<Uuid*>(other.value.v);
           case VAR_LIST: return equal(asList(), other.asList());
           case VAR_MAP: return equal(asMap(), other.asMap());
         }
@@ -412,6 +428,7 @@ std::string VariantImpl::getTypeName(VariantType type) const
       case VAR_STRING: return "string";
       case VAR_MAP: return "map";
       case VAR_LIST: return "list";
+      case VAR_UUID: return "uuid";
     }
     return "<unknown>";//should never happen
 }
@@ -433,6 +450,7 @@ VariantImpl* VariantImpl::create(const Variant& v)
       case VAR_STRING: return new VariantImpl(v.asString());
       case VAR_MAP: return new VariantImpl(v.asMap());
       case VAR_LIST: return new VariantImpl(v.asList());
+      case VAR_UUID: return new VariantImpl(v.asUuid());
       default: return new VariantImpl();
     }
 }
@@ -454,6 +472,7 @@ Variant::Variant(const char* s) : impl(new VariantImpl(std::string(s))) {}
 Variant::Variant(const Map& m) : impl(new VariantImpl(m)) {}
 Variant::Variant(const List& l) : impl(new VariantImpl(l)) {}
 Variant::Variant(const Variant& v) : impl(VariantImpl::create(v)) {}
+Variant::Variant(const Uuid& u) : impl(new VariantImpl(u)) {}
 
 Variant::~Variant() { if (impl) delete impl; }
 
@@ -548,6 +567,13 @@ Variant& Variant::operator=(const char* s)
     return *this;
 }
 
+Variant& Variant::operator=(const Uuid& u)
+{
+    if (impl) delete impl;
+    impl = new VariantImpl(u);
+    return *this;
+}
+
 Variant& Variant::operator=(const Map& m)
 {
     if (impl) delete impl;
@@ -583,6 +609,7 @@ int64_t Variant::asInt64() const { return impl->asInt64(); }
 float Variant::asFloat() const { return impl->asFloat(); }
 double Variant::asDouble() const { return impl->asDouble(); }
 std::string Variant::asString() const { return impl->asString(); }
+Uuid Variant::asUuid() const { return impl->asUuid(); }
 const Variant::Map& Variant::asMap() const { return impl->asMap(); }
 Variant::Map& Variant::asMap() { return impl->asMap(); }
 const Variant::List& Variant::asList() const { return impl->asList(); }
@@ -604,6 +631,7 @@ Variant::operator int64_t() const { return asInt64(); }
 Variant::operator float() const { return asFloat(); }
 Variant::operator double() const { return asDouble(); }
 Variant::operator const char*() const { return asString().c_str(); }
+Variant::operator Uuid() const { return asUuid(); }
 
 std::ostream& operator<<(std::ostream& out, const Variant::Map& map)
 {

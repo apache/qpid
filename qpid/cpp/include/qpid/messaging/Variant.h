@@ -25,6 +25,7 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include "Uuid.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/client/ClientImportExport.h"
@@ -55,7 +56,8 @@ enum VariantType {
     VAR_DOUBLE,
     VAR_STRING,
     VAR_MAP,
-    VAR_LIST
+    VAR_LIST,
+    VAR_UUID
 };
 
 class VariantImpl;
@@ -86,6 +88,7 @@ class Variant
     QPID_CLIENT_EXTERN Variant(const Map&);
     QPID_CLIENT_EXTERN Variant(const List&);
     QPID_CLIENT_EXTERN Variant(const Variant&);
+    QPID_CLIENT_EXTERN Variant(const Uuid&);
 
     QPID_CLIENT_EXTERN ~Variant();
 
@@ -108,6 +111,7 @@ class Variant
     QPID_CLIENT_EXTERN Variant& operator=(const Map&);
     QPID_CLIENT_EXTERN Variant& operator=(const List&);
     QPID_CLIENT_EXTERN Variant& operator=(const Variant&);
+    QPID_CLIENT_EXTERN Variant& operator=(const Uuid&);
 
     QPID_CLIENT_EXTERN bool asBool() const;
     QPID_CLIENT_EXTERN uint8_t asUint8() const;
@@ -121,6 +125,7 @@ class Variant
     QPID_CLIENT_EXTERN float asFloat() const;
     QPID_CLIENT_EXTERN double asDouble() const;
     QPID_CLIENT_EXTERN std::string asString() const;
+    QPID_CLIENT_EXTERN Uuid asUuid() const;
 
     QPID_CLIENT_EXTERN operator bool() const;
     QPID_CLIENT_EXTERN operator uint8_t() const;
@@ -134,6 +139,7 @@ class Variant
     QPID_CLIENT_EXTERN operator float() const;
     QPID_CLIENT_EXTERN operator double() const;
     QPID_CLIENT_EXTERN operator const char*() const;
+    QPID_CLIENT_EXTERN operator Uuid() const;
 
     QPID_CLIENT_EXTERN const Map& asMap() const;
     QPID_CLIENT_EXTERN Map& asMap();
