@@ -1,7 +1,20 @@
 <?xml version="1.0"?>
+<part>
+  <title>AMQP Messaging Broker (Implemented in C++)</title>
+  <partintro>
+    <para>Qpid provides two AMQP messaging brokers:</para>
+
+    <itemizedlist>
+      <listitem><para>Implemented in C++ - high performance, low latency, and RDMA support.</para></listitem>
+      <listitem><para>Implemented in Java - Fully JMS compliant, runs on any Java platform.</para></listitem>
+    </itemizedlist>
+
+    <para>Both AMQP messaging brokers support clients in multiple languages, as long as the messaging client and the messaging broker use the same version of AMQP. See <link linkend="AMQP-Compatibility"/> to see which messaging clients work with each broker.</para>
+
+    <para>This section contains information specific to the broker that is implemented in C++.</para>
+  </partintro>
+
 <chapter>
-  <title>AMQP Messaging Broker (implemented in C++)</title>
-  <section>
     <title>            
       Running the AMQP Messaging Broker
     </title>
@@ -17,10 +30,10 @@
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="queue%20state%20replication.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Starting%20a%20cluster.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ACL.xml"/> 
+</chapter>
+ 
 
-  </section>
-
-  <section>
+<chapter>
     <title>            
       Managing the AMQP Messaging Broker
     </title>
@@ -30,6 +43,5 @@
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Management%20Framework.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Management%20Design%20notes.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMF%20Python%20Console%20Tutorial.xml"/> 
-
-  </section>
 </chapter>
+</part>

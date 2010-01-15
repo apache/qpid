@@ -1,15 +1,29 @@
 <?xml version="1.0"?>
-<section>
-<section>
+<part>
+  <title>AMQP Messaging Broker (Implemented in Java)</title>
+  <partintro>
+    <para>Qpid provides two AMQP messaging brokers:</para>
+
+    <itemizedlist>
+      <listitem><para>Implemented in C++ - high performance, low latency, and RDMA support.</para></listitem>
+      <listitem><para>Implemented in Java - Fully JMS compliant, runs on any Java platform.</para></listitem>
+    </itemizedlist>
+
+    <para>Both AMQP messaging brokers support clients in multiple languages, as long as the messaging client and the messaging broker use the same version of AMQP. See <link linkend="AMQP-Compatibility"/> to see which messaging clients work with each broker.</para>
+
+    <para>This section contains information specific to the broker that is implemented in Java.</para>
+  </partintro>
+
+<chapter>
   <title>General User Guides</title>
 
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java%20Broker%20Feature%20Guide.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20FAQ.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java%20Environment%20Variables.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Troubleshooting%20Guide.xml"/>
-</section>
+</chapter>
 
-<section  id="AMQPMessagingBroker%28implementedinJava%29-HowTos">
+<chapter  id="AMQPMessagingBroker%28implementedinJava%29-HowTos">
 <title>How Tos</title>
 
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Add%20New%20Users.xml"/>
@@ -22,9 +36,9 @@
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How%20to%20Tune%20M3%20Java%20Broker%20Performance.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20Build%20How%20To.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Use%20Priority%20Queues.xml"/>
-</section>
+</chapter>
 
-<section id="AMQPMessagingBroker%28implementedinJava%29-ManagementTools">
+<chapter id="AMQPMessagingBroker%28implementedinJava%29-ManagementTools">
 <title>Management Tools</title>
 
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20JMX%20Management%20Console.xml"/>
@@ -32,5 +46,5 @@
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20Broker%20Management%20CLI.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Management%20Design%20notes.xml"/>
 
-</section>
-</section>
+</chapter>
+</part>
