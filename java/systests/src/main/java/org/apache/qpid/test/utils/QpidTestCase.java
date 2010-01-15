@@ -505,7 +505,8 @@ public class QpidTestCase extends TestCase
             //Add the test name to the broker run.
             // DON'T change PNAME, qpid.stop needs this value.
             env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _testName + "\"");
-            env.put("QPID_WORK", System.getProperty("QPID_WORK"));
+            // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
+            env.put("QPID_WORK", System.getProperty("QPID_WORK")+ "/" + port);
 
 
             // Use the environment variable to set amqj.logging.level for the broker
