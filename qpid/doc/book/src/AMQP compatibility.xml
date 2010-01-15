@@ -6,7 +6,7 @@
   <para>
             <emphasis>Qpid provides the most complete and compatible implementation
             of AMQP. And is the most aggressive in implementing the latest
-            version of the specification. Qpid can be</emphasis> <emphasis><xref linkend="qpid_Download"/></emphasis>
+            version of the specification.
           </para>
   <para>
             There are two brokers:

@@ -11,15 +11,26 @@
 	  <xi:include href="Getting_Started.xml"/>
 	  <xi:include href="Download.xml"/>
 	</part>
-	<xi:include href="Brokers.xml"/>
+
+<!--
+    The broker sections define their own <part/> elements, with <partintro/> text.
+-->
+	<xi:include href="AMQP-Messaging-Broker-CPP.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	<xi:include href="AMQP-Messaging-Broker-Java.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
 	<part>
-	  <title>Clients</title>
-	  <xi:include href="Clients.xml"/>
+	  <title>AMQP Messaging Clients Clients</title>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Java%20JMS%20Messaging%20Client.html"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="4589059.html"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20.NET%20Messaging%20Client.html"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Python%20Messaging%20Client.html"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Ruby%20Messaging%20Client.html"/>
 	</part>
 	<part>
 	  <title>Appendices</title>
-        <xi:include href="Interoperability.xml"/>
-<!--        <xi:include href="FAQ.xml"/> -->
+	  <xi:include href="AMQP compatibility.xml"/>
+	  <xi:include href="Qpid Interoperability Documentation.xml"/>
+	  <!--        <xi:include href="FAQ.xml"/> -->
 	</part>
 </book>
 
