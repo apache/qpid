@@ -5,7 +5,8 @@ from threading import Semaphore
 
 from qpid.messaging import *
 from qmfCommon import (qmfTypes, SchemaProperty, SchemaObjectClass, QmfData,
-                       QmfEvent, SchemaMethod, Notifier, SchemaClassId) 
+                       QmfEvent, SchemaMethod, Notifier, SchemaClassId,
+                       WorkItem) 
 from qmfAgent import (Agent, QmfAgentData)
 
 
@@ -61,14 +62,14 @@ _agent.register_object_class(_schema)
 
 # instantiate managed data objects matching the schema
 
-_obj = QmfAgentData( _agent, _schema=_schema )
-_obj.set_value("index1", 100)
-_obj.set_value("index2", "a name" )
-_obj.set_value("set_string", "UNSET")
-_obj.set_value("set_int", 0)
-_obj.set_value("query_count", 0)
-_obj.set_value("method_call_count", 0)
-_agent.add_object( _obj )
+_obj1 = QmfAgentData( _agent, _schema=_schema )
+_obj1.set_value("index1", 100)
+_obj1.set_value("index2", "a name" )
+_obj1.set_value("set_string", "UNSET")
+_obj1.set_value("set_int", 0)
+_obj1.set_value("query_count", 0)
+_obj1.set_value("method_call_count", 0)
+_agent.add_object( _obj1 )
 
 _agent.add_object( QmfAgentData( _agent, _schema=_schema,
                                 _values={"index1":99, 
@@ -78,26 +79,52 @@ _agent.add_object( QmfAgentData( _agent, _schema=_schema,
                                          "query_count": 0,
                                          "method_call_count": 0} ))
 
+# add an "unstructured" object to the Agent
+_obj2 = QmfAgentData(_agent, _object_id="01545")
+_obj2.set_value("field1", "a value")
+_obj2.set_value("field2", 2)
+_obj2.set_value("field3", {"a":1, "map":2, "value":3})
+_obj2.set_value("field4", ["a", "list", "value"])
+_agent.add_object(_obj2)
+
+
 ## Now connect to the broker
 
 _c = Connection("localhost")
 _c.connect()
 _agent.setConnection(_c)
 
+_error_data = QmfData.create({"code": -1, "description": "You made a boo-boo."})
 
 _done = False
 while not _done:
-    try:
-        _notifier.waitForWork()
+    # try:
+    _notifier.waitForWork()
+    
+    _wi = _agent.get_next_workitem(timeout=0)
+    while _wi:
 
-        _wi = _agent.getNextWorkItem(timeout=0)
-        while _wi:
-            print("work item %d:%s" % (_wi.getType(), str(_wi.getParams())))
-            _agent.releaseWorkItem(_wi)
-            _wi = _agent.getNextWorkItem(timeout=0)
-    except:
-        print( "shutting down..." )
-        _done = True
+        if _wi.get_type() == WorkItem.METHOD_CALL:
+            mc = _wi.get_params()
+            
+            if mc.get_name() == "set_meth":
+                print("!!! Calling 'set_meth' on Object_id = %s" % mc.get_object_id())
+                print("!!! args='%s'" % str(mc.get_args()))
+                print("!!! userid=%s" % str(mc.get_user_id()))
+                print("!!! handle=%s" % _wi.get_handle())
+                _agent.method_response(_wi.get_handle(),
+                                       {"rc1": 100, "rc2": "Success"})
+            else:
+                print("!!! Unknown Method name = %s" % mc.get_name())
+                _agent.method_response(_wi.get_handle(), _error=_error_data)
+        else:
+            print("TBD: work item %d:%s" % (_wi.get_type(), str(_wi.get_params())))
+
+        _agent.release_workitem(_wi)
+        _wi = _agent.get_next_workitem(timeout=0)
+        #    except:
+        #        print( "shutting down...")
+        #        _done = True
 
 print( "Removing connection... TBD!!!" )
 #_myConsole.remove_connection( _c, 10 )

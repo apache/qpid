@@ -28,16 +28,18 @@ from threading import Lock
 from threading import currentThread
 from threading import Condition
 
-from qpid.messaging import *
+from qpid.messaging import Connection, Message, Empty, SendError
 
 from qmfCommon import (makeSubject, parseSubject, OpCode, QmfQuery, Notifier,
                        QmfQueryPredicate, MsgKey, QmfData, QmfAddress,
-                       AMQP_QMF_AGENT_LOCATE, AMQP_QMF_AGENT_INDICATION)  
+                       AMQP_QMF_AGENT_LOCATE, AMQP_QMF_AGENT_INDICATION,
+                       SchemaClass, SchemaClassId, SchemaEventClass,
+                       SchemaObjectClass, WorkItem, SchemaMethod)
 
 
 
 # global flag that indicates which thread (if any) is
-# running the console callback 
+# running the console notifier callback
 _callback_thread=None
 
 
@@ -243,13 +245,86 @@ class QmfConsoleData(QmfData):
         logging.error(" TBD!!!")
         return None
 
-    def invoke_method(self, name, _in_args=None, _reply_handle=None,
+    def invoke_method(self, name, _in_args={}, _reply_handle=None,
                       _timeout=None):
         """
         invoke the named method.
         """
-        logging.error(" TBD!!!")
-        return None
+        assert self._agent
+        assert self._agent._console
+
+        oid = self.get_object_id()
+        if oid is None:
+            raise ValueError("Cannot invoke methods on unmanaged objects.")
+
+        if _timeout is None:
+            _timeout = self._agent._console._reply_timeout
+
+        if _in_args:
+            _in_args = _in_args.copy()
+
+        if self._schema:
+            # validate
+            ms = self._schema.get_method(name)
+            if ms is None:
+                raise ValueError("Method '%s' is undefined." % ms)
+
+            for aname,prop in ms.get_arguments().iteritems():
+                if aname not in _in_args:
+                    if prop.get_default():
+                        _in_args[aname] = prop.get_default()
+                    elif not prop.is_optional():
+                        raise ValueError("Method '%s' requires argument '%s'"
+                                         % (name, aname))
+            for aname in _in_args.iterkeys():
+                prop = ms.get_argument(aname)
+                if prop is None:
+                    raise ValueError("Method '%s' does not define argument"
+                                     " '%s'" % (name, aname))
+                if "I" not in prop.get_direction():
+                    raise ValueError("Method '%s' argument '%s' is not an"
+                                     " input." % (name, aname)) 
+
+            # @todo check if value is correct (type, range, etc)
+
+        handle = self._agent._console._req_correlation.allocate()
+        if handle == 0:
+            raise Exception("Can not allocate a correlation id!")
+
+        _map = {self.KEY_OBJECT_ID:str(oid),
+                SchemaMethod.KEY_NAME:name}
+        if _in_args:
+            _map[SchemaMethod.KEY_ARGUMENTS] = _in_args
+
+        logging.debug("Sending method req to Agent (%s)" % time.time())
+        try:
+            self._agent._sendMethodReq(_map, handle)
+        except SendError, e:
+            logging.error(str(e))
+            self._agent._console._req_correlation.release(handle)
+            return None
+
+        # @todo async method calls!!!
+        if _reply_handle is not None:
+            print("ASYNC TBD")
+
+        logging.debug("Waiting for response to method req (%s)" % _timeout)
+        replyMsg = self._agent._console._req_correlation.get_data(handle, _timeout)
+        self._agent._console._req_correlation.release(handle)
+        if not replyMsg:
+            logging.debug("Agent method req wait timed-out.")
+            return None
+
+        _map = replyMsg.content.get(MsgKey.method)
+        if not _map:
+            logging.error("Invalid method call reply message")
+            return None
+
+        error=_map.get(SchemaMethod.KEY_ERROR)
+        if error:
+            return MethodResult(_error=QmfData.from_map(error))
+        else:
+            return MethodResult(_out_args=_map.get(SchemaMethod.KEY_ARGUMENTS))
 
 
 
@@ -364,6 +439,54 @@ class Agent(object):
         """
         pass
 
+
+    def invoke_method(self, name, _in_args={}, _reply_handle=None,
+                      _timeout=None): 
+        """
+        """
+        assert self._console
+
+        if _timeout is None:
+            _timeout = self._console._reply_timeout
+
+        if _in_args:
+            _in_args = _in_args.copy()
+
+        handle = self._console._req_correlation.allocate()
+        if handle == 0:
+            raise Exception("Can not allocate a correlation id!")
+
+        _map = {SchemaMethod.KEY_NAME:name}
+        if _in_args:
+            _map[SchemaMethod.KEY_ARGUMENTS] = _in_args
+
+        logging.debug("Sending method req to Agent (%s)" % time.time())
+        try:
+            self._sendMethodReq(_map, handle)
+        except SendError, e:
+            logging.error(str(e))
+            self._console._req_correlation.release(handle)
+            return None
+
+        # @todo async method calls!!!
+        if _reply_handle is not None:
+            print("ASYNC TBD")
+
+        logging.debug("Waiting for response to method req (%s)" % _timeout)
+        replyMsg = self._console._req_correlation.get_data(handle, _timeout)
+        self._console._req_correlation.release(handle)
+        if not replyMsg:
+            logging.debug("Agent method req wait timed-out.")
+            return None
+
+        _map = replyMsg.content.get(MsgKey.method)
+        if not _map:
+            logging.error("Invalid method call reply message")
+            return None
+
+        return MethodResult(_out_args=_map.get(SchemaMethod.KEY_ARGUMENTS),
+                            _error=_map.get(SchemaMethod.KEY_ERROR))
+
     def __repr__(self):
         return str(self._address)
     
@@ -379,45 +502,46 @@ class Agent(object):
         self._sendMsg( msg, correlation_id )
 
 
+    def _sendMethodReq(self, mr_map, correlation_id=None):
+        """
+        """
+        msg = Message(subject=makeSubject(OpCode.method_req),
+                      properties={"method":"request"},
+                      content=mr_map)
+        self._sendMsg( msg, correlation_id )
+
+
+  ##==============================================================================
+  ## METHOD CALL
+  ##==============================================================================
+
+class MethodResult(object):
+    def __init__(self, _out_args=None, _error=None):
+        self._error = _error
+        self._out_args = _out_args
+
+    def succeeded(self): 
+        return self._error is None
+
+    def get_exception(self):
+        return self._error
+
+    def get_arguments(self): 
+        return self._out_args
+
+    def get_argument(self, name): 
+        arg = None
+        if self._out_args:
+            arg = self._out_args.get(name)
+        return arg
+
+
   ##==============================================================================
   ## CONSOLE
   ##==============================================================================
 
 
 
-class WorkItem(object):
-    """
-    Describes an event that has arrived at the Console for the
-    application to process.  The Notifier is invoked when one or 
-    more of these WorkItems become available for processing.
-    """
-    #
-    # Enumeration of the types of WorkItems produced by the Console
-    #
-    AGENT_ADDED = 1
-    AGENT_DELETED = 2
-    NEW_PACKAGE = 3
-    NEW_CLASS = 4
-    OBJECT_UPDATE = 5
-    EVENT_RECEIVED = 7
-    AGENT_HEARTBEAT = 8
-
-    def __init__(self, kind, kwargs={}):
-        """
-        Used by the Console to create a work item.
-        
-        @type kind: int
-        @param kind: work item type
-        """
-        self._kind = kind
-        self._param_map = kwargs
-
-
-    def getType(self):
-        return self._kind
-
-    def getParams(self):
-        return self._param_map
 
 
 
@@ -465,6 +589,7 @@ class Console(Thread):
         self._cv = Condition()
         # for passing WorkItems to the application
         self._work_q = Queue.Queue()
+        self._work_q_put = False
         ## Old stuff below???
         #self._broker_list = []
         #self.impl = qmfengine.Console()
@@ -512,14 +637,15 @@ class Console(Thread):
                                                     " x-properties:"
                                                     " {type:direct}}}", 
                                                     capacity=1)
+        logging.error("local addr=%s" % self._address)
         ind_addr = QmfAddress.topic(AMQP_QMF_AGENT_INDICATION, self._domain)
-        logging.debug("agent.ind addr=%s" % ind_addr)
+        logging.error("agent.ind addr=%s" % ind_addr)
         self._announce_recvr = self._session.receiver(str(ind_addr) +
                                                       ";{create:always,"
                                                       " node-properties:{type:topic}}",
                                                       capacity=1)
         locate_addr = QmfAddress.topic(AMQP_QMF_AGENT_LOCATE, self._domain)
-        logging.debug("agent.locate addr=%s" % locate_addr)
+        logging.error("agent.locate addr=%s" % locate_addr)
         self._locate_sender = self._session.sender(str(locate_addr) +
                                                    ";{create:always,"
                                                    " node-properties:{type:topic}}")
@@ -615,9 +741,7 @@ class Console(Thread):
                                               " x-properties:"
                                               " {type:direct}}}")
 
-            query = QmfQuery({QmfQuery._TARGET: {QmfQuery._TARGET_AGENT:None},
-                              QmfQuery._PREDICATE:
-                                  {QmfQuery._CMP_EQ: ["_name", name]}})
+            query = QmfQuery.create_id(QmfQuery.TARGET_AGENT, name)
             msg = Message(subject=makeSubject(OpCode.agent_locate),
                           properties={"method":"request"},
                           content={MsgKey.query: query.map_encode()})
@@ -630,7 +754,7 @@ class Console(Thread):
             self._req_correlation.release(handle)
             return None
 
-        if not timeout:
+        if timeout is None:
             timeout = self._reply_timeout
 
         new_agent = None
@@ -650,6 +774,7 @@ class Console(Thread):
         """
         """
 
+        target = query.get_target()
         handle = self._req_correlation.allocate()
         if handle == 0:
             raise Exception("Can not allocate a correlation id!")
@@ -667,15 +792,63 @@ class Console(Thread):
         logging.debug("Waiting for response to Query (%s)" % timeout)
         reply = self._req_correlation.get_data(handle, timeout)
         self._req_correlation.release(handle)
-        logging.debug("Agent Query wait ended (%s)" % time.time())
-        if reply:
-            print("Agent Query Reply='%s'" % reply)
-            return reply.content
-        else:
-            print("Agent Query FAILED!!!")
+        if not reply:
+            logging.debug("Agent Query wait timed-out.")
             return None
 
-
+        if target == QmfQuery.TARGET_PACKAGES:
+            # simply pass back the list of package names
+            logging.debug("Response to Packet Query received")
+            return reply.content.get(MsgKey.package_info)
+        elif target == QmfQuery.TARGET_OBJECT_ID:
+            # simply pass back the list of object_id's
+            logging.debug("Response to Object Id Query received")
+            return reply.content.get(MsgKey.object_id)
+        elif target == QmfQuery.TARGET_SCHEMA_ID:
+            logging.debug("Response to Schema Id Query received")
+            id_list = []
+            for sid_map in reply.content.get(MsgKey.schema_id):
+                id_list.append(SchemaClassId.from_map(sid_map))
+            return id_list
+        elif target == QmfQuery.TARGET_SCHEMA:
+            logging.debug("Response to Schema Query received")
+            schema_list = []
+            for schema_map in reply.content.get(MsgKey.schema):
+                # extract schema id, convert based on schema type
+                sid_map = schema_map.get(SchemaClass.KEY_SCHEMA_ID)
+                if sid_map:
+                    sid = SchemaClassId.from_map(sid_map)
+                    if sid:
+                        if sid.get_type() == SchemaClassId.TYPE_DATA:
+                            schema = SchemaObjectClass.from_map(schema_map)
+                        else:
+                            schema = SchemaEventClass.from_map(schema_map)
+                        schema_list.append(schema)
+                        self._add_schema(schema)
+            return schema_list
+        elif target == QmfQuery.TARGET_OBJECT:
+            logging.debug("Response to Object Query received")
+            obj_list = []
+            for obj_map in reply.content.get(MsgKey.data_obj):
+                # if the object references a schema, fetch it
+                sid_map = obj_map.get(QmfData.KEY_SCHEMA_ID)
+                if sid_map:
+                    sid = SchemaClassId.from_map(sid_map)
+                    schema = self._fetch_schema(sid, _agent=agent,
+                                                _timeout=timeout)
+                    if not schema:
+                        logging.warning("Unknown schema, id=%s" % sid)
+                        continue
+                    obj = QmfConsoleData(map_=obj_map, agent=agent,
+                                         _schema=schema)
+                else:
+                    # no schema needed
+                    obj = QmfConsoleData(map_=obj_map, agent=agent)
+                obj_list.append(obj)
+            return obj_list
+        else:
+            logging.warning("Unexpected Target for a Query: '%s'" % target)
+            return None
 
     def run(self):
         global _callback_thread
@@ -684,30 +857,30 @@ class Console(Thread):
         #
         while self._operational:
 
-            qLen = self._work_q.qsize()
+            # qLen = self._work_q.qsize()
 
-            try:
-                msg = self._announce_recvr.fetch(timeout = 0)
-                if msg:
-                    self._dispatch(msg, _direct=False)
-            except Empty:
-                pass
+            while True:
+                try:
+                    msg = self._announce_recvr.fetch(timeout=0)
+                except Empty:
+                    break
+                self._dispatch(msg, _direct=False)
 
-            try:
-                msg = self._direct_recvr.fetch(timeout = 0)
-                if msg:
-                    self._dispatch(msg, _direct=True)
-            except Empty:
-                pass
+            while True:
+                try:
+                    msg = self._direct_recvr.fetch(timeout = 0)
+                except Empty:
+                    break
+                self._dispatch(msg, _direct=True)
 
             self._expireAgents()   # check for expired agents
 
-            if qLen == 0 and self._work_q.qsize() and self._notifier:
-                # work queue went non-empty, kick
-                # the application...
-
+            #if qLen == 0 and self._work_q.qsize() and self._notifier:
+            if self._work_q_put and self._notifier:
+                # new stuff on work queue, kick the the application...
+                self._work_q_put = False
                 _callback_thread = currentThread()
-                logging.info("Calling console indication")
+                logging.info("Calling console notifier.indication")
                 self._notifier.indication()
                 _callback_thread = None
 
@@ -761,7 +934,7 @@ class Console(Thread):
         elif opcode == OpCode.object_ind:
             logging.warning("!!! object_ind TBD !!!")
         elif opcode == OpCode.response:
-            logging.warning("!!! response TBD !!!")
+            self._handleResponseMsg(msg, cmap, version, _direct)
         elif opcode == OpCode.schema_ind:
             logging.warning("!!! schema_ind TBD !!!")
         elif opcode == OpCode.noop:
@@ -777,26 +950,29 @@ class Console(Thread):
         """
         logging.debug("_handleAgentIndMsg '%s' (%s)" % (msg, time.time()))
 
-        if MsgKey.agent_info in cmap:
-            try:
-                # TODO: fix
-                name = cmap[MsgKey.agent_info]["_name"]
-            except:
-                logging.warning("Bad agent-ind message received: '%s'" % msg)
-                return
+        ai_map = cmap.get(MsgKey.agent_info)
+        if not ai_map or not isinstance(ai_map, type({})):
+            logging.warning("Bad agent-ind message received: '%s'" % msg)
+            return
+        name = ai_map.get("_name")
+        if not name:
+            logging.warning("Bad agent-ind message received: agent name missing"
+                            " '%s'" % msg)
+            return
 
         ignore = True
         matched = False
         correlated = False
+        agent_query = self._agent_discovery_filter
+
         if msg.correlation_id:
             correlated = self._req_correlation.isValid(msg.correlation_id)
+
         if direct and correlated:
             ignore = False
-        elif self._agent_discovery_filter:
-            logging.error("FIXME: agent discovery filter - new agent name style")
-            # matched = self._agent_discovery_filter.evaluate(QmfData(agent_id.mapEncode()))
-            # ignore = not matched
-            matched = True; ignore = False  # for now
+        elif agent_query:
+            matched = agent_query.evaluate(QmfData.create(values=ai_map))
+            ignore = not matched
 
         if not ignore:
             agent = None
@@ -820,9 +996,9 @@ class Console(Thread):
 
             if old_timestamp == None and matched:
                 logging.error("AGENT_ADDED for %s (%s)" % (agent, time.time()))
-                wi = WorkItem(WorkItem.AGENT_ADDED,
-                              {"agent": agent})
+                wi = WorkItem(WorkItem.AGENT_ADDED, None, {"agent": agent})
                 self._work_q.put(wi)
+                self._work_q_put = True
 
             if correlated:
                 # wake up all waiters
@@ -840,6 +1016,22 @@ class Console(Thread):
 
         if not self._req_correlation.isValid(msg.correlation_id):
             logging.error("FIXME: uncorrelated data indicate??? msg='%s'" % str(msg))
+            return
+
+        # wake up all waiters
+        logging.error("waking waiters for correlation id %s" % msg.correlation_id)
+        self._req_correlation.put_data(msg.correlation_id, msg)
+
+
+    def _handleResponseMsg(self, msg, cmap, version, direct):
+        """
+        Process a received data-ind message.
+        """
+        # @todo code replication - clean me.
+        logging.debug("_handleResponseMsg '%s' (%s)" % (msg, time.time()))
+
+        if not self._req_correlation.isValid(msg.correlation_id):
+            logging.error("FIXME: uncorrelated response??? msg='%s'" % str(msg))
             return
 
         # wake up all waiters
@@ -865,8 +1057,10 @@ class Console(Thread):
                     if agent_deathtime <= now:
                         logging.debug("AGENT_DELETED for %s" % agent)
                         agent._announce_timestamp = None
-                        wi = WorkItem(WorkItem.AGENT_DELETED, {"agent":agent})
+                        wi = WorkItem(WorkItem.AGENT_DELETED, None,
+                                      {"agent":agent})
                         self._work_q.put(wi)
+                        self._work_q_put = True
                     else:
                         if (agent_deathtime - now) < next_expire_delta:
                             next_expire_delta = agent_deathtime - now
@@ -903,28 +1097,29 @@ class Console(Thread):
 
         # new agent - query for its schema database for
         # seeding the schema cache (@todo)
-        # query = QmfQuery({QmfQuery._TARGET_SCHEMA_ID:None})
+        # query = QmfQuery({QmfQuery.TARGET_SCHEMA_ID:None})
         # agent._sendQuery( query )
 
         return agent
 
 
 
-    def enableAgentDiscovery(self, query=None):
+    def enable_agent_discovery(self, _query=None):
         """
         Called to enable the asynchronous Agent Discovery process.
         Once enabled, AGENT_ADD work items can arrive on the WorkQueue.
         """
-        if query:
-            if not isinstance(query, QmfQuery):
-                raise TypeError("Type QmfQuery expected")
-            self._agent_discovery_filter = query
+        # @todo: fix - take predicate only, not entire query!
+        if _query is not None:
+            if (not isinstance(_query, QmfQuery) or
+                _query.get_target() != QmfQuery.TARGET_AGENT):
+                raise TypeError("Type QmfQuery with target == TARGET_AGENT expected")
+            self._agent_discovery_filter = _query
         else:
             # create a match-all agent query (no predicate)
-            self._agent_discovery_filter = QmfQuery({QmfQuery._TARGET: 
-                                                     {QmfQuery._TARGET_AGENT:None}})
+            self._agent_discovery_filter = QmfQuery.create_wildcard(QmfQuery.TARGET_AGENT) 
 
-    def disableAgentDiscovery(self):
+    def disable_agent_discovery(self):
         """
         Called to disable the async Agent Discovery process enabled by
         calling enableAgentDiscovery()
@@ -933,7 +1128,7 @@ class Console(Thread):
 
 
 
-    def getWorkItemCount(self):
+    def get_workitem_count(self):
         """
         Returns the count of pending WorkItems that can be retrieved.
         """
@@ -941,19 +1136,19 @@ class Console(Thread):
 
 
 
-    def getNextWorkItem(self, timeout=None):
+    def get_next_workitem(self, timeout=None):
         """
         Returns the next pending work item, or None if none available.
         @todo: subclass and return an Empty event instead.
         """
         try:
             wi = self._work_q.get(True, timeout)
-        except:
+        except Queue.Empty:
             return None
         return wi
 
 
-    def releaseWorkItem(self, wi):
+    def release_workitem(self, wi):
         """
         Return a WorkItem to the Console when it is no longer needed.
         @todo: call Queue.task_done() - only 2.5+
@@ -962,6 +1157,50 @@ class Console(Thread):
         @param wi: work item object to return.
         """
         pass
+
+    def _add_schema(self, schema):
+        """
+        @todo
+        """
+        if not isinstance(schema, SchemaClass):
+            raise TypeError("SchemaClass type expected")
+
+        self._lock.acquire()
+        try:
+            sid = schema.get_class_id()
+            if not self._schema_cache.has_key(sid):
+                self._schema_cache[sid] = schema
+        finally:
+            self._lock.release()
+
+    def _fetch_schema(self, schema_id, _agent=None, _timeout=None):
+        """
+        Find the schema identified by schema_id.  If not in the cache, ask the
+        agent for it.
+        """
+        if not isinstance(schema_id, SchemaClassId):
+            raise TypeError("SchemaClassId type expected")
+
+        self._lock.acquire()
+        try:
+            schema = self._schema_cache.get(schema_id)
+            if schema:
+                return schema
+        finally:
+            self._lock.release()
+
+        if _agent is None:
+            return None
+
+        # note: doQuery will add the new schema to the cache automatically.
+        slist = self.doQuery(_agent,
+                             QmfQuery.create_id(QmfQuery.TARGET_SCHEMA, schema_id),
+                             _timeout)
+        if slist:
+            return slist[0]
+        else:
+            return None
+
 
 
     # def get_packages(self):
@@ -1341,9 +1580,7 @@ class Console(Thread):
 
 if __name__ == '__main__':
     # temp test code
-    from qmfCommon import (qmfTypes, QmfData,
-                           QmfEvent, SchemaClassId, SchemaEventClass,
-                           SchemaProperty, SchemaObjectClass)
+    from qmfCommon import (qmfTypes, QmfEvent, SchemaProperty)
 
     logging.getLogger().setLevel(logging.INFO)
 
@@ -1362,7 +1599,7 @@ if __name__ == '__main__':
 
     _myConsole = Console(notifier=_noteMe)
 
-    _myConsole.enableAgentDiscovery()
+    _myConsole.enable_agent_discovery()
     logging.info("Waiting...")
 
 
@@ -1430,16 +1667,16 @@ if __name__ == '__main__':
                                            "statistics": { "amqp_type": qmfTypes.TYPE_DELTATIME,
                                                            "unit": "seconds",
                                                            "desc": "time until I retire"},
-                                           "meth1": {"desc": "A test method",
-                                                     "arguments":
+                                           "meth1": {"_desc": "A test method",
+                                                     "_arguments":
                                                          {"arg1": {"amqp_type": qmfTypes.TYPE_UINT32,
                                                                    "desc": "an argument 1",
                                                                    "dir":  "I"},
                                                           "arg2": {"amqp_type": qmfTypes.TYPE_BOOL,
                                                                    "dir":  "IO",
                                                                    "desc": "some weird boolean"}}},
-                                           "meth2": {"desc": "A test method",
-                                                     "arguments":
+                                           "meth2": {"_desc": "A test method",
+                                                     "_arguments":
                                                          {"m2arg1": {"amqp_type": qmfTypes.TYPE_UINT32,
                                                                      "desc": "an 'nuther argument",
                                                                      "dir":
@@ -1538,15 +1775,14 @@ if __name__ == '__main__':
 
     logging.info( "******** Messing around with Queries ********" )
 
-    _q1 = QmfQuery({QmfQuery._TARGET: {QmfQuery._TARGET_AGENT:None},
-                    QmfQuery._PREDICATE:
-                        {QmfQuery._LOGIC_AND: 
-                         [{QmfQuery._CMP_EQ: ["vendor",  "AVendor"]},
-                          {QmfQuery._CMP_EQ: ["product", "SomeProduct"]},
-                          {QmfQuery._CMP_EQ: ["name", "Thingy"]},
-                          {QmfQuery._LOGIC_OR:
-                               [{QmfQuery._CMP_LE: ["temperature", -10]},
-                                {QmfQuery._CMP_FALSE: None},
-                                {QmfQuery._CMP_EXISTS: ["namey"]}]}]}})
+    _q1 = QmfQuery.create_predicate(QmfQuery.TARGET_AGENT,
+                                    QmfQueryPredicate({QmfQuery.LOGIC_AND:
+                                                           [{QmfQuery.CMP_EQ: ["vendor",  "AVendor"]},
+                                                            {QmfQuery.CMP_EQ: ["product", "SomeProduct"]},
+                                                            {QmfQuery.CMP_EQ: ["name", "Thingy"]},
+                                                            {QmfQuery.LOGIC_OR:
+                                                                 [{QmfQuery.CMP_LE: ["temperature", -10]},
+                                                                  {QmfQuery.CMP_FALSE: None},
+                                                                  {QmfQuery.CMP_EXISTS: ["namey"]}]}]}))
 
-    print("_q1.mapEncode() = [%s]" % _q1)
+    print("_q1.mapEncode() = [%s]" % _q1.map_encode())
