@@ -117,6 +117,16 @@ public class SubscriptionTestHelper implements Subscription
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public AMQQueue.Context getQueueContext()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setQueueContext(AMQQueue.Context queueContext)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public QueueEntry getLastSeenEntry()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.

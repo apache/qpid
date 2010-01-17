@@ -27,6 +27,7 @@ import org.apache.qpid.client.*;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.framing.AMQShortString;
 
 import javax.naming.Context;
@@ -43,6 +44,7 @@ import javax.jms.Message;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.HashMap;
+import java.net.URISyntaxException;
 
 import junit.framework.TestCase;
 
@@ -118,7 +120,7 @@ public class ConflationQueueTest extends TestCase
 
 
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put("x-qpid-conflation-key","key");
+        arguments.put("qpid.last_value_queue_key","key");
         ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), true, false, false, arguments);
         queue = new org.apache.qpid.client.AMQQueue("amq.direct",QUEUE);
         ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
@@ -163,7 +165,7 @@ public class ConflationQueueTest extends TestCase
 
 
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put("x-qpid-conflation-key","key");
+        arguments.put("qpid.last_value_queue_key","key");
         ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), false, false, false, arguments);
         queue = new org.apache.qpid.client.AMQQueue("amq.direct",QUEUE);
         ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
@@ -239,7 +241,7 @@ public class ConflationQueueTest extends TestCase
 
 
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put("x-qpid-conflation-key","key");
+        arguments.put("qpid.last_value_queue_key","key");
         ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), false, false, false, arguments);
         queue = new org.apache.qpid.client.AMQQueue("amq.direct",QUEUE);
         ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
@@ -310,6 +312,67 @@ public class ConflationQueueTest extends TestCase
 
     }
 
+    public void testConflationBrowser() throws JMSException, NamingException, AMQException, InterruptedException, URISyntaxException
+    {
+        consumerConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
+        consumerSession = consumerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+
+        final Map<String,Object> arguments = new HashMap<String, Object>();
+        arguments.put("qpid.last_value_queue_key","key");
+        ((AMQSession) producerSession).createQueue(new AMQShortString(QUEUE), true, false, false, arguments);
+        queue = new org.apache.qpid.client.AMQQueue("amq.direct",QUEUE);
+        ((AMQSession) producerSession).declareAndBind((AMQDestination)queue);
+        producer = producerSession.createProducer(queue);
+
+        for (int msg = 0; msg < MSG_COUNT; msg++)
+        {
+            producer.send(nextMessage(msg, false, producerSession, producer));
+            if(msg%10000 == 0)
+            {
+                System.err.println("Sent... " + msg);
+                Thread.sleep(1000);
+            }
+
+        }
+
+        ((AMQSession)producerSession).sync();
+
+        //
+        AMQBindingURL url = new AMQBindingURL("direct://amq.direct//"+QUEUE+"?browse='true'");
+        AMQQueue browseQueue = new AMQQueue(url);
+
+        consumer = consumerSession.createConsumer(browseQueue);
+        consumerConnection.start();
+        Message received;
+        int receivedCount = 0;
+        while((received = consumer.receive(1000))!=null)
+        {
+            receivedCount++;
+            System.err.println("Message: " + received.getIntProperty("msg") + " Conflation Key: " + received.getStringProperty("key"));
+        }
+
+        System.err.println("Received Count: " + receivedCount);
+
+        producer.send(nextMessage(MSG_COUNT, false, producerSession, producer));
+
+        ((AMQSession)producerSession).sync();
+
+        while((received = consumer.receive(5000))!=null)
+        {
+            receivedCount++;
+            System.err.println("Message: " + received.getIntProperty("msg") + " Conflation Key: " + received.getStringProperty("key"));
+        }
+
+        System.err.println("Received Count: " + receivedCount);
+
+        producer.close();
+        producerSession.close();
+        producerConnection.close();
+
+
+
+    }
 
 
 

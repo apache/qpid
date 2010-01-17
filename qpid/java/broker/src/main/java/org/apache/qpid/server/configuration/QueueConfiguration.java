@@ -68,11 +68,6 @@ public class QueueConfiguration
         return _config.getInt("priorities", -1);
     }
 
-    public String getConflationKey()
-    {
-        return _config.getString("conflationKey", null);
-    }
-
     public String getExchange()
     {
         return _config.getString("exchange", null);
@@ -121,6 +116,16 @@ public class QueueConfiguration
     public long getFlowResumeCapacity()
     {
         return _config.getLong("flowResumeCapacity", _vHostConfig.getFlowResumeCapacity());
+    }
+
+    public boolean isLVQ()
+    {
+        return _config.getBoolean("lvq", false);
+    }
+
+    public String getLVQKey()
+    {
+        return _config.getString("lvqKey", null);
     }
 
 }

@@ -87,9 +87,9 @@ public interface Subscription
 
     public State getState();
 
-    QueueEntry getLastSeenEntry();
+    AMQQueue.Context getQueueContext();
 
-    boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue);
+    void setQueueContext(AMQQueue.Context queueContext);
 
 
     boolean isActive();

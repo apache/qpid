@@ -47,6 +47,8 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     protected final boolean _isAutoDelete;
 
+    private final boolean _browseOnly;
+
     private AMQShortString _queueName;
 
     private AMQShortString _routingKey;
@@ -82,6 +84,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
         _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
         _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
+        _browseOnly = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_BROWSE));
         _queueName = binding.getQueueName() == null ? null : binding.getQueueName();
         _routingKey = binding.getRoutingKey() == null ? null : binding.getRoutingKey();
         _bindingKeys = binding.getBindingKeys() == null || binding.getBindingKeys().length == 0 ? new AMQShortString[0] : binding.getBindingKeys();
@@ -122,6 +125,12 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
                              boolean isAutoDelete, AMQShortString queueName, boolean isDurable,AMQShortString[] bindingKeys)
     {
+        this (exchangeName, exchangeClass, routingKey, isExclusive,isAutoDelete,queueName,isDurable,bindingKeys, false);
+    }
+
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
+                             boolean isAutoDelete, AMQShortString queueName, boolean isDurable,AMQShortString[] bindingKeys, boolean browseOnly)
+    {
         if ( (ExchangeDefaults.DIRECT_EXCHANGE_CLASS.equals(exchangeClass) || 
               ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(exchangeClass))  
               && routingKey == null)
@@ -144,6 +153,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _queueName = queueName;
         _isDurable = isDurable;
         _bindingKeys = bindingKeys == null || bindingKeys.length == 0 ? new AMQShortString[0] : bindingKeys;
+        _browseOnly = browseOnly;
     }
 
     public AMQShortString getEncodedName()
@@ -501,5 +511,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             return new AMQAnyDestination(binding);
         }
+    }
+
+    public boolean isBrowseOnly()
+    {
+        return _browseOnly;
     }
 }

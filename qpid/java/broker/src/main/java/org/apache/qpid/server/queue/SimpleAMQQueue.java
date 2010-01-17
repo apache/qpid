@@ -295,7 +295,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         _activeSubscriberCount.incrementAndGet();
         subscription.setStateListener(this);
-        subscription.setLastSeenEntry(null, _entries.getHead());
+        subscription.setQueueContext(new QueueContext(_entries.getHead()));
 
         if (!isDeleted())
         {
@@ -330,12 +330,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // No longer can the queue have an exclusive consumer
             setExclusiveSubscriber(null);
 
-            QueueEntry lastSeen;
-
-            while ((lastSeen = subscription.getLastSeenEntry()) != null)
-            {
-                subscription.setLastSeenEntry(lastSeen, null);
-            }
+            subscription.setQueueContext(null);
 
             // auto-delete queues must be deleted if there are no remaining subscribers
 
@@ -520,68 +515,42 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             _logger.debug(sub + ": deliverMessage: " + entry.debugIdentity());
         }
         sub.send(entry);
+
+        setLastSeenEntry(sub,entry);
     }
 
-    private boolean subscriptionReadyAndHasInterest(final Subscription sub, final QueueEntry entry)
+    private boolean subscriptionReadyAndHasInterest(final Subscription sub, final QueueEntry entry)  throws AMQException
     {
-
-        // We need to move this subscription on, past entries which are already acquired, or deleted or ones it has no
-        // interest in.
-        QueueEntry node = sub.getLastSeenEntry();
-        while (node != null && (node.isAcquired() || node.isDeleted() || !sub.hasInterest(node)))
-        {
-
-            QueueEntry newNode = _entries.next(node);
-            if (newNode != null)
-            {
-                sub.setLastSeenEntry(node, newNode);
-                node = sub.getLastSeenEntry();
-            }
-            else
-            {
-                node = null;
-                break;
-            }
-
-        }
-
-        if (node == entry)
-        {
-            // If the first entry that subscription can process is the one we are trying to deliver to it, then we are
-            // good
-            return true;
-        }
-        else
-        {
-            // Otherwise we should try to update the subscription's last seen entry to the entry we got to, providing
-            // no-one else has updated it to something furhter on in the list
-            //TODO - check
-            //updateLastSeenEntry(sub, entry);
-            return false;
-        }
-
+        return sub.hasInterest(entry) && (getNextAvailableEntry(sub) == entry);
     }
 
-    private void updateLastSeenEntry(final Subscription sub, final QueueEntry entry)
+    private void setLastSeenEntry(final Subscription sub, final QueueEntry entry)
     {
-        QueueEntry node = sub.getLastSeenEntry();
+        QueueContext subContext = (QueueContext) sub.getQueueContext();
+        QueueEntry releasedEntry = subContext._releasedEntry;
 
-        if (node != null && entry.compareTo(node) < 0 && sub.hasInterest(entry))
+        QueueContext._lastSeenUpdater.set(subContext, entry);
+        if(releasedEntry == entry)
         {
-            do
+           QueueContext._releasedUpdater.compareAndSet(subContext, releasedEntry, null);
+        }
+    }
+
+    private void updateSubRequeueEntry(final Subscription sub, final QueueEntry entry)
+    {
+        QueueContext subContext = (QueueContext) sub.getQueueContext();
+        if(subContext != null)
+        {
+            QueueEntry oldEntry;
+
+            while((oldEntry  = subContext._releasedEntry) == null || oldEntry.compareTo(entry) > 0)
             {
-                if (sub.setLastSeenEntry(node, entry))
+                if(QueueContext._releasedUpdater.compareAndSet(subContext, oldEntry, entry))
                 {
-                    return;
-                }
-                else
-                {
-                    node = sub.getLastSeenEntry();
+                    break;
                 }
             }
-            while (node != null && entry.compareTo(node) < 0);
         }
-
     }
 
     public void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException
@@ -596,7 +565,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // we don't make browsers send the same stuff twice
             if (!sub.isBrowser())
             {
-                updateLastSeenEntry(sub, entry);
+                updateSubRequeueEntry(sub, entry);
             }
         }
 
@@ -1408,16 +1377,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private boolean attemptDelivery(Subscription sub) throws AMQException
     {
         boolean atTail = false;
-        boolean advanced = false;
         boolean subActive = sub.isActive() && !sub.isSuspended();
         if (subActive)
         {
-            QueueEntry node = moveSubscriptionToNextNode(sub);
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug(sub + ": attempting Delivery: " + node.debugIdentity());
-            }
-            if (!(node.isAcquired() || node.isDeleted()))
+            QueueEntry node  = getNextAvailableEntry(sub);
+
+            if (node != null && !(node.isAcquired() || node.isDeleted()))
             {
                 if (sub.hasInterest(node))
                 {
@@ -1430,19 +1395,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                         else
                         {
                             deliverMessage(sub, node);
-
-                            if (sub.isBrowser())
-                            {
-                                QueueEntry newNode = _entries.next(node);
-
-                                if (newNode != null)
-                                {
-                                    advanced = true;
-                                    sub.setLastSeenEntry(node, newNode);
-                                    node = sub.getLastSeenEntry();
-                                }
-                                
-                            }
                         }
 
                     }
@@ -1462,17 +1414,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                         node.addStateChangeListener(new QueueEntryListener(sub, node));
                     }
                 }
-                else
-                {
-                    // this subscription is not interested in this node so we can skip over it
-                    QueueEntry newNode = _entries.next(node);
-                    if (newNode != null)
-                    {
-                        sub.setLastSeenEntry(node, newNode);
-                    }
-                }
             }
-            atTail = (_entries.next(node) == null) && !advanced;
+            atTail = (node == null) || (_entries.next(node) == null);
         }
         return atTail || !subActive;
     }
@@ -1484,44 +1427,55 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             SubscriptionList.SubscriptionNode subNode = subscriberIter.getNode();
             Subscription sub = subNode.getSubscription();
-            moveSubscriptionToNextNode(sub);
-        }
-    }
-
-    private QueueEntry moveSubscriptionToNextNode(final Subscription sub)
-            throws AMQException
-    {
-        QueueEntry node = sub.getLastSeenEntry();
-
-        while (node != null && (node.isAcquired() || node.isDeleted() || node.expired()))
-        {
-            if (!node.isAcquired() && !node.isDeleted() && node.expired())
+            if(!sub.isBrowser())
             {
-                if (node.acquire())
-                {
-                    final StoreContext reapingStoreContext = new StoreContext();
-                    node.discard(reapingStoreContext);
-                }
-            }
-            QueueEntry newNode = _entries.next(node);
-            if (newNode != null)
-            {
-                sub.setLastSeenEntry(node, newNode);
-                node = sub.getLastSeenEntry();
+                getNextAvailableEntry(sub);
             }
             else
             {
-                break;
+                // TODO
             }
-
         }
+    }
 
-        if (_logger.isDebugEnabled())
+    private QueueEntry getNextAvailableEntry(final Subscription sub)
+            throws AMQException
+    {
+        QueueContext context = (QueueContext) sub.getQueueContext();
+        if(context != null)
         {
-            _logger.debug(sub + ": nextNode: " + (node == null ? "null" : node.debugIdentity()));
-        }
+            QueueEntry lastSeen = context._lastSeenEntry;
+            QueueEntry releasedNode = context._releasedEntry;
 
-        return node;
+            QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
+
+            boolean expired = false;
+            while (node != null && (node.isAcquired() || node.isDeleted() || (expired = node.expired()) || !sub.hasInterest(node)))
+            {
+                if (expired)
+                {
+                    expired = false;
+                    if (node.acquire())
+                    {
+                        node.discard(new StoreContext());
+                    }
+                }
+
+                if(QueueContext._lastSeenUpdater.compareAndSet(context, lastSeen, node))
+                {
+                    QueueContext._releasedUpdater.compareAndSet(context, releasedNode, null);
+                }
+
+                lastSeen = context._lastSeenEntry;
+                releasedNode = context._releasedEntry;
+                node = (releasedNode != null && lastSeen.compareTo(releasedNode)>0) ? releasedNode : _entries.next(lastSeen);
+            }
+            return node;
+        }
+        else
+        {
+            return null;
+        }
     }
 
     private void processQueue(Runnable runner) throws AMQException

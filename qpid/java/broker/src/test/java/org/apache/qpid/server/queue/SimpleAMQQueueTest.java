@@ -186,7 +186,7 @@ public class SimpleAMQQueueTest extends TestCase
         // Check sending a message ends up with the subscriber
         AMQMessage messageA = createMessage(new Long(24));
         _queue.enqueue(null, messageA);
-        assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
+        assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
         
         // Check removing the subscription removes it's information from the queue
         _queue.unregisterSubscription(_subscription);
@@ -197,8 +197,8 @@ public class SimpleAMQQueueTest extends TestCase
         
         AMQMessage messageB = createMessage(new Long (25));
         _queue.enqueue(null, messageB);
-        QueueEntry entry = _subscription.getLastSeenEntry();
-        assertNull(entry);
+
+        assertNull(_subscription.getQueueContext());
     }
     
     public void testQueueNoSubscriber() throws AMQException, InterruptedException
@@ -207,7 +207,7 @@ public class SimpleAMQQueueTest extends TestCase
         _queue.enqueue(null, messageA);
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
-        assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
+        assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
     }
 
     public void testExclusiveConsumer() throws AMQException
@@ -224,7 +224,7 @@ public class SimpleAMQQueueTest extends TestCase
         // Check sending a message ends up with the subscriber
         AMQMessage messageA = createMessage(new Long(24));
         _queue.enqueue(null, messageA);
-        assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
+        assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
         
         // Check we cannot add a second subscriber to the queue
         Subscription subB = new MockSubscription();
@@ -273,7 +273,7 @@ public class SimpleAMQQueueTest extends TestCase
         Long id = new Long(26);
         AMQMessage message = createMessage(id);
         _queue.enqueue(null, message);
-        QueueEntry entry = _subscription.getLastSeenEntry();
+        QueueEntry entry = _subscription.getQueueContext().getLastSeenEntry();
         entry.setRedelivered(true);
         _queue.resend(entry, _subscription);
         

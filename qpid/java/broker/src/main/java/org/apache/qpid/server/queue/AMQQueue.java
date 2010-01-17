@@ -40,6 +40,10 @@ import java.util.Set;
 
 public interface AMQQueue extends Managable, Comparable<AMQQueue>
 {
+    public interface Context
+    {
+        QueueEntry getLastSeenEntry();
+    }    
 
     AMQShortString getName();
 

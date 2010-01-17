@@ -65,7 +65,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
     private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
-    private final AtomicReference<QueueEntry> _queueContext = new AtomicReference<QueueEntry>(null);
+    private AMQQueue.Context _queueContext;
     private final ClientDeliveryMethod _deliveryMethod;
     private final RecordDeliveryMethod _recordMethod;
 
@@ -627,23 +627,14 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _stateListener = listener;
     }
 
-
-    public QueueEntry getLastSeenEntry()
+    public AMQQueue.Context getQueueContext()
     {
-        QueueEntry entry = _queueContext.get();
-
-        if(_logger.isDebugEnabled())
-        {
-            _logger.debug(_logActor + ": lastSeenEntry: " + (entry == null ? "null" : entry.debugIdentity()));
-        }        
-
-        return entry;
+        return _queueContext;
     }
 
-    public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newvalue)
+    public void setQueueContext(AMQQueue.Context context)
     {
-        _logger.debug(debugIdentity() + " Setting Last Seen To:" + (newvalue == null ? "nullNV" : newvalue.debugIdentity()));
-        return _queueContext.compareAndSet(expected,newvalue);
+        _queueContext = context;
     }
 
 

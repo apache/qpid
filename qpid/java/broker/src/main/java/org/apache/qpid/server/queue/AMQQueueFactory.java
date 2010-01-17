@@ -33,7 +33,9 @@ import java.util.HashMap;
 public class AMQQueueFactory
 {
     public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
-    public static final AMQShortString X_QPID_CONFLATION_KEY = new AMQShortString ("x-qpid-conflation-key");
+    private static final AMQShortString QPID_LAST_VALUE_QUEUE = new AMQShortString ("qpid.last_value_queue");
+    private static final AMQShortString QPID_LAST_VALUE_QUEUE_KEY = new AMQShortString("qpid.last_value_queue_key");
+    private static final String QPID_LVQ_KEY = "qpid.LVQ_key";
 
     private abstract static class QueueProperty
     {
@@ -134,7 +136,17 @@ public class AMQQueueFactory
             throws AMQException
     {
         final int priorities = arguments == null ? 1 : arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
-        final String conflationKey = arguments == null ? null : arguments.containsKey(X_QPID_CONFLATION_KEY) ? arguments.getString(X_QPID_CONFLATION_KEY) : null;
+        String conflationKey = null;
+
+        if(arguments != null && (arguments.containsKey(QPID_LAST_VALUE_QUEUE) || arguments.containsKey(QPID_LAST_VALUE_QUEUE_KEY)))
+        {
+            conflationKey = arguments.getString(QPID_LAST_VALUE_QUEUE_KEY);
+            if(conflationKey == null)
+            {
+                conflationKey = QPID_LVQ_KEY;
+            }
+        }
+
 
         AMQQueue q = null;
         if(conflationKey != null)
@@ -190,14 +202,15 @@ public class AMQQueueFactory
             }
             arguments.put(new AMQShortString("x-qpid-priorities"), priorities);
         }
-        String conflationKey = config.getConflationKey();
-        if(conflationKey != null)
+        if(config.isLVQ() || config.getLVQKey() != null)
         {
             if(arguments == null)
             {
                 arguments = new FieldTable();
             }
-            arguments.put(new AMQShortString("x-qpid-conflation-key"), conflationKey);
+            arguments.setInteger(QPID_LAST_VALUE_QUEUE, 1);
+            arguments.setString(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
+
         }
 
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);
