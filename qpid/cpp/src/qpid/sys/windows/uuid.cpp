@@ -58,5 +58,6 @@ void uuid_unparse (const uuid_t uu, char *out) {
 }
 
 int uuid_compare (const uuid_t a, const uuid_t b) {
-    return memcmp(a, b, qpid::sys::UuidSize) == 0;
+    RPC_STATUS unused;
+    return !UuidEqual((UUID*)a, (UUID*)b, &unused);
 }
