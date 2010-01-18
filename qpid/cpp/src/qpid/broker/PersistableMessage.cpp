@@ -83,16 +83,8 @@ void PersistableMessage::enqueueComplete() {
             }
         }
     }
-    if (notify) {
+    if (notify) 
         allEnqueuesComplete();
-        sys::ScopedLock<sys::Mutex> l(storeLock);
-        if (store) {
-            for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-                PersistableQueue::shared_ptr q(i->lock());
-                if (q) q->notifyDurableIOComplete();
-            } 
-        }            
-    }
 }
 
 bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){

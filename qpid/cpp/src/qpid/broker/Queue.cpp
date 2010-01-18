@@ -124,16 +124,6 @@ Queue::~Queue()
         mgmtObject->resourceDestroy ();
 }
 
-void Queue::notifyDurableIOComplete()
-{
-    QueueListeners::NotificationSet copy;
-    {
-        Mutex::ScopedLock locker(messageLock);
-        listeners.populate(copy);
-    }
-    copy.notify();
-}
-
 bool isLocalTo(const OwnershipToken* token, boost::intrusive_ptr<Message>& msg)
 {
     return token && token->isLocal(msg->getPublisher());

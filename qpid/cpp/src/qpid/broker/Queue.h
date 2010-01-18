@@ -153,7 +153,6 @@ namespace qpid {
 
         public:
 
-            virtual void notifyDurableIOComplete();
             typedef boost::shared_ptr<Queue> shared_ptr;
 
             typedef std::vector<shared_ptr> vector;
