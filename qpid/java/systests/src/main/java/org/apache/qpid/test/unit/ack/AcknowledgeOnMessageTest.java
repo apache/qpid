@@ -105,7 +105,9 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             }
             else
             {
-                fail("All messages not received missing:" + _receivedAll.getCount() + "/" + NUM_MESSAGES);
+                long onQueue=((AMQSession) getConnection().createSession(false, Session.AUTO_ACKNOWLEDGE)).getQueueDepth((AMQDestination) _queue);
+                fail("All messages not received missing:" + _receivedAll.getCount() + "/" + NUM_MESSAGES+" On Queue:"+onQueue);
+
             }
         }
 
@@ -140,6 +142,9 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
 
     public void onMessage(Message message)
     {
+        // Log received Message for debugging
+        System.out.println("RECEIVED MESSAGE:" + message);
+
         try
         {
             int count = NUM_MESSAGES - (int) _receivedAll.getCount();

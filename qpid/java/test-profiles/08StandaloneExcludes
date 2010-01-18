@@ -42,3 +42,18 @@ org.apache.qpid.client.SessionCreateTest#*
 // Excluding here does not reduce test coverage.
 org.apache.qpid.server.configuration.ServerConfigurationFileTest#*
 
+org.apache.qpid.test.unit.ack.AcknowledgeTest#testNoAck
+org.apache.qpid.test.unit.ack.AcknowledgeOnMessageTest#testNoAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testClientAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testAutoAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testTransacted
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testDupsOk
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testNoAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testPreAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testAutoAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testTransacted
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testDupsOk
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testNoAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testPreAck
+
