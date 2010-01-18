@@ -64,6 +64,7 @@ class SubscribedLocalQueue : public LocalQueue {
   public:
     SubscribedLocalQueue(SubscriptionManager& subs) : subscriptions(subs) {}
     Message get () { return pop(); }
+    Message get (sys::Duration timeout) { return pop(timeout); }
     virtual ~SubscribedLocalQueue() {}
 };
 
@@ -129,7 +130,7 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
 
     f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
 
-    Message m2 = localQueue.get();
+    Message m2 = localQueue.get(1);
     BOOST_CHECK_EQUAL(m, m2.getData());
 }
 
