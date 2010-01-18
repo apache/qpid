@@ -82,8 +82,8 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& routingKey, const 
 	    XmlBinding::vector::ConstPtr p = bindings.snapshot();
 	    if (!p || std::find_if(p->begin(), p->end(), MatchQueue(queue)) == p->end()) {
 	        Query query(xqilla.parse(X(queryText.c_str())));
-	        XmlBinding::shared_ptr binding(new XmlBinding (routingKey, queue, this, query));
-	        bindings.add(binding);
+		XmlBinding::shared_ptr binding(new XmlBinding (routingKey, queue, this, *bindingArguments, query));
+
 	        QPID_LOG(trace, "Bound successfully with query: " << queryText );
 
                 binding->parse_message_content = false;
@@ -101,6 +101,7 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& routingKey, const 
                     }
                 }
 
+	        bindings.add(binding);
 	        if (mgmtExchange != 0) {
 	            mgmtExchange->inc_bindingCount();
                 ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
