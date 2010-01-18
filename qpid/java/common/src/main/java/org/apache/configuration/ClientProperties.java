@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.qpid.client.configuration;
+package org.apache.configuration;
 
 /**
  * This class centralized the Qpid client properties.

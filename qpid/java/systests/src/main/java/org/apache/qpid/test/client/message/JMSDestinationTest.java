@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.test.client.message;
 
+import org.apache.configuration.ClientProperties;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidTestCase;
