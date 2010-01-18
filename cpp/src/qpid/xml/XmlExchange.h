@@ -49,8 +49,11 @@ class XmlExchange : public virtual Exchange {
         boost::shared_ptr<XQQuery> xquery;
         bool parse_message_content;
 
-        XmlBinding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent, Query query):
-            Binding(key, queue, parent), xquery(query), parse_message_content(true) {}
+        XmlBinding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent, 
+		   const ::qpid::framing::FieldTable& _arguments, Query query):
+            Binding(key, queue, parent, _arguments),
+	      xquery(query),
+	      parse_message_content(true) {}
     };
 
         
