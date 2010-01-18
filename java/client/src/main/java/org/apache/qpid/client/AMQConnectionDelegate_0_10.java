@@ -29,8 +29,8 @@ import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.XASession;
 
+import org.apache.configuration.ClientProperties;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.framing.ProtocolVersion;
