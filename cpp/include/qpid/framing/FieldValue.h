@@ -203,7 +203,7 @@ inline T FieldValue::getFloatingPointValue() const {
         T value;
         uint8_t* const octets = convertIfRequired(fwv->rawOctets(), W);
         uint8_t* const target = reinterpret_cast<uint8_t*>(&value);
-        for (uint i = 0; i < W; ++i) target[i] = octets[i];
+        for (size_t i = 0; i < W; ++i) target[i] = octets[i];
         return value;
     } else {
         throw InvalidConversionException();
@@ -214,7 +214,7 @@ template <int W> void FieldValue::getFixedWidthValue(unsigned char* value) const
 {
     FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
     if (fwv) {
-        for (uint i = 0; i < W; ++i) value[i] = fwv->rawOctets()[i];
+        for (size_t i = 0; i < W; ++i) value[i] = fwv->rawOctets()[i];
     } else {
         throw InvalidConversionException();
     }
