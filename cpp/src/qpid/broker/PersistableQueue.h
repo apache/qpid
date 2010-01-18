@@ -66,17 +66,7 @@ public:
     PersistableQueue():externalQueueStore(NULL){
     };
     
-    
-    /**
-    * call back to signal async AIO writes have
-    * completed (enqueue/dequeue etc)
-    *
-    * Note: DO NOT do work on this callback, if you block
-    * this callback you will block the store.
-    */
-    virtual void notifyDurableIOComplete()  = 0;
 protected:
-    
     ExternalQueueStore* externalQueueStore;
     
 };
