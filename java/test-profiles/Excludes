@@ -34,5 +34,3 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#*
 org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
 // QPID-2225 Random Test failures against the in-vm broker.
 org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecover#*
-// QPID-2262 Random test failures - The test needs to be fixed.
-org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
