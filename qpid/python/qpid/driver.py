@@ -133,6 +133,7 @@ class Driver:
 
   def __init__(self, connection):
     self.connection = connection
+    self.log_id = "%x" % id(self.connection)
     self._lock = self.connection._lock
 
     self._selector = Selector.default()
@@ -198,9 +199,9 @@ class Driver:
     try:
       data = self._socket.recv(64*1024)
       if data:
-        rawlog.debug("READ: %r", data)
+        rawlog.debug("READ[%s]: %r", self.log_id, data)
       else:
-        rawlog.debug("ABORTED: %s", self._socket.getpeername())
+        rawlog.debug("ABORTED[%s]: %s", self.log_id, self._socket.getpeername())
         error = "connection aborted"
         recoverable = True
     except socket.error, e:
@@ -222,7 +223,7 @@ class Driver:
         self._op_dec.write(*self._seg_dec.read())
         for op in self._op_dec.read():
           self.assign_id(op)
-          opslog.debug("RCVD: %r", op)
+          opslog.debug("RCVD[%s]: %r", self.log_id, op)
           op.dispatch(self)
       except VersionError, e:
         error = e
@@ -247,7 +248,7 @@ class Driver:
   def writeable(self):
     try:
       n = self._socket.send(self._buf)
-      rawlog.debug("SENT: %r", self._buf[:n])
+      rawlog.debug("SENT[%s]: %r", self.log_id, self._buf[:n])
       self._buf = self._buf[n:]
     except socket.error, e:
       self._error(e, True)
@@ -271,7 +272,7 @@ class Driver:
       self.connection.error = (err,)
 
   def write_op(self, op):
-    opslog.debug("SENT: %r", op)
+    opslog.debug("SENT[%s]: %r", self.log_id, op)
     self._op_enc.write(op)
     self._seg_enc.write(*self._op_enc.read())
     self._frame_enc.write(*self._seg_enc.read())
@@ -825,7 +826,7 @@ class Driver:
     if rcv.impending is not UNLIMITED:
       assert rcv.received < rcv.impending, "%s, %s" % (rcv.received, rcv.impending)
     rcv.received += 1
-    log.debug("RECV [%s] %s", ssn, msg)
+    log.debug("RCVD[%s]: %s", ssn.log_id, msg)
     ssn.incoming.append(msg)
     self.connection._waiter.notifyAll()
 

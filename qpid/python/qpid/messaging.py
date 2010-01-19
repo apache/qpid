@@ -423,6 +423,7 @@ class Session:
   def __init__(self, connection, name, transactional):
     self.connection = connection
     self.name = name
+    self.log_id = "%x" % id(self)
 
     self.transactional = transactional
 
@@ -532,7 +533,7 @@ class Session:
       if msg is not None:
         msg._receiver.returned += 1
         self.unacked.append(msg)
-        log.debug("RETR [%s] %s", self, msg)
+        log.debug("RETR[%s]: %s", self.log_id, msg)
         return msg
     return None
 
