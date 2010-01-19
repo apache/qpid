@@ -438,17 +438,34 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         catch (JMSException e)
         {
             Throwable cause = e.getLinkedException();
-            if (!(cause instanceof AMQAuthenticationException))
+
+            if (cause == null)
             {
-                e.printStackTrace();
+                e.printStackTrace(System.out);
+                if (e instanceof IllegalStateException)
+                {
+                    System.out.println("QPID-2345: Session became closed and we got that error rather than the authentication error.");
+                }
+                else
+                {
+                    fail("JMS Exception of did not have cause.:" + e.getMessage());
+                }
             }
-            assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
-            assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
-            
-            //use the latch to ensure the control thread waits long enough for the exception thread 
-            //to have done enough to mark the connection closed before teardown commences
-            assertTrue("Timed out waiting for conneciton to report close",
-            		exceptionReceived.await(2, TimeUnit.SECONDS));
+            else
+            {
+                if (!(cause instanceof AMQAuthenticationException))
+                {
+                    e.printStackTrace();
+                }
+                assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
+                assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+
+                //use the latch to ensure the control thread waits long enough for the exception thread
+                //to have done enough to mark the connection closed before teardown commences
+                assertTrue("Timed out waiting for connection to report close",
+                           exceptionReceived.await(2, TimeUnit.SECONDS));
+            }
+
         }
     }
 
@@ -876,13 +893,20 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             if (cause == null)
             {
                 e.printStackTrace(System.out);
-                fail("JMS Exception did not have cause");
+                if (e instanceof IllegalStateException)
+                {
+                    System.out.println("QPID-2345: Session became closed and we got that error rather than the authentication error.");
+                }
+                else
+                {
+                    fail("JMS Exception of did not have cause.:" + e.getMessage());
+                }
             }
             else if (!(cause instanceof AMQAuthenticationException))
             {
                 cause.printStackTrace(System.out);
                 assertEquals("Incorrect exception", IllegalStateException.class, cause.getClass());
-                System.out.println("QPID-1204 : Session became closed and we got that error rather than the authentication error.");
+                System.out.println("QPID-2345: Session became closed and we got that error rather than the authentication error.");
             }
             else
             {
