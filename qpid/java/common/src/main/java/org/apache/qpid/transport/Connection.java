@@ -83,7 +83,7 @@ public class Connection extends ConnectionInvoker
     private String locale;
     private SaslServer saslServer;
     private SaslClient saslClient;
-    private long idleTimeout = 0;
+    private int idleTimeout = 0;
     private String _authorizationID;
     private String userID;
     
@@ -522,16 +522,16 @@ public class Connection extends ConnectionInvoker
         }
     }
 
-    public void setIdleTimeout(long l)
+    public void setIdleTimeout(int i)
     {
-        idleTimeout = l;       
+        idleTimeout = i;       
         if (sender != null)
         {            
-            sender.setIdleTimeout(l);    
+            sender.setIdleTimeout(i);    
         }
     }
     
-    public long getIdleTimeout()
+    public int getIdleTimeout()
     {
         return idleTimeout;
     }

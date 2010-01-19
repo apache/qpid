@@ -28,7 +28,7 @@ package org.apache.qpid.transport;
 
 public interface Sender<T>
 {
-    void setIdleTimeout(long l);
+    void setIdleTimeout(int i);
 
     void send(T msg);
 

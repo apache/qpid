@@ -285,7 +285,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         _lastWriteFuture = _ioSession.write(minaBuf);
     }
 
-    public void setIdleTimeout(long l)
+    public void setIdleTimeout(int i)
     {
         // MINA doesn't support setting SO_TIMEOUT
     }
