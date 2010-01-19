@@ -21,9 +21,9 @@ package org.apache.configuration;
 /**
  * This class centralized the Qpid client properties.
  */
-public class ClientProperties
+public class ClientProperties extends PropertyNameResolver
 {
-
+  
     /**
      * Currently with Qpid it is not possible to change the client ID.
      * If one is not specified upon connection construction, an id is generated automatically.
@@ -110,4 +110,27 @@ public class ClientProperties
     public static final String WRITE_BUFFER_LIMIT_DEFAULT = "262144";
 
     public static final String AMQP_VERSION = "qpid.amqp.version";
+    
+    private static ClientProperties _instance = new ClientProperties();
+    
+    ClientProperties()
+    {
+        properties.put(IGNORE_SET_CLIENTID_PROP_NAME, new QpidProperty(false,
+                                                             "qpid.ignore_set_client_id","ignore_setclientID"));
+        
+        properties.put(SYNC_PERSISTENT_PROP_NAME, new QpidProperty(false,
+                                                             "qpid.sync_persistence","sync_persistence"));
+        
+        
+        properties.put(MAX_PREFETCH_PROP_NAME, new QpidProperty(500,
+                                                             "qpid.max_prefetch","max_prefetch"));       
+        
+    }
+    
+    public ClientProperties get()
+    {
+        return _instance;
+    }
+    
+    
 }
