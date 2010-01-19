@@ -295,7 +295,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public void setIdleTimeout(long l)
     {
-        _qpidConnection.setIdleTimeout(l);
+        _qpidConnection.setIdleTimeout((int)l);
     }
 
     public int getMaxChannelID()

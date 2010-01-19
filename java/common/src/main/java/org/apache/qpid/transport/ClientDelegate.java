@@ -200,20 +200,20 @@ public class ClientDelegate extends ConnectionDelegate
      */
     private int calculateHeartbeatInterval(Connection conn,int min, int max)
     {
-        long l = conn.getIdleTimeout()/1000;
-        if (l == 0)
+        int i = conn.getIdleTimeout()/1000;
+        if (i == 0)
         {
             log.warn("Idle timeout is zero. Heartbeats are disabled");
             return 0; // heartbeats are disabled.
         }
-        else if (l >= min && l <= max)
+        else if (i >= min && i <= max)
         {
-            return (int)l;
+            return i;
         }
         else
         {
             log.warn("Ignoring the idle timeout %s set by the connection," +
-            		" using the brokers max value %s", l,max);
+            		" using the brokers max value %s", i,max);
             return max;
         }
     }

@@ -109,7 +109,7 @@ public class TestNetworkDriver implements NetworkDriver
         
     }
 
-    public void setIdleTimeout(long l)
+    public void setIdleTimeout(int i)
     {
         
     }

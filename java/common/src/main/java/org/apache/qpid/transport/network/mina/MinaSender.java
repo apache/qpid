@@ -77,7 +77,7 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
         closed.join();
     }
     
-    public void setIdleTimeout(long l)
+    public void setIdleTimeout(int i)
     {
       //noop
     }

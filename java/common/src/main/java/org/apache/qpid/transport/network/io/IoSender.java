@@ -56,7 +56,6 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     private final Object notEmpty = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread senderThread;
-    private long idleTimeout;
     
     private volatile Throwable exception = null;
 
@@ -294,12 +293,11 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         }
     }
 
-    public void setIdleTimeout(long l)
+    public void setIdleTimeout(int i)
     {
         try
         {
-            socket.setSoTimeout((int)l*2);
-            idleTimeout = l;
+            socket.setSoTimeout(i*2);
         }
         catch (Exception e)
         {

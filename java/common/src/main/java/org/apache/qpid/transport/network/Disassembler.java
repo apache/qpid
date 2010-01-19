@@ -238,8 +238,8 @@ public final class Disassembler implements Sender<ProtocolEvent>,
         throw new IllegalArgumentException("" + error);
     }
     
-    public void setIdleTimeout(long l)
+    public void setIdleTimeout(int i)
     {
-        sender.setIdleTimeout(l);
+        sender.setIdleTimeout(i);
     }
 }

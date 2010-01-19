@@ -51,7 +51,7 @@ public class ConsoleOutput implements Sender<ByteBuffer>
         System.out.println("CLOSED");
     }
 
-    public void setIdleTimeout(long l)
+    public void setIdleTimeout(int i)
     {
         // TODO Auto-generated method stub
         
