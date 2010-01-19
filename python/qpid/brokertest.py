@@ -219,17 +219,30 @@ class Broker(Popen):
         s = c.session(str(qpid.datatypes.uuid4()))
         s.queue_declare(queue=queue)
         c.close()
+    
+    def _prep_sender(self, queue, durable, xprops):
+        s = queue + "; {create:always, node-properties:{durable:" + str(durable)
+        if xprops != None: s += ", x-properties:{" + xprops + "}"
+        return s + "}}"
 
-    def send_message(self, queue, message):
-        s = self.connect().session()
-        s.sender(queue+"; {create:always}").send(message)
-        s.connection.close()
+    def send_message(self, queue, message, durable=True, xprops=None, session=None):
+        if session == None:
+            s = self.connect().session()
+        else:
+            s = session
+        s.sender(self._prep_sender(queue, durable, xprops)).send(message)
+        if session == None:
+            s.connection.close()
 
-    def send_messages(self, queue, messages):
-        s = self.connect().session()
-        sender = s.sender(queue+"; {create:always}")
+    def send_messages(self, queue, messages, durable=True, xprops=None, session=None):
+        if session == None:
+            s = self.connect().session()
+        else:
+            s = session
+        sender = s.sender(self._prep_sender(queue, durable, xprops))
         for m in messages: sender.send(m)
-        s.connection.close()
+        if session == None:
+            s.connection.close()
 
     def get_message(self, queue):
         s = self.connect().session()
