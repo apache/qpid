@@ -177,15 +177,26 @@ public class TimeToLiveTest extends QpidTestCase
         {
             producer.send(producerSession.createTextMessage("Message: "+i));
         }
-        long failureTime = System.currentTimeMillis() + 2*SERVER_TTL_TIMEOUT;
+        long failureTime = System.currentTimeMillis() + 2 * SERVER_TTL_TIMEOUT;
 
-        // check Queue depth for up to TIMEOUT seconds
-        long messageCount;
+        // check Queue depth for up to TIMEOUT seconds after the Queue Depth hasn't changed for 100ms.
+        long messageCount = MSG_COUNT;
+        long lastPass;
 
         do
         {
+            lastPass = messageCount;
             Thread.sleep(100);
             messageCount = producerSession.getQueueDepth((AMQDestination) queue);
+
+            // If we have received messages in the last loop then extend the timeout time.
+            // if we get messages stuck that are not expiring then the failureTime will occur
+            // failing the test. This will help with the scenario when the broker does not
+            // have enough CPU cycles to process the TTLs.
+            if (lastPass != messageCount)
+            {
+                failureTime = System.currentTimeMillis() + 2 * SERVER_TTL_TIMEOUT;
+            }
         }
         while(messageCount > 0L && System.currentTimeMillis() < failureTime);
 
