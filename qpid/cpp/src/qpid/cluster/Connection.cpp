@@ -223,12 +223,6 @@ void Connection::abort() {
     cluster.erase(self);
 }
 
-// Member of a shadow connection left the cluster.
-void Connection::left() {
-    assert(isShadow());
-    connection.closed();
-}
-
 // ConnectoinCodec::decode receives read buffers from  directly-connected clients.
 size_t Connection::decode(const char* buffer, size_t size) {
     if (catchUp) {  // Handle catch-up locally.

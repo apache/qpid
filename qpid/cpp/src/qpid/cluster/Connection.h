@@ -98,9 +98,6 @@ class Connection :
     void idleOut() { connection.idleOut(); }
     void idleIn() { connection.idleIn(); }
 
-    /** Called if the connectors member has left the cluster */
-    void left();
-    
     // ConnectionCodec methods - called by IO layer with a read buffer.
     size_t decode(const char* buffer, size_t size);
 
