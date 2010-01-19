@@ -24,6 +24,7 @@
 
 #include "qpid/client/ClientImportExport.h"
 #include <iosfwd>
+#include <string>
 
 namespace qpid {
 namespace messaging {
@@ -59,14 +60,14 @@ class Uuid
     QPID_CLIENT_EXTERN size_t size() const;
     QPID_CLIENT_EXTERN const unsigned char* data() const;
 
-    friend bool operator==(const Uuid&, const Uuid&);
-    friend bool operator!=(const Uuid&, const Uuid&);
-    friend bool operator<(const Uuid&, const Uuid&);
-    friend bool operator>(const Uuid&, const Uuid&);
-    friend bool operator<=(const Uuid&, const Uuid&);
-    friend bool operator>=(const Uuid&, const Uuid&);
-    friend std::ostream& operator<<(std::ostream&, Uuid);
-    friend std::istream& operator>>(std::istream&, Uuid&);
+    friend QPID_CLIENT_EXTERN bool operator==(const Uuid&, const Uuid&);
+    friend QPID_CLIENT_EXTERN bool operator!=(const Uuid&, const Uuid&);
+    friend QPID_CLIENT_EXTERN bool operator<(const Uuid&, const Uuid&);
+    friend QPID_CLIENT_EXTERN bool operator>(const Uuid&, const Uuid&);
+    friend QPID_CLIENT_EXTERN bool operator<=(const Uuid&, const Uuid&);
+    friend QPID_CLIENT_EXTERN bool operator>=(const Uuid&, const Uuid&);
+    friend QPID_CLIENT_EXTERN std::ostream& operator<<(std::ostream&, Uuid);
+    friend QPID_CLIENT_EXTERN std::istream& operator>>(std::istream&, Uuid&);
 
   private:
     unsigned char bytes[16];
