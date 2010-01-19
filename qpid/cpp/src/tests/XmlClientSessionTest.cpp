@@ -130,7 +130,7 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
 
     f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
 
-    Message m2 = localQueue.get(1);
+    Message m2 = localQueue.get(1*qpid::sys::TIME_SEC);
     BOOST_CHECK_EQUAL(m, m2.getData());
 }
 
