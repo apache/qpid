@@ -157,6 +157,7 @@ vector<string> browse(Client& c, const string& q, int n) {
     );
     LocalQueue lq;
     c.subs.subscribe(lq, q, browseSettings);
+    c.session.messageFlush(q);
     vector<string> result;
     for (int i = 0; i < n; ++i) {
         Message m;
