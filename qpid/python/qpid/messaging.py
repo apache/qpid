@@ -432,7 +432,9 @@ class Session:
     self.aborting = False
     self.aborted = False
 
+    self.next_sender_id = 0
     self.senders = []
+    self.next_receiver_id = 0
     self.receivers = []
     self.outgoing = []
     self.incoming = []
@@ -477,7 +479,8 @@ class Session:
     @rtype: Sender
     @return: a new Sender for the specified target
     """
-    sender = Sender(self, len(self.senders), target, options)
+    sender = Sender(self, self.next_sender_id, target, options)
+    self.next_sender_id += 1
     self.senders.append(sender)
     self._wakeup()
     # XXX: because of the lack of waiting here we can end up getting
@@ -497,7 +500,8 @@ class Session:
     @rtype: Receiver
     @return: a new Receiver for the specified source
     """
-    receiver = Receiver(self, len(self.receivers), source, options)
+    receiver = Receiver(self, self.next_receiver_id, source, options)
+    self.next_receiver_id += 1
     self.receivers.append(receiver)
     self._wakeup()
     return receiver
@@ -630,9 +634,9 @@ class Sender:
   Sends outgoing messages.
   """
 
-  def __init__(self, session, index, target, options):
+  def __init__(self, session, id, target, options):
     self.session = session
-    self.index = index
+    self.id = id
     self.target = target
     self.options = options
     self.capacity = options.get("capacity", UNLIMITED)
@@ -753,10 +757,9 @@ class Receiver(object):
   fetched with L{fetch}.
   """
 
-  def __init__(self, session, index, source, options):
+  def __init__(self, session, id, source, options):
     self.session = session
-    self.index = index
-    self.destination = str(self.index)
+    self.id = id
     self.source = source
     self.options = options
 

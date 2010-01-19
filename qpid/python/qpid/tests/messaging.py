@@ -541,6 +541,28 @@ class ReceiverTests(Base):
 
     self.ssn.acknowledge()
 
+  def testDoubleClose(self):
+    m1 = self.content("testDoubleClose", 1)
+    m2 = self.content("testDoubleClose", 2)
+
+    snd = self.ssn.sender("""test-double-close; {
+  create: always,
+  delete: sender,
+  node-properties: {
+    type: topic
+  }
+}
+""")
+    r1 = self.ssn.receiver(snd.target)
+    r2 = self.ssn.receiver(snd.target)
+    snd.send(m1)
+    self.drain(r1, expected=[m1])
+    self.drain(r2, expected=[m1])
+    r1.close()
+    snd.send(m2)
+    self.drain(r2, expected=[m2])
+    r2.close()
+
   # XXX: need testClose
 
 class AddressTests(Base):
