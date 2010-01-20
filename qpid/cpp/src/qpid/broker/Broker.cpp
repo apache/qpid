@@ -92,7 +92,7 @@ Broker::Options::Options(const std::string& name) :
     tcpNoDelay(false),
     requireEncrypted(false),
     maxSessionRate(0),
-    asyncQueueEvents(true)
+    asyncQueueEvents(false)     // Must be false in a cluster.
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
