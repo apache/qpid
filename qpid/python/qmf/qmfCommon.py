@@ -1143,23 +1143,43 @@ class qmfTypes(object):
     TYPE_UINT16     = 2
     TYPE_UINT32     = 3
     TYPE_UINT64     = 4
+
     TYPE_SSTR       = 6
     TYPE_LSTR       = 7
+
     TYPE_ABSTIME    = 8
     TYPE_DELTATIME  = 9
+
     TYPE_REF        = 10
+
     TYPE_BOOL       = 11
+
     TYPE_FLOAT      = 12
     TYPE_DOUBLE     = 13
+
     TYPE_UUID       = 14
+
     TYPE_MAP        = 15
+
     TYPE_INT8       = 16
     TYPE_INT16      = 17
     TYPE_INT32      = 18
     TYPE_INT64      = 19
+
     TYPE_OBJECT     = 20
+
     TYPE_LIST       = 21
+
     TYPE_ARRAY      = 22
+
+# New subtypes:
+# integer (for time, duration, signed/unsigned)
+# double (float)
+# bool
+# string
+# map (ref, qmfdata)
+# list
+# uuid
 
 
 class qmfAccess(object):

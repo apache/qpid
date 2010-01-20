@@ -100,17 +100,32 @@ class Agent(Thread):
         self._work_q = Queue.Queue()
         self._work_q_put = False
 
+
+    def destroy(self, timeout=None):
+        """
+        Must be called before the Agent is deleted.  
+        Frees up all resources and shuts down all background threads.
+
+        @type timeout: float
+        @param timeout: maximum time in seconds to wait for all background threads to terminate.  Default: forever.
+        """
+        logging.debug("Destroying Agent %s" % self.name)
+        if self._conn:
+            self.remove_connection(timeout)
+        logging.debug("Agent Destroyed")
+
+
     def get_name(self):
         return self.name
 
-    def setConnection(self, conn):
+    def set_connection(self, conn):
         my_addr = QmfAddress.direct(self.name, self._domain)
         locate_addr = QmfAddress.topic(AMQP_QMF_AGENT_LOCATE, self._domain)
         ind_addr = QmfAddress.topic(AMQP_QMF_AGENT_INDICATION, self._domain)
 
-        logging.error("my direct addr=%s" % my_addr)
-        logging.error("agent.locate addr=%s" % locate_addr)
-        logging.error("agent.ind addr=%s" % ind_addr)
+        logging.debug("my direct addr=%s" % my_addr)
+        logging.debug("agent.locate addr=%s" % locate_addr)
+        logging.debug("agent.ind addr=%s" % ind_addr)
 
         self._conn = conn
         self._session = self._conn.session()
@@ -127,7 +142,32 @@ class Agent(Thread):
 
         self._running = True
         self.start()
-    
+
+    def remove_connection(self, timeout=None):
+        # tell connection thread to shutdown
+        self._running = False
+        if self.isAlive():
+            # kick my thread to wake it up
+            my_addr = QmfAddress.direct(self.name, self._domain)
+            logging.debug("Making temp sender for [%s]" % str(my_addr))
+            tmp_sender = self._session.sender(str(my_addr))
+            try:
+                msg = Message(subject=makeSubject(OpCode.noop))
+                tmp_sender.send( msg, sync=True )
+            except SendError, e:
+                logging.error(str(e))
+            logging.debug("waiting for agent receiver thread to exit")
+            self.join(timeout)
+            if self.isAlive():
+                logging.error( "Agent thread '%s' is hung..." % self.name)
+        self._direct_receiver.close()
+        self._locate_receiver.close()
+        self._ind_sender.close()
+        self._session.close()
+        self._session = None
+        self._conn = None
+        logging.debug("agent connection removal complete")
+
     def register_object_class(self, schema):
         """
         Register an instance of a SchemaClass with this agent
@@ -176,6 +216,14 @@ class Agent(Thread):
             self._agent_data[id_] = data
         finally:
             self._lock.release()
+
+    def get_object(self, id):
+        self._lock.acquire()
+        try:
+            data = self._agent_data.get(id)
+        finally:
+            self._lock.release()
+        return data
 
 
     def method_response(self, handle, _out_args=None, _error=None): 
@@ -233,6 +281,7 @@ class Agent(Thread):
     def run(self):
         global _callback_thread
         next_heartbeat = datetime.datetime.utcnow()
+        batch_limit = 10 # a guess
         while self._running:
 
             now = datetime.datetime.utcnow()
@@ -249,7 +298,7 @@ class Agent(Thread):
             except Empty:
                 continue
 
-            while True:
+            for i in range(batch_limit):
                 try:
                     msg = self._locate_receiver.fetch(timeout=0)
                 except Empty:
@@ -257,7 +306,7 @@ class Agent(Thread):
                 if msg and msg.content_type == "amqp/map":
                     self._dispatch(msg, _direct=False)
 
-            while True:
+            for i in range(batch_limit):
                 try:
                     msg = self._direct_receiver.fetch(timeout=0)
                 except Empty:
@@ -294,7 +343,7 @@ class Agent(Thread):
 
         @param _direct: True if msg directly addressed to this agent.
         """
-        logging.error( "Message received from Console! [%s]" % msg )
+        logging.debug( "Message received from Console! [%s]" % msg )
         try:
             version,opcode = parseSubject(msg.subject)
         except:
@@ -564,12 +613,17 @@ class QmfAgentData(QmfData):
         super(QmfAgentData, self).set_value(_name, _value, _subType)
         # @todo: publish change
 
-    def inc_value(self, name, delta):
+    def inc_value(self, name, delta=1):
         """ add the delta to the property """
         # @todo: need to take write-lock
-        logging.error(" TBD!!!")
+        val = self.get_value(name)
+        try:
+            val += delta
+        except:
+            raise
+        self.set_value(name, val)
 
-    def dec_value(self, name, delta): 
+    def dec_value(self, name, delta=1): 
         """ subtract the delta from the property """
         # @todo: need to take write-lock
         logging.error(" TBD!!!")

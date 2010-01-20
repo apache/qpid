@@ -64,7 +64,6 @@ class _Mailbox(object):
             self._msgs.append(obj)
             # if was empty, notify waiters
             if len(self._msgs) == 1:
-                logging.error("Delivering @ %s" % time.time())
                 self._cv.notify()
         finally:
             self._cv.release()
@@ -118,7 +117,7 @@ class SequencedWaiter(object):
         self.lock.acquire()
         try:
             if seq in self.pending:
-                logging.error("Putting seq %d @ %s" % (seq,time.time()))
+                # logging.error("Putting seq %d @ %s" % (seq,time.time()))
                 self.pending[seq].deliver(new_data)
             else:
                 logging.error( "seq %d not found!" % seq )
@@ -242,8 +241,29 @@ class QmfConsoleData(QmfData):
         request that the Agent update the value of this object's
         contents.
         """
-        logging.error(" TBD!!!")
-        return None
+        if _reply_handle is not None:
+            logging.error(" ASYNC REFRESH TBD!!!")
+            return None
+
+        assert self._agent
+        assert self._agent._console
+
+        if _timeout is None:
+            _timeout = self._agent._console._reply_timeout
+
+
+        # create query to agent using this objects ID
+        oid = self.get_object_id()
+        query = QmfQuery.create_id(QmfQuery.TARGET_OBJECT,
+                                   self.get_object_id())
+        obj_list = self._agent._console.doQuery(self._agent, query,
+                                                timeout=_timeout)
+        if obj_list is None or len(obj_list) != 1:
+            return None
+
+        self._update(obj_list[0])
+        return self
+
 
     def invoke_method(self, name, _in_args={}, _reply_handle=None,
                       _timeout=None):
@@ -267,7 +287,7 @@ class QmfConsoleData(QmfData):
             # validate
             ms = self._schema.get_method(name)
             if ms is None:
-                raise ValueError("Method '%s' is undefined." % ms)
+                raise ValueError("Method '%s' is undefined." % name)
 
             for aname,prop in ms.get_arguments().iteritems():
                 if aname not in _in_args:
@@ -326,7 +346,12 @@ class QmfConsoleData(QmfData):
         else:
             return MethodResult(_out_args=_map.get(SchemaMethod.KEY_ARGUMENTS))
 
-
+    def _update(self, newer):
+        super(QmfConsoleData,self).__init__(_values=newer._values, _subtypes=newer._subtypes,
+                                           _tag=newer._tag, _object_id=newer._object_id,
+                                           _ctime=newer._ctime, _utime=newer._utime, 
+                                           _dtime=newer._dtime,
+                                           _schema=newer._schema, _const=True)
 
 class QmfLocalData(QmfData):
     """
@@ -637,15 +662,15 @@ class Console(Thread):
                                                     " x-properties:"
                                                     " {type:direct}}}", 
                                                     capacity=1)
-        logging.error("local addr=%s" % self._address)
+        logging.debug("local addr=%s" % self._address)
         ind_addr = QmfAddress.topic(AMQP_QMF_AGENT_INDICATION, self._domain)
-        logging.error("agent.ind addr=%s" % ind_addr)
+        logging.debug("agent.ind addr=%s" % ind_addr)
         self._announce_recvr = self._session.receiver(str(ind_addr) +
                                                       ";{create:always,"
                                                       " node-properties:{type:topic}}",
                                                       capacity=1)
         locate_addr = QmfAddress.topic(AMQP_QMF_AGENT_LOCATE, self._domain)
-        logging.error("agent.locate addr=%s" % locate_addr)
+        logging.debug("agent.locate addr=%s" % locate_addr)
         self._locate_sender = self._session.sender(str(locate_addr) +
                                                    ";{create:always,"
                                                    " node-properties:{type:topic}}")
@@ -713,9 +738,9 @@ class Console(Thread):
         finally:
             self._lock.release()
 
-    def findAgent(self, name, timeout=None ):
+    def find_agent(self, name, timeout=None ):
         """
-        Given the id of a particular agent, return an instance of class Agent 
+        Given the name of a particular agent, return an instance of class Agent 
         representing that agent.  Return None if the agent does not exist.
         """
 
@@ -891,13 +916,85 @@ class Console(Thread):
                 if self._next_agent_expire > now:
                     timeout = ((self._next_agent_expire - now) + datetime.timedelta(microseconds=999999)).seconds
                     try:
-                        logging.error("waiting for next rcvr (timeout=%s)..." % timeout)
+                        logging.debug("waiting for next rcvr (timeout=%s)..." % timeout)
                         self._session.next_receiver(timeout = timeout)
                     except Empty:
                         pass
 
 
         logging.debug("Shutting down Console thread")
+
+    def get_objects(self,
+                    _schema_id=None,
+                    _pname=None, _cname=None,
+                    _object_id=None,
+                    _agents=None,
+                    _timeout=None):
+        """
+        @todo
+        """
+        if _object_id is not None:
+            # query by object id
+            query = QmfQuery.create_id(QmfQuery.TARGET_OBJECT, _object_id)
+        elif _schema_id is not None:
+            pred = QmfQueryPredicate({QmfQuery.CMP_EQ:
+                                          [QmfData.KEY_SCHEMA_ID,
+                                           _schema_id.map_encode()]})
+            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT, pred)
+        elif _pname is not None:
+            # query by package name (and maybe class name)
+            if _cname is not None:
+                pred = QmfQueryPredicate({QmfQuery.LOGIC_AND:
+                                              [{QmfQuery.CMP_EQ:
+                                                    [SchemaClassId.KEY_PACKAGE,
+                                                     _pname]},
+                                               {QmfQuery.CMP_EQ:
+                                                    [SchemaClassId.KEY_CLASS,
+                                                     _cname]}]})
+            else:
+                pred = QmfQueryPredicate({QmfQuery.CMP_EQ:
+                                              [SchemaClassId.KEY_PACKAGE,
+                                               _pname]})
+            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT, pred)
+
+        else:
+            raise Exception("invalid arguments")
+
+        if _agents is None:
+            # use copy of current agent list
+            self._lock.acquire()
+            try:
+                agent_list = self._agent_map.values()
+            finally:
+                self._lock.release()
+        elif isinstance(_agents, Agent):
+            agent_list = [_agents]
+        else:
+            agent_list = _agents
+            # @todo validate this list!
+
+        # @todo: fix when async doQuery done - query all agents at once, then
+        # wait for replies, instead of per-agent querying....
+
+        if _timeout is None:
+            _timeout = self._reply_timeout
+
+        obj_list = []
+        expired = datetime.datetime.utcnow() + datetime.timedelta(seconds=_timeout)
+        for agent in agent_list:
+            if not agent.isActive():
+                continue
+            now = datetime.datetime.utcnow()
+            if now >= expired:
+                break
+            timeout = ((expired - now) + datetime.timedelta(microseconds=999999)).seconds
+            reply = self.doQuery(agent, query, timeout)
+            if reply:
+                obj_list = obj_list + reply
+
+        if obj_list:
+            return obj_list
+        return None
 
 
 
@@ -908,7 +1005,7 @@ class Console(Thread):
         PRIVATE: Process a message received from an Agent
         """
 
-        logging.error( "Message received from Agent! [%s]" % msg )
+        logging.debug( "Message received from Agent! [%s]" % msg )
 
         try:
             version,opcode = parseSubject(msg.subject)
@@ -995,14 +1092,14 @@ class Console(Thread):
                 self._lock.release()
 
             if old_timestamp == None and matched:
-                logging.error("AGENT_ADDED for %s (%s)" % (agent, time.time()))
+                logging.debug("AGENT_ADDED for %s (%s)" % (agent, time.time()))
                 wi = WorkItem(WorkItem.AGENT_ADDED, None, {"agent": agent})
                 self._work_q.put(wi)
                 self._work_q_put = True
 
             if correlated:
                 # wake up all waiters
-                logging.error("waking waiters for correlation id %s" % msg.correlation_id)
+                logging.debug("waking waiters for correlation id %s" % msg.correlation_id)
                 self._req_correlation.put_data(msg.correlation_id, msg)
 
 
@@ -1015,11 +1112,12 @@ class Console(Thread):
         logging.debug("_handleDataIndMsg '%s' (%s)" % (msg, time.time()))
 
         if not self._req_correlation.isValid(msg.correlation_id):
-            logging.error("FIXME: uncorrelated data indicate??? msg='%s'" % str(msg))
+            logging.debug("Data indicate received with unknown correlation_id"
+                          " msg='%s'" % str(msg)) 
             return
 
         # wake up all waiters
-        logging.error("waking waiters for correlation id %s" % msg.correlation_id)
+        logging.debug("waking waiters for correlation id %s" % msg.correlation_id)
         self._req_correlation.put_data(msg.correlation_id, msg)
 
 
@@ -1031,11 +1129,12 @@ class Console(Thread):
         logging.debug("_handleResponseMsg '%s' (%s)" % (msg, time.time()))
 
         if not self._req_correlation.isValid(msg.correlation_id):
-            logging.error("FIXME: uncorrelated response??? msg='%s'" % str(msg))
+            logging.debug("Response msg received with unknown correlation_id"
+                          " msg='%s'" % str(msg))
             return
 
         # wake up all waiters
-        logging.error("waking waiters for correlation id %s" % msg.correlation_id)
+        logging.debug("waking waiters for correlation id %s" % msg.correlation_id)
         self._req_correlation.put_data(msg.correlation_id, msg)
 
 
