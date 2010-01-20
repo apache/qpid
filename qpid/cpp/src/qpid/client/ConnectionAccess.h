@@ -34,6 +34,7 @@ namespace client {
 struct ConnectionAccess {
     static void setVersion(Connection& c, const framing::ProtocolVersion& v) { c.version = v; }
     static boost::shared_ptr<ConnectionImpl>  getImpl(Connection& c) { return c.impl; }
+    static void setImpl(Connection& c, boost::shared_ptr<ConnectionImpl> i) { c.impl = i; }
 };
 
 }} // namespace qpid::client
