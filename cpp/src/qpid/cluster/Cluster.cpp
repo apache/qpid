@@ -105,6 +105,7 @@
  */
 #include "qpid/Exception.h"
 #include "qpid/cluster/Cluster.h"
+#include "qpid/sys/ClusterSafe.h"
 #include "qpid/cluster/ClusterSettings.h"
 #include "qpid/cluster/Connection.h"
 #include "qpid/cluster/UpdateClient.h"
@@ -151,6 +152,7 @@
 #include <iterator>
 #include <map>
 #include <ostream>
+
 
 namespace qpid {
 namespace cluster {
@@ -357,6 +359,7 @@ void Cluster::leave(Lock&) {
         state = LEFT;
         QPID_LOG(notice, *this << " leaving cluster " << name);
         // Finalize connections now now to avoid problems later in destructor.
+        ClusterSafeScope css;   // Don't trigger cluster-safe assertions.
         LEAVE_TRY(localConnections.clear());
         LEAVE_TRY(connections.clear());
         LEAVE_TRY(broker::SignalHandler::shutdown());
@@ -440,6 +443,7 @@ void Cluster::flagError(
 // Handler for deliverFrameQueue.
 // This thread executes the main logic.
 void Cluster::deliveredFrame(const EventFrame& efConst) {
+    sys::ClusterSafeScope css; // Don't trigger cluster-safe asserts.
     Mutex::ScopedLock l(lock);
     if (state == LEFT) return;
     EventFrame e(efConst);
@@ -560,6 +564,7 @@ void Cluster::setReady(Lock&) {
     if (mgmtObject!=0) mgmtObject->set_status("ACTIVE");
     mcast.setReady();
     broker.getQueueEvents().enable();
+    enableClusterSafe();    // Enable cluster-safe assertions.
 }
 
 void Cluster::initMapCompleted(Lock& l) {
@@ -650,6 +655,7 @@ void Cluster::makeOffer(const MemberId& id, Lock& ) {
 // callbacks will be invoked.
 // 
 void Cluster::brokerShutdown()  {
+    sys::ClusterSafeScope css; // Don't trigger cluster-safe asserts.
     try { cpg.shutdown(); }
     catch (const std::exception& e) {
         QPID_LOG(error, *this << " shutting down CPG: " << e.what());
