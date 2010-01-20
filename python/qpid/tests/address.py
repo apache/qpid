@@ -18,7 +18,6 @@
 #
 
 
-from subprocess import Popen, PIPE, STDOUT
 from qpid.tests import Test
 from qpid.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE, \
     LEXER
@@ -82,7 +81,10 @@ class AddressTests(ParserBase, Test):
 
   def call(self, parser, mode, input):
     try:
+      from subprocess import Popen, PIPE, STDOUT
       po = Popen([parser, mode], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+    except ImportError, e:
+      raise Skipped("%s" % e)
     except OSError, e:
       raise Skipped("%s: %s" % (e, parser))
     out, _ = po.communicate(input=input)
