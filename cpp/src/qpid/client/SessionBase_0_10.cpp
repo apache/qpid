@@ -20,6 +20,7 @@
  */
 #include "qpid/client/SessionBase_0_10.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionAccess.h"
 #include "qpid/client/SessionImpl.h"
 #include "qpid/client/Future.h"
 #include "qpid/framing/all_method_bodies.h"
@@ -73,5 +74,12 @@ uint32_t SessionBase_0_10::timeout(uint32_t seconds) { return impl->setTimeout(s
 SessionId SessionBase_0_10::getId() const { return impl->getId(); }
 
 bool SessionBase_0_10::isValid() const { return impl; }
+
+Connection SessionBase_0_10::getConnection()
+{
+    Connection c;
+    ConnectionAccess::setImpl(c, impl->getConnection());
+    return c;
+}
 
 }} // namespace qpid::client

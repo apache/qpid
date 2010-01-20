@@ -607,6 +607,28 @@ QPID_AUTO_TEST_CASE(testExpirationNotAltered) {
     BOOST_CHECK_EQUAL(12345u, got.getDeliveryProperties().getExpiration());
 }
 
+QPID_AUTO_TEST_CASE(testGetConnectionFromSession) {
+    ClientSessionFixture fix;
+    FieldTable options;
+    options.setInt("no-local", 1);
+    fix.session.queueDeclare(arg::queue="a", arg::exclusive=true, arg::autoDelete=true, arg::arguments=options);
+    fix.session.queueDeclare(arg::queue="b", arg::exclusive=true, arg::autoDelete=true);
+
+    Connection c = fix.session.getConnection();
+    Session s = c.newSession();
+    //If this new session was created as expected on the same connection as
+    //fix.session, then the no-local behaviour means that queue 'a'
+    //will not enqueue messages from this new session but queue 'b'
+    //will.
+    s.messageTransfer(arg::content=Message("a", "a"));
+    s.messageTransfer(arg::content=Message("b", "b"));
+
+    Message got;
+    BOOST_CHECK(fix.subs.get(got, "b"));
+    BOOST_CHECK_EQUAL("b", got.getData());
+    BOOST_CHECK(!fix.subs.get(got, "a"));
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
