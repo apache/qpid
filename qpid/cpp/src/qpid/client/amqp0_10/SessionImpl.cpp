@@ -398,7 +398,7 @@ void SessionImpl::rollbackImpl()
 
 void SessionImpl::acknowledgeImpl()
 {
-    incoming.accept();
+    if (!transactional) incoming.accept();
 }
 
 void SessionImpl::rejectImpl(qpid::messaging::Message& m)
