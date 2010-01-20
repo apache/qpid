@@ -516,6 +516,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         _protocolHandler = new AMQProtocolHandler(this);
 
+        _logger.info("Connecting with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
+
         // We are not currently connected
         _connected = false;
 
@@ -551,6 +553,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
             }
         }
+
+        _logger.info("Connected with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
 
         if (_logger.isDebugEnabled())
         {
@@ -619,13 +623,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         try
         {
-            Class c = Class.forName(String.format
+            String delegateClassName = String.format
                                     ("org.apache.qpid.client.AMQConnectionDelegate_%s_%s",
-                                     pe.getMajorVersion(), pe.getMinorVersion()));
+                                     pe.getMajorVersion(), pe.getMinorVersion());
+            _logger.info("Looking up delegate '" + delegateClassName + "' Based on PE:" + pe);
+            Class c = Class.forName(delegateClassName);
             Class partypes[] = new Class[1];
             partypes[0] = AMQConnection.class;
             _delegate = (AMQConnectionDelegate) c.getConstructor(partypes).newInstance(this);
             _sessions.setMaxChannelID(_delegate.getMaxChannelID());
+            //Update our session to use this new protocol version 
+            _protocolHandler.getProtocolSession().setProtocolVersion(_delegate.getProtocolVersion());
+
         }
         catch (ClassNotFoundException e)
         {

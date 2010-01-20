@@ -278,6 +278,7 @@
       <sysproperty key="broker.stopped" value="${broker.stopped}" />
       <sysproperty key="broker.config" value="${broker.config}" />
       <sysproperty key="test.output" value="${module.results}"/>
+      <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>
 
       <syspropertyset>
         <propertyref prefix="test"/>

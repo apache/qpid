@@ -470,6 +470,7 @@ public class AMQProtocolHandler implements ProtocolEngine
                                 // connection.
                                 ProtocolInitiation protocolInit = (ProtocolInitiation) message;
                                 _suggestedProtocolVersion = protocolInit.checkVersion();
+                                _logger.info("Broker suggested using protocol version:" + _suggestedProtocolVersion);
                                 
                                 // get round a bug in old versions of qpid whereby the connection is not closed
                                 _stateManager.changeState(AMQState.CONNECTION_CLOSED);
