@@ -22,6 +22,7 @@ package org.apache.qpid.util;
 
 import java.io.UnsupportedEncodingException;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Stack;
@@ -39,7 +40,7 @@ public final class Strings
 
     private static final byte[] EMPTY = new byte[0];
 
-    private static final ThreadLocal<char[]> charbuf = new ThreadLocal()
+    private static final ThreadLocal<char[]> charbuf = new ThreadLocal<char[]>()
     {
         public char[] initialValue()
         {
@@ -178,7 +179,7 @@ public final class Strings
 
     public static final String expand(String input, Resolver resolver)
     {
-        return expand(input, resolver, new Stack());
+        return expand(input, resolver, new Stack<String>());
     }
 
     private static final String expand(String input, Resolver resolver, Stack<String> stack)
@@ -233,6 +234,27 @@ public final class Strings
         {
             stack.pop();
         }
+    }
+
+    public static final String join(String sep, Iterable items)
+    {
+        StringBuilder result = new StringBuilder();
+
+        for (Object o : items)
+        {
+            if (result.length() > 0)
+            {
+                result.append(sep);
+            }
+            result.append(o.toString());
+        }
+
+        return result.toString();
+    }
+
+    public static final String join(String sep, Object[] items)
+    {
+        return join(sep, Arrays.asList(items));
     }
 
 }
