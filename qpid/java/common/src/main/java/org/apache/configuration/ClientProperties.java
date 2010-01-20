@@ -73,6 +73,10 @@ public class ClientProperties extends PropertyNameResolver
      */
     public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
     public static final long DEFAULT_IDLE_TIMEOUT = 120000;
+    
+    public static final String HEARTBEAT = "qpid.heartbeat";
+    public static final int HEARTBEAT_DEFAULT = 120;
+    
     /**
      * This value will be used to determine the default destination syntax type.
      * Currently the two types are Binding URL (java only) and the Addressing format (used by
