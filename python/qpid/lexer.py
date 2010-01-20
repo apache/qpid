@@ -64,7 +64,7 @@ class Token:
     if self.value is None:
       return repr(self.type)
     else:
-      return "%s(%r)" % (self.type, self.value)
+      return "%s(%s)" % (self.type, self.value)
 
 
 class LexError(Exception):
@@ -96,6 +96,12 @@ class Lexer:
     self.types = types
     self.eof = eof
     self.rexp = rexp
+    self.byname = {}
+    for t in self.types + [eof]:
+      self.byname[t.name] = t
+
+  def type(self, name):
+    return self.byname[name]
 
   def lex(self, st):
     pos = 0

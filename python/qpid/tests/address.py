@@ -17,22 +17,114 @@
 # under the License.
 #
 
+
+from subprocess import Popen, PIPE, STDOUT
 from qpid.tests import Test
-from qpid.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE
+from qpid.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE, \
+    LEXER
+from qpid.lexer import Token
+from qpid.harness import Skipped
 from parser import ParserBase
+
+def indent(st):
+  return "  " + st.replace("\n", "\n  ")
+
+def pprint_address(name, subject, options):
+  return "NAME: %s\nSUBJECT: %s\nOPTIONS: %s" % \
+      (pprint(name), pprint(subject), pprint(options))
+
+def pprint(o):
+  if isinstance(o, dict):
+    return pprint_map(o)
+  elif isinstance(o, list):
+    return pprint_list(o)
+  elif isinstance(o, basestring):
+    return pprint_string(o)
+  else:
+    return repr(o)
+
+def pprint_map(m):
+  items = ["%s: %s" % (pprint(k), pprint(v)) for k, v in m.items()]
+  items.sort()
+  return pprint_items("{", items, "}")
+
+def pprint_list(l):
+  return pprint_items("[", [pprint(x) for x in l], "]")
+
+def pprint_items(start, items, end):
+  if items:
+    return "%s\n%s\n%s" % (start, ",\n".join([indent(i) for i in items]), end)
+  else:
+    return "%s%s" % (start, end)
+
+def pprint_string(s):
+  result = "'"
+  for c in s:
+    if c == "'":
+      result += "\\'"
+    elif c == "\n":
+      result += "\\n"
+    elif ord(c) >= 0x80:
+      result += "\\u%04x" % ord(c)
+    else:
+      result += c
+  result += "'"
+  return result
 
 class AddressTests(ParserBase, Test):
 
   EXCLUDE = (WSPACE, EOF)
 
+  def fields(self, line, n):
+    result = line.split(":", n - 1)
+    result.extend([None]*(n - len(result)))
+    return result
+
+  def call(self, parser, mode, input):
+    try:
+      po = Popen([parser, mode], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+    except OSError, e:
+      raise Skipped("%s: %s" % (e, parser))
+    out, _ = po.communicate(input=input)
+    return out
+
+  def parser(self):
+    return self.config.defines.get("address.parser")
+
   def do_lex(self, st):
-    return lex(st)
+    parser = self.parser()
+    if parser:
+      out = self.call(parser, "lex", st)
+      lines = out.split("\n")
+      toks = []
+      for line in lines:
+        if line.strip():
+          name, position, value = self.fields(line, 3)
+          toks.append(Token(LEXER.type(name), value, position, st))
+      return toks
+    else:
+      return lex(st)
 
   def do_parse(self, st):
     return parse(st)
 
   def valid(self, addr, name=None, subject=None, options=None):
-    ParserBase.valid(self, addr, (name, subject, options))
+    parser = self.parser()
+    if parser:
+      got = self.call(parser, "parse", addr)
+      expected = "%s\n" % pprint_address(name, subject, options)
+      assert expected == got, "expected\n<EXP>%s</EXP>\ngot\n<GOT>%s</GOT>" % (expected, got)
+    else:
+      ParserBase.valid(self, addr, (name, subject, options))
+
+  def invalid(self, addr, error=None):
+    parser = self.parser()
+    if parser:
+      got = self.call(parser, "parse", addr)
+      expected = "ERROR: %s\n" % error
+      assert expected == got, "expected %r, got %r" % (expected, got)
+    else:
+      ParserBase.invalid(self, addr, error)
 
   def testDashInId1(self):
     self.lex("foo-bar", ID)
@@ -125,14 +217,14 @@ class AddressTests(ParserBase, Test):
 
   def testNoName(self):
     self.invalid("; {key: value}",
-                 "unexpected token SEMI(';') line:1,0:; {key: value}")
+                 "unexpected token SEMI(;) line:1,0:; {key: value}")
 
   def testEmpty(self):
     self.invalid("", "unexpected token EOF line:1,0:")
 
   def testNoNameSlash(self):
     self.invalid("/asdf; {key: value}",
-                 "unexpected token SLASH('/') line:1,0:/asdf; {key: value}")
+                 "unexpected token SLASH(/) line:1,0:/asdf; {key: value}")
 
   def testBadOptions1(self):
     self.invalid("name/subject; {",
@@ -156,7 +248,7 @@ class AddressTests(ParserBase, Test):
 
   def testBadOptions5(self):
     self.invalid("name/subject; { key: value asdf",
-                 "expecting (COMMA, RBRACE), got ID('asdf') "
+                 "expecting (COMMA, RBRACE), got ID(asdf) "
                  "line:1,27:name/subject; { key: value asdf")
 
   def testBadOptions6(self):
@@ -166,7 +258,7 @@ class AddressTests(ParserBase, Test):
 
   def testBadOptions7(self):
     self.invalid("name/subject; { key: value } asdf",
-                 "expecting EOF, got ID('asdf') "
+                 "expecting EOF, got ID(asdf) "
                  "line:1,29:name/subject; { key: value } asdf")
 
   def testList1(self):
@@ -185,19 +277,19 @@ class AddressTests(ParserBase, Test):
 
   def testBadList1(self):
     self.invalid("name/subject; { key: [ }", "expecting (NUMBER, STRING, ID, LBRACE, LBRACK), "
-                 "got RBRACE('}') line:1,23:name/subject; { key: [ }")
+                 "got RBRACE(}) line:1,23:name/subject; { key: [ }")
 
   def testBadList2(self):
     self.invalid("name/subject; { key: [ 1 }", "expecting (COMMA, RBRACK), "
-                 "got RBRACE('}') line:1,25:name/subject; { key: [ 1 }")
+                 "got RBRACE(}) line:1,25:name/subject; { key: [ 1 }")
 
   def testBadList3(self):
     self.invalid("name/subject; { key: [ 1 2 }", "expecting (COMMA, RBRACK), "
-                 "got NUMBER('2') line:1,25:name/subject; { key: [ 1 2 }")
+                 "got NUMBER(2) line:1,25:name/subject; { key: [ 1 2 }")
 
   def testBadList4(self):
     self.invalid("name/subject; { key: [ 1 2 ] }", "expecting (COMMA, RBRACK), "
-                 "got NUMBER('2') line:1,25:name/subject; { key: [ 1 2 ] }")
+                 "got NUMBER(2) line:1,25:name/subject; { key: [ 1 2 ] }")
 
   def testMap1(self):
     self.valid("name/subject; { 'key': value }",
