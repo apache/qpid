@@ -245,13 +245,10 @@ void ConnectionImpl::open()
         theTimer().add(heartbeatTask);
     }
 
-    try {
-        handler.waitForOpen();
-    } catch (...) {
-        // Make sure the connector thread is joined.
-        connector->close();
-        throw;
-    }
+    // If the connect fails then the connector is cleaned up either when we try to connect again
+    // - in that case in connector.reset() above;
+    // - or when we are deleted
+    handler.waitForOpen();
 
     // If the SASL layer has provided an "operational" userId for the connection,
     // put it in the negotiated settings.
