@@ -144,7 +144,7 @@ class AsynchConnector : public qpid::sys::AsynchConnector,
 
 private:
     void connComplete(DispatchHandle& handle);
-    void failure(int, const std::string&);
+    void syncFailure();
 
 private:
     ConnectedCallback connCallback;
@@ -189,27 +189,26 @@ void AsynchConnector::start(Poller::shared_ptr poller)
     startWatch(poller);
     // If we previously detected an error insert failure callback now
     if ( !errMsg.empty() ) {
-        DispatchHandle::call(boost::bind(&AsynchConnector::failure, this, -1, errMsg));
+        DispatchHandle::call(boost::bind(&AsynchConnector::syncFailure, this));
     }
 }
 
 void AsynchConnector::connComplete(DispatchHandle& h)
 {
-    int errCode = socket.getError();
-
     h.stopWatch();
+    int errCode = socket.getError();
     if (errCode == 0) {
         connCallback(socket);
-        DispatchHandle::doDelete();
     } else {
-        failure(errCode, strError(errCode));
+        failCallback(socket, errCode, strError(errCode));
     }
+    DispatchHandle::doDelete();
 }
 
-void AsynchConnector::failure(int errCode, const std::string& message)
+void AsynchConnector::syncFailure()
 {
-    failCallback(socket, errCode, message);
-
+    DispatchHandle::stopWatch();
+    failCallback(socket, -1, errMsg);
     DispatchHandle::doDelete();
 }
 
