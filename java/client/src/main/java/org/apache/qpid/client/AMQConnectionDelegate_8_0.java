@@ -304,8 +304,6 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         }
     }
 
-    public void setIdleTimeout(long l){}
-
     public int getMaxChannelID()
     {
         return (int) (Math.pow(2, 16)-1);

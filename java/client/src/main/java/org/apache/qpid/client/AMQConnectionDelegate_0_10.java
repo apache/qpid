@@ -41,6 +41,7 @@ import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionClose;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.ProtocolVersionException;
 import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
@@ -69,7 +70,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     {
         _conn = conn;
         _qpidConnection = new Connection();
-        _qpidConnection.setConnectionListener(this);
+        _qpidConnection.addConnectionListener(this);
     }
 
     /**
@@ -149,40 +150,64 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("connecting to host: " + brokerDetail.getHost() +
-                              " port: " + brokerDetail.getPort() +
-                              " vhost: " + _conn.getVirtualHost() +
-                              " username: " + _conn.getUsername() +
-                              " password: " + _conn.getPassword());
+                _logger.debug("connecting to host: " + brokerDetail.getHost()
+                        + " port: " + brokerDetail.getPort() + " vhost: "
+                        + _conn.getVirtualHost() + " username: "
+                        + _conn.getUsername() + " password: "
+                        + _conn.getPassword());
             }
-            
-            if (brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT) != null)
-            {
-                this.setIdleTimeout(Long.parseLong(brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT)));
-            }
-            else
-            {
-                // use the default value set for all connections
-                this.setIdleTimeout(Long.getLong(ClientProperties.IDLE_TIMEOUT_PROP_NAME,ClientProperties.DEFAULT_IDLE_TIMEOUT));
-            }
-            
-            String saslMechs = brokerDetail.getProperty("sasl_mechs")!= null?
-                               brokerDetail.getProperty("sasl_mechs"):
-                               System.getProperty("qpid.sasl_mechs","PLAIN");
-            
-            _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
-                                    _conn.getUsername(), _conn.getPassword(), brokerDetail.useSSL(),saslMechs);
+
+            String saslMechs = brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS) != null ? 
+                               brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS):
+                               System.getProperty("qpid.sasl_mechs", "PLAIN");
+
+            // Sun SASL Kerberos client uses the
+            // protocol + servername as the service key.
+            String protocol = brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME) != null ? 
+                              brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME):
+                              System.getProperty("qpid.sasl_protocol", "AMQP");
+
+            String saslServerName = brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME) != null ? 
+                                brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME):
+                                System.getProperty("qpid.sasl_server_name", "localhost");
+
+            boolean useSSL = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION);
+                             
+            boolean useSASLEncryption = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION)?
+                                        brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION):
+                                        Boolean.getBoolean("qpid.sasl_encryption");
+                             
+            boolean useTcpNodelay = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY)?
+                                    brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY):
+                                    Boolean.getBoolean("amqj.tcp_nodelay");
+                             
+                    
+            ConnectionSettings conSettings = new ConnectionSettings();
+            conSettings.setHost(brokerDetail.getHost());
+            conSettings.setPort(brokerDetail.getPort());
+            conSettings.setVhost(_conn.getVirtualHost());
+            conSettings.setUsername(_conn.getUsername());
+            conSettings.setPassword(_conn.getPassword());
+            conSettings.setUseSASLEncryption(useSASLEncryption);
+            conSettings.setUseSSL(useSSL);
+            conSettings.setSaslMechs(saslMechs);
+            conSettings.setTcpNodelay(useTcpNodelay);
+            conSettings.setSaslProtocol(protocol);
+            conSettings.setSaslServerName(saslServerName);
+            conSettings.setHeartbeatInterval(getHeartbeatInterval(brokerDetail));
+
+            _qpidConnection.connect(conSettings);
+
             _conn._connected = true;
             _conn.setUsername(_qpidConnection.getUserID());
             _conn._failoverPolicy.attainedConnection();
-        }
-        catch(ProtocolVersionException pe)
+        } catch (ProtocolVersionException pe)
         {
             return new ProtocolVersion(pe.getMajor(), pe.getMinor());
-        }
-        catch (ConnectionException e)
-        {            
-            throw new AMQException(AMQConstant.CHANNEL_ERROR, "cannot connect to broker", e);
+        } catch (ConnectionException e)
+        {
+            throw new AMQException(AMQConstant.CHANNEL_ERROR,
+                    "cannot connect to broker", e);
         }
 
         return null;
@@ -293,11 +318,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
     }
 
-    public void setIdleTimeout(long l)
-    {
-        _qpidConnection.setIdleTimeout((int)l);
-    }
-
     public int getMaxChannelID()
     {
        return Integer.MAX_VALUE;
@@ -306,5 +326,31 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     public ProtocolVersion getProtocolVersion()
     {
         return ProtocolVersion.v0_10;
+    }
+    
+    // The idle_timeout prop is in milisecs while
+    // the new heartbeat prop is in secs
+    private int getHeartbeatInterval(BrokerDetails brokerDetail)
+    {
+        int heartbeat = 0;
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT) != null)
+        {
+            _logger.warn("Broker property idle_timeout=<mili_secs> is deprecated, please use heartbeat=<secs>");
+            heartbeat = Integer.parseInt(brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT))/1000;
+        }
+        else if (brokerDetail.getProperty(BrokerDetails.OPTIONS_HEARTBEAT) != null)
+        {
+            heartbeat = Integer.parseInt(brokerDetail.getProperty(BrokerDetails.OPTIONS_HEARTBEAT));
+        }
+        else if (Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME) != null) 
+        {
+            heartbeat = Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME)/1000;
+            _logger.warn("JVM arg -Didle_timeout=<mili_secs> is deprecated, please use -Dqpid.heartbeat=<secs>");
+        }
+        else
+        {
+            heartbeat = Integer.getInteger(ClientProperties.HEARTBEAT,ClientProperties.HEARTBEAT_DEFAULT);
+        } 
+        return 0;
     }
 }

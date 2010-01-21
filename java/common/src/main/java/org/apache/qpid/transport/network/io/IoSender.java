@@ -297,7 +297,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     {
         try
         {
-            socket.setSoTimeout(i*2);
+            socket.setSoTimeout(i);
         }
         catch (Exception e)
         {

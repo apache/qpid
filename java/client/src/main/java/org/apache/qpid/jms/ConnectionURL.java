@@ -40,8 +40,7 @@ public interface ConnectionURL
     public static final String OPTIONS_SYNC_PUBLISH = "sync_publish";
     public static final String OPTIONS_BROKERLIST = "brokerlist";
     public static final String OPTIONS_FAILOVER = "failover";
-    public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";
-    public static final String OPTIONS_SSL = "ssl";
+    public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";    
     public static final String OPTIONS_DEFAULT_TOPIC_EXCHANGE = "defaultTopicExchange";
     public static final String OPTIONS_DEFAULT_QUEUE_EXCHANGE = "defaultQueueExchange";
     public static final String OPTIONS_TEMPORARY_TOPIC_EXCHANGE = "temporaryTopicExchange";

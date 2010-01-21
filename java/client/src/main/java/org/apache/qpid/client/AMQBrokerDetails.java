@@ -255,11 +255,11 @@ public class AMQBrokerDetails implements BrokerDetails
         return BrokerDetails.DEFAULT_CONNECT_TIMEOUT;
     }
     
-    public boolean useSSL()
+    public boolean getBooleanProperty(String propName)
     {
-        if (_options.containsKey(ConnectionURL.OPTIONS_SSL))
+        if (_options.containsKey(propName))
         {
-            return Boolean.parseBoolean(_options.get(ConnectionURL.OPTIONS_SSL));
+            return Boolean.parseBoolean(_options.get(propName));
         }
 
         return false;
