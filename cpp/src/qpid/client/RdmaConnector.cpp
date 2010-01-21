@@ -172,9 +172,9 @@ void RdmaConnector::connect(const std::string& host, int port){
         boost::bind(&RdmaConnector::connectionError, this, poller, _1, _2),
         boost::bind(&RdmaConnector::disconnected, this, poller, _1),
         boost::bind(&RdmaConnector::rejected, this, poller, _1, _2));
-    c->start(poller);
-
     polling = true;
+
+    c->start(poller);
 }
 
 // The following only gets run when connected
@@ -187,11 +187,12 @@ void RdmaConnector::connected(Poller::shared_ptr poller, Rdma::Connection::intru
         boost::bind(&RdmaConnector::writebuff, this, _1),
         0, // write buffers full
         boost::bind(&RdmaConnector::eof, this, _1)); // data error - just close connection
-    aio->start(poller);
 
     identifier = str(format("[%1% %2%]") % ci->getLocalName() % ci->getPeerName());
     ProtocolInitiation init(version);
     writeDataBlock(init);
+
+    aio->start(poller);
 }
 
 void RdmaConnector::connectionError(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&, Rdma::ErrorType) {
