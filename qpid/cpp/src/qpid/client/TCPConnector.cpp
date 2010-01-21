@@ -91,14 +91,15 @@ void TCPConnector::connect(const std::string& host, int port) {
     assert(closed);
     assert(joined);
     poller = Poller::shared_ptr(new Poller);
+    AsynchConnector* c =
     AsynchConnector::create(socket,
-                            poller,
                             host, port,
                             boost::bind(&TCPConnector::connected, this, _1),
                             boost::bind(&TCPConnector::connectFailed, this, _3));
     closed = false;
     joined = false;
     receiver = Thread(this);
+    c->start(poller);
 }
 
 void TCPConnector::connected(const Socket&) {

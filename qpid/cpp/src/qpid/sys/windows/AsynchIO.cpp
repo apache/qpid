@@ -172,23 +172,30 @@ private:
     ConnectedCallback connCallback;
     FailedCallback failCallback;
     const Socket& socket;
+    const std::string hostname;
+    const uint16_t port;
 
 public:
     AsynchConnector(const Socket& socket,
-                    Poller::shared_ptr poller,
                     std::string hostname,
                     uint16_t port,
                     ConnectedCallback connCb,
                     FailedCallback failCb = 0);
+    void start(Poller::shared_ptr poller);
 };
 
 AsynchConnector::AsynchConnector(const Socket& sock,
-                                 Poller::shared_ptr poller,
-                                 std::string hostname,
-                                 uint16_t port,
+                                 std::string hname,
+                                 uint16_t p,
                                  ConnectedCallback connCb,
-                                 FailedCallback failCb)
-  : connCallback(connCb), failCallback(failCb), socket(sock) {
+                                 FailedCallback failCb) :
+    connCallback(connCb), failCallback(failCb), socket(sock),
+    hostname(hname), port(p)
+{
+}
+
+AsynchConnector::start(Poller::shared_ptr)
+{
     try {
         socket.connect(hostname, port);
         socket.setNonblocking();
