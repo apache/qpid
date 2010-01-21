@@ -24,7 +24,6 @@ from codec010 import StringCodec
 from framing import *
 from session import Session
 from generator import control_invoker
-from spec import SPEC
 from exceptions import *
 from logging import getLogger
 import delegates, socket

@@ -31,6 +31,7 @@ from queue import Queue, Closed as QueueClosed
 from content import Content
 from cStringIO import StringIO
 from time import time
+from exceptions import Closed
 
 class Sequence:
 
@@ -172,8 +173,6 @@ class Responder:
       else:
         frame = Response(self.sequence.next(), request.id, batch, method)
       self.write(frame)
-
-class Closed(Exception): pass
 
 class Channel:
 

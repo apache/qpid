@@ -18,7 +18,6 @@
 #
 
 from threading import Condition, RLock, Lock, currentThread
-from spec import SPEC
 from generator import command_invoker
 from datatypes import RangedSet, Struct, Future
 from codec010 import StringCodec

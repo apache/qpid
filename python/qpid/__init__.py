@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import spec, codec, connection, content, peer, delegate, client
+import connection
 
 class Struct:
 
