@@ -20,17 +20,18 @@
 
 	<part>
 	  <title>AMQP Messaging Clients Clients</title>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Java%20JMS%20Messaging%20Client.html"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="4589059.html"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20.NET%20Messaging%20Client.html"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Python%20Messaging%20Client.html"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Ruby%20Messaging%20Client.html"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Java%20JMS%20Messaging%20Client.xml"/>
+<!--	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20C++%20Messaging%20Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20.NET%20Messaging%20Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Python%20Messaging%20Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Ruby%20Messaging%20Client.xml"/>
+-->
 	</part>
 	<part>
 	  <title>Appendices</title>
-	  <xi:include href="AMQP compatibility.xml"/>
-	  <xi:include href="Qpid Interoperability Documentation.xml"/>
-	  <!--        <xi:include href="FAQ.xml"/> -->
+	  <xi:include href="AMQP%20Compatibility.xml"/>
+	  <xi:include href="Qpid%20Interoperability%20Documentation.xml"/>
+<!--	  <xi:include href="FAQ.xml"/> -->
 	</part>
 </book>
 

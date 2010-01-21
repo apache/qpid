@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+
+  <title>
+      Apache Qpid : AMQP Java JMS Messaging Client
+  </title>
+
+  <para>The Java Client supported by Qpid implements the <ulink
+  url="http://java.sun.com/products/jms/docs.html">Java JMS 1.1
+  Specification</ulink>.  </para>
+
+
+  <section role="h3"
+	   id="AMQPJavaJMSMessagingClient-GeneralUserGuides">
+    <title>General User Guides</title>
+
+
+<!--
+Does not seem to exist!
+
+            <listitem><para>AMQP Java JMS Client Feature Guide
+            </para></listitem>
+
+http://cwiki.apache.org/confluence/pages/createpage.action?spaceKey=qpid&title=JMS%20Client%20Feature%20Guide&linkCreation=true&fromPageId=4589057
+-->
+
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20FAQ.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="System%20Properties.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Connection%20URL%20Format.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Binding%20URL%20Format.xml"/>
+
+<!--
+            <listitem><para>How to Use JNDI to configure the AMQP Java JMS Client
+            </para></listitem>
+            <listitem><para>Using the AMQP Java JMS Client with RT Java
+            </para></listitem>
+            <listitem><para>AMQP Java JMS Client Tuning Guide
+            </para></listitem>
+-->
+
+<!--h3--></section>
+
+	  <section role="h3" id="AMQPJavaJMSMessagingClient-AMQPJavaJMSExamples">
+
+	    <title>AMQP Java JMS Examples </title>
+
+	  <itemizedlist>
+            <listitem><para>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/"></ulink>
+            </para></listitem>
+
+            <listitem><para>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/"></ulink>
+            </para></listitem>
+            <listitem><para>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/"></ulink>
+            </para></listitem>
+          </itemizedlist>
+
+<!--h3--></section>
+
+</chapter>

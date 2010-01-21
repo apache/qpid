@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+
+  <title>
+    Apache Qpid : Qpid JMX Management Console
+  </title>
+
+  <section role="h2" id="QpidJMXManagementConsole-QpidJMXManagementConsole">
+
+    <title> Qpid JMX Management Console </title>
+
+    <section role="h3" id="QpidJMXManagementConsole-Overview">
+      
+      <title>
+	Overview
+      </title>
+
+      <para>
+	The Qpid JMX Management Console is a standalone Eclipse
+	RCP application that communicates with the broker using
+	JMX.
+      </para>
+       
+	  <xi:include href="Configuring%20Management%20Users.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	  <xi:include href="Configuring%20Qpid%20JMX%20Management%20Console.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+          <xi:include href="Management%20Console%20Security.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+          <xi:include href="Qpid%20JMX%20Management%20Console%20FAQ.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	  <xi:include href="Qpid%20JMX%20Management%20Console%20User%20Guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/> 
+	  <xi:include href="Qpid%20Management%20Features.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+<!--h3--></section>
+<!--h2--></section>            
+</chapter>

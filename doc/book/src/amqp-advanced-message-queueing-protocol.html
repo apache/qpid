@@ -1,0 +1,216 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+  <HEAD>
+    <LINK type="text/css" rel="stylesheet" href="resources/space.css">
+    <STYLE type="text/css">
+      .footer {
+        background-image:      url('http://cwiki.apache.org/confluence/images/border/border_bottom.gif');
+        background-repeat:     repeat-x;
+        background-position:   left top;
+        padding-top:           4px;
+        color:                 #666;
+        clear:                 both;
+      }
+     .left {
+        padding-top: 5px;
+	float : left;
+        width : 15em;
+      }
+      .pagecontent {
+         float: left;
+         width: 70%;
+      }
+    </STYLE>
+    <SCRIPT type="text/javascript" language="javascript">
+      var hide = null;
+      var show = null;
+      var children = null;
+
+      function init() {
+        /* Search form initialization */
+        var form = document.forms['search'];
+        if (form != null) {
+          form.elements['domains'].value = location.hostname;
+          form.elements['sitesearch'].value = location.hostname;
+        }
+
+        /* Children initialization */
+        hide = document.getElementById('hide');
+        show = document.getElementById('show');
+        children = document.all != null ?
+                   document.all['children'] :
+                   document.getElementById('children');
+        if (children != null) {
+          children.style.display = 'none';
+          show.style.display = 'inline';
+          hide.style.display = 'none';
+        }
+      }
+
+      function showChildren() {
+        children.style.display = 'block';
+        show.style.display = 'none';
+        hide.style.display = 'inline';
+      }
+
+      function hideChildren() {
+        children.style.display = 'none';
+        show.style.display = 'inline';
+        hide.style.display = 'none';
+      }
+    </SCRIPT>
+    <TITLE>Apache Qpid: Open Source AMQP Messaging - AMQP (Advanced Message Queueing Protocol)</TITLE>
+  <META http-equiv="Content-Type" content="text/html;charset=UTF-8"></HEAD>
+  <BODY onload="init()">
+    <TABLE border="0" cellpadding="2" cellspacing="0" width="100%">
+      <TR class="topBar">
+        <TD align="left" valign="middle" class="topBarDiv" align="left" nowrap="">
+          &nbsp;<A href="index.html" title="Apache Qpid">Apache Qpid</A>&nbsp;&gt;&nbsp;<A href="index.html" title="Index">Index</A>&nbsp;&gt;&nbsp;<A href="" title="AMQP (Advanced Message Queueing Protocol)">AMQP (Advanced Message Queueing Protocol)</A>
+        </TD>
+        <TD align="right" valign="middle" nowrap="">
+          <FORM name="search" action="http://www.google.com/search" method="get">
+            <INPUT type="hidden" name="ie" value="UTF-8">
+            <INPUT type="hidden" name="oe" value="UTF-8">
+            <INPUT type="hidden" name="domains" value="">
+            <INPUT type="hidden" name="sitesearch" value="">
+            <INPUT type="text" name="q" maxlength="255" value="">        
+            <INPUT type="submit" name="btnG" value="Google Search">
+          </FORM>
+        </TD>
+      </TR> 
+    </TABLE>
+
+    <DIV id="PageContent">
+        <DIV class="pageheader" style="padding: 6px 0px 0px 0px;">
+<DIV>
+<TABLE border="0" width="90%">
+<TR>
+<TD align="left">
+<A href="http://qpid.apache.org/">
+<IMG src="http://qpid.apache.org/images/qpid-logo.png" height="69" width="225" border="0"></A>
+</TD>
+<TD>
+</TD>
+<TD align="right">          <A href="http://www.apache.org/">
+            <IMG src="http://qpid.apache.org/images/asf-logo.png" height="69" width="225" border="0"></A></TD>
+</TR>
+</TABLE>
+</DIV>
+
+      </DIV>
+
+<!--
+
+
+      <div class="pagesubheading" style="margin: 0px 10px 0px 10px;">
+                    Added by <a href="/confluence/display/~jonathan.robie@redhat.com">Jonathan Robie</a>, last edited by <a href="/confluence/display/~jonathan.robie@redhat.com">Jonathan Robie</a> on Feb 18, 2009
+                      &nbsp;(<a class="noprint" href="/confluence/pages/diffpages.action?pageId=110693&originalId=110695">view change</a>)
+              
+      </div>
+-->
+
+        <DIV class="left">
+            
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+                                    
+                                                
+            <DIV class="panel" style="background-color: E0E0FF;border-color: #202080;border-style: solid;border-width: 1px;"><DIV class="panelContent" style="background-color: E0E0FF;">
+<H3><A name="Navigation-ApacheQpid"></A>Apache Qpid</H3>
+<P> <A href="index.html" title="Index">Home</A><BR>
+ <A href="download.html" title="Download">Download</A><BR>
+ <A href="getting-started.html" title="Getting Started">Getting Started</A> <BR>
+ <A href="documentation.html" title="Documentation">Documentation</A><BR>
+ <A href="mailing-lists.html" title="Mailing Lists">Mailing Lists</A><BR>
+ <A href="http://issues.apache.org/jira/browse/qpid" rel="nofollow">Issue Reporting</A><BR>
+ <A href="faq.html" title="FAQ">FAQ/How to</A></P>
+
+<H3><A name="Navigation-Resources"></A>Resources</H3>
+<P> <A href="getting-involved.html" title="Getting Involved">Getting Involved</A><BR>
+ <A href="qpid-integrations.html" title="Qpid Integrations">Qpid Integrated with..</A><BR>
+ <A href="source-repository.html" title="Source Repository">Source Repository</A><BR>
+ <A href="building.html" title="Building">Building Qpid</A><BR>
+ <A href="developer-pages.html" title="Developer Pages">Developer Pages</A><BR>
+ <A href="qpid-management-framework.html" title="Qpid Management Framework">QMF</A></P>
+
+<H3><A name="Navigation-AboutQpid"></A>About Qpid</H3>
+<P> <A href="people.html" title="People">People</A><BR>
+ <A href="license.html" title="License">License</A><BR>
+ <A href="project-status.html" title="Project Status">Project Status</A><BR>
+ <A href="acknowledgments.html" title="Acknowledgments">Acknowledgments</A></P>
+
+<H3><A name="Navigation-AboutAMQP"></A>About AMQP</H3>
+<P> <A href="" title="AMQP (Advanced Message Queueing Protocol)">What is AMQP ?</A><BR>
+ <A href="" title="AMQP (Advanced Message Queueing Protocol)">AMQP Specification Download</A></P>
+
+<P><IMG src="navigation.data/AMQP_logo_71px-small.jpg" align="absmiddle" border="0"></P>
+</DIV></DIV>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </DIV>
+
+      <DIV class="pagecontent">
+        <DIV class="wiki-content">
+          <H2><A name="AMQP%28AdvancedMessageQueueingProtocol%29-WhatisAMQP%3F"></A>What is AMQP?</H2>
+
+<P>AMQP <A href="http://www.amqp.org/" rel="nofollow">Advanced Message Queuing Protocol</A> is an open standard designed to support reliable, high-performance messaging over the Internet. AMQP can be used for any distributed or business application, and supports common messaging paradigms like point-to-point, fanout, publish-subscribe, and request-response.</P>
+
+<P>Apache Qpid implements AMQP, including transaction management, queuing, clustering, federation, security, management and multi-platform support.</P>
+
+
+<P>Apache Qpid implements the latest AMQP specification, providing transaction management, queuing, distribution, security, management, clustering, federation and heterogeneous multi-platform support and a lot more. </P>
+
+<P>Apache Qpid is highly optimized, and <A href="amqp-compatibility.html" title="AMQP compatibility">aims to be 100% AMQP Compliant</A>.</P>
+
+<H2><A name="AMQP%28AdvancedMessageQueueingProtocol%29-DownloadtheAMQPSpecifications"></A>Download the AMQP Specifications</H2>
+
+<H3><A name="AMQP%28AdvancedMessageQueueingProtocol%29-AMQPversion010"></A>AMQP version 0-10</H3>
+
+
+<UL>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp.0-10.pdf?version=1" rel="nofollow">AMQP 0-10 Specification (PDF) </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp.0-10.xml?version=1" rel="nofollow">AMQP 0-10 Protocol Definition XML </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp.0-10.dfd?version=1" rel="nofollow">AMQP 0-10 Protocol Definition DTD </A></LI>
+</UL>
+
+
+<H3><A name="AMQP%28AdvancedMessageQueueingProtocol%29-AMQPversion091"></A>AMQP version 0-9-1</H3>
+
+<UL>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-9-1.pdf?version=1" rel="nofollow">AMQP 0-9-1 Specification (PDF) </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-9-1.xml?version=1" rel="nofollow">AMQP 0-9-1 Protocol Documentation (PDF) </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-9-1.dtd?version=1" rel="nofollow">AMQP 0-9-1 Protocol Definitions (XML) </A></LI>
+</UL>
+
+
+<H3><A name="AMQP%28AdvancedMessageQueueingProtocol%29-AMQPversion09"></A>AMQP version 0-9</H3>
+
+<UL>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-9.pdf?version=1" rel="nofollow">AMQP 0-9 Specification (PDF) </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-9.xml?version=1" rel="nofollow">AMQP 0-9 Protocol Documentation (PDF) </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-9.dtd?version=1" rel="nofollow">AMQP 0-9 Protocol Definitions (XML) </A></LI>
+</UL>
+
+
+<H3><A name="AMQP%28AdvancedMessageQueueingProtocol%29-AMQPversion08"></A>AMQP version 0-8</H3>
+
+<UL>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-8.pdf?version=1" rel="nofollow">AMQP 0-8 Specification (PDF) </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-8.dtd?version=1" rel="nofollow">AMQP 0-8 Protocol Documentation (PDF) </A></LI>
+	<LI><A href="https://jira.amqp.org/confluence/download/attachments/720900/amqp0-8.xml?version=1" rel="nofollow">AMQP 0-8 Protocol Definitions (XML) </A></LI>
+</UL>
+
+        </DIV>
+
+<!--
+        -->
+
+      </DIV>
+
+    <DIV class="footer">
+      Apache Qpid, Enterprise AMQP Messaging    
+      &nbsp;
+      &copy; 2004-2008 The Apache Software Foundation.
+      &nbsp;
+        (<A href="http://cwiki.apache.org/confluence/pages/editpage.action?pageId=110693">edit this page</A>)
+    </DIV>
+  </BODY>
+</HTML>
