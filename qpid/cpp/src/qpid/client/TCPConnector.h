@@ -40,9 +40,14 @@
 #include <string>
 
 namespace qpid {
+
+namespace framing {
+    class InitiationHandler;
+}
+
 namespace client {
 
-class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
+class TCPConnector : public Connector, public sys::Codec
 {
     typedef std::deque<framing::AMQFrame> Frames;
     struct Buff;
@@ -58,14 +63,11 @@ class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
     framing::ProtocolVersion version;
     bool initiated;
     bool closed;
-    bool joined;
 
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
     framing::InitiationHandler* initialiser;
     framing::OutputHandler* output;
-
-    sys::Thread receiver;
 
     sys::Socket socket;
 
@@ -76,18 +78,15 @@ class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
 
     ~TCPConnector();
 
-    void run();
     void handleClosed();
     bool closeInternal();
 
-    virtual void connected(const qpid::sys::Socket&);
+    void connected(const sys::Socket&);
     void connectFailed(const std::string& msg);
     bool readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void writebuff(qpid::sys::AsynchIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
     void eof(qpid::sys::AsynchIO&);
-
-    boost::weak_ptr<ConnectionImpl> impl;
 
     void connect(const std::string& host, int port);
     void close();
@@ -107,9 +106,10 @@ class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
     bool canEncode();
 
 public:
-    TCPConnector(framing::ProtocolVersion pVersion,
-                 const ConnectionSettings&, 
-                 ConnectionImpl*);
+    TCPConnector(boost::shared_ptr<sys::Poller>,
+              framing::ProtocolVersion pVersion,
+              const ConnectionSettings&,
+              ConnectionImpl*);
 };
 
 }}   // namespace qpid::client
