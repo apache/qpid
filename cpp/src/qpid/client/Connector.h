@@ -22,27 +22,24 @@
 #define _Connector_
 
 
-#include "qpid/framing/InputHandler.h"
 #include "qpid/framing/OutputHandler.h"
-#include "qpid/framing/InitiationHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
-#include "qpid/sys/ShutdownHandler.h"
-#include "qpid/sys/TimeoutHandler.h"
-#include "qpid/sys/Thread.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/sys/Mutex.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/sys/Time.h"
 
-#include <queue>
-#include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include <string>
 
 namespace qpid {
 
 namespace sys {
+class ShutdownHandler;
 class SecurityLayer;
+class Poller;
+}
+
+namespace framing {
+class InputHandler;
+class AMQFrame;
 }
 
 namespace client {
@@ -52,11 +49,14 @@ class ConnectionImpl;
 
 ///@internal
 class Connector : public framing::OutputHandler
-{    
+{
   public:
     // Protocol connector factory related stuff (it might be better to separate this code from the TCP Connector in the future)
-    typedef Connector* Factory(framing::ProtocolVersion, const ConnectionSettings&, ConnectionImpl*);
-    static Connector* create(const std::string& proto, framing::ProtocolVersion, const ConnectionSettings&, ConnectionImpl*);
+    typedef Connector* Factory(boost::shared_ptr<qpid::sys::Poller>,
+                               framing::ProtocolVersion, const ConnectionSettings&, ConnectionImpl*);
+    static Connector* create(const std::string& proto,
+                             boost::shared_ptr<qpid::sys::Poller>,
+                             framing::ProtocolVersion, const ConnectionSettings&, ConnectionImpl*);
     static void registerFactory(const std::string& proto, Factory* connectorFactory);
 
     virtual ~Connector() {};
@@ -75,7 +75,6 @@ class Connector : public framing::OutputHandler
     virtual void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
 
     virtual unsigned int getSSF() = 0;
-
 };
 
 }}
