@@ -204,7 +204,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         IoTransport.connect_0_9(getProtocolSession(),
                                 brokerDetail.getHost(),
                                 brokerDetail.getPort(),
-                                brokerDetail.useSSL());
+                                brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL));
         _protocolSession.init();
     }
 

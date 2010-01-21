@@ -76,7 +76,7 @@ public class Connection extends ConnectionInvoker
     private State state = NEW;
     final private Object lock = new Object();
     private long timeout = 60000;
-    private ConnectionListener listener = new DefaultConnectionListener();
+    private List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();    
     private ConnectionException error = null;
 
     private int channelMax = 1;
@@ -86,7 +86,8 @@ public class Connection extends ConnectionInvoker
     private int idleTimeout = 0;
     private String _authorizationID;
     private String userID;
-    
+    private ConnectionSettings conSettings;
+
     // want to make this final
     private int _connectionId;
 
@@ -97,16 +98,9 @@ public class Connection extends ConnectionInvoker
         this.delegate = delegate;
     }
 
-    public void setConnectionListener(ConnectionListener listener)
+    public void addConnectionListener(ConnectionListener listener)
     {
-        if (listener == null)
-        {
-            this.listener = new DefaultConnectionListener();
-        }
-        else
-        {
-            this.listener = listener;
-        }
+        listeners.add(listener);
     }
 
     public Sender<ProtocolEvent> getSender()
@@ -154,7 +148,7 @@ public class Connection extends ConnectionInvoker
         this.saslClient = saslClient;
     }
 
-    SaslClient getSaslClient()
+    public SaslClient getSaslClient()
     {
         return saslClient;
     }
@@ -171,13 +165,30 @@ public class Connection extends ConnectionInvoker
 
     public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs)
     {
+        ConnectionSettings settings = new ConnectionSettings();
+        settings.setHost(host);
+        settings.setPort(port);
+        settings.setVhost(vhost);
+        settings.setUsername(username);
+        settings.setPassword(password);
+        settings.setUseSSL(ssl);
+        settings.setSaslMechs(saslMechs);
+        connect(settings);
+    }
+    
+    public void connect(ConnectionSettings settings)
+    {
         synchronized (lock)
         {
+            conSettings = settings;
             state = OPENING;
-            userID = username;
-            delegate = new ClientDelegate(vhost, username, password,saslMechs);
+            userID = settings.getUsername();
+            delegate = new ClientDelegate(settings);
 
-            IoTransport.connect(host, port, ConnectionBinding.get(this), ssl);
+            IoTransport.connect(settings.getHost(), 
+                                settings.getPort(), 
+                                ConnectionBinding.get(this), 
+                                settings.isUseSSL());
             send(new ProtocolHeader(1, 0, 10));
 
             Waiter w = new Waiter(lock, timeout);
@@ -218,7 +229,10 @@ public class Connection extends ConnectionInvoker
             }
         }
 
-        listener.opened(this);
+        for (ConnectionListener listener: listeners)
+        {
+            listener.opened(this);
+        }
     }
 
     public Session createSession()
@@ -407,7 +421,11 @@ public class Connection extends ConnectionInvoker
             }
         }
 
-        listener.exception(this, e);
+        for (ConnectionListener listener: listeners)
+        {
+            listener.exception(this, e);
+        }
+        
     }
 
     public void exception(Throwable t)
@@ -460,7 +478,10 @@ public class Connection extends ConnectionInvoker
             setState(CLOSED);
         }
 
-        listener.closed(this);
+        for (ConnectionListener listener: listeners)
+        {
+            listener.closed(this);
+        }        
     }
 
     public void close()
@@ -559,6 +580,11 @@ public class Connection extends ConnectionInvoker
     public String toString()
     {
         return String.format("conn:%x", System.identityHashCode(this));
+    }
+    
+    public ConnectionSettings getConnectionSettings()
+    {
+        return conSettings;
     }
 
 }

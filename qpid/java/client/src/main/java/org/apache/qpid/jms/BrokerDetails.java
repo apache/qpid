@@ -34,8 +34,14 @@ public interface BrokerDetails
     public static final String OPTIONS_RETRY = "retries";
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
     public static final String OPTIONS_CONNECT_DELAY = "connectdelay";
-    public static final String OPTIONS_IDLE_TIMEOUT = "idle_timeout";
+    public static final String OPTIONS_IDLE_TIMEOUT = "idle_timeout"; // deprecated
+    public static final String OPTIONS_HEARTBEAT = "heartbeat";
     public static final String OPTIONS_SASL_MECHS = "sasl_mechs";
+    public static final String OPTIONS_SASL_ENCRYPTION = "sasl_encryption";
+    public static final String OPTIONS_SSL = "ssl";
+    public static final String OPTIONS_TCP_NO_DELAY = "tcp_nodelay";
+    public static final String OPTIONS_SASL_PROTOCOL_NAME = "sasl_protocol";
+    public static final String OPTIONS_SASL_SERVER_NAME = "sasl_server";
     public static final int DEFAULT_PORT = 5672;
 
     public static final String SOCKET = "socket";
@@ -97,7 +103,7 @@ public interface BrokerDetails
 
     void setSSLConfiguration(SSLConfiguration sslConfiguration);
     
-    boolean useSSL();
+    boolean getBooleanProperty(String propName);
 
     String toString();
 

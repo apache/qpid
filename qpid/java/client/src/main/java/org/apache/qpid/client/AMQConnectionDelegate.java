@@ -58,8 +58,6 @@ public interface AMQConnectionDelegate
 
     <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E;
     
-    void setIdleTimeout(long l);
-    
     int getMaxChannelID();
     
     ProtocolVersion getProtocolVersion();

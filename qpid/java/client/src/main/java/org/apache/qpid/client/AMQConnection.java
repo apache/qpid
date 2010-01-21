@@ -381,10 +381,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 useSSL
                 ? (ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
                    + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port
-                   + "'" + "," + ConnectionURL.OPTIONS_SSL + "='true'")
+                   + "'" + "," + BrokerDetails.OPTIONS_SSL + "='true'")
                 : (ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
                    + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port
-                   + "'" + "," + ConnectionURL.OPTIONS_SSL + "='false'")), sslConfig);
+                   + "'" + "," + BrokerDetails.OPTIONS_SSL + "='false'")), sslConfig);
     }
 
     public AMQConnection(String connection) throws AMQException, URLSyntaxException

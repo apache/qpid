@@ -61,24 +61,13 @@ public class ClientDelegate extends ConnectionDelegate
         } catch (GSSException ignore) {}
     }
     
-    private String vhost;
-    private String username;
-    private String password;
     private List<String> clientMechs;
-    private String protocol;
-    private String serverName;
+    private ConnectionSettings conSettings;
     
-    public ClientDelegate(String vhost, String username, String password,String saslMechs)
+    public ClientDelegate(ConnectionSettings settings)
     {
-        this.vhost = vhost;
-        this.username = username;
-        this.password = password;
-        this.clientMechs = Arrays.asList(saslMechs.split(" "));
-        
-        // Looks kinda of silly but the Sun SASL Kerberos client uses the 
-        // protocol + servername as the service key.
-        this.protocol = System.getProperty("qpid.sasl_protocol","AMQP");
-        this.serverName = System.getProperty("qpid.sasl_server_name","localhost");
+        this.conSettings = settings;
+        this.clientMechs = Arrays.asList(settings.getSaslMechs().split(" "));       
     }
 
     public void init(Connection conn, ProtocolHeader hdr)
@@ -128,11 +117,16 @@ public class ClientDelegate extends ConnectionDelegate
         
         try
         {
+            Map<String,Object> saslProps = new HashMap<String,Object>();
+            if (conSettings.isUseSASLEncryption())
+            {
+                saslProps.put(Sasl.QOP, "auth-conf");
+            }
             UsernamePasswordCallbackHandler handler =
                 new UsernamePasswordCallbackHandler();
-            handler.initialise(username, password);
+            handler.initialise(conSettings.getUsername(), conSettings.getPassword());
             SaslClient sc = Sasl.createSaslClient
-                (mechs, null, protocol, serverName, null, handler);
+                (mechs, null, conSettings.getSaslProtocol(), conSettings.getSaslServerName(), saslProps, handler);
             conn.setSaslClient(sc);
 
             byte[] response = sc.hasInitialResponse() ?
@@ -164,15 +158,16 @@ public class ClientDelegate extends ConnectionDelegate
     @Override public void connectionTune(Connection conn, ConnectionTune tune)
     {
         conn.setChannelMax(tune.getChannelMax());
-        int hb_interval = calculateHeartbeatInterval(conn,
+        int hb_interval = calculateHeartbeatInterval(conSettings.getHeartbeatInterval(),
                                                      tune.getHeartbeatMin(),
                                                      tune.getHeartbeatMax()
                                                      );
         conn.connectionTuneOk(tune.getChannelMax(), 
                               tune.getMaxFrameSize(), 
                               hb_interval);
-        conn.setIdleTimeout(hb_interval*1000);
-        conn.connectionOpen(vhost, null, Option.INSIST);
+        // The idle timeout is twice the heartbeat amount (in milisecs)
+        conn.setIdleTimeout(hb_interval*1000*2);
+        conn.connectionOpen(conSettings.getVhost(), null, Option.INSIST);
     }
 
     @Override public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
@@ -198,9 +193,9 @@ public class ClientDelegate extends ConnectionDelegate
     /**
      * Currently the spec specified the min and max for heartbeat using secs
      */
-    private int calculateHeartbeatInterval(Connection conn,int min, int max)
+    private int calculateHeartbeatInterval(int heartbeat,int min, int max)
     {
-        int i = conn.getIdleTimeout()/1000;
+        int i = heartbeat;
         if (i == 0)
         {
             log.warn("Idle timeout is zero. Heartbeats are disabled");
@@ -245,7 +240,7 @@ public class ClientDelegate extends ConnectionDelegate
     private String getUserID()
     {
         log.debug("Obtaining userID from kerberos");
-        String service = protocol + "@" + serverName;
+        String service = conSettings.getSaslProtocol() + "@" + conSettings.getSaslServerName();
         GSSManager manager = GSSManager.getInstance();
         
         try 

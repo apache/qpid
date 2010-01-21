@@ -160,7 +160,7 @@ public class ConnectionTest extends TestCase implements SessionListener
     private Connection connect(final Condition closed)
     {
         Connection conn = new Connection();
-        conn.setConnectionListener(new ConnectionListener()
+        conn.addConnectionListener(new ConnectionListener()
         {
             public void opened(Connection conn) {}
             public void exception(Connection conn, ConnectionException exc)
@@ -311,7 +311,7 @@ public class ConnectionTest extends TestCase implements SessionListener
         startServer();
 
         Connection conn = new Connection();
-        conn.setConnectionListener(new FailoverConnectionListener());
+        conn.addConnectionListener(new FailoverConnectionListener());
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession(1);
         ssn.setSessionListener(new TestSessionListener());
@@ -366,7 +366,7 @@ public class ConnectionTest extends TestCase implements SessionListener
         startServer();
 
         Connection conn = new Connection();
-        conn.setConnectionListener(new FailoverConnectionListener());
+        conn.addConnectionListener(new FailoverConnectionListener());
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession(1);
         ssn.setSessionListener(new TestSessionListener());
