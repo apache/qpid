@@ -144,12 +144,10 @@ class AsynchConnector : public qpid::sys::AsynchConnector,
 
 private:
     void connComplete(DispatchHandle& handle);
-    void syncFailure();
 
 private:
     ConnectedCallback connCallback;
     FailedCallback failCallback;
-    std::string errMsg;
     const Socket& socket;
 
 public:
@@ -176,21 +174,13 @@ AsynchConnector::AsynchConnector(const Socket& s,
 {
     socket.setNonblocking();
     SocketAddress sa(hostname, boost::lexical_cast<std::string>(port));
-    try {
-        socket.connect(sa);
-    } catch(std::exception& e) {
-        // Defer reporting failure till we start polling
-        errMsg = e.what();
-    }
+    // Note, not catching any exceptions here, also has effect of destructing
+    socket.connect(sa);
 }
 
 void AsynchConnector::start(Poller::shared_ptr poller)
 {
     startWatch(poller);
-    // If we previously detected an error insert failure callback now
-    if ( !errMsg.empty() ) {
-        DispatchHandle::call(boost::bind(&AsynchConnector::syncFailure, this));
-    }
 }
 
 void AsynchConnector::connComplete(DispatchHandle& h)
@@ -202,13 +192,6 @@ void AsynchConnector::connComplete(DispatchHandle& h)
     } else {
         failCallback(socket, errCode, strError(errCode));
     }
-    DispatchHandle::doDelete();
-}
-
-void AsynchConnector::syncFailure()
-{
-    DispatchHandle::stopWatch();
-    failCallback(socket, -1, errMsg);
     DispatchHandle::doDelete();
 }
 
