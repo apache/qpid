@@ -327,13 +327,19 @@ void ConnectionImpl::shutdown() {
 
     if (handler.isClosed()) return;
 
+    bool isClosing = handler.isClosing();
+    bool isOpen = handler.isOpen();
+
     // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
     // an appropriate close-code. connection-forced is not right.
-    bool isClosing = handler.isClosing();
     handler.fail(CONN_CLOSED);//ensure connection is marked as failed before notifying sessions
+
+    // At this point if the object isn't open and isn't closing it must have failed to open
+    // so we can't do the rest of the cleanup
+    if (!isClosing && !isOpen) return;
+
     Mutex::ScopedLock l(lock);
-    if (!isClosing) 
-        closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CONN_CLOSED));
+    closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CONN_CLOSED));
     setException(new TransportFailure(CONN_CLOSED));
 }
 
