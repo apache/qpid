@@ -38,7 +38,7 @@ namespace engine {
 
     private:
         friend struct EventImpl;
-        friend struct AgentImpl;
+        friend class AgentImpl;
         Event(EventImpl* impl);
         EventImpl* impl;
     };

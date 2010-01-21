@@ -194,7 +194,7 @@ AsynchConnector::AsynchConnector(const Socket& sock,
 {
 }
 
-AsynchConnector::start(Poller::shared_ptr)
+void AsynchConnector::start(Poller::shared_ptr)
 {
     try {
         socket.connect(hostname, port);
@@ -217,14 +217,12 @@ AsynchAcceptor* AsynchAcceptor::create(const Socket& s,
 }
 
 AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
-                                                    Poller::shared_ptr poller,
                                                     std::string hostname,
                                                     uint16_t port,
                                                     ConnectedCallback connCb,
                                                     FailedCallback failCb)
 {
     return new windows::AsynchConnector(s,
-                                        poller,
                                         hostname,
                                         port,
                                         connCb,

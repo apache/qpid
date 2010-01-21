@@ -22,6 +22,8 @@
  *
  */
 
+#include "qpid/CommonImportExport.h"
+
 namespace qpid {
 namespace sys {
 
@@ -37,7 +39,7 @@ namespace sys {
  * This function is in the common library rather than the cluster
  * library because it is called by code in the broker library.
  */
-void assertClusterSafe();
+QPID_COMMON_EXTERN void assertClusterSafe();
 
 /**
  * Base class for classes that encapsulate state which is replicated
