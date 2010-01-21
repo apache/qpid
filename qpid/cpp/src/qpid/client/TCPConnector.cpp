@@ -133,7 +133,8 @@ bool TCPConnector::closeInternal() {
     bool ret = !closed;
     if (!closed) {
         closed = true;
-        aio->queueForDeletion();
+        if (aio)
+            aio->queueForDeletion();
         socket.close();
     }
     return ret;
