@@ -535,7 +535,10 @@ void AsynchIO::writeable(DispatchHandle& h) {
                     // we can carry on watching for writes
                     break;
                 } else {
-                    QPID_POSIX_CHECK(rc);
+                    // Report error then just treat as a socket disconnect
+                    QPID_LOG(error, "Error writing socket: " << qpid::sys::strError(errno) << "(" << errno << ")" );
+                    h.unwatchWrite();
+                    break;
                 }
             }
         } else {
