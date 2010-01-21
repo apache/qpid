@@ -37,7 +37,11 @@ except ImportError:
 
 AMQP_QMF_AGENT_LOCATE = "agent.locate"
 AMQP_QMF_AGENT_INDICATION = "agent.ind"
-
+AMQP_QMF_AGENT_EVENT="agent.event"
+# agent.ind[.<agent-name>]
+# agent.event.<sev>.<agent-name>
+# sev="strings"
+#
 
 AMQP_QMF_SUBJECT = "qmf"
 AMQP_QMF_VERSION = 4
@@ -52,6 +56,7 @@ class MsgKey(object):
     object_id="object_id"
     data_obj="object"
     method="method"
+    event="event"
 
 
 class OpCode(object):
@@ -544,8 +549,19 @@ class QmfEvent(QmfData):
     change in some aspect of the system under managment.
     """
     KEY_TIMESTAMP = "_timestamp"
+    KEY_SEVERITY = "_severity"
 
-    def __init__(self, _timestamp=None, _values={}, _subtypes={}, _tag=None,
+    SEV_EMERG = "emerg"
+    SEV_ALERT = "alert"
+    SEV_CRIT = "crit"
+    SEV_ERR = "err"
+    SEV_WARNING = "warning"
+    SEV_NOTICE = "notice"
+    SEV_INFO = "info"
+    SEV_DEBUG = "debug"
+
+    def __init__(self, _timestamp=None, _sev=SEV_NOTICE, _values={},
+                 _subtypes={}, _tag=None,
                  _map=None,
                  _schema=None, _const=True):
         """
@@ -567,6 +583,7 @@ class QmfEvent(QmfData):
             super(QmfEvent, self).__init__(_map=_map, _schema=_schema,
                                            _const=_const)
             _timestamp = _map.get(self.KEY_TIMESTAMP, _timestamp)
+            _sev = _map.get(self.KEY_SEVERITY, _sev)
         else:
             super(QmfEvent, self).__init__(_values=_values,
                                            _subtypes=_subtypes, _tag=_tag,
@@ -579,10 +596,12 @@ class QmfEvent(QmfData):
         except:
             raise TypeError("QmfEvent: a numeric timestamp is required.")
 
-    def _create(cls, timestamp, values,
+        self._severity = _sev
+
+    def _create(cls, timestamp, severity, values,
                 _subtypes={}, _tag=None, _schema=None, _const=False):
-        return cls(_timestamp=timestamp, _values=values, _subtypes=_subtypes,
-                _tag=_tag, _schema=_schema, _const=_const)
+        return cls(_timestamp=timestamp, _sev=severity, _values=values,
+                _subtypes=_subtypes, _tag=_tag, _schema=_schema, _const=_const)
     create = classmethod(_create)
 
     def _from_map(cls, map_, _schema=None, _const=False):
@@ -592,9 +611,13 @@ class QmfEvent(QmfData):
     def get_timestamp(self): 
         return self._timestamp
 
+    def get_severity(self):
+        return self._severity
+
     def map_encode(self):
         _map = super(QmfEvent, self).map_encode()
         _map[self.KEY_TIMESTAMP] = self._timestamp
+        _map[self.KEY_SEVERITY] = self._severity
         return _map
 
 

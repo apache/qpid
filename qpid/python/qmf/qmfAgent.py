@@ -92,6 +92,11 @@ class Agent(Thread):
 
         self._conn = None
         self._session = None
+        self._direct_receiver = None
+        self._locate_receiver = None
+        self._ind_sender = None
+        self._event_sender = None
+
         self._lock = Lock()
         self._packages = {}
         self._schema_timestamp = long(0)
@@ -119,26 +124,41 @@ class Agent(Thread):
         return self.name
 
     def set_connection(self, conn):
-        my_addr = QmfAddress.direct(self.name, self._domain)
-        locate_addr = QmfAddress.topic(AMQP_QMF_AGENT_LOCATE, self._domain)
-        ind_addr = QmfAddress.topic(AMQP_QMF_AGENT_INDICATION, self._domain)
-
-        logging.debug("my direct addr=%s" % my_addr)
-        logging.debug("agent.locate addr=%s" % locate_addr)
-        logging.debug("agent.ind addr=%s" % ind_addr)
-
         self._conn = conn
         self._session = self._conn.session()
+
+        my_addr = QmfAddress.direct(self.name, self._domain)
         self._direct_receiver = self._session.receiver(str(my_addr) +
                                                        ";{create:always,"
                                                        " node-properties:"
-                                                       " {type:topic, x-properties: {type:direct}}}", 
+                                                       " {type:topic,"
+                                                       " x-properties:"
+                                                       " {type:direct}}}",
                                                        capacity=self._capacity)
-        self._locate_receiver = self._session.receiver(str(locate_addr) + 
-                                                       ";{create:always, node-properties:{type:topic}}",
+        logging.debug("my direct addr=%s" % self._direct_receiver.source)
+
+        locate_addr = QmfAddress.topic(AMQP_QMF_AGENT_LOCATE, self._domain)
+        self._locate_receiver = self._session.receiver(str(locate_addr) +
+                                                       ";{create:always,"
+                                                       " node-properties:"
+                                                       " {type:topic}}",
                                                        capacity=self._capacity)
+        logging.debug("agent.locate addr=%s" % self._locate_receiver.source)
+
+
+        ind_addr = QmfAddress.topic(AMQP_QMF_AGENT_INDICATION, self._domain)
         self._ind_sender = self._session.sender(str(ind_addr) +
-                                                ";{create:always, node-properties:{type:topic}}")
+                                                ";{create:always,"
+                                                " node-properties:"
+                                                " {type:topic}}")
+        logging.debug("agent.ind addr=%s" % self._ind_sender.target)
+
+        my_events = QmfAddress.topic(self.name, self._domain)
+        self._event_sender = self._session.sender(str(my_events) +
+                                                  ";{create:always,"
+                                                  " node-properties:"
+                                                  " {type:topic}}")
+        logging.debug("my event addr=%s" % self._event_sender.target)
 
         self._running = True
         self.start()
@@ -161,8 +181,13 @@ class Agent(Thread):
             if self.isAlive():
                 logging.error( "Agent thread '%s' is hung..." % self.name)
         self._direct_receiver.close()
+        self._direct_receiver = None
         self._locate_receiver.close()
+        self._locate_receiver = None
         self._ind_sender.close()
+        self._ind_sender = None
+        self._event_sender.close()
+        self._event_sender = None
         self._session.close()
         self._session = None
         self._conn = None
@@ -195,8 +220,20 @@ class Agent(Thread):
     def register_event_class(self, schema):
         return self.register_object_class(schema)
 
-    def raiseEvent(self, qmfEvent):
-        logging.error("!!!Agent.raiseEvent() TBD!!!")
+    def raise_event(self, qmfEvent):
+        """
+        TBD
+        """
+        if not self._event_sender:
+            raise Exception("No connection available")
+
+        # @todo: should we validate against the schema?
+        _map = {"_name": self.get_name(),
+                "_event": qmfEvent.map_encode()}
+        msg = Message(subject=makeSubject(OpCode.event_ind),
+                      properties={"method":"response"},
+                      content={MsgKey.event:_map})
+        self._event_sender.send(msg)
 
     def add_object(self, data ):
         """

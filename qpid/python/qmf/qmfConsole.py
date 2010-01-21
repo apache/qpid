@@ -34,7 +34,7 @@ from qmfCommon import (makeSubject, parseSubject, OpCode, QmfQuery, Notifier,
                        QmfQueryPredicate, MsgKey, QmfData, QmfAddress,
                        AMQP_QMF_AGENT_LOCATE, AMQP_QMF_AGENT_INDICATION,
                        SchemaClass, SchemaClassId, SchemaEventClass,
-                       SchemaObjectClass, WorkItem, SchemaMethod)
+                       SchemaObjectClass, WorkItem, SchemaMethod, QmfEvent)
 
 
 
@@ -89,7 +89,7 @@ class SequencedWaiter(object):
 
     def __init__(self):
         self.lock     = Lock()
-        self.sequence = 1L
+        self.sequence = long(time.time())  # pseudo-randomize seq start
         self.pending  = {}
 
 
@@ -512,6 +512,15 @@ class Agent(object):
         return MethodResult(_out_args=_map.get(SchemaMethod.KEY_ARGUMENTS),
                             _error=_map.get(SchemaMethod.KEY_ERROR))
 
+    def enable_events(self):
+        raise Exception("enable_events tbd")
+
+    def disable_events(self):
+        raise Exception("disable_events tbd")
+
+    def destroy(self):
+        raise Exception("destroy tbd")
+
     def __repr__(self):
         return str(self._address)
     
@@ -662,18 +671,21 @@ class Console(Thread):
                                                     " x-properties:"
                                                     " {type:direct}}}", 
                                                     capacity=1)
-        logging.debug("local addr=%s" % self._address)
+        logging.debug("my direct addr=%s" % self._direct_recvr.source)
+
         ind_addr = QmfAddress.topic(AMQP_QMF_AGENT_INDICATION, self._domain)
-        logging.debug("agent.ind addr=%s" % ind_addr)
         self._announce_recvr = self._session.receiver(str(ind_addr) +
                                                       ";{create:always,"
                                                       " node-properties:{type:topic}}",
                                                       capacity=1)
+        logging.debug("agent.ind addr=%s" % self._announce_recvr.source)
+
         locate_addr = QmfAddress.topic(AMQP_QMF_AGENT_LOCATE, self._domain)
-        logging.debug("agent.locate addr=%s" % locate_addr)
         self._locate_sender = self._session.sender(str(locate_addr) +
                                                    ";{create:always,"
                                                    " node-properties:{type:topic}}")
+        logging.debug("agent.locate addr=%s" % self._locate_sender.target)
+
         #
         # Now that receivers are created, fire off the receive thread...
         #
@@ -898,6 +910,14 @@ class Console(Thread):
                     break
                 self._dispatch(msg, _direct=True)
 
+            for agent in self._agent_map.itervalues():
+                try:
+                    msg = agent._event_recvr.fetch(timeout = 0)
+                except Empty:
+                    continue
+                self._dispatch(msg, _direct=False)
+
+
             self._expireAgents()   # check for expired agents
 
             #if qLen == 0 and self._work_q.qsize() and self._notifier:
@@ -917,7 +937,7 @@ class Console(Thread):
                     timeout = ((self._next_agent_expire - now) + datetime.timedelta(microseconds=999999)).seconds
                     try:
                         logging.debug("waiting for next rcvr (timeout=%s)..." % timeout)
-                        self._session.next_receiver(timeout = timeout)
+                        xxx = self._session.next_receiver(timeout = timeout)
                     except Empty:
                         pass
 
@@ -1004,9 +1024,7 @@ class Console(Thread):
         """
         PRIVATE: Process a message received from an Agent
         """
-
         logging.debug( "Message received from Agent! [%s]" % msg )
-
         try:
             version,opcode = parseSubject(msg.subject)
             # @todo: deal with version mismatch!!!
@@ -1025,7 +1043,7 @@ class Console(Thread):
         elif opcode == OpCode.data_ind:
             self._handleDataIndMsg(msg, cmap, version, _direct)
         elif opcode == OpCode.event_ind:
-            logging.warning("!!! event_ind TBD !!!")
+            self._handleEventIndMsg(msg, cmap, version, _direct)
         elif opcode == OpCode.managed_object:
             logging.warning("!!! managed_object TBD !!!")
         elif opcode == OpCode.object_ind:
@@ -1082,6 +1100,8 @@ class Console(Thread):
             if not agent:
                 # need to create and add a new agent
                 agent = self._createAgent(name)
+                if not agent:
+                    return   # failed to add agent
 
             # lock out expiration scanning code
             self._lock.acquire()
@@ -1137,6 +1157,41 @@ class Console(Thread):
         logging.debug("waking waiters for correlation id %s" % msg.correlation_id)
         self._req_correlation.put_data(msg.correlation_id, msg)
 
+    def _handleEventIndMsg(self, msg, cmap, version, _direct):
+        ei_map = cmap.get(MsgKey.event)
+        if not ei_map or not isinstance(ei_map, type({})):
+            logging.warning("Bad event indication message received: '%s'" % msg)
+            return
+
+        aname = ei_map.get("_name")
+        emap = ei_map.get("_event")
+        if not aname:
+            logging.debug("No '_name' field in event indication message.")
+            return
+        if not emap:
+            logging.debug("No '_event' field in event indication message.")
+            return
+        # @todo: do I need to lock this???
+        agent = self._agent_map.get(aname)
+        if not agent:
+            logging.debug("Agent '%s' not known." % aname)
+            return
+        try:
+            # @todo: schema???
+            event = QmfEvent.from_map(emap)
+        except TypeError:
+            logging.debug("Invalid QmfEvent map received: %s" % str(emap))
+            return
+
+        # @todo: schema?  Need to fetch it, but not from this thread!
+        # This thread can not pend on a request.
+        logging.debug("Publishing event received from agent %s" % aname)
+        wi = WorkItem(WorkItem.EVENT_RECEIVED, None,
+                      {"agent":agent,
+                       "event":event})
+        self._work_q.put(wi)
+        self._work_q_put = True
+
 
     def _expireAgents(self):
         """
@@ -1158,6 +1213,7 @@ class Console(Thread):
                         agent._announce_timestamp = None
                         wi = WorkItem(WorkItem.AGENT_DELETED, None,
                                       {"agent":agent})
+                        # @todo: remove agent from self._agent_map
                         self._work_q.put(wi)
                         self._work_q_put = True
                     else:
@@ -1175,7 +1231,7 @@ class Console(Thread):
         """
         Factory to create/retrieve an agent for this console
         """
-
+        logging.debug("creating agent %s" % name)
         self._lock.acquire()
         try:
             agent = self._agent_map.get(name)
@@ -1183,12 +1239,28 @@ class Console(Thread):
                 return agent
 
             agent = Agent(name, self)
-            agent._sender = self._session.sender(str(agent._address) + 
-                                                    ";{create:always,"
-                                                    " node-properties:"
-                                                    " {type:topic,"
-                                                    " x-properties:"
-                                                    " {type:direct}}}") 
+            try:
+                agent._sender = self._session.sender(str(agent._address) + 
+                                                     ";{create:always,"
+                                                     " node-properties:"
+                                                     " {type:topic,"
+                                                     " x-properties:"
+                                                     " {type:direct}}}") 
+            except:
+                logging.warning("Unable to create sender for %s" % name)
+                return None
+            logging.debug("created agent sender %s" % agent._sender.target)
+
+            events_addr = QmfAddress.topic(name, self._domain)
+            try:
+                agent._event_recvr = self._session.receiver(str(events_addr) +
+                                                            ";{create:always,"
+                                                            " node-properties:{type:topic}}",
+                                                            capacity=1)
+            except:
+                logging.warning("Unable to create event receiver for %s" % name)
+                return None
+            logging.debug("created agent event receiver %s" % agent._event_recvr.source)
 
             self._agent_map[name] = agent
         finally:
