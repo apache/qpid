@@ -75,7 +75,7 @@ const ::addrinfo& getAddrInfo(const SocketAddress& sa)
     if (!sa.addrInfo) {
         ::addrinfo hints;
         ::memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_INET; // In order to allow AF_INET6 we'd have to change createTcp() as well
+        hints.ai_family = AF_INET; // Change this to support IPv6
         hints.ai_socktype = SOCK_STREAM;
 
         const char* node = 0;
