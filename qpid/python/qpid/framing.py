@@ -198,7 +198,6 @@ class SegmentEncoder:
     return result
 
 from ops import COMMANDS, CONTROLS, COMPOUND, Header, segment_type, track
-from spec import SPEC
 
 from codec010 import StringCodec
 

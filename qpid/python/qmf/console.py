@@ -28,7 +28,7 @@ import re
 from qpid.datatypes  import UUID
 from qpid.datatypes  import timestamp
 from qpid.datatypes  import datetime
-from qpid.peer       import Closed
+from qpid.exceptions import Closed
 from qpid.session    import SessionDetached
 from qpid.connection import Connection, ConnectionFailed, Timeout
 from qpid.datatypes  import Message, RangedSet, UUID
