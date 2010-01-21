@@ -141,14 +141,15 @@ void AsynchIOProtocolFactory::connect(
     // is no longer needed.
 
     Socket* socket = new Socket();
-    AsynchConnector::create(*socket,
-                            poller,
-                            host,
-                            port,
-                            boost::bind(&AsynchIOProtocolFactory::established,
-                                        this, poller, _1, fact, true),
-                            boost::bind(&AsynchIOProtocolFactory::connectFailed,
-                                        this, _1, _2, _3, failed));
+    AsynchConnector* c = AsynchConnector::create(
+        *socket,
+        host,
+        port,
+        boost::bind(&AsynchIOProtocolFactory::established,
+                    this, poller, _1, fact, true),
+        boost::bind(&AsynchIOProtocolFactory::connectFailed,
+                    this, _1, _2, _3, failed));
+    c->start(poller);
 }
 
 }} // namespace qpid::sys

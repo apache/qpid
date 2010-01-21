@@ -154,15 +154,14 @@ private:
 
 public:
     AsynchConnector(const Socket& socket,
-                    Poller::shared_ptr poller,
                     std::string hostname,
                     uint16_t port,
                     ConnectedCallback connCb,
                     FailedCallback failCb);
+    void start(Poller::shared_ptr poller);
 };
 
 AsynchConnector::AsynchConnector(const Socket& s,
-                                 Poller::shared_ptr poller,
                                  std::string hostname,
                                  uint16_t port,
                                  ConnectedCallback connCb,
@@ -180,13 +179,18 @@ AsynchConnector::AsynchConnector(const Socket& s,
     try {
         socket.connect(sa);
     } catch(std::exception& e) {
-        // Defer reporting failure
-        startWatch(poller);
+        // Defer reporting failure till we start polling
         errMsg = e.what();
-        DispatchHandle::call(boost::bind(&AsynchConnector::failure, this, -1, errMsg));
-        return;
     }
+}
+
+void AsynchConnector::start(Poller::shared_ptr poller)
+{
     startWatch(poller);
+    // If we previously detected an error insert failure callback now
+    if ( !errMsg.empty() ) {
+        DispatchHandle::call(boost::bind(&AsynchConnector::failure, this, -1, errMsg));
+    }
 }
 
 void AsynchConnector::connComplete(DispatchHandle& h)
@@ -600,13 +604,12 @@ AsynchAcceptor* AsynchAcceptor::create(const Socket& s,
 }
 
 AsynchConnector* AsynchConnector::create(const Socket& s,
-                                         Poller::shared_ptr poller,
                                          std::string hostname,
                                          uint16_t port,
                                          ConnectedCallback connCb,
                                          FailedCallback failCb)
 {
-    return new posix::AsynchConnector(s, poller, hostname, port, connCb, failCb);
+    return new posix::AsynchConnector(s, hostname, port, connCb, failCb);
 }
 
 AsynchIO* AsynchIO::create(const Socket& s,
