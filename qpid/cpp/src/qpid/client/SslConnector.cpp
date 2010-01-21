@@ -130,12 +130,12 @@ class SslConnector : public Connector, private sys::Runnable
     sys::ShutdownHandler* getShutdownHandler() const;
     framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
+    unsigned int getSSF() { return socket.getKeyLen(); }
 
 public:
     SslConnector(framing::ProtocolVersion pVersion,
               const ConnectionSettings&, 
               ConnectionImpl*);
-    unsigned int getSSF() { return socket.getKeyLen(); }
 };
 
 // Static constructor which registers connector here

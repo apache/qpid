@@ -113,6 +113,7 @@ using boost::str;
     framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
     void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
+    unsigned int getSSF() { return 0; }
 
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
@@ -122,7 +123,6 @@ public:
     RdmaConnector(framing::ProtocolVersion pVersion,
               const ConnectionSettings&, 
               ConnectionImpl*);
-    unsigned int getSSF() { return 0; }
 };
 
 // Static constructor which registers connector here
