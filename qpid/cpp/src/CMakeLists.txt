@@ -567,6 +567,7 @@ set (qpidcommon_SOURCES
      qpid/management/ManagementObject.cpp
      qpid/sys/AggregateOutput.cpp
      qpid/sys/AsynchIOHandler.cpp
+     qpid/sys/ClusterSafe.cpp
      qpid/sys/Dispatcher.cpp
      qpid/sys/DispatchHandle.cpp
      qpid/sys/Runnable.cpp
