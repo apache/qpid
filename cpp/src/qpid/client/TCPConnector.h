@@ -100,6 +100,7 @@ class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
     framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
     void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
+    unsigned int getSSF() { return 0; }
 
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
@@ -109,7 +110,6 @@ public:
     TCPConnector(framing::ProtocolVersion pVersion,
                  const ConnectionSettings&, 
                  ConnectionImpl*);
-    unsigned int getSSF() { return 0; }
 };
 
 }}   // namespace qpid::client
