@@ -1,26 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+
+  <title>
       Apache Qpid : Qpid Troubleshooting Guide
-    </title><para>
-            Contents
-          </para>
-            <itemizedlist>
-              <listitem><para>
-                <xref linkend="QpidTroubleshootingGuide-I-27mgettingajava.lang.UnsupportedClassVersionErrorwhenItrytostartthebroker.Whatdoesthismean-3F"/>
-              </para></listitem>
-              <listitem><para>
-                <xref linkend="QpidTroubleshootingGuide-I-27mhavingaproblembindingtotherequiredhost-3Aportatbrokerstartup-3F"/>
-              </para></listitem>
-              <listitem><para>
-                <xref linkend="QpidTroubleshootingGuide-I-27mhavingproblemswithmyclasspath.HowcanIensurethatmyclasspathisok-3F"/>
-              </para></listitem>
-              <listitem><para>
-                <xref linkend="QpidTroubleshootingGuide-Ican-27tgetthebrokertostart.HowcanIdiagnosetheproblem-3F"/>
-              </para></listitem>
-              <listitem><para>
-                <xref linkend="QpidTroubleshootingGuide-WhenItrytosendmessagestoaqueueI-27mgettingaerrorasthequeuedoesnotexist.WhatcanIdo-3F"/>
-              </para></listitem>
-            </itemizedlist>
+    </title>
+
           <section role="h2" id="QpidTroubleshootingGuide-I-27mgettingajava.lang.UnsupportedClassVersionErrorwhenItrytostartthebroker.Whatdoesthismean-3F"><title>
             I'm getting a java.lang.UnsupportedClassVersionError when I
             try to start the broker. What does this mean ?
@@ -112,6 +96,7 @@
             manifest for this jar includes the common-launch.jar, and thus
             all the code you need to run a client application.
           </para>
+	  </section>
 
 	  <section role="h2" id="QpidTroubleshootingGuide-Ican-27tgetthebrokertostart.HowcanIdiagnosetheproblem-3F"><title>
             I can't get the broker to start. How can I diagnose the
@@ -146,4 +131,5 @@
             <xref linkend="qpid_Qpid-20Java-20FAQ"/> for more details of using the virtualhosts.xml route.
           </para>
 <!--h2--></section>
+
 </chapter>
