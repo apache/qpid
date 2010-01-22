@@ -52,10 +52,21 @@ class QueueListeners
       friend class QueueListeners;
     };
 
+    class ListenerSet
+    {
+      public:
+        void notifyAll();
+      private:
+        Listeners listeners;
+      friend class QueueListeners;
+    };
+
     void addListener(Consumer::shared_ptr);    
     void removeListener(Consumer::shared_ptr);    
     void populate(NotificationSet&);
+    void snapshot(ListenerSet&);
     bool contains(Consumer::shared_ptr c) const;
+    void notifyAll();
 
     template <class F> void eachListener(F f) {
         std::for_each(browsers.begin(), browsers.end(), f);

@@ -119,6 +119,16 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
 }
 
+void SessionHandler::handleException(const qpid::SessionException& e)
+{
+    QPID_LOG(error, "Execution exception (during output): " << e.what());
+    executionException(e.code, e.what()); // Let subclass handle this first.
+    framing::AMQP_AllProxy::Execution  execution(channel);
+    execution.exception(e.code, 0, 0, 0, 0, e.what(), FieldTable());
+    detaching();
+    sendDetach();
+}
+
 namespace {
 bool isControl(const AMQFrame& f) {
     return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_CONTROL;

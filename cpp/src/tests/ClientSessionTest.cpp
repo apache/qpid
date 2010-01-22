@@ -629,6 +629,19 @@ QPID_AUTO_TEST_CASE(testGetConnectionFromSession) {
     BOOST_CHECK(!fix.subs.get(got, "a"));
 }
 
+
+QPID_AUTO_TEST_CASE(testQueueDeleted)
+{
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(arg::queue="my-queue");
+    LocalQueue queue;
+    fix.subs.subscribe(queue, "my-queue");
+    
+    ScopedSuppressLogging sl;
+    fix.session.queueDelete(arg::queue="my-queue");
+    BOOST_CHECK_THROW(queue.get(1*qpid::sys::TIME_SEC), qpid::framing::ResourceDeletedException);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

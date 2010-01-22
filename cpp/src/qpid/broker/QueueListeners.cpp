@@ -78,4 +78,15 @@ bool QueueListeners::contains(Consumer::shared_ptr c) const {
         std::find(consumers.begin(), consumers.end(), c) != consumers.end();
 }
 
+void QueueListeners::ListenerSet::notifyAll()
+{
+    std::for_each(listeners.begin(), listeners.end(), boost::mem_fn(&Consumer::notify));
+}
+
+void QueueListeners::snapshot(ListenerSet& set)
+{
+    set.listeners.insert(set.listeners.end(), consumers.begin(), consumers.end());
+    set.listeners.insert(set.listeners.end(), browsers.begin(), browsers.end());
+}
+
 }} // namespace qpid::broker

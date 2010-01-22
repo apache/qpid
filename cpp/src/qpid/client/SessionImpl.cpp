@@ -558,6 +558,7 @@ void SessionImpl::detach(const std::string& _name)
     setState(DETACHED);
     QPID_LOG(info, "Session detached by peer: " << id);
     proxy.detached(_name, DETACH_CODE_NORMAL);
+    handleClosed();
 }
 
 void SessionImpl::detached(const std::string& _name, uint8_t _code) {

@@ -101,7 +101,8 @@ Queue::Queue(const string& _name, bool _autodelete,
     eventMode(0),
     eventMgr(0),
     insertSeqNo(0),
-    broker(b)
+    broker(b),
+    deleted(false)
 {
     if (parent != 0 && broker != 0)
     {
@@ -291,6 +292,7 @@ void Queue::notifyListener()
 
 bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
+    checkNotDeleted();
     if (c->preAcquires()) {
         switch (consumeNextMessage(m, c)) {
           case CONSUMED:
@@ -869,6 +871,17 @@ void Queue::destroy()
     }
 }
 
+void Queue::notifyDeleted()
+{
+    QueueListeners::ListenerSet set;
+    {
+        Mutex::ScopedLock locker(messageLock);
+        listeners.snapshot(set);
+        deleted = true;
+    }
+    set.notifyAll();
+}
+
 void Queue::bound(const string& exchange, const string& key,
                   const FieldTable& args)
 {
@@ -1102,3 +1115,10 @@ bool Queue::isEnqueued(const QueuedMessage& msg)
 }
 
 QueueListeners& Queue::getListeners() { return listeners; }
+
+void Queue::checkNotDeleted()
+{
+    if (deleted) {
+        throw ResourceDeletedException(QPID_MSG("Queue " << getName() << " has been deleted."));
+    }
+}

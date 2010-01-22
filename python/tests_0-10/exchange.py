@@ -35,9 +35,12 @@ class TestHelper(TestBase010):
         TestBase010.setUp(self)
         self.queues = []
         self.exchanges = []
+        self.subscriptions = []
 
     def tearDown(self):
         try:
+            for s in self.subscriptions:
+                self.session.message_cancel(destination=s)
             for ssn, q in self.queues:
                 ssn.queue_delete(queue=q)
             for ssn, ex in self.exchanges:
@@ -110,6 +113,7 @@ class TestHelper(TestBase010):
         self.session.message_subscribe(queue=queueName, destination=consumer_tag)
         self.session.message_flow(destination=consumer_tag, unit=self.session.credit_unit.message, value=0xFFFFFFFFL)
         self.session.message_flow(destination=consumer_tag, unit=self.session.credit_unit.byte, value=0xFFFFFFFFL)
+        self.subscriptions.append(consumer_tag)
         return self.session.incoming(consumer_tag)
 
 

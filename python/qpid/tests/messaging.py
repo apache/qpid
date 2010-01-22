@@ -239,6 +239,12 @@ class SessionTests(Base):
       pass
     assert msgs == fetched, "expecting %s, got %s" % (msgs, fetched)
     self.ssn.acknowledge()
+    #we set the capacity to 0 to prevent the deletion of the queue -
+    #triggered the deletion policy when the first receiver is closed -
+    #resulting in session exceptions being issued for the remaining
+    #active subscriptions:
+    for r in [rcv1, rcv2, rcv3]:
+      r.capacity = 0
 
   # XXX, we need a convenient way to assert that required queues are
   # empty on setup, and possibly also to drain queues on teardown
