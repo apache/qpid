@@ -109,6 +109,10 @@ public class JAddr
         {
             return pprint_string((String) obj);
         }
+        else if (obj instanceof Boolean)
+        {
+            return ((Boolean) obj).booleanValue() ? "True" : "False";
+        }
         else if (obj == null)
         {
             return "None";

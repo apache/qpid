@@ -580,12 +580,38 @@ class AddressTests(Base):
   def setup_session(self):
     return self.conn.session()
 
-  def testBadOption(self):
-    snd = self.ssn.sender("test-bad-option; {create: always, node-properties: {this-property-does-not-exist: 3}}")
+  def badOption(self, options, error):
+    snd = self.ssn.sender("test-bad-options-snd; %s" % options)
     try:
       snd.send("ping")
+      assert False
     except SendError, e:
-      assert "unrecognized option" in str(e)
+      assert "error in options: %s" % error == str(e), e
+
+    rcv = self.ssn.receiver("test-bad-options-rcv; %s" % options)
+    try:
+      rcv.fetch(timeout=0)
+      assert False
+    except ReceiveError, e:
+      assert "error in options: %s" % error == str(e), e
+
+  def testIllegalKey(self):
+    self.badOption("{create: always, node-properties: "
+                   "{this-property-does-not-exist: 3}}",
+                   "node-properties: this-property-does-not-exist: "
+                   "illegal key")
+
+  def testWrongValue(self):
+    self.badOption("{create: asdf}", "create: asdf not in "
+                   "('always', 'sender', 'receiver', 'never')")
+
+  def testWrongType1(self):
+    self.badOption("{node-properties: asdf}",
+                   "node-properties: asdf is not a map")
+
+  def testWrongType2(self):
+    self.badOption("{node-properties: {durable: []}}",
+                   "node-properties: durable: [] is not a bool")
 
   def testCreateQueue(self):
     snd = self.ssn.sender("test-create-queue; {create: always, delete: always, "

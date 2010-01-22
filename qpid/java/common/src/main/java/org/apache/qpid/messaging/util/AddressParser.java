@@ -47,6 +47,8 @@ public class AddressParser extends Parser
     private static Token.Type SLASH = lxi.define("SLASH", "/");
     private static Token.Type COMMA = lxi.define("COMMA", ",");
     private static Token.Type NUMBER = lxi.define("NUMBER", "[+-]?[0-9]*\\.?[0-9]+");
+    private static Token.Type TRUE = lxi.define("TRUE", "True");
+    private static Token.Type FALSE = lxi.define("FALSE", "False");
     private static Token.Type ID = lxi.define("ID", "[a-zA-Z_](?:[a-zA-Z0-9_-]*[a-zA-Z0-9_])?");
     private static Token.Type STRING = lxi.define("STRING", "\"(?:[^\\\"]|\\.)*\"|'(?:[^\\']|\\.)*'");
     private static Token.Type ESC = lxi.define("ESC", "\\\\[^ux]|\\\\x[0-9a-fA-F][0-9a-fA-F]|\\\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]");
@@ -198,6 +200,14 @@ public class AddressParser extends Parser
                 return Integer.decode(value);
             }
         }
+        else if (type == TRUE)
+        {
+            return true;
+        }
+        else if (type == FALSE)
+        {
+            return false;
+        }
         else
         {
             return value;
@@ -315,7 +325,7 @@ public class AddressParser extends Parser
 
     Object value()
     {
-        if (matches(NUMBER, STRING, ID))
+        if (matches(NUMBER, STRING, ID, TRUE, FALSE))
         {
             return tok2obj(eat());
         }
