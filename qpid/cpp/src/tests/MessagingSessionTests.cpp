@@ -180,6 +180,7 @@ struct MultiQueueFixture : MessagingFixture
 
     ~MultiQueueFixture()
     {
+        connection.close();
         for (const_iterator i = queues.begin(); i != queues.end(); ++i) {
             admin.deleteQueue(*i);
         }

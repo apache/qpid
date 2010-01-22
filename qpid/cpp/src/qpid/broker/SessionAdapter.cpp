@@ -439,6 +439,7 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
         ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent)
             agent->raiseEvent(_qmf::EventQueueDelete(getConnection().getUrl(), getConnection().getUserId(), queue));
+        q->notifyDeleted();
     }
 } 
 

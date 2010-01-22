@@ -610,6 +610,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionManager.cpp \
   qpid/broker/SessionManager.h \
   qpid/broker/SessionManager.h \
+  qpid/broker/SessionOutputException.h \
   qpid/broker/SessionState.cpp \
   qpid/broker/SessionState.h \
   qpid/broker/SignalHandler.cpp \

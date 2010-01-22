@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/SessionOutputException.h"
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
@@ -278,6 +279,9 @@ bool Connection::doOutput() {
             //then do other output as needed:
             return outputTasks.doOutput();
 	}
+    }catch(const SessionOutputException& e){
+        getChannel(e.channel).handleException(e);
+        return true;
     }catch(ConnectionException& e){
         close(e.code, e.getMessage());
     }catch(std::exception& e){

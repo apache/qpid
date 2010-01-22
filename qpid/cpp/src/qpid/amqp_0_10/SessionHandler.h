@@ -30,6 +30,7 @@
 
 namespace qpid {
 
+struct SessionException;
 
 namespace amqp_0_10 {
 
@@ -62,6 +63,7 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     QPID_COMMON_EXTERN void sendTimeout(uint32_t t);
     QPID_COMMON_EXTERN void sendFlush();
     QPID_COMMON_EXTERN void markReadyToSend();//TODO: only needed for inter-broker bridge; cleanup
+    QPID_COMMON_EXTERN void handleException(const qpid::SessionException& e);
 
     /** True if the handler is ready to send and receive */
     bool ready() const;

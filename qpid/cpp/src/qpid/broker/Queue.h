@@ -107,6 +107,7 @@ namespace qpid {
             bool insertSeqNo;
             std::string seqNoKey;
             Broker* broker;
+            bool deleted;
 
             void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -150,6 +151,7 @@ namespace qpid {
             }
             
             Messages::iterator findAt(framing::SequenceNumber pos);
+            void checkNotDeleted();
 
         public:
 
@@ -173,6 +175,7 @@ namespace qpid {
             QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings,
                                               bool recovering = false);
             void destroy();
+            void notifyDeleted();
             QPID_BROKER_EXTERN void bound(const string& exchange,
                                           const string& key,
                                           const qpid::framing::FieldTable& args);

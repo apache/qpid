@@ -27,6 +27,7 @@
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/SessionContext.h"
+#include "qpid/broker/SessionOutputException.h"
 #include "qpid/broker/TxAccept.h"
 #include "qpid/broker/TxPublish.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -671,7 +672,11 @@ void SemanticState::reject(DeliveryId first, DeliveryId last)
 
 bool SemanticState::ConsumerImpl::doOutput()
 {
-    return haveCredit() && queue->dispatch(shared_from_this());
+    try {
+        return haveCredit() && queue->dispatch(shared_from_this());
+    } catch (const SessionException& e) {
+        throw SessionOutputException(e, parent->session.getChannel());
+    }
 }
 
 void SemanticState::ConsumerImpl::enableNotify()
