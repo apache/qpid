@@ -212,7 +212,7 @@ class Connection
      */
     QPID_CLIENT_EXTERN const ConnectionSettings& getNegotiatedSettings();
 
-  friend class ConnectionAccess; ///<@internal
+  friend struct ConnectionAccess; ///<@internal
   friend class SessionBase_0_10; ///<@internal
 };
 
