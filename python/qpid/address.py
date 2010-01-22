@@ -31,6 +31,8 @@ SEMI = l.define("SEMI", r";")
 SLASH = l.define("SLASH", r"/")
 COMMA = l.define("COMMA", r",")
 NUMBER = l.define("NUMBER", r'[+-]?[0-9]*\.?[0-9]+')
+TRUE = l.define("TRUE", r'True')
+FALSE = l.define("FALSE", r'False')
 ID = l.define("ID", r'[a-zA-Z_](?:[a-zA-Z0-9_-]*[a-zA-Z0-9_])?')
 STRING = l.define("STRING", r""""(?:[^\\"]|\\.)*"|'(?:[^\\']|\\.)*'""")
 ESC = l.define("ESC", r"\\[^ux]|\\x[0-9a-fA-F][0-9a-fA-F]|\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]")
@@ -59,6 +61,10 @@ def tok2str(tok):
 def tok2obj(tok):
   if tok.type in (STRING, NUMBER):
     return eval(tok.value)
+  elif tok.type == TRUE:
+    return True
+  elif tok.type == FALSE:
+    return False
   else:
     return tok.value
 
@@ -127,7 +133,7 @@ class AddressParser(Parser):
     return (key, val)
 
   def value(self):
-    if self.matches(NUMBER, STRING, ID):
+    if self.matches(NUMBER, STRING, ID, TRUE, FALSE):
       return tok2obj(self.eat())
     elif self.matches(LBRACE):
       return self.map()

@@ -303,3 +303,7 @@ class AddressTests(ParserBase, Test):
   def testMap3(self):
     self.valid('name/subject; { "foo.bar": value }',
                "name", "subject", {"foo.bar": "value"})
+
+  def testBoolean(self):
+    self.valid("name/subject; { true: True, false: False }",
+               "name", "subject", {"true": True, "false": False})

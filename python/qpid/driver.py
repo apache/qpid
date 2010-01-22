@@ -28,6 +28,7 @@ from ops import *
 from selector import Selector
 from threading import Condition, Thread
 from util import connect
+from validator import Map, Types, Values
 
 log = getLogger("qpid.messaging")
 rawlog = getLogger("qpid.messaging.io.raw")
@@ -474,6 +475,9 @@ class Driver:
       if _snd.options is None:
         _snd.options = {}
 
+      if not self.validate_options(_snd):
+        return
+
       def do_link(type, subtype):
         if type == "topic":
           _snd._exchange = _snd.name
@@ -527,6 +531,9 @@ class Driver:
       if _rcv.options is None:
         _rcv.options = {}
 
+      if not self.validate_options(_rcv):
+        return
+
       def do_link(type, subtype):
         if type == "topic":
           _rcv._queue = "%s.%s" % (rcv.session.name, _rcv.destination)
@@ -567,6 +574,33 @@ class Driver:
           sst.write_cmd(MessageCancel(_rcv.destination), do_unlink)
         _rcv.canceled = True
 
+  POLICIES = Values("always", "sender", "receiver", "never")
+
+  OPTS = Map({
+      "create": POLICIES,
+      "delete": POLICIES,
+      "assert": POLICIES,
+      "type": Types(basestring),
+      "node-properties": Map({
+          "type": Values("queue", "topic"),
+          "durable": Types(bool),
+          "x-properties": Map({
+              "type": Types(basestring),
+              "bindings": Types(list)
+              },
+              restricted=False)
+          })
+        })
+
+  def validate_options(self, lnk):
+    err = Driver.OPTS.validate(lnk.options)
+    if err:
+      lnk.target.error = ("error in options: %s" % err,)
+      lnk.target.closed = True
+      return False
+    else:
+      return True
+
   def resolve_declare(self, sst, lnk, dir, action):
     def do_resolved(er, qr):
       if er.not_found and not qr.queue:
@@ -598,14 +632,10 @@ class Driver:
     sst.write_query(QueueQuery(name), do_action)
 
   def declare(self, sst, name, options, action):
-    opts = dict(options)
-    props = dict(opts.pop("node-properties", {}))
-    durable = props.pop("durable", DURABLE_DEFAULT)
-    type = props.pop("type", "queue")
-    xprops = dict(props.pop("x-properties", {}))
-
-    if props:
-      return ("unrecognized option(s): %s" % "".join(props.keys()),)
+    props = options.get("node-properties", {})
+    durable = props.get("durable", DURABLE_DEFAULT)
+    type = props.get("type", "queue")
+    xprops = props.get("x-properties", {})
 
     if type == "topic":
       cmd = ExchangeDeclare(exchange=name, durable=durable)
@@ -613,7 +643,7 @@ class Driver:
       cmd = QueueDeclare(queue=name, durable=durable)
       bindings = xprops.pop("bindings", [])
     else:
-      return ("unrecognized type, must be topic or queue: %s" % type,)
+      raise ValueError(type)
 
     for f in cmd.FIELDS:
       if f.name != "arguments" and xprops.has_key(f.name):
