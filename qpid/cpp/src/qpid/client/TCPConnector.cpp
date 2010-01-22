@@ -200,6 +200,10 @@ void TCPConnector::handleClosed() {
 
 void TCPConnector::writebuff(AsynchIO& /*aio*/) 
 {
+    // It's possible to be disconnected and be writable
+    if (closed)
+        return;
+
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
     if (codec->canEncode()) {
         std::auto_ptr<AsynchIO::BufferBase> buffer = std::auto_ptr<AsynchIO::BufferBase>(aio->getQueuedBuffer());
