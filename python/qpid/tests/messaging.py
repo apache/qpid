@@ -718,6 +718,47 @@ test-bindings-queue; {
     rcv = self.ssn.receiver("test-bindings-queue")
     self.drain(rcv, expected=["one", "two", "three", "four"])
 
+  def testBindingsAdditive(self):
+    m1 = self.content("testBindingsAdditive", 1)
+    m2 = self.content("testBindingsAdditive", 2)
+    m3 = self.content("testBindingsAdditive", 3)
+    m4 = self.content("testBindingsAdditive", 4)
+
+    snd = self.ssn.sender("""
+test-bindings-additive-queue; {
+  create: always,
+  delete: always,
+  node-properties: {
+    x-properties: {
+      bindings: ["amq.topic/a"]
+    }
+  }
+}
+""")
+
+    snd_a = self.ssn.sender("amq.topic/a")
+    snd_b = self.ssn.sender("amq.topic/b")
+
+    snd_a.send(m1)
+    snd_b.send(m2)
+
+    rcv = self.ssn.receiver("test-bindings-additive-queue")
+    self.drain(rcv, expected=[m1])
+
+    new_snd = self.ssn.sender("""
+test-bindings-additive-queue; {
+  node-properties: {
+    x-properties: {
+      bindings: ["amq.topic/b"]
+    }
+  }
+}
+""")
+
+    new_snd.send(m3)
+    snd_b.send(m4)
+    self.drain(rcv, expected=[m3, m4])
+
 NOSUCH_Q = "this-queue-should-not-exist"
 UNPARSEABLE_ADDR = "name/subject; {bad options"
 UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"
