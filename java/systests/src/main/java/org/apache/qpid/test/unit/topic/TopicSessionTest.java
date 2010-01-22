@@ -126,12 +126,13 @@ public class TopicSessionTest extends QpidTestCase
             session1 = con.createTopicSession(true, AMQSession.NO_ACKNOWLEDGE);
             publisher = session1.createPublisher(null);
         }
+        sub.close();
         TopicSubscriber sub2 = session1.createDurableSubscriber(topic2, "subscription0");
         publisher.publish(topic, session1.createTextMessage("hello"));
         session1.commit();
         if (!shutdown)
         {
-            m = (TextMessage) sub.receive(2000);
+            m = (TextMessage) sub2.receive(2000);
             assertNull(m);
             session1.commit();
         }
