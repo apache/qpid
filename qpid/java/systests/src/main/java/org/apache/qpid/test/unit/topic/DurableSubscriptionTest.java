@@ -97,6 +97,7 @@ public class DurableSubscriptionTest extends QpidTestCase
         _logger.info("Receive message on consumer 1 :expecting null");
         assertEquals(null, msg);
 
+        consumer2.close();
         _logger.info("Unsubscribe session2/consumer2");
         session2.unsubscribe("MySubscription");
 
@@ -109,10 +110,6 @@ public class DurableSubscriptionTest extends QpidTestCase
         assertEquals("B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(NEGATIVE_RECEIVE_TIMEOUT);
-        assertEquals(null, msg);
-
-        _logger.info("Receive message on consumer 2 :expecting null");
-        msg = consumer2.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertEquals(null, msg);
 
         _logger.info("Close connection");
@@ -301,7 +298,6 @@ public class DurableSubscriptionTest extends QpidTestCase
     	{
     		assertTrue("Wrong type of exception thrown", e instanceof InvalidSelectorException);
     	}
-    	
     	TopicSubscriber liveSubscriber = session.createDurableSubscriber(topic, "testDurableWithInvalidSelectorSub");
     	assertNotNull("Subscriber should have been created", liveSubscriber);
 
@@ -311,6 +307,7 @@ public class DurableSubscriptionTest extends QpidTestCase
     	assertNotNull ("Message should have been received", msg);
     	assertEquals ("testDurableWithInvalidSelector2", ((TextMessage) msg).getText());
     	assertNull("Should not receive subsequent message", liveSubscriber.receive(200));
+        liveSubscriber.close();
         session.unsubscribe("testDurableWithInvalidSelectorSub");
     }
     
