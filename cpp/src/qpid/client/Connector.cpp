@@ -23,6 +23,7 @@
 
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/SecurityLayer.h"
 
 #include <map>
 
