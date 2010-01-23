@@ -31,6 +31,7 @@ pkg_check_modules(NSS nss)
 
 set (ssl_default ${ssl_force})
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (ssl_default ON)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (NSS_FOUND)
     set (ssl_default ON)
@@ -39,68 +40,78 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 option(BUILD_SSL "Build with support for SSL" ${ssl_default})
 if (BUILD_SSL)
+  if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+    set (sslclient_windows_SOURCES qpid/client/windows/SslConnector.cpp)
+    set (sslbroker_windows_SOURCES qpid/broker/windows/SslProtocolFactory.cpp)
+    set (sslcommon_windows_SOURCES
+         qpid/sys/windows/SslAsynchIO.cpp
+        )
+    set (windows_ssl_libs Secur32.lib)
+    set (windows_ssl_server_libs Crypt32.lib)
+  else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-  if (NOT NSS_FOUND)
-    message(FATAL_ERROR "nss/nspr not found, required for ssl support")
-  endif (NOT NSS_FOUND)
+    if (NOT NSS_FOUND)
+      message(FATAL_ERROR "nss/nspr not found, required for ssl support")
+    endif (NOT NSS_FOUND)
 
-  foreach(f ${NSS_CFLAGS})
-    set (NSS_COMPILE_FLAGS "${NSS_COMPILE_FLAGS} ${f}")
-  endforeach(f)
+    foreach(f ${NSS_CFLAGS})
+      set (NSS_COMPILE_FLAGS "${NSS_COMPILE_FLAGS} ${f}")
+    endforeach(f)
 
-  foreach(f ${NSS_LDFLAGS})
-    set (NSS_LINK_FLAGS "${NSS_LINK_FLAGS} ${f}")
-  endforeach(f)
+    foreach(f ${NSS_LDFLAGS})
+      set (NSS_LINK_FLAGS "${NSS_LINK_FLAGS} ${f}")
+    endforeach(f)
 
-  set (sslcommon_SOURCES
-       qpid/sys/ssl/check.h
-       qpid/sys/ssl/check.cpp
-       qpid/sys/ssl/util.h
-       qpid/sys/ssl/util.cpp
-       qpid/sys/ssl/SslSocket.h
-       qpid/sys/ssl/SslSocket.cpp
-       qpid/sys/ssl/SslIo.h
-       qpid/sys/ssl/SslIo.cpp
-      )
+    set (sslcommon_SOURCES
+         qpid/sys/ssl/check.h
+         qpid/sys/ssl/check.cpp
+         qpid/sys/ssl/util.h
+         qpid/sys/ssl/util.cpp
+         qpid/sys/ssl/SslSocket.h
+         qpid/sys/ssl/SslSocket.cpp
+         qpid/sys/ssl/SslIo.h
+         qpid/sys/ssl/SslIo.cpp
+        )
 
-  add_library (sslcommon SHARED ${sslcommon_SOURCES})
-  target_link_libraries (sslcommon qpidcommon)
-  set_target_properties (sslcommon PROPERTIES
-                         VERSION ${qpidc_version}
-                         COMPILE_FLAGS ${NSS_COMPILE_FLAGS}
-                         LINK_FLAGS ${NSS_LINK_FLAGS})
+    add_library (sslcommon SHARED ${sslcommon_SOURCES})
+    target_link_libraries (sslcommon qpidcommon)
+    set_target_properties (sslcommon PROPERTIES
+                           VERSION ${qpidc_version}
+                           COMPILE_FLAGS ${NSS_COMPILE_FLAGS}
+                           LINK_FLAGS ${NSS_LINK_FLAGS})
 
-  set (ssl_SOURCES
-       qpid/sys/SslPlugin.cpp
-       qpid/sys/ssl/SslHandler.h
-       qpid/sys/ssl/SslHandler.cpp
-      )
-  add_library (ssl MODULE ${ssl_SOURCES})
-  target_link_libraries (ssl qpidbroker sslcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
-  set_target_properties (ssl PROPERTIES
-                         PREFIX ""
-                         COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties(ssl PROPERTIES
-                          LINK_FLAGS -Wl,--no-undefined)
-  endif (CMAKE_COMPILER_IS_GNUCXX)
+    set (ssl_SOURCES
+         qpid/sys/SslPlugin.cpp
+         qpid/sys/ssl/SslHandler.h
+         qpid/sys/ssl/SslHandler.cpp
+        )
+    add_library (ssl MODULE ${ssl_SOURCES})
+    target_link_libraries (ssl qpidbroker sslcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    set_target_properties (ssl PROPERTIES
+                           PREFIX ""
+                           COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
+    if (CMAKE_COMPILER_IS_GNUCXX)
+      set_target_properties(ssl PROPERTIES
+                            LINK_FLAGS -Wl,--no-undefined)
+    endif (CMAKE_COMPILER_IS_GNUCXX)
 
-  install (TARGETS ssl
-           DESTINATION ${QPIDD_MODULE_DIR}
-           COMPONENT ${QPID_COMPONENT_BROKER})
+    install (TARGETS ssl
+             DESTINATION ${QPIDD_MODULE_DIR}
+             COMPONENT ${QPID_COMPONENT_BROKER})
 
-  add_library (sslconnector MODULE qpid/client/SslConnector.cpp)
-  target_link_libraries (sslconnector qpidclient sslcommon)
-  set_target_properties (sslconnector PROPERTIES
-                         PREFIX ""
-                         COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties(sslconnector PROPERTIES
-                          LINK_FLAGS -Wl,--no-undefined)
-  endif (CMAKE_COMPILER_IS_GNUCXX)
+    add_library (sslconnector MODULE qpid/client/SslConnector.cpp)
+    target_link_libraries (sslconnector qpidclient sslcommon)
+    set_target_properties (sslconnector PROPERTIES
+                           PREFIX ""
+                           COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
+    if (CMAKE_COMPILER_IS_GNUCXX)
+      set_target_properties(sslconnector PROPERTIES
+                            LINK_FLAGS -Wl,--no-undefined)
+    endif (CMAKE_COMPILER_IS_GNUCXX)
 
-  install (TARGETS sslconnector
-           DESTINATION ${QPIDC_MODULE_DIR}
-           COMPONENT ${QPID_COMPONENT_CLIENT})
+    install (TARGETS sslconnector
+             DESTINATION ${QPIDC_MODULE_DIR}
+             COMPONENT ${QPID_COMPONENT_CLIENT})
+  endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 endif (BUILD_SSL)

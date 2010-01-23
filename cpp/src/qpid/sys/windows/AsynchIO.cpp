@@ -204,7 +204,6 @@ void AsynchConnector::start(Poller::shared_ptr)
         if (failCallback)
             failCallback(socket, -1, std::string(e.what()));
         socket.close();
-        delete &socket;
     }
 }
 
@@ -428,10 +427,7 @@ void AsynchIO::queueReadBuffer(AsynchIO::BufferBase* buff) {
 
 void AsynchIO::unread(AsynchIO::BufferBase* buff) {
     assert(buff);
-    if (buff->dataStart != 0) {
-        memmove(buff->bytes, buff->bytes+buff->dataStart, buff->dataCount);
-        buff->dataStart = 0;
-    }
+    buff->squish();
     QLock l(bufferQueueLock);
     bufferQueue.push_front(buff);
 }

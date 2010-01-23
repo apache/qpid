@@ -439,7 +439,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${sslbroker_windows_SOURCES}
   )
   set (qpidbroker_platform_LIBS
-    ${windows_ssl_libs}
+    ${windows_ssl_libs} ${windows_ssl_server_libs}
   )
   set (qpidclient_platform_SOURCES
     qpid/client/windows/SaslFactory.cpp

@@ -76,19 +76,12 @@ class TCPConnector : public Connector, public sys::Codec
     boost::shared_ptr<sys::Poller> poller;
     std::auto_ptr<qpid::sys::SecurityLayer> securityLayer;
 
-    ~TCPConnector();
-
     void handleClosed();
     bool closeInternal();
 
-    void connected(const sys::Socket&);
-    void connectFailed(const std::string& msg);
-    bool readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
-    void writebuff(qpid::sys::AsynchIO&);
+    virtual void connected(const sys::Socket&);
     void writeDataBlock(const framing::AMQDataBlock& data);
-    void eof(qpid::sys::AsynchIO&);
 
-    void connect(const std::string& host, int port);
     void close();
     void send(framing::AMQFrame& frame);
     void abort();
@@ -104,6 +97,16 @@ class TCPConnector : public Connector, public sys::Codec
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
     bool canEncode();
+
+protected:
+    virtual ~TCPConnector();
+    void connect(const std::string& host, int port);
+    void start(sys::AsynchIO* aio_);
+    void initAmqp();
+    virtual void connectFailed(const std::string& msg);
+    bool readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
+    void writebuff(qpid::sys::AsynchIO&);
+    void eof(qpid::sys::AsynchIO&);
 
 public:
     TCPConnector(boost::shared_ptr<sys::Poller>,
