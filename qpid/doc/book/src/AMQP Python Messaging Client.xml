@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+    Apache Qpid : AMQP Python Messaging Client
+  </title>
+  <section role="h3" id="AMQPPythonMessagingClient-UserGuides">
+    <title>
+      User Guides
+    </title>
+    <itemizedlist>
+      <listitem>
+	<para>
+	  <ulink url="http://qpid.apache.org/docs/api/python/html/index.html">Python Client API Guide</ulink>
+	</para>
+      </listitem>
+    </itemizedlist>
+    <!--h3-->
+  </section>
+
+  <section role="h3" id="AMQPPythonMessagingClient-Examples">
+    <title>
+      Examples
+    </title>
+    <itemizedlist>
+      <listitem>
+	<para>
+	  <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/">AMQP Python Client Examples </ulink>
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/README">Running the AMQP Python Client Examples </ulink>
+	</para>
+      </listitem>
+    </itemizedlist>
+    <!--h3-->
+  </section>
+
+  <xi:include href="PythonBrokerTest.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</chapter>

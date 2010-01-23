@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml"  xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>
+    Apache Qpid : AMQP .NET Messaging Client
+  </title>
+  <para>
+    Currently the .NET code base provides two client libraries that
+    are compatible respectively with AMQP 0.8 and 0.10. The 0.8 client
+    is located in <filename>qpid\dotnet</filename> and the 0.10 client
+    in: <filename>qpid\dotnet\client-010</filename>.
+  </para>
+  <para>
+    You will need an AMQP broker to fully use those client libraries.
+    Use M4 or later C++ broker for AMQP 0.10 or Java broker for AMQP
+    0.8/0.9.
+  </para>
+  <section role="h3" id="AMQP.NETMessagingClient-UserGuides">
+    <title>
+      User Guides
+    </title>
+        
+    <xi:include href="NET%20User%20Guide.xml"/>
+    <xi:include href="Excel%20AddIn.xml"/>
+    <xi:include href="WCF.xml"/>
+  </section>
+
+  <section role="h3" id="AMQP.NETMessagingClient-Examples">
+    <title>
+      Examples
+    </title>
+  <itemizedlist>
+    <listitem>
+      <para>
+	<ulink url="http://svn.apache.org/viewvc/qpid/trunk/qpid/dotnet/client-010/examples/"/>
+      </para>
+    </listitem>
+  </itemizedlist>
+    <!--h3-->
+  </section>
+
+<!--
+
+  <section role="h3" id="AMQP.NETMessagingClient-DeveloperGuidelines">
+    <title>
+      Developer Guidelines
+    </title>
+    <itemizedlist>
+    <listitem>
+      <para>
+	<xref linkend="qpid_Developer-20Pages"/>
+      </para>
+    </listitem>
+    <listitem>
+      <para>Coding Standards </para>
+    </listitem>
+    <listitem>
+      <para>How Tos
+      <itemizedlist>
+	<listitem>
+	  <para>
+	    <xref linkend="qpid_Build-20.NET-20Client"/>
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    <xref linkend="qpid_Releasing"/>
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    <xref linkend="qpid_Run-20tests"/>
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    <xref linkend="qpid_Setup-20.Net-20Client-20on-20Windows"/>
+	  </para>
+	</listitem>
+      </itemizedlist>
+      </para>
+    </listitem>
+  </itemizedlist>
+  </section>
+  -->
+
+
+</chapter>

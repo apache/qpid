@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+    Apache Qpid : AMQP Ruby Messaging Client
+  </title>
+  <para>
+    The Ruby Messaging Client currently has little documentation and
+    few examples.
+  </para>
+  <section role="h3" id="AMQPRubyMessagingClient-Examples">
+    <title>
+      Examples
+    </title>
+    <para>
+      <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/ruby/examples">AMQP Ruby Messaging Client Examples</ulink>
+    </para>
+    <!--h3-->
+  </section>
+</chapter>
