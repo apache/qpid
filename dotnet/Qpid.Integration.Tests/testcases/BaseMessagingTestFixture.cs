@@ -89,7 +89,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             log.Debug("public virtual void Shutdown(): called");
         }
-
+        
         /// <summary> Sets up the nth test end-point. </summary>
         ///
         /// <param name="n">The index of the test end-point to set up.</param>
@@ -104,6 +104,25 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <param name="subscriptionName">If durable is true, the fixed unique queue name to use.</param>
         public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey, AcknowledgeMode ackMode, bool transacted,
                                   string exchangeName, bool declareBind, bool durable, string subscriptionName)
+        {
+           SetUpEndPoint(n, producer, consumer, routingKey, ackMode, transacted, exchangeName, declareBind, durable, subscriptionName, true, false);
+        }
+        /// <summary> Sets up the nth test end-point. </summary>
+        ///
+        /// <param name="n">The index of the test end-point to set up.</param>
+        /// <param name="producer"><tt>true</tt> to set up a producer on the end-point.</param>
+        /// <param name="consumer"><tt>true</tt> to set up a consumer on the end-point.</param>
+        /// <param name="routingKey">The routing key for the producer to send on.</param>
+        /// <param name="ackMode">The ack mode for the end-points channel.</param>
+        /// <param name="transacted"><tt>true</tt> to use transactions on the end-points channel.</param>
+        /// <param name="exchangeName">The exchange to produce or consume on.</param>
+        /// <param name="declareBind"><tt>true</tt> if the consumers queue should be declared and bound, <tt>false</tt> if it has already been.</param>
+        /// <param name="durable"><tt>true</tt> to declare the consumers queue as durable.</param>
+        /// <param name="subscriptionName">If durable is true, the fixed unique queue name to use.</param>
+        /// <param name="exclusive"><tt>true</tt> declare queue as exclusive.</param>
+        /// <param name="browse"><tt>true</tt> only browse, don''t consume.</param>
+        public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey, AcknowledgeMode ackMode, bool transacted,
+                                  string exchangeName, bool declareBind, bool durable, string subscriptionName, bool exclusive, bool browse)
         {
             // Allow client id to be fixed, or undefined.
             {
@@ -137,7 +156,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
                     
                     if (declareBind)
                     {
-                        testChannel[n].DeclareQueue(queueName, durable, true, false);
+                        testChannel[n].DeclareQueue(queueName, durable, exclusive, false);
                         testChannel[n].Bind(queueName, exchangeName, routingKey);
                     }
                 }
@@ -156,7 +175,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
                     }
                 }
 
-                testConsumer[n] = testChannel[n].CreateConsumerBuilder(queueName).Create();
+                testConsumer[n] = testChannel[n].CreateConsumerBuilder(queueName).WithBrowse(browse).Create();
             }
         }
 

@@ -38,6 +38,8 @@ namespace Apache.Qpid.Messaging
 
         private bool _exclusive = false;
 
+        private bool _browse = false;
+
         //private bool _durable = false;
         //private string _subscriptionName = null;
 
@@ -81,6 +83,12 @@ namespace Apache.Qpid.Messaging
             return this;
         }
         
+        public MessageConsumerBuilder WithBrowse(bool browse)
+        {
+            _browse = browse;
+            return this;
+        }
+        
         /*
         public MessageConsumerBuilder WithDurable(bool durable)
         {
@@ -99,7 +107,7 @@ namespace Apache.Qpid.Messaging
         
         public IMessageConsumer Create()
         {
-            return _channel.CreateConsumer(_queueName, _prefetchLow, _prefetchHigh, _noLocal, _exclusive);
+            return _channel.CreateConsumer(_queueName, _prefetchLow, _prefetchHigh, _noLocal, _exclusive, _browse);
         }
     }
 }
