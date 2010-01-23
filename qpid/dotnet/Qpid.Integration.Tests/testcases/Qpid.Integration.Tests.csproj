@@ -59,5 +59,6 @@
     <Compile Include="MandatoryMessageTest.cs" />
     <Compile Include="ProducerMultiConsumerTest.cs" />
     <Compile Include="SslConnectionTest.cs" />
+	<Compile Include="QueueBrowsingTest.cs" />
   </ItemGroup>
 </Project>

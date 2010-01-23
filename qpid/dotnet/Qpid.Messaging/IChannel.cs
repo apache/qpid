@@ -97,6 +97,17 @@ namespace Apache.Qpid.Messaging
         /// <param name="isAutoDelete">True if the queue should be deleted when the channel closes</param>
         void DeclareQueue(string queueName, bool isDurable, bool isExclusive, bool isAutoDelete);
 
+        
+        /// <summary>
+        /// Declare a new queue with the specified set of arguments.
+        /// </summary>
+        /// <param name="queueName">Name of the queue</param>
+        /// <param name="isDurable">True if the queue should be durable</param>
+        /// <param name="isExclusive">True if the queue should be exclusive to this channel</param>
+        /// <param name="isAutoDelete">True if the queue should be deleted when the channel closes</param>
+        /// <param name="args">Optional arguments to Queue.Declare</param>
+        void DeclareQueue(string queueName, bool isDurable, bool isExclusive, bool isAutoDelete, IFieldTable args);
+
         /// <summary>
         /// Delete a queue with the specifies arguments.
         /// </summary>
@@ -191,6 +202,23 @@ namespace Apache.Qpid.Messaging
                                         int prefetchHigh,
                                         bool noLocal,
                                         bool exclusive);
+                                        
+        /// <summary>
+        /// Creates a new consumer.
+        /// </summary>
+        /// <param name="queueName">Name of queue to receive messages from</param>
+        /// <param name="prefetchLow">Low prefetch value</param>
+        /// <param name="prefetchHigh">High prefetch value</param>
+        /// <param name="noLocal">If true, messages sent on this channel will not be received by this consumer</param>
+        /// <param name="exclusive">If true, the consumer opens the queue in exclusive mode</param>
+        /// <param name="browse">If true, the consumer only browses and does not consume</param>
+        /// <returns>The new consumer</returns>
+        IMessageConsumer CreateConsumer(string queueName,
+                                        int prefetchLow, 
+                                        int prefetchHigh,
+                                        bool noLocal,
+                                        bool exclusive,
+                                        bool browse);                                        
         
         /// <summary>
         /// Unsubscribe from a queue.

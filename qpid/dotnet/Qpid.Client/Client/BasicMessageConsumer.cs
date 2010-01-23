@@ -44,6 +44,13 @@ namespace Apache.Qpid.Client
             get { return _exclusive; }
         }
 
+        private bool _browse;
+        
+        public bool Browse
+        {
+            get { return _browse; }
+        }
+
         public bool NoLocal
         {
             get { return _noLocal; }
@@ -131,7 +138,7 @@ namespace Apache.Qpid.Client
 
         internal BasicMessageConsumer(ushort channelId, string queueName, bool noLocal,
                                       MessageFactoryRegistry messageFactory, AmqChannel channel,
-                                      int prefetchHigh, int prefetchLow, bool exclusive)
+                                      int prefetchHigh, int prefetchLow, bool exclusive, bool browse)
         {
             _channelId = channelId;
             _queueName = queueName;
@@ -142,6 +149,7 @@ namespace Apache.Qpid.Client
             _prefetchHigh = prefetchHigh;
             _prefetchLow = prefetchLow;
             _exclusive = exclusive;
+            _browse = browse;
 
             if (_acknowledgeMode == AcknowledgeMode.SessionTransacted)
             {
