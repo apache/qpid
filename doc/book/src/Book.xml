@@ -21,11 +21,11 @@
 	<part>
 	  <title>AMQP Messaging Clients Clients</title>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Java%20JMS%20Messaging%20Client.xml"/>
-<!--	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20C++%20Messaging%20Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20C++%20Messaging%20Client.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20.NET%20Messaging%20Client.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Python%20Messaging%20Client.xml"/>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Ruby%20Messaging%20Client.xml"/>
--->
+
 	</part>
 	<part>
 	  <title>Appendices</title>

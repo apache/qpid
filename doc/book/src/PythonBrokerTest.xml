@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+  <title>
+    Apache Qpid : PythonBrokerTest
+  </title>
+  <section role="h2" id="PythonBrokerTest-PythonBrokerSystemTestSuite">
+    <title>
+      Python Broker System Test Suite
+    </title>
+    <para>
+      This is a suite of python client tests that exercise and verify
+      broker functionality. Python allows us to rapidly develop client
+      test scenarios and provides a 'neutral' set of tests that can run
+      against any AMQP-compliant broker.
+    </para>
+    <para>
+      The python/tests directory contains a collection of python
+      modules, each containing several unittest classes, each
+      containing a set of test methods that represent some test
+      scenario. Test classes inherit qpid.TestBas from
+      qpid/testlib.py, it inherits unittest.TestCase
+      but adds some qpid-specific setUp/tearDown and
+      convenience functions.
+    </para>
+    <para>
+      TODO: get pydoc generated up to qpid wiki or website
+      automatically?
+    </para>
+    <section role="h3" id="PythonBrokerTest-Runningthetests">
+      <title>
+	Running the tests
+      </title>
+      <para>
+	Simplest way to run the tests:
+      </para>
+      <itemizedlist>
+	<listitem>
+	  <para>Run a broker on the default port
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    ./run_tests
+	  </para>
+	</listitem>
+      </itemizedlist>
+      <para>
+	For additional options: ./run_tests --help
+      </para>
+      <!--h3-->
+    </section>
+
+    <section role="h3" id="PythonBrokerTest-Expectedfailures">
+      <title>
+	Expected failures
+      </title>
+      <para>
+	Until we complete functionality, tests may fail because the
+	tested functionality is missing in the broker. To skip
+	expected failures in the C++ or Java brokers:
+      </para>
+      <programlisting>
+./run_tests -I cpp_failing.txt
+./run_tests -I java_failing.txt
+      </programlisting>
+      <para>
+	If you fix a failure, please remove it from the corresponding
+	list.
+      </para>
+
+      <!--h3-->
+    </section>
+
+    <!--h2-->
+  </section>
+
+</chapter>
