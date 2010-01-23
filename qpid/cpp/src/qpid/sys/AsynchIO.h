@@ -87,6 +87,13 @@ struct AsynchIOBufferBase {
     
     virtual ~AsynchIOBufferBase()
     {}
+
+    void squish() {
+        if (dataStart != 0) {
+            memmove(bytes, bytes + dataStart, dataCount);
+            dataStart = 0;
+        }
+    }
 };
 
 /*

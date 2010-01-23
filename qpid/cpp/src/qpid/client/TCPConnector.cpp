@@ -108,15 +108,23 @@ void TCPConnector::connected(const Socket&) {
                        0, // closed
                        0, // nobuffs
                        boost::bind(&TCPConnector::writebuff, this, _1));
+    start(aio);
+    initAmqp();
+    aio->start(poller);
+}
+
+void TCPConnector::start(sys::AsynchIO* aio_) {
+    aio = aio_;
     for (int i = 0; i < 32; i++) {
         aio->queueReadBuffer(new Buff(maxFrameSize));
     }
 
     identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
+}
+
+void TCPConnector::initAmqp() {
     ProtocolInitiation init(version);
     writeDataBlock(init);
-
-    aio->start(poller);
 }
 
 void TCPConnector::connectFailed(const std::string& msg) {
@@ -286,7 +294,7 @@ size_t TCPConnector::decode(const char* buffer, size_t size)
 }
 
 void TCPConnector::writeDataBlock(const AMQDataBlock& data) {
-    AsynchIO::BufferBase* buff = new Buff(maxFrameSize);
+    AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
     buff->dataCount = data.encodedSize();

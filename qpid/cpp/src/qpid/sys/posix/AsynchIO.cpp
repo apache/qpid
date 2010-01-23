@@ -319,10 +319,7 @@ void AsynchIO::queueReadBuffer(BufferBase* buff) {
 
 void AsynchIO::unread(BufferBase* buff) {
     assert(buff);
-    if (buff->dataStart != 0) {
-        memmove(buff->bytes, buff->bytes+buff->dataStart, buff->dataCount);
-        buff->dataStart = 0;
-    }
+    buff->squish();
 
     bool queueWasEmpty = bufferQueue.empty();
     bufferQueue.push_front(buff);
