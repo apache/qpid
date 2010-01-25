@@ -144,8 +144,8 @@ class BaseTest(unittest.TestCase):
         # find agents
 
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
-                                              agent_timeout=3)
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                            agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
                                               self.broker.user,
@@ -169,7 +169,7 @@ class BaseTest(unittest.TestCase):
                 self.assertTrue(event.get_value("prop-1") > 0)
 
                 agent = wi.get_params().get("agent")
-                if not agent or not isinstance(agent, qmf.qmfConsole.Agent):
+                if not agent or not isinstance(agent, qmf2.console.Agent):
                     self.fail("Unexpected workitem from agent")
                 else:
                     if agent.get_name() == "agent1":

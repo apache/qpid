@@ -174,7 +174,7 @@ class BaseTest(unittest.TestCase):
         # synchronous query for all objects by id
         # verify known object ids are returned
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -206,7 +206,7 @@ class BaseTest(unittest.TestCase):
         # synchronous query for each objects
         # verify objects and schemas are correct
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -248,7 +248,7 @@ class BaseTest(unittest.TestCase):
         # find agents
         # synchronous query all package names
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -276,7 +276,7 @@ class BaseTest(unittest.TestCase):
         # find agents
         # synchronous query for all schema by package name
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -310,7 +310,7 @@ class BaseTest(unittest.TestCase):
         # find agents
         # synchronous query for all schema by package name
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,

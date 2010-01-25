@@ -25,7 +25,7 @@ import qmf2.console
 import qmf2.agent
 
 
-class _testNotifier(qmf.qmfCommon.Notifier):
+class _testNotifier(qmf2.common.Notifier):
     def __init__(self):
         self._event = Event()
 
@@ -48,7 +48,7 @@ class _agentApp(Thread):
     def __init__(self, name, heartbeat):
         Thread.__init__(self)
         self.notifier = _testNotifier()
-        self.agent = qmf.qmfAgent.Agent(name,
+        self.agent = qmf2.agent.Agent(name,
                            _notifier=self.notifier,
                            _heartbeat_interval=heartbeat)
         # No database needed for this test
@@ -118,7 +118,7 @@ class BaseTest(unittest.TestCase):
         # wait
         # expect agent add for agent1 and agent2
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -133,7 +133,7 @@ class BaseTest(unittest.TestCase):
         while wi and not (agent1_found and agent2_found):
             if wi.get_type() == wi.AGENT_ADDED:
                 agent = wi.get_params().get("agent")
-                if not agent or not isinstance(agent, qmf.qmfConsole.Agent):
+                if not agent or not isinstance(agent, qmf2.console.Agent):
                     self.fail("Unexpected workitem from agent")
                 else:
                     if agent.get_name() == "agent1":
@@ -159,7 +159,7 @@ class BaseTest(unittest.TestCase):
         # wait until timeout
         # expect agent add for agent1 only
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -168,10 +168,10 @@ class BaseTest(unittest.TestCase):
         self.conn.connect()
         self.console.addConnection(self.conn)
 
-        query = qmf.qmfCommon.QmfQuery.create_predicate(
-                           qmf.qmfCommon.QmfQuery.TARGET_AGENT,
-                           qmf.qmfCommon.QmfQueryPredicate({qmf.qmfCommon.QmfQuery.CMP_EQ:
-                                 [qmf.qmfCommon.QmfQuery.KEY_AGENT_NAME, "agent1"]}))
+        query = qmf2.common.QmfQuery.create_predicate(
+                           qmf2.common.QmfQuery.TARGET_AGENT,
+                           qmf2.common.QmfQueryPredicate({qmf2.common.QmfQuery.CMP_EQ:
+                                 [qmf2.common.QmfQuery.KEY_AGENT_NAME, "agent1"]}))
         self.console.enable_agent_discovery(query)
 
         agent1_found = agent2_found = False
@@ -179,7 +179,7 @@ class BaseTest(unittest.TestCase):
         while wi:
             if wi.get_type() == wi.AGENT_ADDED:
                 agent = wi.get_params().get("agent")
-                if not agent or not isinstance(agent, qmf.qmfConsole.Agent):
+                if not agent or not isinstance(agent, qmf2.console.Agent):
                     self.fail("Unexpected workitem from agent")
                 else:
                     if agent.get_name() == "agent1":
@@ -203,7 +203,7 @@ class BaseTest(unittest.TestCase):
         # stop agent1, expect timeout notification
         # stop agent2, expect timeout notification
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=2)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -218,7 +218,7 @@ class BaseTest(unittest.TestCase):
         while wi and not (agent1_found and agent2_found):
             if wi.get_type() == wi.AGENT_ADDED:
                 agent = wi.get_params().get("agent")
-                if not agent or not isinstance(agent, qmf.qmfConsole.Agent):
+                if not agent or not isinstance(agent, qmf2.console.Agent):
                     self.fail("Unexpected workitem from agent")
                 else:
                     if agent.get_name() == "agent1":
@@ -246,7 +246,7 @@ class BaseTest(unittest.TestCase):
         while wi is not None:
             if wi.get_type() == wi.AGENT_DELETED:
                 agent = wi.get_params().get("agent")
-                if not agent or not isinstance(agent, qmf.qmfConsole.Agent):
+                if not agent or not isinstance(agent, qmf2.console.Agent):
                     self.fail("Unexpected workitem from agent")
                 else:
                     if agent.get_name() == "agent1":
@@ -272,7 +272,7 @@ class BaseTest(unittest.TestCase):
         while wi is not None:
             if wi.get_type() == wi.AGENT_DELETED:
                 agent = wi.get_params().get("agent")
-                if not agent or not isinstance(agent, qmf.qmfConsole.Agent):
+                if not agent or not isinstance(agent, qmf2.console.Agent):
                     self.fail("Unexpected workitem from agent")
                 else:
                     if agent.get_name() == "agent2":
@@ -297,7 +297,7 @@ class BaseTest(unittest.TestCase):
         # find agent-none, expect failure
         # find agent2, expect success
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier)
+        self.console = qmf2.console.Console(notifier=self.notifier)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
                                               self.broker.user,

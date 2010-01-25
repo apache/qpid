@@ -228,8 +228,8 @@ class BaseTest(unittest.TestCase):
         # synchronous query for all objects in schema
         # method call on each object
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
-                                              agent_timeout=3)
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                            agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
                                               self.broker.user,
@@ -254,7 +254,7 @@ class BaseTest(unittest.TestCase):
                 mr = obj.invoke_method( "set_meth", {"arg_int": -99,
                                                      "arg_str": "Now set!"},
                                         _timeout=3)
-                self.assertTrue(isinstance(mr, qmf.qmfConsole.MethodResult))
+                self.assertTrue(isinstance(mr, qmf2.console.MethodResult))
                 self.assertTrue(mr.succeeded())
                 self.assertTrue(mr.get_argument("code") == 0)
 
@@ -278,7 +278,7 @@ class BaseTest(unittest.TestCase):
         # invalid method call on each object
         #  - should throw a ValueError
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -315,7 +315,7 @@ class BaseTest(unittest.TestCase):
         # synchronous query for a managed object
         # method call on each object
         self.notifier = _testNotifier()
-        self.console = qmf.qmfConsole.Console(notifier=self.notifier,
+        self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
         self.conn = qpid.messaging.Connection(self.broker.host,
                                               self.broker.port,
@@ -340,7 +340,7 @@ class BaseTest(unittest.TestCase):
                                     "arg2": "Now set!",
                                     "arg3": 1966},
                                    _timeout=3)
-            self.assertTrue(isinstance(mr, qmf.qmfConsole.MethodResult))
+            self.assertTrue(isinstance(mr, qmf2.console.MethodResult))
             self.assertTrue(mr.succeeded())
             self.assertTrue(mr.get_argument("code") == 0)
             # @todo refresh and verify changes
