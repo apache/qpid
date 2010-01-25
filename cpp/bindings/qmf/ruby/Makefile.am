@@ -29,7 +29,7 @@ rubylibdir = $(RUBY_LIB)
 dist_rubylib_DATA = qmf.rb
 
 qmfengine.cpp: $(srcdir)/ruby.i $(srcdir)/../qmfengine.i
-	$(SWIG) -ruby -c++ -Wall -I/usr/include $(INCLUDES) $(QPID_CXXFLAGS) -o qmfengine.cpp $(srcdir)/ruby.i
+	$(SWIG) -ruby -c++ -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o qmfengine.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = qmfengine.la

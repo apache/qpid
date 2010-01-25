@@ -29,7 +29,7 @@ EXTRA_DIST = python.i
 BUILT_SOURCES = $(generated_file_list)
 
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmfengine.i
-	swig -c++ -python -Wall -I/usr/include $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -o qmfengine.cpp $(srcdir)/python.i
+	swig -c++ -python -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o qmfengine.cpp $(srcdir)/python.i
 
 pylibdir = $(PYTHON_LIB)
 
