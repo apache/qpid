@@ -588,9 +588,8 @@ class Driver:
       "create": POLICIES,
       "delete": POLICIES,
       "assert": POLICIES,
-      "type": Values("queue", "topic"),
       "node-properties": Map({
-          "type": Types(basestring),
+          "type": Values("queue", "topic"),
           "durable": Types(bool),
           "x-properties": Map({
               "type": Types(basestring),
