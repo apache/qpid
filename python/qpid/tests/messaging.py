@@ -613,6 +613,12 @@ class AddressTests(Base):
     self.badOption("{node-properties: {durable: []}}",
                    "node-properties: durable: [] is not a bool")
 
+  def testNonQueueBindings(self):
+    self.badOption("{node-properties: {type: topic, x-properties: "
+                   "{bindings: []}}}",
+                   "node-properties: x-properties: bindings: "
+                   "bindings are only permitted on nodes of type queue")
+
   def testCreateQueue(self):
     snd = self.ssn.sender("test-create-queue; {create: always, delete: always, "
                           "node-properties: {type: queue, durable: False, "
