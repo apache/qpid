@@ -28,7 +28,7 @@ from ops import *
 from selector import Selector
 from threading import Condition, Thread
 from util import connect
-from validator import Map, Types, Values
+from validator import And, Context, Map, Types, Values
 
 log = getLogger("qpid.messaging")
 rawlog = getLogger("qpid.messaging.io.raw")
@@ -584,6 +584,13 @@ class Driver:
 
   POLICIES = Values("always", "sender", "receiver", "never")
 
+  class Bindings:
+
+    def validate(self, o, ctx):
+      t = ctx.containers[1].get("type", "queue")
+      if t != "queue":
+        return "bindings are only permitted on nodes of type queue"
+
   OPTS = Map({
       "create": POLICIES,
       "delete": POLICIES,
@@ -593,14 +600,15 @@ class Driver:
           "durable": Types(bool),
           "x-properties": Map({
               "type": Types(basestring),
-              "bindings": Types(list)
+              "bindings": And(Types(list), Bindings())
               },
               restricted=False)
           })
         })
 
   def validate_options(self, lnk):
-    err = Driver.OPTS.validate(lnk.options)
+    ctx = Context()
+    err = Driver.OPTS.validate(lnk.options, ctx)
     if err:
       lnk.target.error = ("error in options: %s" % err,)
       lnk.target.closed = True

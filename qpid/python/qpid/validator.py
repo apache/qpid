@@ -17,12 +17,23 @@
 # under the License.
 #
 
+class Context:
+
+  def __init__(self):
+    self.containers = []
+
+  def push(self, o):
+    self.containers.append(o)
+
+  def pop(self):
+    return self.containers.pop()
+
 class Values:
 
   def __init__(self, *values):
     self.values = values
 
-  def validate(self, o):
+  def validate(self, o, ctx):
     if not o in self.values:
       return "%s not in %s" % (o, self.values)
 
@@ -34,7 +45,7 @@ class Types:
   def __init__(self, *types):
     self.types = types
 
-  def validate(self, o):
+  def validate(self, o, ctx):
     for t in self.types:
       if isinstance(o, t):
         return
@@ -49,20 +60,34 @@ class Map:
     self.map = map
     self.restricted = restricted
 
-  def validate(self, o):
+  def validate(self, o, ctx):
     errors = []
 
     if not hasattr(o, "get"):
       return "%s is not a map" % o
 
+    ctx.push(o)
     for k, t in self.map.items():
       v = o.get(k)
       if v is not None:
-        err = t.validate(v)
+        err = t.validate(v, ctx)
         if err: errors.append("%s: %s" % (k, err))
     if self.restricted:
       for k in o:
         if not k in self.map:
           errors.append("%s: illegal key" % k)
+    ctx.pop()
+
     if errors:
       return ", ".join(errors)
+
+class And:
+
+  def __init__(self, *conditions):
+    self.conditions = conditions
+
+  def validate(self, o, ctx):
+    for c in self.conditions:
+      err = c.validate(o, ctx)
+      if err:
+        return err
