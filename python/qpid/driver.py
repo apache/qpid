@@ -839,11 +839,10 @@ class Driver:
     sst = self._attachments[snd.session]
     _snd = self._attachments[snd]
 
-    # XXX: what if subject is specified for a normal queue?
-    if _snd._routing_key is None:
-      rk = msg.subject
-    else:
+    if msg.subject is None or _snd._exchange == "":
       rk = _snd._routing_key
+    else:
+      rk = msg.subject
     # XXX: do we need to query to figure out how to create the reply-to interoperably?
     if msg.reply_to:
       rt = addr2reply_to(msg.reply_to)
