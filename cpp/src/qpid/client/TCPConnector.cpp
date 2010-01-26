@@ -139,8 +139,8 @@ void TCPConnector::connectFailed(const std::string& msg) {
 bool TCPConnector::closeInternal() {
     Mutex::ScopedLock l(lock);
     bool ret = !closed;
-    if (!closed) {
-        closed = true;
+    closed = true;
+    if (ret) {
         if (aio)
             aio->queueForDeletion();
         socket.close();
@@ -186,17 +186,19 @@ const std::string& TCPConnector::getIdentifier() const {
 }
 
 void TCPConnector::send(AMQFrame& frame) {
+    bool notifyWrite = false;
+    {
     Mutex::ScopedLock l(lock);
     frames.push_back(frame);
     //only ask to write if this is the end of a frameset or if we
     //already have a buffers worth of data
     currentSize += frame.encodedSize();
-    bool notifyWrite = false;
     if (frame.getEof()) {
         lastEof = frames.size();
         notifyWrite = true;
     } else {
         notifyWrite = (currentSize >= maxFrameSize);
+    }
     }
     if (notifyWrite && !closed) aio->notifyPendingWrite();
 }
