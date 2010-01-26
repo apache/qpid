@@ -19,4 +19,8 @@
 # under the License.
 #
 
-import agent_discovery, basic_query, basic_method, obj_gets, events
+import agent_discovery
+import basic_query
+import basic_method
+import obj_gets
+import events

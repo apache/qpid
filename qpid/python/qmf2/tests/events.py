@@ -22,6 +22,7 @@ import logging
 from threading import Thread, Event
 
 import qpid.messaging
+from qpid.harness import Skipped
 from qmf2.common import (Notifier, SchemaObjectClass, SchemaClassId,
                          SchemaProperty, qmfTypes, SchemaMethod, QmfQuery,
                          QmfData, QmfQueryPredicate, SchemaEventClass,
@@ -93,7 +94,11 @@ class _agentApp(Thread):
                                          self.broker_url.port,
                                          self.broker_url.user,
                                          self.broker_url.password)
-        conn.connect()
+        try:
+            conn.connect()
+        except qpid.messaging.ConnectError, e:
+            raise Skipped(e)
+
         self.agent.set_connection(conn)
 
         counter = 1
@@ -150,12 +155,18 @@ class BaseTest(unittest.TestCase):
                                               self.broker.port,
                                               self.broker.user,
                                               self.broker.password)
-        self.conn.connect()
+        try:
+            self.conn.connect()
+        except qpid.messaging.ConnectError, e:
+            raise Skipped(e)
+
         self.console.addConnection(self.conn)
 
         # find the agents
         for aname in ["agent1", "agent2"]:
+            print("!!! finding aname=%s (%s)" % (aname, time.time()))
             agent = self.console.find_agent(aname, timeout=3)
+            print("!!! agent=%s aname=%s (%s)" % (agent, aname, time.time()))
             self.assertTrue(agent and agent.get_name() == aname)
 
         # now wait for events
