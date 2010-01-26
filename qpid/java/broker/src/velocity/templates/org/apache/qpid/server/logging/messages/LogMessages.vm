@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import org.apache.qpid.server.logging.LogMessage;        
-import org.apache.qpid.server.registry.ApplicationRegistry;        
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -36,12 +36,12 @@ import java.util.ResourceBundle;
  * message parameters.
  *
  * DO NOT EDIT DIRECTLY THIS FILE IS GENERATED.
- *      
+ *
  */
 public class ${type.name}Messages
 {
     static ResourceBundle _messages;
-    static MessageFormat _formatter;
+    static Locale _currentLocale;
 
     static
     {
@@ -50,22 +50,16 @@ public class ${type.name}Messages
 
     public static void reload()
     {
-        Locale currentLocale;
-             
         if (ApplicationRegistry.isConfigured())
         {
-            currentLocale = ApplicationRegistry.getInstance().getConfiguration().getLocale();
+            _currentLocale = ApplicationRegistry.getInstance().getConfiguration().getLocale();
         }
         else
         {
-            currentLocale = Locale.getDefault();
+            _currentLocale = Locale.getDefault();
         }
 
-        _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages",
-                                                           currentLocale);
-
-        _formatter = new MessageFormat("");
-        _formatter.setLocale(currentLocale);
+        _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages", _currentLocale);
     }
 
 
@@ -128,7 +122,7 @@ public class ${type.name}Messages
         StringBuffer msg = new StringBuffer();
 
         // Split the formatted message up on the option values so we can
-        // rebuild the message based on the configured options.     
+        // rebuild the message based on the configured options.
         String[] parts = rawMessage.split("\\[");
         msg.append(parts[0]);
 
@@ -146,7 +140,7 @@ public class ${type.name}Messages
                 msg.append(parts[${velocityCount}].substring(0, end));
             }
 
-            // Use 'end + 1' to remove the ']' from the output 
+            // Use 'end + 1' to remove the ']' from the output
             msg.append(parts[${velocityCount}].substring(end + 1));
 #end
         }
@@ -157,19 +151,20 @@ public class ${type.name}Messages
 ##
 ## If we don't have any parameters then we don't need the overhead of using the
 ## message formatter so we can just set our return message to the retreived
-## fixed string.
-## So we don't need to update the _formatter with the new pattern.
+## fixed string. So we don't need to create a new MessageFormat
 ##
 ## Here we setup rawMessage to be the formatted message ready for direct return
 ## with the message.name or further processing to remove options.
 ##
 #if(${message.parameters.size()} > 0)
         final Object[] messageArguments = {#foreach($parameter in ${message.parameters})${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end#end};
-        _formatter.applyPattern(rawMessage);
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
 
-        final String message = _formatter.format(messageArguments);
+        final String message = formatter.format(messageArguments);
 #else
-## If we have no parameters then we can skip the formatter and set the log
+## If we have no parameters then we can skip the formating and set the log
         final String message = rawMessage;
 #end
 
@@ -181,7 +176,7 @@ public class ${type.name}Messages
             }
         };
     }
-             
+
 #end
 
 }
