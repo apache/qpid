@@ -350,7 +350,7 @@ namespace Rdma {
             return ConnectionEvent(e);
         }
 
-        void bind(qpid::sys::SocketAddress& src_addr) const {
+        void bind(const qpid::sys::SocketAddress& src_addr) const {
             assert(id.get());
             CHECK(::rdma_bind_addr(id.get(), getAddrInfo(src_addr).ai_addr));
         }
@@ -361,7 +361,7 @@ namespace Rdma {
         }
 
         void resolve_addr(
-            qpid::sys::SocketAddress& dst_addr,
+            const qpid::sys::SocketAddress& dst_addr,
             int timeout_ms = DEFAULT_TIMEOUT) const
         {
             assert(id.get());
