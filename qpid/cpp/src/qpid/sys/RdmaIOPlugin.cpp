@@ -305,16 +305,16 @@ void RdmaIOProtocolFactory::accept(Poller::shared_ptr poller, ConnectionCodec::F
     sin.sin_port = htons(listeningPort);
     sin.sin_addr.s_addr = INADDR_ANY;
 
-    SocketAddress sa("",boost::lexical_cast<std::string>(listeningPort));
     listener.reset(
-        new Rdma::Listener(sa,
+        new Rdma::Listener(
             Rdma::ConnectionParams(65536, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(&RdmaIOProtocolFactory::established, this, poller, _1),
             boost::bind(&RdmaIOProtocolFactory::connectionError, this, _1, _2),
             boost::bind(&RdmaIOProtocolFactory::disconnected, this, _1),
             boost::bind(&RdmaIOProtocolFactory::request, this, _1, _2, fact)));
 
-    listener->start(poller);
+    SocketAddress sa("",boost::lexical_cast<std::string>(listeningPort));
+    listener->start(poller, sa);
 }
 
 // Only used for outgoing connections (in federation)
@@ -337,17 +337,16 @@ void RdmaIOProtocolFactory::connect(
     ConnectionCodec::Factory* f,
     ConnectFailedCallback failed)
 {
-    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
     Rdma::Connector* c =
         new Rdma::Connector(
-            sa,
             Rdma::ConnectionParams(8000, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(&RdmaIOProtocolFactory::connected, this, poller, _1, _2, f),
             boost::bind(&RdmaIOProtocolFactory::connectionError, this, _1, _2),
             boost::bind(&RdmaIOProtocolFactory::disconnected, this, _1),
             boost::bind(&RdmaIOProtocolFactory::rejected, this, _1, _2, failed));
 
-    c->start(poller);
+    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    c->start(poller, sa);
 }
 
 }} // namespace qpid::sys

@@ -172,17 +172,16 @@ int main(int argc, char* argv[]) {
         boost::shared_ptr<Poller> p(new Poller());
         Dispatcher d(p);
 
-        SocketAddress sa(host, port);
-        cout << "Connecting to: " << sa.asString() <<"\n";
         Rdma::Connector c(
-            sa,
             Rdma::ConnectionParams(msgsize, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(&connected, p, _1, _2),
             boost::bind(&connectionError, p, _1, _2),
             boost::bind(&disconnected, p, _1),
             boost::bind(&rejected, p, _1, _2));
 
-        c.start(p);
+        SocketAddress sa(host, port);
+        cout << "Connecting to: " << sa.asString() <<"\n";
+        c.start(p, sa);
         d.run();
     } catch (Rdma::Exception& e) {
         int err = e.getError();

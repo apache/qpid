@@ -152,8 +152,7 @@ int main(int argc, char* argv[]) {
         boost::shared_ptr<Poller> p(new Poller());
         Dispatcher d(p);
 
-        SocketAddress sa("", port);
-        Rdma::Listener a(sa,
+        Rdma::Listener a(
             Rdma::ConnectionParams(16384, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(connected, p, _1),
             connectionError,
@@ -161,7 +160,8 @@ int main(int argc, char* argv[]) {
             connectionRequest);
 
 
-        a.start(p);
+        SocketAddress sa("", port);
+        a.start(p, sa);
         d.run();
     } catch (Rdma::Exception& e) {
         int err = e.getError();
