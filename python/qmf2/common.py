@@ -34,15 +34,6 @@ except ImportError:
 ## Constants
 ##
 
-
-AMQP_QMF_AGENT_LOCATE = "agent.locate"
-AMQP_QMF_AGENT_INDICATION = "agent.ind"
-AMQP_QMF_AGENT_EVENT="agent.event"
-# agent.ind[.<agent-name>]
-# agent.event.<sev>.<agent-name>
-# sev="strings"
-#
-
 AMQP_QMF_SUBJECT = "qmf"
 AMQP_QMF_VERSION = 4
 AMQP_QMF_SUBJECT_FMT = "%s%d.%s"
@@ -168,38 +159,102 @@ class WorkItem(object):
 
 class QmfAddress(object):
     """
+    Address format: "qmf.<domain>.[topic|direct]/<subject>"
     TBD
     """
+
     TYPE_DIRECT = "direct"
     TYPE_TOPIC = "topic"
 
     ADDRESS_FMT = "qmf.%s.%s/%s"
     DEFAULT_DOMAIN = "default"
 
+    # Directly-addressed messages:
+    # agent's direct address: "qmf.<domain>.direct/<agent-name>
+    # console's direct address: "qmf.<domain>.direct/<console-name>
 
-    def __init__(self, name, domain, type_):
-        self._name = name
+    # Well-known Topic Addresses:
+    # "qmf.<domain>.topic/<subject>
+    # Where <subject> has the following format:
+    #   "console.ind#" - indications sent from consoles
+    #   "agent.ind#" - indications sent from agents
+    #
+    # The following "well known" subjects are defined:
+    #
+    # console.ind.locate[.<agent-name>] - agent discovery request
+    # agent.ind.heartbeat[.<agent-name>"] - agent heartbeats
+    # agent.ind.event[.<severity>.<agent-name>] - events
+    # agent.ind.schema[TBD] - schema updates
+    #
+    SUBJECT_AGENT_IND="agent.ind"
+    SUBJECT_AGENT_HEARTBEAT = "agent.ind.heartbeat"
+    SUBJECT_AGENT_EVENT="agent.ind.event"
+    SUBJECT_AGENT_SCHEMA="agent.ind.schema"
+
+    SUBJECT_CONSOLE_IND="console.ind"
+    SUBJECT_CONSOLE_LOCATE_AGENT="console.ind.locate"
+    
+
+
+    def __init__(self, subject, domain, type_):
+        if '/' in domain or '.' in domain:
+            raise Exception("domain string must not contain '/' or '.'"
+                            " characters.")
+
+        self._subject = subject
         self._domain = domain
         self._type = type_
 
-    def _direct(cls, name, _domain=None):
+    def _direct(cls, subject, _domain=None):
         if _domain is None:
             _domain = QmfAddress.DEFAULT_DOMAIN
-        return cls(name, _domain, type_=QmfAddress.TYPE_DIRECT)
+        return cls(subject, _domain, type_=QmfAddress.TYPE_DIRECT)
     direct = classmethod(_direct)
 
-    def _topic(cls, name, _domain=None):
+    def _topic(cls, subject, _domain=None):
         if _domain is None:
             _domain = QmfAddress.DEFAULT_DOMAIN
-        return cls(name, _domain, type_=QmfAddress.TYPE_TOPIC)
+        return cls(subject, _domain, type_=QmfAddress.TYPE_TOPIC)
     topic = classmethod(_topic)
 
+    def __from_string(cls, address):
+        node,subject = address.split('/',1)
+        qmf,domain,type_ = node.split('.',2)
+
+        if qmf != "qmf" or (type_ != QmfAddress.TYPE_DIRECT and 
+                            type_ != QmfAddress.TYPE_TOPIC):
+            raise ValueError("invalid QmfAddress format: %s" % address)
+
+        return cls(subject, domain, type_)
+    from_string = classmethod(__from_string)
 
     def get_address(self):
+        """
+        Return the QMF address as a string, suitable for use with the AMQP
+        messaging API.
+        """
         return str(self)
 
+    def get_node(self):
+        """
+        Return the 'node' portion of the address.
+        """
+        return self.get_address().split('/',1)[0]
+
+    def get_subject(self):
+        """
+        Return the 'subject' portion of the address.
+        """
+        return self.get_address().split('/',1)[1]
+
+    def get_domain(self):
+        return self._domain
+
+    def is_direct(self):
+        return self._type == self.TYPE_DIRECT
+
     def __repr__(self):
-        return QmfAddress.ADDRESS_FMT % (self._domain, self._type, self._name)
+        return QmfAddress.ADDRESS_FMT % (self._domain, self._type, self._subject)
 
 
 
@@ -345,14 +400,14 @@ class QmfData(_mapEncoder):
             # not override it!
             self._schema = None
 
-    def _create(cls, values, _subtypes={}, _tag=None, _object_id=None,
+    def __create(cls, values, _subtypes={}, _tag=None, _object_id=None,
                 _schema=None, _const=False):
         # timestamp in millisec since epoch UTC
         ctime = long(time.time() * 1000)
         return cls(_values=values, _subtypes=_subtypes, _tag=_tag,
                    _ctime=ctime, _utime=ctime,
                    _object_id=_object_id, _schema=_schema, _const=_const)
-    create = classmethod(_create)
+    create = classmethod(__create)
 
     def __from_map(cls, map_, _schema=None, _const=False):
         return cls(_map=map_, _schema=_schema, _const=_const)
