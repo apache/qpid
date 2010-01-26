@@ -765,6 +765,17 @@ test-bindings-additive-queue; {
     snd_b.send(m4)
     self.drain(rcv, expected=[m3, m4])
 
+  def testSubjectOverride(self):
+    snd = self.ssn.sender("amq.topic/a")
+    rcv_a = self.ssn.receiver("amq.topic/a")
+    rcv_b = self.ssn.receiver("amq.topic/b")
+    m1 = self.content("testSubjectOverride", 1)
+    m2 = self.content("testSubjectOverride", 2)
+    snd.send(m1)
+    snd.send(Message(subject="b", content=m2))
+    self.drain(rcv_a, expected=[m1])
+    self.drain(rcv_b, expected=[m2])
+
 NOSUCH_Q = "this-queue-should-not-exist"
 UNPARSEABLE_ADDR = "name/subject; {bad options"
 UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"
