@@ -92,9 +92,11 @@ class AddressImpl;
  * <li>x-properties - a nested map that can contain implementation or
  * protocol specifiec extedned properties. For the amqp 0-10 mapping,
  * the fields in queue- or exchange- declare can be specified in here;
- * anything that is not recognised as one of those will be passed
- * through in the arguments field.,/li>
- * </ul>
+ * a bindings entry may also be specified, whose value should be an
+ * array of strings of the form exchange/key; anything else will be
+ * passed through in the arguments field.
+ * </li> 
+ * </ul> 
  * </td></tr>
  * 
  * </table>
