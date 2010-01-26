@@ -452,8 +452,8 @@ namespace Rdma {
         handle.stopWatch();
     }
 
-    void ConnectionManager::start(Poller::shared_ptr poller) {
-        startConnection(ci);
+    void ConnectionManager::start(Poller::shared_ptr poller, const qpid::sys::SocketAddress& addr) {
+        startConnection(ci, addr);
         handle.startWatch(poller);
     }
 
@@ -462,7 +462,6 @@ namespace Rdma {
     }
 
     Listener::Listener(
-        const SocketAddress& src,
         const ConnectionParams& cp,
         EstablishedCallback ec,
         ErrorCallback errc,
@@ -470,15 +469,14 @@ namespace Rdma {
         ConnectionRequestCallback crc
     ) :
         ConnectionManager(errc, dc),
-        src_addr(src),
         checkConnectionParams(cp),
         connectionRequestCallback(crc),
         establishedCallback(ec)
     {
     }
 
-    void Listener::startConnection(Connection::intrusive_ptr ci) {
-        ci->bind(src_addr);
+    void Listener::startConnection(Connection::intrusive_ptr ci, const qpid::sys::SocketAddress& addr) {
+        ci->bind(addr);
         ci->listen();
     }
 
@@ -542,7 +540,6 @@ namespace Rdma {
     }
 
     Connector::Connector(
-        const SocketAddress& dst,
         const ConnectionParams& cp,
         ConnectedCallback cc,
         ErrorCallback errc,
@@ -550,15 +547,14 @@ namespace Rdma {
         RejectedCallback rc
     ) :
         ConnectionManager(errc, dc),
-        dst_addr(dst),
         connectionParams(cp),
         rejectedCallback(rc),
         connectedCallback(cc)
     {
     }
 
-    void Connector::startConnection(Connection::intrusive_ptr ci) {
-        ci->resolve_addr(dst_addr);
+    void Connector::startConnection(Connection::intrusive_ptr ci, const qpid::sys::SocketAddress& addr) {
+        ci->resolve_addr(addr);
     }
 
     void Connector::connectionEvent(Connection::intrusive_ptr ci) {

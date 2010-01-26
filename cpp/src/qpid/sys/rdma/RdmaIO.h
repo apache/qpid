@@ -160,12 +160,12 @@ namespace Rdma {
 
         virtual ~ConnectionManager();
 
-        void start(qpid::sys::Poller::shared_ptr poller);
+        void start(qpid::sys::Poller::shared_ptr polle, const qpid::sys::SocketAddress& addrr);
 
     private:
         void event(qpid::sys::DispatchHandle& handle);
 
-        virtual void startConnection(Connection::intrusive_ptr ci) = 0;
+        virtual void startConnection(Connection::intrusive_ptr ci, const qpid::sys::SocketAddress& addr) = 0;
         virtual void connectionEvent(Connection::intrusive_ptr ci) = 0;
     };
 
@@ -174,14 +174,12 @@ namespace Rdma {
 
     class Listener : public ConnectionManager
     {
-        qpid::sys::SocketAddress src_addr;
         ConnectionParams checkConnectionParams;
         ConnectionRequestCallback connectionRequestCallback;
         EstablishedCallback establishedCallback;
 
     public:
         Listener(
-            const qpid::sys::SocketAddress& src,
             const ConnectionParams& cp,
             EstablishedCallback ec,
             ErrorCallback errc,
@@ -190,7 +188,7 @@ namespace Rdma {
         );
 
     private:
-        void startConnection(Connection::intrusive_ptr ci);
+        void startConnection(Connection::intrusive_ptr ci, const qpid::sys::SocketAddress& addr);
         void connectionEvent(Connection::intrusive_ptr ci);
     };
 
@@ -199,14 +197,12 @@ namespace Rdma {
 
     class Connector : public ConnectionManager
     {
-        qpid::sys::SocketAddress dst_addr;
         ConnectionParams connectionParams;
         RejectedCallback rejectedCallback;
         ConnectedCallback connectedCallback;
 
     public:
         Connector(
-            const qpid::sys::SocketAddress& dst,
             const ConnectionParams& cp,
             ConnectedCallback cc,
             ErrorCallback errc,
@@ -215,7 +211,7 @@ namespace Rdma {
         );
 
     private:
-        void startConnection(Connection::intrusive_ptr ci);
+        void startConnection(Connection::intrusive_ptr ci, const qpid::sys::SocketAddress& addr);
         void connectionEvent(Connection::intrusive_ptr ci);
     };
 }

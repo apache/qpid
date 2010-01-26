@@ -49,7 +49,7 @@ using namespace qpid::framing;
 using boost::format;
 using boost::str;
 
-  class RdmaConnector : public Connector, public sys::Codec
+class RdmaConnector : public Connector, public sys::Codec
 {
     struct Buff;
 
@@ -164,17 +164,17 @@ void RdmaConnector::connect(const std::string& host, int port){
     Mutex::ScopedLock l(pollingLock);
     assert(!polling);
 
-    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
     Rdma::Connector* c = new Rdma::Connector(
-        sa,
         Rdma::ConnectionParams(maxFrameSize, Rdma::DEFAULT_WR_ENTRIES),
         boost::bind(&RdmaConnector::connected, this, poller, _1, _2),
         boost::bind(&RdmaConnector::connectionError, this, poller, _1, _2),
         boost::bind(&RdmaConnector::disconnected, this, poller, _1),
         boost::bind(&RdmaConnector::rejected, this, poller, _1, _2));
+
     polling = true;
 
-    c->start(poller);
+    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    c->start(poller, sa);
 }
 
 // The following only gets run when connected
