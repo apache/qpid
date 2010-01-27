@@ -21,26 +21,36 @@
 
 package org.apache.qpid.client.message;
 
-import org.apache.commons.collections.map.ReferenceMap;
-import org.apache.qpid.client.*;
-import org.apache.qpid.framing.ContentHeaderProperties;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQPInvalidClassException;
-import org.apache.qpid.jms.Message;
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.transport.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
+import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
-import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageFormatException;
-import javax.jms.DeliveryMode;
-import java.util.*;
+import javax.jms.MessageNotWriteableException;
+
+import org.apache.commons.collections.map.ReferenceMap;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.CustomJMSXProperty;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.Message;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.ExchangeQueryResult;
+import org.apache.qpid.transport.Future;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageDeliveryMode;
+import org.apache.qpid.transport.MessageDeliveryPriority;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.ReplyTo;
+import org.apache.qpid.transport.codec.BBDecoder;
+import org.apache.qpid.transport.codec.BBEncoder;
 
 /**
  * This extends AbstractAMQMessageDelegate which contains common code between
@@ -912,4 +922,18 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         return _deliveryProps;
     }
 
+    
+    public java.nio.ByteBuffer encodeMap(Map<String,Object> map)
+    {
+        BBEncoder encoder = new BBEncoder(1024);
+        encoder.writeMap(map);
+        return encoder.segment();
+    }
+    
+    public Map<String,Object> decodeMap(java.nio.ByteBuffer buf)
+    {
+       BBDecoder decoder = new BBDecoder();
+       decoder.init(buf);
+       return decoder.readMap();
+    }
 }
