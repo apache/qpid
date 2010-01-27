@@ -31,6 +31,8 @@ namespace cluster {
 
 typedef std::set<MemberId> MemberSet;
 
+std::string encodeMemberSet(const MemberSet&);
+
 MemberSet decodeMemberSet(const std::string&);
 
 MemberSet intersection(const MemberSet& a, const MemberSet& b);

@@ -36,16 +36,21 @@ QPID_AUTO_TEST_SUITE(InitialStatusMapTestSuite)
 
 typedef InitialStatusMap::Status Status;
 
-Status activeStatus(const Uuid& id=Uuid()) {
-    return Status(ProtocolVersion(), 0, true, id, STORE_STATE_NO_STORE, Uuid(), 0);
+Status activeStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet()) {
+    return Status(ProtocolVersion(), 0, true, id, STORE_STATE_NO_STORE, Uuid(), 0,
+                  encodeMemberSet(ms));
 }
 
-Status newcomerStatus(const Uuid& id=Uuid()) {
-    return Status(ProtocolVersion(), 0, false, id, STORE_STATE_NO_STORE, Uuid(), 0);
+Status newcomerStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet()) {
+    return Status(ProtocolVersion(), 0, false, id, STORE_STATE_NO_STORE, Uuid(), 0,
+                  encodeMemberSet(ms));
 }
 
-Status storeStatus(bool active, StoreState state, Uuid start=Uuid(), Uuid stop=Uuid()) {
-    return Status(ProtocolVersion(), 0, active, start, state, stop, 0);
+Status storeStatus(bool active, StoreState state, Uuid start=Uuid(), Uuid stop=Uuid(),
+                   const MemberSet& ms=MemberSet())
+{
+    return Status(ProtocolVersion(), 0, active, start, state, stop, 0, 
+                  encodeMemberSet(ms));
 }
 
 QPID_AUTO_TEST_CASE(testFirstInCluster) {
@@ -56,7 +61,7 @@ QPID_AUTO_TEST_CASE(testFirstInCluster) {
     MemberSet members = list_of(MemberId(0));
     map.configChange(members);
     BOOST_CHECK(!map.isComplete());
-    map.received(MemberId(0), newcomerStatus(id));
+    map.received(MemberId(0), newcomerStatus(id, list_of<MemberId>(0)));
     BOOST_CHECK(map.isComplete());
     BOOST_CHECK(map.transitionToComplete());
     BOOST_CHECK(map.getElders().empty());
@@ -96,9 +101,9 @@ QPID_AUTO_TEST_CASE(testMultipleFirstInCluster) {
     BOOST_CHECK(map.isResendNeeded());
 
     // All new members
-    map.received(MemberId(0), newcomerStatus(id));
-    map.received(MemberId(1), newcomerStatus());
-    map.received(MemberId(2), newcomerStatus());
+    map.received(MemberId(0), newcomerStatus(id, list_of<MemberId>(0)(1)(2)));
+    map.received(MemberId(1), newcomerStatus(id, list_of<MemberId>(0)(1)(2)));
+    map.received(MemberId(2), newcomerStatus(id, list_of<MemberId>(0)(1)(2)));
     BOOST_CHECK(!map.isResendNeeded());
     BOOST_CHECK(map.isComplete());
     BOOST_CHECK(map.transitionToComplete());
@@ -108,21 +113,20 @@ QPID_AUTO_TEST_CASE(testMultipleFirstInCluster) {
 }
 
 QPID_AUTO_TEST_CASE(testMultipleJoinExisting) {
-    // Multiple members 1,2,3 join existing cluster containing 0.
+    // Multiple members 2,3 join simultaneously a cluster containing 0,1.
     InitialStatusMap map(MemberId(2), 1); // self is 2
     Uuid id(true);
     MemberSet members = list_of(MemberId(0))(MemberId(1))(MemberId(2))(MemberId(3));
     map.configChange(members);
     BOOST_CHECK(map.isResendNeeded());
-
-    map.received(MemberId(1), newcomerStatus());
-    map.received(MemberId(2), newcomerStatus());
-    map.received(MemberId(3), newcomerStatus());
-    map.received(MemberId(0), activeStatus(id));
+    map.received(MemberId(0), activeStatus(id, list_of<MemberId>(0)));
+    map.received(MemberId(1), newcomerStatus(id, list_of<MemberId>(0)(1)));
+    map.received(MemberId(2), newcomerStatus(id, list_of<MemberId>(0)(1)(2)(3)));
+    map.received(MemberId(3), newcomerStatus(id, list_of<MemberId>(0)(1)(2)(3)));
     BOOST_CHECK(!map.isResendNeeded());
     BOOST_CHECK(map.isComplete());
     BOOST_CHECK(map.transitionToComplete());
-    BOOST_CHECK_EQUAL(map.getElders(), list_of(MemberId(0))(MemberId(3)));
+    BOOST_CHECK_EQUAL(map.getElders(), list_of<MemberId>(0)(1)(3));
     BOOST_CHECK(map.isUpdateNeeded());
     BOOST_CHECK_EQUAL(map.getClusterId(), id);
 }
