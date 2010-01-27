@@ -54,7 +54,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     qpid::messaging::Message get(qpid::sys::Duration timeout);
     bool fetch(qpid::messaging::Message& message, qpid::sys::Duration timeout);
     qpid::messaging::Message fetch(qpid::sys::Duration timeout);
-    void cancel();
+    void close();
     void start();
     void stop();
     const std::string& getName() const;
@@ -81,7 +81,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     //implementation of public facing methods
     bool fetchImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
     bool getImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
-    void cancelImpl();
+    void closeImpl();
     void setCapacityImpl(uint32_t);
 
     //functors for public facing methods (allows locking and retry
@@ -115,10 +115,10 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
         void operator()() { result = impl.fetchImpl(message, timeout); }
     };
 
-    struct Cancel : Command
+    struct Close : Command
     {
-        Cancel(ReceiverImpl& i) : Command(i) {}
-        void operator()() { impl.cancelImpl(); }
+        Close(ReceiverImpl& i) : Command(i) {}
+        void operator()() { impl.closeImpl(); }
     };
 
     struct SetCapacity : Command

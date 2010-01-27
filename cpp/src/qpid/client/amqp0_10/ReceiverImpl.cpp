@@ -68,9 +68,9 @@ bool ReceiverImpl::fetch(qpid::messaging::Message& message, qpid::sys::Duration 
     return f.result;
 }
 
-void ReceiverImpl::cancel() 
+void ReceiverImpl::close() 
 { 
-    execute<Cancel>();
+    execute<Close>();
 }
 
 void ReceiverImpl::start()
@@ -167,7 +167,7 @@ bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::sys::Durat
     }
 }
 
-void ReceiverImpl::cancelImpl() 
+void ReceiverImpl::closeImpl() 
 { 
     if (state != CANCELLED) {
         state = CANCELLED;

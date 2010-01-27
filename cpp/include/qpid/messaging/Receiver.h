@@ -110,7 +110,7 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
     /**
      * Cancels this receiver.
      */
-    QPID_CLIENT_EXTERN void cancel();
+    QPID_CLIENT_EXTERN void close();
 
     /**
      * Returns the name of this receiver.

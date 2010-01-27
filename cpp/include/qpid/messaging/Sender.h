@@ -50,7 +50,7 @@ class Sender : public qpid::client::Handle<SenderImpl>
     QPID_CLIENT_EXTERN Sender& operator=(const Sender&);
 
     QPID_CLIENT_EXTERN void send(const Message& message);
-    QPID_CLIENT_EXTERN void cancel();
+    QPID_CLIENT_EXTERN void close();
 
     /**
      * Sets the capacity for the sender. The capacity determines how

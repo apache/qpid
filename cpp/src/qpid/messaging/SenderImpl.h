@@ -37,7 +37,7 @@ class SenderImpl : public virtual qpid::RefCounted
   public:
     virtual ~SenderImpl() {}
     virtual void send(const Message& message) = 0;
-    virtual void cancel() = 0;
+    virtual void close() = 0;
     virtual void setCapacity(uint32_t) = 0;
     virtual uint32_t getCapacity() = 0;
     virtual uint32_t pending() = 0;

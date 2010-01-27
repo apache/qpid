@@ -40,7 +40,7 @@ Sender::Sender(const Sender& s) : qpid::client::Handle<SenderImpl>() { PI::copy(
 Sender::~Sender() { PI::dtor(*this); }
 Sender& Sender::operator=(const Sender& s) { return PI::assign(*this, s); }
 void Sender::send(const Message& message) { impl->send(message); }
-void Sender::cancel() { impl->cancel(); }
+void Sender::close() { impl->close(); }
 void Sender::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Sender::getCapacity() { return impl->getCapacity(); }
 uint32_t Sender::pending() { return impl->pending(); }
