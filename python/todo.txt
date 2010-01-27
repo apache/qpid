@@ -68,11 +68,13 @@ Session:
       + need to detail address options
       + need to define subject pattern semantics
       + consider providing convenience for sender/receiver caching
+      + need to provide sync option, possibly change default
 
     - receiver: F, NR, ND
       + need to detail address options
       + need to define filter syntax/semantics
       + consider providing convenience for sender/receiver caching
+      + need to provide sync option, possibly change default
 
     - acknowledge: F, NR
 
@@ -158,6 +160,8 @@ Message:
 Address:
 
   - syntax: F, NR
+    + need to consider whitespace in name/subject
+    + consider unquoted string concept
   - subject related changes, e.g. allowing patterns on both ends: NF
   - creating/deleting queues/exchanges F, NR
     + need to handle cleanup of temp queues/topics: F, NR
