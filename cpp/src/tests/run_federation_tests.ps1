@@ -40,7 +40,7 @@ if (!(Test-Path $prog)) {
     "Cannot locate qpidd.exe"
     exit 1
 }
-$cmdline = "$prog --auth=no --no-module-dir --port=0 --log-to-file qpidd.log $args | foreach { set-content qpidd.port `$_ }"
+$cmdline = "$prog --auth=no --no-module-dir --no-data-dir --port=0 --ssl-port=0 --log-to-file qpidd.log $args | foreach { set-content qpidd.port `$_ }"
 $cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
 
 function start_brokers {
@@ -70,8 +70,9 @@ trap {
 
 &start_brokers
 "Running federation tests using brokers on ports $env:LOCAL_PORT $env:REMOTE_PORT"
-$env:PYTHONPATH=$PYTHON_DIR
-python $srcdir/federation.py -v -s $srcdir\..\..\..\specs\amqp.0-10-qpid-errata.xml -b localhost:$env:LOCAL_PORT --remote-port $env:REMOTE_PORT $args
+$env:PYTHONPATH="$PYTHON_DIR;$srcdir"
+$tests = "*"
+Invoke-Expression "python $PYTHON_DIR/qpid-python-test -m federation -b localhost:$env:LOCAL_PORT -Dremote-port=$env:REMOTE_PORT $tests" | Out-Default
 $RETCODE=$LASTEXITCODE
 &stop_brokers
 if ($RETCODE -ne 0) {
