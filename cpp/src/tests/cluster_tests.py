@@ -31,6 +31,12 @@ log = getLogger("qpid.cluster_tests")
 # Import scripts as modules
 qpid_cluster=import_script(checkenv("QPID_CLUSTER_EXEC"))
 
+def readfile(filename):
+    """Returns te content of file named filename as a string"""
+    f = file(filename)
+    try: return f.read()
+    finally: f.close()
+
 class ShortTests(BrokerTest):
     """Short cluster functionality tests."""
 
@@ -81,7 +87,7 @@ class ShortTests(BrokerTest):
 
         # Now update a new member and compare their dumps.
         cluster.start(args=["--test-store-dump", "updatee.dump"])
-        assert file("direct.dump").read() == file("updatee.dump").read()
+        assert readfile("direct.dump") == readfile("updatee.dump")
         os.remove("direct.dump")
         os.remove("updatee.dump")
         
@@ -94,14 +100,14 @@ class ShortTests(BrokerTest):
         cluster.start()
 
         update_re = re.compile(r"member update: (.*) frameSeq=[0-9]+ configSeq=([0-9]+)")
-        matches = [ update_re.search(file(b.log).read()) for b in cluster ]
+        matches = [ update_re.search(readfile(b.log)) for b in cluster ]
         sequences = [ m.group(2) for m in matches]
         self.assertEqual(sequences, ["0", "1", "3"])
 
         # Check that configurations with same seq. number match
         configs={}
         for b in cluster:
-            matches = update_re.findall(file(b.log).read())
+            matches = update_re.findall(readfile(b.log))
             for m in matches:
                 seq=m[1]
                 config=re.sub("\((member|unknown)\)", "", m[0])
@@ -142,6 +148,62 @@ class LongTests(BrokerTest):
         receiver.stop(sender.sent)
         for i in range(i, len(cluster)): cluster[i].kill()
 
+    def test_management(self):
+        """Run management in conjunction with other traffic."""
+        # Publish often to provoke errors
+        args=["--mgmt-pub-interval", 1]
+        # Use store if present
+        if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
+
+        class ClientLoop(StoppableThread):
+            """Run an infinite client loop."""
+            def __init__(self, broker, cmd):
+                StoppableThread.__init__(self)
+                self.broker=broker
+                self.cmd = cmd
+                self.lock = Lock()
+                self.process = None
+                self.stopped = False
+                self.start()
+
+            def run(self):
+                try:
+                    while True:
+                        self.lock.acquire()
+                        try:
+                            if self.stopped: break
+                            self.process = self.broker.test.popen(self.cmd,
+                                                                  expect=EXPECT_UNKNOWN)
+                        finally: self.lock.release()
+                        try: exit = self.process.wait()
+                        except: exit = 1
+                        self.lock.acquire()
+                        try:
+                            if exit != 0 and not self.stopped:
+                                self.process.unexpected("bad exit status in client loop")
+                        finally: self.lock.release()
+                except Exception, e:
+                    error=e
+
+            def stop(self):
+                self.lock.acquire()
+                try:
+                    self.stopped = True
+                    try: self.process.terminate()
+                    except: pass
+                finally: self.lock.release()
+                StoppableThread.stop(self)
+        cluster = self.cluster(3, args)
+        clients = []
+        for b in cluster:
+            clients.append(ClientLoop(b, ["perftest", "--count", "100", "--port", b.port()]))
+            clients.append(ClientLoop(b, ["qpid-queue-stats", "-a", "localhost:%s" %(b.port())]))
+        endtime = time.time() + self.duration()
+        while time.time() < endtime:
+            for b in cluster: b.ready() # Will raise if broker crashed.
+            time.sleep(1)
+        for c in clients:
+            c.stop()
 
 class StoreTests(BrokerTest):
     """
@@ -255,8 +317,8 @@ class StoreTests(BrokerTest):
         self.assertRaises(Exception, lambda: a.ready())
         self.assertRaises(Exception, lambda: b.ready())
         msg = re.compile("critical.*no clean store")
-        assert msg.search(file(a.log).read())
-        assert msg.search(file(b.log).read())
+        assert msg.search(readfile(a.log))
+        assert msg.search(readfile(b.log))
 
         # FIXME aconway 2009-12-03: verify manual restore procedure
 
