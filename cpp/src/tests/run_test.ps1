@@ -30,15 +30,11 @@ $env:BOOST_TEST_SHOW_PROGRESS = "yes"
 # one level up.
 $prog = $args[0]
 $is_script = $prog -match ".ps1$"
-if (Test-Path $prog) {
-   $env:QPID_LIB_DIR = ".."
-   $env:PATH += ";.."
-}
-else {
+if (!$is_script) {
    . $srcdir\find_prog.ps1 $prog
    $args[0] = $prog
    $env:QPID_LIB_DIR = "..\$sub"
-   $env:PATH += "$dir\$sub;..\$sub"
+   $env:PATH += ";$dir\$sub;..\$sub"
 }
 
 # If qpidd.port exists and is not empty run test with QPID_PORT set.
