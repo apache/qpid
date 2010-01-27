@@ -179,9 +179,7 @@ class Driver:
     if self.connection.host:
       self._sasl.setAttr("host", self.connection.host)
     options = self.connection.options
-    service = options.get("service", self.connection.host)
-    if service:
-      self._sasl.setAttr("service", service)
+    self._sasl.setAttr("service", options.get("service", "qpidd"))
     if "min_ssf" in options:
       self._sasl.setAttr("minssf", options["min_ssf"])
     if "max_ssf" in options:
@@ -229,9 +227,9 @@ class Driver:
     try:
       data = self._socket.recv(64*1024)
       if data:
+        rawlog.debug("READ[%s]: %r", self.log_id, data)
         if self._sasl_decode:
           data = self._sasl.decode(data)
-        rawlog.debug("READ[%s]: %r", self.log_id, data)
       else:
         rawlog.debug("ABORTED[%s]: %s", self.log_id, self._socket.getpeername())
         error = "connection aborted"
