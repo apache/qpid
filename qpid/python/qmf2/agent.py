@@ -24,7 +24,7 @@ import Queue
 from threading import Thread, Lock, currentThread
 from qpid.messaging import Connection, Message, Empty, SendError
 from uuid import uuid4
-from common import (makeSubject, parseSubject, OpCode, QmfQuery,
+from common import (make_subject, parse_subject, OpCode, QmfQuery,
                     SchemaObjectClass, MsgKey, QmfData, QmfAddress,
                     SchemaClass, SchemaClassId, WorkItem, SchemaMethod) 
 
@@ -174,7 +174,7 @@ class Agent(Thread):
             # kick my thread to wake it up
             try:
                 msg = Message(properties={"method":"request",
-                                          "qmf.subject":makeSubject(OpCode.noop)},
+                                          "qmf.subject":make_subject(OpCode.noop)},
                               subject=self.name,
                               content={"noop":"noop"})
 
@@ -240,7 +240,7 @@ class Agent(Thread):
         msg = Message(subject=QmfAddress.SUBJECT_AGENT_EVENT + "." +
                       qmfEvent.get_severity() + "." + self.name,
                       properties={"method":"response",
-                                  "qmf.subject":makeSubject(OpCode.event_ind)},
+                                  "qmf.subject":make_subject(OpCode.event_ind)},
                       content={MsgKey.event:_map})
         # TRACE
         # logging.error("!!! Agent %s sending Event (%s)" % 
@@ -292,7 +292,7 @@ class Agent(Thread):
             _map[SchemaMethod.KEY_ERROR] = _error.map_encode()
 
         msg = Message( properties={"method":"response",
-                                   "qmf.subject":makeSubject(OpCode.response)},
+                                   "qmf.subject":make_subject(OpCode.response)},
                        content={MsgKey.method:_map})
         msg.correlation_id = handle.correlation_id
 
@@ -386,7 +386,7 @@ class Agent(Thread):
         _map = {"_name": self.get_name(),
                 "_schema_timestamp": self._schema_timestamp}
         return Message(properties={"method":"response",
-                                   "qmf.subject":makeSubject(OpCode.agent_ind)},
+                                   "qmf.subject":make_subject(OpCode.agent_ind)},
                        content={MsgKey.agent_info: _map})
 
     def _send_reply(self, msg, reply_to):
@@ -397,8 +397,7 @@ class Agent(Thread):
             try:
                 reply_to = QmfAddress.from_string(str(reply_to))
             except ValueError:
-                logging.error("Invalid reply-to address '%s'" %
-                              handle.reply_to)
+                logging.error("Invalid reply-to address '%s'" % reply_to)
 
         msg.subject = reply_to.get_subject()
 
@@ -426,7 +425,7 @@ class Agent(Thread):
         """
         logging.debug( "Message received from Console! [%s]" % msg )
         try:
-            version,opcode = parseSubject(msg.properties.get("qmf.subject"))
+            version,opcode = parse_subject(msg.properties.get("qmf.subject"))
         except:
             logging.warning("Ignoring unrecognized message '%s'" % msg.subject)
             return
@@ -541,7 +540,7 @@ class Agent(Thread):
         finally:
             self._lock.release()
 
-        m = Message(properties={"qmf.subject":makeSubject(OpCode.data_ind),
+        m = Message(properties={"qmf.subject":make_subject(OpCode.data_ind),
                                 "method":"response"},
                     content={MsgKey.package_info: pnames} )
         if msg.correlation_id != None:
@@ -583,7 +582,7 @@ class Agent(Thread):
             content = {MsgKey.schema:schemas}
 
         m = Message(properties={"method":"response",
-                                "qmf.subject":makeSubject(OpCode.data_ind)},
+                                "qmf.subject":make_subject(OpCode.data_ind)},
                     content=content )
         if msg.correlation_id != None:
             m.correlation_id = msg.correlation_id
@@ -626,7 +625,7 @@ class Agent(Thread):
             content = {MsgKey.data_obj:data_objs}
 
         m = Message(properties={"method":"response",
-                                "qmf.subject":makeSubject(OpCode.data_ind)},
+                                "qmf.subject":make_subject(OpCode.data_ind)},
                     content=content )
         if msg.correlation_id != None:
             m.correlation_id = msg.correlation_id
@@ -688,8 +687,7 @@ class QmfAgentData(QmfData):
 
 if __name__ == '__main__':
     # static test cases - no message passing, just exercise API
-    from common import (AgentName, SchemaProperty, qmfTypes,
-                           SchemaMethod, SchemaEventClass)
+    from common import (AgentName, SchemaProperty, qmfTypes, SchemaEventClass)
 
     logging.getLogger().setLevel(logging.INFO)
 
