@@ -44,8 +44,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     public static final String MIME_TYPE = "jms/map-message";
 
-
-    private Map<String, Object> _map = new HashMap<String, Object>();
+    protected Map<String, Object> _map = new HashMap<String, Object>();
 
     public JMSMapMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException
     {
@@ -459,7 +458,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         return _map.containsKey(propName);
     }
 
-    private void populateMapFromData() throws JMSException
+    protected void populateMapFromData() throws JMSException
     {
         if (_data != null)
         {
@@ -479,7 +478,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         }
     }
 
-    private void writeMapToData()
+    protected void writeMapToData()
     {
         allocateInitialBuffer();
         final int size = _map.size();

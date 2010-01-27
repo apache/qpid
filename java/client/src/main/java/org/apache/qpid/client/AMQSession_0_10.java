@@ -61,6 +61,11 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.apache.qpid.client.message.AMQPEncodedMapMessage;
+import org.apache.qpid.client.message.JMSMapMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+
 /**
  * This is a 0.10 Session
  */
@@ -122,6 +127,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private TimerTask flushTask = null;
     private RangeSet unacked = new RangeSet();
     private int unackedCount = 0;
+    private boolean useAMQPEncodedMapMessage = !Boolean.getBoolean("qpid.use_legacy_map_message");
 
     /**
      * USed to store the range of in tx messages
@@ -933,4 +939,17 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return AMQMessageDelegateFactory.FACTORY_0_10;
     }
 
+    @ Override
+    public MapMessage createMapMessage() throws JMSException
+    {
+        checkNotClosed();
+        if (useAMQPEncodedMapMessage)
+        {
+            return new AMQPEncodedMapMessage(AMQMessageDelegateFactory.FACTORY_0_10);
+        }
+        else
+        {
+            return new JMSMapMessage(AMQMessageDelegateFactory.FACTORY_0_10);
+        }
+    }
 }

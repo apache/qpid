@@ -49,7 +49,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
 
 
 
-    private AMQMessageDelegate _delegate;
+    protected AMQMessageDelegate _delegate;
     private boolean _redelivered;
 
     protected AbstractJMSMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
@@ -379,6 +379,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
             buf.append("\nJMS Destination: ").append(getJMSDestination());
             buf.append("\nJMS Type: ").append(getJMSType());
             buf.append("\nJMS MessageID: ").append(getJMSMessageID());
+            buf.append("\nJMS Content-Type: ").append(getContentType());
             buf.append("\nAMQ message number: ").append(getDeliveryTag());
 
             buf.append("\nProperties:");

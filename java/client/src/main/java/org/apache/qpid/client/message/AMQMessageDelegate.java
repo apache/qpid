@@ -25,7 +25,10 @@ import org.apache.qpid.client.AMQSession;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
+
+import java.nio.ByteBuffer;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.UUID;
 
 public interface AMQMessageDelegate
@@ -134,4 +137,8 @@ public interface AMQMessageDelegate
     long getDeliveryTag();
 
     void setJMSMessageID(final UUID messageId) throws JMSException;
+    
+    ByteBuffer encodeMap(Map<String,Object> map);
+    
+    Map<String,Object> decodeMap(ByteBuffer buf);
 }
