@@ -134,7 +134,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
         self.console.enable_agent_discovery()
 
         agent1_found = agent2_found = False
@@ -177,7 +177,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         query = qmf2.common.QmfQuery.create_predicate(
                            qmf2.common.QmfQuery.TARGET_AGENT,
@@ -223,7 +223,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
         self.console.enable_agent_discovery()
 
         agent1_found = agent2_found = False
@@ -316,7 +316,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         agent1 = self.console.find_agent("agent1", timeout=3)
         self.assertTrue(agent1 and agent1.get_name() == "agent1")
@@ -327,7 +327,7 @@ class BaseTest(unittest.TestCase):
         agent2 = self.console.find_agent("agent2", timeout=3)
         self.assertTrue(agent2 and agent2.get_name() == "agent2")
 
-        self.console.removeConnection(self.conn, 10)
+        self.console.remove_connection(self.conn, 10)
         self.console.destroy(10)
 
 
@@ -349,7 +349,7 @@ class BaseTest(unittest.TestCase):
                                              self.broker.user,
                                              self.broker.password)
             conn.connect()
-            console.addConnection(conn)
+            console.add_connection(conn)
             console.enable_agent_discovery()
             self.consoles.append(console)
 
@@ -453,7 +453,7 @@ class BaseTest(unittest.TestCase):
                                              self.broker.user,
                                              self.broker.password)
             conn.connect()
-            console.addConnection(conn)
+            console.add_connection(conn)
             self.consoles.append(console)
 
         agent1 = self.consoles[0].find_agent("agent1", timeout=3)

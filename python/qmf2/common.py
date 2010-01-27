@@ -74,14 +74,14 @@ class OpCode(object):
 
 
 
-def makeSubject(_code): 
+def make_subject(_code): 
     """
     Create a message subject field value.
     """
     return AMQP_QMF_SUBJECT_FMT % (AMQP_QMF_SUBJECT, AMQP_QMF_VERSION, _code)
 
 
-def parseSubject(_sub):
+def parse_subject(_sub):
     """
     Deconstruct a subject field, return version,opcode values
     """
@@ -1273,7 +1273,7 @@ class qmfDirection(object):
 
 
 
-def _toBool( param ):
+def _to_bool( param ):
     """
     Helper routine to convert human-readable representations of
     boolean values to python bool types.
@@ -1484,15 +1484,15 @@ class SchemaProperty(_mapEncoder):
                 if value not in self._access_strings:
                     raise TypeError("invalid value for access parameter: '%s':" % value )
                 self._access = value
-            elif key == "index"   : self._isIndex = _toBool(value)
-            elif key == "optional": self._isOptional = _toBool(value)
+            elif key == "index"   : self._isIndex = _to_bool(value)
+            elif key == "optional": self._isOptional = _to_bool(value)
             elif key == "unit"    : self._unit    = value
             elif key == "min"     : self._min     = value
             elif key == "max"     : self._max     = value
             elif key == "maxlen"  : self._maxlen  = value
             elif key == "desc"    : self._desc    = value
             elif key == "reference" : self._reference = value
-            elif key == "parent_ref"   : self._isParentRef = _toBool(value)
+            elif key == "parent_ref"   : self._isParentRef = _to_bool(value)
             elif key == "dir":
                 value = str(value).upper()
                 if value not in self._dir_strings:
@@ -1510,27 +1510,27 @@ class SchemaProperty(_mapEncoder):
         return cls(_map=map_)
     from_map = classmethod(_from_map)
 
-    def getType(self): return self._type
+    def get_type(self): return self._type
 
-    def getAccess(self): return self._access
+    def get_access(self): return self._access
 
     def is_optional(self): return self._isOptional
 
-    def isIndex(self): return self._isIndex
+    def is_index(self): return self._isIndex
 
-    def getUnit(self): return self._unit
+    def get_unit(self): return self._unit
 
-    def getMin(self): return self._min
+    def get_min(self): return self._min
 
-    def getMax(self): return self._max
+    def get_max(self): return self._max
 
-    def getMaxLen(self): return self._maxlen
+    def get_max_len(self): return self._maxlen
 
-    def getDesc(self): return self._desc
+    def get_desc(self): return self._desc
 
-    def getReference(self): return self._reference
+    def get_reference(self): return self._reference
 
-    def isParentRef(self): return self._isParentRef
+    def is_parent_ref(self): return self._isParentRef
 
     def get_direction(self): return self._dir
 
@@ -1559,7 +1559,7 @@ class SchemaProperty(_mapEncoder):
     def __repr__(self): 
         return "SchemaProperty=<<" + str(self.map_encode()) + ">>"
 
-    def _updateHash(self, hasher):
+    def _update_hash(self, hasher):
         """
         Update the given hash object with a hash computed over this schema.
         """
@@ -1663,13 +1663,13 @@ class SchemaMethod(_mapEncoder):
         result += ")>>"
         return result
 
-    def _updateHash(self, hasher):
+    def _update_hash(self, hasher):
         """
         Update the given hash object with a hash computed over this schema.
         """
         for name,val in self._arguments.iteritems():
             hasher.update(name)
-            val._updateHash(hasher)
+            val._update_hash(hasher)
         if self._desc: hasher.update(self._desc)
 
 
@@ -1738,7 +1738,7 @@ class SchemaClass(QmfData):
         md5Hash.update(self._classId.get_type())
         for name,x in self._values.iteritems():
             md5Hash.update(name)
-            x._updateHash( md5Hash )
+            x._update_hash( md5Hash )
         for name,value in self._subtypes.iteritems():
             md5Hash.update(name)
             md5Hash.update(value)

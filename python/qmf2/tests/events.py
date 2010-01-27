@@ -168,7 +168,7 @@ class BaseTest(unittest.TestCase):
         except qpid.messaging.ConnectError, e:
             raise Skipped(e)
 
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         # find the agents
         for aname in ["agent1", "agent2"]:

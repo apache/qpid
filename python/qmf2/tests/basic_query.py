@@ -187,14 +187,14 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT_ID)
-            oid_list = self.console.doQuery(agent, query)
+            oid_list = self.console.do_query(agent, query)
 
             self.assertTrue(isinstance(oid_list, type([])), 
                             "Unexpected return type")
@@ -219,7 +219,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
@@ -227,7 +227,7 @@ class BaseTest(unittest.TestCase):
 
             for oid in ['100a name', '99another name', '01545']:
                 query = QmfQuery.create_id(QmfQuery.TARGET_OBJECT, oid)
-                obj_list = self.console.doQuery(agent, query)
+                obj_list = self.console.do_query(agent, query)
 
                 self.assertTrue(isinstance(obj_list, type([])), 
                                 "Unexpected return type")
@@ -261,14 +261,14 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_PACKAGES)
-            package_list = self.console.doQuery(agent, query)
+            package_list = self.console.do_query(agent, query)
             self.assertTrue(len(package_list) == 1)
             self.assertTrue('MyPackage' in package_list)
 
@@ -289,7 +289,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
@@ -300,7 +300,7 @@ class BaseTest(unittest.TestCase):
                     {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE, 
                                        "MyPackage"]}))
 
-            schema_list = self.console.doQuery(agent, query)
+            schema_list = self.console.do_query(agent, query)
             self.assertTrue(len(schema_list))
             for schema in schema_list:
                 self.assertTrue(schema.get_class_id().get_package_name() ==
@@ -323,7 +323,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
@@ -334,7 +334,7 @@ class BaseTest(unittest.TestCase):
                     {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE, 
                                        "No-Such-Package"]}))
 
-            schema_list = self.console.doQuery(agent, query)
+            schema_list = self.console.do_query(agent, query)
             self.assertTrue(len(schema_list) == 0)
 
         self.console.destroy(10)
