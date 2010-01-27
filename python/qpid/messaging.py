@@ -75,8 +75,7 @@ class Connection:
   """
 
   @static
-  def open(host, port=None, username="guest", password="guest",
-           mechanism="PLAIN", heartbeat=None, **options):
+  def open(host, port=None, username="guest", password="guest", **options):
     """
     Creates an AMQP connection and connects it to the given host and port.
 
@@ -87,12 +86,11 @@ class Connection:
     @rtype: Connection
     @return: a connected Connection
     """
-    conn = Connection(host, port, username, password, mechanism, heartbeat, **options)
+    conn = Connection(host, port, username, password, **options)
     conn.connect()
     return conn
 
-  def __init__(self, host, port=None, username="guest", password="guest",
-               mechanism="PLAIN", heartbeat=None, **options):
+  def __init__(self, host, port=None, username="guest", password="guest", **options):
     """
     Creates a connection. A newly created connection must be connected
     with the Connection.connect() method before it can be used.
@@ -108,8 +106,9 @@ class Connection:
     self.port = default(port, AMQP_PORT)
     self.username = username
     self.password = password
-    self.mechanism = mechanism
-    self.heartbeat = heartbeat
+    self.mechanisms = options.get("mechanisms")
+    self.heartbeat = options.get("heartbeat")
+    self.options = options
 
     self.id = str(uuid4())
     self.session_counter = 0

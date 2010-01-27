@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import address, compat, connection, socket, struct, sys, time
+import address, compat, connection, sasl, socket, struct, sys, time
 from concurrency import synchronized
 from datatypes import RangedSet, Serial
 from exceptions import Timeout, VersionError
@@ -171,6 +171,24 @@ class Driver:
     self._op_dec = OpDecoder()
     self._timeout = None
 
+    self._sasl = sasl.Client()
+    if self.connection.username:
+      self._sasl.setAttr("username", self.connection.username)
+    if self.connection.password:
+      self._sasl.setAttr("password", self.connection.password)
+    if self.connection.host:
+      self._sasl.setAttr("host", self.connection.host)
+    options = self.connection.options
+    if "service" in options:
+      self._sasl.setAttr("service", options["service"])
+    if "min_ssf" in options:
+      self._sasl.setAttr("minssf", options["min_ssf"])
+    if "max_ssf" in options:
+      self._sasl.setAttr("maxssf", options["max_ssf"])
+    self._sasl.init()
+    self._sasl_encode = False
+    self._sasl_decode = False
+
     for ssn in self.connection.sessions.values():
       for m in ssn.acked + ssn.unacked + ssn.incoming:
         m._transfer_id = None
@@ -210,6 +228,8 @@ class Driver:
     try:
       data = self._socket.recv(64*1024)
       if data:
+        if self._sasl_decode:
+          data = self._sasl.decode(data)
         rawlog.debug("READ[%s]: %r", self.log_id, data)
       else:
         rawlog.debug("ABORTED[%s]: %s", self.log_id, self._socket.getpeername())
@@ -287,7 +307,10 @@ class Driver:
     self._op_enc.write(op)
     self._seg_enc.write(*self._op_enc.read())
     self._frame_enc.write(*self._seg_enc.read())
-    self._buf += self._frame_enc.read()
+    bytes = self._frame_enc.read()
+    if self._sasl_encode:
+      bytes = self._sasl.encode(bytes)
+    self._buf += bytes
 
   def do_header(self, hdr):
     cli_major = 0; cli_minor = 10
@@ -297,11 +320,17 @@ class Driver:
                          (cli_major, cli_minor, major, minor))
 
   def do_connection_start(self, start):
-    # XXX: should we use some sort of callback for this?
-    r = "\0%s\0%s" % (self.connection.username, self.connection.password)
-    m = self.connection.mechanism
+    if self.connection.mechanisms:
+      mechs = [m for m in start.mechanisms if m in self.connection.mechanisms]
+    else:
+      mechs = start.mechanisms
+    mech, initial = self._sasl.start(" ".join(mechs))
     self.write_op(ConnectionStartOk(client_properties=CLIENT_PROPERTIES,
-                                    mechanism=m, response=r))
+                                    mechanism=mech, response=initial))
+
+  def do_connection_secure(self, secure):
+    resp = self._sasl.step(secure.challenge)
+    self.write_op(ConnectionSecureOk(response=resp))
 
   def do_connection_tune(self, tune):
     # XXX: is heartbeat protocol specific?
@@ -310,9 +339,11 @@ class Driver:
     self.write_op(ConnectionTuneOk(heartbeat=self.connection.heartbeat,
                                    channel_max=self.channel_max))
     self.write_op(ConnectionOpen())
+    self._sasl_encode = True
 
   def do_connection_open_ok(self, open_ok):
     self._connected = True
+    self._sasl_decode = True
 
   def connection_heartbeat(self, hrt):
     self.write_op(ConnectionHeartbeat())
