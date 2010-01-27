@@ -95,6 +95,11 @@
       <field name="frame-seq" type="sequence-no"/>
     </control>
 
+    <!-- Synchronize periodic timer tasks across the cluster -->
+    <control name="periodic-timer" code="0x15">
+      <field name="name" type="str16"/>
+    </control>
+
     <!-- Shut down the entire cluster -->
     <control name="shutdown" code="0x20">
       <field name="shutdown-id" type="uuid"/>
