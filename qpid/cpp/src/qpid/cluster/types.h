@@ -59,7 +59,7 @@ struct MemberId : std::pair<uint32_t, uint32_t> {
     uint32_t getPid() const { return second; }
     operator uint64_t() const { return (uint64_t(first)<<32ull) + second; }
 
-    // AsMethodBody as string, network byte order.
+    // MemberId as byte string, network byte order. Not human readable.
     std::string str() const;
 };
 

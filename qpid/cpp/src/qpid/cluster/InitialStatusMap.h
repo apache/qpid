@@ -47,11 +47,11 @@ class InitialStatusMap
     void received(const MemberId&, const Status& is);
 
     /**@return true if the map is complete. */
-    bool isComplete();
+    bool isComplete() const;
     /**@return true if the map was completed by the last config change or received. */
     bool transitionToComplete();
     /**@pre isComplete(). @return this node's elders */
-    MemberSet getElders();
+    MemberSet getElders() const;
     /**@pre isComplete(). @return True if we need an update. */
     bool isUpdateNeeded();
     /**@pre isComplete(). @return Cluster-wide cluster ID. */
@@ -59,6 +59,10 @@ class InitialStatusMap
     /**@pre isComplete(). @throw Exception if there are any inconsistencies. */
     void checkConsistent();
 
+    /** Get first config-change for this member, encoded as a string.
+     *@pre configChange has been called at least once.
+     */
+    std::string getFirstConfigStr() const;
   private:
     typedef std::map<MemberId, boost::optional<Status> > Map;
     static bool notInitialized(const Map::value_type&);
