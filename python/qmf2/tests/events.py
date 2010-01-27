@@ -75,10 +75,16 @@ class _agentApp(Thread):
         self.agent.register_object_class(_schema)
 
         self.running = False
+        self.ready = Event()
 
     def start_app(self):
         self.running = True
         self.start()
+        self.ready.wait(10)
+        if not self.ready.is_set():
+            raise Exception("Agent failed to connect to broker.")
+        # time.sleep(1)
+        print("!!! agent=%s setup complete (%s)" % (self.agent, time.time()))
 
     def stop_app(self):
         self.running = False
@@ -100,6 +106,8 @@ class _agentApp(Thread):
             raise Skipped(e)
 
         self.agent.set_connection(conn)
+        print("!!! agent=%s connection done (%s)" % (self.agent, time.time()))
+        self.ready.set()
 
         counter = 1
         while self.running:
@@ -164,9 +172,7 @@ class BaseTest(unittest.TestCase):
 
         # find the agents
         for aname in ["agent1", "agent2"]:
-            print("!!! finding aname=%s (%s)" % (aname, time.time()))
             agent = self.console.find_agent(aname, timeout=3)
-            print("!!! agent=%s aname=%s (%s)" % (agent, aname, time.time()))
             self.assertTrue(agent and agent.get_name() == aname)
 
         # now wait for events
