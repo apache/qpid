@@ -47,7 +47,7 @@ void Receiver::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Receiver::getCapacity() { return impl->getCapacity(); }
 uint32_t Receiver::available() { return impl->available(); }
 uint32_t Receiver::pendingAck() { return impl->pendingAck(); }
-void Receiver::cancel() { impl->cancel(); }
+void Receiver::close() { impl->close(); }
 const std::string& Receiver::getName() const { return impl->getName(); }
 Session Receiver::getSession() const { return impl->getSession(); }
 }} // namespace qpid::messaging

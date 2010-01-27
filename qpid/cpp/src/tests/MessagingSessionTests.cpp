@@ -123,8 +123,8 @@ struct MessagingFixture : public BrokerFixture
         Message in;
         BOOST_CHECK(r.fetch(in, 5*qpid::sys::TIME_SEC));
         BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
-        r.cancel();
-        s.cancel();
+        r.close();
+        s.close();
     }
 
     ~MessagingFixture()
@@ -284,7 +284,7 @@ QPID_AUTO_TEST_CASE(testSimpleTopic)
     msg.setContent("four");
     sender.send(msg);
     BOOST_CHECK_EQUAL(fetch(sub2, 2), boost::assign::list_of<std::string>("three")("four"));
-    sub2.cancel();
+    sub2.close();
 
     msg.setContent("five");
     sender.send(msg);
@@ -501,7 +501,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyQueueReceiver)
     QueueCreatePolicyFixture fix("#; {create:receiver, node-properties:{type:queue}}");
     Receiver r = fix.session.createReceiver(fix.address);
     fix.test();
-    r.cancel();
+    r.close();
 }
 
 QPID_AUTO_TEST_CASE(testCreatePolicyQueueSender)
@@ -509,7 +509,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyQueueSender)
     QueueCreatePolicyFixture fix("#; {create:sender, node-properties:{type:queue}}");
     Sender s = fix.session.createSender(fix.address);
     fix.test();
-    s.cancel();
+    s.close();
 }
 
 struct ExchangeCreatePolicyFixture : public MessagingFixture
@@ -546,7 +546,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyTopicReceiverFanout)
     ExchangeCreatePolicyFixture fix("#/my-subject; {create:receiver, node-properties:{type:topic, x-properties:{type:fanout}}}", "fanout");
     Receiver r = fix.session.createReceiver(fix.address);
     fix.test();
-    r.cancel();
+    r.close();
 }
 
 QPID_AUTO_TEST_CASE(testCreatePolicyTopicSenderDirect)
@@ -554,7 +554,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyTopicSenderDirect)
     ExchangeCreatePolicyFixture fix("#/my-subject; {create:sender, node-properties:{type:topic, x-properties:{type:direct}}}", "direct");
     Sender s = fix.session.createSender(fix.address);
     fix.test();
-    s.cancel();
+    s.close();
 }
 
 struct DeletePolicyFixture : public MessagingFixture
@@ -598,25 +598,25 @@ struct DeletePolicyFixture : public MessagingFixture
         Receiver r = session.createReceiver(address);
         switch (mode) {
           case RECEIVER:
-            s.cancel();
+            s.close();
             BOOST_CHECK(exists(address));
-            r.cancel();
+            r.close();
             BOOST_CHECK(!exists(address));
             break;
           case SENDER:
-            r.cancel();
+            r.close();
             BOOST_CHECK(exists(address));
-            s.cancel();
+            s.close();
             BOOST_CHECK(!exists(address));
             break;
           case ALWAYS:
-            s.cancel();
+            s.close();
             BOOST_CHECK(!exists(address));
             break;
           case NEVER:
-            r.cancel();
+            r.close();
             BOOST_CHECK(exists(address));
-            s.cancel();
+            s.close();
             BOOST_CHECK(exists(address));
             destroy(address);
         }
@@ -676,19 +676,19 @@ QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
     MessagingFixture fix;
     std::string a1 = "q; {create:always, assert:always, node-properties:{type:queue, durable:false, x-properties:{qpid.max-count:100}}}";
     Sender s1 = fix.session.createSender(a1);
-    s1.cancel();
+    s1.close();
     Receiver r1 = fix.session.createReceiver(a1);
-    r1.cancel();
+    r1.close();
     
     std::string a2 = "q; {assert:receiver, node-properties:{durable:true, x-properties:{qpid.max-count:100}}}";
     Sender s2 = fix.session.createSender(a2);
-    s2.cancel();
+    s2.close();
     BOOST_CHECK_THROW(fix.session.createReceiver(a2), qpid::messaging::InvalidAddress);
 
     std::string a3 = "q; {assert:sender, node-properties:{x-properties:{qpid.max-count:99}}}";
     BOOST_CHECK_THROW(fix.session.createSender(a3), qpid::messaging::InvalidAddress);
     Receiver r3 = fix.session.createReceiver(a3);
-    r3.cancel();
+    r3.close();
 
     fix.admin.deleteQueue("q");
 }

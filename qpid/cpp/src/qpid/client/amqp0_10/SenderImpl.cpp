@@ -40,9 +40,9 @@ void SenderImpl::send(const qpid::messaging::Message& message)
     while (f.repeat) parent.execute(f);
 }
 
-void SenderImpl::cancel()
+void SenderImpl::close()
 {
-    execute<Cancel>();
+    execute<Close>();
 }
 
 void SenderImpl::setCapacity(uint32_t c)
@@ -124,7 +124,7 @@ uint32_t SenderImpl::checkPendingSends(bool flush)
     return outgoing.size();
 }
 
-void SenderImpl::cancelImpl()
+void SenderImpl::closeImpl()
 {
     state = CANCELLED;
     sink->cancel(session, name);

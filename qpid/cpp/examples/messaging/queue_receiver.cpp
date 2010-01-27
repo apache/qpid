@@ -42,8 +42,8 @@ int main(int argc, char** argv) {
             std::cout << "Message: " << message.getContent() << std::endl;
             session.acknowledge();
             if (message.getContent() == "That's all, folks!") {
-                std::cout << "Cancelling receiver" << std::endl;
-                receiver.cancel();
+                std::cout << "Closing receiver" << std::endl;
+                receiver.close();
                 break;
             }
         }

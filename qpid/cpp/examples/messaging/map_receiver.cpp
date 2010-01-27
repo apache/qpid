@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
         MapView content(message);
         std::cout << content << std::endl;
         session.acknowledge();
-        receiver.cancel();
+        receiver.close();
         connection.close();
         return 0;
     } catch(const std::exception& error) {

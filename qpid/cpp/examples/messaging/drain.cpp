@@ -111,7 +111,7 @@ int main(int argc, char** argv)
                 std::cout  << "')" << std::endl;
                 session.acknowledge();
             }
-            receiver.cancel();
+            receiver.close();
             session.close();            
             connection.close();
             return 0;

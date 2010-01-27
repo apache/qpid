@@ -49,7 +49,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     SenderImpl(SessionImpl& parent, const std::string& name, 
                const qpid::messaging::Address& address);
     void send(const qpid::messaging::Message&);
-    void cancel();
+    void close();
     void setCapacity(uint32_t);
     uint32_t getCapacity();
     uint32_t pending();
@@ -80,7 +80,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
 
     //logic for application visible methods:
     void sendImpl(const qpid::messaging::Message&);
-    void cancelImpl();
+    void closeImpl();
 
 
     //functors for application visible methods (allowing locking and
@@ -108,10 +108,10 @@ class SenderImpl : public qpid::messaging::SenderImpl
         }
     };
 
-    struct Cancel : Command
+    struct Close : Command
     {
-        Cancel(SenderImpl& i) : Command(i) {}
-        void operator()() { impl.cancelImpl(); }
+        Close(SenderImpl& i) : Command(i) {}
+        void operator()() { impl.closeImpl(); }
     };
 
     struct CheckPendingSends : Command
