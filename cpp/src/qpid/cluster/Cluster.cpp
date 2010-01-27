@@ -294,14 +294,8 @@ void Cluster::initialize() {
 
 // Called in connection thread to insert a client connection.
 void Cluster::addLocalConnection(const boost::intrusive_ptr<Connection>& c) {
-    QPID_LOG(info, *this << " new local connection " << c->getId());
-    localConnections.insert(c);
     assert(c->getId().getMember() == self);
-    // Announce the connection to the cluster.
-    if (c->isLocalClient())
-        mcast.mcastControl(ClusterConnectionAnnounceBody(ProtocolVersion(),
-                                                         c->getBrokerConnection().getSSF() ),
-                           c->getId());
+    localConnections.insert(c);
 }
 
 // Called in connection thread to insert an updated shadow connection.
@@ -497,22 +491,18 @@ ConnectionPtr Cluster::getConnection(const EventFrame& e, Lock&) {
     if (i != connections.end()) return i->second;
     ConnectionPtr cp;
     // If the frame is an announcement for a new connection, add it.
-    if (e.frame.getBody() && e.frame.getMethod() &&
-        e.frame.getMethod()->isA<ClusterConnectionAnnounceBody>())
+    const ClusterConnectionAnnounceBody *announce = castAnnounce(e.frame.getBody());
+    if (e.frame.getBody() && e.frame.getMethod() && announce)
     {
         if (id.getMember() == self)  { // Announces one of my own
             cp = localConnections.getErase(id);
-            assert(cp); 
+            assert(cp);
         }
         else {              // New remote connection, create a shadow.
             std::ostringstream mgmtId;
-            unsigned int ssf;
-            const ClusterConnectionAnnounceBody *announce = castAnnounce(e.frame.getBody());
-
+            unsigned int ssf = (announce && announce->hasSsf()) ? announce->getSsf() : 0;
             mgmtId << id;
-            ssf = (announce && announce->hasSsf()) ? announce->getSsf() : 0;
-            QPID_LOG(debug, *this << "new connection's ssf =" << ssf );
-            cp = new Connection(*this, shadowOut, mgmtId.str(), id, ssf );
+            cp = new Connection(*this, shadowOut, mgmtId.str(), id, ssf);
         }
         connections.insert(ConnectionMap::value_type(id, cp));
     }

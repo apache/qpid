@@ -73,7 +73,7 @@ class Connection :
     ~Connection();
     
     ConnectionId getId() const { return self; }
-    broker::Connection& getBrokerConnection() { return connection; }
+    broker::Connection& getBrokerConnection() { return *connection; }
 
     /** Local connections may be clients or catch-up connections */
     bool isLocal() const;
@@ -95,8 +95,8 @@ class Connection :
     void received(framing::AMQFrame&);
     void closed();
     bool doOutput();
-    void idleOut() { connection.idleOut(); }
-    void idleIn() { connection.idleIn(); }
+    void idleOut() { if (connection.get()) connection->idleOut(); }
+    void idleIn() { if (connection.get()) connection->idleIn(); }
 
     // ConnectionCodec methods - called by IO layer with a read buffer.
     size_t decode(const char* buffer, size_t size);
@@ -156,7 +156,7 @@ class Connection :
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
-    void announce(uint32_t) {}  // handled by Cluster.
+    void announce(uint32_t ssf);
     void abort();
     void deliverClose();
 
@@ -165,11 +165,36 @@ class Connection :
     void addQueueListener(const std::string& queue, uint32_t listener);
     void managementSchema(const std::string& data);
 
+    uint32_t getSsf() const { return connectionCtor.ssf; }
+
   private:
     struct NullFrameHandler : public framing::FrameHandler {
         void handle(framing::AMQFrame&) {}
     };
-    
+
+    // Arguments to construct a broker::Connection
+    struct ConnectionCtor {
+        sys::ConnectionOutputHandler* out;
+        broker::Broker& broker;
+        std::string mgmtId;
+        unsigned int ssf;
+        bool isLink;
+        uint64_t objectId;
+
+        ConnectionCtor(
+            sys::ConnectionOutputHandler* out_,
+            broker::Broker& broker_,
+            const std::string& mgmtId_,
+            unsigned int ssf_,
+            bool isLink_=false,
+            uint64_t objectId_=0
+        ) : out(out_), broker(broker_), mgmtId(mgmtId_), ssf(ssf_), isLink(isLink_), objectId(objectId_) {}
+
+        std::auto_ptr<broker::Connection> construct() {
+            return std::auto_ptr<broker::Connection>(
+                new broker::Connection(out, broker, mgmtId, ssf, isLink, objectId));
+        }
+    };
 
     static NullFrameHandler nullFrameHandler;
 
@@ -191,7 +216,8 @@ class Connection :
     bool catchUp;
     OutputInterceptor output;
     framing::FrameDecoder localDecoder;
-    broker::Connection connection;
+    ConnectionCtor connectionCtor;
+    std::auto_ptr<broker::Connection> connection;
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
