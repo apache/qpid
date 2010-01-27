@@ -508,6 +508,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Consumer.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
+  qpid/broker/DelegatingPeriodicTimer.h \
+  qpid/broker/DelegatingPeriodicTimer.cpp \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.cpp \
   qpid/broker/DeliverableMessage.h \

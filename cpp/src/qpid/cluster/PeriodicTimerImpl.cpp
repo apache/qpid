@@ -32,20 +32,24 @@ PeriodicTimerImpl::TaskEntry::TaskEntry(
     Cluster& c, const Task& t, sys::Duration d, const std::string& n)
     : TimerTask(d), cluster(c), timer(c.getBroker().getTimer()),
       task(t), name(n), inFlight(false)
-{}
+{
+    timer.add(this);
+}
 
 void PeriodicTimerImpl::TaskEntry::fire() {
+    setupNextFire();
+    timer.add(this);
+    bool isElder = cluster.isElder(); // Call outside lock to avoid deadlock.
     sys::Mutex::ScopedLock l(lock);
     // Only the elder mcasts.
     // Don't mcast another if we haven't yet received the last one.
-    if (cluster.isElder() && !inFlight) {
+    if (isElder && !inFlight) {
+        QPID_LOG(trace, "Sending periodic-timer control for " << name);
         inFlight = true;
         cluster.getMulticast().mcastControl(
             framing::ClusterPeriodicTimerBody(framing::ProtocolVersion(), name),
             cluster.getId());
     }
-    setupNextFire();
-    timer.add(this);
 }
 
 void PeriodicTimerImpl::TaskEntry::deliver() {
@@ -59,6 +63,7 @@ void PeriodicTimerImpl::add(
     const Task& task, sys::Duration period, const std::string& name)
 {
     sys::Mutex::ScopedLock l(lock);
+    QPID_LOG(debug, "Periodic timer add entry for " << name);
     if (map.find(name) != map.end())
         throw Exception(QPID_MSG("Cluster timer task name added twice: " << name));
     map[name] = new TaskEntry(cluster, task, period, name);
@@ -72,6 +77,7 @@ void PeriodicTimerImpl::deliver(const std::string& name) {
         if (i == map.end())
             throw Exception(QPID_MSG("Cluster timer unknown task: " << name));
     }
+    QPID_LOG(debug, "Periodic timer execute " << name);
     i->second->deliver();
 }
 

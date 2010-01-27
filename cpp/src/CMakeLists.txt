@@ -733,6 +733,7 @@ set (qpidbroker_SOURCES
      qpid/broker/Connection.cpp
      qpid/broker/ConnectionHandler.cpp
      qpid/broker/ConnectionFactory.cpp
+     qpid/broker/DelegatingPeriodicTimer.cpp
      qpid/broker/DeliverableMessage.cpp
      qpid/broker/DeliveryRecord.cpp
      qpid/broker/DirectExchange.cpp
