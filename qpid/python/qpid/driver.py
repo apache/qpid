@@ -179,8 +179,9 @@ class Driver:
     if self.connection.host:
       self._sasl.setAttr("host", self.connection.host)
     options = self.connection.options
-    if "service" in options:
-      self._sasl.setAttr("service", options["service"])
+    service = options.get("service", self.connection.host)
+    if service:
+      self._sasl.setAttr("service", service)
     if "min_ssf" in options:
       self._sasl.setAttr("minssf", options["min_ssf"])
     if "max_ssf" in options:
