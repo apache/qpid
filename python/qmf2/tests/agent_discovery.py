@@ -56,10 +56,14 @@ class _agentApp(Thread):
                            _heartbeat_interval=heartbeat)
         # No database needed for this test
         self.running = False
+        self.ready = Event()
 
     def start_app(self):
         self.running = True
         self.start()
+        self.ready.wait(10)
+        if not self.ready.is_set():
+            raise Exception("Agent failed to connect to broker.")
 
     def stop_app(self):
         self.running = False
@@ -78,6 +82,7 @@ class _agentApp(Thread):
                                          self.broker_url.password)
         conn.connect()
         self.agent.set_connection(conn)
+        self.ready.set()
 
         while self.running:
             self.notifier.wait_for_work(None)

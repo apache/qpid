@@ -47,9 +47,10 @@ class _testNotifier(Notifier):
 
 
 class _agentApp(Thread):
-    def __init__(self, name, heartbeat):
+    def __init__(self, name, broker_url, heartbeat):
         Thread.__init__(self)
         self.notifier = _testNotifier()
+        self.broker_url = broker_url
         self.agent = Agent(name,
                            _notifier=self.notifier,
                            _heartbeat_interval=heartbeat)
@@ -138,26 +139,17 @@ class _agentApp(Thread):
         _obj.set_value("key-2", 2)
         self.agent.add_object(_obj)
 
+        self.running = False
+        self.ready = Event()
+
+    def start_app(self):
         self.running = True
         self.start()
+        self.ready.wait(10)
+        if not self.ready.is_set():
+            raise Exception("Agent failed to connect to broker.")
 
-    def connect_agent(self, broker_url):
-        # broker_url = "user/passwd@hostname:port"
-        self.conn = qpid.messaging.Connection(broker_url.host,
-                                         broker_url.port,
-                                         broker_url.user,
-                                         broker_url.password)
-        self.conn.connect()
-        self.agent.set_connection(self.conn)
-
-    def disconnect_agent(self, timeout):
-        if self.conn:
-            self.agent.remove_connection(timeout)
-
-    def shutdown_agent(self, timeout):
-        self.agent.destroy(timeout)
-
-    def stop(self):
+    def stop_app(self):
         self.running = False
         self.notifier.indication() # hmmm... collide with daemon???
         self.join(10)
@@ -165,6 +157,15 @@ class _agentApp(Thread):
             raise Exception("AGENT DID NOT TERMINATE AS EXPECTED!!!")
 
     def run(self):
+        # broker_url = "user/passwd@hostname:port"
+        self.conn = qpid.messaging.Connection(self.broker_url.host,
+                                              self.broker_url.port,
+                                              self.broker_url.user,
+                                              self.broker_url.password)
+        self.conn.connect()
+        self.agent.set_connection(self.conn)
+        self.ready.set()
+
         while self.running:
             self.notifier.wait_for_work(None)
             wi = self.agent.get_next_workitem(timeout=0)
@@ -173,6 +174,9 @@ class _agentApp(Thread):
                 self.agent.release_workitem(wi)
                 wi = self.agent.get_next_workitem(timeout=0)
 
+        if self.conn:
+            self.agent.remove_connection(10)
+        self.agent.destroy(10)
 
 
 class BaseTest(unittest.TestCase):
@@ -186,15 +190,14 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         self.agents = []
         for i in range(self.agent_count):
-            agent = _agentApp("agent-" + str(i), 1)
-            agent.connect_agent(self.broker)
+            agent = _agentApp("agent-" + str(i), self.broker, 1)
+            agent.start_app()
             self.agents.append(agent)
 
     def tearDown(self):
         for agent in self.agents:
             if agent is not None:
-                agent.shutdown_agent(10)
-                agent.stop()
+                agent.stop_app()
 
 
     def test_all_agents(self):
