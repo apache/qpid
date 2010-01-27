@@ -471,6 +471,9 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/TimeoutHandler.h			\
   qpid/sys/Timer.cpp				\
   qpid/sys/Timer.h				\
+  qpid/sys/PeriodicTimer.h			\
+  qpid/sys/PeriodicTimerImpl.h			\
+  qpid/sys/PeriodicTimerImpl.cpp		\
   qpid/sys/Waitable.h				\
   qpid/sys/alloca.h				\
   qpid/sys/uuid.h

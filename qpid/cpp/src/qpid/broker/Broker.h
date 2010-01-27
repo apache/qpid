@@ -49,6 +49,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Timer.h"
+#include "qpid/sys/PeriodicTimer.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/sys/Mutex.h"
@@ -146,6 +147,7 @@ public:
 
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
+    std::auto_ptr<sys::PeriodicTimer> periodicTimer;
     Options config;
     std::auto_ptr<management::ManagementAgent> managementAgent;
     ProtocolFactoryMap protocolFactories;
@@ -253,6 +255,8 @@ public:
     void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
 
     sys::Timer& getTimer() { return timer; }
+    sys::PeriodicTimer& getPeriodicTimer() { return *periodicTimer; }
+    void setPeriodicTimer(std::auto_ptr<sys::PeriodicTimer> pt) { periodicTimer = pt; }
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
 

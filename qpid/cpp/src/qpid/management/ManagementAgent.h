@@ -26,7 +26,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/sys/Timer.h"
+#include "qpid/sys/PeriodicTimer.h"
 #include "qpid/broker/ConnectionToken.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/ManagementEvent.h"
@@ -105,15 +105,6 @@ public:
     void importSchemas(framing::Buffer& inBuf);
 
 private:
-    struct Periodic : public qpid::sys::TimerTask
-    {
-        ManagementAgent& agent;
-
-        Periodic (ManagementAgent& agent, uint32_t seconds);
-        virtual ~Periodic ();
-        void fire ();
-    };
-
     //  Storage for tracking remote management agents, attached via the client
     //  management agent API.
     //
@@ -205,7 +196,7 @@ private:
     std::string                  dataDir;
     uint16_t                     interval;
     qpid::broker::Broker*        broker;
-    qpid::sys::Timer*            timer;
+    qpid::sys::PeriodicTimer*    timer;
     uint16_t                     bootSequence;
     uint32_t                     nextObjectId;
     uint32_t                     brokerBank;
