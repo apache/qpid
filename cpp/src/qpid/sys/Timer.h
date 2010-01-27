@@ -69,6 +69,12 @@ protected:
 bool operator<(const boost::intrusive_ptr<TimerTask>& a,
                 const boost::intrusive_ptr<TimerTask>& b);
 
+/**
+   A timer to trigger tasks that are local to one broker.
+
+   For periodic tasks that should be synchronized across all brokers
+   in a cluster, use qpid::sys::PeriodicTimer.
+ */
 class Timer : private Runnable {
     qpid::sys::Monitor monitor;
     std::priority_queue<boost::intrusive_ptr<TimerTask> > tasks;

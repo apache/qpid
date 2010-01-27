@@ -91,10 +91,12 @@ void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
     dataDir        = _dataDir;
     interval       = _interval;
     broker         = _broker;
-    timer          = &_broker->getTimer();
+    timer          = &_broker->getPeriodicTimer();
     threadPoolSize = _threads;
     ManagementObject::maxThreads = threadPoolSize;
-    timer->add (new Periodic(*this, interval));
+    timer->add (boost::bind(&ManagementAgent::periodicProcessing, this),
+                interval * sys::TIME_SEC,
+                "ManagementAgent::periodicProcessing");
 
     // Get from file or generate and save to file.
     if (dataDir.empty())
@@ -231,17 +233,6 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
                "console.event.1.0." + event.getPackageName() + "." + event.getEventName());
 }
 
-ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
-    : TimerTask (qpid::sys::Duration ((_seconds ? _seconds : 1) * qpid::sys::TIME_SEC)), agent(_agent) {}
-
-ManagementAgent::Periodic::~Periodic () {}
-
-void ManagementAgent::Periodic::fire ()
-{
-    agent.timer->add (new Periodic (agent, agent.interval));
-    agent.periodicProcessing ();
-}
-
 void ManagementAgent::clientAdded (const std::string& routingKey)
 {
     if (routingKey.find("console") != 0)
@@ -332,6 +323,7 @@ void ManagementAgent::periodicProcessing (void)
 {
 #define BUFSIZE   65536
 #define HEADROOM  4096
+    QPID_LOG(trace, "Management agent periodic processing")
     Mutex::ScopedLock lock (userLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
