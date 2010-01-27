@@ -63,6 +63,7 @@ namespace cluster {
 
 class Connection;
 class EventFrame;
+class PeriodicTimerImpl;
 
 /**
  * Connection to the cluster
@@ -271,6 +272,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     bool updateRetracted;
     ErrorCheck error;
     UpdateReceiver updateReceiver;
+    PeriodicTimerImpl* timer;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;

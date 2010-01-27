@@ -137,7 +137,6 @@ const std::string knownHostsNone("none");
 
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
-    periodicTimer(new sys::PeriodicTimerImpl(timer)),
     config(conf),
     managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     store(new NullMessageStore),
@@ -257,6 +256,12 @@ Broker::Broker(const Broker::Options& conf) :
 
     // Initialize plugins
     Plugin::initializeAll(*this);
+
+    if (!periodicTimer.hasDelegate()) {
+        // If no plugin has contributed a PeriodicTimer, use the default one.
+        periodicTimer.setDelegate(
+            std::auto_ptr<sys::PeriodicTimer>(new sys::PeriodicTimerImpl(timer)));
+    }
 
     if (conf.queueCleanInterval) {
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
@@ -467,6 +472,10 @@ std::vector<Url>
 Broker::getKnownBrokersImpl()
 {
     return knownBrokers;
+}
+
+void Broker::setPeriodicTimer(std::auto_ptr<sys::PeriodicTimer> pt) {
+    periodicTimer.setDelegate(pt);
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");
