@@ -49,6 +49,7 @@
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/SystemInfo.h"
+#include "qpid/sys/PeriodicTimerImpl.h"
 #include "qpid/Address.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
@@ -136,6 +137,7 @@ const std::string knownHostsNone("none");
 
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
+    periodicTimer(new sys::PeriodicTimerImpl(timer)),
     config(conf),
     managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     store(new NullMessageStore),
