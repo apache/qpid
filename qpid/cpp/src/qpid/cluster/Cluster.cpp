@@ -112,6 +112,7 @@
 #include "qpid/cluster/RetractClient.h"
 #include "qpid/cluster/FailoverExchange.h"
 #include "qpid/cluster/UpdateExchange.h"
+#include "qpid/cluster/PeriodicTimerImpl.h"
 
 #include "qpid/assert.h"
 #include "qmf/org/apache/qpid/cluster/ArgsClusterStopClusterNode.h"
@@ -136,6 +137,7 @@
 #include "qpid/framing/ClusterUpdateRequestBody.h"
 #include "qpid/framing/ClusterConnectionAnnounceBody.h"
 #include "qpid/framing/ClusterErrorCheckBody.h"
+#include "qpid/framing/ClusterPeriodicTimerBody.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Helpers.h"
 #include "qpid/log/Statement.h"
@@ -177,7 +179,7 @@ namespace _qmf = ::qmf::org::apache::qpid::cluster;
  * Currently use SVN revision to avoid clashes with versions from
  * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 896973;
+const uint32_t Cluster::CLUSTER_VERSION = 903171;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
@@ -206,6 +208,9 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     void messageExpired(uint64_t id) { cluster.messageExpired(member, id, l); }
     void errorCheck(uint8_t type, const framing::SequenceNumber& frameSeq) {
         cluster.errorCheck(member, type, frameSeq, l);
+    }
+    void periodicTimer(const std::string& name) {
+        cluster.periodicTimer(member, name, l);
     }
 
     void shutdown(const Uuid& id) { cluster.shutdown(member, id, l); }
@@ -245,6 +250,10 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     updateRetracted(false),
     error(*this)
 {
+    // FIXME aconway 2010-01-26: must be done before management registers with timer.
+    broker.setPeriodicTimer(
+        std::auto_ptr<sys::PeriodicTimer>(new PeriodicTimerImpl(*this)));
+
     mAgent = broker.getManagementAgent();
     if (mAgent != 0){
         _qmf::Package  packageInit(mAgent);
@@ -952,5 +961,13 @@ void Cluster::errorCheck(const MemberId& from, uint8_t type, framing::SequenceNu
         error.respondNone(from, type, frameSeq);
 }
 
+void Cluster::periodicTimer(const MemberId&, const std::string& , Lock&) {
+    // FIXME aconway 2010-01-26:
+}
+
+bool Cluster::isElder() const {
+    Mutex::ScopedLock l(lock);
+    return elders.empty();
+}
 
 }} // namespace qpid::cluster

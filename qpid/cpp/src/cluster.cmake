@@ -129,6 +129,8 @@ if (BUILD_CLUSTER)
        qpid/cluster/MemberSet.h
        qpid/cluster/MemberSet.cpp
        qpid/cluster/types.h
+       qpid/cluster/PeriodicTimerImpl.h
+       qpid/cluster/PeriodicTimerImpl.cpp
        qpid/cluster/StoreStatus.h
        qpid/cluster/StoreStatus.cpp
       )

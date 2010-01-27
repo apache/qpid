@@ -117,6 +117,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     UpdateReceiver& getUpdateReceiver() { return updateReceiver; }
 
+    bool isElder() const;
+
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
@@ -161,6 +163,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void errorCheck(const MemberId&, uint8_t type, SequenceNumber frameSeq, Lock&);
+    void periodicTimer(const MemberId&, const std::string& name, Lock&);
 
     void shutdown(const MemberId&, const framing::Uuid& shutdownId, Lock&);
 
@@ -241,11 +244,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     
 
     // Remaining members are protected by lock.
-
-    // TODO aconway 2009-03-06: Most of these members are also only used in
-    // deliverFrameQueue thread or during stall. Review and separate members
-    // that require a lock, drop lock when not needed.
-
     mutable sys::Monitor lock;
 
 

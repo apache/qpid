@@ -573,6 +573,7 @@ set (qpidcommon_SOURCES
      qpid/sys/Runnable.cpp
      qpid/sys/Shlib.cpp
      qpid/sys/Timer.cpp
+     qpid/sys/PeriodicTimerImpl.cpp
 )
 
 add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
