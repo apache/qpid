@@ -250,9 +250,10 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     updateRetracted(false),
     error(*this)
 {
-    // FIXME aconway 2010-01-26: must be done before management registers with timer.
-    broker.setPeriodicTimer(
-        std::auto_ptr<sys::PeriodicTimer>(new PeriodicTimerImpl(*this)));
+    // We give ownership of the timer to the broker and keep a plain pointer.
+    // This is OK as it means the timer has the same lifetime as the broker.
+    timer = new PeriodicTimerImpl(*this);
+    broker.setPeriodicTimer(std::auto_ptr<sys::PeriodicTimer>(timer));
 
     mAgent = broker.getManagementAgent();
     if (mAgent != 0){
@@ -448,8 +449,8 @@ void Cluster::flagError(
 // Handler for deliverFrameQueue.
 // This thread executes the main logic.
 void Cluster::deliveredFrame(const EventFrame& efConst) {
-    sys::ClusterSafeScope css; // Don't trigger cluster-safe asserts.
     Mutex::ScopedLock l(lock);
+    sys::ClusterSafeScope css; // Don't trigger cluster-safe asserts.
     if (state == LEFT) return;
     EventFrame e(efConst);
     const ClusterUpdateOfferBody* offer = castUpdateOffer(e.frame.getBody());
@@ -961,13 +962,13 @@ void Cluster::errorCheck(const MemberId& from, uint8_t type, framing::SequenceNu
         error.respondNone(from, type, frameSeq);
 }
 
-void Cluster::periodicTimer(const MemberId&, const std::string& , Lock&) {
-    // FIXME aconway 2010-01-26:
+void Cluster::periodicTimer(const MemberId&, const std::string& name, Lock&) {
+    timer->deliver(name);
 }
 
 bool Cluster::isElder() const {
-    Mutex::ScopedLock l(lock);
-    return elders.empty();
+    Monitor::ScopedLock l(lock);
+    return state >= CATCHUP && elders.empty();
 }
 
 }} // namespace qpid::cluster
