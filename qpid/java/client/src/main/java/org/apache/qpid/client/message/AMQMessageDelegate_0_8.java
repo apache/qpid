@@ -573,5 +573,25 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         return _deliveryTag;
     }
 
+    
+    public java.nio.ByteBuffer encodeMap(Map<String,Object> map)
+    {   
+        String errorMsg = "There is no support for encoding maps";
+        if (_session != null)
+        {
+            errorMsg = errorMsg + " in AMQP " + _session.getAMQConnection().getProtocolVersion();
+        }
+        throw new UnsupportedOperationException(errorMsg);
+    }
+    
+    public Map<String,Object> decodeMap(java.nio.ByteBuffer buf)
+    {
+        String errorMsg = "There is no support for encoding maps";
+        if (_session != null)
+        {
+            errorMsg = errorMsg + " in AMQP " + _session.getAMQConnection().getProtocolVersion();
+        }
+        throw new UnsupportedOperationException(errorMsg);
+    }
 
 }

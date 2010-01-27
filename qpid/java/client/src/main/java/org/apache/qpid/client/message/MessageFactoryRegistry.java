@@ -64,6 +64,7 @@ public class MessageFactoryRegistry
         mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
         mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
         mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
+        mf.registerFactory(AMQPEncodedMapMessage.MIME_TYPE, new AMQPEncodedMapMessageFactory());
         mf.registerFactory(null, mf._default);
 
         return mf;
