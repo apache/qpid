@@ -210,17 +210,17 @@ struct BrokerInfo {
 struct ProcessControlOptions : public qpid::Options {
     bool quit;
     bool check;
-    //std::string transport;   No transport options yet - TCP is it.
+    std::string transport;
 
     ProcessControlOptions()
         : qpid::Options("Process control options"),
           quit(false),
-          check(false) //, transport(TCP)
+          check(false),
+          transport(TCP)
     {
-        // Only have TCP for now, so don't need this...
-        //            ("transport", optValue(transport, "TRANSPORT"), "The transport for which to return the port")
         addOptions()
             ("check,c", qpid::optValue(check), "Prints the broker's process ID to stdout and returns 0 if the broker is running, otherwise returns 1")
+            ("transport", qpid::optValue(transport, "TRANSPORT"), "The transport for which to return the port")
             ("quit,q", qpid::optValue(quit), "Tells the broker to shut down");
     }
 };
@@ -283,7 +283,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
 
     // Need the correct port number to use in the pid file name.
     if (options->broker.port == 0)
-        options->broker.port = brokerPtr->getPort("");
+        options->broker.port = brokerPtr->getPort(myOptions->control.transport);
 
     BrokerInfo info;
     info.pid = ::GetCurrentProcessId();
