@@ -25,6 +25,13 @@
 namespace qpid {
 namespace cluster {
 
+std::string encodeMemberSet(const MemberSet& m) {
+    std::string addresses;
+    for (MemberSet::const_iterator i = m.begin(); i != m.end(); ++i)
+        addresses.append(i->str());
+    return addresses;
+}
+
 MemberSet decodeMemberSet(const std::string& s) {
     MemberSet set;
     for (std::string::const_iterator i = s.begin(); i < s.end(); i += 8) {

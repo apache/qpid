@@ -45,6 +45,7 @@ void InitialStatusMap::configChange(const MemberSet& members) {
     Map::iterator j = map.begin();
     while (i != members.end() || j != map.end()) {
         if (i == members.end()) { // j not in members, member left
+            firstConfig.erase(j->first);
             Map::iterator k = j++;
             map.erase(k);
         }
@@ -59,6 +60,7 @@ void InitialStatusMap::configChange(const MemberSet& members) {
             ++i;
         }
         else if (*i > j->first) { // j not in members, member left
+            firstConfig.erase(j->first);
             Map::iterator k = j++;
             map.erase(k);
         }
@@ -83,7 +85,7 @@ bool InitialStatusMap::notInitialized(const Map::value_type& v) {
     return !v.second;
 }
 
-bool InitialStatusMap::isComplete() {
+bool InitialStatusMap::isComplete() const {
     return !map.empty() && find_if(map.begin(), map.end(), &notInitialized) == map.end()
         && (map.size() >= size);
 }
@@ -128,12 +130,21 @@ bool InitialStatusMap::isUpdateNeeded() {
     return false;
 }
 
-MemberSet InitialStatusMap::getElders() {
+MemberSet InitialStatusMap::getElders() const {
     assert(isComplete());
     MemberSet elders;
-    // Elders are from first config change, active or higher node-id.
-    for (MemberSet::iterator i = firstConfig.begin(); i != firstConfig.end(); ++i) {
-        if (map.find(*i) != map.end() && (map[*i]->getActive() || *i > self))
+    for (MemberSet::const_iterator i = firstConfig.begin(); i != firstConfig.end(); ++i) {
+        // *i is in my first config, so a potential elder.
+        if (*i == self) continue; // Not my own elder
+        Map::const_iterator j = map.find(*i);
+        assert(j != map.end());
+        assert(j->second);
+        const Status& s = *j->second;
+        // If I'm not in i's first config then i is older than me.
+        // Otherwise we were born in the same configuration so use
+        // member ID to break the tie.
+        MemberSet iFirstConfig = decodeMemberSet(s.getFirstConfig());
+        if (iFirstConfig.find(self) == iFirstConfig.end() || *i > self)
             elders.insert(*i);
     }
     return elders;
@@ -197,5 +208,9 @@ void InitialStatusMap::checkConsistent() {
         throw Exception("Cannot recover, no clean store.");
 }
 
+std::string InitialStatusMap::getFirstConfigStr() const {
+    assert(!firstConfig.empty());
+    return encodeMemberSet(firstConfig);
+}
 
 }} // namespace qpid::cluster
