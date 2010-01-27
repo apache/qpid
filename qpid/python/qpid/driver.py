@@ -322,7 +322,8 @@ class Driver:
 
   def do_connection_start(self, start):
     if self.connection.mechanisms:
-      mechs = [m for m in start.mechanisms if m in self.connection.mechanisms]
+      permitted = self.connection.mechanisms.split()
+      mechs = [m for m in start.mechanisms if m in permitted]
     else:
       mechs = start.mechanisms
     mech, initial = self._sasl.start(" ".join(mechs))
