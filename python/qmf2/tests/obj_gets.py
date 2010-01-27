@@ -213,7 +213,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for agent_app in self.agents:
             aname = agent_app.agent.get_name()
@@ -271,7 +271,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         agent_list = []
         for agent_app in self.agents:
@@ -343,7 +343,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         agent_list = []
         for agent_app in self.agents:

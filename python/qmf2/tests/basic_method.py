@@ -240,7 +240,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
@@ -253,7 +253,7 @@ class BaseTest(unittest.TestCase):
                       {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE,
                                          "MyPackage"]}]}))
 
-            obj_list = self.console.doQuery(agent, query)
+            obj_list = self.console.do_query(agent, query)
             self.assertTrue(len(obj_list) == 2)
             for obj in obj_list:
                 mr = obj.invoke_method( "set_meth", {"arg_int": -99,
@@ -290,7 +290,7 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
@@ -303,7 +303,7 @@ class BaseTest(unittest.TestCase):
                       {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE,
                                          "MyPackage"]}]}))
 
-            obj_list = self.console.doQuery(agent, query)
+            obj_list = self.console.do_query(agent, query)
             self.assertTrue(len(obj_list) == 2)
             for obj in obj_list:
                 self.failUnlessRaises(ValueError,
@@ -327,14 +327,14 @@ class BaseTest(unittest.TestCase):
                                               self.broker.user,
                                               self.broker.password)
         self.conn.connect()
-        self.console.addConnection(self.conn)
+        self.console.add_connection(self.conn)
 
         for aname in ["agent1", "agent2"]:
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
             query = QmfQuery.create_id(QmfQuery.TARGET_OBJECT, "01545")
-            obj_list = self.console.doQuery(agent, query)
+            obj_list = self.console.do_query(agent, query)
 
             self.assertTrue(isinstance(obj_list, type([])))
             self.assertTrue(len(obj_list) == 1)
