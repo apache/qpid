@@ -639,6 +639,8 @@ set (qpidclient_SOURCES
      qpid/client/SubscriptionManagerImpl.cpp
      qpid/client/TCPConnector.cpp
      qpid/messaging/Address.cpp
+     qpid/messaging/AddressParser.h
+     qpid/messaging/AddressParser.cpp
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/ListContent.cpp

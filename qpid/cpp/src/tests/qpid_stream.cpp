@@ -72,7 +72,8 @@ struct Client : Runnable
     void run()
     {
         try {
-            Connection connection = Connection::open(opts.url);
+            Connection connection;
+            connection.open(opts.url);
             Session session = connection.newSession();
             doWork(session);
             session.close();

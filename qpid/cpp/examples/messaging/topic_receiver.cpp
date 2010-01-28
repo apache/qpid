@@ -35,7 +35,8 @@ int main(int argc, char** argv) {
     const std::string pattern = argc>2 ? argv[2] : "#.#";
 
     try {
-        Connection connection = Connection::open(url);
+        Connection connection;
+        connection.open(url);
         Session session = connection.newSession();
         Receiver receiver = session.createReceiver("news_service; {filter:[control, " + pattern + "]}");
         while (true) {

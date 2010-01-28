@@ -180,11 +180,8 @@ int main(int argc, char ** argv)
     Options opts;
     if (opts.parse(argc, argv)) {
         try {
-            Variant::Map connectionOptions;
-            if (opts.connectionOptions.size()) {
-                parseOptionString(opts.connectionOptions, connectionOptions);
-            }
-            Connection connection =  Connection::open(opts.url, connectionOptions);
+            Connection connection(opts.connectionOptions);
+            connection.open(opts.url);
             Session session = connection.newSession(opts.tx > 0);
             Sender sender = session.createSender(opts.address);
             Message msg;
