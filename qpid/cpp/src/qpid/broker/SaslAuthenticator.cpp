@@ -148,8 +148,13 @@ void NullAuthenticator::getMechanisms(Array& mechanisms)
 void NullAuthenticator::start(const string& mechanism, const string& response)
 {
     if (encrypt) {
-        QPID_LOG(error, "Rejected un-encrypted connection.");
-        throw ConnectionForcedException("Connection must be encrypted.");
+        // encryption required - check to see if we are running over an
+        // encrypted SSL connection.
+        sasl_ssf_t external_ssf = (sasl_ssf_t) connection.getSSF();
+        if (external_ssf < 1) {   // < 1 == unencrypted
+            QPID_LOG(error, "Rejected un-encrypted connection.");
+            throw ConnectionForcedException("Connection must be encrypted.");
+        }
     }
     if (mechanism == "PLAIN") { // Old behavior
         if (response.size() > 0) {
