@@ -180,9 +180,9 @@ class BaseTest(unittest.TestCase):
         self.console.add_connection(self.conn)
 
         query = qmf2.common.QmfQuery.create_predicate(
-                           qmf2.common.QmfQuery.TARGET_AGENT,
-                           qmf2.common.QmfQueryPredicate({qmf2.common.QmfQuery.CMP_EQ:
-                                 [qmf2.common.QmfQuery.KEY_AGENT_NAME, "agent1"]}))
+            qmf2.common.QmfQuery.TARGET_AGENT,
+            [qmf2.common.QmfQuery.EQ, qmf2.common.QmfQuery.KEY_AGENT_NAME, 
+             [qmf2.common.QmfQuery.QUOTE, "agent1"]])
         self.console.enable_agent_discovery(query)
 
         agent1_found = agent2_found = False
