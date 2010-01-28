@@ -54,8 +54,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
             exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent, broker));
         }else if (type == ManagementExchange::typeName) {
             exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args, parent, broker));
-        }
-	else{
+        }else{
             FunctionMap::iterator i =  factory.find(type);
             if (i == factory.end()) {
                 throw UnknownExchangeTypeException();    
