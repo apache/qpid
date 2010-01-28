@@ -227,7 +227,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     protected final boolean DECLARE_EXCHANGES =
         Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
 
-    protected boolean USE_AMQP_ENCODED_MAP_MESSAGE = !Boolean.getBoolean("qpid.use_legacy_map_message");
+    protected final boolean USE_AMQP_ENCODED_MAP_MESSAGE;
 
     /** System property to enable strict AMQP compliance. */
     public static final String STRICT_AMQP = "STRICT_AMQP";
@@ -425,7 +425,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     protected AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
                MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
-
+        USE_AMQP_ENCODED_MAP_MESSAGE = !con.isUseLegacyMapMessageFormat();  
         _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP, STRICT_AMQP_DEFAULT));
         _strictAMQPFATAL =
                 Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP_FATAL, STRICT_AMQP_FATAL_DEFAULT));

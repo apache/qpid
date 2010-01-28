@@ -323,6 +323,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     //Indicates the sync publish options (persistent|all)
     //By default it's async publish
     private String _syncPublish = "";
+    
+    // Indicates whether to use the old map message format or the 
+    // new amqp-0-10 encoded format.
+    private boolean _useLegacyMapMessageFormat;
 
     /**
      * @param broker      brokerdetails
@@ -452,7 +456,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // use the default value set for all connections
             _syncPublish = System.getProperty((ClientProperties.SYNC_ACK_PROP_NAME),_syncPublish);
         }
-
+        
+        if (connectionURL.getOption(ConnectionURL.OPTIONS_USE_LEGACY_MAP_MESSAGE_FORMAT) != null)
+        {
+            _useLegacyMapMessageFormat =  Boolean.parseBoolean(
+                    connectionURL.getOption(ConnectionURL.OPTIONS_USE_LEGACY_MAP_MESSAGE_FORMAT));
+        }
+        else
+        {
+            // use the default value set for all connections
+            _useLegacyMapMessageFormat = Boolean.getBoolean(ClientProperties.USE_LEGACY_MAP_MESSAGE_FORMAT);
+        }
+        
         String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
 
         _failoverPolicy = new FailoverPolicy(connectionURL, this);
@@ -1606,5 +1621,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public int getNextChannelID()
     {
         return _sessions.getNextChannelId();
+    }
+    
+    public boolean isUseLegacyMapMessageFormat()
+    {
+        return _useLegacyMapMessageFormat;
     }
 }
