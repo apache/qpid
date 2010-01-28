@@ -6,6 +6,8 @@ import javax.jms.JMSException;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.transport.codec.BBDecoder;
+import org.apache.qpid.transport.codec.BBEncoder;
 
 public class AMQPEncodedMapMessage extends JMSMapMessage
 {
@@ -46,7 +48,9 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
         if (_data != null)
         {
             _data.rewind();
-            _map = _delegate.decodeMap(_data.buf());
+            BBDecoder decoder = new BBDecoder();
+            decoder.init(_data.buf());
+            _map = decoder.readMap();
         }
         else
         {
@@ -57,7 +61,9 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
     @ Override
     protected void writeMapToData()
     {
-        _data = ByteBuffer.wrap(_delegate.encodeMap(_map));
+        BBEncoder encoder = new BBEncoder(1024);
+        encoder.writeMap(_map);
+        _data = ByteBuffer.wrap(encoder.segment());
     }
     
     // for testing

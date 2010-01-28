@@ -921,19 +921,4 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         return _deliveryProps;
     }
-
-    
-    public java.nio.ByteBuffer encodeMap(Map<String,Object> map)
-    {
-        BBEncoder encoder = new BBEncoder(1024);
-        encoder.writeMap(map);
-        return encoder.segment();
-    }
-    
-    public Map<String,Object> decodeMap(java.nio.ByteBuffer buf)
-    {
-       BBDecoder decoder = new BBDecoder();
-       decoder.init(buf);
-       return decoder.readMap();
-    }
 }
