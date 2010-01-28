@@ -137,8 +137,4 @@ public interface AMQMessageDelegate
     long getDeliveryTag();
 
     void setJMSMessageID(final UUID messageId) throws JMSException;
-    
-    ByteBuffer encodeMap(Map<String,Object> map);
-    
-    Map<String,Object> decodeMap(ByteBuffer buf);
 }
