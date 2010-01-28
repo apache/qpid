@@ -24,14 +24,16 @@
 #include <sstream>
 #include <iostream>
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/log/Statement.h"
 #include <stdlib.h>
 
 namespace qpid {
 
 void assert_fail(char const * expr, char const * function, char const * file, long line) {
     std::ostringstream msg;
-    msg << "Internal error: " << expr << " in function " << function
+    msg << "Assertion failed: " << expr << " in function " << function
         << "(" << file << ":" << line << ")";
+    QPID_LOG(critical, msg.str());
 #ifdef NDEBUG
     throw framing::InternalErrorException(msg.str());
 #else

@@ -51,11 +51,9 @@ Event::Event(EventType t, const ConnectionId& c,  size_t s)
 {}
 
 void EventHeader::decode(const MemberId& m, framing::Buffer& buf) {
-    if (buf.available() <= HEADER_SIZE)
-        throw Exception("Not enough for multicast header");
+    QPID_ASSERT(buf.available() >= HEADER_SIZE);
     type = (EventType)buf.getOctet();
-    if(type != DATA && type != CONTROL)
-        throw Exception("Invalid multicast event type");
+    QPID_ASSERT(type == DATA || type == CONTROL);
     connectionId = ConnectionId(m, buf.getLongLong());
     size = buf.getLong();
 }
@@ -63,8 +61,7 @@ void EventHeader::decode(const MemberId& m, framing::Buffer& buf) {
 Event Event::decodeCopy(const MemberId& m, framing::Buffer& buf) {
     Event e;
     e.decode(m, buf);           // Header
-    if (buf.available() < e.size)
-        throw Exception("Not enough data for multicast event");
+    QPID_ASSERT(buf.available() >= e.size);
     e.store = RefCountedBuffer::create(e.size + HEADER_SIZE);
     memcpy(e.getData(), buf.getPointer() + buf.getPosition(), e.size);
     return e;
@@ -107,8 +104,8 @@ Event::operator Buffer() const  {
 const AMQFrame& Event::getFrame() const {
     assert(type == CONTROL);
     if (!frame.getBody()) {
-    Buffer buf(*this);
-    QPID_ASSERT(frame.decode(buf));
+        Buffer buf(*this);
+        QPID_ASSERT(frame.decode(buf));
     }
     return frame;
 }
