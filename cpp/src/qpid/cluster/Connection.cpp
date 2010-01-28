@@ -477,6 +477,9 @@ void Connection::accumulatedAck(const qpid::framing::SequenceSet& s) {
 void Connection::exchange(const std::string& encoded) {
     Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
     broker::Exchange::shared_ptr ex = broker::Exchange::decode(cluster.getBroker().getExchanges(), buf);
+    if(ex.get() && ex->isDurable() && !ex->getName().find("amq.") == 0 && !ex->getName().find("qpid.") == 0) {
+        cluster.getBroker().getStore().create(*(ex.get()), ex->getArgs());
+    }
     QPID_LOG(debug, cluster << " updated exchange " << ex->getName());
 }
 
