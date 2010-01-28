@@ -82,7 +82,9 @@ public class ClientProperties extends PropertyNameResolver
      * Currently the two types are Binding URL (java only) and the Addressing format (used by
      * all clients). 
      */
-    public static final String DEST_SYNTAX = "dest_syntax";
+    public static final String DEST_SYNTAX = "qpid.dest_syntax";
+    
+    public static final String USE_LEGACY_MAP_MESSAGE_FORMAT = "qpid.use_legacy_map_message";
 
      /**
      * ==========================================================
