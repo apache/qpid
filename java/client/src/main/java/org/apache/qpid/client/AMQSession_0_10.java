@@ -124,7 +124,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private TimerTask flushTask = null;
     private RangeSet unacked = new RangeSet();
     private int unackedCount = 0;
-    private boolean useAMQPEncodedMapMessage = !Boolean.getBoolean("qpid.use_legacy_map_message");
 
     /**
      * USed to store the range of in tx messages
