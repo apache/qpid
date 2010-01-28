@@ -127,6 +127,17 @@ void UpdateClient::update() {
     QPID_LOG(debug, updaterId << " updating state to " << updateeId
              << " at " << updateeUrl);
     Broker& b = updaterBroker;
+
+    //
+    // Bash the state of the slave into conformance with ours.  The
+    // goal here is to get his state arranged so as to mimic our
+    // state, w/r/t object ID creation.  Currently, that means that we
+    // propagate our boot seq and object UID counter to him so that
+    // subsequently created objects on his side will track what's on
+    // our side.
+    //
+    updateManagementSetupState(b);
+
     b.getExchanges().eachExchange(boost::bind(&UpdateClient::updateExchange, this, _1));
     b.getQueues().eachQueue(boost::bind(&UpdateClient::updateNonExclusiveQueue, this, _1));
 
@@ -172,6 +183,22 @@ template <class T> std::string encode(const T& t) {
     return encoded;
 }
 } // namespace
+
+//
+// Propagate the management setup state block, currently consisting of
+// object number counter and boot sequence counter, to the slave.
+//
+void UpdateClient::updateManagementSetupState(Broker & b)
+{
+    qmf::org::apache::qpid::broker::ManagementSetupState mss(b.getManagementAgent(), 0);
+    mss.set_objectNum(b.getManagementAgent()->getNextObjectId());
+    mss.set_bootSequence(b.getManagementAgent()->getBootSequence());
+
+    QPID_LOG(debug, updaterId << " updating management-setup-state " << mss.get_objectNum() 
+	     << " " << mss.get_bootSequence() << "\n");
+
+    ClusterConnectionProxy(session).managementSetupState(mss.get_objectNum(), mss.get_bootSequence());
+}
 
 void UpdateClient::updateExchange(const boost::shared_ptr<Exchange>& ex) {
     QPID_LOG(debug, updaterId << " updating exchange " << ex->getName());
