@@ -513,5 +513,19 @@ void Connection::managementSchema(const std::string& data) {
     QPID_LOG(debug, cluster << " updated management schemas");
 }
 
+//
+// This is the handler for incoming managementsetup messages.
+//
+void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
+{
+    QPID_LOG(debug, "Running managementsetup state handler, new objectnum "
+	     << objectNum << " seq " << bootSequence);
+    management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
+    if (!agent)
+        throw Exception(QPID_MSG("Management schema update but no management agent."));
+    agent->setNextObjectId(objectNum);
+    agent->setBootSequence(bootSequence);
+}
+
 }} // Namespace qpid::cluster
 
