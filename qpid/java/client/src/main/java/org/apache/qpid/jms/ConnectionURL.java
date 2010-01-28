@@ -38,6 +38,7 @@ public interface ConnectionURL
     public static final String OPTIONS_MAXPREFETCH = "maxprefetch";
     public static final String OPTIONS_SYNC_ACK = "sync_ack";    
     public static final String OPTIONS_SYNC_PUBLISH = "sync_publish";
+    public static final String OPTIONS_USE_LEGACY_MAP_MESSAGE_FORMAT = "use_legacy_map_msg_format";
     public static final String OPTIONS_BROKERLIST = "brokerlist";
     public static final String OPTIONS_FAILOVER = "failover";
     public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";    
