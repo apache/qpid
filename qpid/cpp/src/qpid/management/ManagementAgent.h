@@ -104,6 +104,13 @@ public:
     /** Decode a serialized schemas and add to my schema cache */
     void importSchemas(framing::Buffer& inBuf);
 
+    // these are in support of the managementSetup-state stuff, for synch'ing clustered brokers
+    uint64_t getNextObjectId(void) { return nextObjectId; }
+    void setNextObjectId(uint64_t o) { nextObjectId = o; }
+
+    uint16_t getBootSequence(void) { return bootSequence; }
+    void setBootSequence(uint16_t b) { bootSequence = b; }
+
 private:
     //  Storage for tracking remote management agents, attached via the client
     //  management agent API.

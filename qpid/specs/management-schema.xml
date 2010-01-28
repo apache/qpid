@@ -326,6 +326,27 @@
     <method name="close"/>
   </class>
 
+  <!--
+  ===============================================================
+  ManagementSetupState
+  ===============================================================
+
+     This thing is used during cluster recovery operations (and maybe
+  eventually elsewhere) to transmit assorted state from one broker to
+  another.  At present, the two data propagated are the object number
+  counter and boot sequence, both of which are used for creating
+  object ids for newly-created objects.
+
+    -->
+  <class name="ManagementSetupState">
+    <!-- for reasons that aren't clear (to me, anyhow) you have to say
+    access="RO" to get accessor methods defined.  RC or RW don't do
+    it.  Probably this is documented someplace, but I couldn't find
+    it. -jrd -->
+    <property name="objectNum" type="uint64" access="RO"/>
+    <property name="bootSequence" type="uint16" access="RO"/>
+  </class>
+
   <eventArguments>
     <arg name="altEx"   type="sstr"   desc="Name of the alternate exchange"/>
     <arg name="args"    type="map"    desc="Supplemental arguments or parameters supplied"/>
