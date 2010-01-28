@@ -1,4 +1,3 @@
-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,7 +16,7 @@
 # under the License.
 #
 import time
-import logging
+from logging import getLogger
 from threading import Lock
 from threading import Condition
 try:
@@ -27,7 +26,8 @@ except ImportError:
     import md5
     _md5Obj = md5.new
 
-
+log = getLogger("qmf")
+log_query = getLogger("qmf.query")
 
 
 ##
@@ -423,7 +423,10 @@ class QmfData(_mapEncoder):
         return self._tag
 
     def get_value(self, name):
-        # meta-properties:
+        """
+        Will throw an AttributeError exception if the named value does not exist.
+        """
+        # meta-properties first:
         if name == SchemaClassId.KEY_PACKAGE:
             if self._schema_id:
                 return self._schema_id.get_package_name()
@@ -453,7 +456,10 @@ class QmfData(_mapEncoder):
         if name == self.KEY_DELETE_TS:
             return self._dtime
 
-        return self._values.get(name)
+        try:
+            return self._values[name]
+        except KeyError:
+            raise AttributeError("no value named '%s' in this object" % name)
 
     def has_value(self, name):
 
@@ -515,8 +521,7 @@ class QmfData(_mapEncoder):
             try:
                 result += unicode(self._values[key])
             except:
-                logging.error("get_object_id(): cannot convert value '%s'."
-                              % key)
+                log.error("get_object_id(): cannot convert value '%s'." % key)
                 return None
         self._object_id = result
         return result
@@ -931,23 +936,32 @@ class QmfQuery(_mapEncoder):
     # QmfData.KEY_DELETE_TS
     # <name of data value>
 
-    CMP_EQ="eq"
-    CMP_NE="ne"
-    CMP_LT="lt"
-    CMP_LE="le"
-    CMP_GT="gt"
-    CMP_GE="ge"
-    CMP_RE_MATCH="re_match"
-    CMP_EXISTS="exists"
-    CMP_TRUE="true"
-    CMP_FALSE="false"
+    # supported predicate operators
 
-    LOGIC_AND="and"
-    LOGIC_OR="or"
-    LOGIC_NOT="not"
+    # evaluation operators
+    QUOTE="quote"
+    UNQUOTE="unquote"
+    # boolean operators
+    EQ="eq"
+    NE="ne"
+    LT="lt"
+    LE="le"
+    GT="gt"
+    GE="ge"
+    RE_MATCH="re_match"
+    EXISTS="exists"
+    TRUE="true"
+    FALSE="false"
+    # logic operators
+    AND="and"
+    OR="or"
+    NOT="not"
 
     _valid_targets = [TARGET_PACKAGES, TARGET_OBJECT_ID, TARGET_SCHEMA, TARGET_SCHEMA_ID, 
                       TARGET_OBJECT, TARGET_AGENT]
+    _valid_bool_ops = [EQ, NE, LT, GT, LE, GE, EXISTS, RE_MATCH, TRUE, FALSE]
+    _valid_logic_ops = [AND, OR, NOT]
+    _valid_eval_ops = [QUOTE, UNQUOTE]
 
     def __init__(self, _target=None, _target_params=None, _predicate=None,
                  _id=None, _map=None):
@@ -972,9 +986,7 @@ class QmfQuery(_mapEncoder):
                 if _target == self.TARGET_SCHEMA:
                     _id = SchemaClassId.from_map(_id)
             else: 
-                pred = _map.get(self.KEY_PREDICATE)
-                if pred:
-                    _predicate = QmfQueryPredicate(pred)
+                _predicate = _map.get(self.KEY_PREDICATE, _predicate)
 
         self._target = _target
         if not self._target:
@@ -1038,7 +1050,7 @@ class QmfQuery(_mapEncoder):
             raise Exception("Unsupported query target '%s'" % str(self._target))
 
         if self._predicate:
-            return self._predicate.evaluate(qmfData)
+            return self._eval_pred(self._predicate, qmfData)
         # no predicate and no id - always match
         return True
 
@@ -1050,163 +1062,131 @@ class QmfQuery(_mapEncoder):
             else:
                 _map[self.KEY_ID] = self._id
         elif self._predicate is not None:
-            _map[self.KEY_PREDICATE] = self._predicate.map_encode()
+            _map[self.KEY_PREDICATE] = self._predicate
         return _map
+
+    def _eval_pred(self, pred, qmfData):
+        """
+        Evaluate the predicate expression against a QmfData object.
+        """
+        if not isinstance(qmfData, QmfData):
+            raise TypeError("Query expects to evaluate QmfData types.")
+
+        if not isinstance(pred, type([])):
+            log_query.warning("Invalid type for predicate expression: '%s'" % str(pred))
+            return False
+
+        # empty predicate - match all???
+        if len(pred) == 0:
+            return True
+
+        oper = pred[0]
+        if oper == QmfQuery.TRUE:
+            log_query.debug("query evaluate TRUE")
+            return True
+
+        if oper == QmfQuery.FALSE:
+            log_query.debug("query evaluate FALSE")
+            return False
+
+        if oper == QmfQuery.AND:
+            log_query.debug("query evaluate AND: '%s'" % str(pred))
+            for exp in pred[1:]:
+                if not self._eval_pred(exp, qmfData):
+                    log_query.debug("---> False")
+                    return False
+            log_query.debug("---> True")
+            return True
+
+        if oper == QmfQuery.OR:
+            log_query.debug("query evaluate OR: [%s]" % str(pred))
+            for exp in pred[1:]:
+                if self._eval_pred(exp, qmfData):
+                    log_query.debug("---> True")
+                    return True
+            log_query.debug("---> False")
+            return False
+
+        if oper == QmfQuery.NOT:
+            log_query.debug("query evaluate NOT: [%s]" % str(pred))
+            for exp in pred[1:]:
+                if self._eval_pred(exp, qmfData):
+                    log_query.debug("---> False")
+                    return False
+            log_query.debug("---> True")
+            return True
+
+        if oper == QmfQuery.EXISTS:
+            if len(pred) != 2:
+                log_query.warning("Malformed query: 'exists' operator"
+                                " - bad arguments '%s'" % str(pred))
+                return False
+            ### Q: Should we assume "quote", or should it be explicit?
+            ### "foo" or ["quote" "foo"] 
+            ### my guess is "explicit"
+            log_query.debug("query evaluate EXISTS: [%s]" % str(pred))
+            try:
+                arg = self._fetch_pred_arg(pred[1], qmfData)
+            except AttributeError:
+                log_query.debug("query parameter not found: '%s'" % str(pred))
+                return False
+            v = qmfData.has_value(arg)
+            log_query.debug("---> %s" % str(v))
+            return v
+
+        # binary operators
+        if oper in [QmfQuery.EQ, QmfQuery.NE, QmfQuery.LT,
+                    QmfQuery.LE, QmfQuery.GT, QmfQuery.GE,
+                    QmfQuery.RE_MATCH]:
+            if len(pred) != 3:
+                log_query.warning("Malformed query: '%s' operator"
+                                " - requires 2 arguments '%s'" %
+                                (oper, str(pred)))
+                return False
+            # @todo: support regular expression match
+            log_query.debug("query evaluate binary op: [%s]" % str(pred))
+            try:
+                arg1 = self._fetch_pred_arg(pred[1], qmfData)
+                arg2 = self._fetch_pred_arg(pred[2], qmfData)
+            except AttributeError:
+                log_query.debug("query parameter not found: '%s'" % str(pred))
+                return False
+            log_query.debug("query evaluate %s: %s, %s" % (oper, str(arg1), str(arg2)))
+            v = False
+            try:
+                if oper == QmfQuery.EQ: v = arg1 == arg2
+                elif oper == QmfQuery.NE: v = arg1 != arg2
+                elif oper == QmfQuery.LT: v = arg1 < arg2
+                elif oper == QmfQuery.LE: v = arg1 <= arg2
+                elif oper == QmfQuery.GT: v = arg1 > arg2
+                elif oper == QmfQuery.GE: v = arg1 >= arg2
+            except TypeError:
+                log_query.warning("query comparison failed: '%s'" %  str(pred))
+            log_query.debug("---> %s" % str(v))
+            return v
+
+        log_query.warning("Unrecognized query operator: [%s]" % str(pred[0]))
+        return False
+
+    def _fetch_pred_arg(self, arg, qmfData):
+        """
+        Determine the value of a predicate argument by evaluating quoted
+        arguments.
+        """
+        if isinstance(arg, basestring):
+            return qmfData.get_value(arg)
+        if isinstance(arg, type([])) and len(arg) == 2:
+            if arg[0] == QmfQuery.QUOTE:
+                return arg[1]
+            if arg[0] == QmfQuery.UNQUOTE:
+                return qmfData.get_value(arg[1])
+        return arg
 
     def __repr__(self):
         return "QmfQuery=<<" + str(self.map_encode()) + ">>"
 
 
 
-class QmfQueryPredicate(_mapEncoder):
-    """
-    Class for Query predicates.
-    """
-    _valid_cmp_ops = [QmfQuery.CMP_EQ, QmfQuery.CMP_NE, QmfQuery.CMP_LT, 
-                      QmfQuery.CMP_GT, QmfQuery.CMP_LE, QmfQuery.CMP_GE,
-                      QmfQuery.CMP_EXISTS, QmfQuery.CMP_RE_MATCH,
-                      QmfQuery.CMP_TRUE, QmfQuery.CMP_FALSE]
-    _valid_logic_ops = [QmfQuery.LOGIC_AND, QmfQuery.LOGIC_OR, QmfQuery.LOGIC_NOT]
-
-
-    def __init__( self, pmap):
-        """
-        {"op": listOf(operands)}
-        """
-        self._oper = None
-        self._operands = []
-
-        logic_op = False
-        if type(pmap) == dict:
-            for key in pmap.iterkeys():
-                if key in self._valid_cmp_ops:
-                    # comparison operation - may have "name" and "value"
-                    self._oper = key
-                    break
-                if key in self._valid_logic_ops:
-                    logic_op = True
-                    self._oper = key
-                    break
-
-            if not self._oper:
-                raise TypeError("invalid predicate expression: '%s'" % str(pmap))
-
-            if type(pmap[self._oper]) == list or type(pmap[self._oper]) == tuple:
-                if logic_op:
-                    for exp in pmap[self._oper]:
-                        self.append(QmfQueryPredicate(exp))
-                else:
-                    self._operands = list(pmap[self._oper])
-
-        else:
-            raise TypeError("invalid predicate: '%s'" % str(pmap))
-
-
-    def append(self, operand):
-        """
-        Append another operand to a predicate expression
-        """
-        self._operands.append(operand)
-
-
-
-    def evaluate( self, qmfData ):
-        """
-        """
-        if not isinstance(qmfData, QmfData):
-            raise TypeError("Query expects to evaluate QmfData types.")
-
-        if self._oper == QmfQuery.CMP_TRUE:
-            logging.debug("query evaluate TRUE")
-            return True
-        if self._oper == QmfQuery.CMP_FALSE:
-            logging.debug("query evaluate FALSE")
-            return False
-
-        if self._oper in [QmfQuery.CMP_EQ, QmfQuery.CMP_NE, QmfQuery.CMP_LT, 
-                          QmfQuery.CMP_LE, QmfQuery.CMP_GT, QmfQuery.CMP_GE,
-                          QmfQuery.CMP_RE_MATCH]:
-            if len(self._operands) != 2:
-                logging.warning("Malformed query compare expression received: '%s, %s'" %
-                                (self._oper, str(self._operands)))
-                return False
-            # @todo: support regular expression match
-            name = self._operands[0]
-            logging.debug("looking for: '%s'" % str(name))
-            if not qmfData.has_value(name):
-                logging.warning("Malformed query, attribute '%s' not present."
-                          % name)
-                return False
-
-            arg1 = qmfData.get_value(name)
-            arg2 = self._operands[1]
-            logging.debug("query evaluate %s: '%s' '%s' '%s'" % 
-                          (name, str(arg1), self._oper, str(arg2)))
-            try:
-                if self._oper == QmfQuery.CMP_EQ: return arg1 == arg2
-                if self._oper == QmfQuery.CMP_NE: return arg1 != arg2
-                if self._oper == QmfQuery.CMP_LT: return arg1 < arg2
-                if self._oper == QmfQuery.CMP_LE: return arg1 <= arg2
-                if self._oper == QmfQuery.CMP_GT: return arg1 > arg2
-                if self._oper == QmfQuery.CMP_GE: return arg1 >= arg2
-                if self._oper == QmfQuery.CMP_RE_MATCH: 
-                    logging.error("!!! RE QUERY TBD !!!")
-                    return False
-            except:
-                pass
-            logging.warning("Malformed query - %s: '%s' '%s' '%s'" % 
-                            (name, str(arg1), self._oper, str(self._operands[1])))
-            return False
-
-
-        if self._oper == QmfQuery.CMP_EXISTS:
-            if len(self._operands) != 1:
-                logging.warning("Malformed query present expression received")
-                return False
-            name = self._operands[0]
-            logging.debug("query evaluate PRESENT: [%s]" % str(name))
-            return qmfData.has_value(name)
-
-        if self._oper == QmfQuery.LOGIC_AND:
-            logging.debug("query evaluate AND: '%s'" % str(self._operands))
-            for exp in self._operands:
-                if not exp.evaluate(qmfData):
-                    return False
-            return True
-
-        if self._oper == QmfQuery.LOGIC_OR:
-            logging.debug("query evaluate OR: [%s]" % str(self._operands))
-            for exp in self._operands:
-                if exp.evaluate(qmfData):
-                    return True
-            return False
-
-        if self._oper == QmfQuery.LOGIC_NOT:
-            logging.debug("query evaluate NOT: [%s]" % str(self._operands))
-            for exp in self._operands:
-                if exp.evaluate(qmfData):
-                    return False
-            return True
-
-        logging.warning("Unrecognized query operator: [%s]" % str(self._oper))
-        return False
-
-    
-    def map_encode(self):
-        _map = {}
-        _list = []
-        for exp in self._operands:
-            if isinstance(exp, QmfQueryPredicate):
-                _list.append(exp.map_encode())
-            else:
-                _list.append(exp)
-        _map[self._oper] = _list
-        return _map
-
-
-    def __repr__(self):
-        return "QmfQueryPredicate=<<" + str(self.map_encode()) + ">>"
-    
 
 
 ##==============================================================================
@@ -1923,14 +1903,4 @@ class SchemaEventClass(SchemaClass):
     def __from_map(cls, map_):
         return cls(_map=map_)
     from_map = classmethod(__from_map)
-
-
-
-
-
-
-
-
-
-
 
