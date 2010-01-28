@@ -22,7 +22,7 @@ from threading import Thread, Event
 import qpid.messaging
 from qmf2.common import (Notifier, SchemaObjectClass, SchemaClassId,
                            SchemaProperty, qmfTypes, SchemaMethod, QmfQuery,
-                           QmfData, QmfQueryPredicate) 
+                           QmfData) 
 import qmf2.console
 from qmf2.agent import(QmfAgentData, Agent)
 
@@ -107,6 +107,7 @@ class _agentApp(Thread):
         _obj2.set_value("field2", 2)
         _obj2.set_value("field3", {"a":1, "map":2, "value":3})
         _obj2.set_value("field4", ["a", "list", "value"])
+        _obj2.set_value("index1", 50)
         self.agent.add_object(_obj2)
 
         self.running = False
@@ -296,9 +297,9 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(agent and agent.get_name() == aname)
 
             query = QmfQuery.create_predicate(QmfQuery.TARGET_SCHEMA,
-                                              QmfQueryPredicate(
-                    {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE, 
-                                       "MyPackage"]}))
+                                              [QmfQuery.EQ,
+                                               SchemaClassId.KEY_PACKAGE, 
+                                               [QmfQuery.QUOTE, "MyPackage"]])
 
             schema_list = self.console.do_query(agent, query)
             self.assertTrue(len(schema_list))
@@ -330,13 +331,104 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(agent and agent.get_name() == aname)
 
             query = QmfQuery.create_predicate(QmfQuery.TARGET_SCHEMA,
-                                              QmfQueryPredicate(
-                    {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE, 
-                                       "No-Such-Package"]}))
+                                              [QmfQuery.EQ,
+                                               [QmfQuery.UNQUOTE, SchemaClassId.KEY_PACKAGE],
+                                               [QmfQuery.QUOTE, "No-Such-Package"]])
 
             schema_list = self.console.do_query(agent, query)
             self.assertTrue(len(schema_list) == 0)
 
         self.console.destroy(10)
 
+
+    def test_predicate_match_string(self):
+        # create console
+        # find agents
+        # synchronous query for all objects with a value named
+        #   set_string which is < or equal to "UNSET"
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        for aname in ["agent1", "agent2"]:
+            agent = self.console.find_agent(aname, timeout=3)
+            self.assertTrue(agent and agent.get_name() == aname)
+
+            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
+                    [QmfQuery.AND,
+                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, "set_string"]],
+                     [QmfQuery.EQ, "set_string", [QmfQuery.QUOTE, "UNSET"]]])
+
+            obj_list = self.console.do_query(agent, query)
+            self.assertTrue(len(obj_list) == 2)
+            for obj in obj_list:
+                self.assertTrue(obj.has_value("set_string"))
+                self.assertTrue(obj.get_value("set_string") == "UNSET")
+
+        self.console.destroy(10)
+
+
+
+    def test_predicate_match_integer(self):
+        # create console
+        # find agents
+        # synchronous query for all objects with a value named
+        #   "index1" which is < or equal to various values
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        for aname in ["agent1", "agent2"]:
+            agent = self.console.find_agent(aname, timeout=3)
+            self.assertTrue(agent and agent.get_name() == aname)
+
+            # == 99
+            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
+                    [QmfQuery.AND,
+                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, "index1"]],
+                     [QmfQuery.EQ, "index1", 99]])
+
+            obj_list = self.console.do_query(agent, query)
+            self.assertTrue(len(obj_list) == 1)
+            self.assertTrue(obj_list[0].has_value("index1"))
+            self.assertTrue(obj_list[0].get_value("index1") == 99)
+
+            # <= 99
+            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
+                    [QmfQuery.AND,
+                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, "index1"]],
+                     [QmfQuery.LE, "index1", 99]])
+
+            obj_list = self.console.do_query(agent, query)
+            self.assertTrue(len(obj_list) == 2)
+            for obj in obj_list:
+                self.assertTrue(obj.has_value("index1"))
+                self.assertTrue(obj.get_value("index1") <= 99)
+
+
+            # > 99
+            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
+                    [QmfQuery.AND,
+                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, "index1"]],
+                     [QmfQuery.GT, "index1", 99]])
+
+            obj_list = self.console.do_query(agent, query)
+            self.assertTrue(len(obj_list) == 1)
+            for obj in obj_list:
+                self.assertTrue(obj.has_value("index1"))
+                self.assertTrue(obj.get_value("index1") > 99)
+
+        self.console.destroy(10)
 

@@ -22,7 +22,7 @@ from threading import Thread, Event
 import qpid.messaging
 from qmf2.common import (Notifier, SchemaObjectClass, SchemaClassId,
                          SchemaProperty, qmfTypes, SchemaMethod, QmfQuery,
-                         QmfData, QmfQueryPredicate) 
+                         QmfData)
 import qmf2.console
 from qmf2.agent import(QmfAgentData, Agent)
 

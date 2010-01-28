@@ -31,7 +31,7 @@ from threading import Condition
 from qpid.messaging import Connection, Message, Empty, SendError
 
 from common import (make_subject, parse_subject, OpCode, QmfQuery, Notifier,
-                       QmfQueryPredicate, MsgKey, QmfData, QmfAddress,
+                    MsgKey, QmfData, QmfAddress,
                        SchemaClass, SchemaClassId, SchemaEventClass,
                        SchemaObjectClass, WorkItem, SchemaMethod, QmfEvent)
 
@@ -992,26 +992,19 @@ class Console(Thread):
             # query by object id
             query = QmfQuery.create_id(QmfQuery.TARGET_OBJECT, _object_id)
         elif _schema_id is not None:
-            pred = QmfQueryPredicate({QmfQuery.CMP_EQ:
-                                          [QmfData.KEY_SCHEMA_ID,
-                                           _schema_id.map_encode()]})
+            pred = [QmfQuery.EQ, QmfData.KEY_SCHEMA_ID, _schema_id.map_encode()]
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT, pred)
         elif _pname is not None:
             # query by package name (and maybe class name)
             if _cname is not None:
-                pred = QmfQueryPredicate({QmfQuery.LOGIC_AND:
-                                              [{QmfQuery.CMP_EQ:
-                                                    [SchemaClassId.KEY_PACKAGE,
-                                                     _pname]},
-                                               {QmfQuery.CMP_EQ:
-                                                    [SchemaClassId.KEY_CLASS,
-                                                     _cname]}]})
+                pred = [QmfQuery.AND, [QmfQuery.EQ, SchemaClassId.KEY_PACKAGE, 
+                                                    [QmfQuery.QUOTE, _pname]],
+                                      [QmfQuery.EQ, SchemaClassId.KEY_CLASS, 
+                                                    [QmfQuery.QUOTE, _cname]]]
             else:
-                pred = QmfQueryPredicate({QmfQuery.CMP_EQ:
-                                              [SchemaClassId.KEY_PACKAGE,
-                                               _pname]})
+                pred = [QmfQuery.EQ, SchemaClassId.KEY_PACKAGE, 
+                                     [QmfQuery.QUOTE, _pname]]
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT, pred)
-
         else:
             raise Exception("invalid arguments")
 
@@ -1977,13 +1970,13 @@ if __name__ == '__main__':
     logging.info( "******** Messing around with Queries ********" )
 
     _q1 = QmfQuery.create_predicate(QmfQuery.TARGET_AGENT,
-                                    QmfQueryPredicate({QmfQuery.LOGIC_AND:
-                                                           [{QmfQuery.CMP_EQ: ["vendor",  "AVendor"]},
-                                                            {QmfQuery.CMP_EQ: ["product", "SomeProduct"]},
-                                                            {QmfQuery.CMP_EQ: ["name", "Thingy"]},
-                                                            {QmfQuery.LOGIC_OR:
-                                                                 [{QmfQuery.CMP_LE: ["temperature", -10]},
-                                                                  {QmfQuery.CMP_FALSE: None},
-                                                                  {QmfQuery.CMP_EXISTS: ["namey"]}]}]}))
+                                    [QmfQuery.AND,
+                                     [QmfQuery.EQ, "vendor", [QmfQuery.QUOTE, "AVendor"]],
+                                     [QmfQuery.EQ, [QmfQuery.QUOTE, "SomeProduct"], "product"],
+                                     [QmfQuery.EQ, [QmfQuery.UNQUOTE, "name"], [QmfQuery.QUOTE, "Thingy"]],
+                                     [QmfQuery.OR,
+                                      [QmfQuery.LE, "temperature", -10],
+                                      [QmfQuery.FALSE],
+                                      [QmfQuery.EXISTS, "namey"]]])
 
     print("_q1.mapEncode() = [%s]" % _q1.map_encode())

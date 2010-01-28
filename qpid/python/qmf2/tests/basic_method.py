@@ -22,7 +22,7 @@ from threading import Thread, Event
 import qpid.messaging
 from qmf2.common import (Notifier, SchemaObjectClass, SchemaClassId,
                            SchemaProperty, qmfTypes, SchemaMethod, QmfQuery,
-                           QmfData, QmfQueryPredicate, WorkItem) 
+                           QmfData, WorkItem) 
 import qmf2.console
 from qmf2.agent import(QmfAgentData, Agent, MethodCallParams)
 
@@ -247,11 +247,9 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(agent and agent.get_name() == aname)
 
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
-                                              QmfQueryPredicate(
-                    {QmfQuery.LOGIC_AND:
-                     [{QmfQuery.CMP_EXISTS: [SchemaClassId.KEY_PACKAGE]},
-                      {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE,
-                                         "MyPackage"]}]}))
+                    [QmfQuery.AND,
+                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, SchemaClassId.KEY_PACKAGE]],
+                     [QmfQuery.EQ, SchemaClassId.KEY_PACKAGE, [QmfQuery.QUOTE, "MyPackage"]]])
 
             obj_list = self.console.do_query(agent, query)
             self.assertTrue(len(obj_list) == 2)
@@ -297,11 +295,9 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(agent and agent.get_name() == aname)
 
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
-                                              QmfQueryPredicate(
-                    {QmfQuery.LOGIC_AND:
-                     [{QmfQuery.CMP_EXISTS: [SchemaClassId.KEY_PACKAGE]},
-                      {QmfQuery.CMP_EQ: [SchemaClassId.KEY_PACKAGE,
-                                         "MyPackage"]}]}))
+                    [QmfQuery.AND,
+                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, SchemaClassId.KEY_PACKAGE]],
+                     [QmfQuery.EQ, [QmfQuery.UNQUOTE, SchemaClassId.KEY_PACKAGE], [QmfQuery.QUOTE, "MyPackage"]]])
 
             obj_list = self.console.do_query(agent, query)
             self.assertTrue(len(obj_list) == 2)

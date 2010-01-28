@@ -25,7 +25,7 @@ import qpid.messaging
 from qpid.harness import Skipped
 from qmf2.common import (Notifier, SchemaObjectClass, SchemaClassId,
                          SchemaProperty, qmfTypes, SchemaMethod, QmfQuery,
-                         QmfData, QmfQueryPredicate, SchemaEventClass,
+                         QmfData, SchemaEventClass,
                          QmfEvent)
 import qmf2.console
 from qmf2.agent import(QmfAgentData, Agent)
