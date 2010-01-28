@@ -24,6 +24,8 @@ import java.util.Map;
 
 import org.apache.qpid.messaging.util.AddressParser;
 
+import static org.apache.qpid.messaging.util.PyPrint.pprint;
+
 
 /**
  * Address
@@ -62,6 +64,12 @@ public class Address
     public Map getOptions()
     {
         return options;
+    }
+
+    public String toString()
+    {
+        return String.format("%s/%s; %s", pprint(name), pprint(subject),
+                             pprint(options));
     }
 
 }
