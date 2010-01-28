@@ -42,6 +42,7 @@ struct Options : public qpid::Options
     bool help;
     std::string url;
     std::string address;
+    std::string connectionOptions;
     int64_t timeout;
     bool forever;
     qpid::log::Options log;
@@ -59,6 +60,7 @@ struct Options : public qpid::Options
             ("address,a", qpid::optValue(address, "ADDRESS"), "address to drain from")
             ("timeout,t", qpid::optValue(timeout, "TIMEOUT"), "timeout in seconds to wait before exiting")
             ("forever,f", qpid::optValue(forever), "ignore timeout and wait forever")
+            ("connection-options", qpid::optValue(connectionOptions,"OPTIONS"), "connection options string in the form {name1=value1, name2=value2}")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -96,7 +98,8 @@ int main(int argc, char** argv)
     Options options(argv[0]);
     if (options.parse(argc, argv)) {
         try {
-            Connection connection = Connection::open(options.url);
+            Connection connection(options.connectionOptions);
+            connection.open(options.url);
             Session session = connection.newSession();
             Receiver receiver = session.createReceiver(options.address);
             Duration timeout = options.getTimeout();

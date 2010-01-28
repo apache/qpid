@@ -110,9 +110,18 @@ struct MessagingFixture : public BrokerFixture
 
     MessagingFixture(Broker::Options opts = Broker::Options()) :
         BrokerFixture(opts),
-        connection(Connection::open((boost::format("amqp:tcp:localhost:%1%") % (broker->getPort(Broker::TCP_TRANSPORT))).str())),
+        connection(open(broker->getPort(Broker::TCP_TRANSPORT))),
         session(connection.newSession()),
-        admin(broker->getPort(Broker::TCP_TRANSPORT)) {}
+        admin(broker->getPort(Broker::TCP_TRANSPORT))
+    {
+    }
+
+    static Connection open(uint16_t port)
+    {
+        Connection connection;
+        connection.open((boost::format("amqp:tcp:localhost:%1%") % (port)).str());
+        return connection;
+    }
 
     void ping(const qpid::messaging::Address& address)
     {
