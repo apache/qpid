@@ -23,6 +23,7 @@
  */
 
 #include "PeriodicTimer.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace sys {
@@ -33,8 +34,10 @@ namespace sys {
 class PeriodicTimerImpl : public PeriodicTimer
 {
   public:
-    PeriodicTimerImpl(Timer& timer);
-    void add(const Task& task, Duration period, const std::string& taskName);
+    QPID_COMMON_EXTERN PeriodicTimerImpl(Timer& timer);
+    QPID_COMMON_EXTERN void add(const Task& task,
+                                Duration period,
+                                const std::string& taskName);
 
   private:
     struct TaskImpl;
