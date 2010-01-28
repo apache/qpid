@@ -25,8 +25,11 @@ import java.nio.ByteBuffer;
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
+import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.security.sasl.SASLReceiver;
+import org.apache.qpid.transport.network.security.sasl.SASLSender;
 
 /**
  * ConnectionBinding
@@ -69,6 +72,12 @@ public abstract class ConnectionBinding
     {
         Connection conn = connection();
 
+        if (conn.getConnectionSettings().isUseSASLEncryption())
+        {
+            sender = new SASLSender(sender);
+            conn.addConnectionListener((ConnectionListener)sender);
+        }
+        
         // XXX: hardcoded max-frame
         Disassembler dis = new Disassembler(sender, MAX_FRAME_SIZE);
         conn.setSender(dis);
@@ -77,7 +86,16 @@ public abstract class ConnectionBinding
 
     public Receiver<ByteBuffer> receiver(Connection conn)
     {
-        return new InputHandler(new Assembler(conn));
+        if (conn.getConnectionSettings().isUseSASLEncryption())
+        {
+            SASLReceiver receiver = new SASLReceiver(new InputHandler(new Assembler(conn)));
+            conn.addConnectionListener((ConnectionListener)receiver);
+            return receiver;
+        }
+        else
+        {
+            return new InputHandler(new Assembler(conn));
+        }
     }
 
 }
