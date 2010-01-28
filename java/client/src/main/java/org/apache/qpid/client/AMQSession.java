@@ -71,6 +71,7 @@ import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.AMQPEncodedMapMessage;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.CloseConsumerMessage;
 import org.apache.qpid.client.message.JMSBytesMessage;
@@ -225,6 +226,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     protected final boolean DECLARE_EXCHANGES =
         Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
+
+    protected boolean USE_AMQP_ENCODED_MAP_MESSAGE = !Boolean.getBoolean("qpid.use_legacy_map_message");
 
     /** System property to enable strict AMQP compliance. */
     public static final String STRICT_AMQP = "STRICT_AMQP";
@@ -995,7 +998,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public MapMessage createMapMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSMapMessage(getMessageDelegateFactory());
+        if (USE_AMQP_ENCODED_MAP_MESSAGE)
+        {
+            return new AMQPEncodedMapMessage(getMessageDelegateFactory());
+        }
+        else
+        {
+            return new JMSMapMessage(getMessageDelegateFactory());
+        }
     }
 
     public javax.jms.Message createMessage() throws JMSException
