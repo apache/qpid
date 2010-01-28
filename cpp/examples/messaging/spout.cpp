@@ -56,6 +56,7 @@ struct Options : public qpid::Options
     string_vector properties;
     string_vector entries;
     std::string content;
+    std::string connectionOptions;
     qpid::log::Options log;
 
     Options(const std::string& argv0=std::string())
@@ -76,6 +77,7 @@ struct Options : public qpid::Options
             ("property,P", qpid::optValue(properties, "NAME=VALUE"), "specify message property")
             ("map,M", qpid::optValue(entries, "NAME=VALUE"), "specify entry for map content")
             ("content", qpid::optValue(content, "CONTENT"), "specify textual content")
+            ("connection-options", qpid::optValue(connectionOptions,"OPTIONS"), "connection options string in the form {name1=value1, name2=value2}")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -155,7 +157,8 @@ int main(int argc, char** argv)
     Options options(argv[0]);
     if (options.parse(argc, argv)) {        
         try {
-            Connection connection = Connection::open(options.url);
+            Connection connection(options.connectionOptions);
+            connection.open(options.url);
             Session session = connection.newSession();
             Sender sender = session.createSender(options.address);
 

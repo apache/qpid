@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/messaging/Connection.h"
+#include "qpid/messaging/AddressParser.h"
 #include "qpid/messaging/ConnectionImpl.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/SessionImpl.h"
@@ -37,18 +38,27 @@ namespace messaging {
 
 using qpid::client::PI;
 
-Connection Connection::open(const std::string& url, const Variant::Map& options)
-{
-    //only support amqp 0-10 at present
-    Connection connection(new qpid::client::amqp0_10::ConnectionImpl(url, options));
-    return connection;
-}
-
 Connection::Connection(ConnectionImpl* impl) { PI::ctor(*this, impl); }
 Connection::Connection(const Connection& c) : qpid::client::Handle<ConnectionImpl>() { PI::copy(*this, c); }
 Connection& Connection::operator=(const Connection& c) { return PI::assign(*this, c); }
 Connection::~Connection() { PI::dtor(*this); }
 
+Connection::Connection(const std::string& o)
+{ 
+    Variant::Map options;
+    AddressParser parser(o);
+    if (parser.parseMap(options)) {
+        PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(options));
+    } else {
+        throw InvalidOptionString(o);
+    }
+}
+Connection::Connection(const Variant::Map& options)
+{
+    PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(options));
+}
+
+void Connection::open(const std::string& url) { impl->open(url); }
 void Connection::close() { impl->close(); }
 Session Connection::newSession(const char* name) { return impl->newSession(false, name); }
 Session Connection::newSession(const std::string& name) { return impl->newSession(false, name); }

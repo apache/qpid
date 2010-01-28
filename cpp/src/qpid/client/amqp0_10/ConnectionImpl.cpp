@@ -61,8 +61,8 @@ void convert(const Variant::Map& from, ConnectionSettings& to)
     setIfFound(from, "bounds", to.bounds);
 }
 
-ConnectionImpl::ConnectionImpl(const std::string& u, const Variant::Map& options) : 
-    url(u), reconnectionEnabled(true), timeout(-1),
+ConnectionImpl::ConnectionImpl(const Variant::Map& options) : 
+    reconnectionEnabled(true), timeout(-1),
     minRetryInterval(1), maxRetryInterval(30)
 {
     QPID_LOG(debug, "Opening connection to " << url << " with " << options);
@@ -71,6 +71,11 @@ ConnectionImpl::ConnectionImpl(const std::string& u, const Variant::Map& options
     setIfFound(options, "reconnection-timeout", timeout);
     setIfFound(options, "min-retry-interval", minRetryInterval);
     setIfFound(options, "max-retry-interval", maxRetryInterval);
+}
+
+void ConnectionImpl::open(const std::string& u)
+{
+    url = u;
     connection.open(url, settings);
 }
 

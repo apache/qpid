@@ -702,6 +702,8 @@ libqpidclient_la_SOURCES =			\
   qpid/client/TCPConnector.cpp			\
   qpid/client/TCPConnector.h			\
   qpid/messaging/Address.cpp			\
+  qpid/messaging/AddressParser.h		\
+  qpid/messaging/AddressParser.cpp		\
   qpid/messaging/Connection.cpp			\
   qpid/messaging/ListContent.cpp		\
   qpid/messaging/ListView.cpp			\

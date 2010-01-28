@@ -52,7 +52,8 @@ int main(int argc, char** argv) {
     int count = argc>2 ? atoi(argv[2]) : 10;
 
     try {
-        Connection connection = Connection::open(url);
+        Connection connection;
+        connection.open(url);
         Session session = connection.newSession();
         Sender sender = session.createSender("news_service");
 

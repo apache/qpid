@@ -42,7 +42,8 @@ int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
 
     try {
-        Connection connection = Connection::open(url);
+        Connection connection;
+        connection.open(url);
         Session session = connection.newSession();
         Receiver receiver = session.createReceiver("service_queue; {create: always}");
 

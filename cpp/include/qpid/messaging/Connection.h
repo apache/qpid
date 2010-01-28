@@ -38,9 +38,16 @@ namespace messaging {
 class ConnectionImpl;
 class Session;
 
+struct InvalidOptionString : public qpid::Exception 
+{
+    InvalidOptionString(const std::string& msg);
+};
+
 class Connection : public qpid::client::Handle<ConnectionImpl>
 {
   public:
+    QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl);
+    QPID_CLIENT_EXTERN Connection(const Connection&);
     /**
      * Current implementation supports the following options:
      * 
@@ -70,12 +77,11 @@ class Connection : public qpid::client::Handle<ConnectionImpl>
      * 
      *
      */
-    static QPID_CLIENT_EXTERN Connection open(const std::string& url, const Variant::Map& options = Variant::Map());
-
-    QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl = 0);
-    QPID_CLIENT_EXTERN Connection(const Connection&);
+    QPID_CLIENT_EXTERN Connection(const Variant::Map& options = Variant::Map());
+    QPID_CLIENT_EXTERN Connection(const std::string& options);
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
+    QPID_CLIENT_EXTERN void open(const std::string& url);
     QPID_CLIENT_EXTERN void close();
     QPID_CLIENT_EXTERN Session newSession(bool transactional, const std::string& name = std::string());
     QPID_CLIENT_EXTERN Session newSession(const std::string& name = std::string());
@@ -86,19 +92,6 @@ class Connection : public qpid::client::Handle<ConnectionImpl>
   friend class qpid::client::PrivateImplRef<Connection>;
 
 };
-
-struct InvalidOptionString : public qpid::Exception 
-{
-    InvalidOptionString(const std::string& msg);
-};
-
-/**
- * TODO: need to change format of connection option string (currently
- * name1=value1&name2=value2 etc, should probably use map syntax as
- * per address options.
- */
-QPID_CLIENT_EXTERN void parseOptionString(const std::string&, Variant::Map&);
-QPID_CLIENT_EXTERN Variant::Map parseOptionString(const std::string&);
 
 }} // namespace qpid::messaging
 
