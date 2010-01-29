@@ -36,7 +36,7 @@ using namespace std;
 NoOpConnectionOutputHandler OutputInterceptor::discardHandler;
 
 OutputInterceptor::OutputInterceptor(Connection& p, sys::ConnectionOutputHandler& h)
-    : parent(p), closing(false), next(&h), sendMax(1), sent(0), sentDoOutput(false)
+    : parent(p), closing(false), next(&h), sendMax(2048), sent(0), sentDoOutput(false)
 {}
 
 void OutputInterceptor::send(framing::AMQFrame& f) {
@@ -80,7 +80,7 @@ void OutputInterceptor::deliverDoOutput(uint32_t limit) {
         if (buffered == 0 && sent == sendMax) // Could have sent more, increase the limit.
             newLimit = sendMax*2; 
         else if (buffered > 0 && sent > 1) // Data left unsent, reduce the limit.
-            newLimit = sent-1;
+            newLimit = (sendMax + sent) / 2;
     }
     sent = 0;
     while (sent < limit && parent.getBrokerConnection().doOutput())
