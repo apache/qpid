@@ -211,7 +211,7 @@ namespace qpid {
                                             bool exclusive = false);
             QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
 
-            uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
+            uint32_t purge(const uint32_t purge_request=0, boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>()); //defaults to all messages 
             QPID_BROKER_EXTERN void purgeExpired();
 
             //move qty # of messages to destination Queue destq
