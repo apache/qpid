@@ -155,17 +155,24 @@ class ManagementAgent
     //
     virtual uint32_t pollCallbacks(uint32_t callLimit = 0) = 0;
 
-    // If "useExternalThread" was set to true in the constructor, this method provides
-    // a callback that is invoked whenever there is work to be done by pollCallbacks.
-    // This function is invoked on the agent's thread and should not perform any work
-    // except to signal the application's thread.
+    // In the "useExternalThread" scenario, there are three ways that an application can
+    // use to be notified that there is work to do.  Of course the application may periodically
+    // call pollCallbacks if it wishes, but this will cause long latencies in the responses
+    // to method calls.
     //
-    // There are two flavors of callback:
-    //    A C version that uses a pointer to a function with a void* context
-    //    A C++ version that uses a class derived from Notifyable
+    // The notification methods are:
     //
-    // Either type of callback may be used.  If they are both provided, the C++ callback
-    // will be the only one invoked.
+    //  1) Register a C-style callback by providing a pointer to a function
+    //  2) Register a C++-style callback by providing an object of a class that is derived
+    //     from Notifyable
+    //  3) Call getSignalFd() to get a file descriptor that can be used in a select
+    //     call.  The file descriptor shall become readable when the agent has work to
+    //     do.  Note that this mechanism is specific to Posix-based operating environments.
+    //     getSignalFd will probably not function correctly on Windows.
+    //
+    // If a callback is registered, the callback function will be called on the agent's
+    // thread.  The callback function must perform no work other than to signal the application
+    // thread to call pollCallbacks.
     //
     typedef void (*cb_t)(void*);
     virtual void setSignalCallback(cb_t callback, void* context) = 0;
