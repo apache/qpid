@@ -23,6 +23,7 @@
 
 #include "qpid/sys/windows/check.h"
 
+#include <winsock2.h>
 #include <ws2tcpip.h>
 #include <string.h>
 
