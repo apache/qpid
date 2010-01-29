@@ -49,7 +49,6 @@
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/SystemInfo.h"
-#include "qpid/sys/PeriodicTimerImpl.h"
 #include "qpid/Address.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
@@ -257,11 +256,7 @@ Broker::Broker(const Broker::Options& conf) :
     // Initialize plugins
     Plugin::initializeAll(*this);
 
-    if (!periodicTimer.hasDelegate()) {
-        // If no plugin has contributed a PeriodicTimer, use the default one.
-        periodicTimer.setDelegate(
-            std::auto_ptr<sys::PeriodicTimer>(new sys::PeriodicTimerImpl(timer)));
-    }
+    if (managementAgent.get()) managementAgent->pluginsInitialized();
 
     if (conf.queueCleanInterval) {
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
@@ -474,8 +469,8 @@ Broker::getKnownBrokersImpl()
     return knownBrokers;
 }
 
-void Broker::setPeriodicTimer(std::auto_ptr<sys::PeriodicTimer> pt) {
-    periodicTimer.setDelegate(pt);
+void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
+    clusterTimer = t;
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");
