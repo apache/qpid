@@ -155,7 +155,13 @@
     <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Broker latency through this queue"/>
 
     <method name="purge" desc="Discard all or some messages on a queue">
-      <arg name="request"          dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
+      <arg name="request" dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
+    </method>
+
+    <method name="reroute" desc="Remove all or some messages on this queue and route them to an exchange">
+      <arg name="request"        dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
+      <arg name="useAltExchange" dir="I" type="bool"   desc="Iff true, use the queue's configured alternate exchange; iff false, use exchange named in the 'exchange' argument"/>
+      <arg name="exchange"       dir="I" type="sstr"   desc="Name of the exchange to route the messages through"/>
     </method>
   </class>
 
