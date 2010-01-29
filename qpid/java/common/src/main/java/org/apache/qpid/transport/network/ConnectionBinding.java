@@ -72,7 +72,8 @@ public abstract class ConnectionBinding
     {
         Connection conn = connection();
 
-        if (conn.getConnectionSettings().isUseSASLEncryption())
+        if (conn.getConnectionSettings() != null & 
+            conn.getConnectionSettings().isUseSASLEncryption())
         {
             sender = new SASLSender(sender);
             conn.addConnectionListener((ConnectionListener)sender);
@@ -86,7 +87,8 @@ public abstract class ConnectionBinding
 
     public Receiver<ByteBuffer> receiver(Connection conn)
     {
-        if (conn.getConnectionSettings().isUseSASLEncryption())
+        if (conn.getConnectionSettings() != null & 
+            conn.getConnectionSettings().isUseSASLEncryption())
         {
             SASLReceiver receiver = new SASLReceiver(new InputHandler(new Assembler(conn)));
             conn.addConnectionListener((ConnectionListener)receiver);
