@@ -21,6 +21,7 @@
 import optparse, time
 from qpid.messaging import *
 from qpid.util import URL
+from qpid.log import enable, DEBUG, WARN
 
 def nameval(st):
   idx = st.find("=")
@@ -36,19 +37,32 @@ parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS [ CONTENT .
                                description="Send messages to the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
+parser.add_option("-r", "--reconnect", action="store_true",
+                  help="enable auto reconnect")
+parser.add_option("-d", "--reconnect-delay", type=float, default=3,
+                  help="delay between reconnect attempts")
+parser.add_option("-l", "--reconnect-limit", type=int,
+                  help="maximum number of reconnect attempts")
 parser.add_option("-c", "--count", type=int, default=1,
                   help="stop after count messages have been sent, zero disables (default %default)")
 parser.add_option("-t", "--timeout", type=float, default=None,
                   help="exit after the specified time")
 parser.add_option("-i", "--id", help="use the supplied id instead of generating one")
-parser.add_option("-r", "--reply-to", help="specify reply-to address")
+parser.add_option("-R", "--reply-to", help="specify reply-to address")
 parser.add_option("-P", "--property", dest="properties", action="append", default=[],
                   metavar="NAME=VALUE", help="specify message property")
 parser.add_option("-M", "--map", dest="entries", action="append", default=[],
                   metavar="KEY=VALUE",
                   help="specify map entry for message body")
+parser.add_option("-v", dest="verbose", action="store_true",
+                  help="enable logging")
 
 opts, args = parser.parse_args()
+
+if opts.verbose:
+  enable("qpid", DEBUG)
+else:
+  enable("qpid", WARN)
 
 url = URL(opts.broker)
 if opts.id is None:
@@ -79,7 +93,11 @@ else:
 
 # XXX: should make URL default the port for us
 conn = Connection.open(url.host, url.port or AMQP_PORT,
-                       username=url.user, password=url.password)
+                       username=url.user,
+                       password=url.password,
+                       reconnect=opts.reconnect,
+                       reconnect_delay=opts.reconnect_delay,
+                       reconnect_limit=opts.reconnect_limit)
 ssn = conn.session()
 snd = ssn.sender(addr)
 
