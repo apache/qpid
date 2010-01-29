@@ -30,6 +30,12 @@
 namespace qpid {
 namespace management {
 
+class Notifyable {
+public:
+    virtual ~Notifyable() {}
+    virtual void notify() = 0;
+};
+
 class ManagementAgent
 {
   public:
@@ -150,11 +156,20 @@ class ManagementAgent
     virtual uint32_t pollCallbacks(uint32_t callLimit = 0) = 0;
 
     // If "useExternalThread" was set to true in the constructor, this method provides
-    // a standard file descriptor that can be used in a select statement to signal that
-    // there are method callbacks ready (i.e. that "pollCallbacks" will result in at
-    // least one method call).  When this fd is ready-for-read, pollCallbacks may be
-    // invoked.  Calling pollCallbacks shall reset the ready-to-read state of the fd.
+    // a callback that is invoked whenever there is work to be done by pollCallbacks.
+    // This function is invoked on the agent's thread and should not perform any work
+    // except to signal the application's thread.
     //
+    // There are two flavors of callback:
+    //    A C version that uses a pointer to a function with a void* context
+    //    A C++ version that uses a class derived from Notifyable
+    //
+    // Either type of callback may be used.  If they are both provided, the C++ callback
+    // will be the only one invoked.
+    //
+    typedef void (*cb_t)(void*);
+    virtual void setSignalCallback(cb_t callback, void* context) = 0;
+    virtual void setSignalCallback(Notifyable& notifyable) = 0;
     virtual int getSignalFd() = 0;
 };
 
