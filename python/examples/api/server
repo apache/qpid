@@ -28,7 +28,14 @@ parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS ...",
                                description="handle requests from the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
-parser.add_option("-v", dest="verbose", action="store_true", help="enable logging")
+parser.add_option("-r", "--reconnect", action="store_true",
+                  help="enable auto reconnect")
+parser.add_option("-d", "--reconnect-delay", type=float, default=3,
+                  help="delay between reconnect attempts")
+parser.add_option("-l", "--reconnect-limit", type=int,
+                  help="maximum number of reconnect attempts")
+parser.add_option("-v", dest="verbose", action="store_true",
+                  help="enable logging")
 
 opts, args = parser.parse_args()
 
@@ -45,8 +52,11 @@ else:
 
 # XXX: should make URL default the port for us
 conn = Connection.open(url.host, url.port or AMQP_PORT,
-                       username=url.user, password=url.password)
-conn.reconnect = True
+                       username=url.user,
+                       password=url.password,
+                       reconnect=opts.reconnect,
+                       reconnect_delay=opts.reconnect_delay,
+                       reconnect_limit=opts.reconnect_limit)
 ssn = conn.session()
 rcv = ssn.receiver(addr)
 

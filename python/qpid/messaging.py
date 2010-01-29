@@ -108,12 +108,15 @@ class Connection:
     self.password = password
     self.mechanisms = options.get("mechanisms")
     self.heartbeat = options.get("heartbeat")
+    self.reconnect = options.get("reconnect", False)
+    self.reconnect_delay = options.get("reconnect_delay", 3)
+    self.reconnect_limit = options.get("reconnect_limit")
+    self.backups = options.get("backups", [])
     self.options = options
 
     self.id = str(uuid4())
     self.session_counter = 0
     self.sessions = {}
-    self.reconnect = options.get("reconnect", False)
     self._connected = False
     self._lock = RLock()
     self._condition = Condition(self._lock)
