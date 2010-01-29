@@ -78,6 +78,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void raiseEvent(const management::ManagementEvent& event, severity_t severity = SEV_DEFAULT);
     uint32_t pollCallbacks(uint32_t callLimit = 0);
     int getSignalFd();
+    void setSignalCallback(cb_t callback, void* context);
+    void setSignalCallback(Notifyable& n);
 
     uint16_t getInterval() { return interval; }
     void periodicProcessing();
@@ -142,6 +144,10 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     bool              extThread;
     sys::PipeHandle*  pipeHandle;
     uint64_t          nextObjectId;
+    cb_t              notifyCallback;
+    void*             notifyContext;
+    Notifyable*       notifyable;
+    bool              inCallback;
     std::string       storeFile;
     sys::Mutex        agentLock;
     sys::Mutex        addLock;

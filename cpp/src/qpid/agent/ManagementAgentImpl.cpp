@@ -21,7 +21,6 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/log/Statement.h"
-#include "qpid/sys/PipeHandle.h"
 #include "qpid/agent/ManagementAgentImpl.h"
 #include <list>
 #include <string.h>
@@ -78,7 +77,8 @@ ManagementAgent* ManagementAgent::Singleton::getInstance()
 const string ManagementAgentImpl::storeMagicNumber("MA02");
 
 ManagementAgentImpl::ManagementAgentImpl() :
-    interval(10), extThread(false), pipeHandle(0),
+    interval(10), extThread(false), pipeHandle(0), notifyCallback(0), notifyContext(0),
+    notifyable(0), inCallback(false),
     initialized(false), connected(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
@@ -148,12 +148,6 @@ void ManagementAgentImpl::init(const qpid::client::ConnectionSettings& settings,
     QPID_LOG(info, "QMF Agent Initialized: broker=" << settings.host << ":" << settings.port <<
              " interval=" << intervalSeconds << " storeFile=" << _storeFile);
     connectionSettings = settings;
-
-    // TODO: Abstract the socket calls for portability
-    // qpid::sys::PipeHandle to create a pipe
-    if (extThread) {
-        pipeHandle = new PipeHandle(true);
-    }
 
     retrieveData();
     bootSequence++;
@@ -226,6 +220,11 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
 {
     Mutex::ScopedLock lock(agentLock);
 
+    if (inCallback) {
+        QPID_LOG(critical, "pollCallbacks invoked from the agent's thread!");
+        return 0;
+    }
+
     for (uint32_t idx = 0; callLimit == 0 || idx < callLimit; idx++) {
         if (methodQueue.empty())
             break;
@@ -239,15 +238,35 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
             delete item;
         }
     }
-    
-    char rbuf[100];
-    while (pipeHandle->read(rbuf, 100) > 0) ; // Consume all signaling bytes
+
+    if (pipeHandle != 0) {
+        char rbuf[100];
+        while (pipeHandle->read(rbuf, 100) > 0) ; // Consume all signaling bytes
+    }
     return methodQueue.size();
 }
 
-int ManagementAgentImpl::getSignalFd(void)
+int ManagementAgentImpl::getSignalFd()
 {
-    return pipeHandle->getReadHandle();
+    if (extThread) {
+        pipeHandle = new PipeHandle(true);
+        return pipeHandle->getReadHandle();
+    }
+
+    return -1;
+}
+
+void ManagementAgentImpl::setSignalCallback(cb_t callback, void* context)
+{
+    Mutex::ScopedLock lock(agentLock);
+    notifyCallback = callback;
+    notifyContext  = context;
+}
+
+void ManagementAgentImpl::setSignalCallback(Notifyable& _notifyable)
+{
+    Mutex::ScopedLock lock(agentLock);
+    notifyable = &_notifyable;
 }
 
 void ManagementAgentImpl::startProtocol()
@@ -528,7 +547,23 @@ void ManagementAgentImpl::handleMethodRequest(Buffer& inBuffer, uint32_t sequenc
 
         inBuffer.getRawData(body, inBuffer.available());
         methodQueue.push_back(new QueuedMethod(sequence, replyTo, body));
-        pipeHandle->write("X", 1);
+        if (pipeHandle != 0) {
+            pipeHandle->write("X", 1);
+        } else if (notifyable != 0) {
+            inCallback = true;
+            {
+                Mutex::ScopedUnlock unlock(agentLock);
+                notifyable->notify();
+            }
+            inCallback = false;
+        } else if (notifyCallback != 0) {
+            inCallback = true;
+            {
+                Mutex::ScopedUnlock unlock(agentLock);
+                notifyCallback(notifyContext);
+            }
+            inCallback = false;
+        }
     } else {
         invokeMethodRequest(inBuffer, sequence, replyTo);
     }
