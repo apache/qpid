@@ -190,14 +190,15 @@ template <class T> std::string encode(const T& t) {
 //
 void UpdateClient::updateManagementSetupState(Broker & b)
 {
-    qmf::org::apache::qpid::broker::ManagementSetupState mss(b.getManagementAgent(), 0);
-    mss.set_objectNum(b.getManagementAgent()->getNextObjectId());
-    mss.set_bootSequence(b.getManagementAgent()->getBootSequence());
-
-    QPID_LOG(debug, updaterId << " updating management-setup-state " << mss.get_objectNum() 
-	     << " " << mss.get_bootSequence() << "\n");
-
-    ClusterConnectionProxy(session).managementSetupState(mss.get_objectNum(), mss.get_bootSequence());
+    management::ManagementAgent* agent = updaterBroker.getManagementAgent();
+    if (agent) {
+        qmf::org::apache::qpid::broker::ManagementSetupState mss(b.getManagementAgent(), 0);
+        mss.set_objectNum(b.getManagementAgent()->getNextObjectId());
+        mss.set_bootSequence(b.getManagementAgent()->getBootSequence());
+        QPID_LOG(debug, updaterId << " updating management-setup-state " << mss.get_objectNum() 
+                 << " " << mss.get_bootSequence() << "\n");
+        ClusterConnectionProxy(session).managementSetupState(mss.get_objectNum(), mss.get_bootSequence());
+    }
 }
 
 void UpdateClient::updateExchange(const boost::shared_ptr<Exchange>& ex) {
