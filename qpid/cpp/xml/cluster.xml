@@ -95,8 +95,12 @@
       <field name="frame-seq" type="sequence-no"/>
     </control>
 
-    <!-- Synchronize periodic timer tasks across the cluster -->
-    <control name="periodic-timer" code="0x15">
+    <!-- Synchronize timer tasks across the cluster -->
+    <control name="timer-wakeup" code="0x15">
+      <field name="name" type="str16"/>
+    </control>
+
+    <control name="timer-drop" code="0x16">
       <field name="name" type="str16"/>
     </control>
 

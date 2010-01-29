@@ -471,9 +471,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/TimeoutHandler.h			\
   qpid/sys/Timer.cpp				\
   qpid/sys/Timer.h				\
-  qpid/sys/PeriodicTimer.h			\
-  qpid/sys/PeriodicTimerImpl.h			\
-  qpid/sys/PeriodicTimerImpl.cpp		\
   qpid/sys/Waitable.h				\
   qpid/sys/alloca.h				\
   qpid/sys/uuid.h
@@ -508,8 +505,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Consumer.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
-  qpid/broker/DelegatingPeriodicTimer.h \
-  qpid/broker/DelegatingPeriodicTimer.cpp \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.cpp \
   qpid/broker/DeliverableMessage.h \

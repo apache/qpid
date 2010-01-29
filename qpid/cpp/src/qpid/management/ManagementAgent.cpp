@@ -52,7 +52,8 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
 }
 
 ManagementAgent::ManagementAgent () :
-    threadPoolSize(1), interval(10), broker(0), startTime(uint64_t(Duration(now())))
+    threadPoolSize(1), interval(10), broker(0), timer(0),
+    startTime(uint64_t(Duration(now())))
 {
     nextObjectId   = 1;
     brokerBank     = 1;
@@ -91,12 +92,8 @@ void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
     dataDir        = _dataDir;
     interval       = _interval;
     broker         = _broker;
-    timer          = &_broker->getPeriodicTimer();
     threadPoolSize = _threads;
     ManagementObject::maxThreads = threadPoolSize;
-    timer->add (boost::bind(&ManagementAgent::periodicProcessing, this),
-                interval * sys::TIME_SEC,
-                "ManagementAgent::periodicProcessing");
 
     // Get from file or generate and save to file.
     if (dataDir.empty())
@@ -133,6 +130,12 @@ void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
 
         QPID_LOG (debug, "ManagementAgent boot sequence: " << bootSequence);
     }
+}
+
+void ManagementAgent::pluginsInitialized() {
+    // Do this here so cluster plugin has the chance to set up the timer.
+    timer          = &broker->getClusterTimer();
+    timer->add(new Periodic(*this, interval));
 }
 
 void ManagementAgent::writeData ()
@@ -231,6 +234,19 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
     outBuffer.reset();
     sendBuffer(outBuffer, outLen, mExchange,
                "console.event.1.0." + event.getPackageName() + "." + event.getEventName());
+}
+
+ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
+    : TimerTask (qpid::sys::Duration((_seconds ? _seconds : 1) * qpid::sys::TIME_SEC),
+                 "ManagementAgent::periodicProcessing"),
+                 agent(_agent) {}
+
+ManagementAgent::Periodic::~Periodic () {}
+
+void ManagementAgent::Periodic::fire ()
+{
+    agent.timer->add (new Periodic (agent, agent.interval));
+    agent.periodicProcessing ();
 }
 
 void ManagementAgent::clientAdded (const std::string& routingKey)

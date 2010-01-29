@@ -26,7 +26,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/sys/PeriodicTimer.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/broker/ConnectionToken.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/ManagementEvent.h"
@@ -65,8 +65,12 @@ public:
     ManagementAgent ();
     virtual ~ManagementAgent ();
 
+    /** Called before plugins are initialized */
     void configure       (const std::string& dataDir, uint16_t interval,
                           qpid::broker::Broker* broker, int threadPoolSize);
+    /** Called after plugins are initialized. */
+    void pluginsInitialized();
+
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
                           qpid::broker::Exchange::shared_ptr directExchange);
@@ -112,6 +116,15 @@ public:
     void setBootSequence(uint16_t b) { bootSequence = b; }
 
 private:
+    struct Periodic : public qpid::sys::TimerTask
+    {
+        ManagementAgent& agent;
+
+        Periodic (ManagementAgent& agent, uint32_t seconds);
+        virtual ~Periodic ();
+        void fire ();
+    };
+
     //  Storage for tracking remote management agents, attached via the client
     //  management agent API.
     //
@@ -203,7 +216,7 @@ private:
     std::string                  dataDir;
     uint16_t                     interval;
     qpid::broker::Broker*        broker;
-    qpid::sys::PeriodicTimer*    timer;
+    qpid::sys::Timer*            timer;
     uint16_t                     bootSequence;
     uint32_t                     nextObjectId;
     uint32_t                     brokerBank;

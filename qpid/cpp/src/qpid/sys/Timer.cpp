@@ -30,14 +30,16 @@ using std::max;
 namespace qpid {
 namespace sys {
 
-TimerTask::TimerTask(Duration timeout) :
+TimerTask::TimerTask(Duration timeout, const std::string&  n) :
+    name(n),
     sortTime(AbsTime::FarFuture()),
     period(timeout),
     nextFireTime(AbsTime::now(), timeout),
     cancelled(false)
 {}
 
-TimerTask::TimerTask(AbsTime time) :
+TimerTask::TimerTask(AbsTime time, const std::string&  n) :
+    name(n),
     sortTime(AbsTime::FarFuture()),
     period(0),
     nextFireTime(time),
@@ -102,13 +104,15 @@ void Timer::run()
             {
             ScopedLock<Mutex> l(t->callbackLock);
             if (t->cancelled) {
+                drop(t);
                 if (delay > 500 * TIME_MSEC) {
-                    QPID_LOG(debug, "cancelled Timer woken up " << delay / TIME_MSEC << "ms late");
+                    QPID_LOG(debug, "cancelled Timer woken up " << delay / TIME_MSEC
+                             << "ms late");
                 }
                 continue;
             } else if(Duration(t->nextFireTime, start) >= 0) {
                 Monitor::ScopedUnlock u(monitor);
-                t->fireTask();
+                fire(t);
                 // Warn on callback overrun
                 AbsTime end(AbsTime::now());
                 Duration overrun(tasks.top()->nextFireTime, end);
@@ -168,6 +172,14 @@ void Timer::stop()
     }
     runner.join();
 }
+
+// Allow subclasses to override behavior when firing a task.
+void Timer::fire(boost::intrusive_ptr<TimerTask> t) {
+    t->fireTask();
+}
+
+// Provided for subclasses: called when a task is droped.
+void Timer::drop(boost::intrusive_ptr<TimerTask>) {}
 
 bool operator<(const intrusive_ptr<TimerTask>& a,
                        const intrusive_ptr<TimerTask>& b)

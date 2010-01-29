@@ -38,10 +38,11 @@ namespace sys {
 class Timer;
 
 class TimerTask : public RefCounted {
-    friend class Timer;
-    friend bool operator<(const boost::intrusive_ptr<TimerTask>&,
-                const boost::intrusive_ptr<TimerTask>&);
+  friend class Timer;
+  friend bool operator<(const boost::intrusive_ptr<TimerTask>&,
+                        const boost::intrusive_ptr<TimerTask>&);
 
+    std::string name;
     AbsTime sortTime;
     Duration period;
     AbsTime nextFireTime;
@@ -51,30 +52,26 @@ class TimerTask : public RefCounted {
     bool readyToFire() const;
     void fireTask();
 
-public:
-    QPID_COMMON_EXTERN TimerTask(Duration period);
-    QPID_COMMON_EXTERN TimerTask(AbsTime fireTime);
+  public:
+    QPID_COMMON_EXTERN TimerTask(Duration period, const std::string& name=std::string());
+    QPID_COMMON_EXTERN TimerTask(AbsTime fireTime, const std::string& name=std::string());
     QPID_COMMON_EXTERN virtual ~TimerTask();
 
     QPID_COMMON_EXTERN void setupNextFire();
     QPID_COMMON_EXTERN void restart();
     QPID_COMMON_EXTERN void cancel();
 
-protected:
+    std::string getName() const { return name; }
+
+  protected:
     // Must be overridden with callback
     virtual void fire() = 0;
 };
 
 // For the priority_queue order
 bool operator<(const boost::intrusive_ptr<TimerTask>& a,
-                const boost::intrusive_ptr<TimerTask>& b);
+               const boost::intrusive_ptr<TimerTask>& b);
 
-/**
-   A timer to trigger tasks that are local to one broker.
-
-   For periodic tasks that should be synchronized across all brokers
-   in a cluster, use qpid::sys::PeriodicTimer.
- */
 class Timer : private Runnable {
     qpid::sys::Monitor monitor;
     std::priority_queue<boost::intrusive_ptr<TimerTask> > tasks;
@@ -84,13 +81,17 @@ class Timer : private Runnable {
     // Runnable interface
     void run();
 
-public:
+  public:
     QPID_COMMON_EXTERN Timer();
-    QPID_COMMON_EXTERN ~Timer();
+    QPID_COMMON_EXTERN virtual ~Timer();
 
-    QPID_COMMON_EXTERN void add(boost::intrusive_ptr<TimerTask> task);
-    QPID_COMMON_EXTERN void start();
-    QPID_COMMON_EXTERN void stop();
+    QPID_COMMON_EXTERN virtual void add(boost::intrusive_ptr<TimerTask> task);
+    QPID_COMMON_EXTERN virtual void start();
+    QPID_COMMON_EXTERN virtual void stop();
+
+  protected:
+    QPID_COMMON_EXTERN virtual void fire(boost::intrusive_ptr<TimerTask> task);
+    QPID_COMMON_EXTERN virtual void drop(boost::intrusive_ptr<TimerTask> task);
 };
 
 

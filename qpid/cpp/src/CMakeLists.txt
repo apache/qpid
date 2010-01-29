@@ -573,7 +573,6 @@ set (qpidcommon_SOURCES
      qpid/sys/Runnable.cpp
      qpid/sys/Shlib.cpp
      qpid/sys/Timer.cpp
-     qpid/sys/PeriodicTimerImpl.cpp
 )
 
 add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
@@ -735,7 +734,6 @@ set (qpidbroker_SOURCES
      qpid/broker/Connection.cpp
      qpid/broker/ConnectionHandler.cpp
      qpid/broker/ConnectionFactory.cpp
-     qpid/broker/DelegatingPeriodicTimer.cpp
      qpid/broker/DeliverableMessage.cpp
      qpid/broker/DeliveryRecord.cpp
      qpid/broker/DirectExchange.cpp
