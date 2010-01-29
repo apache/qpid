@@ -21,17 +21,31 @@
 import optparse
 from qpid.messaging import *
 from qpid.util import URL
+from qpid.log import enable, DEBUG, WARN
 
 parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS ...",
                                description="Drain messages from the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
+parser.add_option("-r", "--reconnect", action="store_true",
+                  help="enable auto reconnect")
+parser.add_option("-d", "--reconnect-delay", type=float, default=3,
+                  help="delay between reconnect attempts")
+parser.add_option("-l", "--reconnect-limit", type=int,
+                  help="maximum number of reconnect attempts")
 parser.add_option("-t", "--timeout", type=float, default=0,
                   help="timeout in seconds to wait before exiting (default %default)")
 parser.add_option("-f", "--forever", action="store_true",
                   help="ignore timeout and wait forever")
+parser.add_option("-v", dest="verbose", action="store_true",
+                  help="enable logging")
 
 opts, args = parser.parse_args()
+
+if opts.verbose:
+  enable("qpid", DEBUG)
+else:
+  enable("qpid", WARN)
 
 url = URL(opts.broker)
 if args:
@@ -45,7 +59,11 @@ else:
 
 # XXX: should make URL default the port for us
 conn = Connection.open(url.host, url.port or AMQP_PORT,
-                       username=url.user, password=url.password)
+                       username=url.user,
+                       password=url.password,
+                       reconnect=opts.reconnect,
+                       reconnect_delay=opts.reconnect_delay,
+                       reconnect_limit=opts.reconnect_limit)
 ssn = conn.session()
 rcv = ssn.receiver(addr)
 
