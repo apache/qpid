@@ -63,7 +63,7 @@ namespace cluster {
 
 class Connection;
 class EventFrame;
-class PeriodicTimerImpl;
+class ClusterTimer;
 
 /**
  * Connection to the cluster
@@ -164,7 +164,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void errorCheck(const MemberId&, uint8_t type, SequenceNumber frameSeq, Lock&);
-    void periodicTimer(const MemberId&, const std::string& name, Lock&);
+    void timerWakeup(const MemberId&, const std::string& name, Lock&);
+    void timerDrop(const MemberId&, const std::string& name, Lock&);
 
     void shutdown(const MemberId&, const framing::Uuid& shutdownId, Lock&);
 
@@ -200,6 +201,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         const struct cpg_address */*left*/, int /*nLeft*/,
         const struct cpg_address */*joined*/, int /*nJoined*/
     );
+
+    void becomeElder();
 
     // == Called in management threads.
     virtual qpid::management::ManagementObject* GetManagementObject() const;
@@ -265,6 +268,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     StoreStatus store;
     ClusterMap map;
     MemberSet elders;
+    bool elder;
     size_t lastSize;
     bool lastBroker;
     sys::Thread updateThread;
@@ -272,7 +276,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     bool updateRetracted;
     ErrorCheck error;
     UpdateReceiver updateReceiver;
-    PeriodicTimerImpl* timer;
+    ClusterTimer* timer;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;

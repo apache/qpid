@@ -25,7 +25,6 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionFactory.h"
 #include "qpid/broker/ConnectionToken.h"
-#include "qpid/broker/DelegatingPeriodicTimer.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/DtxManager.h"
 #include "qpid/broker/ExchangeRegistry.h"
@@ -147,7 +146,7 @@ public:
 
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
-    DelegatingPeriodicTimer periodicTimer;
+    std::auto_ptr<sys::Timer> clusterTimer;
     Options config;
     std::auto_ptr<management::ManagementAgent> managementAgent;
     ProtocolFactoryMap protocolFactories;
@@ -254,9 +253,12 @@ public:
     boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
     void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
 
+    /** Timer for local tasks affecting only this broker */
     sys::Timer& getTimer() { return timer; }
-    sys::PeriodicTimer& getPeriodicTimer() { return periodicTimer; }
-    void setPeriodicTimer(std::auto_ptr<sys::PeriodicTimer> pt);
+
+    /** Timer for tasks that must be synchronized if we are in a cluster */
+    sys::Timer& getClusterTimer() { return clusterTimer.get() ? *clusterTimer : timer; }
+    void setClusterTimer(std::auto_ptr<sys::Timer>);
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
 

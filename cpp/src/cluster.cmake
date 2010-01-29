@@ -81,6 +81,8 @@ if (BUILD_CLUSTER)
        ${CMAN_SOURCES}
        qpid/cluster/Cluster.cpp
        qpid/cluster/Cluster.h
+       qpid/cluster/ClusterTimer.cpp
+       qpid/cluster/ClusterTimer.h
        qpid/cluster/Decoder.cpp
        qpid/cluster/Decoder.h
        qpid/cluster/PollableQueue.h
@@ -129,8 +131,6 @@ if (BUILD_CLUSTER)
        qpid/cluster/MemberSet.h
        qpid/cluster/MemberSet.cpp
        qpid/cluster/types.h
-       qpid/cluster/PeriodicTimerImpl.h
-       qpid/cluster/PeriodicTimerImpl.cpp
        qpid/cluster/StoreStatus.h
        qpid/cluster/StoreStatus.cpp
       )
