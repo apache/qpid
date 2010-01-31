@@ -34,10 +34,10 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
+import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
@@ -215,7 +215,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             if (queue == null)
             {
                 _logger.error("Unkown queue: " + queueName + " cannot be bound to exchange: "
-                    + exchange.getName());
+                    + exchange.getNameShortString());
             }
             else
             {
@@ -227,10 +227,18 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                     argumentsFT = new FieldTable(org.apache.mina.common.ByteBuffer.wrap(buf),buf.limit());
                 }
 
-                _logger.info("Restoring binding: (Exchange: " + exchange.getName() + ", Queue: " + queueName
-                    + ", Routing Key: " + bindingKey + ", Arguments: " + argumentsFT + ")");
+                BindingFactory bf = _virtualHost.getBindingFactory();
 
-                queue.bind(exchange, bindingKey == null ? null : new AMQShortString(bindingKey), argumentsFT);
+                Map<String, Object> argumentMap = FieldTable.convertToMap(argumentsFT);
+
+                if(bf.getBinding(bindingKey, queue, exchange, argumentMap) == null)
+                {
+
+                    _logger.info("Restoring binding: (Exchange: " + exchange.getNameShortString() + ", Queue: " + queueName
+                        + ", Routing Key: " + bindingKey + ", Arguments: " + argumentsFT + ")");
+
+                    bf.restoreBinding(bindingKey, queue, exchange, argumentMap);
+                }
 
             }
         }
@@ -271,7 +279,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
                     if (_logger.isDebugEnabled())
                     {
-                        _logger.debug("On recovery, delivering " + message.getMessageNumber() + " to " + queue.getName());
+                        _logger.debug("On recovery, delivering " + message.getMessageNumber() + " to " + queue.getNameShortString());
                     }
 
                     Integer count = _queueRecoveries.get(queueName);
@@ -286,7 +294,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 }
                 else
                 {
-                    _logger.warn("Message id " + messageId + " referenced in log as enqueue in queue " + queue.getName() + " is unknwon, entry will be discarded");
+                    _logger.warn("Message id " + messageId + " referenced in log as enqueue in queue " + queue.getNameShortString() + " is unknwon, entry will be discarded");
                     TransactionLog.Transaction txn = _transactionLog.newTransaction();
                     txn.dequeueMessage(queue, messageId);
                     txn.commitTranAsync();
@@ -333,7 +341,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1005(entry.getValue(), entry.getKey()));
 
             CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1006(entry.getKey(), true));
-        }        
+        }
 
         CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1006(null, false));
     }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,22 +20,25 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.util.Collection;
-import java.net.InetSocketAddress;
-
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+
+import org.apache.qpid.qmf.QMFService;
+import org.apache.qpid.server.configuration.BrokerConfig;
+import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.transport.QpidAcceptor;
-import org.apache.mina.common.IoAcceptor;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
+import java.net.InetSocketAddress;
+import java.util.UUID;
 
 public interface IApplicationRegistry
 {
@@ -81,4 +84,17 @@ public interface IApplicationRegistry
      */
     void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor);
 
+    public UUID getBrokerId();
+
+    QMFService getQMFService();
+
+    void setBroker(BrokerConfig broker);
+
+    BrokerConfig getBroker();
+
+    VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
+
+    ConfigStore getConfigStore();
+
+    void setConfigStore(ConfigStore store);
 }

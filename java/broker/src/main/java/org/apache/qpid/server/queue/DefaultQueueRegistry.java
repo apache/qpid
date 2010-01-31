@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -46,7 +45,7 @@ public class DefaultQueueRegistry implements QueueRegistry
 
     public void registerQueue(AMQQueue queue)
     {
-        _queueMap.put(queue.getName(), queue);
+        _queueMap.put(queue.getNameShortString(), queue);
     }
 
     public void unregisterQueue(AMQShortString name)

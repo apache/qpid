@@ -20,43 +20,47 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.QueueConfig;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.management.Managable;
+import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
-public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource
+public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource, BaseQueue,
+                                  QueueConfig
 {
     boolean getDeleteOnNoConsumers();
 
     void setDeleteOnNoConsumers(boolean b);
 
+    void addBinding(Binding binding);
+
+    void removeBinding(Binding binding);
+
+    List<Binding> getBindings();
+
+    int getBindingCount();
 
     public interface Context
     {
         QueueEntry getLastSeenEntry();
     }
 
-    AMQShortString getName();
-
     void setNoLocal(boolean b);
-
-    boolean isDurable();
 
     boolean isAutoDelete();
 
@@ -69,14 +73,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     VirtualHost getVirtualHost();
 
-
-    void bind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException;
-
-    void unBind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException;
-
-    List<ExchangeBinding> getExchangeBindings();
-
-
     void registerSubscription(final Subscription subscription, final boolean exclusive) throws AMQException;
 
     void unregisterSubscription(final Subscription subscription) throws AMQException;
@@ -85,6 +81,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     int getConsumerCount();
 
     int getActiveConsumerCount();
+
+    boolean hasExclusiveSubscriber();
 
     boolean isUnused();
 
@@ -107,8 +105,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     int delete() throws AMQException;
 
 
-    QueueEntry enqueue(ServerMessage message) throws AMQException;
-
     void requeue(QueueEntry entry);
 
     void requeue(QueueEntryImpl storeContext, Subscription subscription);
@@ -122,6 +118,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
 
     void addQueueDeleteTask(final Task task);
+    void removeQueueDeleteTask(final Task task);
+
 
 
     List<QueueEntry> getMessagesOnTheQueue();

@@ -20,14 +20,14 @@
 */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.transport.NetworkDriver;
-import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.ConnectionDelegate;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
-import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.transport.ConnectionDelegate;
+import org.apache.qpid.transport.NetworkDriver;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -239,10 +239,10 @@ private static final byte[] AMQP_0_9_1_HEADER =
             final ConnectionDelegate connDelegate =
                     new org.apache.qpid.server.transport.ServerConnectionDelegate(_appRegistry, _fqdn);
 
-            Connection conn = new ServerConnection();
+            ServerConnection conn = new ServerConnection();
             conn.setConnectionDelegate(connDelegate);
 
-            return new ProtocolEngine_0_10( conn, _networkDriver);
+            return new ProtocolEngine_0_10( conn, _networkDriver, _appRegistry);
         }
     };
 

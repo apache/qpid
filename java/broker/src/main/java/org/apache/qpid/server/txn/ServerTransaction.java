@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.txn;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 
-import java.util.List;
-import java.util.SortedSet;
 import java.util.Collection;
+import java.util.List;
 
 public interface ServerTransaction
 {
@@ -45,13 +42,13 @@ public interface ServerTransaction
         public void onRollback();
     }
 
-    void dequeue(AMQQueue queue, EnqueableMessage message, Action postCommitAction);
+    void dequeue(BaseQueue queue, EnqueableMessage message, Action postCommitAction);
 
     void dequeue(Collection<QueueEntry> ackedMessages, Action postCommitAction);
 
-    void enqueue(AMQQueue queue, EnqueableMessage message, Action postCommitAction);
+    void enqueue(BaseQueue queue, EnqueableMessage message, Action postCommitAction);
 
-    void enqueue(List<AMQQueue> queues, EnqueableMessage message, Action postCommitAction);
+    void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postCommitAction);
 
 
     void commit();

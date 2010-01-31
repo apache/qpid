@@ -20,23 +20,25 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.transport.Connection.State.CLOSED;
+import static org.apache.qpid.transport.Connection.State.CLOSING;
+import static org.apache.qpid.transport.Connection.State.NEW;
+import static org.apache.qpid.transport.Connection.State.OPEN;
+import static org.apache.qpid.transport.Connection.State.OPENING;
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoTransport;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
 import org.apache.qpid.util.Strings;
 
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslServer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.UUID;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslServer;
-
-import static org.apache.qpid.transport.Connection.State.*;
 
 
 /**
@@ -55,6 +57,7 @@ public class Connection extends ConnectionInvoker
 
     private static final Logger log = Logger.get(Connection.class);
 
+
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
 
     class DefaultConnectionListener implements ConnectionListener
@@ -67,6 +70,24 @@ public class Connection extends ConnectionInvoker
         public void closed(Connection conn) {}
     }
 
+    public static interface SessionFactory
+    {
+        Session newSession(Connection conn, Binary name, long expiry);
+    }
+
+    private static final class DefaultSessionFactory implements SessionFactory
+    {
+
+        public Session newSession(final Connection conn, final Binary name, final long expiry)
+        {
+            return new Session(conn, name, expiry);
+        }
+    }
+
+    private static final SessionFactory DEFAULT_SESSION_FACTORY = new DefaultSessionFactory();
+
+    private SessionFactory _sessionFactory = DEFAULT_SESSION_FACTORY;
+
     private ConnectionDelegate delegate;
     private Sender<ProtocolEvent> sender;
 
@@ -76,7 +97,7 @@ public class Connection extends ConnectionInvoker
     private State state = NEW;
     final private Object lock = new Object();
     private long timeout = 60000;
-    private List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();    
+    private List<ConnectionListener> listeners = new ArrayList<ConnectionListener>();
     private ConnectionException error = null;
 
     private int channelMax = 1;
@@ -85,6 +106,7 @@ public class Connection extends ConnectionInvoker
     private SaslClient saslClient;
     private int idleTimeout = 0;
     private String _authorizationID;
+    private Map<String,Object> _serverProperties;
     private String userID;
     private ConnectionSettings conSettings;
 
@@ -111,7 +133,7 @@ public class Connection extends ConnectionInvoker
     public void setSender(Sender<ProtocolEvent> sender)
     {
         this.sender = sender;
-        sender.setIdleTimeout(idleTimeout);         
+        sender.setIdleTimeout(idleTimeout);
     }
 
     protected void setState(State state)
@@ -157,13 +179,19 @@ public class Connection extends ConnectionInvoker
     {
         connect(host, port, vhost, username, password, false);
     }
-    
+
     public void connect(String host, int port, String vhost, String username, String password, boolean ssl)
     {
         connect(host, port, vhost, username, password, ssl,"PLAIN");
     }
 
     public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs)
+    {
+        connect(host, port, vhost, username, password, ssl,saslMechs, Collections.EMPTY_MAP);
+    }
+
+
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs,Map<String,Object> clientProps)
     {
         ConnectionSettings settings = new ConnectionSettings();
         settings.setHost(host);
@@ -173,11 +201,13 @@ public class Connection extends ConnectionInvoker
         settings.setPassword(password);
         settings.setUseSSL(ssl);
         settings.setSaslMechs(saslMechs);
+        settings.setClientProperties(clientProps);
         connect(settings);
     }
-    
+
     public void connect(ConnectionSettings settings)
     {
+
         synchronized (lock)
         {
             conSettings = settings;
@@ -185,9 +215,9 @@ public class Connection extends ConnectionInvoker
             userID = settings.getUsername();
             delegate = new ClientDelegate(settings);
 
-            IoTransport.connect(settings.getHost(), 
-                                settings.getPort(), 
-                                ConnectionBinding.get(this), 
+            IoTransport.connect(settings.getHost(),
+                                settings.getPort(),
+                                ConnectionBinding.get(this),
                                 settings.isUseSSL());
             send(new ProtocolHeader(1, 0, 10));
 
@@ -264,7 +294,7 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
-            Session ssn = new Session(this, name, expiry);
+            Session ssn = _sessionFactory.newSession(this, name, expiry);
             sessions.put(name, ssn);
             map(ssn);
             ssn.attach();
@@ -278,6 +308,13 @@ public class Connection extends ConnectionInvoker
         {
             sessions.remove(ssn.getName());
         }
+    }
+
+    public void setSessionFactory(SessionFactory sessionFactory)
+    {
+        assert sessionFactory != null;
+
+        _sessionFactory = sessionFactory;
     }
 
     public void setConnectionId(int id)
@@ -425,7 +462,7 @@ public class Connection extends ConnectionInvoker
         {
             listener.exception(this, e);
         }
-        
+
     }
 
     public void exception(Throwable t)
@@ -481,7 +518,7 @@ public class Connection extends ConnectionInvoker
         for (ConnectionListener listener: listeners)
         {
             listener.closed(this);
-        }        
+        }
     }
 
     public void close()
@@ -545,13 +582,13 @@ public class Connection extends ConnectionInvoker
 
     public void setIdleTimeout(int i)
     {
-        idleTimeout = i;       
+        idleTimeout = i;
         if (sender != null)
-        {            
-            sender.setIdleTimeout(i);    
+        {
+            sender.setIdleTimeout(i);
         }
     }
-    
+
     public int getIdleTimeout()
     {
         return idleTimeout;
@@ -566,22 +603,32 @@ public class Connection extends ConnectionInvoker
     {
         return _authorizationID;
     }
-    
+
     public String getUserID()
     {
         return userID;
     }
-    
+
     public void setUserID(String id)
     {
         userID = id;
+    }
+
+    public void setServerProperties(final Map<String, Object> serverProperties)
+    {
+        _serverProperties = serverProperties == null ? Collections.EMPTY_MAP : serverProperties;
+    }
+
+    public Map<String, Object> getServerProperties()
+    {
+        return _serverProperties;
     }
 
     public String toString()
     {
         return String.format("conn:%x", System.identityHashCode(this));
     }
-    
+
     public ConnectionSettings getConnectionSettings()
     {
         return conSettings;

@@ -21,109 +21,35 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FanoutExchange extends AbstractExchange
 {
     private static final Logger _logger = Logger.getLogger(FanoutExchange.class);
 
+    private static final Integer ONE = Integer.valueOf(1);
+
     /**
      * Maps from queue name to queue instances
      */
-    private final CopyOnWriteArraySet<AMQQueue> _queues = new CopyOnWriteArraySet<AMQQueue>();
+    private final ConcurrentHashMap<AMQQueue,Integer> _queues = new ConcurrentHashMap<AMQQueue,Integer>();
 
-    /**
-     * MBean class implementing the management interfaces.
-     */
-    @MBeanDescription("Management Bean for Fanout Exchange")
-    private final class FanoutExchangeMBean extends ExchangeMBean
+    protected AbstractExchangeMBean createMBean() throws JMException
     {
-        private static final String BINDING_KEY_SUBSTITUTE = "*";
-
-        @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
-        public FanoutExchangeMBean() throws JMException
-        {
-            super();
-            _exchangeType = "fanout";
-            init();
-        }
-
-        public TabularData bindings() throws OpenDataException
-        {
-
-            _bindingList = new TabularDataSupport(_bindinglistDataType);
-
-            if(_queues.isEmpty())
-            {
-                return _bindingList;
-            }
-
-            ArrayList<String> queueNames = new ArrayList<String>();
-
-            for (AMQQueue queue : _queues)
-            {
-                String queueName = queue.getName().toString();
-                queueNames.add(queueName);
-            }
-
-            Object[] bindingItemValues = {BINDING_KEY_SUBSTITUTE, queueNames.toArray(new String[0])};
-            CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
-            _bindingList.put(bindingData);
-
-            return _bindingList;
-        }
-
-        public void createNewBinding(String queueName, String binding) throws JMException
-        {
-            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
-            if (queue == null)
-            {
-                throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
-            }
-
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
-            try
-            {
-                queue.bind(FanoutExchange.this, new AMQShortString(BINDING_KEY_SUBSTITUTE), null);
-            }
-            catch (AMQException ex)
-            {
-                throw new MBeanException(ex);
-            }
-            finally
-            {
-                CurrentActor.remove();
-            }
-        }
-
-    } // End of MBean class
-
-    protected ExchangeMBean createMBean() throws JMException
-    {
-        return new FanoutExchange.FanoutExchangeMBean();
+        return new FanoutExchangeMBean(this);
     }
 
     public Logger getLogger()
@@ -161,42 +87,12 @@ public class FanoutExchange extends AbstractExchange
     	}
     };
 
-    public Map<AMQShortString, List<AMQQueue>> getBindings()
+    public FanoutExchange()
     {
-        return null;
+        super(TYPE);
     }
 
-    public AMQShortString getType()
-    {
-        return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
-    }
-
-    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        assert queue != null;
-
-        if (_queues.contains(queue))
-        {
-            _logger.debug("Queue " + queue + " is already registered");
-        }
-        else
-        {
-            _queues.add(queue);
-            _logger.debug("Binding queue " + queue + " with routing key " + routingKey + " to exchange " + this);
-        }
-    }
-
-    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        assert queue != null;
-
-        if (!_queues.remove(queue))
-        {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName() + ". ");
-        }
-    }
-
-    public ArrayList<AMQQueue> route(InboundMessage payload)
+    public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
 
 
@@ -205,7 +101,12 @@ public class FanoutExchange extends AbstractExchange
             _logger.debug("Publishing message to queue " + _queues);
         }
 
-        return new ArrayList(_queues);
+        for(Binding b : getBindings())
+        {
+            b.incrementMatches();
+        }
+
+        return new ArrayList<BaseQueue>(_queues.keySet());
 
     }
 
@@ -234,5 +135,72 @@ public class FanoutExchange extends AbstractExchange
     public boolean hasBindings()
     {
         return !_queues.isEmpty();
+    }
+
+    protected void onBind(final Binding binding)
+    {
+        AMQQueue queue = binding.getQueue();
+        assert queue != null;
+
+        Integer oldVal;
+
+        if((oldVal = _queues.putIfAbsent(queue, ONE)) != null)
+        {
+            Integer newVal = oldVal+1;
+            while(!_queues.replace(queue, oldVal, newVal))
+            {
+                oldVal = _queues.get(queue);
+                if(oldVal == null)
+                {
+                    oldVal = _queues.putIfAbsent(queue, ONE);
+                    if(oldVal == null)
+                    {
+                        break;
+                    }
+                }
+                newVal = oldVal + 1;
+            }
+        }
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Binding queue " + queue
+                          + " with routing key " + new AMQShortString(binding.getBindingKey()) + " to exchange " + this);
+        }
+    }
+
+    protected void onUnbind(final Binding binding)
+    {
+        AMQQueue queue = binding.getQueue();
+        Integer oldValue = _queues.get(queue);
+
+        boolean done = false;
+
+        while(!(done || oldValue == null))
+        {
+            while(!(done || oldValue == null) && oldValue.intValue() == 1)
+            {
+                if(!_queues.remove(queue, oldValue))
+                {
+                    oldValue = _queues.get(queue);
+                }
+                else
+                {
+                    done = true;
+                }
+            }
+            while(!(done || oldValue == null) && oldValue.intValue() != 1)
+            {
+                Integer newValue = oldValue - 1;
+                if(!_queues.replace(queue, oldValue, newValue))
+                {
+                    oldValue = _queues.get(queue);
+                }
+                else
+                {
+                    done = true;
+                }
+            }
+        }
     }
 }

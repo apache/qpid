@@ -21,15 +21,15 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
-
-import org.apache.qpid.AMQPInvalidClassException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQPInvalidClassException;
 
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -68,8 +68,11 @@ public class FieldTable
     public FieldTable(ByteBuffer buffer, long length) throws AMQFrameDecodingException
     {
         this();
-        _encodedForm = buffer.slice();
-        _encodedForm.limit((int) length);
+        ByteBuffer encodedForm = buffer.slice();
+        encodedForm.limit((int) length);
+        _encodedForm = ByteBuffer.allocate((int)length);
+        _encodedForm.put(encodedForm);
+        _encodedForm.flip();
         _encodedSize = length;
         buffer.skip((int) length);
     }
@@ -829,6 +832,36 @@ public class FieldTable
         recalculateEncodedSize();
     }
 
+    public static Map<String, Object> convertToMap(final FieldTable fieldTable)
+    {
+        final Map<String, Object> map = new HashMap<String, Object>();
+
+        if(fieldTable != null)
+        {
+            fieldTable.processOverElements(
+                        new FieldTableElementProcessor()
+                    {
+
+                        public boolean processElement(String propertyName, AMQTypedValue value)
+                        {
+                            Object val = value.getValue();
+                            if(val instanceof AMQShortString)
+                            {
+                                val = val.toString();
+                            }
+                            map.put(propertyName, val);
+                            return true;
+                        }
+
+                        public Object getResult()
+                        {
+                            return map;
+                        }
+                    });
+        }
+        return map;
+    }
+
 
     public static interface FieldTableElementProcessor
     {
@@ -1046,6 +1079,9 @@ public class FieldTable
             {
 
                 final AMQShortString key = EncodingUtils.readAMQShortString(buffer);
+
+                _logger.debug("FieldTable::PropFieldTable(buffer," + length + "): Read key '" + key);
+
                 AMQTypedValue value = AMQTypedValue.readFromBuffer(buffer);
 
                 if (trace)

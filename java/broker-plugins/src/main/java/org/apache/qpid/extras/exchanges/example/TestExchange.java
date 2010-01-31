@@ -21,18 +21,25 @@ package org.apache.qpid.extras.exchanges.example;
  */
 
 
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.ExchangeConfigType;
+import org.apache.qpid.server.configuration.VirtualHostConfig;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.UUID;
 
 public class TestExchange implements Exchange
 {
@@ -41,21 +48,24 @@ public class TestExchange implements Exchange
     {
     }
 
-    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+
+
+    public void addBindingListener(final BindingListener listener)
     {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public Map<AMQShortString, List<AMQQueue>> getBindings()
+    public void removeBindingListener(final BindingListener listener)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public AMQShortString getNameShortString()
     {
         return null;
     }
 
-    public AMQShortString getName()
-    {
-        return null;
-    }
-
-    public AMQShortString getType()
+    public AMQShortString getTypeShortString()
     {
         return null;
     }
@@ -75,9 +85,59 @@ public class TestExchange implements Exchange
         return false;
     }
 
+    public void addCloseTask(final Task task)
+    {
+
+    }
+
+    public void removeCloseTask(final Task task)
+    {
+
+    }
+
     public Exchange getAlternateExchange()
     {
         return null;
+    }
+
+    public Map<String, Object> getArguments()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getBindingCount()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getBindingCountHigh()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getMsgReceives()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getMsgRoutes()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getByteReceives()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getByteRoutes()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getCreateTime()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void setAlternateExchange(Exchange exchange)
@@ -100,9 +160,39 @@ public class TestExchange implements Exchange
         return false;
     }
 
+    public void addBinding(final Binding binding)
+    {
+
+    }
+
+    public void removeBinding(final Binding binding)
+    {
+
+    }
+
+    public Collection<Binding> getBindings()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void initialise(VirtualHost host, AMQShortString name, boolean durable, boolean autoDelete)
             throws AMQException
     {
+    }
+
+    public VirtualHostConfig getVirtualHost()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public String getName()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ExchangeType getType()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean isAutoDelete()
@@ -130,16 +220,27 @@ public class TestExchange implements Exchange
         return false;
     }
 
+    public UUID getId()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ExchangeConfigType getConfigType()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public boolean isDurable()
     {
         return false;
     }
 
-    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-    }
-
-    public ArrayList<AMQQueue> route(InboundMessage message)
+    public ArrayList<? extends BaseQueue> route(InboundMessage message)
     {
         return new ArrayList<AMQQueue>();
     }

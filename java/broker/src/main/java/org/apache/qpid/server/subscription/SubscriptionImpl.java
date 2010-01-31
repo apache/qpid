@@ -20,41 +20,49 @@
  */
 package org.apache.qpid.server.subscription;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.SessionConfig;
+import org.apache.qpid.server.configuration.SubscriptionConfig;
+import org.apache.qpid.server.configuration.SubscriptionConfigType;
+import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.flow.FlowCreditManager;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.SubscriptionActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.filter.FilterManager;
-import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Encapsulation of a supscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
  * that was given out by the broker and the channel id. <p/>
  */
-public abstract class SubscriptionImpl implements Subscription, FlowCreditManager.FlowCreditManagerListener
+public abstract class SubscriptionImpl implements Subscription, FlowCreditManager.FlowCreditManagerListener,
+                                                  SubscriptionConfig
 {
 
     private StateListener _stateListener = new StateListener()
@@ -85,6 +93,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final long _subscriptionID = idGenerator.getAndIncrement();
     private LogSubject _logSubject;
     private LogActor _logActor;
+    private UUID _id;
 
 
     static final class BrowserSubscription extends SubscriptionImpl
@@ -148,6 +157,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
         public boolean isBrowser()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isExplicitAcknowledge()
         {
             return false;
         }
@@ -318,9 +333,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             _autoClose = false;
         }
 
-
     }
 
+    public ConfigStore getConfigStore()
+    {
+        return getQueue().getConfigStore();
+    }
 
 
     public synchronized void setQueue(AMQQueue queue, boolean exclusive)
@@ -330,6 +348,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
         }
         _queue = queue;
+
+        _id = getConfigStore().createId();
+        getConfigStore().addConfiguredObject(this);
 
         _logSubject = new SubscriptionLogSubject(this);
         _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
@@ -414,7 +435,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public boolean hasInterest(QueueEntry entry)
     {
 
-        
+
 
 
         //check that the message hasn't been rejected
@@ -505,7 +526,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         {
             _stateChangeLock.unlock();
         }
-
+        getConfigStore().removeConfiguredObject(this);
 
         //Log Subscription closed
         CurrentActor.get().message(_logSubject, SubscriptionMessages.SUB_CLOSE());
@@ -689,4 +710,60 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     }
 
     abstract boolean isBrowser();
+
+    public String getCreditMode()
+    {
+        return "WINDOW";
+    }
+
+    public SessionConfig getSessionConfig()
+    {
+        return getChannel();
+    }
+
+    public boolean isBrowsing()
+    {
+        return isBrowser();
+    }
+
+    public boolean isExplicitAcknowledge()
+    {
+        return true;
+    }
+
+    public UUID getId()
+    {
+        return _id;
+    }
+
+    public boolean isDurable()
+    {
+        return false;
+    }
+
+    public SubscriptionConfigType getConfigType()
+    {
+        return SubscriptionConfigType.getInstance();
+    }
+
+    public boolean isExclusive()
+    {
+        return getQueue().hasExclusiveSubscriber();
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return getSessionConfig();
+    }
+
+    public String getName()
+    {
+        return String.valueOf(_consumerTag);
+    }
+
+    public Map<String, Object> getArguments()
+    {
+        return null;
+    }
+
 }

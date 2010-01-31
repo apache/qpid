@@ -21,33 +21,39 @@
 package org.apache.qpid.server.store;
 
 import junit.framework.TestCase;
-
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeType;
-import org.apache.qpid.server.exchange.TopicExchange;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.queue.*;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.exchange.DirectExchange;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.queue.AMQPriorityQueue;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.IncomingMessage;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.io.File;
 import java.util.List;
@@ -99,8 +105,7 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration(getClass().getName(), configuration));
-            ApplicationRegistry.getInstance().getVirtualHostRegistry().registerVirtualHost(_virtualHost);
+            _virtualHost = ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration(getClass().getName(), configuration));
         }
         catch (Exception e)
         {
@@ -244,10 +249,10 @@ public class MessageStoreTest extends TestCase
     {
         QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
 
-        validateBindingProperties(queueRegistry.getQueue(durablePriorityQueueName).getExchangeBindings(), false);
-        validateBindingProperties(queueRegistry.getQueue(durablePriorityTopicQueueName).getExchangeBindings(), true);
-        validateBindingProperties(queueRegistry.getQueue(durableQueueName).getExchangeBindings(), false);
-        validateBindingProperties(queueRegistry.getQueue(durableTopicQueueName).getExchangeBindings(), true);
+        validateBindingProperties(queueRegistry.getQueue(durablePriorityQueueName).getBindings(), false);
+        validateBindingProperties(queueRegistry.getQueue(durablePriorityTopicQueueName).getBindings(), true);
+        validateBindingProperties(queueRegistry.getQueue(durableQueueName).getBindings(), false);
+        validateBindingProperties(queueRegistry.getQueue(durableTopicQueueName).getBindings(), true);
     }
 
     /**
@@ -256,16 +261,16 @@ public class MessageStoreTest extends TestCase
      * @param bindings     the set of bindings to validate
      * @param useSelectors if set validate that the binding has a JMS_SELECTOR argument
      */
-    private void validateBindingProperties(List<ExchangeBinding> bindings, boolean useSelectors)
+    private void validateBindingProperties(List<Binding> bindings, boolean useSelectors)
     {
         assertEquals("Each queue should only be bound once.", 1, bindings.size());
 
-        ExchangeBinding binding = bindings.get(0);
+        Binding binding = bindings.get(0);
 
         if (useSelectors)
         {
             assertTrue("Binding does not contain a Selector argument.",
-                       binding.getArguments().containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue()));
+                       binding.getArguments().containsKey(AMQPFilterTypes.JMS_SELECTOR.toString()));
         }
     }
 
@@ -376,7 +381,7 @@ public class MessageStoreTest extends TestCase
         {
             // TODO Deliver to queues
             ServerTransaction trans = new AutoCommitTransaction(_virtualHost.getMessageStore());
-            final List<AMQQueue> destinationQueues = currentMessage.getDestinationQueues();
+            final List<? extends BaseQueue> destinationQueues = currentMessage.getDestinationQueues();
             trans.enqueue(currentMessage.getDestinationQueues(), currentMessage, new ServerTransaction.Action() {
                 public void postCommit()
                 {
@@ -384,9 +389,9 @@ public class MessageStoreTest extends TestCase
                     {
                         AMQMessage message = new AMQMessage(currentMessage.getStoredMessage());
 
-                        for(AMQQueue queue : destinationQueues)
+                        for(BaseQueue queue : destinationQueues)
                         {
-                            QueueEntry entry = queue.enqueue(message);
+                            queue.enqueue(message);
                         }
                     }
                     catch (AMQException e)
@@ -525,14 +530,7 @@ public class MessageStoreTest extends TestCase
 
     protected void bindQueueToExchange(Exchange exchange, AMQShortString routingKey, AMQQueue queue, boolean useSelector, FieldTable queueArguments)
     {
-        try
-        {
-            exchange.registerQueue(queueName, queue, queueArguments);
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+
 
         FieldTable bindArguments = null;
 
@@ -544,9 +542,9 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            queue.bind(exchange, routingKey, bindArguments);
+            _virtualHost.getBindingFactory().addBinding(String.valueOf(routingKey), queue, exchange, FieldTable.convertToMap(bindArguments));
         }
-        catch (AMQException e)
+        catch (Exception e)
         {
             fail(e.getMessage());
         }
@@ -609,7 +607,7 @@ public class MessageStoreTest extends TestCase
 
         public AMQShortString getExchange()
         {
-            return _exchange.getName();
+            return _exchange.getNameShortString();
         }
 
         public void setExchange(AMQShortString exchange)

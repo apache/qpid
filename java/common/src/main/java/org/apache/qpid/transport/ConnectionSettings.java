@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.transport;
 
-public class ConnectionSettings 
+import java.util.Map;
+
+public class ConnectionSettings
 {
     String protocol = "tcp";
     String host = "localhost";
@@ -32,12 +34,13 @@ public class ConnectionSettings
     String saslServerName = "localhost";
     int port = 5672;
     int maxChannelCount = 32767;
-    int maxFrameSize = 65535;  
+    int maxFrameSize = 65535;
     int heartbeatInterval;
     boolean useSSL;
     boolean useSASLEncryption;
     boolean tcpNodelay;
-    
+    private Map<String, Object> _clientProperties;
+
     public boolean isTcpNodelay()
     {
         return tcpNodelay;
@@ -186,5 +189,15 @@ public class ConnectionSettings
     public void setMaxFrameSize(int maxFrameSize)
     {
         this.maxFrameSize = maxFrameSize;
+    }
+
+    public void setClientProperties(final Map<String, Object> clientProperties)
+    {
+        _clientProperties = clientProperties;
+    }
+
+    public Map<String, Object> getClientProperties()
+    {
+        return _clientProperties;
     }
 }

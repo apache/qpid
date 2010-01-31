@@ -37,8 +37,19 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.util.Date;
-import java.util.List;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.management.ManagedObject;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -55,22 +66,8 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.ManagedObject;
+import java.util.Date;
+import java.util.List;
 
 /**
  * This MBean class implements the management interface. In order to make more attributes, operations and notifications
@@ -255,7 +252,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
             Object[] itemValues =
                 {
                     channel.getChannelId(), channel.isTransactional(),
-                    (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName().asString() : null,
+                    (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getNameShortString().asString() : null,
                     channel.getUnacknowledgedMessageMap().size(), channel.getBlocking()
                 };
 
@@ -291,7 +288,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         // then the CurrentActor could be set in our JMX Proxy object.
         // As it is we need to set the CurrentActor on all MBean methods
         // Ideally we would not have a single method that can be called from
-        // two contexts.        
+        // two contexts.
         boolean removeActor = false;
         if (CurrentActor.get() == null)
         {

@@ -22,12 +22,12 @@ package org.apache.qpid.server.configuration;
 
 import junit.framework.TestCase;
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class VirtualHostConfigurationTest extends TestCase
 {
@@ -39,8 +39,6 @@ public class VirtualHostConfigurationTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        //Highlight that this test will cause a new AR to be created
-        ApplicationRegistry.getInstance();
         // Fill config file with stuff
         configXml = new XMLConfiguration();
         configXml.setRootElementName("virtualhosts");
@@ -49,39 +47,37 @@ public class VirtualHostConfigurationTest extends TestCase
 
     public void tearDown() throws Exception
     {
-        //Correctly close the AR we created
-        ApplicationRegistry.remove();
-
         super.tearDown();
     }
 
     public void testQueuePriority() throws Exception
     {
+        configXml.addProperty("virtualhost.testQueuePriority.name", "testQueuePriority");
         // Set up queue with 5 priorities
-        configXml.addProperty("virtualhost.test.queues(-1).queue(-1).name(-1)",
+        configXml.addProperty("virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
                               "atest");
-        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).exchange",
+        configXml.addProperty("virtualhost.testQueuePriority.queues.queue.atest(-1).exchange",
                               "amq.direct");
-        configXml.addProperty("virtualhost.test.queues.queue.atest.priorities",
+        configXml.addProperty("virtualhost.testQueuePriority.queues.queue.atest.priorities",
                               "5");
 
         // Set up queue with JMS style priorities
-        configXml.addProperty("virtualhost.test.queues(-1).queue(-1).name(-1)",
+        configXml.addProperty("virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
                               "ptest");
-        configXml.addProperty("virtualhost.test.queues.queue.ptest(-1).exchange",
+        configXml.addProperty("virtualhost.testQueuePriority.queues.queue.ptest(-1).exchange",
                               "amq.direct");
-        configXml.addProperty("virtualhost.test.queues.queue.ptest.priority",
+        configXml.addProperty("virtualhost.testQueuePriority.queues.queue.ptest.priority",
                                "true");
 
         // Set up queue with no priorities
-        configXml.addProperty("virtualhost.test.queues(-1).queue(-1).name(-1)",
+        configXml.addProperty("virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
                               "ntest");
-        configXml.addProperty("virtualhost.test.queues.queue.ntest(-1).exchange",
+        configXml.addProperty("virtualhost.testQueuePriority.queues.queue.ntest(-1).exchange",
                               "amq.direct");
-        configXml.addProperty("virtualhost.test.queues.queue.ntest.priority",
+        configXml.addProperty("virtualhost.testQueuePriority.queues.queue.ntest.priority",
                               "false");
 
-        VirtualHost vhost = new VirtualHostImpl(new VirtualHostConfiguration("test", configXml.subset("virtualhost.test")));
+        VirtualHost vhost = ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration("testQueuePriority", configXml.subset("virtualhost.testQueuePriority")));
 
         // Check that atest was a priority queue with 5 priorities
         AMQQueue atest = vhost.getQueueRegistry().getQueue(new AMQShortString("atest"));
@@ -96,25 +92,29 @@ public class VirtualHostConfigurationTest extends TestCase
         // Check that ntest wasn't a priority queue
         AMQQueue ntest = vhost.getQueueRegistry().getQueue(new AMQShortString("ntest"));
         assertFalse(ntest instanceof AMQPriorityQueue);
+
+        ApplicationRegistry.remove();
+
     }
 
     public void testQueueAlerts() throws Exception
     {
+        configXml.addProperty("virtualhost.testQueueAlerts.name", "testQueueAlerts");
         // Set up queue with 5 priorities
-        configXml.addProperty("virtualhost.test.queues.exchange", "amq.topic");
-        configXml.addProperty("virtualhost.test.queues.maximumQueueDepth", "1");
-        configXml.addProperty("virtualhost.test.queues.maximumMessageSize", "2");
-        configXml.addProperty("virtualhost.test.queues.maximumMessageAge", "3");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.exchange", "amq.topic");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.maximumQueueDepth", "1");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.maximumMessageSize", "2");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.maximumMessageAge", "3");
 
-        configXml.addProperty("virtualhost.test.queues(-1).queue(1).name(1)", "atest");
-        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).exchange", "amq.direct");
-        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).maximumQueueDepth", "4");
-        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).maximumMessageSize", "5");
-        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).maximumMessageAge", "6");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues(-1).queue(1).name(1)", "atest");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.queue.atest(-1).exchange", "amq.direct");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumQueueDepth", "4");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumMessageSize", "5");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumMessageAge", "6");
 
-        configXml.addProperty("virtualhost.test.queues(-1).queue(-1).name(-1)", "btest");
+        configXml.addProperty("virtualhost.testQueueAlerts.queues(-1).queue(-1).name(-1)", "btest");
 
-        VirtualHost vhost = new VirtualHostImpl(new VirtualHostConfiguration("test", configXml.subset("virtualhost.test")));
+        VirtualHost vhost = ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration("testQueueAlerts", configXml.subset("virtualhost.testQueueAlerts")));
 
         // Check specifically configured values
         AMQQueue aTest = vhost.getQueueRegistry().getQueue(new AMQShortString("atest"));
@@ -127,6 +127,9 @@ public class VirtualHostConfigurationTest extends TestCase
         assertEquals(1, bTest.getMaximumQueueDepth());
         assertEquals(2, bTest.getMaximumMessageSize());
         assertEquals(3, bTest.getMaximumMessageAge());
+
+        ApplicationRegistry.remove();
+
 
     }
 

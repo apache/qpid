@@ -23,19 +23,16 @@ package org.apache.qpid.server.security.access;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.amqp_0_9.ExchangeDeclareBodyImpl;
 import org.apache.qpid.framing.amqp_8_0.QueueBindBodyImpl;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class PrincipalPermissionsTest extends TestCase
 {
@@ -74,8 +71,7 @@ public class PrincipalPermissionsTest extends TestCase
         _perms = new PrincipalPermissions(_user);
         try
         {
-            PropertiesConfiguration env = new PropertiesConfiguration();
-            _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration("test", env));
+            _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
             _exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, _durable, _ticket, _autoDelete);
             _queue = AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, _virtualHost, _arguments);
             _temporaryQueue = AMQQueueFactory.createAMQQueueImpl(_tempQueueName, false, _owner , true, _virtualHost, _arguments);
@@ -106,7 +102,7 @@ public class PrincipalPermissionsTest extends TestCase
     {
         QueueBindBodyImpl bind = new QueueBindBodyImpl(_ticket, _queueName, _exchangeName, _routingKey, _nowait, _arguments);
         Object[] args = new Object[]{bind, _exchange, _queue, _routingKey};
-        
+
         assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.BIND, args));
         _perms.grant(Permission.BIND, (Object[]) null);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.BIND, args));
@@ -116,7 +112,7 @@ public class PrincipalPermissionsTest extends TestCase
     {
         Object[] grantArgs = new Object[]{_temporary , _queueName, _exchangeName, _routingKey};
         Object[] authArgs = new Object[]{_autoDelete, _queueName};
-        
+
         assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
         _perms.grant(Permission.CREATEQUEUE, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
@@ -157,12 +153,12 @@ public class PrincipalPermissionsTest extends TestCase
         _perms.grant(Permission.CONSUME, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authArgs));
     }
-    
+
     public void testPublish()
     {
         Object[] authArgs = new Object[]{_exchange, _routingKey};
-        Object[] grantArgs = new Object[]{_exchange.getName(), _routingKey};
-        
+        Object[] grantArgs = new Object[]{_exchange.getNameShortString(), _routingKey};
+
         assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.PUBLISH, authArgs));
         _perms.grant(Permission.PUBLISH, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.PUBLISH, authArgs));
@@ -171,28 +167,28 @@ public class PrincipalPermissionsTest extends TestCase
     public void testVhostAccess()
     {
         //Tests that granting a user Virtualhost level access allows all authorisation requests
-        //where previously they would be denied 
-        
+        //where previously they would be denied
+
         //QPID-2133 createExchange rights currently allow all exchange creation unless rights for creating some
         //specific exchanges are granted. Grant a specific exchange creation to cause all others to be denied.
         Object[] createArgsCreateExchange = new Object[]{new AMQShortString("madeup"), _exchangeType};
         Object[] authArgsCreateExchange = new Object[]{_exchangeName,_exchangeType};
         assertEquals("Exchange creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEEXCHANGE, authArgsCreateExchange));
         _perms.grant(Permission.CREATEEXCHANGE, createArgsCreateExchange);
-        
-        Object[] authArgsPublish = new Object[]{_exchange, _routingKey};        
+
+        Object[] authArgsPublish = new Object[]{_exchange, _routingKey};
         Object[] authArgsConsume = new Object[]{_queue};
         Object[] authArgsCreateQueue = new Object[]{_autoDelete, _queueName};
         QueueBindBodyImpl bind = new QueueBindBodyImpl(_ticket, _queueName, _exchangeName, _routingKey, _nowait, _arguments);
         Object[] authArgsBind = new Object[]{bind, _exchange, _queue, _routingKey};
-        
+
         assertEquals("Exchange creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.CREATEEXCHANGE, authArgsCreateExchange));
         assertEquals("Publish was not denied", AuthzResult.DENIED, _perms.authorise(Permission.PUBLISH, authArgsPublish));
         assertEquals("Consume creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.CONSUME, authArgsConsume));
         assertEquals("Queue creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.CREATEQUEUE, authArgsCreateQueue));
         //BIND pre-grant authorise check disabled due to QPID-1597
         //assertEquals("Binding creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.BIND, authArgsBind));
-        
+
         _perms.grant(Permission.ACCESS);
 
         assertEquals("Exchange creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEEXCHANGE, authArgsCreateExchange));

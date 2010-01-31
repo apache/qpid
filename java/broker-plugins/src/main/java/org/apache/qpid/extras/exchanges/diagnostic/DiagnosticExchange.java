@@ -28,12 +28,17 @@ import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.AbstractExchange;
+import org.apache.qpid.server.exchange.AbstractExchangeMBean;
+import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import org.apache.qpid.junit.extensions.util.SizeOf;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
@@ -69,7 +74,7 @@ public class DiagnosticExchange extends AbstractExchange
      * MBean class implementing the management interfaces.
      */
     @MBeanDescription("Management Bean for Diagnostic Exchange")
-    private final class DiagnosticExchangeMBean extends ExchangeMBean
+    private final class DiagnosticExchangeMBean extends AbstractExchangeMBean<DiagnosticExchange>
     {
 
         /**
@@ -80,8 +85,8 @@ public class DiagnosticExchange extends AbstractExchange
         @MBeanConstructor("Creates an MBean for AMQ Diagnostic exchange")
         public DiagnosticExchangeMBean() throws JMException
         {
-            super();
-            _exchangeType = "diagnostic";
+            super(DiagnosticExchange.this);
+
             init();
         }
 
@@ -116,6 +121,42 @@ public class DiagnosticExchange extends AbstractExchange
 
     } // End of MBean class
 
+
+    public static final ExchangeType<DiagnosticExchange> TYPE = new ExchangeType<DiagnosticExchange>()
+    {
+
+        public AMQShortString getName()
+        {
+            return DIAGNOSTIC_EXCHANGE_CLASS;
+        }
+
+        public Class<DiagnosticExchange> getExchangeClass()
+        {
+            return DiagnosticExchange.class;
+        }
+
+        public DiagnosticExchange newInstance(VirtualHost host,
+                                            AMQShortString name,
+                                            boolean durable,
+                                            int ticket,
+                                            boolean autoDelete) throws AMQException
+        {
+            DiagnosticExchange exch = new DiagnosticExchange();
+            exch.initialise(host,name,durable,ticket,autoDelete);
+            return exch;
+        }
+
+        public AMQShortString getDefaultExchangeName()
+        {
+            return DIAGNOSTIC_EXCHANGE_NAME ;
+        }
+    };
+
+    public DiagnosticExchange()
+    {
+        super(TYPE);
+    }
+
     /**
      * Creates a new MBean instance
      *
@@ -123,7 +164,7 @@ public class DiagnosticExchange extends AbstractExchange
      * @throws AMQException
      *             if something goes wrong
      */
-    protected ExchangeMBean createMBean() throws JMException
+    protected AbstractExchangeMBean createMBean() throws JMException
     {
         return new DiagnosticExchange.DiagnosticExchangeMBean();
 
@@ -134,50 +175,11 @@ public class DiagnosticExchange extends AbstractExchange
         return _logger;
     }
 
-    public AMQShortString getType()
-    {
-        return DIAGNOSTIC_EXCHANGE_CLASS;
-    }
-
-    /**
-     * Does nothing.
-     *
-     * @param routingKey
-     *            pointless
-     * @param queue
-     *            pointless
-     * @param args
-     *            pointless
-     * @throws AMQException
-     *             never
-     */
-    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        // No op
-    }
-
     public void registerQueue(String routingKey, AMQQueue queue, Map<String, Object> args) throws AMQException
     {
         // No op
     }
 
-
-    /**
-     * Does nothing.
-     *
-     * @param routingKey
-     *            pointless
-     * @param queue
-     *            pointless
-     * @param args
-     *            pointless
-     * @throws AMQException
-     *             never
-     */
-    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        // No op
-    }
 
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
@@ -199,7 +201,7 @@ public class DiagnosticExchange extends AbstractExchange
         return false;
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage payload)
+    public ArrayList<AMQQueue> doRoute(InboundMessage payload)
     {
 
         Long value = new Long(SizeOf.getUsedMemory());
@@ -224,4 +226,14 @@ public class DiagnosticExchange extends AbstractExchange
 		return false;
 	}
 
+
+    protected void onBind(final Binding binding)
+    {
+
+    }
+
+    protected void onUnbind(final Binding binding)
+    {
+
+    }
 }

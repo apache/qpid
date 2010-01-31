@@ -40,6 +40,6 @@ public class QueueLogSubject extends AbstractLogSubject
     {
         setLogStringWithFormat(LOG_FORMAT,
                                queue.getVirtualHost().getName(),
-                               queue.getName());
+                               queue.getNameShortString());
     }
 }

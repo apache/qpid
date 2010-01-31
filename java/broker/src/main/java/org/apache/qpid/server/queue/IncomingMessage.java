@@ -63,7 +63,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
      * delivered. It is <b>cleared after delivery has been attempted</b>. Any persistent record of destinations is done
      * by the message handle.
      */
-    private ArrayList<AMQQueue> _destinationQueues;
+    private ArrayList<? extends BaseQueue> _destinationQueues;
 
     private long _expiration;
 
@@ -131,7 +131,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     }
 
 
-    public ArrayList<AMQQueue> getDestinationQueues()
+    public ArrayList<? extends BaseQueue> getDestinationQueues()
     {
         return _destinationQueues;
     }
@@ -225,7 +225,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     }
 
-    public void enqueue(final ArrayList<AMQQueue> queues)
+    public void enqueue(final ArrayList<? extends BaseQueue> queues)
     {
         _destinationQueues = queues;
     }

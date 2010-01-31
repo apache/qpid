@@ -20,52 +20,14 @@
  */
 package org.apache.qpid.client;
 
-import java.io.Serializable;
-import java.net.URISyntaxException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.jms.BytesMessage;
-import javax.jms.Destination;
-import javax.jms.IllegalStateException;
-import javax.jms.InvalidDestinationException;
-import javax.jms.InvalidSelectorException;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.QueueBrowser;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSender;
-import javax.jms.QueueSession;
-import javax.jms.StreamMessage;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
-import javax.jms.TopicSubscriber;
-import javax.jms.TransactionRolledBackException;
-
+import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
-import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
@@ -92,8 +54,23 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.url.AMQBindingURL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.*;
+import javax.jms.IllegalStateException;
+import java.io.Serializable;
+import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * <p/><table id="crc"><caption>CRC Card</caption>
@@ -734,7 +711,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
        }
 
-        //if we don't have an exception then we can perform closing operations  
+        //if we don't have an exception then we can perform closing operations
         _closing.set(e == null);
 
         if (!_closed.getAndSet(true))
@@ -905,7 +882,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkValidDestination(destination);
 
         return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, (destination instanceof Topic), null, null,
-                                  false, false);
+                                  ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()), false);
     }
 
     public C createExclusiveConsumer(Destination destination) throws JMSException
@@ -913,7 +890,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkValidDestination(destination);
 
         return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, true, null, null,
-                                  false, false);
+                                  ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()), false);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
@@ -921,7 +898,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkValidDestination(destination);
 
         return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, (destination instanceof Topic),
-                                  messageSelector, null, false, false);
+                                  messageSelector, null, ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()), false);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal)
@@ -930,7 +907,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkValidDestination(destination);
 
         return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, noLocal, (destination instanceof Topic),
-                                  messageSelector, null, false, false);
+                                  messageSelector, null, ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()), false);
     }
 
     public MessageConsumer createExclusiveConsumer(Destination destination, String messageSelector, boolean noLocal)
@@ -947,7 +924,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, null, false, false);
+        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, null, ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()), false);
     }
 
     public MessageConsumer createConsumer(Destination destination, int prefetchHigh, int prefetchLow, boolean noLocal,
@@ -955,7 +932,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null, false, false);
+        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null, ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()), false);
     }
 
     public MessageConsumer createConsumer(Destination destination, int prefetch, boolean noLocal, boolean exclusive,
@@ -963,7 +940,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, rawSelector, false, false);
+        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, rawSelector, ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()), false);
     }
 
     public MessageConsumer createConsumer(Destination destination, int prefetchHigh, int prefetchLow, boolean noLocal,
@@ -971,7 +948,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, rawSelector, false,
+        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, rawSelector, ((destination instanceof AMQDestination)  && ((AMQDestination)destination).isBrowseOnly()),
                                   false);
     }
 
@@ -1526,7 +1503,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             sendRecover();
 
             markClean();
-            
+
             if (!isSuspended)
             {
                 suspendChannel(false);
@@ -1599,7 +1576,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // should be rolled back(reject/release)
                 _rollbackMark.set(_highestDeliveryTag.get());
 
-                syncDispatchQueue();      
+                syncDispatchQueue();
 
                 _dispatcher.rollback();
 

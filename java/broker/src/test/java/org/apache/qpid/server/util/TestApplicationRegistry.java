@@ -22,10 +22,16 @@ package org.apache.qpid.server.util;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
+import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -35,17 +41,13 @@ import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
-import java.util.Arrays;
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {
@@ -97,6 +99,8 @@ public class TestApplicationRegistry extends ApplicationRegistry
         _messageStore = new TestableMemoryMessageStore();
 
         _virtualHostRegistry = new VirtualHostRegistry(this);
+        _qmfService = new QMFService(getConfigStore(),this);
+
 
         PropertiesConfiguration vhostProps = new PropertiesConfiguration();
         VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
@@ -147,6 +151,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
         try
         {
             super.close();
+            _qmfService.close();
         }
         finally
         {

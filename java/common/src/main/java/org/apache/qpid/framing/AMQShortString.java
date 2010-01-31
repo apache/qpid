@@ -40,8 +40,6 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     private static final byte MINUS = (byte)'-';
     private static final byte ZERO = (byte) '0';
 
-
-
     private final class TokenizerImpl implements AMQShortStringTokenizer
     {
         private final byte _delim;
@@ -115,7 +113,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private final int _length;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
-    
+
     public static final AMQShortString EMPTY_STRING = new AMQShortString((String)null);
 
     public AMQShortString(byte[] data)
@@ -758,6 +756,11 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             }
         }
         return false;  //To change body of created methods use File | Settings | File Templates.
+    }
+
+    public static AMQShortString valueOf(Object obj)
+    {
+        return obj == null ? null : new AMQShortString(String.valueOf(obj));
     }
 
 

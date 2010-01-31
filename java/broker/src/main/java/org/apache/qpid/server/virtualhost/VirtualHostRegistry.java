@@ -21,6 +21,7 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.configuration.ConfigStore;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,12 +53,17 @@ public class VirtualHostRegistry
 
     public VirtualHost getVirtualHost(String name)
     {
-        if(name == null || name.trim().length() == 0 )
+        if(name == null || name.trim().length() == 0 || "/".equals(name.trim()))
         {
             name = getDefaultVirtualHostName();
         }
 
         return _registry.get(name);
+    }
+
+    public VirtualHost getDefaultVirtualHost()
+    {
+        return getVirtualHost(getDefaultVirtualHostName());
     }
 
     private String getDefaultVirtualHostName()
@@ -79,5 +85,10 @@ public class VirtualHostRegistry
     public ApplicationRegistry getApplicationRegistry()
     {
         return _applicationRegistry;
+    }
+
+    public ConfigStore getConfigStore()
+    {
+        return _applicationRegistry.getConfigStore();
     }
 }

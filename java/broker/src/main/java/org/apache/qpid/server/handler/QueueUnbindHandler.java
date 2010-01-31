@@ -106,23 +106,16 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
         }
 
-        try
+        if(virtualHost.getBindingFactory().getBinding(String.valueOf(routingKey), queue, exch, FieldTable.convertToMap(body.getArguments())) == null)
         {
-            queue.unBind(exch, routingKey, body.getArguments());
+            throw body.getChannelException(AMQConstant.NOT_FOUND,"No such binding");
         }
-        catch (AMQInvalidRoutingKeyException rke)
+        else
         {
-            throw body.getChannelException(AMQConstant.INVALID_ROUTING_KEY, routingKey.toString());
-        }
-        catch (AMQException e)
-        {
-            if(e.getErrorCode() == AMQConstant.NOT_FOUND)
-            {
-                throw body.getChannelException(AMQConstant.NOT_FOUND,e.getMessage(),e);
-            }
-            throw body.getChannelException(AMQConstant.CHANNEL_ERROR, e.toString());
+            virtualHost.getBindingFactory().removeBinding(String.valueOf(routingKey), queue, exch, FieldTable.convertToMap(body.getArguments()));
         }
 
+        
         if (_log.isInfoEnabled())
         {
             _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + routingKey);

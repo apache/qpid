@@ -27,7 +27,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -102,11 +101,11 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                         body.getNoLocal(), body.getNowait(), queue))
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-                }                
+                }
                 else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
                 }
 
                 if (body.getConsumerTag() != null)
@@ -163,14 +162,14 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
-                                                   + queue.getName()
+                                                   + queue.getNameShortString()
                                                    + " as it already has an existing exclusive consumer");
                 }
                 catch (AMQQueue.ExistingSubscriptionPreventsExclusive e)
                 {
                     throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
-                                                   + queue.getName()
+                                                   + queue.getNameShortString()
                                                    + " exclusively as it already has a consumer");
                 }
 

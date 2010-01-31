@@ -20,50 +20,16 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicMarkableReference;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.management.JMException;
-import javax.security.sasl.SaslServer;
-
 import org.apache.log4j.Logger;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
+
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.AMQBody;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.AMQProtocolHeaderException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ChannelCloseOkBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.MethodDispatcher;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.pool.Job;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
@@ -71,6 +37,10 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.ConnectionConfig;
+import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -85,12 +55,31 @@ import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Sender;
 
-public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocolSession
+import javax.management.JMException;
+import javax.security.sasl.SaslServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
+public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocolSession, ConnectionConfig
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
@@ -161,6 +150,8 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
     private long _maxFrameSize;
     private final AtomicBoolean _closing = new AtomicBoolean(false);
+    private final UUID _id;
+    private final ConfigStore _configStore;
 
     public ManagedObject getManagedObject()
     {
@@ -180,6 +171,10 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
         _logSubject = new ConnectionLogSubject(this);
+
+        _configStore = virtualHostRegistry.getConfigStore();
+        _id = _configStore.createId();
+
 
         _actor.message(ConnectionMessages.CON_OPEN(null, null, false, false));
 
@@ -765,6 +760,8 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void closeProtocolSession()
     {
+        getConfigStore().removeConfiguredObject(this);
+
         _networkDriver.close();
         try
         {
@@ -902,6 +899,8 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         _virtualHost = virtualHost;
 
         _virtualHost.getConnectionRegistry().registerConnection(this);
+        
+        _configStore.addConfiguredObject(this);
 
         try
         {
@@ -1065,6 +1064,71 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                 closeProtocolSession();
             }
         }
+    }
+
+    public Boolean isIncoming()
+    {
+        return true;
+    }
+
+    public Boolean isSystemConnection()
+    {
+        return false;
+    }
+
+    public Boolean isFederationLink()
+    {
+        return false;
+    }
+
+    public String getAuthId()
+    {
+        return getAuthorizedID().getName();
+    }
+
+    public Integer getRemotePID()
+    {
+        return null;
+    }
+
+    public String getRemoteProcessName()
+    {
+        return null;
+    }
+
+    public Integer getRemoteParentPID()
+    {
+        return null;
+    }
+
+    public ConfigStore getConfigStore()
+    {
+        return _configStore;
+    }
+
+    public ConnectionConfigType getConfigType()
+    {
+        return ConnectionConfigType.getInstance();
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return getVirtualHost();
+    }
+
+    public boolean isDurable()
+    {
+        return false;
+    }
+
+    public UUID getId()
+    {
+        return _id;
+    }
+
+    public String getAddress()
+    {
+        return String.valueOf(getRemoteAddress());
     }
 
 }

@@ -95,7 +95,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     {
         super(ManagedQueue.class, ManagedQueue.TYPE);
         _queue = queue;
-        _queueName = jmxEncode(new StringBuffer(queue.getName()), 0).toString();
+        _queueName = jmxEncode(new StringBuffer(queue.getNameShortString()), 0).toString();
     }
 
     public ManagedObject getParentObject()
@@ -252,7 +252,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         {
             throw new IllegalArgumentException("Capacity must not be less than FlowResumeCapacity");
         }
-        
+
     	_queue.setCapacity(capacity);
     }
 
@@ -267,10 +267,10 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         {
             throw new IllegalArgumentException("FlowResumeCapacity must not exceed Capacity");
         }
-        
+
         _queue.setFlowResumeCapacity(flowResumeCapacity);
     }
-    
+
     public boolean isFlowOverfull()
     {
         return _queue.isOverfull();
@@ -309,7 +309,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     public void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg)
     {
         // important : add log to the log file - monitoring tools may be looking for this
-        _logger.info(notification.name() + " On Queue " + queue.getName() + " - " + notificationMsg);
+        _logger.info(notification.name() + " On Queue " + queue.getNameShortString() + " - " + notificationMsg);
         notificationMsg = notification.name() + " " + notificationMsg;
 
         _lastNotification =
@@ -509,7 +509,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private String[] getMessageTransferMessageHeaderProps(MessageTransferMessage msg)
     {
         List<String> list = new ArrayList<String>();
-        
+
         AMQMessageHeader header = msg.getMessageHeader();
         MessageProperties msgProps = msg.getHeader().get(MessageProperties.class);
 

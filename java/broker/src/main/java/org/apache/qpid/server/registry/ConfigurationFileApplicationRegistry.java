@@ -21,13 +21,15 @@
 package org.apache.qpid.server.registry;
 
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
@@ -36,7 +38,6 @@ import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.io.File;
 
@@ -51,6 +52,9 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     public void initialise(int instanceID) throws Exception
     {
+        _qmfService = new QMFService(getConfigStore(), this);
+
+
         _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
                                                        new Log4jMessageLogger());
 
@@ -75,6 +79,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _databaseManager.initialiseManagement(_configuration);
 
+
         _managedObjectRegistry.start();
 
         initialiseVirtualHosts();
@@ -91,6 +96,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         try
         {
             super.close();
+            _qmfService.close();
         }
         finally
         {
@@ -102,7 +108,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     {
         for (String name : _configuration.getVirtualHosts())
         {
-            _virtualHostRegistry.registerVirtualHost(new VirtualHostImpl(_configuration.getVirtualHostConfig(name)));
+            createVirtualHost(_configuration.getVirtualHostConfig(name));
         }
         getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
     }

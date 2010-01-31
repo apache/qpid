@@ -20,20 +20,23 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.log4j.Logger;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 
 public class QueueEntryImpl implements QueueEntry
@@ -152,6 +155,11 @@ public class QueueEntryImpl implements QueueEntry
         }
         return false;
 
+    }
+
+    public boolean isAvailable()
+    {
+        return _state == AVAILABLE_STATE;
     }
 
     public boolean isAcquired()
@@ -408,7 +416,7 @@ public class QueueEntryImpl implements QueueEntry
 
             if(alternateExchange != null)
             {
-                final List<AMQQueue> rerouteQueues = alternateExchange.route(new InboundMessageAdapter(this));
+                final List<? extends BaseQueue> rerouteQueues = alternateExchange.route(new InboundMessageAdapter(this));
                 final ServerMessage message = getMessage();
                 if(rerouteQueues != null && rerouteQueues.size() != 0)
                 {
@@ -419,9 +427,9 @@ public class QueueEntryImpl implements QueueEntry
                         {
                             try
                             {
-                                for(AMQQueue queue : rerouteQueues)
+                                for(BaseQueue queue : rerouteQueues)
                                 {
-                                    QueueEntry entry = queue.enqueue(message);
+                                    queue.enqueue(message);
                                 }
                             }
                             catch (AMQException e)

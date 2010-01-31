@@ -83,6 +83,16 @@ public class HeadersBindingTest extends TestCase
             return null;
         }
 
+        public String getReplyToExchange()
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public String getReplyToRoutingKey()
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
         public Object getHeader(String name)
         {
             return _headers.get(name);

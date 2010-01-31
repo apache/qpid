@@ -22,7 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -30,12 +30,14 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.AMQException;
 
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
+import java.util.UUID;
 
 public class MockAMQQueue implements AMQQueue
 {
@@ -58,17 +60,107 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public void setDeleteOnNoConsumers(boolean b)
-    {        
+    {
     }
 
-    public AMQShortString getName()
+    public void addBinding(final Binding binding)
+    {
+
+    }
+
+    public void removeBinding(final Binding binding)
+    {
+
+    }
+
+    public List<Binding> getBindings()
+    {
+        return null;
+    }
+
+    public int getBindingCount()
+    {
+        return 0;
+    }
+
+    public ConfigStore getConfigStore()
+    {
+        return getVirtualHost().getConfigStore();
+    }
+
+    public long getMessageDequeueCount()
+    {
+        return 0;
+    }
+
+    public long getTotalEnqueueSize()
+    {
+        return 0;
+    }
+
+    public long getTotalDequeueSize()
+    {
+        return 0;
+    }
+
+    public int getBindingCountHigh()
+    {
+        return 0;
+    }
+
+    public long getPersistentByteEnqueues()
+    {
+        return 0;
+    }
+
+    public long getPersistentByteDequeues()
+    {
+        return 0;
+    }
+
+    public long getPersistentMsgEnqueues()
+    {
+        return 0;
+    }
+
+    public long getPersistentMsgDequeues()
+    {
+        return 0;
+    }
+
+    public void purge(final long request)
+    {
+
+    }
+
+    public long getCreateTime()
+    {
+        return 0;
+    }
+
+    public AMQShortString getNameShortString()
     {
         return _name;
     }
 
     public void setNoLocal(boolean b)
     {
-        
+
+    }
+
+    public UUID getId()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public QueueConfigType getConfigType()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean isDurable()
@@ -96,6 +188,11 @@ public class MockAMQQueue implements AMQQueue
         return _virtualhost;
     }
 
+    public String getName()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void bind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -106,10 +203,6 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public List<ExchangeBinding> getExchangeBindings()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
 
     public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
     {
@@ -129,6 +222,11 @@ public class MockAMQQueue implements AMQQueue
     public int getActiveConsumerCount()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean hasExclusiveSubscriber()
+    {
+        return false;
     }
 
     public boolean isUnused()
@@ -176,10 +274,14 @@ public class MockAMQQueue implements AMQQueue
        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public QueueEntry enqueue(ServerMessage message) throws AMQException
+    public void enqueue(ServerMessage message) throws AMQException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
+    {
+    }
+
 
     public void requeue(QueueEntry entry)
     {
@@ -202,6 +304,11 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public void addQueueDeleteTask(Task task)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void removeQueueDeleteTask(final Task task)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }

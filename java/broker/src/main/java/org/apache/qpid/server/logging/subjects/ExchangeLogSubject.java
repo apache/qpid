@@ -41,6 +41,6 @@ public class ExchangeLogSubject extends AbstractLogSubject
     public ExchangeLogSubject(Exchange exchange, VirtualHost vhost)
     {
         setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
-                               exchange.getType(), exchange.getName());
+                               exchange.getTypeShortString(), exchange.getNameShortString());
     }
 }

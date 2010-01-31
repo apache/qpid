@@ -31,6 +31,7 @@ public interface BindingURL
     public static final String OPTION_EXCLUSIVE = "exclusive";
     public static final String OPTION_AUTODELETE = "autodelete";
     public static final String OPTION_DURABLE = "durable";
+    public static final String OPTION_BROWSE = "browse";
     public static final String OPTION_CLIENTID = "clientid";
     public static final String OPTION_SUBSCRIPTION = "subscription";
     public static final String OPTION_ROUTING_KEY = "routingkey";

@@ -23,6 +23,7 @@ package org.apache.qpid.transport.codec;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 
 /**
@@ -314,6 +315,28 @@ public final class BBEncoder extends AbstractEncoder
 			out.put(byteArray);			
 		}
 	}
+
+    public void writeBin128(UUID id)
+	{
+        byte[] data = new byte[16];
+
+        long msb = id.getMostSignificantBits();
+        long lsb = id.getLeastSignificantBits();
+
+        assert data.length == 16;
+        for (int i=7; i>=0; i--)
+        {
+            data[i] = (byte)(msb & 0xff);
+            msb = msb >> 8;
+        }
+
+        for (int i=15; i>=8; i--)
+        {
+            data[i] = (byte)(lsb & 0xff);
+            lsb = (lsb >> 8);
+        }
+        writeBin128(data);
+    }
 
 	public void writeFloat(float aFloat)
 	{

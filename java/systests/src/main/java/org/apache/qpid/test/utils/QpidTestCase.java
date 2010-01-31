@@ -21,12 +21,16 @@ import junit.framework.TestCase;
 import junit.framework.TestResult;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.log4j.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -35,9 +39,6 @@ import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.LogMonitor;
-import org.apache.log4j.Level;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -58,7 +59,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintStream;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +78,7 @@ public class QpidTestCase extends TestCase
 
     protected static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
     protected static final int LOGMONITOR_TIMEOUT = 5000;
-    
+
     protected long RECEIVE_TIMEOUT = 1000l;
 
     private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
@@ -166,7 +166,7 @@ public class QpidTestCase extends TestCase
     private static final String TEST_OUTPUT = "test.output";
     private static final String BROKER_LOG_INTERLEAVE = "broker.log.interleave";
     private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
-        
+
     // values
     protected static final String JAVA = "java";
     protected static final String CPP = "cpp";
@@ -187,14 +187,14 @@ public class QpidTestCase extends TestCase
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     private String _output = System.getProperty(TEST_OUTPUT);
-    
-    private static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");    
+
+    private static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
     protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
-    
+
     protected File _outputFile;
-    
+
     protected PrintStream _brokerOutputStream;
-    
+
     private Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
 
     private InitialContext _initialContext;
@@ -216,11 +216,11 @@ public class QpidTestCase extends TestCase
 
     public QpidTestCase()
     {
-        super("QpidTestCase");
+        this("QpidTestCase");
     }
 
     public void runBare() throws Throwable
-    {    	
+    {
         _testName = getClass().getSimpleName() + "." + getName();
         String qname = getClass().getName() + "." + getName();
 
@@ -231,7 +231,7 @@ public class QpidTestCase extends TestCase
         PrintStream oldErr = System.err;
         PrintStream out = null;
         PrintStream err = null;
-        
+
         boolean redirected = _output != null && _output.length() > 0;
         if (redirected)
         {
@@ -240,15 +240,15 @@ public class QpidTestCase extends TestCase
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
             System.setOut(out);
             System.setErr(err);
-                        
+
             if (_interleaveBrokerLog)
             {
-            	_brokerOutputStream = out;            	
+            	_brokerOutputStream = out;
             }
             else
             {
             	_brokerOutputStream = new PrintStream(new FileOutputStream(String
-    					.format("%s/TEST-%s.broker.out", _output, qname)), true);	
+    					.format("%s/TEST-%s.broker.out", _output, qname)), true);
             }
         }
 
@@ -267,7 +267,7 @@ public class QpidTestCase extends TestCase
             {
                 _logger.error("exception stopping broker", e);
             }
-            
+
             if(_brokerCleanBetweenTests)
             {
             	try
@@ -279,7 +279,7 @@ public class QpidTestCase extends TestCase
             		_logger.error("exception cleaning up broker", e);
             	}
             }
-            
+
             _logger.info("==========  stop " + _testName + " ==========");
 
             if (redirected)
@@ -289,7 +289,7 @@ public class QpidTestCase extends TestCase
                 err.close();
                 out.close();
                 if (!_interleaveBrokerLog)
-                { 	
+                {
                 	_brokerOutputStream.close();
                 }
             }
@@ -380,13 +380,13 @@ public class QpidTestCase extends TestCase
             {
                 String line;
                 while ((line = in.readLine()) != null)
-                {	
+                {
                 	if (_interleaveBrokerLog)
                 	{
                 		line = _brokerLogPrefix + line;
                 	}
                 	out.println(line);
-                	                	
+
                     if (latch != null && line.contains(ready))
                     {
                         seenReady = true;
@@ -433,7 +433,7 @@ public class QpidTestCase extends TestCase
      */
     protected int getManagementPort(int mainPort)
     {
-        return mainPort + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT);
+        return mainPort + (DEFAULT_MANAGEMENT_PORT - (_broker.equals(VM) ? DEFAULT_VM_PORT : DEFAULT_PORT));
     }
 
     /**
@@ -484,7 +484,16 @@ public class QpidTestCase extends TestCase
             setConfigurationProperty("management.jmxport", String.valueOf(getManagementPort(port)));
             saveTestConfiguration();
             // create an in_VM broker
-            ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(_configFile), port);
+            final ConfigurationFileApplicationRegistry registry = new ConfigurationFileApplicationRegistry(_configFile);
+            try
+            {
+                ApplicationRegistry.initialise(registry, port);
+            }
+            catch (Exception e)
+            {
+                registry.close();
+                throw e;
+            }
             TransportConnection.createVMBroker(port);
         }
         else if (!_broker.equals(EXTERNAL))
@@ -511,12 +520,12 @@ public class QpidTestCase extends TestCase
 
             // Use the environment variable to set amqj.logging.level for the broker
             // The value used is a 'server' value in the test configuration to
-            // allow a differentiation between the client and broker logging levels.            
+            // allow a differentiation between the client and broker logging levels.
             if (System.getProperty("amqj.server.logging.level") != null)
             {
                 setBrokerEnvironment("AMQJ_LOGGING_LEVEL", System.getProperty("amqj.server.logging.level"));
             }
-            
+
             // Add all the environment settings the test requested
             if (!_env.isEmpty())
             {
@@ -766,7 +775,7 @@ public class QpidTestCase extends TestCase
             _propertiesSetForBroker.put(property, value);
         }
 
-    }    
+    }
 
     /**
      * Set a System (-D) property for this test run.
@@ -790,7 +799,7 @@ public class QpidTestCase extends TestCase
      * Java Broker via a -D value defined in QPID_OPTS.
      *
      * If the value should not be set on the broker then use
-     * setTestClientSystemProperty(). 
+     * setTestClientSystemProperty().
      *
      * @param property the property to set
      * @param value    the new value to use
@@ -800,7 +809,7 @@ public class QpidTestCase extends TestCase
         // Record the value for the external broker
         _propertiesSetForBroker.put(property, value);
 
-        //Set the value for the test client vm aswell.        
+        //Set the value for the test client vm aswell.
         setTestClientSystemProperty(property, value);
     }
 
@@ -816,7 +825,7 @@ public class QpidTestCase extends TestCase
         {
             // Record the current value so we can revert it later.
             _propertiesSetForTestOnly.put(property, System.getProperty(property));
-        }                                                                     
+        }
 
         System.setProperty(property, value);
     }
@@ -1153,7 +1162,7 @@ public class QpidTestCase extends TestCase
                                      int count, int batchSize) throws Exception
     {
         return sendMessage(session, destination, count, 0, batchSize);
-    }    
+    }
 
     /**
      * Send messages to the given destination.
@@ -1199,7 +1208,7 @@ public class QpidTestCase extends TestCase
         // Ensure we commit the last messages
         // Commit the session if we are transacted and
         // we have no batchSize or
-        // our count is not divible by batchSize. 
+        // our count is not divible by batchSize.
         if (session.getTransacted() &&
             ( batchSize == 0 || count % batchSize != 0))
         {
@@ -1249,13 +1258,13 @@ public class QpidTestCase extends TestCase
     {
         reloadBroker(0);
     }
-    
+
     public void reloadBroker(int port) throws ConfigurationException, IOException
     {
         if (_broker.equals(VM))
         {
             ApplicationRegistry.getInstance().getConfiguration().reparseConfigFileSecuritySections();
-        } 
+        }
         else // FIXME: should really use the JMX interface to do this
         {
             /*
@@ -1266,11 +1275,11 @@ public class QpidTestCase extends TestCase
             BufferedReader reader = new BufferedReader (new InputStreamReader(p.getInputStream()));
             String cmd = "/bin/kill -SIGHUP " + reader.readLine();
             p = Runtime.getRuntime().exec(cmd);
-            
+
             LogMonitor _monitor = new LogMonitor(_outputFile);
             assertTrue("The expected server security configuration reload did not occur",
                     _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
-            
+
         }
     }
 }

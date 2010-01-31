@@ -52,7 +52,7 @@ public class Copy extends Move
     protected void doCommand(AMQQueue fromQueue, long start, long end, AMQQueue toQueue)
     {
         ServerTransaction txn = new LocalTransaction(fromQueue.getVirtualHost().getTransactionLog());
-        fromQueue.copyMessagesToAnotherQueue(start, end, toQueue.getName().toString(), txn);
+        fromQueue.copyMessagesToAnotherQueue(start, end, toQueue.getNameShortString().toString(), txn);
         txn.commit();
     }
 

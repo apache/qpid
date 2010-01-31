@@ -20,20 +20,11 @@
  */
 package org.apache.qpid.server.configuration;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Collections;
-
 import junit.framework.TestCase;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -41,6 +32,14 @@ import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.TestNetworkDriver;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 
 public class ServerConfigurationTest extends TestCase
 {
@@ -51,7 +50,7 @@ public class ServerConfigurationTest extends TestCase
     public void setUp()
     {
         //Highlight that this test will cause a new AR to be created
-        ApplicationRegistry.getInstance();
+//        ApplicationRegistry.getInstance();
 
         _config = new XMLConfiguration();
     }
@@ -60,7 +59,7 @@ public class ServerConfigurationTest extends TestCase
     public void tearDown() throws Exception
     {
         //Correctly Close the AR we created
-        ApplicationRegistry.remove();
+//        ApplicationRegistry.remove();
     }
 
     public void testSetJMXManagementPort() throws ConfigurationException
@@ -765,21 +764,28 @@ public class ServerConfigurationTest extends TestCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
+        try
+        {
+            ApplicationRegistry.initialise(reg, 1);
 
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
+            // Test config
+            VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+            VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
 
-        TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setRemoteAddress("127.0.0.1");
+            TestNetworkDriver testDriver = new TestNetworkDriver();
+            testDriver.setRemoteAddress("127.0.0.1");
 
-        AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
-        assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+            AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
+            assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
-        testDriver.setRemoteAddress("127.1.2.3");
-        session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
-        assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
+            testDriver.setRemoteAddress("127.1.2.3");
+            session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
+            assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
+        }
+        finally
+        {
+            ApplicationRegistry.remove(1);
+        }
     }
 
     public void testCombinedConfigurationFirewall() throws Exception
@@ -839,48 +845,61 @@ public class ServerConfigurationTest extends TestCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
+        try
+        {
+            ApplicationRegistry.initialise(reg, 1);
 
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
+            // Test config
+            VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+            VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
 
-        TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setRemoteAddress("127.0.0.1");
+            TestNetworkDriver testDriver = new TestNetworkDriver();
+            testDriver.setRemoteAddress("127.0.0.1");
 
-        AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
-        session.setNetworkDriver(testDriver);
-        assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+            AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
+            session.setNetworkDriver(testDriver);
+            assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+        }
+        finally
+        {
+            ApplicationRegistry.remove(1);
+        }
     }
-    
+
     public void testConfigurationFirewallReload() throws Exception
     {
         // Write out config
         File mainFile = File.createTempFile(getClass().getName(), null);
 
-        mainFile.deleteOnExit();        
+        mainFile.deleteOnExit();
         writeConfigFile(mainFile, false);
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
+        try
+        {
+            ApplicationRegistry.initialise(reg, 1);
 
-        // Test config
-        TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setRemoteAddress("127.0.0.1");
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
-        
-        assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
-       
-        // Switch to deny the connection
-        writeConfigFile(mainFile, true);
-        
-        reg.getConfiguration().reparseConfigFileSecuritySections();
+            // Test config
+            TestNetworkDriver testDriver = new TestNetworkDriver();
+            testDriver.setRemoteAddress("127.0.0.1");
+            VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+            VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
+            AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
 
-        assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
+            assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
+            // Switch to deny the connection
+            writeConfigFile(mainFile, true);
+
+            reg.getConfiguration().reparseConfigFileSecuritySections();
+
+            assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
+        }
+        finally
+        {
+            ApplicationRegistry.remove(1);
+        }
     }
 
     private void writeConfigFile(File mainFile, boolean allow) throws IOException {
@@ -974,45 +993,52 @@ public class ServerConfigurationTest extends TestCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
+        try
+        {
+            ApplicationRegistry.initialise(reg, 1);
 
-        // Test config
-        TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setRemoteAddress("127.0.0.1");
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
-        assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+            // Test config
+            TestNetworkDriver testDriver = new TestNetworkDriver();
+            testDriver.setRemoteAddress("127.0.0.1");
+            VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+            VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
+            AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
+            assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
-        RandomAccessFile fileBRandom = new RandomAccessFile(fileB, "rw");
-        fileBRandom.setLength(0);
-        fileBRandom.seek(0);
-        fileBRandom.close();
+            RandomAccessFile fileBRandom = new RandomAccessFile(fileB, "rw");
+            fileBRandom.setLength(0);
+            fileBRandom.seek(0);
+            fileBRandom.close();
 
-        out = new FileWriter(fileB);
-        out.write("<firewall>\n");
-        out.write("\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
-        out.write("</firewall>\n");
-        out.close();
+            out = new FileWriter(fileB);
+            out.write("<firewall>\n");
+            out.write("\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
+            out.write("</firewall>\n");
+            out.close();
 
-        reg.getConfiguration().reparseConfigFileSecuritySections();
+            reg.getConfiguration().reparseConfigFileSecuritySections();
 
-        assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
+            assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
-        fileBRandom = new RandomAccessFile(fileB, "rw");
-        fileBRandom.setLength(0);
-        fileBRandom.seek(0);
-        fileBRandom.close();
+            fileBRandom = new RandomAccessFile(fileB, "rw");
+            fileBRandom.setLength(0);
+            fileBRandom.seek(0);
+            fileBRandom.close();
 
-        out = new FileWriter(fileB);
-        out.write("<firewall>\n");
-        out.write("\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
-        out.write("</firewall>\n");
-        out.close();
+            out = new FileWriter(fileB);
+            out.write("<firewall>\n");
+            out.write("\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
+            out.write("</firewall>\n");
+            out.close();
 
-        reg.getConfiguration().reparseConfigFileSecuritySections();
+            reg.getConfiguration().reparseConfigFileSecuritySections();
 
-        assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+            assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+        }
+        finally
+        {
+            ApplicationRegistry.remove(1);
+        }
     }
 
     public void testnewParserOutputVsOldParserOutput() throws ConfigurationException
@@ -1038,11 +1064,18 @@ public class ServerConfigurationTest extends TestCase
         File configFile = new File(System.getProperty("QPID_HOME")+"/etc/config.xml");
         assertTrue(configFile.exists());
 
-        ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(configFile), REGISTRY);
+        try
+        {
+            ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(configFile), REGISTRY);
 
-        VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance(REGISTRY).getVirtualHostRegistry();
+            VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance(REGISTRY).getVirtualHostRegistry();
 
-        assertEquals("Incorrect virtualhost count", 3 , virtualHostRegistry.getVirtualHosts().size());
+            assertEquals("Incorrect virtualhost count", 3 , virtualHostRegistry.getVirtualHosts().size());
+        }
+        finally
+        {
+            ApplicationRegistry.remove(REGISTRY);
+        }
     }
 
 

@@ -118,4 +118,13 @@ public class QueueConfiguration
         return _config.getLong("flowResumeCapacity", _vHostConfig.getFlowResumeCapacity());
     }
 
+    public boolean isLVQ()
+    {
+        return _config.getBoolean("lvq", false);
+    }
+
+    public String getLVQKey()
+    {
+        return _config.getString("lvqKey", null);
+    }
 }

@@ -20,22 +20,24 @@
 */
 package org.apache.qpid.server.store;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
-import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
+import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.commons.configuration.Configuration;
-
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -49,8 +51,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
 
 
 public class DerbyMessageStore implements MessageStore
@@ -590,7 +590,10 @@ public class DerbyMessageStore implements MessageStore
                     conn = newConnection();
 
                     PreparedStatement stmt = conn.prepareStatement(FIND_EXCHANGE);
-                    stmt.setString(1, exchange.getName().toString());
+                    stmt.setString(1, exchange.getNameShortString().toString());
+                    stmt.execute();
+                    stmt.close();
+                    conn.commit();
 
                     ResultSet rs = stmt.executeQuery();
 
@@ -617,7 +620,7 @@ public class DerbyMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new AMQException("Error writing Exchange with name " + exchange.getName() + " to database: " + e, e);
+                throw new AMQException("Error writing Exchange with name " + exchange.getNameShortString() + " to database: " + e, e);
             }
         }
 
@@ -631,11 +634,11 @@ public class DerbyMessageStore implements MessageStore
         {
             conn = newConnection();
             PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_EXCHANGE);
-            stmt.setString(1, exchange.getName().toString());
+            stmt.setString(1, exchange.getNameShortString().toString());
             int results = stmt.executeUpdate();
             if(results == 0)
             {
-                throw new AMQException("Exchange " + exchange.getName() + " not found");
+                throw new AMQException("Exchange " + exchange.getNameShortString() + " not found");
             }
             else
             {
@@ -645,7 +648,7 @@ public class DerbyMessageStore implements MessageStore
         }
         catch (SQLException e)
         {
-            throw new AMQException("Error writing deleting with name " + exchange.getName() + " from database: " + e, e);
+            throw new AMQException("Error writing deleting with name " + exchange.getNameShortString() + " from database: " + e, e);
         }
         finally
         {
@@ -677,8 +680,8 @@ public class DerbyMessageStore implements MessageStore
                 conn = newConnection();
 
                 PreparedStatement stmt = conn.prepareStatement(FIND_BINDING);
-                stmt.setString(1, exchange.getName().toString() );
-                stmt.setString(2, queue.getName().toString());
+                stmt.setString(1, exchange.getNameShortString().toString() );
+                stmt.setString(2, queue.getNameShortString().toString());
                 stmt.setString(3, routingKey == null ? null : routingKey.toString());
 
                 ResultSet rs = stmt.executeQuery();
@@ -687,8 +690,8 @@ public class DerbyMessageStore implements MessageStore
                 if (!rs.next())
                 {
                     stmt = conn.prepareStatement(INSERT_INTO_BINDINGS);
-                    stmt.setString(1, exchange.getName().toString() );
-                    stmt.setString(2, queue.getName().toString());
+                    stmt.setString(1, exchange.getNameShortString().toString() );
+                    stmt.setString(2, queue.getNameShortString().toString());
                     stmt.setString(3, routingKey == null ? null : routingKey.toString());
                     if(args != null)
                     {
@@ -713,8 +716,8 @@ public class DerbyMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new AMQException("Error writing binding for AMQQueue with name " + queue.getName() + " to exchange "
-                    + exchange.getName() + " to database: " + e, e);
+                throw new AMQException("Error writing binding for AMQQueue with name " + queue.getNameShortString() + " to exchange "
+                    + exchange.getNameShortString() + " to database: " + e, e);
             }
             finally
             {
@@ -748,23 +751,23 @@ public class DerbyMessageStore implements MessageStore
             conn = newConnection();
             // exchange_name varchar(255) not null, queue_name varchar(255) not null, binding_key varchar(255), arguments blob
             PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_BINDINGS);
-            stmt.setString(1, exchange.getName().toString() );
-            stmt.setString(2, queue.getName().toString());
+            stmt.setString(1, exchange.getNameShortString().toString() );
+            stmt.setString(2, queue.getNameShortString().toString());
             stmt.setString(3, routingKey == null ? null : routingKey.toString());
 
 
             if(stmt.executeUpdate() != 1)
             {
-                 throw new AMQException("Queue binding for queue with name " + queue.getName() + " to exchange "
-                + exchange.getName() + "  not found");
+                 throw new AMQException("Queue binding for queue with name " + queue.getNameShortString() + " to exchange "
+                + exchange.getNameShortString() + "  not found");
             }
             conn.commit();
             stmt.close();
         }
         catch (SQLException e)
         {
-            throw new AMQException("Error removing binding for AMQQueue with name " + queue.getName() + " to exchange "
-                + exchange.getName() + " in database: " + e, e);
+            throw new AMQException("Error removing binding for AMQQueue with name " + queue.getNameShortString() + " to exchange "
+                + exchange.getNameShortString() + " in database: " + e, e);
         }
         finally
         {
@@ -801,7 +804,7 @@ public class DerbyMessageStore implements MessageStore
                 Connection conn = newConnection();
 
                 PreparedStatement stmt = conn.prepareStatement(FIND_QUEUE);
-                stmt.setString(1, queue.getName().toString());
+                stmt.setString(1, queue.getNameShortString().toString());
 
                 ResultSet rs = stmt.executeQuery();
 
@@ -816,7 +819,7 @@ public class DerbyMessageStore implements MessageStore
                                      ? null
                                      : queue.getPrincipalHolder().getPrincipal().getName();
 
-                    stmt.setString(1, queue.getName().toString());
+                    stmt.setString(1, queue.getNameShortString().toString());
                     stmt.setString(2, owner);
 
                     stmt.execute();
@@ -830,7 +833,7 @@ public class DerbyMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new AMQException("Error writing AMQQueue with name " + queue.getName() + " to database: " + e, e);
+                throw new AMQException("Error writing AMQQueue with name " + queue.getNameShortString() + " to database: " + e, e);
             }
         }
     }
@@ -843,7 +846,7 @@ public class DerbyMessageStore implements MessageStore
 
     public void removeQueue(final AMQQueue queue) throws AMQException
     {
-        AMQShortString name = queue.getName();
+        AMQShortString name = queue.getNameShortString();
         _logger.debug("public void removeQueue(AMQShortString name = " + name + "): called");
         Connection conn = null;
 

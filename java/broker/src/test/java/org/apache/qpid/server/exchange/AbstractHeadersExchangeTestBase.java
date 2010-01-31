@@ -21,23 +21,41 @@
 package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.queue.*;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.binding.BindingFactory;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.IncomingMessage;
+import org.apache.qpid.server.queue.MockStoredMessage;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.subscription.Subscription;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class AbstractHeadersExchangeTestBase extends TestCase
@@ -47,10 +65,23 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
 
+
+
     /**
      * Not used in this test, just there to stub out the routing calls
      */
     private MessageStore _store = new MemoryMessageStore();
+
+
+    BindingFactory bindingFactory = new BindingFactory(new DurableConfigurationStore.Source()
+                                                        {
+
+                                                            public DurableConfigurationStore getDurableConfigurationStore()
+                                                            {
+                                                                return _store;
+                                                            }
+                                                        },
+                                                        exchange);
 
     private int count;
 
@@ -93,7 +124,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         m.route(exchange);
         if(m.getIncomingMessage().allContentReceived())
         {
-            for(AMQQueue q : m.getIncomingMessage().getDestinationQueues())
+            for(BaseQueue q : m.getIncomingMessage().getDestinationQueues())
             {
                 q.enqueue(m);
             }
@@ -241,14 +272,16 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         public String toString()
         {
-            return getName().toString();
+            return getNameShortString().toString();
         }
 
         public TestQueue(AMQShortString name) throws AMQException
         {
-            super(name, false, new AMQShortString("test"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"));
+            super(name, false, new AMQShortString("test"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"),Collections.EMPTY_MAP);
             ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test").getQueueRegistry().registerQueue(this);
         }
+
+
 
         /**
          * We override this method so that the default behaviour, which attempts to use a delivery manager, is
@@ -258,10 +291,10 @@ public class AbstractHeadersExchangeTestBase extends TestCase
          * @throws AMQException
          */
         @Override
-        public QueueEntry enqueue(ServerMessage msg) throws AMQException
+        public void enqueue(ServerMessage msg, PostEnqueueAction action) throws AMQException
         {
             messages.add( new HeadersExchangeTest.Message((AMQMessage) msg));
-            return new QueueEntry()
+            final QueueEntry queueEntry = new QueueEntry()
             {
 
                 public AMQQueue getQueue()
@@ -285,6 +318,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                 }
 
                 public boolean expired() throws AMQException
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isAvailable()
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
@@ -439,6 +477,12 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             };
+
+            if(action != null)
+            {
+                action.onEnqueue(queueEntry);
+            }
+
         }
 
         boolean isInQueue(Message msg)
