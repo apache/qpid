@@ -22,6 +22,7 @@ package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLog;
@@ -46,7 +47,7 @@ public class AutoCommitTransaction implements ServerTransaction
         postCommitAction.postCommit();
     }
 
-    public void dequeue(AMQQueue queue, EnqueableMessage message, Action postCommitAction)
+    public void dequeue(BaseQueue queue, EnqueableMessage message, Action postCommitAction)
     {
 
         try
@@ -105,7 +106,7 @@ public class AutoCommitTransaction implements ServerTransaction
     }
 
 
-    public void enqueue(AMQQueue queue, EnqueableMessage message, Action postCommitAction)
+    public void enqueue(BaseQueue queue, EnqueableMessage message, Action postCommitAction)
     {
         try
         {
@@ -128,7 +129,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     }
 
-    public void enqueue(List<AMQQueue> queues, EnqueableMessage message, Action postCommitAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postCommitAction)
     {
         try
         {
@@ -137,7 +138,7 @@ public class AutoCommitTransaction implements ServerTransaction
             {
                 TransactionLog.Transaction txn = _transactionLog.newTransaction();
                 Long id = message.getMessageNumber();
-                for(AMQQueue q : queues)
+                for(BaseQueue q : queues)
                 {
                     if(q.isDurable())
                     {

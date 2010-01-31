@@ -28,6 +28,11 @@
 
     <property name="output.dir" value="${module.precompiled}/org/apache/qpid/server/filter/jms/selector"/>
 
+    <property name="qmf.input.file" value="${project.root}/../specs/management-schema.xml"/>
+    <property name="qmf.xsl.file" value="${project.root}/broker/src/xsl/qmf.xsl"/>
+    <property name="qmf.output.dir" value="${module.precompiled}/org/apache/qpid/server/qmf/schema"/>
+    <property name="qmf.output.file" value="BrokerSchema.java"/>
+
     <property name="gentools.home" location="${project.root}/../gentools" />
     <property name="generated.package" value="org/apache/qpid/server/logging/messages" />
     <property name="generated.dir" location="${module.precompiled}/${generated.package}" />
@@ -35,7 +40,7 @@
     <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
 
 
-    <target name="precompile" depends="gen_logging">
+    <target name="precompile" depends="gen_logging,gen_qmf">
         <mkdir dir="${output.dir}"/>
         <!-- Compile Selcector Code -->
         <javacc target="src/main/grammar/SelectorParser.jj"
@@ -82,6 +87,16 @@
     <touch file="${velocity.timestamp}" />
   </target>
 
+  <target name="check_qmf_deps">
+    <uptodate property="gen_qmf.notRequired" targetfile="${qmf.output.dir}/${qmf.output.file}">
+      <srcfiles file="${qmf.input.file}"/>
+      <srcfiles file="${qmf.xsl.file}"/>
+    </uptodate>
+  </target>
+
+  <target name="gen_qmf" depends="check_qmf_deps" unless="gen_qmf.notRequired">
+    <xslt in="${qmf.input.file}" out="${qmf.output.dir}/${qmf.output.file}" style="${qmf.xsl.file}"/>
+  </target>
 
     <target name="copy-etc-release" if="module.etc.exists" description="copy etc directory if it exists to build tree">
       <copy todir="${module.release}/etc" failonerror="false" flatten="true">

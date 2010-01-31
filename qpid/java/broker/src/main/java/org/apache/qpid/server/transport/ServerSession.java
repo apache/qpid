@@ -20,31 +20,54 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.transport.*;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.subscription.Subscription_0_10;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.LocalTransaction;
-import org.apache.qpid.server.security.PrincipalHolder;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.AMQException;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.security.Principal;
-import java.lang.ref.WeakReference;
-
-import static org.apache.qpid.util.Serial.*;
 import com.sun.security.auth.UserPrincipal;
 
-public class ServerSession extends Session implements PrincipalHolder
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.ConnectionConfig;
+import org.apache.qpid.server.configuration.SessionConfig;
+import org.apache.qpid.server.configuration.SessionConfigType;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.Binary;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.Range;
+import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.SessionDelegate;
+import static org.apache.qpid.util.Serial.gt;
+
+import java.lang.ref.WeakReference;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class ServerSession extends Session implements PrincipalHolder, SessionConfig
 {
     private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
+
+    private final UUID _id;
+    private ConnectionConfig _connectionConfig;
 
     public static interface MessageDispositionChangeListener
     {
@@ -78,23 +101,27 @@ public class ServerSession extends Session implements PrincipalHolder
 
     private final WeakReference<Session> _reference;
 
-
-    ServerSession(Connection connection, Binary name, long expiry)
-    {
-        super(connection, name, expiry);
-
-        _transaction = new AutoCommitTransaction(this.getMessageStore());
-        _principal = new UserPrincipal(connection.getAuthorizationID());
-        _reference = new WeakReference(this);
-    }
-
     ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
+        this(connection, delegate, name, expiry, ((ServerConnection)connection).getConfig());
+    }
+
+    public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry, ConnectionConfig connConfig)
+    {
         super(connection, delegate, name, expiry);
+        _connectionConfig = connConfig;        
         _transaction = new AutoCommitTransaction(this.getMessageStore());
         _principal = new UserPrincipal(connection.getAuthorizationID());
         _reference = new WeakReference(this);
+        _id = getConfigStore().createId();
+        getConfigStore().addConfiguredObject(this);
     }
+
+    private ConfigStore getConfigStore()
+    {
+        return getConnectionConfig().getConfigStore();
+    }
+
 
     @Override
     protected boolean isFull(int id)
@@ -102,13 +129,13 @@ public class ServerSession extends Session implements PrincipalHolder
         return isCommandsFull(id);
     }
 
-    public void enqueue(final ServerMessage message, final ArrayList<AMQQueue> queues)
+    public void enqueue(final ServerMessage message, final ArrayList<? extends BaseQueue> queues)
     {
 
             _transaction.enqueue(queues,message, new ServerTransaction.Action()
             {
 
-                AMQQueue[] _queues = queues.toArray(new AMQQueue[queues.size()]);
+                BaseQueue[] _queues = queues.toArray(new BaseQueue[queues.size()]);
 
                 public void postCommit()
                 {
@@ -243,7 +270,7 @@ public class ServerSession extends Session implements PrincipalHolder
             Iterator<Integer> unacceptedMessages = _messageDispositionListenerMap.keySet().iterator();
             Iterator<Range> rangeIter = ranges.iterator();
 
-            if(rangeIter.hasNext())                               
+            if(rangeIter.hasNext())
             {
                 Range range = rangeIter.next();
 
@@ -289,6 +316,8 @@ public class ServerSession extends Session implements PrincipalHolder
             listener.onRelease();
         }
         _messageDispositionListenerMap.clear();
+
+        getConfigStore().removeConfiguredObject(this);
 
         for (Task task : _taskList)
         {
@@ -391,8 +420,61 @@ public class ServerSession extends Session implements PrincipalHolder
 
     public MessageStore getMessageStore()
     {
-        return ((ServerConnection)getConnection()).getVirtualHost().getMessageStore();
+        return getVirtualHost().getMessageStore();
     }
 
+    public VirtualHost getVirtualHost()
+    {
+        return (VirtualHost) _connectionConfig.getVirtualHost();
+    }
 
+    public UUID getId()
+    {
+        return _id;
+    }
+
+    public SessionConfigType getConfigType()
+    {
+        return SessionConfigType.getInstance();
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return getVirtualHost();
+    }
+
+    public boolean isDurable()
+    {
+        return false;
+    }
+
+    public boolean isAttached()
+    {
+        return true;
+    }
+
+    public long getDetachedLifespan()
+    {
+        return 0;
+    }
+
+    public Long getExpiryTime()
+    {
+        return null;
+    }
+
+    public Long getMaxClientRate()
+    {
+        return null;
+    }
+
+    public ConnectionConfig getConnectionConfig()
+    {
+        return _connectionConfig;
+    }
+
+    public String getSessionName()
+    {
+        return getName().toString();
+    }
 }

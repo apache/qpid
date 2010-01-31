@@ -119,7 +119,7 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
     public ByteBuffer getBody()
     {
         ByteBuffer body = getMetaData().getBody();
-        if(body == null)
+        if(body == null && getSize() != 0l)
         {
             final int size = (int) getSize();
             int pos = 0;

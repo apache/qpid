@@ -196,7 +196,7 @@ public class Move extends AbstractCommand
     protected void doCommand(AMQQueue fromQueue, long start, long id, AMQQueue toQueue)
     {
         ServerTransaction txn = new LocalTransaction(fromQueue.getVirtualHost().getTransactionLog());
-        fromQueue.moveMessagesToAnotherQueue(start, id, toQueue.getName().toString(), txn);
+        fromQueue.moveMessagesToAnotherQueue(start, id, toQueue.getNameShortString().toString(), txn);
         txn.commit();
     }
 }

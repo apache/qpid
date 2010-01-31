@@ -20,16 +20,6 @@
  */
 package org.apache.qpid.transport.network;
 
-import static java.lang.Math.min;
-import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
-import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
-import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
-import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
-import static org.apache.qpid.transport.network.Frame.LAST_SEG;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolDelegate;
@@ -40,6 +30,15 @@ import org.apache.qpid.transport.SegmentType;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.codec.BBEncoder;
+import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
+import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
+import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
+import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
+import static org.apache.qpid.transport.network.Frame.LAST_SEG;
+
+import static java.lang.Math.min;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 
 /**
@@ -55,7 +54,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     private final int maxPayload;
     private final ByteBuffer header;
     private final Object sendlock = new Object();
-    private final ThreadLocal<BBEncoder> encoder = new ThreadLocal()
+    private final ThreadLocal<BBEncoder> encoder = new ThreadLocal<BBEncoder>()
     {
         public BBEncoder initialValue()
         {
@@ -98,7 +97,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
         }
     }
 
-    private final void frame(byte flags, byte type, byte track, int channel, int size, ByteBuffer buf)
+    private void frame(byte flags, byte type, byte track, int channel, int size, ByteBuffer buf)
     {
         synchronized (sendlock)
         {
@@ -227,8 +226,14 @@ public final class Disassembler implements Sender<ProtocolEvent>,
             fragment(flags, type, method, methodSeg);
             if (payload)
             {
-                fragment((byte) 0x0, SegmentType.HEADER, method, headerSeg);
-                fragment(LAST_SEG, SegmentType.BODY, method, method.getBody());
+                ByteBuffer body = method.getBody();
+                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER,
+                         method, headerSeg);
+                if (body != null)
+                {
+                    fragment(LAST_SEG, SegmentType.BODY, method, body);
+                }
+
             }
         }
     }
@@ -237,7 +242,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     {
         throw new IllegalArgumentException("" + error);
     }
-    
+
     public void setIdleTimeout(int i)
     {
         sender.setIdleTimeout(i);

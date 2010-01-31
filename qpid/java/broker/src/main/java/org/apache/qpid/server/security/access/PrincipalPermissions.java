@@ -42,7 +42,7 @@ public class PrincipalPermissions
     private static final Object CREATE_QUEUES_KEY = new Object();
     private static final Object CREATE_EXCHANGES_KEY = new Object();
 
-    
+
     private static final Object CREATE_QUEUE_TEMPORARY_KEY = new Object();
     private static final Object CREATE_QUEUE_QUEUES_KEY = new Object();
     private static final Object CREATE_QUEUE_EXCHANGES_KEY = new Object();
@@ -64,9 +64,9 @@ public class PrincipalPermissions
     }
 
     /**
-     * 
+     *
      * @param permission the type of permission to check
-     * 
+     *
      * @param parameters vararg depending on what permission was passed in
      *  ACCESS: none
      *  BIND: none
@@ -113,7 +113,7 @@ public class PrincipalPermissions
     {
         _fullVHostAccess = true;
     }
-    
+
 	private void grantPublish(Permission permission, Object... parameters) {
 		Map publishRights = (Map) _permissions.get(permission);
 
@@ -344,9 +344,9 @@ public class PrincipalPermissions
     }
 
     /**
-     * 
+     *
      * @param permission the type of permission to check
-     * 
+     *
      * @param parameters vararg depending on what permission was passed in
      *  ACCESS: none
      *  BIND: QueueBindBody bindmethod, Exchange exchange, AMQQueue queue, AMQShortString routingKey
@@ -363,7 +363,7 @@ public class PrincipalPermissions
 
         switch (permission)
         {
-            case ACCESS://No Parameters 
+            case ACCESS://No Parameters
                 return AuthzResult.ALLOWED; // The existence of this user-specific PP infers some level of access is authorised
             case BIND: // Parameters : QueueBindMethod , Exchange , AMQQueue, AMQShortString routingKey
                 return authoriseBind(parameters);
@@ -444,7 +444,7 @@ public class PrincipalPermissions
                 {
                     if ( new AMQShortString(queue.getPrincipalHolder().getPrincipal().getName()).equals(_user))
                     {
-                        return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                        return (queues.size() == 0 || queues.contains(queue.getNameShortString())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                     }
                     else
                     {
@@ -453,7 +453,7 @@ public class PrincipalPermissions
                 }
 
                 // If we are
-                return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                return (queues.size() == 0 || queues.contains(queue.getNameShortString())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
             }
         }
 
@@ -486,7 +486,7 @@ public class PrincipalPermissions
 		// Otherwise exchange must be listed in the white list
 
 		// If the map doesn't have the exchange then it isn't allowed
-		if (!exchanges.containsKey(((Exchange) parameters[0]).getName()))
+		if (!exchanges.containsKey(((Exchange) parameters[0]).getNameShortString()))
 		{
 		    return AuthzResult.DENIED;
 		}
@@ -494,7 +494,7 @@ public class PrincipalPermissions
 		{
 
 		    // Get valid routing keys
-		    HashSet routingKeys = (HashSet) exchanges.get(((Exchange)parameters[0]).getName());
+		    HashSet routingKeys = (HashSet) exchanges.get(((Exchange)parameters[0]).getNameShortString());
 
 		    // Having no routingKeys in the map then all are allowed.
 		    if (routingKeys == null)
@@ -544,7 +544,7 @@ public class PrincipalPermissions
 		// check the valid exchanges
 		if (rights == null || rights.containsKey(exchangeName))
 		{
-		    return AuthzResult.ALLOWED; 
+		    return AuthzResult.ALLOWED;
 		}
 		else
 		{
@@ -587,13 +587,13 @@ public class PrincipalPermissions
 		    // If there is a white list then check
 		    if (create_queues_queues == null || create_queues_queues.containsKey(queueName))
 		    {
-		        return AuthzResult.ALLOWED; 
+		        return AuthzResult.ALLOWED;
 		    }
 		    else
 		    {
 		        return AuthzResult.DENIED;
 		    }
-		        
+
 		}
 	}
 
@@ -604,7 +604,7 @@ public class PrincipalPermissions
             //user has been granted full access to the vhost
             return AuthzResult.ALLOWED;
         }
-	    
+
         Exchange exchange = (Exchange) parameters[1];
 
 		AMQQueue bind_queueName = (AMQQueue) parameters[2];
@@ -631,7 +631,7 @@ public class PrincipalPermissions
 		    }
 
 		    // Check to see if we have a white list of routingkeys to check
-		    Map rkeys = (Map) exchangeDetails.get(exchange.getName());
+		    Map rkeys = (Map) exchangeDetails.get(exchange.getNameShortString());
 
 		    // if keys is null then any rkey is allowed on this exchange
 		    if (rkeys == null)

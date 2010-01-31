@@ -21,7 +21,10 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.server.connection.IConnectionRegistry;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfig;
+import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
@@ -31,8 +34,13 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.binding.BindingFactory;
 
-public interface VirtualHost
+import java.util.UUID;
+import java.util.TimerTask;
+
+public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHostConfig
 {
     IConnectionRegistry getConnectionRegistry();
 
@@ -59,4 +67,24 @@ public interface VirtualHost
     void close() throws Exception;
 
     ManagedObject getManagedObject();
+
+    UUID getBrokerId();
+
+    void scheduleTask(long period, TimerTask task);
+
+
+    IApplicationRegistry getApplicationRegistry();
+
+    BindingFactory getBindingFactory();
+
+    void createBrokerConnection(String transport,
+                                String host,
+                                int port,
+                                String vhost,
+                                boolean durable,
+                                String authMechanism, String username, String password);
+
+    ConfigStore getConfigStore();
+
+    void removeBrokerConnection(BrokerLink brokerLink);
 }

@@ -20,24 +20,33 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.qmf.QMFService;
+import org.apache.qpid.server.configuration.BrokerConfig;
+import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.SystemConfig;
+import org.apache.qpid.server.configuration.SystemConfigImpl;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.transport.QpidAcceptor;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -75,6 +84,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected RootMessageLogger _rootMessageLogger;
 
+    protected UUID _brokerId = UUID.randomUUID();
+
+    protected QMFService _qmfService;
+
+    private BrokerConfig _broker;
+
+    private ConfigStore _configStore;
+
     static
     {
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
@@ -100,6 +117,16 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _logger.info("Initialising Application Registry:" + instanceID);
             _instanceMap.put(instanceID, instance);
 
+            final ConfigStore store = ConfigStore.newInstance();
+            store.setRoot(new SystemConfigImpl(store));
+            instance.setConfigStore(store);
+
+            BrokerConfig broker = new BrokerConfigAdapter(instance, instanceID);
+
+            SystemConfig system = (SystemConfig) store.getRoot();
+            system.addBroker(broker);
+            instance.setBroker(broker);
+
             try
             {
                 instance.initialise(instanceID);
@@ -107,13 +134,30 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             catch (Exception e)
             {
                 _instanceMap.remove(instanceID);
-                throw e;
+                try
+                {
+                    system.removeBroker(broker);
+                }
+                finally
+                {
+                    throw e;
+                }
             }
         }
         else
         {
             remove(instanceID);
         }
+    }
+
+    public ConfigStore getConfigStore()
+    {
+        return _configStore;
+    }
+
+    public void setConfigStore(final ConfigStore configStore)
+    {
+        _configStore = configStore;
     }
 
     public static boolean isConfigured()
@@ -151,6 +195,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                     _logger.info("Shuting down ApplicationRegistry(" + instanceID + "):" + instance);
                 }
                 instance.close();
+                instance.getBroker().getSystem().removeBroker(instance.getBroker());
             }
         }
         catch (Exception e)
@@ -316,5 +361,32 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         return _rootMessageLogger;
     }
-    
+
+    public UUID getBrokerId()
+    {
+        return _brokerId;
+    }
+
+    public QMFService getQMFService()
+    {
+        return _qmfService;
+    }
+
+    public BrokerConfig getBroker()
+    {
+        return _broker;
+    }
+
+    public void setBroker(final BrokerConfig broker)
+    {
+        _broker = broker;
+    }
+
+    public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
+    {
+        VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
+        _virtualHostRegistry.registerVirtualHost(virtualHost);
+        getBroker().addVirtualHost(virtualHost);
+        return virtualHost;
+    }
 }

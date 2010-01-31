@@ -21,6 +21,7 @@
 package org.apache.qpid.server.handler;
 
 import java.util.UUID;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
@@ -150,21 +151,21 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                        queue.bind(defaultExchange, queueName, null);
-                        _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getName() + ")");
+                        virtualHost.getBindingFactory().addBinding(String.valueOf(queueName), queue, defaultExchange, Collections.EMPTY_MAP);
+                        _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getNameShortString() + ")");
                     }
                 }
             }
             else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
             {
                 throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                  "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+                                                  "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
             }
             else if(!body.getPassive() && ((queue.isExclusive()) != body.getExclusive()))
             {
 
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
-                                                  "Cannot re-declare queue '" + queue.getName() + "' with different exclusivity (was: "
+                                                  "Cannot re-declare queue '" + queue.getNameShortString() + "' with different exclusivity (was: "
                                                     + queue.isExclusive() + " requested " + body.getExclusive() + ")");
             }
             else if (!body.getPassive() && body.getExclusive() && !queue.getExclusiveOwner().equals(queue.isDurable() ? session.getPrincipal().getName() : session))
@@ -178,13 +179,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             else if(!body.getPassive() && queue.isAutoDelete() != body.getAutoDelete())
             {
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
-                                                  "Cannot re-declare queue '" + queue.getName() + "' with different auto-delete (was: "
+                                                  "Cannot re-declare queue '" + queue.getNameShortString() + "' with different auto-delete (was: "
                                                     + queue.isAutoDelete() + " requested " + body.getAutoDelete() + ")");
             }
             else if(!body.getPassive() && queue.isDurable() != body.getDurable())
             {
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
-                                                  "Cannot re-declare queue '" + queue.getName() + "' with different durability (was: "
+                                                  "Cannot re-declare queue '" + queue.getNameShortString() + "' with different durability (was: "
                                                     + queue.isDurable() + " requested " + body.getDurable() + ")");
             }
 

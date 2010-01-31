@@ -50,7 +50,7 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
         _queue = new MockAMQQueue("BindingLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
-        _subject = new BindingLogSubject(_routingKey, _exchange, _queue);
+        _subject = new BindingLogSubject(String.valueOf(_routingKey), _exchange, _queue);
     }
 
     /**

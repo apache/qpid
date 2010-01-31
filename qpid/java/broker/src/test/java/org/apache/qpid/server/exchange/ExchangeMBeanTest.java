@@ -29,7 +29,6 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -58,8 +57,8 @@ public class ExchangeMBeanTest  extends TestCase
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
-        mbean.createNewBinding(_queue.getName().toString(), "binding1");
-        mbean.createNewBinding(_queue.getName().toString(), "binding2");
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "binding1");
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "binding2");
 
         TabularData data = mbean.bindings();
         ArrayList<Object> list = new ArrayList<Object>(data.values());
@@ -85,8 +84,8 @@ public class ExchangeMBeanTest  extends TestCase
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
-        mbean.createNewBinding(_queue.getName().toString(), "binding1");
-        mbean.createNewBinding(_queue.getName().toString(), "binding2");
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "binding1");
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "binding2");
 
         TabularData data = mbean.bindings();
         ArrayList<Object> list = new ArrayList<Object>(data.values());
@@ -112,8 +111,8 @@ public class ExchangeMBeanTest  extends TestCase
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
-        mbean.createNewBinding(_queue.getName().toString(), "key1=binding1,key2=binding2");
-        mbean.createNewBinding(_queue.getName().toString(), "key3=binding3");
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "key1=binding1,key2=binding2");
+        mbean.createNewBinding(_queue.getNameShortString().toString(), "key3=binding3");
 
         TabularData data = mbean.bindings();
         ArrayList<Object> list = new ArrayList<Object>(data.values());

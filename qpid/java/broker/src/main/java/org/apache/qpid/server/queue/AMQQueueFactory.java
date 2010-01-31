@@ -23,15 +23,20 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.QueueConfiguration;
 
 import java.util.Map;
+import java.util.HashMap;
 
 
 public class AMQQueueFactory
 {
     public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
+
+    private static final String QPID_LVQ_KEY = "qpid.LVQ_key";
+    private static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
+    private static final String QPID_LAST_VALUE_QUEUE_KEY = "qpid.last_value_queue_key";
 
     private abstract static class QueueProperty
     {
@@ -130,21 +135,60 @@ public class AMQQueueFactory
                                               boolean autoDelete,
                                               VirtualHost virtualHost, final FieldTable arguments)
     {
-        final int priorities = arguments == null ? 1 : arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
+        return createAMQQueueImpl(name == null ? null : name.toString(),
+                                  durable,
+                                  owner == null ? null : owner.toString(),
+                                  autoDelete,
+                                  virtualHost,
+                                  FieldTable.convertToMap(arguments));
+    }
 
-        AMQQueue q = null;
-        if(priorities > 1)
+
+    public static AMQQueue createAMQQueueImpl(String queueName,
+                                              boolean durable,
+                                              String owner,
+                                              boolean autoDelete,
+                                              VirtualHost virtualHost, Map<String, Object> arguments)
+    {
+        int priorities = 1;
+        String conflationKey = null;
+        if(arguments != null)
         {
-            q = new AMQPriorityQueue(name, durable, owner, autoDelete, virtualHost, priorities);
+            if(arguments.containsKey(QPID_LAST_VALUE_QUEUE) || arguments.containsKey(QPID_LAST_VALUE_QUEUE_KEY))
+            {
+                conflationKey = (String) arguments.get(QPID_LAST_VALUE_QUEUE_KEY);
+                if(conflationKey == null)
+                {
+                    conflationKey = QPID_LVQ_KEY;
+                }
+            }
+            else if(arguments.containsKey(X_QPID_PRIORITIES))
+            {
+                Object prioritiesObj = arguments.get(X_QPID_PRIORITIES);
+                if(prioritiesObj instanceof Number)
+                {
+                    priorities = ((Number)prioritiesObj).intValue();
+                }
+            }
+        }
+
+        AMQQueue q;
+        if(conflationKey != null)
+        {
+            q = new ConflationQueue(queueName, durable, owner, autoDelete, virtualHost, arguments, conflationKey);
+        }
+        else if(priorities > 1)
+        {
+            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, virtualHost, priorities, arguments);
         }
         else
         {
-            q = new SimpleAMQQueue(name, durable, owner, autoDelete, virtualHost);
+            q = new SimpleAMQQueue(queueName, durable, owner, autoDelete, virtualHost, arguments);
         }
 
         //Register the new queue
         virtualHost.getQueueRegistry().registerQueue(q);
-        q.configure(virtualHost.getConfiguration().getQueueConfiguration(name.asString()));
+        q.configure(virtualHost.getConfiguration().getQueueConfiguration(queueName));
 
         if(arguments != null)
         {
@@ -158,29 +202,43 @@ public class AMQQueueFactory
         }
 
         return q;
+
     }
+
 
     public static AMQQueue createAMQQueueImpl(QueueConfiguration config, VirtualHost host) throws AMQException
     {
-        AMQShortString queueName = new AMQShortString(config.getName());
+        String queueName = config.getName();
 
         boolean durable = config.getDurable();
         boolean autodelete = config.getAutoDelete();
-        AMQShortString owner = (config.getOwner() != null) ? new AMQShortString(config.getOwner()) : null;
-        FieldTable arguments = null;
-        boolean priority = config.getPriority();
-        int priorities = config.getPriorities();
-        if(priority || priorities > 0)
+        String owner = config.getOwner();
+        Map<String,Object> arguments = null;
+        if(config.isLVQ() || config.getLVQKey() != null)
         {
             if(arguments == null)
             {
-                arguments = new FieldTable();
+                arguments = new HashMap<String,Object>();
             }
-            if (priorities < 0)
+            arguments.put(QPID_LAST_VALUE_QUEUE, 1);
+            arguments.put(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
+        }
+        else
+        {
+            boolean priority = config.getPriority();
+            int priorities = config.getPriorities();
+            if(priority || priorities > 0)
             {
-                priorities = 10;
+                if(arguments == null)
+                {
+                    arguments = new HashMap<String,Object>();
+                }
+                if (priorities < 0)
+                {
+                    priorities = 10;
+                }
+                arguments.put("x-qpid-priorities", priorities);
             }
-            arguments.put(new AMQShortString("x-qpid-priorities"), priorities);
         }
 
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);
@@ -188,38 +246,4 @@ public class AMQQueueFactory
         return q;
     }
 
-    public static AMQQueue createAMQQueueImpl(String queueName,
-                                              boolean durable,
-                                              String owner,
-                                              boolean autoDelete,
-                                              VirtualHost virtualHost, Map<String, Object> arguments)
-            throws AMQException
-    {
-        int priorities = 1;
-        if(arguments != null && arguments.containsKey(X_QPID_PRIORITIES))
-        {
-            Object prioritiesObj = arguments.get(X_QPID_PRIORITIES);
-            if(prioritiesObj instanceof Number)
-            {
-                priorities = ((Number)prioritiesObj).intValue();
-            }
-        }
-
-
-        AMQQueue q = null;
-        if(priorities > 1)
-        {
-            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, virtualHost, priorities);
-        }
-        else
-        {
-            q = new SimpleAMQQueue(queueName, durable, owner, autoDelete, virtualHost);
-        }
-
-        //Register the new queue
-        virtualHost.getQueueRegistry().registerQueue(q);
-        q.configure(virtualHost.getConfiguration().getQueueConfiguration(queueName));
-        return q;
-
-    }
 }

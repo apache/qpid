@@ -2,6 +2,7 @@ package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLog;
@@ -28,7 +29,7 @@ public class LocalTransaction implements ServerTransaction
         _postCommitActions.add(postCommitAction);
     }
 
-    public void dequeue(AMQQueue queue, EnqueableMessage message, Action postCommitAction)
+    public void dequeue(BaseQueue queue, EnqueableMessage message, Action postCommitAction)
     {
         if(message.isPersistent() && queue.isDurable())
         {
@@ -113,7 +114,7 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(AMQQueue queue, EnqueableMessage message, Action postCommitAction)
+    public void enqueue(BaseQueue queue, EnqueableMessage message, Action postCommitAction)
     {
         if(message.isPersistent() && queue.isDurable())
         {
@@ -132,7 +133,7 @@ public class LocalTransaction implements ServerTransaction
 
     }
 
-    public void enqueue(List<AMQQueue> queues, EnqueableMessage message, Action postCommitAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postCommitAction)
     {
 
 
@@ -140,7 +141,7 @@ public class LocalTransaction implements ServerTransaction
         {
             if(_transaction == null)
             {
-                for(AMQQueue queue : queues)
+                for(BaseQueue queue : queues)
                 {
                     if(queue.isDurable())
                     {
@@ -155,7 +156,7 @@ public class LocalTransaction implements ServerTransaction
 
             try
             {
-                for(AMQQueue queue : queues)
+                for(BaseQueue queue : queues)
                 {
                     if(queue.isDurable())
                     {

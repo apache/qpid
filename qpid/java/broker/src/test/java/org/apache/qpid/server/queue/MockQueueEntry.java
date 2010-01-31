@@ -85,6 +85,11 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
+    public boolean isAvailable()
+    {
+        return false; 
+    }
+
     public Subscription getDeliveredSubscription()
     {
         return null;

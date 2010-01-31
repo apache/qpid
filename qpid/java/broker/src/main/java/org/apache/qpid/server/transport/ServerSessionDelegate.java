@@ -28,6 +28,7 @@ import org.apache.qpid.server.exchange.*;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.subscription.Subscription_0_10;
@@ -42,6 +43,7 @@ import org.apache.qpid.framing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.nio.ByteBuffer;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
@@ -218,11 +220,15 @@ public class ServerSessionDelegate extends SessionDelegate
         MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
         final MessageStore store = getVirtualHost(ssn).getMessageStore();
         StoredMessage<MessageMetaData_0_10> storeMessage = store.addMessage(messageMetaData);
-        storeMessage.addContent(0,xfr.getBody());
+        ByteBuffer body = xfr.getBody();
+        if(body != null)
+        {
+            storeMessage.addContent(0, body);
+        }
         storeMessage.flushToStore();
         MessageTransferMessage message = new MessageTransferMessage(storeMessage, ((ServerSession)ssn).getReference());
 
-        ArrayList<AMQQueue> queues = exchange.route(message);
+        ArrayList<? extends BaseQueue> queues = exchange.route(message);
 
 
 
@@ -355,7 +361,7 @@ public class ServerSessionDelegate extends SessionDelegate
             else
             {
                 // TODO - check exchange has same properties
-                if(!exchange.getType().toString().equals(method.getType()))
+                if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Cannot redeclare with a different exchange type");
                 }
@@ -419,7 +425,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if(!exchange.getType().toString().equals(method.getType()))
+                if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Cannot redeclare with a different exchange type");
                 }
@@ -525,7 +531,7 @@ public class ServerSessionDelegate extends SessionDelegate
         if(exchange != null)
         {
             result.setDurable(exchange.isDurable());
-            result.setType(exchange.getType().toString());
+            result.setType(exchange.getTypeShortString().toString());
             result.setNotFound(false);
         }
         else
@@ -582,30 +588,23 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                            + "' to Queue: '" + method.getQueue()
                                                                            + "' not allowed");
             }
-            else if(exchange.getType().equals(HeadersExchange.TYPE.getName()) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
+            else if(exchange.getTypeShortString().equals(HeadersExchange.TYPE.getName()) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
             {
                 exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getName() + " require an x-match header");
             }
             else
             {
-                try
+                AMQShortString routingKey = new AMQShortString(method.getBindingKey());
+                FieldTable fieldTable = FieldTable.convertToFieldTable(method.getArguments());
+
+                if (!exchange.isBound(routingKey, fieldTable, queue))
                 {
-                    AMQShortString routingKey = new AMQShortString(method.getBindingKey());
-                    FieldTable fieldTable = FieldTable.convertToFieldTable(method.getArguments());
+                    virtualHost.getBindingFactory().addBinding(method.getBindingKey(), queue, exchange, method.getArguments());
 
-                    if (!exchange.isBound(routingKey, fieldTable, queue))
-                    {
-                        queue.bind(exchange, routingKey, fieldTable);
-
-                    }
-                    else
-                    {
-                        // todo
-                    }
                 }
-                catch (AMQException e)
+                else
                 {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    // todo
                 }
             }
 
@@ -649,14 +648,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                try
-                {
-                    queue.unBind(exchange, new AMQShortString(method.getBindingKey()), null);
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                virtualHost.getBindingFactory().removeBinding(method.getBindingKey(), queue, exchange, null);
             }
         }
 
@@ -827,7 +819,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         {
                             queue.setDeleteOnNoConsumers(true);
                         }
-                        
+
                         final String alternateExchangeName = method.getAlternateExchange();
                         if(alternateExchangeName != null && alternateExchangeName.length() != 0)
                         {
@@ -870,11 +862,12 @@ public class ServerSessionDelegate extends SessionDelegate
 
                         if (autoRegister)
                         {
+
                             ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
 
                             Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                            queue.bind(defaultExchange, new AMQShortString(queueName), null);
+                            virtualHost.getBindingFactory().addBinding(queueName, queue, defaultExchange, null);
 
                         }
 
@@ -1114,7 +1107,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         if(queue != null)
         {
-            result.setQueue(queue.getName().toString());
+            result.setQueue(queue.getNameShortString().toString());
             result.setDurable(queue.isDurable());
             result.setExclusive(queue.isExclusive());
             result.setAutoDelete(queue.isAutoDelete());

@@ -60,10 +60,10 @@ final class IoReceiver implements Runnable
         this.bufferSize = bufferSize;
         this.socket = transport.getSocket();
         this.timeout = timeout;
-        
+
         try
         {
-            receiverThread = Threading.getThreadFactory().createThread(this);                      
+            receiverThread = Threading.getThreadFactory().createThread(this);
         }
         catch(Exception e)
         {

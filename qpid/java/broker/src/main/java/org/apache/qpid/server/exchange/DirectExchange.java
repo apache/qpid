@@ -20,40 +20,29 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.management.JMException;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class DirectExchange extends AbstractExchange
 {
     private static final Logger _logger = Logger.getLogger(DirectExchange.class);
 
-    /**
-     * Maps from queue name to queue instances
-     */
-    private final Index _index = new Index();
+    private final ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>> _bindingsByKey =
+            new ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>>();
 
     public static final ExchangeType<DirectExchange> TYPE = new ExchangeType<DirectExchange>()
     {
@@ -85,73 +74,15 @@ public class DirectExchange extends AbstractExchange
         }
     };
 
-    /**
-     * MBean class implementing the management interfaces.
-     */
-    @MBeanDescription("Management Bean for Direct Exchange")
-    private final class DirectExchangeMBean extends ExchangeMBean
+
+    public DirectExchange()
     {
-        @MBeanConstructor("Creates an MBean for AMQ direct exchange")
-        public DirectExchangeMBean()  throws JMException
-        {
-            super();
-            _exchangeType = "direct";
-            init();
-        }
+        super(TYPE);
+    }
 
-        public TabularData bindings() throws OpenDataException
-        {
-            Map<AMQShortString, List<AMQQueue>> bindings = _index.getBindingsMap();
-            _bindingList = new TabularDataSupport(_bindinglistDataType);
-
-            for (Map.Entry<AMQShortString, List<AMQQueue>> entry : bindings.entrySet())
-            {
-                AMQShortString key = entry.getKey();
-                List<String> queueList = new ArrayList<String>();
-
-                List<AMQQueue> queues = entry.getValue();
-                for (AMQQueue q : queues)
-                {
-                    queueList.add(q.getName().toString());
-                }
-
-                Object[] bindingItemValues = {key.toString(), queueList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
-                _bindingList.put(bindingData);
-            }
-
-            return _bindingList;
-        }
-
-        public void createNewBinding(String queueName, String binding) throws JMException
-        {
-            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
-            if (queue == null)
-            {
-                throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
-            }
-
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
-            try
-            {
-                queue.bind(DirectExchange.this, new AMQShortString(binding), null);
-            }
-            catch (AMQException ex)
-            {
-                throw new MBeanException(ex);
-            }
-            finally
-            {
-                CurrentActor.remove();
-            }
-        }
-
-    }// End of MBean class
-
-
-    protected ExchangeMBean createMBean() throws JMException
+    protected AbstractExchangeMBean createMBean() throws JMException
     {
-        return new DirectExchangeMBean();
+        return new DirectExchangeMBean(this);
     }
 
     public Logger getLogger()
@@ -159,67 +90,35 @@ public class DirectExchange extends AbstractExchange
         return _logger;
     }
 
-    public AMQShortString getType()
-    {
-        return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
-    }
 
-    public void registerQueue(String routingKey, AMQQueue queue, Map<String,Object> args) throws AMQException
-    {
-        registerQueue(new AMQShortString(routingKey), queue);
-    }
-
-    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        registerQueue(routingKey, queue);
-    }
-
-    private void registerQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
-    {
-        assert queue != null;
-        assert routingKey != null;
-        if (!_index.add(routingKey, queue))
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Queue (" + queue + ") is already registered with routing key " + routingKey);
-            }
-        }
-        else
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Binding queue:" + queue + " with routing key '" + routingKey +"' to exchange:" + this);
-            }
-        }
-    }
-
-    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        assert queue != null;
-        assert routingKey != null;
-
-        if (!_index.remove(routingKey, queue))
-        {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey + ". No queue was registered with that _routing key");
-        }
-    }
-
-    public ArrayList<AMQQueue> route(InboundMessage payload)
+    public ArrayList<? extends BaseQueue> doRoute(InboundMessage payload)
     {
 
         final String routingKey = payload.getRoutingKey();
 
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(routingKey == null ? "" : routingKey);
 
-        final ArrayList<AMQQueue> queues = (routingKey == null) ? _index.get("") : _index.get(routingKey);
-
-        if (_logger.isDebugEnabled())
+        if(bindings != null)
         {
-            _logger.debug("Publishing message to queue " + queues);
-        }
+            final ArrayList<BaseQueue> queues = new ArrayList<BaseQueue>(bindings.size());
 
-        return queues;
+            for(Binding binding : bindings)
+            {
+                queues.add(binding.getQueue());
+                binding.incrementMatches();
+            }
+
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Publishing message to queue " + queues);
+            }
+
+            return queues;
+        }
+        else
+        {
+            return new ArrayList<BaseQueue>(0); 
+        }
 
 
 
@@ -232,24 +131,40 @@ public class DirectExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
-        final List<AMQQueue> queues = _index.get(routingKey);
-        return queues != null && queues.contains(queue);
+        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+        if(bindings != null)
+        {
+            for(Binding binding : bindings)
+            {
+                if(binding.getQueue().equals(queue))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+
     }
 
     public boolean isBound(AMQShortString routingKey)
     {
-        final List<AMQQueue> queues = _index.get(routingKey);
-        return queues != null && !queues.isEmpty();
+        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+        return bindings != null && !bindings.isEmpty();
     }
 
     public boolean isBound(AMQQueue queue)
     {
-        Map<AMQShortString, List<AMQQueue>> bindings = _index.getBindingsMap();
-        for (List<AMQQueue> queues : bindings.values())
+
+        for (CopyOnWriteArraySet<Binding> bindings : _bindingsByKey.values())
         {
-            if (queues.contains(queue))
+            for(Binding binding : bindings)
             {
-                return true;
+                if(binding.getQueue().equals(queue))
+                {
+                    return true;
+                }
             }
         }
         return false;
@@ -257,11 +172,45 @@ public class DirectExchange extends AbstractExchange
 
     public boolean hasBindings()
     {
-        return !_index.getBindingsMap().isEmpty();
+        return !getBindings().isEmpty();
     }
 
-    public Map<AMQShortString, List<AMQQueue>> getBindings()
+    protected void onBind(final Binding binding)
     {
-        return _index.getBindingsMap();
+        String bindingKey = binding.getBindingKey();
+        AMQQueue queue = binding.getQueue();
+        AMQShortString routingKey = AMQShortString.valueOf(bindingKey);
+
+        assert queue != null;
+        assert routingKey != null;
+
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+
+        if(bindings == null)
+        {
+            bindings = new CopyOnWriteArraySet<Binding>();
+            CopyOnWriteArraySet<Binding> newBindings;
+            if((newBindings = _bindingsByKey.putIfAbsent(bindingKey, bindings)) != null)
+            {
+                bindings = newBindings;
+            }
+        }
+
+        bindings.add(binding);
+
     }
+
+    protected void onUnbind(final Binding binding)
+    {
+        assert binding != null;
+
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(binding.getBindingKey());
+        if(bindings != null)
+        {
+            bindings.remove(binding);
+        }
+
+    }
+
+
 }

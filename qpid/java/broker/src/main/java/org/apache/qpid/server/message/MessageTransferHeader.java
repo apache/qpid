@@ -105,6 +105,30 @@ class MessageTransferHeader implements AMQMessageHeader
         }
     }
 
+    public String getReplyToExchange()
+    {
+        if (_messageProps != null && _messageProps.getReplyTo() != null)
+        {
+            return _messageProps.getReplyTo().getExchange();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public String getReplyToRoutingKey()
+    {
+        if (_messageProps != null && _messageProps.getReplyTo() != null)
+        {
+            return _messageProps.getReplyTo().getRoutingKey();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     public Object getHeader(String name)
     {
         Map<String, Object> appHeaders = _messageProps == null ? null : _messageProps.getApplicationHeaders();

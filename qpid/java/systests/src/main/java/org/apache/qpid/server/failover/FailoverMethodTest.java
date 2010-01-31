@@ -21,13 +21,14 @@
 package org.apache.qpid.server.failover;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.ExceptionListener;
@@ -91,7 +92,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             // then TCP NoDelay 0 Delay 1 Delay 2 Delay  3
             // so 3 delays of 2s in total for connection
             // as this is a tcp connection it will take 1second per connection to fail
-            // so max time is 6seconds of delay plus 4 seconds of TCP Delay + 1 second of runtime. == 11 seconds 
+            // so max time is 6seconds of delay plus 4 seconds of TCP Delay + 1 second of runtime. == 11 seconds
 
             // Ensure we actually had the delay
             assertTrue("Failover took less than 6 seconds", duration > 6000);

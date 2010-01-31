@@ -50,7 +50,7 @@ import java.util.List;
  * validate this class then performs a log statement with logging enabled and
  * logging disabled.
  *
- * The resulting log file is then validated. 
+ * The resulting log file is then validated.
  *
  */
 public abstract class AbstractTestLogSubject extends TestCase
@@ -177,7 +177,7 @@ public abstract class AbstractTestLogSubject extends TestCase
         assertNotNull("Queue not found:" + message, queueSlice);
 
         assertEquals("Queue name not correct",
-                     queue.getName().toString(), queueSlice);
+                     queue.getNameShortString().toString(), queueSlice);
     }
 
     /**
@@ -199,10 +199,10 @@ public abstract class AbstractTestLogSubject extends TestCase
                      exchangeParts.length);
 
         assertEquals("Exchange type not correct",
-                     exchange.getType().toString(), exchangeParts[0]);
+                     exchange.getTypeShortString().toString(), exchangeParts[0]);
 
         assertEquals("Exchange name not correct",
-                     exchange.getName().toString(), exchangeParts[1]);
+                     exchange.getNameShortString().toString(), exchangeParts[1]);
 
     }
 

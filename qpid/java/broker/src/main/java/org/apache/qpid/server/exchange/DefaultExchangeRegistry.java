@@ -66,8 +66,8 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void registerExchange(Exchange exchange) throws AMQException
     {
-        _exchangeMap.put(exchange.getName(), exchange);
-        _exchangeMapStr.put(exchange.getName().toString(), exchange);
+        _exchangeMap.put(exchange.getNameShortString(), exchange);
+        _exchangeMapStr.put(exchange.getNameShortString().toString(), exchange);
     }
 
     public void setDefaultExchange(Exchange exchange)

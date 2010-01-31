@@ -21,14 +21,8 @@
 
 package org.apache.qpid.transport.network.mina;
 
-import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-
 import org.apache.mina.common.ConnectFuture;
+import org.apache.mina.common.ExecutorThreadModel;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.IoConnector;
@@ -48,6 +42,9 @@ import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.NewThreadExecutor;
 import org.apache.mina.util.SessionUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
@@ -55,14 +52,19 @@ import org.apache.qpid.thread.QpidThreadExecutor;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.NetworkDriverConfiguration;
 import org.apache.qpid.transport.OpenException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
 public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 {
 
     private static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
-    
+
     ProtocolEngine _protocolEngine;
     private boolean _useNIO = false;
     private int _processors = 4;
@@ -80,7 +82,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     private WriteFuture _lastWriteFuture;
 
     private static final Logger _logger = LoggerFactory.getLogger(MINANetworkDriver.class);
-    
+
     public MINANetworkDriver(boolean useNIO, int processors, boolean executorPool, boolean protectIO)
     {
         _useNIO = useNIO;
@@ -100,7 +102,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         _ioSession = session;
         _ioSession.setAttachment(_protocolEngine);
     }
-    
+
     public MINANetworkDriver()
     {
 
@@ -110,7 +112,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     {
         _socketConnector = ioConnector;
     }
-    
+
     public MINANetworkDriver(IoConnector ioConnector, ProtocolEngine engine)
     {
         _socketConnector = ioConnector;
@@ -123,7 +125,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
         _factory = factory;
         _config = config;
-        
+
         if (_useNIO)
         {
             _acceptor = new org.apache.mina.transport.socket.nio.MultiThreadSocketAcceptor(_processors,
@@ -135,6 +137,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         }
 
         SocketAcceptorConfig sconfig = (SocketAcceptorConfig) _acceptor.getDefaultConfig();
+        sconfig.setThreadModel(ExecutorThreadModel.getInstance("MINANetworkDriver(Acceptor)"));
         SocketSessionConfig sc = (SocketSessionConfig) sconfig.getSessionConfig();
 
         if (config != null)
@@ -181,12 +184,12 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     {
         return _ioSession.getRemoteAddress();
     }
-    
+
     public SocketAddress getLocalAddress()
     {
         return _ioSession.getLocalAddress();
     }
-    
+
 
     public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkDriverConfiguration config,
             SSLContextFactory sslFactory) throws OpenException
@@ -195,7 +198,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         {
             _sslFactory = sslFactory;
         }
-        
+
         if (_useNIO)
         {
             _socketConnector = new MultiThreadSocketConnector(1, new QpidThreadExecutor());
@@ -205,7 +208,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
             _socketConnector = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking
                                                                                  // connector
         }
-        
+
         org.apache.mina.common.ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
         // the MINA default is currently to use the pooled allocator although this may change in future
         // once more testing of the performance of the simple allocator has been done
@@ -215,12 +218,23 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         }
 
         SocketConnectorConfig cfg = (SocketConnectorConfig) _socketConnector.getDefaultConfig();
-        
+        String s = "";
+                    StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+            for(StackTraceElement elt : trace)
+            {
+                if(elt.getClassName().contains("Test"))
+                {
+                    s = elt.getClassName();
+                    break;
+                }
+            }
+        cfg.setThreadModel(ExecutorThreadModel.getInstance("MINANetworkDriver(Client)-"+s));
+
         SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();
         scfg.setTcpNoDelay((config != null) ? config.getTcpNoDelay() :  true);
         scfg.setSendBufferSize((config != null) ? config.getSendBufferSize() : DEFAULT_BUFFER_SIZE);
         scfg.setReceiveBufferSize((config != null) ? config.getReceiveBufferSize() : DEFAULT_BUFFER_SIZE);
-        
+
         // Don't have the connector's worker thread wait around for other
         // connections (we only use
         // one SocketConnector per connection at the moment anyway). This allows
@@ -230,7 +244,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         {
             ((SocketConnector) _socketConnector).setWorkerTimeout(0);
         }
-        
+
         ConnectFuture future = _socketConnector.connect(new InetSocketAddress(destination, port), this, cfg);
         future.join();
         if (!future.isConnected())
@@ -295,7 +309,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         if (_protocolEngine != null)
         {
             _protocolEngine.exception(throwable);
-        } 
+        }
         else
         {
             _logger.error("Exception thrown and no ProtocolEngine to handle it", throwable);
@@ -307,12 +321,12 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
      * Invoked when a message is received on a particular protocol session. Note
      * that a protocol session is directly tied to a particular physical
      * connection.
-     * 
+     *
      * @param protocolSession
      *            the protocol session that received the message
      * @param message
      *            the message itself (i.e. a decoded frame)
-     * 
+     *
      * @throws Exception
      *             if the message cannot be processed
      */
@@ -376,7 +390,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         {
             _ioSession = protocolSession;
         }
-        
+
         if (_acceptingConnections)
         {
             // Set up the protocol engine
@@ -389,12 +403,12 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception
     {
         if (IdleStatus.WRITER_IDLE.equals(status))
-        {   
+        {
             ((ProtocolEngine) session.getAttachment()).writerIdle();
         }
         else if (IdleStatus.READER_IDLE.equals(status))
         {
-            ((ProtocolEngine) session.getAttachment()).readerIdle();        
+            ((ProtocolEngine) session.getAttachment()).readerIdle();
         }
     }
 

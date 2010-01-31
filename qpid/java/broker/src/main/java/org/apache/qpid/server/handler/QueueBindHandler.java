@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,20 +21,26 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidRoutingKeyException;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Map;
 
 public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 {
@@ -80,7 +86,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
             if (body.getRoutingKey() == null)
             {
-                routingKey = queue.getName();
+                routingKey = queue.getNameShortString();
             }
             else
             {
@@ -116,17 +122,25 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
             {
                 throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                  "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+                                                  "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
             }
 
             if (!exch.isBound(routingKey, body.getArguments(), queue))
             {
-                queue.bind(exch, routingKey, body.getArguments());
+                String bindingKey = String.valueOf(routingKey);
+                Map<String,Object> arguments = FieldTable.convertToMap(body.getArguments());
+
+                if(!virtualHost.getBindingFactory().addBinding(bindingKey, queue, exch, arguments))
+                {
+                    Binding oldBinding = virtualHost.getBindingFactory().getBinding(bindingKey, queue, exch, arguments);
+
+                    Map<String, Object> oldArgs = oldBinding.getArguments();
+                    if((oldArgs == null && !arguments.isEmpty()) || (oldArgs != null && !oldArgs.equals(arguments)))
+                    {
+                        virtualHost.getBindingFactory().replaceBinding(bindingKey, queue, exch, arguments);    
+                    }
+                }
             }
-        }
-        catch (AMQInvalidRoutingKeyException rke)
-        {
-            throw body.getChannelException(AMQConstant.INVALID_ROUTING_KEY, routingKey.toString());
         }
         catch (AMQException e)
         {
