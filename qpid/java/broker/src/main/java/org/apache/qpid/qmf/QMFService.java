@@ -1056,6 +1056,16 @@ public class QMFService implements ConfigStore.ConfigEventListener
             return factory.createResponseCommand();
         }
 
+        public BrokerSchema.QueueClass.RerouteMethodResponseCommand reroute(final BrokerSchema.QueueClass.RerouteMethodResponseCommandFactory factory, 
+                                                                            final Long request, 
+                                                                            final Boolean useAltExchange, 
+                                                                            final String exchange)
+        {
+            //TODO
+            return factory.createResponseCommand();
+        }
+
+
         public Map getArguments()
         {
             return _obj.getArguments();
