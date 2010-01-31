@@ -49,7 +49,7 @@ public class QueueDenier extends AllowAll
     @Override
     public AuthzResult authoriseDelete(PrincipalHolder session, AMQQueue queue)
     {
-        if (!(queue.getName().toString().equals(_queueName)))
+        if (!(queue.getNameShortString().toString().equals(_queueName)))
         {
             return AuthzResult.ALLOWED;
         }

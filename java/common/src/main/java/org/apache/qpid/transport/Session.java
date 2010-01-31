@@ -21,26 +21,31 @@
 package org.apache.qpid.transport;
 
 
+import static org.apache.qpid.transport.Option.COMPLETED;
+import static org.apache.qpid.transport.Option.SYNC;
+import static org.apache.qpid.transport.Option.TIMELY_REPLY;
+import static org.apache.qpid.transport.Session.State.CLOSED;
+import static org.apache.qpid.transport.Session.State.CLOSING;
+import static org.apache.qpid.transport.Session.State.DETACHED;
+import static org.apache.qpid.transport.Session.State.NEW;
+import static org.apache.qpid.transport.Session.State.OPEN;
+import static org.apache.qpid.transport.Session.State.RESUMING;
 import org.apache.qpid.transport.network.Frame;
-
+import static org.apache.qpid.transport.util.Functions.mod;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
+import static org.apache.qpid.util.Serial.ge;
+import static org.apache.qpid.util.Serial.gt;
+import static org.apache.qpid.util.Serial.le;
+import static org.apache.qpid.util.Serial.lt;
+import static org.apache.qpid.util.Serial.max;
+import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-
-import static org.apache.qpid.transport.Option.*;
-import static org.apache.qpid.transport.Session.State.*;
-import static org.apache.qpid.transport.util.Functions.*;
-import static org.apache.qpid.util.Serial.*;
-import static org.apache.qpid.util.Strings.*;
 
 /**
  * Session
@@ -140,7 +145,7 @@ public class Session extends SessionInvoker
         this.expiry = expiry;
     }
 
-    int getChannel()
+    public int getChannel()
     {
         return channel;
     }
@@ -464,7 +469,7 @@ public class Session extends SessionInvoker
                 {
                     commandBytes -= m.getBodySize();
                     m.complete();
-                    commands[idx] = null;                    
+                    commands[idx] = null;
                 }
             }
             if (le(lower, maxComplete + 1))
@@ -644,7 +649,7 @@ public class Session extends SessionInvoker
                     m.setSync(true);
                 }
                 needSync = !m.isSync();
-                
+
                 try
                 {
                     send(m);

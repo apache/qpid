@@ -27,6 +27,7 @@
   <property name="gentools.home" location="${project.root}/../gentools" />
   <property name="generated.package" value="org/apache/qpid/framing" />
   <property name="generated.dir" location="${module.precompiled}/${generated.package}" />
+  <property name="qpidbuildversion.java" location="${module.precompiled}/org/apache/qpid/QpidBuildVersion.java" />
   <property name="xml.spec.dir" location="${project.root}/../specs" />
   <property name="xml.spec.deps" value="amqp.0-8.xml amqp.0-9.xml amqp0-9-1.stripped.xml" />
   <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/amqp.0-9.xml ${xml.spec.dir}/amqp0-9-1.stripped.xml" />
@@ -77,7 +78,26 @@
     <touch file="${gentools.timestamp}" />
   </target>
 
-  <target name="precompile" depends="gentools,jython,create-version"/>
+  <target name="build-version" depends="create-version" if="version-stale">
+  <tstamp>
+    <format property="build.time" pattern="yyyy-MM-dd HH:mm:ss z" timezone="UTC"/>
+  </tstamp>
+
+    <echo file="${qpidbuildversion.java}" append="false">package org.apache.qpid;
+
+public class QpidBuildVersion
+{
+    public static final String VERSION = "${project.version}";
+    public static final String SVN_VERSION = "${svnversion.output}";
+    public static final String BUILD_PROJECT = "${project.name}";
+    public static final String BUILD_TIME = "${build.time}";
+
+}
+</echo>
+
+  </target>
+
+  <target name="precompile" depends="gentools,jython,create-version,build-version"/>
 
   <target name="bundle" depends="bundle-tasks"/>
 </project>

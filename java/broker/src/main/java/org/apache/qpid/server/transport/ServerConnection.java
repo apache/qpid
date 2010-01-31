@@ -20,12 +20,20 @@
  */
 package org.apache.qpid.server.transport;
 
+import org.apache.qpid.server.configuration.ConnectionConfig;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.Method;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ServerConnection extends Connection
 {
+    private ConnectionConfig _config;
+    private Runnable _onOpenTask;
+
+    public ServerConnection()
+    {
+    }
+
     @Override
     protected void invoke(Method method)
     {
@@ -36,6 +44,10 @@ public class ServerConnection extends Connection
     protected void setState(State state)
     {
         super.setState(state);
+        if(state == State.OPEN && _onOpenTask != null)
+        {
+            _onOpenTask.run();
+        }
     }
 
     @Override
@@ -60,5 +72,20 @@ public class ServerConnection extends Connection
     public void setVirtualHost(VirtualHost virtualHost)
     {
         _virtualHost = virtualHost;
+    }
+
+    public void setConnectionConfig(final ConnectionConfig config)
+    {
+        _config = config;
+    }
+
+    public ConnectionConfig getConfig()
+    {
+        return _config;
+    }
+
+    public void onOpen(final Runnable task)
+    {
+        _onOpenTask = task;
     }
 }

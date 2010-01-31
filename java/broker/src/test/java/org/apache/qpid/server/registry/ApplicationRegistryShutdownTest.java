@@ -50,7 +50,7 @@ public class ApplicationRegistryShutdownTest extends TestCase
     @Override
     public void tearDown() throws Exception
     {
-        // Correctly Close the AR we created        
+        // Correctly Close the AR we created
     	ApplicationRegistry.remove();
     }
 
@@ -58,22 +58,15 @@ public class ApplicationRegistryShutdownTest extends TestCase
     /**
      * QPID-1399 : Ensure that the Authentiction manager unregisters any SASL providers created during
      * ApplicationRegistry initialisation.
-     * 
+     *
      */
-    public void testAuthenticationMangerCleansUp()
+    public void testAuthenticationMangerCleansUp() throws Exception
     {
         // Get default providers
         Provider[] defaultProviders = Security.getProviders();
 
         // Register new providers
-        try
-        {
-            _registry.initialise(ApplicationRegistry.DEFAULT_INSTANCE);
-        }
-        catch (Exception e)
-        {
-            fail(e.getMessage());
-        }
+        ApplicationRegistry.initialise(_registry, ApplicationRegistry.DEFAULT_INSTANCE);        
 
         // Get the providers after initialisation
         Provider[] providersAfterInitialisation = Security.getProviders();
@@ -103,16 +96,9 @@ public class ApplicationRegistryShutdownTest extends TestCase
         assertTrue("No new SASL mechanisms added by initialisation.", additions.size() != 0 );
 
         //Close the registry which will perform the close the AuthenticationManager
-        try
-        {
-            _registry.close();
-        }
-        catch (Exception e)
-        {
-            fail(e.getMessage());
-        }
+        _registry.close();
 
-        //Validate that the SASL plugins have been removed.
+        //Validate that the SASL plugFins have been removed.
         Provider[] providersAfterClose = Security.getProviders();
 
         assertTrue("No providers unregistered", providersAfterInitialisation.length > providersAfterClose.length);

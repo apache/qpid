@@ -278,6 +278,18 @@ public class MessageMetaData implements StorableMessageMetaData
             return getProperties().getReplyToAsString();
         }
 
+        public String getReplyToExchange()
+        {
+            // TODO
+            return getReplyTo();
+        }
+
+        public String getReplyToRoutingKey()
+        {
+            // TODO
+            return getReplyTo();
+        }
+
         public Object getHeader(String name)
         {
             FieldTable ft = getProperties().getHeaders();

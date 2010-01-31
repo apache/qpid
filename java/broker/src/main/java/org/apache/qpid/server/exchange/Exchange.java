@@ -25,17 +25,31 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.binding.BindingFactory;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.ExchangeConfig;
 
 import javax.management.JMException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public interface Exchange extends ExchangeReferrer
+public interface Exchange extends ExchangeReferrer, ExchangeConfig
 {
-    AMQShortString getName();
 
-    AMQShortString getType();
+    public interface BindingListener
+    {
+        void bindingAdded(Exchange exchange, Binding binding);
+        void bindingRemoved(Exchange exchange, Binding binding);
+    }
+
+    AMQShortString getNameShortString();
+
+    AMQShortString getTypeShortString();
 
     void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
             throws AMQException, JMException;
@@ -51,13 +65,8 @@ public interface Exchange extends ExchangeReferrer
 
     void close() throws AMQException;
 
-    void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
-
-
-    void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
-
-    ArrayList<AMQQueue> route(InboundMessage message);
+    ArrayList<? extends BaseQueue> route(InboundMessage message);
 
 
     /**
@@ -101,6 +110,11 @@ public interface Exchange extends ExchangeReferrer
 
     boolean isBound(String bindingKey);
 
+    void addCloseTask(Task task);
+
+    void removeCloseTask(Task task);
+
+
     Exchange getAlternateExchange();
 
     void setAlternateExchange(Exchange exchange);
@@ -110,4 +124,20 @@ public interface Exchange extends ExchangeReferrer
     void addReference(ExchangeReferrer exchange);
 
     boolean hasReferrers();
+
+    void addBinding(Binding binding);
+
+    void removeBinding(Binding binding);
+
+    Collection<Binding> getBindings();
+
+    public void addBindingListener(BindingListener listener);
+
+    public void removeBindingListener(BindingListener listener);
+
+
+    public static interface Task
+    {
+        public void onClose(Exchange exchange);
+    }
 }

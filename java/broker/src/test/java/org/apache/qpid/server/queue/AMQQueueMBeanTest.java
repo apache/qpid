@@ -302,7 +302,7 @@ public class AMQQueueMBeanTest extends TestCase
         });
 
         AMQMessage m = new AMQMessage(msg.getStoredMessage());
-        for(AMQQueue q : msg.getDestinationQueues())
+        for(BaseQueue q : msg.getDestinationQueues())
         {
             q.enqueue(m);
         }
@@ -463,7 +463,7 @@ public class AMQQueueMBeanTest extends TestCase
                                                                        MESSAGE_SIZE)));
 
             AMQMessage m = new AMQMessage(currentMessage.getStoredMessage());
-            for(AMQQueue q : currentMessage.getDestinationQueues())
+            for(BaseQueue q : currentMessage.getDestinationQueues())
             {
                 q.enqueue(m);
             }

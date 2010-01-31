@@ -22,12 +22,14 @@ package org.apache.qpid.server.util;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
+import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -36,14 +38,13 @@ import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Properties;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
@@ -75,10 +76,11 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
         _virtualHostRegistry = new VirtualHostRegistry(this);
+        _qmfService = new QMFService(getConfigStore(),this);
+
         PropertiesConfiguration vhostProps = new PropertiesConfiguration();
         VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
-        VirtualHost dummyHost = new VirtualHostImpl(hostConfig);
-        _virtualHostRegistry.registerVirtualHost(dummyHost);
+        VirtualHost dummyHost = ApplicationRegistry.getInstance().createVirtualHost(hostConfig);
         _virtualHostRegistry.setDefaultVirtualHostName("test");
         _pluginManager = new PluginManager("");
         _startup = new Exception("NAR");
@@ -99,6 +101,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         try
         {
             super.close();
+            _qmfService.close();
         }
         finally
         {

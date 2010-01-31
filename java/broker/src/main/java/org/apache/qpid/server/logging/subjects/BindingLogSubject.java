@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -49,13 +48,13 @@ public class BindingLogSubject extends AbstractLogSubject
      * @param exchange
      * @param queue
      */
-    public BindingLogSubject(AMQShortString routingKey, Exchange exchange,
+    public BindingLogSubject(String routingKey, Exchange exchange,
                              AMQQueue queue)
     {
         setLogStringWithFormat(BINDING_FORMAT, queue.getVirtualHost().getName(),
-                               exchange.getType(),
-                               exchange.getName(),
-                               queue.getName(),
+                               exchange.getTypeShortString(),
+                               exchange.getNameShortString(),
+                               queue.getNameShortString(),
                                routingKey);
     }
 

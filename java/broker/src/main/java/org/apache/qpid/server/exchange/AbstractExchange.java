@@ -20,51 +20,57 @@
  */
 package org.apache.qpid.server.exchange;
 
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-import javax.management.JMException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.TabularType;
-import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.ArrayType;
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.ExchangeConfigType;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.management.Managable;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import javax.management.JMException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
+
+
     private AMQShortString _name;
+    private final AtomicBoolean _closed = new AtomicBoolean();
 
     private Exchange _alternateExchange;
 
     protected boolean _durable;
-    protected String _exchangeType;
     protected int _ticket;
 
     private VirtualHost _virtualHost;
 
-    protected ExchangeMBean _exchangeMbean;
+    private final List<Exchange.Task> _closeTaskList = new CopyOnWriteArrayList<Exchange.Task>();
+
+
+    protected AbstractExchangeMBean _exchangeMbean;
 
     /**
      * Whether the exchange is automatically deleted once all queues have detached from it
@@ -75,87 +81,41 @@ public abstract class AbstractExchange implements Exchange, Managable
     private LogSubject _logSubject;
     private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
 
-    /**
-     * Abstract MBean class. This has some of the methods implemented from
-     * management intrerface for exchanges. Any implementaion of an
-     * Exchange MBean should extend this class.
-     */
-    protected abstract class ExchangeMBean extends AMQManagedObject implements ManagedExchange
-    {
-        // open mbean data types for representing exchange bindings
-        protected OpenType[] _bindingItemTypes;
-        protected CompositeType _bindingDataType;
-        protected TabularType _bindinglistDataType;
-        protected TabularDataSupport _bindingList;
+    private final CopyOnWriteArrayList<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
+    private final ExchangeType<? extends Exchange> _type;
+    private UUID _id;
+    private final AtomicInteger _bindingCountHigh = new AtomicInteger();
+    private final AtomicLong _receivedMessageCount = new AtomicLong();
+    private final AtomicLong _receivedMessageSize = new AtomicLong();
+    private final AtomicLong _routedMessageCount = new AtomicLong();
+    private final AtomicLong _routedMessageSize = new AtomicLong();
 
+    private final CopyOnWriteArrayList<Exchange.BindingListener> _listeners = new CopyOnWriteArrayList<Exchange.BindingListener>();
+/*
+=======
         public ExchangeMBean() throws NotCompliantMBeanException
         {
             super(ManagedExchange.class, ManagedExchange.TYPE);
         }
+>>>>>>> .r902547
+*/
 
-        protected void init() throws OpenDataException
-        {
-            _bindingItemTypes = new OpenType[2];
-            _bindingItemTypes[0] = SimpleType.STRING;
-            _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
-            _bindingDataType = new CompositeType("Exchange Binding", "Binding key and Queue names",
-                    COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS, _bindingItemTypes);
-            _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
-                                                   _bindingDataType, TABULAR_UNIQUE_INDEX);
-        }
+    // TODO
+    private long _createTime = System.currentTimeMillis();
 
-        public ManagedObject getParentObject()
-        {
-            return _virtualHost.getManagedObject();
-        }
+    public AbstractExchange(final ExchangeType<? extends Exchange> type)
+    {
+        _type = type;
+    }
 
-        public String getObjectInstanceName()
-        {
-            return _name.toString();
-        }
-
-        public String getName()
-        {
-            return _name.toString();
-        }
-
-        public String getExchangeType()
-        {
-            return _exchangeType;
-        }
-
-        public Integer getTicketNo()
-        {
-            return _ticket;
-        }
-
-        public boolean isDurable()
-        {
-            return _durable;
-        }
-
-        public boolean isAutoDelete()
-        {
-            return _autoDelete;
-        }
-
-        // Added exchangetype in the object name lets maangement apps to do any customization required
-        public ObjectName getObjectName() throws MalformedObjectNameException
-        {
-            String objNameString = super.getObjectName().toString();
-            objNameString = objNameString + ",ExchangeType=" + _exchangeType;
-            return new ObjectName(objNameString);
-        }
-
-        protected ManagedObjectRegistry getManagedObjectRegistry()
-        {
-            return ApplicationRegistry.getInstance().getManagedObjectRegistry();
-        }
-    } // End of MBean class
-
-    public AMQShortString getName()
+    public AMQShortString getNameShortString()
     {
         return _name;
+    }
+
+    public final AMQShortString getTypeShortString()
+    {
+        return _type.getName();
     }
 
     /**
@@ -163,7 +123,7 @@ public abstract class AbstractExchange implements Exchange, Managable
      * called during initialisation (template method pattern).
      * @return the MBean
      */
-    protected abstract ExchangeMBean createMBean() throws JMException;
+    protected abstract AbstractExchangeMBean createMBean() throws JMException;
 
     public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
             throws AMQException
@@ -173,6 +133,11 @@ public abstract class AbstractExchange implements Exchange, Managable
         _durable = durable;
         _autoDelete = autoDelete;
         _ticket = ticket;
+
+        // TODO - fix
+        _id = getConfigStore().createId();
+
+        getConfigStore().addConfiguredObject(this);
         try
         {
             _exchangeMbean = createMBean();
@@ -185,7 +150,12 @@ public abstract class AbstractExchange implements Exchange, Managable
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
         // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.EXH_CREATED(String.valueOf(getType()), String.valueOf(name), durable));
+        CurrentActor.get().message(ExchangeMessages.EXH_CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
+    }
+
+    public ConfigStore getConfigStore()
+    {
+        return getVirtualHost().getConfigStore();
     }
 
     public abstract Logger getLogger();
@@ -207,21 +177,32 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     public void close() throws AMQException
     {
-        if (_exchangeMbean != null)
-        {
-            _exchangeMbean.unregister();
-        }
-        if(_alternateExchange != null)
-        {
-            _alternateExchange.removeReference(this);
-        }
 
-        CurrentActor.get().message(_logSubject, ExchangeMessages.EXH_DELETED());
+        if(_closed.compareAndSet(false,true))
+        {
+            if (_exchangeMbean != null)
+            {
+                _exchangeMbean.unregister();
+            }
+            getConfigStore().removeConfiguredObject(this);
+            if(_alternateExchange != null)
+            {
+                _alternateExchange.removeReference(this);
+            }
+
+            CurrentActor.get().message(_logSubject, ExchangeMessages.EXH_DELETED());
+
+            for(Task task : _closeTaskList)
+            {
+                task.onClose(this);
+            }
+            _closeTaskList.clear();
+        }
     }
 
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + getName() +"]";
+        return getClass().getSimpleName() + "[" + getNameShortString() +"]";
     }
 
     public ManagedObject getManagedObject()
@@ -287,5 +268,144 @@ public abstract class AbstractExchange implements Exchange, Managable
     public boolean hasReferrers()
     {
         return !_referrers.isEmpty();
+    }
+
+    public void addCloseTask(final Task task)
+    {
+        _closeTaskList.add(task);
+    }
+
+    public void removeCloseTask(final Task task)
+    {
+        _closeTaskList.remove(task);
+    }
+
+    public final void addBinding(final Binding binding)
+    {
+        _bindings.add(binding);
+        int bindingCountSize = _bindings.size();
+        int maxBindingsSize;
+        while((maxBindingsSize = _bindingCountHigh.get()) < bindingCountSize)
+        {
+            _bindingCountHigh.compareAndSet(maxBindingsSize, bindingCountSize);
+        }
+        for(BindingListener listener : _listeners)
+        {
+            listener.bindingAdded(this, binding);
+        }
+        onBind(binding);
+    }
+
+    public long getBindingCountHigh()
+    {
+        return _bindingCountHigh.get();
+    }
+
+    public final void removeBinding(final Binding binding)
+    {
+        onUnbind(binding);
+        for(BindingListener listener : _listeners)
+        {
+            listener.bindingRemoved(this, binding);
+        }
+        _bindings.remove(binding);
+    }
+
+    public final Collection<Binding> getBindings()
+    {
+        return Collections.unmodifiableList(_bindings);
+    }
+
+    protected abstract void onBind(final Binding binding);
+
+    protected abstract void onUnbind(final Binding binding);
+
+
+    public String getName()
+    {
+        return _name.toString();
+    }
+
+    public ExchangeType getType()
+    {
+        return _type;
+    }
+
+    public Map<String, Object> getArguments()
+    {
+        // TODO - Fix
+        return Collections.EMPTY_MAP;
+    }
+
+    public UUID getId()
+    {
+        return _id;
+    }
+
+    public ExchangeConfigType getConfigType()
+    {
+        return ExchangeConfigType.getInstance();
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return _virtualHost;
+    }
+
+    public long getBindingCount()
+    {
+        return getBindings().size();
+    }
+
+
+
+    public final ArrayList<? extends BaseQueue> route(final InboundMessage message)
+    {
+        _receivedMessageCount.incrementAndGet();
+        _receivedMessageSize.addAndGet(message.getSize());
+        final ArrayList<? extends BaseQueue> queues = doRoute(message);
+        if(queues != null && !queues.isEmpty())
+        {
+            _routedMessageCount.incrementAndGet();
+            _routedMessageSize.addAndGet(message.getSize());
+        }
+        return queues;
+    }
+
+    protected abstract ArrayList<? extends BaseQueue> doRoute(final InboundMessage message);
+
+    public long getMsgReceives()
+    {
+        return _receivedMessageCount.get();
+    }
+
+    public long getMsgRoutes()
+    {
+        return _routedMessageCount.get();
+    }
+
+    public long getByteReceives()
+    {
+        return _receivedMessageSize.get();
+    }
+
+    public long getByteRoutes()
+    {
+        return _routedMessageSize.get();
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
+    }
+
+    public void addBindingListener(final BindingListener listener)
+    {
+        _listeners.add(listener);
+    }
+
+    public void removeBindingListener(final BindingListener listener)
+    {
+        _listeners.remove(listener);
     }
 }

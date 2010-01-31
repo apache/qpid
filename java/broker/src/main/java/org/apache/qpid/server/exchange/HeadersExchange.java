@@ -22,33 +22,20 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.binding.Binding;
 
 import javax.management.JMException;
-import javax.management.openmbean.ArrayType;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -119,151 +106,40 @@ public class HeadersExchange extends AbstractExchange
     private final List<Registration> _bindings = new CopyOnWriteArrayList<Registration>();
     private Map<AMQShortString, Registration> _bindingByKey = new ConcurrentHashMap<AMQShortString, Registration>();
 
-    /**
-     * HeadersExchangeMBean class implements the management interface for the
-     * Header Exchanges.
-     */
-    @MBeanDescription("Management Bean for Headers Exchange")
-    private final class HeadersExchangeMBean extends ExchangeMBean
+
+    public HeadersExchange()
     {
-        @MBeanConstructor("Creates an MBean for AMQ Headers exchange")
-        public HeadersExchangeMBean() throws JMException
-        {
-            super();
-            _exchangeType = "headers";
-            init();
-        }
-
-        /**
-         * initialises the OpenType objects.
-         */
-        protected void init() throws OpenDataException
-        {
-
-            _bindingItemTypes = new OpenType[3];
-            _bindingItemTypes[0] = SimpleType.INTEGER;
-            _bindingItemTypes[1] = SimpleType.STRING;
-            _bindingItemTypes[2] = new ArrayType(1, SimpleType.STRING);
-            _bindingDataType = new CompositeType("Exchange Binding", "Queue name and header bindings",
-                    HEADERS_COMPOSITE_ITEM_NAMES, HEADERS_COMPOSITE_ITEM_DESC, _bindingItemTypes);
-            _bindinglistDataType = new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
-                                                   _bindingDataType, HEADERS_TABULAR_UNIQUE_INDEX);
-        }
-
-        public TabularData bindings() throws OpenDataException
-        {
-            _bindingList = new TabularDataSupport(_bindinglistDataType);
-            int count = 1;
-            for (Iterator<Registration> itr = _bindings.iterator(); itr.hasNext();)
-            {
-                Registration registration = itr.next();
-                String queueName = registration.queue.getName().toString();
-
-                HeadersBinding headers = registration.binding;
-                FieldTable headerMappings = headers.getMappings();
-                final List<String> mappingList = new ArrayList<String>();
-
-                headerMappings.processOverElements(new FieldTable.FieldTableElementProcessor()
-                {
-
-                    public boolean processElement(String propertyName, AMQTypedValue value)
-                    {
-                        mappingList.add(propertyName + "=" + value.getValue());
-                        return true;
-                    }
-
-                    public Object getResult()
-                    {
-                        return mappingList;
-                    }
-                });
-
-
-                Object[] bindingItemValues = {count++, queueName, mappingList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, HEADERS_COMPOSITE_ITEM_NAMES, bindingItemValues);
-                _bindingList.put(bindingData);
-            }
-
-            return _bindingList;
-        }
-
-        /**
-         * Creates bindings. Binding pattern is as follows-
-         * <attributename>=<value>,<attributename>=<value>,...
-         * @param queueName
-         * @param binding
-         * @throws javax.management.JMException
-         */
-        public void createNewBinding(String queueName, String binding) throws JMException
-        {
-            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
-
-            if (queue == null)
-            {
-                throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
-            }
-
-            String[] bindings = binding.split(",");
-            FieldTable bindingMap = new FieldTable();
-            for (int i = 0; i < bindings.length; i++)
-            {
-                String[] keyAndValue = bindings[i].split("=");
-                if (keyAndValue == null || keyAndValue.length == 0 || keyAndValue.length > 2)
-                {
-                    throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
-                }
-
-                if(keyAndValue.length ==1)
-                {
-                    //no value was given, only a key. Use an empty value
-                    //to signal match on key presence alone
-                    bindingMap.setString(keyAndValue[0], "");
-                }
-                else
-                {
-                    bindingMap.setString(keyAndValue[0], keyAndValue[1]);
-                }
-            }
-
-            _bindings.add(new Registration(new HeadersBinding(bindingMap), queue, new AMQShortString(binding)));
-        }
-
-    } // End of MBean class
-
-    public AMQShortString getType()
-    {
-        return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
+        super(TYPE);
     }
 
-    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void registerQueue(String routingKey, AMQQueue queue, Map<String,Object> args)
     {
-        _logger.debug("Exchange " + getName() + ": Binding " + queue.getName() + " with " + args);
+        registerQueue(new AMQShortString(routingKey), queue, FieldTable.convertToFieldTable(args));
+    }
+
+    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args)
+    {
+        _logger.debug("Exchange " + getNameShortString() + ": Binding " + queue.getNameShortString() + " with " + args);
 
         Registration registration = new Registration(new HeadersBinding(args), queue, routingKey);
         _bindings.add(registration);
 
     }
 
-    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void deregisterQueue(String routingKey, AMQQueue queue, Map<String,Object> args)
     {
-        _logger.debug("Exchange " + getName() + ": Unbinding " + queue.getName());
-
-        if(!_bindings.remove(new Registration(args == null ? null : new HeadersBinding(args), queue, routingKey)))
-        {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
-                                   + " with headers args " + args);
-        }
+        _bindings.remove(new Registration(args == null ? null : new HeadersBinding(FieldTable.convertToFieldTable(args)), queue, new AMQShortString(routingKey)));
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage payload)
+    public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
         AMQMessageHeader header = payload.getMessageHeader();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Exchange " + getName() + ": routing message with headers " + header);
+            _logger.debug("Exchange " + getNameShortString() + ": routing message with headers " + header);
         }
         boolean routed = false;
-        ArrayList<AMQQueue> queues = new ArrayList<AMQQueue>();
+        ArrayList<BaseQueue> queues = new ArrayList<BaseQueue>();
         for (Registration e : _bindings)
         {
 
@@ -271,8 +147,8 @@ public class HeadersExchange extends AbstractExchange
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Exchange " + getName() + ": delivering message with headers " +
-                                  header + " to " + e.queue.getName());
+                    _logger.debug("Exchange " + getNameShortString() + ": delivering message with headers " +
+                                  header + " to " + e.queue.getNameShortString());
                 }
                 queues.add(e.queue);
 
@@ -315,6 +191,8 @@ public class HeadersExchange extends AbstractExchange
         return !_bindings.isEmpty();
     }
 
+
+
     protected FieldTable getHeaders(ContentHeaderBody contentHeaderFrame)
     {
         //what if the content type is not 'basic'? 'file' and 'stream' content classes also define headers,
@@ -322,14 +200,9 @@ public class HeadersExchange extends AbstractExchange
         return ((BasicContentHeaderProperties) contentHeaderFrame.properties).getHeaders();
     }
 
-    protected ExchangeMBean createMBean() throws JMException
+    protected AbstractExchangeMBean createMBean() throws JMException
     {
-        return new HeadersExchangeMBean();
-    }
-
-    public Map<AMQShortString, List<AMQQueue>> getBindings()
-    {
-        return null;
+        return new HeadersExchangeMBean(this);
     }
 
     public Logger getLogger()
@@ -338,7 +211,7 @@ public class HeadersExchange extends AbstractExchange
     }
 
 
-    private static class Registration
+    static class Registration
     {
         private final HeadersBinding binding;
         private final AMQQueue queue;
@@ -365,5 +238,31 @@ public class HeadersExchange extends AbstractExchange
                    && (routingKey == null ? ((Registration)o).routingKey == null
                                           : routingKey.equals(((Registration)o).routingKey));
         }
+
+        public HeadersBinding getBinding()
+        {
+            return binding;
+        }
+
+        public AMQQueue getQueue()
+        {
+            return queue;
+        }
+
+        public AMQShortString getRoutingKey()
+        {
+            return routingKey;
+        }
     }
+
+    protected void onBind(final Binding binding)
+    {
+        registerQueue(binding.getBindingKey(), binding.getQueue(), binding.getArguments());
+    }
+
+    protected void onUnbind(final Binding binding)
+    {
+        deregisterQueue(binding.getBindingKey(), binding.getQueue(), binding.getArguments());
+    }
+
 }

@@ -21,9 +21,11 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionList;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Map;
 
 public class AMQPriorityQueue extends SimpleAMQQueue
 {
@@ -32,18 +34,18 @@ public class AMQPriorityQueue extends SimpleAMQQueue
                                final AMQShortString owner,
                                final boolean autoDelete,
                                final VirtualHost virtualHost,
-                               int priorities)
+                               int priorities, Map<String, Object> arguments)
     {
-        super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities));
+        super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities),arguments);
     }
 
     public AMQPriorityQueue(String queueName,
                             boolean durable,
                             String owner,
                             boolean autoDelete,
-                            VirtualHost virtualHost, int priorities)
+                            VirtualHost virtualHost, int priorities, Map<String,Object> arguments)
     {
-        this(new AMQShortString(queueName), durable, new AMQShortString(owner),autoDelete,virtualHost,priorities);
+        this(queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner),autoDelete,virtualHost,priorities, arguments);
     }
 
     public int getPriorities()

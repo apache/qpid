@@ -24,12 +24,13 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;

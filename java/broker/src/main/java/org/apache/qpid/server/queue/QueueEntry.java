@@ -28,6 +28,7 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 {
 
 
+
     public static enum State
     {
         AVAILABLE,
@@ -162,6 +163,8 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
     boolean getDeliveredToConsumer();
 
     boolean expired() throws AMQException;
+
+    boolean isAvailable();
 
     boolean isAcquired();
 

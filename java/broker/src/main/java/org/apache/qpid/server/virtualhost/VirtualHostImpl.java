@@ -20,19 +20,21 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.VirtualHostMessages;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.binding.BindingFactory;
+import org.apache.qpid.server.configuration.BrokerConfig;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfigType;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
@@ -41,6 +43,11 @@ import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.federation.BrokerLink;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.VirtualHostMessages;
+import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -48,14 +55,15 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TransactionLog;
 
 import javax.management.NotCompliantMBeanException;
 import java.util.Collections;
@@ -63,6 +71,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 public class VirtualHostImpl implements Accessable, VirtualHost
 {
@@ -88,9 +99,17 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
     private ACLManager _accessManager;
 
-    private final Timer _houseKeepingTimer;
+    private final Timer _timer;
+    private final IApplicationRegistry _appRegistry;
     private VirtualHostConfiguration _configuration;
     private DurableConfigurationStore _durableConfigurationStore;
+    private BindingFactory _bindingFactory;
+    private BrokerConfig _broker;
+    private UUID _id;
+
+
+    private final long _createTime = System.currentTimeMillis();
+    private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
 
     public void setAccessableName(String name)
     {
@@ -111,6 +130,26 @@ public class VirtualHostImpl implements Accessable, VirtualHost
     public VirtualHostConfiguration getConfiguration()
     {
         return _configuration;
+    }
+
+    public UUID getId()
+    {
+        return _id;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public VirtualHostConfigType getConfigType()
+    {
+        return VirtualHostConfigType.getInstance();
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return getBroker();
+    }
+
+    public boolean isDurable()
+    {
+        return false;
     }
 
     /**
@@ -141,22 +180,27 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
     } // End of MBean class
 
-    /**
-     * Normal Constructor
-     *
-     * @param hostConfig
-     *
-     * @throws Exception
-     */
-    public VirtualHostImpl(VirtualHostConfiguration hostConfig) throws Exception
+
+
+    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
     {
-        this(hostConfig, null);
+        this(appRegistry, hostConfig, null);
     }
+
 
     public VirtualHostImpl(VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
     {
+        this(ApplicationRegistry.getInstance(),hostConfig,store);
+    }
+
+    private VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
+    {
+        _appRegistry = appRegistry;
+        _broker = appRegistry.getBroker();
         _configuration = hostConfig;
         _name = hostConfig.getName();
+
+        _id = appRegistry.getConfigStore().createId();
 
         CurrentActor.get().message(VirtualHostMessages.VHT_CREATED(_name));
 
@@ -169,7 +213,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
         _connectionRegistry = new ConnectionRegistry(this);
 
-        _houseKeepingTimer = new Timer("Queue-housekeeping-" + _name, true);
+        _timer = new Timer("TimerThread-" + _name + ":", true);
 
         _queueRegistry = new DefaultQueueRegistry(this);
 
@@ -177,6 +221,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         _exchangeFactory.initialise(hostConfig);
 
         _exchangeRegistry = new DefaultExchangeRegistry(this);
+
 
         //Create a temporary RT to store the durable entries from the config file
         // so we can replay them in to the real _RT after it has been loaded.
@@ -188,6 +233,8 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
         // This needs to be after the RT has been defined as it creates the default durable exchanges.
         _exchangeRegistry.initialise();
+
+        _bindingFactory = new BindingFactory(this);
 
         initialiseModel(hostConfig);
 
@@ -205,9 +252,11 @@ public class VirtualHostImpl implements Accessable, VirtualHost
             initialiseMessageStore(hostConfig);
         }
 
+
+
         //Now that the RT has been initialised loop through the persistent queues/exchanges created from the config
         // file and write them in to the new routing Table.
-        for (StartupRoutingTable.CreateQueueTuple cqt : configFileRT.queue)
+/*        for (StartupRoutingTable.CreateQueueTuple cqt : configFileRT.queue)
         {
             getDurableConfigurationStore().createQueue(cqt.queue, cqt.arguments);
         }
@@ -220,7 +269,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         for (StartupRoutingTable.CreateBindingTuple cbt : configFileRT.bindings)
         {
             getDurableConfigurationStore().bindQueue(cbt.exchange, cbt.routingKey, cbt.queue, cbt.arguments);
-        }
+        }*/
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(_name, hostConfig);
 
@@ -250,7 +299,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                         }
                         catch (Exception e)
                         {
-                            _logger.error("Exception in housekeeping for queue: " + q.getName().toString(), e);
+                            _logger.error("Exception in housekeeping for queue: " + q.getNameShortString().toString(), e);
                             //Don't throw exceptions as this will stop the
                             // house keeping task from running.
                         }
@@ -258,9 +307,8 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                 }
             }
 
-            _houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
-                                                   period / 2,
-                                                   period);
+            final TimerTask expiredMessagesTask = new RemoveExpiredMessagesTask();
+            scheduleTask(period, expiredMessagesTask);
 
             class ForceChannelClosuresTask extends TimerTask
             {
@@ -271,6 +319,12 @@ public class VirtualHostImpl implements Accessable, VirtualHost
             }
         }
     }
+
+    public void scheduleTask(final long period, final TimerTask task)
+    {
+        _timer.scheduleAtFixedRate(task, period / 2, period);
+    }
+
 
     private void initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
     {
@@ -377,7 +431,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         List routingKeys = queueConfiguration.getRoutingKeys();
         if (routingKeys == null || routingKeys.isEmpty())
         {
-            routingKeys = Collections.singletonList(queue.getName());
+            routingKeys = Collections.singletonList(queue.getNameShortString());
         }
 
         for (Object routingKeyNameObj : routingKeys)
@@ -387,18 +441,38 @@ public class VirtualHostImpl implements Accessable, VirtualHost
             {
                 _logger.info("Binding queue:" + queue + " with routing key '" + routingKey + "' to exchange:" + this);
             }
-            queue.bind(exchange, routingKey, null);
+            _bindingFactory.addBinding(routingKey.toString(), queue, exchange, null);
         }
 
         if (exchange != _exchangeRegistry.getDefaultExchange())
         {
-            queue.bind(_exchangeRegistry.getDefaultExchange(), queue.getName(), null);
+            _bindingFactory.addBinding(queue.getNameShortString().toString(), queue, exchange, null);
         }
     }
 
     public String getName()
     {
         return _name;
+    }
+
+    public BrokerConfig getBroker()
+    {
+        return _broker;
+    }
+
+    public String getFederationTag()
+    {
+        return _broker.getFederationTag();
+    }
+
+    public void setBroker(final BrokerConfig broker)
+    {
+        _broker = broker;
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 
     public QueueRegistry getQueueRegistry()
@@ -457,9 +531,9 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         }
 
         //Stop Housekeeping
-        if (_houseKeepingTimer != null)
+        if (_timer != null)
         {
-            _houseKeepingTimer.cancel();
+            _timer.cancel();
         }
 
         //Close MessageStore
@@ -479,6 +553,59 @@ public class VirtualHostImpl implements Accessable, VirtualHost
     public ManagedObject getManagedObject()
     {
         return _virtualHostMBean;
+    }
+
+    public UUID getBrokerId()
+    {
+        return _appRegistry.getBrokerId();
+    }
+
+    public IApplicationRegistry getApplicationRegistry()
+    {
+        return _appRegistry;
+    }
+
+    public BindingFactory getBindingFactory()
+    {
+        return _bindingFactory;
+    }
+
+    public void createBrokerConnection(final String transport,
+                                       final String host,
+                                       final int port,
+                                       final String vhost,
+                                       final boolean durable,
+                                       final String authMechanism,
+                                       final String username,
+                                       final String password)
+    {
+        BrokerLink blink = new BrokerLink(this, transport, host, port, vhost, durable, authMechanism, username, password);
+        _links.putIfAbsent(blink,blink);
+        getConfigStore().addConfiguredObject(blink);
+    }
+
+    public void removeBrokerConnection(final String transport,
+                                       final String host,
+                                       final int port,
+                                       final String vhost)
+    {
+        removeBrokerConnection(new BrokerLink(this, transport, host, port, vhost, false, null,null,null));
+
+    }
+
+    public void removeBrokerConnection(BrokerLink blink)
+    {
+        blink = _links.get(blink);
+        if(blink != null)
+        {
+            blink.close();
+            getConfigStore().removeConfiguredObject(blink);
+        }
+    }
+
+    public ConfigStore getConfigStore()
+    {
+        return getApplicationRegistry().getConfigStore();
     }
 
     /**

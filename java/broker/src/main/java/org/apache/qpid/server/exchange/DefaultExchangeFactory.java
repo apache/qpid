@@ -20,18 +20,19 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.qmf.ManagementExchange;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
@@ -47,6 +48,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         registerExchangeType(TopicExchange.TYPE);
         registerExchangeType(HeadersExchange.TYPE);
         registerExchangeType(FanoutExchange.TYPE);
+        registerExchangeType(ManagementExchange.TYPE);
     }
 
     public void registerExchangeType(ExchangeType<? extends Exchange> type)

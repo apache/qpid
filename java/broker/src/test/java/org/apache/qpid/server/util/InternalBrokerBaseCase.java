@@ -74,7 +74,7 @@ public class InternalBrokerBaseCase extends TestCase
 
         Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
 
-        _queue.bind(defaultExchange, QUEUE_NAME, null);
+        _virtualHost.getBindingFactory().addBinding(QUEUE_NAME.toString(), _queue, defaultExchange, null);        
 
         _session = new InternalTestProtocolSession(_virtualHost);
         CurrentActor.set(_session.getLogActor());

@@ -22,6 +22,7 @@ package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.jms.selector.SelectorParser;
 import org.apache.qpid.server.queue.Filterable;
 
@@ -33,7 +34,7 @@ public class JMSSelectorFilter implements MessageFilter
     private String _selector;
     private BooleanExpression _matcher;
 
-    public JMSSelectorFilter(String selector) throws AMQException
+    public JMSSelectorFilter(String selector) throws AMQInvalidArgumentException
     {
         _selector = selector;
         _matcher = new SelectorParser().parse(selector);

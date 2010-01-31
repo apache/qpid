@@ -31,6 +31,11 @@ import org.apache.commons.configuration.Configuration;
 public interface DurableConfigurationStore
 {
 
+    public static interface Source
+    {
+        DurableConfigurationStore getDurableConfigurationStore();
+    }
+
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.

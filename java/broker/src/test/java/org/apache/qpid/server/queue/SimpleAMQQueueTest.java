@@ -21,12 +21,9 @@ package org.apache.qpid.server.queue;
  */
 
 
-import java.util.ArrayList;
-import java.util.List;
-
 import junit.framework.TestCase;
-
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -35,17 +32,21 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.subscription.MockSubscription;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.subscription.MockSubscription;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class SimpleAMQQueueTest extends TestCase
 {
@@ -124,7 +125,7 @@ public class SimpleAMQQueueTest extends TestCase
         }
 
         try {
-            _queue = new SimpleAMQQueue(_qname, false, _owner, false, null);
+            _queue = new SimpleAMQQueue(_qname, false, _owner, false, null,Collections.EMPTY_MAP);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -145,31 +146,23 @@ public class SimpleAMQQueueTest extends TestCase
 
     public void testBinding()
     {
-        try
-        {
-            _queue.bind(_exchange, _routingKey, null);
-            assertTrue("Routing key was not bound",
-                            _exchange.getBindings().containsKey(_routingKey));
-            assertEquals("Queue was not bound to key",
-                        _exchange.getBindings().get(_routingKey).get(0),
-                        _queue);
-            assertEquals("Exchange binding count", 1,
-                    _queue.getExchangeBindings().size());
-            assertEquals("Wrong exchange bound", _routingKey,
-                    _queue.getExchangeBindings().get(0).getRoutingKey());
-            assertEquals("Wrong exchange bound", _exchange,
-                    _queue.getExchangeBindings().get(0).getExchange());
+        _virtualHost.getBindingFactory().addBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
 
-            _queue.unBind(_exchange, _routingKey, null);
-            assertFalse("Routing key was still bound",
-                    _exchange.getBindings().containsKey(_routingKey));
-            assertNull("Routing key was not empty",
-                    _exchange.getBindings().get(_routingKey));
-        }
-        catch (AMQException e)
-        {
-            assertNull("Unexpected exception", e);
-        }
+        assertTrue("Routing key was not bound",
+                        _exchange.isBound(_routingKey));
+        assertTrue("Queue was not bound to key",
+                    _exchange.isBound(_routingKey,_queue));
+        assertEquals("Exchange binding count", 1,
+                _queue.getBindings().size());
+        assertEquals("Wrong exchange bound", String.valueOf(_routingKey),
+                _queue.getBindings().get(0).getBindingKey());
+        assertEquals("Wrong exchange bound", _exchange,
+                _queue.getBindings().get(0).getExchange());
+
+        _virtualHost.getBindingFactory().removeBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
+        assertFalse("Routing key was still bound",
+                _exchange.isBound(_routingKey));
+
     }
 
     public void testSubscription() throws AMQException
@@ -258,7 +251,7 @@ public class SimpleAMQQueueTest extends TestCase
     public void testAutoDeleteQueue() throws Exception
     {
        _queue.stop();
-       _queue = new SimpleAMQQueue(_qname, false, null, true, _virtualHost);
+       _queue = new SimpleAMQQueue(_qname, false, null, true, _virtualHost, Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));
@@ -409,7 +402,7 @@ public class SimpleAMQQueueTest extends TestCase
         ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) 2);
         msg.setContentHeaderBody(contentHeaderBody);
 
-        final ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
+        final ArrayList<BaseQueue> qs = new ArrayList<BaseQueue>();
 
         // Send persistent message
 

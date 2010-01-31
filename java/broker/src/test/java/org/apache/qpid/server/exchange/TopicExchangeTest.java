@@ -67,11 +67,8 @@ public class TopicExchangeTest extends TestCase
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
-        MessagePublishInfo info = new PublishInfo(new AMQShortString("a.b"));
-
-        IncomingMessage message = new IncomingMessage(info);
-
-        message.enqueue(_exchange.route(message));
+        IncomingMessage message = createMessage("a.b");
+        routeMessage(message);
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
@@ -357,7 +354,7 @@ public class TopicExchangeTest extends TestCase
 
         message.enqueue(_exchange.route(message));
         AMQMessage msg = new AMQMessage(message.getStoredMessage());
-        for(AMQQueue q : message.getDestinationQueues())
+        for(BaseQueue q : message.getDestinationQueues())
         {
             q.enqueue(msg);
         }

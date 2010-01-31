@@ -61,11 +61,9 @@ public class SimpleQueueEntryList implements QueueEntryList
     {
         _deletes.incrementAndGet();
         QueueEntryImpl head = _head.nextNode();
-        boolean deleted = head.isDeleted();
         while(head._next != null && head.isDeleted())
         {
 
-            deleted = true;
             final QueueEntryImpl newhead = head.nextNode();
             if(newhead != null)
             {
@@ -75,11 +73,6 @@ public class SimpleQueueEntryList implements QueueEntryList
                 }
             }
             head = _head.nextNode();
-        }
-
-        if(!deleted)
-        {
-            deleted = true;
         }
 
         if(_deletes.get() > 1000L)
@@ -135,7 +128,7 @@ public class SimpleQueueEntryList implements QueueEntryList
 
     public QueueEntry add(ServerMessage message)
     {
-        QueueEntryImpl node = new QueueEntryImpl(this, message);
+        QueueEntryImpl node = createQueueEntry(message);
         for (;;)
         {
             QueueEntryImpl tail = _tail;
@@ -158,6 +151,11 @@ public class SimpleQueueEntryList implements QueueEntryList
                 }
             }
         }
+    }
+
+    protected QueueEntryImpl createQueueEntry(ServerMessage message)
+    {
+        return new QueueEntryImpl(this, message);
     }
 
     public QueueEntry next(QueueEntry node)

@@ -36,11 +36,12 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.transport.ServerSession;
+import org.apache.qpid.server.configuration.*;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderProperties;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.*;
 
@@ -50,12 +51,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.nio.ByteBuffer;
 
-public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener
+public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener, SubscriptionConfig
 {
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
@@ -98,6 +97,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private LogSubject _logSubject;
     private LogActor _logActor;
     private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
+    private UUID _id;
+    private String _traceExclude;
+    private String _trace;
 
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
@@ -115,7 +117,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _filters = filters;
         _creditManager.addStateListener(this);
         _state.set(_creditManager.hasCredit() ? State.ACTIVE : State.SUSPENDED);
-
 
     }
 
@@ -146,6 +147,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
         }
         _queue = queue;
+        Map<String, Object> arguments = queue.getArguments() == null ? Collections.EMPTY_MAP : queue.getArguments();
+        _traceExclude = (String) arguments.get("qpid.trace.exclude");
+        _trace = (String) arguments.get("qpid.trace.id");
+        _id = getConfigStore().createId();
+        getConfigStore().addConfiguredObject(this);
         _logSubject = new SubscriptionLogSubject(this);
         _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
 
@@ -235,6 +241,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 }
             }
             _creditManager.removeListener(this);
+            getConfigStore().removeConfiguredObject(this);
         }
         finally
         {
@@ -243,6 +250,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
 
 
+    }
+
+    public ConfigStore getConfigStore()
+    {
+        return getQueue().getConfigStore();
     }
 
     public void creditStateChanged(boolean hasCredit)
@@ -290,6 +302,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
         MessageTransfer xfr;
 
+        DeliveryProperties deliveryProps;
+        MessageProperties messageProps = null;
+
         if(serverMsg instanceof MessageTransferMessage)
         {
 
@@ -316,11 +331,15 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 }
                 else
                 {
+                    if(header instanceof MessageProperties)
+                    {
+                        messageProps = (MessageProperties) header;
+                    }
                     newHeaders.add(header);
                 }
             }
 
-            DeliveryProperties deliveryProps = new DeliveryProperties();
+            deliveryProps = new DeliveryProperties();
             if(origDeliveryProps != null)
             {
                 if(origDeliveryProps.hasDeliveryMode())
@@ -343,21 +362,33 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 {
                     deliveryProps.setRoutingKey(origDeliveryProps.getRoutingKey());
                 }
+                if(origDeliveryProps.hasTimestamp())
+                {
+                    deliveryProps.setTimestamp(origDeliveryProps.getTimestamp());
+                }
+
 
             }
 
             deliveryProps.setRedelivered(entry.isRedelivered());
 
             newHeaders.add(deliveryProps);
+
+            if(_trace != null && messageProps == null)
+            {
+                messageProps = new MessageProperties();
+                newHeaders.add(messageProps);
+            }
+
             Header header = new Header(newHeaders);
 
             xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody());
         }
-        else
+        else if(serverMsg instanceof AMQMessage)
         {
             AMQMessage message_0_8 = (AMQMessage) serverMsg;
-            DeliveryProperties deliveryProps = new DeliveryProperties();
-            MessageProperties messageProps = new MessageProperties();
+            deliveryProps = new DeliveryProperties();
+            messageProps = new MessageProperties();
 
             int size = (int) message_0_8.getSize();
             ByteBuffer body = ByteBuffer.allocate(size);
@@ -399,9 +430,52 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                 messageProps.setUserId(properties.getUserId().getBytes());
             }
 
+            FieldTable fieldTable = properties.getHeaders();
+
+            final Map<String, Object> appHeaders = FieldTable.convertToMap(fieldTable);
+
+
+            messageProps.setApplicationHeaders(appHeaders);
+
+            Header header = new Header(headers);
+            xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
+        }
+        else
+        {
+
+            deliveryProps = new DeliveryProperties();
+            messageProps = new MessageProperties();
+
+            int size = (int) serverMsg.getSize();
+            ByteBuffer body = ByteBuffer.allocate(size);
+            serverMsg.getContent(body, 0);
+            body.flip();
+
+            Struct[] headers = new Struct[] { deliveryProps, messageProps };
+
+
+            deliveryProps.setExpiration(serverMsg.getExpiration());
+            deliveryProps.setImmediate(serverMsg.isImmediate());
+            deliveryProps.setPriority(MessageDeliveryPriority.get(serverMsg.getMessageHeader().getPriority()));
+            deliveryProps.setRedelivered(entry.isRedelivered());
+            deliveryProps.setRoutingKey(serverMsg.getRoutingKey());
+            deliveryProps.setTimestamp(serverMsg.getMessageHeader().getTimestamp());
+
+            messageProps.setContentEncoding(serverMsg.getMessageHeader().getEncoding());
+            messageProps.setContentLength(size);
+            messageProps.setContentType(serverMsg.getMessageHeader().getMimeType());
+            if(serverMsg.getMessageHeader().getCorrelationId() != null)
+            {
+                messageProps.setCorrelationId(serverMsg.getMessageHeader().getCorrelationId().getBytes());
+            }
+
+
+            // TODO - ReplyTo
+
+
             final Map<String, Object> appHeaders = new HashMap<String, Object>();
 
-            properties.getHeaders().processOverElements(
+            /*properties.getHeaders().processOverElements(
                     new FieldTable.FieldTableElementProcessor()
                     {
 
@@ -424,39 +498,98 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
 
             messageProps.setApplicationHeaders(appHeaders);
-
+*/
             Header header = new Header(headers);
             xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
         }
 
-        if(_acceptMode == MessageAcceptMode.NONE)
+        boolean excludeDueToFederation = false;
+
+        if(_trace != null)
         {
-            xfr.setCompletionListener(new MessageAcceptCompletionListener(this, _session, entry, _flowMode == MessageFlowMode.WINDOW));
+            if(!messageProps.hasApplicationHeaders())
+            {
+                messageProps.setApplicationHeaders(new HashMap<String,Object>());
+            }
+            Map<String,Object> appHeaders = messageProps.getApplicationHeaders();
+            String trace = (String) appHeaders.get("x-qpid.trace");
+            if(trace == null)
+            {
+                trace = _trace;
+            }
+            else
+            {
+                if(_traceExclude != null)
+                {
+                    excludeDueToFederation = Arrays.asList(trace.split(",")).contains(_traceExclude);
+                }
+                trace+=","+_trace;
+            }
+            appHeaders.put("x-qpid.trace",trace);
         }
-        else if(_flowMode == MessageFlowMode.WINDOW)
+
+        if(!excludeDueToFederation)
         {
-            xfr.setCompletionListener(new Method.CompletionListener()
-                                        {
-                                            public void onComplete(Method method)
+            if(_acceptMode == MessageAcceptMode.NONE)
+            {
+                xfr.setCompletionListener(new MessageAcceptCompletionListener(this, _session, entry, _flowMode == MessageFlowMode.WINDOW));
+            }
+            else if(_flowMode == MessageFlowMode.WINDOW)
+            {
+                xfr.setCompletionListener(new Method.CompletionListener()
                                             {
-                                                restoreCredit(entry);
-                                            }
-                                        });
-        }
+                                                public void onComplete(Method method)
+                                                {
+                                                    restoreCredit(entry);
+                                                }
+                                            });
+            }
 
 
-        _postIdSettingAction._xfr = xfr;
-        if(_acceptMode == MessageAcceptMode.EXPLICIT)
-        {
-            _postIdSettingAction._action = new ExplicitAcceptDispositionChangeListener(entry, this);
+            _postIdSettingAction._xfr = xfr;
+            if(_acceptMode == MessageAcceptMode.EXPLICIT)
+            {
+                _postIdSettingAction._action = new ExplicitAcceptDispositionChangeListener(entry, this);
+            }
+            else
+            {
+                _postIdSettingAction._action = new ImplicitAcceptDispositionChangeListener(entry, this);
+            }
+
+            _session.sendMessage(xfr, _postIdSettingAction);
+
+            if(_acceptMode == MessageAcceptMode.NONE && _acquireMode == MessageAcquireMode.PRE_ACQUIRED)
+            {
+                forceDequeue(entry, false);
+            }
         }
         else
         {
-            _postIdSettingAction._action = new ImplicitAcceptDispositionChangeListener(entry, this);
+            forceDequeue(entry, _flowMode == MessageFlowMode.WINDOW);
+
         }
+    }
 
-        _session.sendMessage(xfr, _postIdSettingAction);
+    private void forceDequeue(final QueueEntry entry, final boolean restoreCredit)
+    {
+        ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
+        txn.dequeue(entry.getQueue(),entry.getMessage(),
+                                new ServerTransaction.Action()
+                            {
+                                public void postCommit()
+                                {
+                                    if(restoreCredit)
+                                    {
+                                        restoreCredit(entry);
+                                    }
+                                    entry.discard();
+                                }
 
+                                public void onRollback()
+                                {
+
+                                }
+                            });
     }
 
     void reject(QueueEntry entry)
@@ -660,4 +793,59 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     }
 
 
+    public SessionConfig getSessionConfig()
+    {
+        return getSession();
+    }
+
+    public boolean isBrowsing()
+    {
+        return _acquireMode == MessageAcquireMode.NOT_ACQUIRED;
+    }
+
+    public boolean isExclusive()
+    {
+        return getQueue().hasExclusiveSubscriber();
+    }
+
+    public ConfiguredObject getParent()
+    {
+        return getSessionConfig();
+    }
+
+    public boolean isDurable()
+    {
+        return false;
+    }
+
+    public SubscriptionConfigType getConfigType()
+    {
+        return SubscriptionConfigType.getInstance();
+    }
+
+    public boolean isExplicitAcknowledge()
+    {
+        return _acceptMode == MessageAcceptMode.EXPLICIT;
+    }
+
+    public String getCreditMode()
+    {
+        return _flowMode.toString();
+    }
+
+    public UUID getId()
+    {
+        return _id;
+    }
+
+    public String getName()
+    {
+        return _destination;
+    }
+
+    public Map<String, Object> getArguments()
+    {
+        //TODO
+        return Collections.EMPTY_MAP;
+    }
 }

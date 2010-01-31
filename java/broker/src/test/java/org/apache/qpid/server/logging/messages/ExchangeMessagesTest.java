@@ -37,8 +37,8 @@ public class ExchangeMessagesTest extends AbstractTestMessages
                 getVirtualHostRegistry().getVirtualHost("test").
                 getExchangeRegistry().getDefaultExchange();
 
-        String type = exchange.getType().toString();
-        String name = exchange.getName().toString();
+        String type = exchange.getTypeShortString().toString();
+        String name = exchange.getNameShortString().toString();
 
         _logMessage = ExchangeMessages.EXH_CREATED(type, name, false);
         List<Object> log = performLog();
@@ -55,8 +55,8 @@ public class ExchangeMessagesTest extends AbstractTestMessages
                 getVirtualHostRegistry().getVirtualHost("test").
                 getExchangeRegistry().getDefaultExchange();
 
-        String type = exchange.getType().toString();
-        String name = exchange.getName().toString();
+        String type = exchange.getTypeShortString().toString();
+        String name = exchange.getNameShortString().toString();
 
         _logMessage = ExchangeMessages.EXH_CREATED(type, name, true);
         List<Object> log = performLog();

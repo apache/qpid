@@ -219,7 +219,7 @@ public class MessageStoreTool
 
         _console.println("");
 
-        _console.println(BOILER_PLATE);        
+        _console.println(BOILER_PLATE);
 
         runCLI();
     }
@@ -495,13 +495,13 @@ public class MessageStoreTool
                 if (_exchange != null)
                 {
                     status.append("[");
-                    status.append(_exchange.getName());
+                    status.append(_exchange.getNameShortString());
                     status.append("]");
 
                     if (_queue != null)
                     {
                         status.append("->'");
-                        status.append(_queue.getName());
+                        status.append(_queue.getNameShortString());
                         status.append("'");
 
                         if (_msgids != null)

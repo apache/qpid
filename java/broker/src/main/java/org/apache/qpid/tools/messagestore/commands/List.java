@@ -292,12 +292,12 @@ public class List extends AbstractCommand
             {
                 if (exchange.isBound(queue))
                 {
-                    data.add(queue.getName().toString());
+                    data.add(queue.getNameShortString().toString());
                 }
             }
             else
             {
-                data.add(queue.getName().toString());
+                data.add(queue.getNameShortString().toString());
             }
         }
 
