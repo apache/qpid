@@ -103,6 +103,24 @@ public:
         return false;
     }
 
+    template <class TestFn, class ModifierFn>
+    bool modify_if(TestFn f, ModifierFn & m)
+    {
+        if (!array)
+            return false;
+        {
+            Mutex::ScopedLock l(lock);
+            if (std::find_if(array->begin(), array->end(), f) != array->end())
+            {
+                ArrayPtr copy(new std::vector<T>(*array));
+                m(*std::find_if(copy->begin(), copy->end(), f));
+                array = copy;
+                return true;
+            }
+        }
+        return false;
+    }
+
     template <class F>
     F for_each(F f)
     {

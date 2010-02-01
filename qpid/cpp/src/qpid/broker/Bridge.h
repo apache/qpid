@@ -73,7 +73,7 @@ public:
     static Bridge::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
     // Exchange::DynamicBridge methods
-    void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin);
+    void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin, qpid::framing::FieldTable* extra_args=0);
     void sendReorigin();
     void ioThreadPropagateBinding(const string& queue, const string& exchange, const string& key, framing::FieldTable args);
     bool containsLocalTag(const std::string& tagList) const;
