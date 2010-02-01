@@ -273,13 +273,19 @@ management::Manageable::status_t Bridge::ManagementMethod(uint32_t methodId,
 }
 
 void Bridge::propagateBinding(const string& key, const string& tagList,
-                              const string& op,  const string& origin)
+                              const string& op,  const string& origin,
+                              qpid::framing::FieldTable* extra_args)
 {
     const string& localTag = link->getBroker()->getFederationTag();
     const string& peerTag  = connState->getFederationPeerTag();
 
     if (tagList.find(peerTag) == tagList.npos) {
          FieldTable bindArgs;
+         if (extra_args) {
+             for (qpid::framing::FieldTable::ValueMap::iterator i=extra_args->begin(); i != extra_args->end(); ++i) {
+                 bindArgs.insert((*i));
+             }
+         }
          string newTagList(tagList + string(tagList.empty() ? "" : ",") + localTag);
 
          bindArgs.setString(qpidFedOp, op);
