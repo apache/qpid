@@ -17,6 +17,7 @@
 #
 import unittest
 import logging
+import datetime
 from threading import Thread, Event
 
 import qpid.messaging
@@ -193,8 +194,10 @@ class BaseTest(unittest.TestCase):
             agent = _agentApp("agent-" + str(i), self.broker, 1)
             agent.start_app()
             self.agents.append(agent)
+        #print("!!!! STARTING TEST: %s" % datetime.datetime.utcnow())
 
     def tearDown(self):
+        #print("!!!! STOPPING TEST: %s" % datetime.datetime.utcnow())
         for agent in self.agents:
             if agent is not None:
                 agent.stop_app()
@@ -221,25 +224,34 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(agent and agent.get_name() == aname)
 
         # console has discovered all agents, now query all undesc-2 objects
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
         objs = self.console.get_objects(_object_id="undesc-2", _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
         self.assertTrue(len(objs) == self.agent_count)
         for obj in objs:
             self.assertTrue(obj.get_object_id() == "undesc-2")
 
         # now query all objects from schema "package1"
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
         objs = self.console.get_objects(_pname="package1", _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
         self.assertTrue(len(objs) == (self.agent_count * 3))
         for obj in objs:
             self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
 
         # now query all objects from schema "package2"
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
         objs = self.console.get_objects(_pname="package2", _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
         self.assertTrue(len(objs) == (self.agent_count * 2))
         for obj in objs:
             self.assertTrue(obj.get_schema_class_id().get_package_name() == "package2")
 
         # now query all objects from schema "package1/class2"
-        objs = self.console.get_objects(_pname="package1", _cname="class2", _timeout=5)
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_pname="package1", _cname="class2",
+                                        _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
         self.assertTrue(len(objs) == self.agent_count)
         for obj in objs:
             self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
@@ -247,7 +259,9 @@ class BaseTest(unittest.TestCase):
 
         # given the schema identifier from the last query, repeat using the
         # specific schema id
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
         schema_id = objs[0].get_schema_class_id()
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
         objs = self.console.get_objects(_schema_id=schema_id, _timeout=5)
         self.assertTrue(len(objs) == self.agent_count)
         for obj in objs:
@@ -352,7 +366,7 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(agent and agent.get_name() == aname)
             agent_list.append(agent)
 
-        # Only use one agetn
+        # Only use one agent
         agent = agent_list[0]
 
         # console has discovered all agents, now query all undesc-2 objects
@@ -397,6 +411,107 @@ class BaseTest(unittest.TestCase):
         for obj in objs:
             self.assertTrue(obj.get_schema_class_id() == schema_id)
 
+
+        self.console.destroy(10)
+
+
+
+    def test_all_objs_by_oid(self):
+        # create console
+        # find all agents
+        # synchronous query for all described objects by:
+        #    oid & schema_id
+        #    oid & package name
+        #    oid & package and class name
+        # verify known object ids are returned
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        for agent_app in self.agents:
+            aname = agent_app.agent.get_name()
+            agent = self.console.find_agent(aname, timeout=3)
+            self.assertTrue(agent and agent.get_name() == aname)
+
+        # now query all objects from schema "package1"
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_pname="package1",
+                                        _object_id="p1c1_key1", _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(len(objs) == self.agent_count)
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class1")
+            self.assertTrue(obj.get_object_id() == "p1c1_key1")
+        # mooch the schema for a later test
+        schema_id_p1c1 = objs[0].get_schema_class_id()
+
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_pname="package1",
+                                        _object_id="p1c2_name1", _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(len(objs) == self.agent_count)
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class2")
+            self.assertTrue(obj.get_object_id() == "p1c2_name1")
+
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_pname="package2", _cname="class1",
+                                        _object_id="p2c1_key1", _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(len(objs) == self.agent_count)
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package2")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class1")
+            self.assertTrue(obj.get_object_id() == "p2c1_key1")
+
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_schema_id=schema_id_p1c1,
+                                        _object_id="p1c1_key2", _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(len(objs) == self.agent_count)
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class1")
+            self.assertTrue(obj.get_object_id() == "p1c1_key2")
+
+        # this should return all "undescribed" objects
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(len(objs) == (self.agent_count * 2))
+        for obj in objs:
+            self.assertTrue(obj.get_object_id() == "undesc-1" or
+                            obj.get_object_id() == "undesc-2")
+
+        # these should fail
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_schema_id=schema_id_p1c1,
+                                        _object_id="does not exist",
+                                        _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(objs == None)
+
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_pname="package2",
+                                        _object_id="does not exist",
+                                        _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(objs == None)
+
+        #print("!!!! STARTING GET: %s" % datetime.datetime.utcnow())
+        objs = self.console.get_objects(_pname="package3",
+                                        _object_id="does not exist",
+                                        _timeout=5)
+        #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(objs == None)
 
         self.console.destroy(10)
 
