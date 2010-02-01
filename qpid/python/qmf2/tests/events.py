@@ -84,7 +84,6 @@ class _agentApp(Thread):
         if not self.ready.is_set():
             raise Exception("Agent failed to connect to broker.")
         # time.sleep(1)
-        print("!!! agent=%s setup complete (%s)" % (self.agent, time.time()))
 
     def stop_app(self):
         self.running = False
@@ -106,7 +105,6 @@ class _agentApp(Thread):
             raise Skipped(e)
 
         self.agent.set_connection(conn)
-        print("!!! agent=%s connection done (%s)" % (self.agent, time.time()))
         self.ready.set()
 
         counter = 1
