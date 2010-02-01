@@ -296,14 +296,14 @@ void Exchange::handleHelloRequest()
 {
 }
 
-void Exchange::propagateFedOp(const string& routingKey, const string& tags, const string& op, const string& origin)
+void Exchange::propagateFedOp(const string& routingKey, const string& tags, const string& op, const string& origin, qpid::framing::FieldTable* extra_args)
 {
     Mutex::ScopedLock l(bridgeLock);
     string myOp(op.empty() ? fedOpBind : op);
 
     for (std::vector<DynamicBridge*>::iterator iter = bridgeVector.begin();
          iter != bridgeVector.end(); iter++)
-        (*iter)->propagateBinding(routingKey, tags, op, origin);
+        (*iter)->propagateBinding(routingKey, tags, op, origin, extra_args);
 }
 
 Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* parent,

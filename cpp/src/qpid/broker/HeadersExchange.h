@@ -33,29 +33,51 @@ namespace qpid {
 namespace broker {
 
 
-class HeadersExchange : public virtual Exchange {    
-    typedef std::pair<qpid::framing::FieldTable, Binding::shared_ptr> HeaderMap;
-    typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> Bindings;
+class HeadersExchange : public virtual Exchange {
+
+    struct BoundKey
+    {
+        Binding::shared_ptr binding;
+        FedBinding fedBinding;
+        BoundKey(Binding::shared_ptr binding_) : binding(binding_) {}
+    };
 
     struct MatchArgs
     {
         const Queue::shared_ptr queue;        
         const qpid::framing::FieldTable* args;
         MatchArgs(Queue::shared_ptr q, const qpid::framing::FieldTable* a);
-        bool operator()(Exchange::Binding::shared_ptr b);        
+        bool operator()(BoundKey & bk);
     };
+    
     struct MatchKey
     {
-        const Queue::shared_ptr queue;        
+        const Queue::shared_ptr queue;
         const std::string& key;
         MatchKey(Queue::shared_ptr q, const std::string& k);
-        bool operator()(Exchange::Binding::shared_ptr b);        
+        bool operator()(BoundKey & bk);
     };
+
+    struct FedUnbindModifier
+    {
+        string fedOrigin;
+        bool shouldUnbind;
+        bool shouldPropagate;
+        FedUnbindModifier();
+        FedUnbindModifier(string & origin);
+        bool operator()(BoundKey & bk);
+    };
+
+    typedef qpid::sys::CopyOnWriteArray<BoundKey> Bindings;
 
     Bindings bindings;
     qpid::sys::Mutex lock;
 
     static std::string getMatch(const framing::FieldTable* args);
+
+  protected:
+    void getNonFedArgs(const framing::FieldTable* args,
+                       framing::FieldTable& nonFedArgs);
 
   public:
     static const std::string typeName;
@@ -84,6 +106,8 @@ class HeadersExchange : public virtual Exchange {
                                             const qpid::framing::FieldTable* const args);
 
     QPID_BROKER_EXTERN virtual ~HeadersExchange();
+
+    virtual bool supportsDynamicBinding() { return true; }
 
     static QPID_BROKER_EXTERN bool match(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
     static bool equal(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);

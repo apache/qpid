@@ -163,7 +163,7 @@ public:
     class DynamicBridge {
     public:
         virtual ~DynamicBridge() {}
-        virtual void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin) = 0;
+        virtual void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin, qpid::framing::FieldTable* extra_args=0) = 0;
         virtual void sendReorigin() = 0;
         virtual bool containsLocalTag(const std::string& tagList) const = 0;
         virtual const std::string& getLocalTag() const = 0;
@@ -185,7 +185,8 @@ protected:
 
     QPID_BROKER_EXTERN virtual void handleHelloRequest();
     void propagateFedOp(const std::string& routingKey, const std::string& tags,
-                        const std::string& op,         const std::string& origin);
+                        const std::string& op,         const std::string& origin, 
+                        qpid::framing::FieldTable* extra_args=0);
 };
 
 }}
