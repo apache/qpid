@@ -67,10 +67,10 @@ session = connection.session(str(uuid4()))
 # exchange_bind() determines which messages are routed to a queue. 
 
 session.queue_declare(queue="first")
-session.exchange_bind(exchange="amq.match", queue="first", arguments={'x-match':'any', 'class':'first'})
+session.exchange_bind(exchange="amq.match", queue="first", binding_key="first", arguments={'x-match':'any', 'class':'first'})
 
 session.queue_declare(queue="second")
-session.exchange_bind(exchange="amq.match", queue="second", arguments={'x-match':'any', 'class':'second'})
+session.exchange_bind(exchange="amq.match", queue="second", binding_key="second", arguments={'x-match':'any', 'class':'second'})
 
 #----- Cleanup ---------------------------------------------
 
