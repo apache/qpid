@@ -94,12 +94,21 @@ class _agentApp(Thread):
         self.agent.add_object( _obj1 )
 
         self.agent.add_object( QmfAgentData( self.agent, _schema=_schema,
-                                             _values={"index1":99, 
+                                             _values={"index1":99,
                                                       "index2": "another name",
                                                       "set_string": "UNSET",
                                                       "set_int": 0,
                                                       "query_count": 0,
                                                       "method_call_count": 0} ))
+
+        self.agent.add_object( QmfAgentData( self.agent, _schema=_schema,
+                                             _values={"index1":50,
+                                                      "index2": "my name",
+                                                      "set_string": "SET",
+                                                      "set_int": 0,
+                                                      "query_count": 0,
+                                                      "method_call_count": 0} ))
+
 
         # add an "unstructured" object to the Agent
         _obj2 = QmfAgentData(self.agent, _object_id="01545")
@@ -108,6 +117,30 @@ class _agentApp(Thread):
         _obj2.set_value("field3", {"a":1, "map":2, "value":3})
         _obj2.set_value("field4", ["a", "list", "value"])
         _obj2.set_value("index1", 50)
+        self.agent.add_object(_obj2)
+
+        _obj2 = QmfAgentData(self.agent, _object_id="01546")
+        _obj2.set_value("field1", "a value")
+        _obj2.set_value("field2", 3)
+        _obj2.set_value("field3", {"a":1, "map":2, "value":3})
+        _obj2.set_value("field4", ["a", "list", "value"])
+        _obj2.set_value("index1", 51)
+        self.agent.add_object(_obj2)
+
+        _obj2 = QmfAgentData(self.agent, _object_id="01544")
+        _obj2.set_value("field1", "a value")
+        _obj2.set_value("field2", 4)
+        _obj2.set_value("field3", {"a":1, "map":2, "value":3})
+        _obj2.set_value("field4", ["a", "list", "value"])
+        _obj2.set_value("index1", 49)
+        self.agent.add_object(_obj2)
+
+        _obj2 = QmfAgentData(self.agent, _object_id="01543")
+        _obj2.set_value("field1", "a value")
+        _obj2.set_value("field2", 4)
+        _obj2.set_value("field3", {"a":1, "map":2, "value":3})
+        _obj2.set_value("field4", ["a", "list", "value"])
+        _obj2.set_value("index1", 48)
         self.agent.add_object(_obj2)
 
         self.running = False
@@ -178,7 +211,8 @@ class BaseTest(unittest.TestCase):
     def test_all_oids(self):
         # create console
         # find agents
-        # synchronous query for all objects by id
+        # synchronous query for all schemas
+        # synchronous query for all objects per schema
         # verify known object ids are returned
         self.notifier = _testNotifier()
         self.console = qmf2.console.Console(notifier=self.notifier,
@@ -194,15 +228,39 @@ class BaseTest(unittest.TestCase):
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
+            # first, find objects per schema
+            query = QmfQuery.create_wildcard(QmfQuery.TARGET_SCHEMA_ID)
+            sid_list = self.console.do_query(agent, query)
+            self.assertTrue(sid_list and len(sid_list) == 1)
+            for sid in sid_list:
+                t_params = {QmfData.KEY_SCHEMA_ID: sid}
+                query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT_ID,
+                                                _target_params=t_params)
+
+                oid_list = self.console.do_query(agent, query)
+
+                self.assertTrue(isinstance(oid_list, type([])), 
+                                "Unexpected return type")
+                self.assertTrue(len(oid_list) == 3, "Wrong count")
+                self.assertTrue('100a name' in oid_list)
+                self.assertTrue('99another name' in oid_list)
+                self.assertTrue('50my name' in oid_list)
+                self.assertTrue('01545' not in oid_list)
+
+
+            # now, find all unmanaged objects (no schema)
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT_ID)
             oid_list = self.console.do_query(agent, query)
 
             self.assertTrue(isinstance(oid_list, type([])), 
                             "Unexpected return type")
-            self.assertTrue(len(oid_list) == 3, "Wrong count")
-            self.assertTrue('100a name' in oid_list)
-            self.assertTrue('99another name' in oid_list)
+            self.assertTrue(len(oid_list) == 4, "Wrong count")
+            self.assertTrue('100a name' not in oid_list)
+            self.assertTrue('99another name' not in oid_list)
             self.assertTrue('01545' in oid_list)
+            self.assertTrue('01544' in oid_list)
+            self.assertTrue('01543' in oid_list)
+            self.assertTrue('01546' in oid_list)
 
         self.console.destroy(10)
 
@@ -226,8 +284,13 @@ class BaseTest(unittest.TestCase):
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
-            for oid in ['100a name', '99another name', '01545']:
-                query = QmfQuery.create_id(QmfQuery.TARGET_OBJECT, oid)
+            # first, find objects per schema
+            query = QmfQuery.create_wildcard(QmfQuery.TARGET_SCHEMA_ID)
+            sid_list = self.console.do_query(agent, query)
+            self.assertTrue(sid_list and len(sid_list) == 1)
+
+            for oid in ['100a name', '99another name']:
+                query = QmfQuery.create_id_object(oid, sid_list[0])
                 obj_list = self.console.do_query(agent, query)
 
                 self.assertTrue(isinstance(obj_list, type([])), 
@@ -236,15 +299,23 @@ class BaseTest(unittest.TestCase):
                 obj = obj_list[0]
                 self.assertTrue(isinstance(obj, QmfData))
                 self.assertTrue(obj.get_object_id() == oid)
+                self.assertTrue(obj.get_schema_class_id() == sid_list[0])
+                schema_id = obj.get_schema_class_id()
+                self.assertTrue(isinstance(schema_id, SchemaClassId))
+                self.assertTrue(obj.is_described())
 
-                if obj.is_described():
-                    self.assertTrue(oid in ['100a name', '99another name'])
-                    schema_id = obj.get_schema_class_id()
-                    self.assertTrue(isinstance(schema_id, SchemaClassId))
-                else:
-                    self.assertTrue(oid == "01545")
+            # now find schema-less objects
+            for oid in ['01545']:
+                query = QmfQuery.create_id_object(oid)
+                obj_list = self.console.do_query(agent, query)
 
-
+                self.assertTrue(isinstance(obj_list, type([])), 
+                                "Unexpected return type")
+                self.assertTrue(len(obj_list) == 1)
+                obj = obj_list[0]
+                self.assertTrue(isinstance(obj, QmfData))
+                self.assertTrue(obj.get_object_id() == oid)
+                self.assertFalse(obj.is_described())
 
         self.console.destroy(10)
 
@@ -360,11 +431,21 @@ class BaseTest(unittest.TestCase):
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
+            # get the schema id for MyPackage:MyClass schema
+            query = QmfQuery.create_predicate(QmfQuery.TARGET_SCHEMA_ID,
+                                              [QmfQuery.AND,
+                                               [QmfQuery.EQ, SchemaClassId.KEY_PACKAGE,
+                                                [QmfQuery.QUOTE, "MyPackage"]],
+                                               [QmfQuery.EQ, SchemaClassId.KEY_CLASS,
+                                                [QmfQuery.QUOTE, "MyClass"]]])
+            sid_list = self.console.do_query(agent, query)
+            self.assertTrue(len(sid_list) == 1)
+
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
                     [QmfQuery.AND,
                      [QmfQuery.EXISTS, [QmfQuery.QUOTE, "set_string"]],
-                     [QmfQuery.EQ, "set_string", [QmfQuery.QUOTE, "UNSET"]]])
-
+                     [QmfQuery.EQ, "set_string", [QmfQuery.QUOTE, "UNSET"]]],
+                    _target_params={QmfData.KEY_SCHEMA_ID: sid_list[0]})
             obj_list = self.console.do_query(agent, query)
             self.assertTrue(len(obj_list) == 2)
             for obj in obj_list:
@@ -394,41 +475,43 @@ class BaseTest(unittest.TestCase):
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
-            # == 99
+            # Query the unmanaged (no schema) objects
+
+            # == 50
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
                     [QmfQuery.AND,
                      [QmfQuery.EXISTS, [QmfQuery.QUOTE, "index1"]],
-                     [QmfQuery.EQ, "index1", 99]])
+                     [QmfQuery.EQ, "index1", 50]])
 
             obj_list = self.console.do_query(agent, query)
             self.assertTrue(len(obj_list) == 1)
             self.assertTrue(obj_list[0].has_value("index1"))
-            self.assertTrue(obj_list[0].get_value("index1") == 99)
+            self.assertTrue(obj_list[0].get_value("index1") == 50)
 
-            # <= 99
+            # <= 50
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
                     [QmfQuery.AND,
                      [QmfQuery.EXISTS, [QmfQuery.QUOTE, "index1"]],
-                     [QmfQuery.LE, "index1", 99]])
+                     [QmfQuery.LE, "index1", 50]])
 
             obj_list = self.console.do_query(agent, query)
-            self.assertTrue(len(obj_list) == 2)
+            self.assertTrue(len(obj_list) == 3)
             for obj in obj_list:
                 self.assertTrue(obj.has_value("index1"))
-                self.assertTrue(obj.get_value("index1") <= 99)
+                self.assertTrue(obj.get_value("index1") <= 50)
 
 
-            # > 99
+            # > 50
             query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
                     [QmfQuery.AND,
                      [QmfQuery.EXISTS, [QmfQuery.QUOTE, "index1"]],
-                     [QmfQuery.GT, "index1", 99]])
+                     [QmfQuery.GT, "index1", 50]])
 
             obj_list = self.console.do_query(agent, query)
             self.assertTrue(len(obj_list) == 1)
             for obj in obj_list:
                 self.assertTrue(obj.has_value("index1"))
-                self.assertTrue(obj.get_value("index1") > 99)
+                self.assertTrue(obj.get_value("index1") > 50)
 
         self.console.destroy(10)
 

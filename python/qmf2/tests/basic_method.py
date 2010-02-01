@@ -148,7 +148,8 @@ class _agentApp(Thread):
                         raise Exception("Unexpected method call parameters")
 
                     if mc.get_name() == "set_meth":
-                        obj = self.agent.get_object(mc.get_object_id())
+                        obj = self.agent.get_object(mc.get_object_id(),
+                                                    mc.get_schema_id())
                         if obj is None:
                             error_info = QmfData.create({"code": -2, 
                                                          "description":
@@ -164,7 +165,8 @@ class _agentApp(Thread):
                             self.agent.method_response(wi.get_handle(),
                                                        {"code" : 0})
                     elif mc.get_name() == "a_method":
-                        obj = self.agent.get_object(mc.get_object_id())
+                        obj = self.agent.get_object(mc.get_object_id(),
+                                                    mc.get_schema_id())
                         if obj is None:
                             error_info = QmfData.create({"code": -3, 
                                                          "description":
@@ -246,38 +248,41 @@ class BaseTest(unittest.TestCase):
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
-            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
-                    [QmfQuery.AND,
-                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, SchemaClassId.KEY_PACKAGE]],
-                     [QmfQuery.EQ, SchemaClassId.KEY_PACKAGE, [QmfQuery.QUOTE, "MyPackage"]]])
+            query = QmfQuery.create_wildcard(QmfQuery.TARGET_SCHEMA_ID)
 
-            obj_list = self.console.do_query(agent, query)
-            self.assertTrue(len(obj_list) == 2)
-            for obj in obj_list:
-                mr = obj.invoke_method( "set_meth", {"arg_int": -99,
-                                                     "arg_str": "Now set!"},
-                                        _timeout=3)
-                self.assertTrue(isinstance(mr, qmf2.console.MethodResult))
-                self.assertTrue(mr.succeeded())
-                self.assertTrue(mr.get_argument("code") == 0)
+            sid_list = self.console.do_query(agent, query)
+            self.assertTrue(sid_list and len(sid_list) == 1)
+            for sid in sid_list:
+                t_params = {QmfData.KEY_SCHEMA_ID: sid}
+                query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT,
+                                                _target_params=t_params)
+                obj_list = self.console.do_query(agent, query)
+                self.assertTrue(len(obj_list) == 2)
+                for obj in obj_list:
+                    mr = obj.invoke_method( "set_meth", {"arg_int": -99,
+                                                         "arg_str": "Now set!"},
+                                            _timeout=3)
+                    self.assertTrue(isinstance(mr, qmf2.console.MethodResult))
+                    self.assertTrue(mr.succeeded())
+                    self.assertTrue(mr.get_argument("code") == 0)
 
-                self.assertTrue(obj.get_value("method_call_count") == 0)
-                self.assertTrue(obj.get_value("set_string") == "UNSET")
-                self.assertTrue(obj.get_value("set_int") == 0)
+                    self.assertTrue(obj.get_value("method_call_count") == 0)
+                    self.assertTrue(obj.get_value("set_string") == "UNSET")
+                    self.assertTrue(obj.get_value("set_int") == 0)
 
-                obj.refresh()
+                    obj.refresh()
 
-                self.assertTrue(obj.get_value("method_call_count") == 1)
-                self.assertTrue(obj.get_value("set_string") == "Now set!")
-                self.assertTrue(obj.get_value("set_int") == -99)
+                    self.assertTrue(obj.get_value("method_call_count") == 1)
+                    self.assertTrue(obj.get_value("set_string") == "Now set!")
+                    self.assertTrue(obj.get_value("set_int") == -99)
 
         self.console.destroy(10)
 
 
-    def test_bad_method(self):
+    def test_bad_method_schema(self):
         # create console
         # find agents
-        # synchronous query for all objects in schema
+        # synchronous query for all objects with schema
         # invalid method call on each object
         #  - should throw a ValueError
         self.notifier = _testNotifier()
@@ -294,21 +299,61 @@ class BaseTest(unittest.TestCase):
             agent = self.console.find_agent(aname, timeout=3)
             self.assertTrue(agent and agent.get_name() == aname)
 
-            query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
-                    [QmfQuery.AND,
-                     [QmfQuery.EXISTS, [QmfQuery.QUOTE, SchemaClassId.KEY_PACKAGE]],
-                     [QmfQuery.EQ, [QmfQuery.UNQUOTE, SchemaClassId.KEY_PACKAGE], [QmfQuery.QUOTE, "MyPackage"]]])
+            query = QmfQuery.create_wildcard(QmfQuery.TARGET_SCHEMA_ID)
 
-            obj_list = self.console.do_query(agent, query)
-            self.assertTrue(len(obj_list) == 2)
-            for obj in obj_list:
-                self.failUnlessRaises(ValueError,
-                                      obj.invoke_method,
-                                      "unknown_meth", 
-                                      {"arg1": -99, "arg2": "Now set!"},
-                                      _timeout=3)
+            sid_list = self.console.do_query(agent, query)
+            self.assertTrue(sid_list and len(sid_list) == 1)
+            for sid in sid_list:
+
+                t_params = {QmfData.KEY_SCHEMA_ID: sid}
+                query = QmfQuery.create_predicate(QmfQuery.TARGET_OBJECT,
+                                                  [QmfQuery.TRUE],
+                                                  _target_params=t_params)
+
+                obj_list = self.console.do_query(agent, query)
+                self.assertTrue(len(obj_list) == 2)
+                for obj in obj_list:
+                    self.failUnlessRaises(ValueError,
+                                          obj.invoke_method,
+                                          "unknown_meth", 
+                                          {"arg1": -99, "arg2": "Now set!"},
+                                          _timeout=3)
         self.console.destroy(10)
 
+    def test_bad_method_no_schema(self):
+        # create console
+        # find agents
+        # synchronous query for all objects with no schema
+        # invalid method call on each object
+        #  - should throw a ValueError
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        for aname in ["agent1", "agent2"]:
+            agent = self.console.find_agent(aname, timeout=3)
+            self.assertTrue(agent and agent.get_name() == aname)
+
+            query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT)
+
+            obj_list = self.console.do_query(agent, query)
+            self.assertTrue(len(obj_list) == 1)
+            for obj in obj_list:
+                self.assertTrue(obj.get_schema_class_id() == None)
+                mr = obj.invoke_method("unknown_meth", 
+                                       {"arg1": -99, "arg2": "Now set!"},
+                                       _timeout=3)
+                self.assertTrue(isinstance(mr, qmf2.console.MethodResult))
+                self.assertFalse(mr.succeeded())
+                self.assertTrue(isinstance(mr.get_exception(), QmfData))
+
+        self.console.destroy(10)
 
     def test_managed_obj(self):
         # create console

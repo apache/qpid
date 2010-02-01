@@ -90,6 +90,12 @@ def parse_subject(_sub):
 
     return _sub[3:].split('.', 1)
 
+def timedelta_to_secs(td):
+    """
+    Convert a time delta to a time interval in seconds (float)
+    """
+    return td.days * 86400 + td.seconds + td.microseconds/1000000.0
+
 
 ##==============================================================================
 ## Async Event Model
@@ -906,8 +912,10 @@ class QmfQuery(_mapEncoder):
 
     TARGET_SCHEMA_ID="schema_id"
     TARGET_SCHEMA="schema"
-    # allowed predicate key(s):
+    # allowed id: value:
+    # SchemaClassId
     #
+    # allowed predicate key(s):
     # SchemaClassId.KEY_PACKAGE
     # SchemaClassId.KEY_CLASS
     # SchemaClassId.KEY_TYPE
@@ -917,19 +925,22 @@ class QmfQuery(_mapEncoder):
     # name of method (exist test only)
 
     TARGET_AGENT="agent"
+    # allowed id: value:
+    # string name of agent
     # allowed predicate keys(s):
-    #
+    # 
     KEY_AGENT_NAME="_name"
 
     TARGET_OBJECT_ID="object_id"
     TARGET_OBJECT="object"
+    # If object is described by a schema, the value of the target map must
+    # include a "_schema_id": {map encoded schema id} value.
+    #
+    # allowed id: value:
+    # object_id string
+    #
     # allowed predicate keys(s):
     #
-    # SchemaClassId.KEY_PACKAGE
-    # SchemaClassId.KEY_CLASS
-    # SchemaClassId.KEY_TYPE
-    # SchemaClassId.KEY_HASH
-    # QmfData.KEY_SCHEMA_ID
     # QmfData.KEY_OBJECT_ID
     # QmfData.KEY_UPDATE_TS
     # QmfData.KEY_CREATE_TS
@@ -977,8 +988,23 @@ class QmfQuery(_mapEncoder):
                 if key in self._valid_targets:
                     _target = key
                     break
+            if _target is None:
+                raise TypeError("Invalid QmfQuery target: '%s'" %
+                                str(target_map))
 
+            # convert target params from map format
             _target_params = target_map.get(_target)
+            if _target_params:
+                if not isinstance(_target_params, type({})):
+                    raise TypeError("target params must be a map: '%s'" %
+                                    str(_target_params))
+                t_params = {}
+                for name,value in _target_params.iteritems():
+                    if name == QmfData.KEY_SCHEMA_ID:
+                        t_params[name] = SchemaClassId.from_map(value)
+                    else:
+                        t_params[name] = value
+                _target_params = t_params
 
             _id = _map.get(self.KEY_ID)
             if _id is not None:
@@ -1009,9 +1035,40 @@ class QmfQuery(_mapEncoder):
         return cls(_target=target, _target_params=_target_params, _id=ident)
     create_id = classmethod(_create_id)
 
+    def _create_id_object(cls, object_id, _schema_id=None):
+        """
+        Create a ID Query for an object (schema optional).
+        """
+        if _schema_id is not None:
+            if not isinstance(_schema_id, SchemaClassId):
+                raise TypeError("class SchemaClassId expected")
+            params = {QmfData.KEY_SCHEMA_ID: _schema_id}
+        else:
+            params = None
+        return cls(_target=QmfQuery.TARGET_OBJECT,
+                   _id=object_id,
+                   _target_params=params)
+    create_id_object = classmethod(_create_id_object)
+
+    def _create_id_object_id(cls, object_id, _schema_id=None):
+        """
+        Create a ID Query for object_ids (schema optional).
+        """
+        if _schema_id is not None:
+            if not isinstance(_schema_id, SchemaClassId):
+                raise TypeError("class SchemaClassId expected")
+            params = {QmfData.KEY_SCHEMA_ID: _schema_id}
+        else:
+            params = None
+        return cls(_target=QmfQuery.TARGET_OBJECT_ID,
+                   _id=object_id,
+                   _target_params=params)
+    create_id_object_id = classmethod(_create_id_object_id)
+
     def _from_map(cls, map_):
         return cls(_map=map_)
     from_map = classmethod(_from_map)
+    # end constructors
 
     def get_target(self):
         return self._target
@@ -1055,7 +1112,18 @@ class QmfQuery(_mapEncoder):
         return True
 
     def map_encode(self):
-        _map = {self.KEY_TARGET: {self._target: self._target_params}}
+        t_params = {}
+        if self._target_params:
+            for name,value in self._target_params.iteritems():
+                if isinstance(value, _mapEncoder):
+                    t_params[name] = value.map_encode()
+                else:
+                    t_params[name] = value
+        if t_params:
+            _map = {self.KEY_TARGET: {self._target: t_params}}
+        else:
+            _map = {self.KEY_TARGET: {self._target: None}}
+
         if self._id is not None:
             if isinstance(self._id, _mapEncoder):
                 _map[self.KEY_ID] = self._id.map_encode()
