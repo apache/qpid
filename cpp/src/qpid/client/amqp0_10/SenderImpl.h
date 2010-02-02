@@ -73,6 +73,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     uint32_t capacity;
     uint32_t window;
     bool flushed;
+    const bool unreliable;
 
     uint32_t checkPendingSends(bool flush);
     void replay();
@@ -80,6 +81,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
 
     //logic for application visible methods:
     void sendImpl(const qpid::messaging::Message&);
+    void sendUnreliable(const qpid::messaging::Message&);
     void closeImpl();
 
 
@@ -105,6 +107,21 @@ class SenderImpl : public qpid::messaging::SenderImpl
             //failure (and replayed) so need not repeat the call
             repeat = false;
             impl.sendImpl(*message);
+        }
+    };
+
+    struct UnreliableSend : Command
+    {
+        const qpid::messaging::Message* message;
+
+        UnreliableSend(SenderImpl& i, const qpid::messaging::Message* m) : Command(i), message(m) {}
+        void operator()() 
+        {
+            //TODO: ideally want to put messages on the outbound
+            //queue and pull them off in io thread, but the old
+            //0-10 client doesn't support that option so for now
+            //we simply don't queue unreliable messages
+            impl.sendUnreliable(*message);                
         }
     };
 

@@ -120,7 +120,7 @@ class AddressImpl;
  * exactly-once (the latter is not yet correctly supported).</td></tr>
  * 
  * <tr valign=top><td>filter</td><td>(only relevant for topics at present) allows bindings to
- * be created for the queue that match the given criteris (or list of
+ * be created for the queue that match the given criteria (or list of
  * criteria).</td></tr>
  * 
  * <tr valign=top><td>x-properties</td><td>allows protocol or implementation specific options

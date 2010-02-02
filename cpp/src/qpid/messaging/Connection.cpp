@@ -47,7 +47,7 @@ Connection::Connection(const std::string& o)
 { 
     Variant::Map options;
     AddressParser parser(o);
-    if (parser.parseMap(options)) {
+    if (o.empty() || parser.parseMap(options)) {
         PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(options));
     } else {
         throw InvalidOptionString(o);

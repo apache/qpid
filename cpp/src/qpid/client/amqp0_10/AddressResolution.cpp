@@ -265,12 +265,12 @@ bool getSenderPolicy(const Address& address, const std::string& key)
     return in(address.getOption(key), list_of<std::string>(ALWAYS)(SENDER));
 }
 
-bool is_unreliable(const Address& address)
+bool AddressResolution::is_unreliable(const Address& address)
 {
     return in(address.getOption(RELIABILITY), list_of<std::string>(UNRELIABLE)(AT_MOST_ONCE));
 }
 
-bool is_reliable(const Address& address)
+bool AddressResolution::is_reliable(const Address& address)
 {
     return in(address.getOption(RELIABILITY), list_of<std::string>(AT_LEAST_ONCE)(EXACTLY_ONCE));
 }
@@ -346,7 +346,7 @@ const Variant& getNestedOption(const Variant::Map& options, const std::vector<st
 
 QueueSource::QueueSource(const Address& address) :
     Queue(address),
-    acceptMode(is_unreliable(address) ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT),
+    acceptMode(AddressResolution::is_unreliable(address) ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT),
     acquireMode(address.getOption(BROWSE).asBool() ? ACQUIRE_MODE_NOT_ACQUIRED : ACQUIRE_MODE_PRE_ACQUIRED),
     exclusive(false)
 {
@@ -393,7 +393,7 @@ std::string Subscription::getSubscriptionName(const std::string& base, const Var
 Subscription::Subscription(const Address& address, const std::string& exchangeType)
     : Exchange(address),
       queue(getSubscriptionName(name, address.getOption(NAME))),
-      reliable(is_reliable(address)),
+      reliable(AddressResolution::is_reliable(address)),
       durable(address.getOption(DURABLE_SUBSCRIPTION).asBool())
 {
     if (address.getOption(NO_LOCAL).asBool()) queueOptions.setInt(NO_LOCAL, 1);
