@@ -125,11 +125,15 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
     {
         _session.createDurableSubscriber(_topic, getName());
 
-        //Validate
+        //Wait for up to 2 seconds for message to appear
+        // ignore response as we will use the findMatches afterwards just
+        // incase it did take more than 2 seconds to log.
+        _monitor.waitForMessage(SUB_PREFIX, 2000);
 
+        //Validate
         List<String> results = _monitor.findMatches(SUB_PREFIX);
 
-        assertEquals("Result set larger than expected.", 1, results.size());
+        assertEquals("Result set not as expected.", 1, results.size());
 
         String log = getLog(results.get(0));
 
