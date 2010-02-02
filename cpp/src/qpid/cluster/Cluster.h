@@ -120,6 +120,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     bool isElder() const;
 
+    // For debugging only. Can only be called in deliver thread.
+    void debugSnapshot(const char*, Connection* =0);
+
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
@@ -178,10 +181,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
     void erase(const ConnectionId&, Lock&);       
-
     void initMapCompleted(Lock&);
-
-
+    void becomeElder(Lock&);
 
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 
@@ -201,8 +202,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         const struct cpg_address */*left*/, int /*nLeft*/,
         const struct cpg_address */*joined*/, int /*nJoined*/
     );
-
-    void becomeElder();
 
     // == Called in management threads.
     virtual qpid::management::ManagementObject* GetManagementObject() const;

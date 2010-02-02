@@ -195,6 +195,11 @@ struct GiveReadCreditOnExit {
     ~GiveReadCreditOnExit() { connection.giveReadCredit(credit); }
 };
 
+void Connection::deliverDoOutput(uint32_t limit) {
+    output.deliverDoOutput(limit);
+    cluster.debugSnapshot("deliver-do-output", this);
+}
+
 // Called in delivery thread, in cluster order.
 void Connection::deliveredFrame(const EventFrame& f) {
     GiveReadCreditOnExit gc(*this, f.readCredit);
