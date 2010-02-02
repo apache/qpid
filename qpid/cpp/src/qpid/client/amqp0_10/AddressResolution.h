@@ -56,7 +56,8 @@ class AddressResolution
 
     static qpid::messaging::Address convert(const qpid::framing::ReplyTo&);
     static qpid::framing::ReplyTo convert(const qpid::messaging::Address&);
-
+    static bool is_unreliable(const qpid::messaging::Address& address);
+    static bool is_reliable(const qpid::messaging::Address& address);
   private:
 };
 }}} // namespace qpid::client::amqp0_10

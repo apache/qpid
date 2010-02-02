@@ -32,12 +32,17 @@ namespace amqp0_10 {
 SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name, 
                        const qpid::messaging::Address& _address) : 
     parent(_parent), name(_name), address(_address), state(UNRESOLVED),
-    capacity(50), window(0), flushed(false) {}
+    capacity(50), window(0), flushed(false), unreliable(AddressResolution::is_unreliable(address)) {}
 
 void SenderImpl::send(const qpid::messaging::Message& message) 
 {
-    Send f(*this, &message);
-    while (f.repeat) parent.execute(f);
+    if (unreliable) {
+        UnreliableSend f(*this, &message);
+        parent.execute(f);
+    } else {
+        Send f(*this, &message);
+        while (f.repeat) parent.execute(f);
+    }
 }
 
 void SenderImpl::close()
@@ -78,7 +83,7 @@ void SenderImpl::init(qpid::client::AsyncSession s, AddressResolution& resolver)
 void SenderImpl::waitForCapacity() 
 {
     //TODO: add option to throw exception rather than blocking?
-    if (capacity <= (flushed ? checkPendingSends(false) : outgoing.size())) {
+    if (!unreliable && capacity <= (flushed ? checkPendingSends(false) : outgoing.size())) {
         //Initial implementation is very basic. As outgoing is
         //currently only reduced on receiving completions and we are
         //blocking anyway we may as well sync(). If successful that
@@ -93,14 +98,21 @@ void SenderImpl::waitForCapacity()
     }
 }
 
-void SenderImpl::sendImpl(const qpid::messaging::Message& m) 
+void SenderImpl::sendImpl(const qpid::messaging::Message& m)
 {
-    //TODO: make recording for replay optional (would still want to track completion however)
     std::auto_ptr<OutgoingMessage> msg(new OutgoingMessage());
     msg->convert(m);
     msg->setSubject(m.getSubject().empty() ? address.getSubject() : m.getSubject());
     outgoing.push_back(msg.release());
     sink->send(session, name, outgoing.back());
+}
+
+void SenderImpl::sendUnreliable(const qpid::messaging::Message& m)
+{
+    OutgoingMessage msg;
+    msg.convert(m);
+    msg.setSubject(m.getSubject().empty() ? address.getSubject() : m.getSubject());
+    sink->send(session, name, msg);
 }
 
 void SenderImpl::replay()
