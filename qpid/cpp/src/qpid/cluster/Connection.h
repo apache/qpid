@@ -205,7 +205,7 @@ class Connection :
     
     void init();
     bool checkUnsupported(const framing::AMQBody& body);
-    void deliverDoOutput(uint32_t limit) { output.deliverDoOutput(limit); }
+    void deliverDoOutput(uint32_t limit);
 
     boost::shared_ptr<broker::Queue> findQueue(const std::string& qname);
     broker::SessionState& sessionState();
