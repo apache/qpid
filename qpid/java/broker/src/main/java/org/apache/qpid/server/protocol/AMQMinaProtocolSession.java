@@ -388,11 +388,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                             evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR,
                                                                    AMQConstant.CHANNEL_ERROR.getName().toString());
 
+                    _logger.info(e.getMessage() + " whilst processing:" + methodBody);
                     closeConnection(channelId, ce, false);
                 }
             }
             catch (AMQConnectionException e)
             {
+                _logger.info(e.getMessage() + " whilst processing:" + methodBody);
                 closeConnection(channelId, e, false);
             }
         }
@@ -708,7 +710,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Closing connection due to: " + e.getMessage());
+            _logger.info("Closing connection due to: " + e);
         }
 
         markChannelAwaitingCloseOk(channelId);
