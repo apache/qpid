@@ -474,7 +474,6 @@ void Cluster::deliveredFrame(const EventFrame& efConst) {
 
 
 void Cluster::processFrame(const EventFrame& e, Lock& l) {
-    map.incrementFrameSeq();
     if (e.isCluster()) {
         QPID_LOG(trace, *this << " DLVR: " << e);
         ClusterDispatcher dispatch(*this, e.connectionId.getMember(), l);
@@ -482,6 +481,7 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
             throw Exception(QPID_MSG("Invalid cluster control"));
     }
     else if (state >= CATCHUP) {
+        map.incrementFrameSeq();
         ConnectionPtr connection = getConnection(e, l);
         if (connection) {
             QPID_LOG(trace, *this << " DLVR " << map.getFrameSeq() << ":  " << e);
