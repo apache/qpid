@@ -249,7 +249,8 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
 int ManagementAgentImpl::getSignalFd()
 {
     if (extThread) {
-        pipeHandle = new PipeHandle(true);
+        if (pipeHandle == 0)
+            pipeHandle = new PipeHandle(true);
         return pipeHandle->getReadHandle();
     }
 
