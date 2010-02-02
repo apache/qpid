@@ -79,7 +79,9 @@ framing::SequenceNumber loadSeqNum(const fs::path& path) {
 
 
 void StoreStatus::load() {
-    if (dataDir.empty()) return;
+    if (dataDir.empty()) {
+        throw Exception(QPID_MSG("No data-dir: When a store is loaded together with clustering, --data-dir must be specified."));
+    }
     fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
     try {
         create_directory(dir);
