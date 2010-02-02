@@ -63,6 +63,7 @@ struct Options : public qpid::Options
     std::string content;
     uint tx;
     uint rollbackFrequency;
+    uint capacity;
     qpid::log::Options log;
 
     Options(const std::string& argv0=std::string())
@@ -76,6 +77,7 @@ struct Options : public qpid::Options
           ttl(0),
           tx(0),
           rollbackFrequency(0),
+          capacity(0),
           log(argv0)
     {
         addOptions()
@@ -94,6 +96,7 @@ struct Options : public qpid::Options
             ("correlation-id", qpid::optValue(correlationid, "ID"), "correlation-id for message")
             ("user-id", qpid::optValue(userid, "USERID"), "userid for message")
             ("content", qpid::optValue(content, "CONTENT"), "specify textual content")
+            ("capacity", qpid::optValue(capacity, "N"), "size of the senders outgoing message queue")
             ("tx", qpid::optValue(tx, "N"), "batch size for transactions (0 implies transaction are not used)")
             ("rollback-frequency", qpid::optValue(rollbackFrequency, "N"), "rollback frequency (0 implies no transaction will be rolledback)")
             ("help", qpid::optValue(help), "print this usage statement");
@@ -184,6 +187,7 @@ int main(int argc, char ** argv)
             connection.open(opts.url);
             Session session = connection.newSession(opts.tx > 0);
             Sender sender = session.createSender(opts.address);
+            if (opts.capacity) sender.setCapacity(opts.capacity);
             Message msg;
             msg.setDurable(opts.durable);
             if (opts.ttl) {
