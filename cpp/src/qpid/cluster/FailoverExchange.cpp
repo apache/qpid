@@ -45,8 +45,12 @@ FailoverExchange::FailoverExchange(management::Manageable* parent) : Exchange(TY
         mgmtExchange->set_type(TYPE_NAME);
 }
 
-
 void FailoverExchange::setUrls(const vector<Url>& u) {
+    Lock l(lock);
+    urls = u;
+}
+
+void FailoverExchange::updateUrls(const vector<Url>& u) {
     Lock l(lock);
     urls=u;
     if (urls.empty()) return;

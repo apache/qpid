@@ -41,8 +41,11 @@ class FailoverExchange : public broker::Exchange
     static const std::string TYPE_NAME;
 
     FailoverExchange(management::Manageable* parent);
-    
+
+    /** Set the URLs but don't send an update.*/
     void setUrls(const std::vector<Url>&);
+    /** Set the URLs and send an update.*/
+    void updateUrls(const std::vector<Url>&);
 
     // Exchange overrides
     std::string getType() const;
