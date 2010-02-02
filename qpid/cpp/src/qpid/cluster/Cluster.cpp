@@ -826,7 +826,7 @@ void Cluster::checkUpdateIn(Lock& l) {
     if (state != UPDATEE) return; // Wait till we reach the stall point.
     if (updatedMap) { // We're up to date
         map = *updatedMap;
-        memberUpdate(l);
+        failoverExchange->setUrls(getUrls(l));
         mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
         state = CATCHUP;
         broker.setClusterUpdatee(false);
@@ -908,9 +908,9 @@ void Cluster::memberUpdate(Lock& l) {
     std::vector<Url> urls = getUrls(l);
     std::vector<string> ids = getIds(l);
     size_t size = urls.size();
-    failoverExchange->setUrls(urls);
+    failoverExchange->updateUrls(urls);
 
-    if (size == 1 && lastSize > 1 && state >= CATCHUP) { 
+    if (size == 1 && lastSize > 1 && state >= CATCHUP) {
         QPID_LOG(notice, *this << " last broker standing, update queue policies");
         lastBroker = true;
         broker.getQueues().updateQueueClusterState(true);

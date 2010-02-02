@@ -272,7 +272,7 @@ QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
     c0.session.queueDeclare("q", arg::durable=durableFlag);
     c0.session.messageTransfer(arg::content=ttlMessage("a", "q", 200, durableFlag));
     c0.session.messageTransfer(arg::content=makeMessage("b", "q", durableFlag));
-    c0.session.messageTransfer(arg::content=ttlMessage("x", "p", 10000, durableFlag));
+    c0.session.messageTransfer(arg::content=ttlMessage("x", "p", 100000, durableFlag));
     c0.session.messageTransfer(arg::content=makeMessage("y", "p", durableFlag));
     cluster.add();
     Client c2(cluster[1], "c2");
