@@ -466,9 +466,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                                  // was False
                                                                  if (!_suspendState.getAndSet(true))
                                                                  {
-                                                                     _logger.debug(
-                                                                             "Above threshold(" + _prefetchHighMark
-                                                                             + ") so suspending channel. Current value is " + currentValue);
+                                                                     if (_logger.isDebugEnabled())
+                                                                     {
+                                                                         _logger.debug(
+                                                                                 "Above threshold(" + _prefetchHighMark
+                                                                                 + ") so suspending channel. Current value is " + currentValue);
+                                                                     }
                                                                      new Thread(new SuspenderRunner(_suspendState)).start();
                                                                  }
                                                              }
@@ -484,9 +487,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                                  // was true
                                                                  if (_suspendState.getAndSet(false))
                                                                  {
-                                                                     _logger.debug(
-                                                                             "Below threshold(" + _prefetchLowMark
-                                                                             + ") so unsuspending channel. Current value is " + currentValue);
+                                                                     if (_logger.isDebugEnabled())
+                                                                     {
+
+                                                                         _logger.debug(
+                                                                                 "Below threshold(" + _prefetchLowMark
+                                                                                 + ") so unsuspending channel. Current value is " + currentValue);
+                                                                     }
                                                                     new Thread(new SuspenderRunner(_suspendState)).start();
                                                                  }
                                                              }
