@@ -104,7 +104,7 @@ class FieldTable
     ValueMap::iterator end() { return values.end(); }
     ValueMap::iterator find(const std::string& s) { return values.find(s); }
 
-    std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
+    QPID_COMMON_EXTERN std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
     QPID_COMMON_EXTERN ValueMap::iterator insert(ValueMap::iterator, const ValueMap::value_type&);
     void clear() { values.clear(); }
 
