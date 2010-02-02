@@ -112,3 +112,5 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#*
 
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
 
+org.apache.qpid.server.queue.ConflationQueueTest#*
+
