@@ -11,27 +11,28 @@
 8.  Rudimentary AMQP type support for headers (Int and String)
 9.  Channel functional tests using NUnit
 10. Programming samples
+11. Prefetch window for inbound messages
+12. Full distributed transaction support with single phase optimization.
 
 
 2. Planned features (not yet available)
 =======================================
 
 1.  Full AMQP type support, including maps and arrays
-2.  System.Transactions integration (local and distributed with dynamic escalation)
-3.  Prefetch window for inbound messages
-4.  Shared sessions
-5.  Connection failover with AMQP broker clusters
-6.  Temporary queues
-7.  Broker management
-8.  System logging and tracing
-9.  CMake build system support
-10. Transport and message based security
+2.  AMQP session-based local transactions.
+3.  Shared sessions
+4.  Connection failover with AMQP broker clusters
+5.  Temporary queues
+6.  Broker management
+7.  System logging and tracing
+8.  CMake build system support
+9.  Transport and message based security
 
 
 3. Prerequisites
 ================
 
-1. Qpid C++ client and common libraries for Windows including BOOST
+1. Qpid C++ client and common libraries for Windows including BOOST.
 Ensure the location of the Boost library (e.g. %BOOST_ROOT%\lib) is
 included in your PATH environment variable.
 
@@ -48,14 +49,20 @@ Install NUnit from http://www.nunit.org
 NOTE: In the following instructions %QPID_ROOT% refers to the root of
 qpid source code location e.g. C:\trunk\qpid
 
-5. Build Qpid cpp
-Build at least the "qpidd", "qpidclient" and "qpidcommon" projects.
-Create an environment variable called QPID_BUILD_ROOT and store the 
-path to the Qpid build directory in it.
+5. Build Qpid cpp according to the instuctions in INSTALL-WINDOWS.
+Build at least the "qpidd", "qpidxarm", "qpidclient" and "qpidcommon"
+projects. Optionally build "perftest" for use with the WcfPerftest
+interoperability and performance test program.  Create an environment
+variable called QPID_BUILD_ROOT and store the path to the Qpid build
+directory in it.  Use the same BOOST_ROOT environment variable for
+building both Qpid cpp and WCF related solutions.
 
 
 4. Building the solution file
 =============================
+
+Ensure that BOOST_ROOT and QPID_BUILD_ROOT environment variables are
+set as described above.
 
 Option 1: Using MSBuild
 
@@ -95,11 +102,11 @@ WCFToWCFDirect
 
 2. Build the solution WCFToWCFDirect.sln.
 
-3. Copy qpidclient.dll and qpidcommon.dll from the Qpid build folder
+3. Copy qpidclientd.dll and qpidcommond.dll from the Qpid build folder
    e.g. %QPID_ROOT%\cpp\build\src\Debug to the same location as the exe files
    e.g. bin\Debug of each of the projects. These dlls are needed at runtime.
 
-4. Copy qpidclient.dll and qpidcommon.dll to %QPID_ROOT%\wcf\tools\QCreate\Debug folder.
+4. Copy qpidclientd.dll and qpidcommond.dll to %QPID_ROOT%\wcf\tools\QCreate\Debug folder.
 
 5. Start the qpid broker from the qpid build folder e.g. %QPID_ROOT%\cpp\build\src\Debug.
 
@@ -123,11 +130,11 @@ WCFToWCFPubSub
 
 2. Build the solution WCFToWCFPubSub.sln.
 
-3. Copy qpidclient.dll and qpidcommon.dll from the Qpid build folder
+3. Copy qpidclientd.dll and qpidcommond.dll from the Qpid build folder
    e.g. %QPID_ROOT%\cpp\build\src\Debug to the same location as the exe files
    e.g. bin\Debug of each of the projects. These dlls are needed at runtime.
 
-4. Copy qpidclient.dll and qpidcommon.dll to %QPID_ROOT%\wcf\tools\QCreate\Debug folder.
+4. Copy qpidclientd.dll and qpidcommond.dll to %QPID_ROOT%\wcf\tools\QCreate\Debug folder.
 
 5. Start the qpid broker from the qpid build folder e.g. %QPID_ROOT%\cpp\build\src\Debug.
 
@@ -148,15 +155,35 @@ WCFToWCFPubSub
    %QPID_ROOT%\wcf\samples\Channel\WCFToWCFPubSub\Topic_Producer\bin\Debug.
 
 
-7. Known Issues
+7. Configuring Transaction Support
+==================================
+
+1. Following the instructions in http://support.microsoft.com/kb/817066, update
+   the MSDTC security settings to allow XA transactions, and create an XADLL
+   registry entry for "qpidxarm" with string (REG_SZ) value
+   "c:\actual\path\to\qpidxarm.dll".
+
+2. Update the PATH environment variable for system programs and services to 
+   include the locations for the Release versions of each following dll:
+
+   Apache.Qpid.Channel.dll
+   Apache.Qpid.Interop.dll
+   qpidclient.dll
+   qpidcommon.dll
+   boost*.dll
+
+3. Restart the Distributed Transaction Coordinator service, so that it runs 
+   using the new PATH and MSDTC settings from the previous steps.
+
+
+8. Known Issues
 ===============
 
-1. The Release configuration of the build (specified using the
-   /p:Configuration=Release switch with MSBuild) fails.
-
-2. The AmqpChannelListener is limited to single threaded use and the async methods
+1. The AmqpChannelListener is limited to single threaded use and the async methods
    throw NotImplementedException.
 
-3. The AmqpChannelListener can hang on close for 60 seconds.
+2. Failing to close WCF channels after use can sometimes lead to BOOST timeout
+   exceptions in the finalizer thread.  As a workaround, applications should
+   close all Qpid WCF services, listeners and channel factories before exiting.
 
 
