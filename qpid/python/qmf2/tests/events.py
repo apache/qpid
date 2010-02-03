@@ -114,7 +114,7 @@ class _agentApp(Thread):
                                     QmfEvent.SEV_WARNING,
                                     {"prop-1": counter,
                                      "prop-2": str(datetime.datetime.utcnow())},
-                                    _schema=self.schema)
+                                    _schema_id=self.schema.get_class_id())
             counter += 1
             self.agent.raise_event(event)
             wi = self.agent.get_next_workitem(timeout=0)
