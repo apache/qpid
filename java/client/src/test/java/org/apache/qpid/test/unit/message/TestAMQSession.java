@@ -175,4 +175,12 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     public void sync()
     {
     }
+
+    public void handleAddressBasedDestination(AMQDestination dest, 
+                                              boolean isConsumer, 
+                                              boolean noWait) throws AMQException
+    {
+        throw new UnsupportedOperationException("The new addressing based sytanx is "
+                + "not supported for AMQP 0-8/0-9 versions");
+    }
 }

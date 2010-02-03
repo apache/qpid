@@ -17,34 +17,39 @@
  */
 package org.apache.qpid.client;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.nio.ByteBuffer;
+import static org.apache.qpid.transport.Option.NONE;
+import static org.apache.qpid.transport.Option.SYNC;
 
+import java.nio.ByteBuffer;
+import java.util.UUID;
+
+import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.DeliveryMode;
 
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.FiledTableSupport;
+import org.apache.qpid.client.AMQDestination.AddressOption;
+import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageAcceptMode;
+import org.apache.qpid.transport.MessageAcquireMode;
+import org.apache.qpid.transport.MessageDeliveryMode;
+import org.apache.qpid.transport.MessageDeliveryPriority;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.Option;
 import org.apache.qpid.util.Strings;
-import org.apache.qpid.njms.ExceptionHelper;
-import org.apache.qpid.transport.*;
-import static org.apache.qpid.transport.Option.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a 0_10 message producer.
  */
 public class BasicMessageProducer_0_10 extends BasicMessageProducer
 {
+    private static final Logger _logger = LoggerFactory.getLogger(BasicMessageProducer_0_10.class);
     private byte[] userIDBytes;
 
     BasicMessageProducer_0_10(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
@@ -59,12 +64,27 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     void declareDestination(AMQDestination destination)
     {
-        String name = destination.getExchangeName().toString();
-        ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare
-            (name,
-             destination.getExchangeClass().toString(),
-             null, null,
-             name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
+        if (destination.getDestSyntax() == DestSyntax.BURL)
+        {
+            String name = destination.getExchangeName().toString();
+            ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare
+                (name,
+                 destination.getExchangeClass().toString(),
+                 null, null,
+                 name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
+        }
+        else
+        {       
+            try
+            {
+                getSession().handleAddressBasedDestination(destination,false,false);
+            }
+            catch(Exception e)
+            {
+                // Idealy this should be thrown to the JMS layer.
+                _logger.warn("Exception occured while verifying destination",e);
+            }
+        }
     }
 
     //--- Overwritten methods
@@ -136,7 +156,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             deliveryProp.setPriority(MessageDeliveryPriority.get((short) priority));
             message.setJMSPriority(priority);
         }
-        String exchangeName = destination.getExchangeName().toString();
+        String exchangeName = destination.getExchangeName() == null ? "" : destination.getExchangeName().toString();
         if ( deliveryProp.getExchange() == null || ! deliveryProp.getExchange().equals(exchangeName))
         {
             deliveryProp.setExchange(exchangeName);
@@ -166,7 +186,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             org.apache.mina.common.ByteBuffer data = message.getData();
             ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.buf().slice();
             
-            ssn.messageTransfer(destination.getExchangeName().toString(), MessageAcceptMode.NONE,
+            ssn.messageTransfer(destination.getExchangeName() == null ? "" : destination.getExchangeName().toString(), 
+                                MessageAcceptMode.NONE,
                                 MessageAcquireMode.PRE_ACQUIRED,
                                 new Header(deliveryProp, messageProps),
                     buffer, sync ? SYNC : NONE);
