@@ -34,13 +34,13 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.apache.configuration.ClientProperties;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.test.utils.QpidTestCase;
