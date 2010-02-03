@@ -29,12 +29,12 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.TopicSession;
 
-import org.apache.configuration.ClientProperties;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionDelegate_0_10;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidTestCase;
 
