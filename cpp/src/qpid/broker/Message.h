@@ -161,6 +161,8 @@ public:
     void setDequeueCompleteCallback(MessageCallback& cb);
     void resetDequeueCompleteCallback();
 
+    uint8_t getPriority() const;
+
   private:
     typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
 
