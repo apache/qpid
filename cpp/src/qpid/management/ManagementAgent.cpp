@@ -194,6 +194,7 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
     }
 
     ObjectId objId(0 /*flags*/ , sequence, brokerBank, 0, objectNum);
+    objId.setV2Key(object->getKey());
 
     object->setObjectId(objId);
     newManagementObjects[objId] = object;

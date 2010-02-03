@@ -169,6 +169,21 @@ void ManagementObject::writeTimestamps (framing::Buffer& buf)
     objectId.encode(buf);
 }
 
+void ManagementObject::readTimestamps (framing::Buffer& buf)
+{
+    std::string unused;
+    uint8_t unusedUuid[16];
+    ObjectId unusedObjectId;
+
+    buf.getShortString(unused);
+    buf.getShortString(unused);
+    buf.getBin128(unusedUuid);
+    updateTime = buf.getLongLong();
+    createTime = buf.getLongLong();
+    destroyTime = buf.getLongLong();
+    unusedObjectId.decode(buf);
+}
+
 void ManagementObject::setReference(ObjectId) {}
 
 int ManagementObject::getThreadIndex() {
