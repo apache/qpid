@@ -26,6 +26,7 @@
 #include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
+#include <iostream>
 
 using namespace qmf::/*MGEN:Class.Namespace*/;
 using namespace qpid::framing;
@@ -123,6 +124,17 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 }
 /*MGEN:ENDIF*/
 
+void /*MGEN:Class.NameCap*/::readProperties (Buffer& buf)
+{
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    readTimestamps(buf);
+/*MGEN:IF(Class.ExistOptionals)*/
+    for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
+        presenceMask[idx] = buf.getOctet();
+/*MGEN:ENDIF*/
+/*MGEN:Class.ReadProperties*/
+}
+
 void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf)
 {
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
@@ -178,3 +190,12 @@ void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
     outBuf.putLong(status);
     outBuf.putShortString(Manageable::StatusText(status, text));
 }
+
+std::string /*MGEN:Class.NameCap*/::getKey() const
+{
+    std::stringstream key;
+
+/*MGEN:Class.PrimaryKey*/
+    return key.str();
+}
+

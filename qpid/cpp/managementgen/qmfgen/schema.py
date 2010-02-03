@@ -58,6 +58,7 @@ class SchemaType:
     self.encode    = None
     self.decode    = None
     self.style     = "normal"
+    self.stream    = "#"
     self.accessor  = None
     self.init      = "0"
     self.perThread = False
@@ -84,6 +85,9 @@ class SchemaType:
 
       elif key == 'style':
         self.style = val
+
+      elif key == 'stream':
+        self.stream = val
 
       elif key == 'accessor':
         self.accessor = val
@@ -199,6 +203,9 @@ class SchemaType:
       stream.write ("        threadStats->" + varName + "Total = 0;\n")
       stream.write ("        threadStats->" + varName + "Min   = std::numeric_limits<" + cpptype + ">::max();\n")
       stream.write ("        threadStats->" + varName + "Max   = std::numeric_limits<" + cpptype + ">::min();\n")
+
+  def genRead (self, stream, varName, indent="    "):
+    stream.write(indent + self.decode.replace("@", "buf").replace("#", varName) + ";\n")
 
   def genWrite (self, stream, varName, indent="    "):
     if self.style != "mma":
@@ -380,6 +387,15 @@ class SchemaProperty:
     if self.desc != None:
       stream.write ("    ft.setString (DESC,   \"" + self.desc   + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
+
+  def genRead (self, stream):
+    indent = "    "
+    if self.isOptional:
+      stream.write("    if (presenceMask[presenceByte_%s] & presenceMask_%s) {\n" % (self.name, self.name))
+      indent = "        "
+    self.type.type.genRead (stream, self.name, indent)
+    if self.isOptional:
+      stream.write("    }\n")
 
   def genWrite (self, stream):
     indent = "    "
@@ -1054,6 +1070,19 @@ class SchemaClass:
       if element.type.type.perThread:
         element.genDeclaration (stream, "        ")
 
+  def genPrimaryKey (self, stream, variables):
+    first = 1
+    for prop in self.properties:
+      if prop.isIndex == 1:
+        if first:
+          first = None
+        else:
+          stream.write(" << \",\";\n")
+        var = prop.type.type.stream.replace("#", prop.getName())
+        stream.write("    key << %s" % var)
+    if not first:
+      stream.write(";")
+
   def genNamespace (self, stream, variables):
     stream.write("::".join(self.packageName.split(".")))
 
@@ -1181,6 +1210,10 @@ class SchemaClass:
     for inst in self.statistics:
       if inst.type.type.perThread:
         inst.genAssign (stream)
+
+  def genReadProperties (self, stream, variables):
+    for prop in self.properties:
+      prop.genRead (stream)
 
   def genWriteProperties (self, stream, variables):
     for prop in self.properties:

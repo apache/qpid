@@ -51,6 +51,7 @@ protected:
     const AgentAttachment* agent;
     uint64_t first;
     uint64_t second;
+    std::string v2Key;
     void fromString(const std::string&);
 public:
     QPID_COMMON_EXTERN ObjectId() : agent(0), first(0), second(0) {}
@@ -63,6 +64,8 @@ public:
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
     QPID_COMMON_EXTERN void encode(framing::Buffer& buffer);
     QPID_COMMON_EXTERN void decode(framing::Buffer& buffer);
+    QPID_COMMON_EXTERN void setV2Key(const std::string& key) { v2Key = key; }
+    QPID_COMMON_EXTERN const std::string& getV2Key() const { return v2Key; }
     friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const ObjectId&);
 };
 
@@ -128,6 +131,7 @@ protected:
 
     QPID_COMMON_EXTERN int  getThreadIndex();
     QPID_COMMON_EXTERN void writeTimestamps(qpid::framing::Buffer& buf);
+    QPID_COMMON_EXTERN void readTimestamps(qpid::framing::Buffer& buf);
 
   public:
     QPID_COMMON_EXTERN static int maxThreads;
@@ -141,12 +145,14 @@ protected:
     virtual ~ManagementObject() {}
 
     virtual writeSchemaCall_t getWriteSchemaCall() = 0;
+    virtual void readProperties(qpid::framing::Buffer& buf) = 0;
     virtual void writeProperties(qpid::framing::Buffer& buf) = 0;
     virtual void writeStatistics(qpid::framing::Buffer& buf,
                                  bool skipHeaders = false) = 0;
     virtual void doMethod(std::string&           methodName,
                           qpid::framing::Buffer& inBuf,
                           qpid::framing::Buffer& outBuf) = 0;
+    virtual std::string getKey() const = 0;
     QPID_COMMON_EXTERN virtual void setReference(ObjectId objectId);
 
     virtual std::string& getClassName() const = 0;
