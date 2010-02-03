@@ -21,6 +21,9 @@
 package org.apache.qpid.client;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import javax.jms.Destination;
 import javax.naming.NamingException;
@@ -28,26 +31,35 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 
+import org.apache.qpid.client.messaging.address.AddressHelper;
+import org.apache.qpid.client.messaging.address.QpidExchangeOptions;
+import org.apache.qpid.client.messaging.address.QpidQueueOptions;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.messaging.Address;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public abstract class AMQDestination implements Destination, Referenceable
 {
-    protected final AMQShortString _exchangeName;
+    private static final Logger _logger = LoggerFactory.getLogger(AMQDestination.class);
+    
+    protected AMQShortString _exchangeName;
 
-    protected final AMQShortString _exchangeClass;
+    protected AMQShortString _exchangeClass;
 
-    protected final boolean _isDurable;
+    protected boolean _isDurable;
 
-    protected final boolean _isExclusive;
+    protected boolean _isExclusive;
 
-    protected final boolean _isAutoDelete;
+    protected boolean _isAutoDelete;
 
-    private final boolean _browseOnly;
+    private boolean _browseOnly;
 
     private AMQShortString _queueName;
 
@@ -70,13 +82,107 @@ public abstract class AMQDestination implements Destination, Referenceable
     public static final int QUEUE_TYPE = 1;
     public static final int TOPIC_TYPE = 2;
     public static final int UNKNOWN_TYPE = 3;
+    
+    // ----- Fields required to support new address syntax -------
+    
+    public enum DestSyntax {        
+      BURL,ADDR;
+      
+      public static DestSyntax getSyntaxType(String s)
+      {
+          if (("BURL").equals(s))
+          {
+              return BURL;
+          }
+          else if (("ADDR").equals(s))
+          {
+              return ADDR;
+          }
+          else
+          {
+              throw new IllegalArgumentException("Invalid Destination Syntax Type" +
+                                                 " should be one of {BURL|ADDR}");
+          }
+      }
+    } 
+    
+    public enum AddressOption { 
+      ALWAYS, NEVER, SENDER, RECEIVER; 
+        
+      public static AddressOption getOption(String str)
+      {
+          if ("always".equals(str)) return ALWAYS;
+          else if ("never".equals(str)) return NEVER;
+          else if ("sender".equals(str)) return SENDER;
+          else if ("receiver".equals(str)) return RECEIVER;
+          else throw new IllegalArgumentException(str + " is not an allowed value");
+      }
+    }
+    
+    public enum FilterType { SQL92, XQUERY, SUBJECT }
+    
+    protected static DestSyntax defaultDestSyntax;
+    
+    protected DestSyntax _destSyntax;
 
-    protected AMQDestination(String url) throws URISyntaxException
+    protected Address _address;
+    protected String _name;
+    protected String _subject;
+    protected AddressOption _create = AddressOption.NEVER;
+    protected AddressOption _assert = AddressOption.ALWAYS;
+    protected AddressOption _delete = AddressOption.NEVER;
+    
+    protected String _filter;
+    protected FilterType _filterType = FilterType.SUBJECT;
+    protected boolean _isNoLocal;
+    protected int _nodeType = QUEUE_TYPE;
+    protected String _alternateExchange;
+    protected QpidQueueOptions _queueOptions;
+    protected QpidExchangeOptions _exchangeOptions;
+    protected List<Binding> _bindings = new ArrayList<Binding>();
+    // ----- / Fields required to support new address syntax -------
+    
+    static
     {
-        this(new AMQBindingURL(url));
+        defaultDestSyntax = DestSyntax.getSyntaxType(
+                     System.getProperty(ClientProperties.DEST_SYNTAX,
+                                        DestSyntax.BURL.toString()));
+    }
+    
+    protected AMQDestination(Address address)
+    {
+        this._address = address;
+        getInfoFromAddress();
+        _destSyntax = DestSyntax.ADDR;
+        _logger.info("Based on " + address + " the selected destination syntax is " + _destSyntax);
+    }
+    
+    protected AMQDestination(String str) throws URISyntaxException
+    {
+        if (str.startsWith("BURL:") || 
+           (!str.startsWith("ADDR:") && defaultDestSyntax == DestSyntax.BURL))
+        {            
+            _destSyntax = DestSyntax.BURL;
+            getInfoFromBindingURL(new AMQBindingURL(str));            
+        }
+        else
+        {
+            _destSyntax = DestSyntax.ADDR;
+            this._address = createAddressFromString(str);
+            getInfoFromAddress();
+        }
+        _logger.info("Based on " + str + " the selected destination syntax is " + _destSyntax);
+    }
+    
+    //retained for legacy support
+    protected AMQDestination(BindingURL binding)
+    {
+        getInfoFromBindingURL(binding);
+        _destSyntax = DestSyntax.BURL;
+        _logger.info("Based on " + binding + " the selected destination syntax is " + _destSyntax);
     }
 
-    protected AMQDestination(BindingURL binding)
+    protected void getInfoFromBindingURL(BindingURL binding)
     {
         _exchangeName = binding.getExchangeName();
         _exchangeClass = binding.getExchangeClass();
@@ -153,7 +259,9 @@ public abstract class AMQDestination implements Destination, Referenceable
         _queueName = queueName;
         _isDurable = isDurable;
         _bindingKeys = bindingKeys == null || bindingKeys.length == 0 ? new AMQShortString[0] : bindingKeys;
+        _destSyntax = DestSyntax.BURL;
         _browseOnly = browseOnly;
+        _logger.info("Based on " + toString() + " the selected destination syntax is " + _destSyntax);
     }
 
     public AMQShortString getEncodedName()
@@ -243,7 +351,14 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     public String toString()
     {
-        return toURL();
+        if (_destSyntax == DestSyntax.BURL)
+        {
+            return toURL();
+        }
+        else
+        {
+            return _address.toString();
+        }
 
     }
 
@@ -424,8 +539,8 @@ public abstract class AMQDestination implements Destination, Referenceable
     public int hashCode()
     {
         int result;
-        result = _exchangeName.hashCode();
-        result = 29 * result + _exchangeClass.hashCode();
+        result = _exchangeName == null ? "".hashCode() : _exchangeName.hashCode();
+        result = 29 * result + (_exchangeClass == null ? "".hashCode() :_exchangeClass.hashCode());
         //result = 29 * result + _destinationName.hashCode();
         if (_queueName != null)
         {
@@ -512,6 +627,163 @@ public abstract class AMQDestination implements Destination, Referenceable
             return new AMQAnyDestination(binding);
         }
     }
+
+    // ----- new address syntax -----------
+    public static class Binding
+    {
+        String exchange;
+        String bindingKey;
+        Map<String,Object> args;
+        
+        public Binding(String exchange,String bindingKey,Map<String,Object> args)
+        {
+            this.exchange = exchange;
+            this.bindingKey = bindingKey;
+            this.args = args;
+        }
+        
+        public String getExchange() 
+        {
+            return exchange;
+        }
+
+        public String getBindingKey() 
+        {
+            return bindingKey;
+        }
+        
+        public Map<String, Object> getArgs() 
+        {
+            return args;
+        }
+    }
+    
+    public Address getAddress() {
+        return _address;
+    }
+    
+    public String getName() {
+        return _name;
+    }
+
+    public String getSubject() {
+        return _subject;
+    }
+
+    public AddressOption getCreate() {
+        return _create;
+    }
+
+    public AddressOption getAssert() {
+        return _assert;
+    }
+
+    public AddressOption getDelete() {
+        return _delete;
+    }
+
+    public String getFilter() {
+        return _filter;
+    }
+
+    public FilterType getFilterType() {
+        return _filterType;
+    }
+
+    public boolean isNoLocal() {
+        return _isNoLocal;
+    }
+
+    public int getNodeType() {
+        return _nodeType;
+    }
+
+    public QpidQueueOptions getQueueOptions() {
+        return _queueOptions;
+    }
+
+    public List<Binding> getBindings() {
+        return _bindings;
+    }
+
+    public void addBinding(Binding binding) {
+        this._bindings.add(binding);
+    }
+    
+    public DestSyntax getDestSyntax() {
+        return _destSyntax;
+    }
+    
+    public QpidExchangeOptions getExchangeOptions() {
+        return _exchangeOptions;
+    }
+
+    public String getAlternateExchange() {
+        return _alternateExchange;
+    }
+
+    public void setAlternateExchange(String alternateExchange) {
+        this._alternateExchange = alternateExchange;
+    }
+    
+    public void setExchangeName(AMQShortString name)
+    {
+        this._exchangeName = name;
+    }
+    
+    public void setExchangeClass(AMQShortString type)
+    {
+        this._exchangeClass = type;
+    }
+    
+    public void setRoutingKey(AMQShortString rk)
+    {
+        this._routingKey = rk;
+    }
+    
+    private Address createAddressFromString(String str)
+    {
+        if (str.startsWith("ADDR:"))
+        {
+            str = str.substring(str.indexOf(':')+1,str.length());
+        }
+       return Address.parse(str);
+    }
+    
+    private void getInfoFromAddress()
+    {
+        _name = _address.getName();
+        _subject = _address.getSubject();
+        
+        AddressHelper addrHelper = new AddressHelper(_address);
+        
+        _create = addrHelper.getCreate() != null ?
+                 AddressOption.getOption(addrHelper.getCreate()):AddressOption.NEVER;
+                
+        _assert = addrHelper.getAssert() != null ?
+                 AddressOption.getOption(addrHelper.getAssert()):AddressOption.ALWAYS;
+
+        _delete = addrHelper.getDelete() != null ?
+                 AddressOption.getOption(addrHelper.getDelete()):AddressOption.NEVER;
+                        
+        _filter = addrHelper.getFilter(); 
+        _isNoLocal = addrHelper.isNoLocal();
+        _isDurable = addrHelper.isDurable();
+        _isAutoDelete = addrHelper.isAutoDelete();
+        _isExclusive = addrHelper.isExclusive();
+        _browseOnly = addrHelper.isBrowseOnly();
+        
+        _nodeType = addrHelper.getNodeType() == null || addrHelper.getNodeType().equals("queue")?
+                   QUEUE_TYPE : TOPIC_TYPE;
+        
+        _alternateExchange = addrHelper.getAltExchange();
+        
+        _queueOptions = addrHelper.getQpidQueueOptions();
+        _exchangeOptions = addrHelper.getQpidExchangeOptions();
+        _bindings = addrHelper.getBindings();
+    }
+    
+    // ----- / new address syntax -----------    
 
     public boolean isBrowseOnly()
     {

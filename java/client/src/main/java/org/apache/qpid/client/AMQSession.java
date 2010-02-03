@@ -28,6 +28,8 @@ import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
+import org.apache.qpid.client.AMQDestination.AddressOption;
+import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
@@ -203,7 +205,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     protected final boolean DECLARE_EXCHANGES =
         Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
-
+    
     protected final boolean USE_AMQP_ENCODED_MAP_MESSAGE;
 
     /** System property to enable strict AMQP compliance. */
@@ -368,7 +370,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private boolean _dirty;
     /** Has failover occured on this session with outstanding actions to commit? */
     private boolean _failedOverDirty;
-
+    
     private static final class FlowControlIndicator
     {
         private volatile boolean _flowControl = true;
@@ -2095,7 +2097,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             if (tempDest.getSession() != this)
             {
                 _logger.debug("destination is on different session");
-                throw new JMSException("Cannot consume from a temporary destination created onanother session");
+                throw new JMSException("Cannot consume from a temporary destination created on another session");
             }
 
             if (tempDest.isDeleted())
@@ -2301,7 +2303,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         checkNotClosed();
                         long producerId = getNextProducerId();
                         P producer = createMessageProducer(destination, mandatory,
-                                                                              immediate, waitUntilSent, producerId);
+                                                           immediate, waitUntilSent, producerId);
                         registerProducer(producerId, producer);
 
                         return producer;
@@ -2535,15 +2537,23 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         AMQProtocolHandler protocolHandler = getProtocolHandler();
 
-        if (DECLARE_EXCHANGES)
+        if (amqd.getDestSyntax() == DestSyntax.ADDR)
         {
-            declareExchange(amqd, protocolHandler, nowait);
+            handleAddressBasedDestination(amqd,true,nowait);            
         }
-
-        if (DECLARE_QUEUES || amqd.isNameRequired())
+        else
         {
-            declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
+            if (DECLARE_EXCHANGES)
+            {
+                declareExchange(amqd, protocolHandler, nowait);
+            }
+    
+            if (DECLARE_QUEUES || amqd.isNameRequired())
+            {
+                declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
+            }
         }
+        
         AMQShortString queueName = amqd.getAMQQueueName();
 
         // store the consumer queue name
@@ -2589,6 +2599,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
+    public abstract void handleAddressBasedDestination(AMQDestination dest, 
+                                                       boolean isConsumer,
+                                                       boolean noWait) throws AMQException;
+    
     private void registerProducer(long producerId, MessageProducer producer)
     {
         _producers.put(new Long(producerId), producer);
