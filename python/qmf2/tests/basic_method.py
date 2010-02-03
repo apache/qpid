@@ -84,9 +84,8 @@ class _agentApp(Thread):
 
         # instantiate managed data objects matching the schema
 
-        _obj1 = QmfAgentData( self.agent, _schema=_schema )
-        _obj1.set_value("index1", 100)
-        _obj1.set_value("index2", "a name" )
+        _obj1 = QmfAgentData( self.agent, _schema=_schema,
+                              _values={"index1":100, "index2":"a name"})
         _obj1.set_value("set_string", "UNSET")
         _obj1.set_value("set_int", 0)
         _obj1.set_value("query_count", 0)
@@ -153,7 +152,8 @@ class _agentApp(Thread):
                         if obj is None:
                             error_info = QmfData.create({"code": -2, 
                                                          "description":
-                                                             "Bad Object Id."})
+                                                             "Bad Object Id."},
+                                                        _object_id="_error")
                             self.agent.method_response(wi.get_handle(),
                                                        _error=error_info)
                         else:
@@ -170,13 +170,15 @@ class _agentApp(Thread):
                         if obj is None:
                             error_info = QmfData.create({"code": -3, 
                                                          "description":
-                                                             "Unknown object id."})
+                                                             "Unknown object id."},
+                                                        _object_id="_error")
                             self.agent.method_response(wi.get_handle(),
                                                        _error=error_info)
                         elif obj.get_object_id() != "01545":
-                            error_info = QmfData.create({"code": -4, 
-                                                         "description":
-                                                             "Unexpected id."})
+                            error_info = QmfData.create( {"code": -4, 
+                                                          "description":
+                                                              "Unexpected id."},
+                                                         _object_id="_error")
                             self.agent.method_response(wi.get_handle(),
                                                        _error=error_info)
                         else:
@@ -187,15 +189,18 @@ class _agentApp(Thread):
                                 self.agent.method_response(wi.get_handle(),
                                                            {"code" : 0})
                             else:
-                                error_info = QmfData.create({"code": -5, 
-                                                             "description":
-                                                                 "Bad Args."})
+                                error_info = QmfData.create(
+                                    {"code": -5, 
+                                     "description":
+                                         "Bad Args."},
+                                    _object_id="_error")
                                 self.agent.method_response(wi.get_handle(),
                                                            _error=error_info)
                     else:
-                        error_info = QmfData.create({"code": -1, 
+                        error_info = QmfData.create( {"code": -1, 
                                                      "description":
-                                                         "Unknown method call."})
+                                                         "Unknown method call."},
+                                                     _object_id="_error")
                         self.agent.method_response(wi.get_handle(), _error=error_info)
 
                 self.agent.release_workitem(wi)
@@ -284,7 +289,7 @@ class BaseTest(unittest.TestCase):
         # find agents
         # synchronous query for all objects with schema
         # invalid method call on each object
-        #  - should throw a ValueError
+        #  - should throw a ValueError - NOT YET.
         self.notifier = _testNotifier()
         self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
@@ -313,11 +318,18 @@ class BaseTest(unittest.TestCase):
                 obj_list = self.console.do_query(agent, query)
                 self.assertTrue(len(obj_list) == 2)
                 for obj in obj_list:
-                    self.failUnlessRaises(ValueError,
-                                          obj.invoke_method,
-                                          "unknown_meth", 
-                                          {"arg1": -99, "arg2": "Now set!"},
-                                          _timeout=3)
+                    mr = obj.invoke_method("unknown_method",
+                                           {"arg1": -99, "arg2": "Now set!"},
+                                           _timeout=3)
+                    # self.failUnlessRaises(ValueError,
+                    #                       obj.invoke_method,
+                    #                       "unknown_meth", 
+                    #                       {"arg1": -99, "arg2": "Now set!"},
+                    #                       _timeout=3)
+                    self.assertTrue(isinstance(mr, qmf2.console.MethodResult))
+                    self.assertFalse(mr.succeeded())
+                    self.assertTrue(isinstance(mr.get_exception(), QmfData))
+
         self.console.destroy(10)
 
     def test_bad_method_no_schema(self):

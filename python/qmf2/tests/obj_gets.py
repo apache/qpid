@@ -74,14 +74,16 @@ class _agentApp(Thread):
 
         self.agent.register_object_class(_schema)
 
-        _obj = QmfAgentData( self.agent, _schema=_schema )
-        _obj.set_value("key", "p1c1_key1")
+        _obj = QmfAgentData( self.agent,
+                             _values={"key":"p1c1_key1"},
+                             _schema=_schema)
         _obj.set_value("count1", 0)
         _obj.set_value("count2", 0)
         self.agent.add_object( _obj )
 
-        _obj = QmfAgentData( self.agent, _schema=_schema )
-        _obj.set_value("key", "p1c1_key2")
+        _obj = QmfAgentData( self.agent, 
+                             _values={"key":"p1c1_key2"},
+                             _schema=_schema )
         _obj.set_value("count1", 9)
         _obj.set_value("count2", 10)
         self.agent.add_object( _obj )
@@ -97,8 +99,9 @@ class _agentApp(Thread):
 
         self.agent.register_object_class(_schema)
 
-        _obj = QmfAgentData( self.agent, _schema=_schema )
-        _obj.set_value("name", "p1c2_name1")
+        _obj = QmfAgentData( self.agent, 
+                             _values={"name":"p1c2_name1"},
+                             _schema=_schema )
         _obj.set_value("string1", "a data string")
         self.agent.add_object( _obj )
 
@@ -114,13 +117,15 @@ class _agentApp(Thread):
 
         self.agent.register_object_class(_schema)
 
-        _obj = QmfAgentData( self.agent, _schema=_schema )
-        _obj.set_value("key", "p2c1_key1")
+        _obj = QmfAgentData( self.agent, 
+                             _values={"key":"p2c1_key1"},
+                             _schema=_schema )
         _obj.set_value("counter", 0)
         self.agent.add_object( _obj )
 
-        _obj = QmfAgentData( self.agent, _schema=_schema )
-        _obj.set_value("key", "p2c1_key2")
+        _obj = QmfAgentData( self.agent, 
+                             _values={"key":"p2c1_key2"},
+                             _schema=_schema )
         _obj.set_value("counter", 2112)
         self.agent.add_object( _obj )
 
@@ -511,6 +516,83 @@ class BaseTest(unittest.TestCase):
                                         _object_id="does not exist",
                                         _timeout=5)
         #print("!!!! STOPPING GET: %s" % datetime.datetime.utcnow())
+        self.assertTrue(objs == None)
+
+        self.console.destroy(10)
+
+
+    def test_wildcard_schema_id(self):
+        # create console
+        # find all agents
+        # synchronous query for all described objects by:
+        #    oid & wildcard schema_id
+        #    wildcard schema_id
+        # verify known object ids are returned
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        for agent_app in self.agents:
+            aname = agent_app.agent.get_name()
+            agent = self.console.find_agent(aname, timeout=3)
+            self.assertTrue(agent and agent.get_name() == aname)
+
+        wild_schema_id = SchemaClassId("package1", "class1")
+        objs = self.console.get_objects(_schema_id=wild_schema_id, _timeout=5)
+        self.assertTrue(len(objs) == (self.agent_count * 2))
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class1")
+
+        wild_schema_id = SchemaClassId("package1", "class2")
+        objs = self.console.get_objects(_schema_id=wild_schema_id, _timeout=5)
+        self.assertTrue(len(objs) == self.agent_count)
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class2")
+            self.assertTrue(obj.get_object_id() == "p1c2_name1")
+
+        wild_schema_id = SchemaClassId("package2", "class1")
+        objs = self.console.get_objects(_schema_id=wild_schema_id, _timeout=5)
+        self.assertTrue(len(objs) == (self.agent_count * 2))
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package2")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class1")
+
+        wild_schema_id = SchemaClassId("package1", "class1")
+        objs = self.console.get_objects(_schema_id=wild_schema_id,
+                                        _object_id="p1c1_key2", _timeout=5)
+        self.assertTrue(len(objs) == self.agent_count)
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package1")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class1")
+            self.assertTrue(obj.get_object_id() == "p1c1_key2")
+
+        # should fail
+        objs = self.console.get_objects(_schema_id=wild_schema_id,
+                                        _object_id="does not exist",
+                                        _timeout=5)
+        self.assertTrue(objs == None)
+
+        wild_schema_id = SchemaClassId("package2", "class1")
+        objs = self.console.get_objects(_schema_id=wild_schema_id,
+                                        _object_id="p2c1_key2", _timeout=5)
+        self.assertTrue(len(objs) == self.agent_count)
+        for obj in objs:
+            self.assertTrue(obj.get_schema_class_id().get_package_name() == "package2")
+            self.assertTrue(obj.get_schema_class_id().get_class_name() == "class1")
+            self.assertTrue(obj.get_object_id() == "p2c1_key2")
+
+        # should fail
+        wild_schema_id = SchemaClassId("package1", "bad-class")
+        objs = self.console.get_objects(_schema_id=wild_schema_id,
+                                        _object_id="p1c1_key2", _timeout=5)
         self.assertTrue(objs == None)
 
         self.console.destroy(10)
