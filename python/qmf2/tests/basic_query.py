@@ -84,9 +84,8 @@ class _agentApp(Thread):
 
         # instantiate managed data objects matching the schema
 
-        _obj1 = QmfAgentData( self.agent, _schema=_schema )
-        _obj1.set_value("index1", 100)
-        _obj1.set_value("index2", "a name" )
+        _obj1 = QmfAgentData( self.agent, _schema=_schema,
+                              _values={"index1":100, "index2":"a name"})
         _obj1.set_value("set_string", "UNSET")
         _obj1.set_value("set_int", 0)
         _obj1.set_value("query_count", 0)

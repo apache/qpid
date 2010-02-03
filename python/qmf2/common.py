@@ -338,8 +338,7 @@ class _mapEncoder(object):
 
 class QmfData(_mapEncoder):
     """
-    Base data class representing arbitrarily structure data.  No schema or 
-    managing agent is associated with data of this class.
+    Base class representing management data.
 
     Map format:
     map["_values"] = map of unordered "name"=<value> pairs (optional)
@@ -356,10 +355,10 @@ class QmfData(_mapEncoder):
     KEY_DELETE_TS = "_delete_ts"
 
     def __init__(self,
-                 _values={}, _subtypes={}, _tag=None, _object_id=None,
+                 _values={}, _subtypes={}, _tag=None,
+                 _object_id=None, _schema_id=None,
                  _ctime = 0, _utime = 0, _dtime = 0,
-                 _map=None,
-                 _schema=None, _const=False):
+                 _map=None, _const=False):
         """
         @type _values: dict
         @param _values: dictionary of initial name=value pairs for object's
@@ -372,7 +371,6 @@ class QmfData(_mapEncoder):
         @type _const: boolean
         @param _const: if true, this object cannot be modified
         """
-        self._schema_id = None
         if _map is not None:
             # construct from map
             _tag = _map.get(self.KEY_TAG, _tag)
@@ -381,10 +379,13 @@ class QmfData(_mapEncoder):
             _object_id = _map.get(self.KEY_OBJECT_ID, _object_id)
             sid = _map.get(self.KEY_SCHEMA_ID)
             if sid:
-                self._schema_id = SchemaClassId(_map=sid)
+                _schema_id = SchemaClassId.from_map(sid)
             _ctime = long(_map.get(self.KEY_CREATE_TS, _ctime))
             _utime = long(_map.get(self.KEY_UPDATE_TS, _utime))
             _dtime = long(_map.get(self.KEY_DELETE_TS, _dtime))
+
+        if _object_id is None:
+            raise Exception("An object_id must be provided.")
 
         self._values = _values.copy()
         self._subtypes = _subtypes.copy()
@@ -393,30 +394,21 @@ class QmfData(_mapEncoder):
         self._utime = _utime
         self._dtime = _dtime
         self._const = _const
+        self._schema_id = _schema_id
+        self._object_id = str(_object_id)
 
-        if _object_id is not None:
-            self._object_id = str(_object_id)
-        else:
-            self._object_id = None
-
-        if _schema is not None:
-            self._set_schema(_schema)
-        else:
-            # careful: map constructor may have already set self._schema_id, do
-            # not override it!
-            self._schema = None
 
     def __create(cls, values, _subtypes={}, _tag=None, _object_id=None,
-                _schema=None, _const=False):
+                _schema_id=None, _const=False):
         # timestamp in millisec since epoch UTC
         ctime = long(time.time() * 1000)
         return cls(_values=values, _subtypes=_subtypes, _tag=_tag,
                    _ctime=ctime, _utime=ctime,
-                   _object_id=_object_id, _schema=_schema, _const=_const)
+                   _object_id=_object_id, _schema_id=_schema_id, _const=_const)
     create = classmethod(__create)
 
-    def __from_map(cls, map_, _schema=None, _const=False):
-        return cls(_map=map_, _schema=_schema, _const=_const)
+    def __from_map(cls, map_, _const=False):
+        return cls(_map=map_, _const=_const)
     from_map = classmethod(__from_map)
 
     def is_managed(self):
@@ -507,30 +499,7 @@ class QmfData(_mapEncoder):
         @rtype: str
         @returns: the identification string, or None if not assigned and id. 
         """
-        if self._object_id:
-            return self._object_id
-
-        # if object id not assigned, see if schema defines a set of field
-        # values to use as an id
-        if not self._schema: 
-            return None
-
-        ids = self._schema.get_id_names()
-        if not ids:
-            return None
-
-        if not self._validated:
-            self._validate()
-
-        result = u""
-        for key in ids:
-            try:
-                result += unicode(self._values[key])
-            except:
-                log.error("get_object_id(): cannot convert value '%s'." % key)
-                return None
-        self._object_id = result
-        return result
+        return self._object_id
 
     def map_encode(self):
         _map = {}
@@ -554,34 +523,6 @@ class QmfData(_mapEncoder):
         if self._schema_id:
             _map[self.KEY_SCHEMA_ID] = self._schema_id.map_encode()
         return _map
-
-    def _set_schema(self, schema):
-        self._validated = False
-        self._schema = schema
-        if schema:
-            self._schema_id = schema.get_class_id()
-            if self._const:
-                self._validate()
-        else:
-            self._schema_id = None
-
-    def _validate(self):
-        """
-        Compares this object's data against the associated schema.  Throws an 
-        exception if the data does not conform to the schema.
-        """
-        props = self._schema.get_properties()
-        for name,val in props.iteritems():
-            # @todo validate: type compatible with amqp_type?
-            # @todo validate: primary keys have values
-            if name not in self._values:
-                if val._isOptional:
-                    # ok not to be present, put in dummy value
-                    # to simplify access
-                    self._values[name] = None
-                else:
-                    raise Exception("Required property '%s' not present." % name)
-        self._validated = True
 
     def __repr__(self):
         return "QmfData=<<" + str(self.map_encode()) + ">>"
@@ -629,7 +570,7 @@ class QmfEvent(QmfData):
     def __init__(self, _timestamp=None, _sev=SEV_NOTICE, _values={},
                  _subtypes={}, _tag=None,
                  _map=None,
-                 _schema=None, _const=True):
+                 _schema_id=None, _const=True):
         """
         @type _map: dict
         @param _map: if not None, construct instance from map representation. 
@@ -646,14 +587,16 @@ class QmfEvent(QmfData):
 
         if _map is not None:
             # construct from map
-            super(QmfEvent, self).__init__(_map=_map, _schema=_schema,
-                                           _const=_const)
+            super(QmfEvent, self).__init__(_map=_map, _const=_const,
+                                           _object_id="_event")
             _timestamp = _map.get(self.KEY_TIMESTAMP, _timestamp)
             _sev = _map.get(self.KEY_SEVERITY, _sev)
         else:
-            super(QmfEvent, self).__init__(_values=_values,
+            super(QmfEvent, self).__init__(_object_id="_event",
+                                           _values=_values,
                                            _subtypes=_subtypes, _tag=_tag,
-                                           _schema=_schema, _const=_const)
+                                           _schema_id=_schema_id,
+                                           _const=_const)
         if _timestamp is None:
             raise TypeError("QmfEvent: a valid timestamp is required.")
 
@@ -665,13 +608,13 @@ class QmfEvent(QmfData):
         self._severity = _sev
 
     def _create(cls, timestamp, severity, values,
-                _subtypes={}, _tag=None, _schema=None, _const=False):
+                _subtypes={}, _tag=None, _schema_id=None, _const=False):
         return cls(_timestamp=timestamp, _sev=severity, _values=values,
-                _subtypes=_subtypes, _tag=_tag, _schema=_schema, _const=_const)
+                _subtypes=_subtypes, _tag=_tag, _schema_id=_schema_id, _const=_const)
     create = classmethod(_create)
 
-    def _from_map(cls, map_, _schema=None, _const=False):
-        return cls(_map=map_, _schema=_schema, _const=_const)
+    def _from_map(cls, map_, _const=False):
+        return cls(_map=map_, _const=_const)
     from_map = classmethod(_from_map)
 
     def get_timestamp(self): 
@@ -1761,7 +1704,9 @@ class SchemaClass(QmfData):
             self._object_id_names = _map.get(self.KEY_PRIMARY_KEY_NAMES,[])
             _desc = _map.get(self.KEY_DESC)
         else:
-            super(SchemaClass, self).__init__()
+            if _classId is None:
+                raise Exception("A class identifier must be supplied.")
+            super(SchemaClass, self).__init__(_object_id=str(_classId))
             self._object_id_names = []
 
         self._classId = _classId
@@ -1876,8 +1821,8 @@ class SchemaObjectClass(SchemaClass):
     Map format:
     map(SchemaClass)
     """
-    def __init__(self, _classId=None, _desc=None, 
-                 _props={}, _methods={}, _object_id_names=None, 
+    def __init__(self, _classId=None, _desc=None,
+                 _props={}, _methods={}, _object_id_names=[],
                  _map=None):
         """
         @type pname: str
