@@ -1,4 +1,5 @@
 broker.version=0-10
+broker.language=cpp
 
 broker.dir=${project.root}/../cpp/src
 module.dir=${broker.dir}/.libs
