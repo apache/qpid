@@ -67,4 +67,9 @@ namespace broker{
         return b && b->getAcceptMode() == 0/*EXPLICIT == 0*/;
     }
 
+    uint8_t TransferAdapter::getPriority(const framing::FrameSet& f)
+    {
+        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
+        return p ? p->getPriority() : 0;
+    }
 }}

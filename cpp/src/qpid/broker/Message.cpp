@@ -420,6 +420,10 @@ void Message::resetDequeueCompleteCallback() {
     dequeueCallback = 0;
 }
 
+uint8_t Message::getPriority() const {
+    return getAdapter().getPriority(frames);
+}
+
 framing::FieldTable& Message::getOrInsertHeaders()
 {
     return getProperties<MessageProperties>()->getApplicationHeaders();

@@ -40,6 +40,7 @@ struct MessageAdapter
     virtual const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f) = 0;
     virtual bool isPersistent(const framing::FrameSet& f) = 0;
     virtual bool requiresAccept(const framing::FrameSet& f) = 0;    
+    virtual uint8_t getPriority(const framing::FrameSet& f) = 0;
 };
 
 struct TransferAdapter : MessageAdapter
@@ -50,6 +51,7 @@ struct TransferAdapter : MessageAdapter
     virtual bool isPersistent(const framing::FrameSet& f);
     bool isImmediate(const framing::FrameSet&);
     bool requiresAccept(const framing::FrameSet& f);    
+    uint8_t getPriority(const framing::FrameSet& f);
 };
 
 }}
