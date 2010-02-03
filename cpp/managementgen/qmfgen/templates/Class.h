@@ -75,12 +75,14 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
 /*MGEN:ENDIF*/
     // Private Methods
     static void writeSchema(::qpid::framing::Buffer& buf);
+    void readProperties(::qpid::framing::Buffer& buf);
     void writeProperties(::qpid::framing::Buffer& buf);
     void writeStatistics(::qpid::framing::Buffer& buf,
                          bool skipHeaders = false);
     void doMethod(std::string& methodName,
                   ::qpid::framing::Buffer& inBuf,
                   ::qpid::framing::Buffer& outBuf);
+    std::string getKey() const;
     writeSchemaCall_t getWriteSchemaCall() { return writeSchema; }
 /*MGEN:IF(Class.NoStatistics)*/
     // Stub for getInstChanged.  There are no statistics in this class.
