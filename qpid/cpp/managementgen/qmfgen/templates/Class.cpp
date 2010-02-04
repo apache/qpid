@@ -124,6 +124,16 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 }
 /*MGEN:ENDIF*/
 
+uint32_t /*MGEN:Class.NameCap*/::writePropertiesSize() const
+{
+    uint32_t size = writeTimestampsSize();
+/*MGEN:IF(Class.ExistOptionals)*/
+    size += /*MGEN:Class.PresenceMaskBytes*/;
+/*MGEN:ENDIF*/
+/*MGEN:Class.SizeProperties*/
+    return size;
+}
+
 void /*MGEN:Class.NameCap*/::readProperties (Buffer& buf)
 {
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
@@ -135,7 +145,7 @@ void /*MGEN:Class.NameCap*/::readProperties (Buffer& buf)
 /*MGEN:Class.ReadProperties*/
 }
 
-void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf)
+void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf) const
 {
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
     configChanged = false;

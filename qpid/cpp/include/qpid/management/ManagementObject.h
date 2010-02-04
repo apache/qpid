@@ -62,7 +62,8 @@ public:
     QPID_COMMON_EXTERN ObjectId(const std::string&);
     QPID_COMMON_EXTERN bool operator==(const ObjectId &other) const;
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
-    QPID_COMMON_EXTERN void encode(framing::Buffer& buffer);
+    QPID_COMMON_EXTERN uint32_t encodedSize() const { return 16; };
+    QPID_COMMON_EXTERN void encode(framing::Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(framing::Buffer& buffer);
     QPID_COMMON_EXTERN void setV2Key(const std::string& key) { v2Key = key; }
     QPID_COMMON_EXTERN const std::string& getV2Key() const { return v2Key; }
@@ -119,19 +120,20 @@ protected:
     uint64_t         destroyTime;
     uint64_t         updateTime;
     ObjectId         objectId;
-    bool             configChanged;
+    mutable bool     configChanged;
     bool             instChanged;
     bool             deleted;
     Manageable*      coreObject;
-    sys::Mutex       accessLock;
+    mutable sys::Mutex accessLock;
     uint32_t         flags;
 
     static int nextThreadIndex;
     bool             forcePublish;
 
     QPID_COMMON_EXTERN int  getThreadIndex();
-    QPID_COMMON_EXTERN void writeTimestamps(qpid::framing::Buffer& buf);
+    QPID_COMMON_EXTERN void writeTimestamps(qpid::framing::Buffer& buf) const;
     QPID_COMMON_EXTERN void readTimestamps(qpid::framing::Buffer& buf);
+    QPID_COMMON_EXTERN uint32_t writeTimestampsSize() const;
 
   public:
     QPID_COMMON_EXTERN static int maxThreads;
@@ -146,7 +148,8 @@ protected:
 
     virtual writeSchemaCall_t getWriteSchemaCall() = 0;
     virtual void readProperties(qpid::framing::Buffer& buf) = 0;
-    virtual void writeProperties(qpid::framing::Buffer& buf) = 0;
+    virtual uint32_t writePropertiesSize() const = 0;
+    virtual void writeProperties(qpid::framing::Buffer& buf) const = 0;
     virtual void writeStatistics(qpid::framing::Buffer& buf,
                                  bool skipHeaders = false) = 0;
     virtual void doMethod(std::string&           methodName,
@@ -182,6 +185,10 @@ protected:
         return other.getClassName() == getClassName() &&
             other.getPackageName() == getPackageName();
     }
+
+    QPID_COMMON_EXTERN void encode(qpid::framing::Buffer& buf) const { writeProperties(buf); }
+    QPID_COMMON_EXTERN void decode(qpid::framing::Buffer& buf) { readProperties(buf); }
+    QPID_COMMON_EXTERN uint32_t encodedSize() const { return writePropertiesSize(); }
 };
 
 typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;

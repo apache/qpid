@@ -73,12 +73,12 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
 
     void aggregatePerThreadStats(struct PerThreadStats*);
 /*MGEN:ENDIF*/
-    // Private Methods
+  public:
     static void writeSchema(::qpid::framing::Buffer& buf);
+    uint32_t writePropertiesSize() const;
     void readProperties(::qpid::framing::Buffer& buf);
-    void writeProperties(::qpid::framing::Buffer& buf);
-    void writeStatistics(::qpid::framing::Buffer& buf,
-                         bool skipHeaders = false);
+    void writeProperties(::qpid::framing::Buffer& buf) const;
+    void writeStatistics(::qpid::framing::Buffer& buf, bool skipHeaders = false);
     void doMethod(std::string& methodName,
                   ::qpid::framing::Buffer& inBuf,
                   ::qpid::framing::Buffer& outBuf);
@@ -89,7 +89,6 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     bool getInstChanged() { return false; }
     bool hasInst() { return false; }
 /*MGEN:ENDIF*/
-  public:
 
     /*MGEN:Class.NameCap*/(::qpid::management::ManagementAgent* agent,
                             ::qpid::management::Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
