@@ -30,7 +30,7 @@ void MessageReplayTracker::send(const Message& message, const std::string& desti
 {
     buffer.push_back(ReplayRecord(message, destination));    
     buffer.back().send(*this);
-    if (flushInterval && ++count >= flushInterval) {
+    if (flushInterval && (++count % flushInterval == 0)) {
         checkCompletion();
         if (!buffer.empty()) session.flush();
     }
