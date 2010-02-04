@@ -121,7 +121,7 @@ bool ObjectId::operator<(const ObjectId &other) const
     return (first < otherFirst) || ((first == otherFirst) && (second < other.second));
 }
 
-void ObjectId::encode(framing::Buffer& buffer)
+void ObjectId::encode(framing::Buffer& buffer) const
 {
     if (agent == 0)
         buffer.putLongLong(first);
@@ -158,7 +158,7 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
 int ManagementObject::maxThreads = 1;
 int ManagementObject::nextThreadIndex = 0;
 
-void ManagementObject::writeTimestamps (framing::Buffer& buf)
+void ManagementObject::writeTimestamps (framing::Buffer& buf) const
 {
     buf.putShortString (getPackageName ());
     buf.putShortString (getClassName ());
@@ -182,6 +182,17 @@ void ManagementObject::readTimestamps (framing::Buffer& buf)
     createTime = buf.getLongLong();
     destroyTime = buf.getLongLong();
     unusedObjectId.decode(buf);
+}
+
+uint32_t ManagementObject::writeTimestampsSize() const
+{
+    return 1 + getPackageName().length() +  // str8
+        1 + getClassName().length() +       // str8
+        16 +                                // bin128
+        8 +                                 // uint64
+        8 +                                 // uint64
+        8 +                                 // uint64
+        objectId.encodedSize();             // objectId
 }
 
 void ManagementObject::setReference(ObjectId) {}

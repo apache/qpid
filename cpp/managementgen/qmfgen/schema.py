@@ -59,6 +59,7 @@ class SchemaType:
     self.decode    = None
     self.style     = "normal"
     self.stream    = "#"
+    self.size      = "1"
     self.accessor  = None
     self.init      = "0"
     self.perThread = False
@@ -88,6 +89,9 @@ class SchemaType:
 
       elif key == 'stream':
         self.stream = val
+
+      elif key == 'size':
+        self.size = val
 
       elif key == 'accessor':
         self.accessor = val
@@ -387,6 +391,15 @@ class SchemaProperty:
     if self.desc != None:
       stream.write ("    ft.setString (DESC,   \"" + self.desc   + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
+
+  def genSize (self, stream):
+    indent = "    "
+    if self.isOptional:
+      stream.write("    if (presenceMask[presenceByte_%s] & presenceMask_%s) {\n" % (self.name, self.name))
+      indent = "        "
+    stream.write("%ssize += %s;  // %s\n" % (indent, self.type.type.size.replace("#", self.name), self.name))
+    if self.isOptional:
+      stream.write("    }\n")
 
   def genRead (self, stream):
     indent = "    "
@@ -1210,6 +1223,10 @@ class SchemaClass:
     for inst in self.statistics:
       if inst.type.type.perThread:
         inst.genAssign (stream)
+
+  def genSizeProperties (self, stream, variables):
+    for prop in self.properties:
+      prop.genSize (stream)
 
   def genReadProperties (self, stream, variables):
     for prop in self.properties:
