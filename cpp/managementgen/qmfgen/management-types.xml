@@ -19,38 +19,38 @@
   under the License.
 -->
 
-<type name="objId"     base="REF"       cpp="::qpid::management::ObjectId"  encode="#.encode(@)" decode="#.decode(@)"  stream="#.getV2Key()" accessor="direct" init="::qpid::management::ObjectId()" byRef="y"/>
-<type name="uint8"     base="U8"        cpp="uint8_t"       encode="@.putOctet(#)"       decode="# = @.getOctet()"     stream="#" accessor="direct" init="0"/>
-<type name="uint16"    base="U16"       cpp="uint16_t"      encode="@.putShort(#)"       decode="# = @.getShort()"     stream="#" accessor="direct" init="0"/>
-<type name="uint32"    base="U32"       cpp="uint32_t"      encode="@.putLong(#)"        decode="# = @.getLong()"      stream="#" accessor="direct" init="0"/>
-<type name="uint64"    base="U64"       cpp="uint64_t"      encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" accessor="direct" init="0"/>
-<type name="int8"      base="S8"        cpp="int8_t"        encode="@.putInt8(#)"        decode="# = @.getInt8()"      stream="#" accessor="direct" init="0"/>
-<type name="int16"     base="S16"       cpp="int16_t"       encode="@.putInt16(#)"       decode="# = @.getInt16()"     stream="#" accessor="direct" init="0"/>
-<type name="int32"     base="S32"       cpp="int32_t"       encode="@.putInt32(#)"       decode="# = @.getInt32()"     stream="#" accessor="direct" init="0"/>
-<type name="int64"     base="S64"       cpp="int64_t"       encode="@.putInt64(#)"       decode="# = @.getInt64()"     stream="#" accessor="direct" init="0"/>
-<type name="bool"      base="BOOL"      cpp="uint8_t"       encode="@.putOctet(#?1:0)"   decode="# = @.getOctet()==1"  stream="#" accessor="direct" init="0"/>
-<type name="sstr"      base="SSTR"      cpp="std::string"   encode="@.putShortString(#)" decode="@.getShortString(#)"  stream="#" accessor="direct" init='""' byRef="y"/>
-<type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putMediumString(#)" decode="@.getMediumString(#)" stream="#" accessor="direct" init='""' byRef="y"/>
-<type name="absTime"   base="ABSTIME"   cpp="int64_t"       encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" accessor="direct" init="0"/>
-<type name="deltaTime" base="DELTATIME" cpp="uint64_t"      encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" accessor="direct" init="0"/>
-<type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat(#)"       decode="# = @.getFloat()"     stream="#" accessor="direct" init="0."/>
-<type name="double"    base="DOUBLE"    cpp="double"        encode="@.putDouble(#)"      decode="# = @.getDouble()"    stream="#" accessor="direct" init="0."/>
-<type name="uuid"      base="UUID"      cpp="::qpid::framing::Uuid" encode="#.encode(@)"       decode="#.decode(@)"    stream="#" accessor="direct" init="::qpid::framing::Uuid()" byRef="y"/>
-<type name="map"       base="FTABLE"    cpp="::qpid::framing::FieldTable" encode="#.encode(@)" decode="#.decode(@)"    stream="#" accessor="direct" init="::qpid::framing::FieldTable()" byRef="y"/>
+<type name="objId"     base="REF"       cpp="::qpid::management::ObjectId"  encode="#.encode(@)" decode="#.decode(@)"  stream="#.getV2Key()" size="16" accessor="direct" init="::qpid::management::ObjectId()" byRef="y"/>
+<type name="uint8"     base="U8"        cpp="uint8_t"       encode="@.putOctet(#)"       decode="# = @.getOctet()"     stream="#" size="1" accessor="direct" init="0"/>
+<type name="uint16"    base="U16"       cpp="uint16_t"      encode="@.putShort(#)"       decode="# = @.getShort()"     stream="#" size="2" accessor="direct" init="0"/>
+<type name="uint32"    base="U32"       cpp="uint32_t"      encode="@.putLong(#)"        decode="# = @.getLong()"      stream="#" size="4" accessor="direct" init="0"/>
+<type name="uint64"    base="U64"       cpp="uint64_t"      encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" size="8" accessor="direct" init="0"/>
+<type name="int8"      base="S8"        cpp="int8_t"        encode="@.putInt8(#)"        decode="# = @.getInt8()"      stream="#" size="1" accessor="direct" init="0"/>
+<type name="int16"     base="S16"       cpp="int16_t"       encode="@.putInt16(#)"       decode="# = @.getInt16()"     stream="#" size="2" accessor="direct" init="0"/>
+<type name="int32"     base="S32"       cpp="int32_t"       encode="@.putInt32(#)"       decode="# = @.getInt32()"     stream="#" size="4" accessor="direct" init="0"/>
+<type name="int64"     base="S64"       cpp="int64_t"       encode="@.putInt64(#)"       decode="# = @.getInt64()"     stream="#" size="8" accessor="direct" init="0"/>
+<type name="bool"      base="BOOL"      cpp="uint8_t"       encode="@.putOctet(#?1:0)"   decode="# = @.getOctet()==1"  stream="#" size="1" accessor="direct" init="0"/>
+<type name="sstr"      base="SSTR"      cpp="std::string"   encode="@.putShortString(#)" decode="@.getShortString(#)"  stream="#" size="(1 + #.length())" accessor="direct" init='""' byRef="y"/>
+<type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putMediumString(#)" decode="@.getMediumString(#)" stream="#" size="(2 + #.length())" accessor="direct" init='""' byRef="y"/>
+<type name="absTime"   base="ABSTIME"   cpp="int64_t"       encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" size="8" accessor="direct" init="0"/>
+<type name="deltaTime" base="DELTATIME" cpp="uint64_t"      encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" size="8" accessor="direct" init="0"/>
+<type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat(#)"       decode="# = @.getFloat()"     stream="#" size="4" accessor="direct" init="0."/>
+<type name="double"    base="DOUBLE"    cpp="double"        encode="@.putDouble(#)"      decode="# = @.getDouble()"    stream="#" size="8" accessor="direct" init="0."/>
+<type name="uuid"      base="UUID"      cpp="::qpid::framing::Uuid" encode="#.encode(@)"       decode="#.decode(@)"    stream="#" size="16" accessor="direct" init="::qpid::framing::Uuid()" byRef="y"/>
+<type name="map"       base="FTABLE"    cpp="::qpid::framing::FieldTable" encode="#.encode(@)" decode="#.decode(@)"    stream="#" size="#.encodedSize()" accessor="direct" init="::qpid::framing::FieldTable()" byRef="y"/>
 
-<type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    style="wm" stream="#" accessor="counter" init="0"/>
-<type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    style="wm" stream="#" accessor="counter" init="0"/>
-<type name="hilo32"  base="U32"  cpp="uint32_t" encode="@.putLong(#)"     decode="# = @.getLong()"     style="wm" stream="#" accessor="counter" init="0"/>
-<type name="hilo64"  base="U64"  cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" style="wm" stream="#" accessor="counter" init="0"/>
+<type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    style="wm" stream="#" size="1" accessor="counter" init="0"/>
+<type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    style="wm" stream="#" size="2" accessor="counter" init="0"/>
+<type name="hilo32"  base="U32"  cpp="uint32_t" encode="@.putLong(#)"     decode="# = @.getLong()"     style="wm" stream="#" size="4" accessor="counter" init="0"/>
+<type name="hilo64"  base="U64"  cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" style="wm" stream="#" size="8" accessor="counter" init="0"/>
 
-<type name="count8"  base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    stream="#" accessor="counter" init="0" perThread="y"/>
-<type name="count16" base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    stream="#" accessor="counter" init="0" perThread="y"/>
-<type name="count32" base="U32"  cpp="uint32_t" encode="@.putLong(#)"     decode="# = @.getLong()"     stream="#" accessor="counter" init="0" perThread="y"/>
-<type name="count64" base="U64"  cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" stream="#" accessor="counter" init="0" perThread="y"/>
+<type name="count8"  base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    stream="#" size="1" accessor="counter" init="0" perThread="y"/>
+<type name="count16" base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    stream="#" size="2" accessor="counter" init="0" perThread="y"/>
+<type name="count32" base="U32"  cpp="uint32_t" encode="@.putLong(#)"     decode="# = @.getLong()"     stream="#" size="4" accessor="counter" init="0" perThread="y"/>
+<type name="count64" base="U64"  cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" stream="#" size="8" accessor="counter" init="0" perThread="y"/>
 
 <!-- Min/Max/Average statistics -->
-<type name="mma32"   base="U32"       cpp="uint32_t" encode="@.putLong(#)"     decode="# = @.getLong()"     style="mma" stream="#" accessor="direct" init="0" perThread="y"/>
-<type name="mma64"   base="U64"       cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" style="mma" stream="#" accessor="direct" init="0" perThread="y"/>
-<type name="mmaTime" base="DELTATIME" cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" style="mma" stream="#" accessor="direct" init="0" perThread="y"/>
+<type name="mma32"   base="U32"       cpp="uint32_t" encode="@.putLong(#)"     decode="# = @.getLong()"     style="mma" stream="#" size="4" accessor="direct" init="0" perThread="y"/>
+<type name="mma64"   base="U64"       cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" style="mma" stream="#" size="8" accessor="direct" init="0" perThread="y"/>
+<type name="mmaTime" base="DELTATIME" cpp="uint64_t" encode="@.putLongLong(#)" decode="# = @.getLongLong()" style="mma" stream="#" size="8" accessor="direct" init="0" perThread="y"/>
 
 </schema-types>
