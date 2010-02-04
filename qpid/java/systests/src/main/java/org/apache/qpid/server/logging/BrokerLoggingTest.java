@@ -47,6 +47,8 @@ import java.util.List;
  */
 public class BrokerLoggingTest extends AbstractTestLogging
 {
+    private static final String BRK_LOG_PREFIX = "BRK-";
+
     public void setUp() throws Exception
     {
         // We either do this here or have a null check in tearDown.
@@ -91,7 +93,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             String configFilePath = _configFile.toString();
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -170,7 +172,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure broker has fully started up.
             getConnection();
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -268,7 +270,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure broker has fully started up.
             getConnection();
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -354,7 +356,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Now we can create the monitor as _outputFile will now be defined
             _monitor = new LogMonitor(_outputFile);
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -437,7 +439,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure broker has fully started up.
             getConnection();
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -537,7 +539,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure broker has fully started up.
             getConnection();
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -631,7 +633,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             //Ensure the broker has fully started up.
             getConnection();
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -720,7 +722,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             //Give broker time to shutdown and flush log
             checkSocketClosed(getPort());
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -828,7 +830,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             //Give broker time to shutdown and flush log
             checkSocketClosed(getPort());
 
-            List<String> results = _monitor.findMatches(TESTID);
+            List<String> results = _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation
@@ -910,7 +912,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure the broker has shutdown before retreving results
             checkSocketClosed(getPort());
 
-            List<String> results = _monitor.findMatches("BRK-");
+            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
                 // Validation

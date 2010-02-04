@@ -160,7 +160,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         sendMessagesAsync(producer, producerSession, 5, 50L);
 
         Thread.sleep(5000);
-        List<String> results = _monitor.findMatches("QUE-1003");
+        List<String> results = _monitor.waitAndFindMatches("QUE-1003", DEFAULT_LOG_WAIT);
 
         assertEquals("Did not find correct number of QUE-1003 queue overfull messages", 1, results.size());
 
@@ -170,7 +170,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
         while(consumer.receive(1000) != null);
 
-        results = _monitor.findMatches("QUE-1004");
+        results = _monitor.waitAndFindMatches("QUE-1004", DEFAULT_LOG_WAIT);
 
         assertEquals("Did not find correct number of QUE_UNDERFULL queue underfull messages", 1, results.size());
 
@@ -205,7 +205,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         MessageSender sender = sendMessagesAsync(producer, producerSession, 5, 50L);
 
         Thread.sleep(10000);
-        List<String> results = _monitor.findMatches("Message send delayed by");
+        List<String> results = _monitor.waitAndFindMatches("Message send delayed by", 10000);
         assertTrue("Incorrect number of delay messages logged by client - expect at least 3, got " + results.size(),3 <= results.size());
         results = _monitor.findMatches("Message send failed due to timeout waiting on broker enforced flow control");
         assertEquals("Incorrect number of send failure messages logged by client",1,results.size());

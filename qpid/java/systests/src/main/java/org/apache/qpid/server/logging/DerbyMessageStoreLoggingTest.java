@@ -91,7 +91,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         startBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -102,7 +102,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
-        results = _monitor.findMatches("MST-1002");
+        results = _monitor.waitAndFindMatches("MST-1002", DEFAULT_LOG_WAIT);
 
         assertEquals("Each vhost did not close its store.", vhosts.size(), results.size());
 
@@ -154,7 +154,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         startBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -165,7 +165,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
-        results = _monitor.findMatches("MST-1004");
+        results = _monitor.waitAndFindMatches("MST-1004", DEFAULT_LOG_WAIT);
 
         assertTrue("Each vhost did not close its store.", vhosts.size() <= results.size());
 
@@ -221,7 +221,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         startBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -232,7 +232,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
-        results = _monitor.findMatches("MST-1006");
+        results = _monitor.waitAndFindMatches("MST-1006", DEFAULT_LOG_WAIT);
 
         assertTrue("Each vhost did not close its store.", vhosts.size() <= results.size());
 
@@ -287,7 +287,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         startBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -298,7 +298,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
-        results = _monitor.findMatches("MST-1004 : Recovery Start :");
+        results = _monitor.waitAndFindMatches("MST-1004 : Recovery Start :", DEFAULT_LOG_WAIT);
 
         // We are only looking for the default queue defined in local host being
         // recovered. If other tests have made queues in test then we want to
@@ -352,7 +352,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         startBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -363,7 +363,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
-        results = _monitor.findMatches("MST-1006 : Recovery Complete :");
+        results = _monitor.waitAndFindMatches("MST-1006 : Recovery Complete :", DEFAULT_LOG_WAIT);
 
         // We are only looking for the default queue defined in local host being
         // recovered. If other tests have made queues in test then we want to
@@ -494,7 +494,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
             startBroker();
 
-            List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+            List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
             // Validation
 
@@ -505,7 +505,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
             //Validate each vhost logs a creation
-            results = _monitor.findMatches("MST-1004 : Recovery Start : " + queueName);
+            results = _monitor.waitAndFindMatches("MST-1004 : Recovery Start : " + queueName, DEFAULT_LOG_WAIT);
 
             assertEquals("Recovered test queue not found.", 1, results.size());
 

@@ -94,7 +94,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
         // They should all be durable
 
-        List<String> results = _monitor.findMatches(EXH_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(EXH_PREFIX, DEFAULT_LOG_WAIT);
 
         assertTrue("No Results found for Exchange.", results.size()>0);
 
@@ -132,7 +132,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
         _session.createConsumer(_queue);
 
-        List<String> results = _monitor.findMatches(EXH_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(EXH_PREFIX, DEFAULT_LOG_WAIT);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
@@ -180,7 +180,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
         ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeleteOkBody.class);
 
-        List<String> results = _monitor.findMatches(EXH_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(EXH_PREFIX, DEFAULT_LOG_WAIT);
 
         assertEquals("Result set larger than expected.", 2, results.size());
 

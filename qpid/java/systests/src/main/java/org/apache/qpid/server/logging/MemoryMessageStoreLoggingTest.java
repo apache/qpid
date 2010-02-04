@@ -78,7 +78,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         startBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -149,7 +149,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         //Stop the broker so we get the close messages.
         stopBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 

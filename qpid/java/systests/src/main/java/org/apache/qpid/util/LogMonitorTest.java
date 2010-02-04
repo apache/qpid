@@ -224,7 +224,7 @@ public class LogMonitorTest extends TestCase
         assertEquals("Incorrect result set size", 0, results.size());
     }
 
-    /**
+    /**                                                                                                                                                 
      * Validate that the LogMonitor can match the given string in the log
      *
      * @param log     The LogMonitor to check

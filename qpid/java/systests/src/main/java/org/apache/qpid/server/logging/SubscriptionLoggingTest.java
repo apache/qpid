@@ -91,7 +91,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
@@ -125,13 +125,8 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
     {
         _session.createDurableSubscriber(_topic, getName());
 
-        //Wait for up to 2 seconds for message to appear
-        // ignore response as we will use the findMatches afterwards just
-        // incase it did take more than 2 seconds to log.
-        _monitor.waitForMessage(SUB_PREFIX, 2000);
-
         //Validate
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, 2000);
 
         assertEquals("Result set not as expected.", 1, results.size());
 
@@ -167,7 +162,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createBrowser(_queue);
 
         //Validate
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
 
         assertEquals("Result set larger than expected.", 2, results.size());
 
@@ -211,7 +206,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
@@ -249,7 +244,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, 2000);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
@@ -287,7 +282,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createConsumer(_queue).close();
 
         //Validate
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
 
         //3
         assertEquals("Result set larger than expected.", 2, results.size());
@@ -373,7 +368,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.commit();
 
         //Validate
-        List<String> results = _monitor.findMatches("SUB-1003");
+        List<String> results = _monitor.waitAndFindMatches("SUB-1003", DEFAULT_LOG_WAIT);
 
         try
         {

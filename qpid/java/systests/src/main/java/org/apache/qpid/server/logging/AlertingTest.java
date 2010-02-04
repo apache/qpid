@@ -47,13 +47,6 @@ public class AlertingTest extends AbstractTestLogging
 
     public void setUp() throws Exception
     {
-        // set QPID_WORK to be [QPID_WORK|io.tmpdir]/<testName>
-        // This ensures that each of these tests operate independantly.
-        setSystemProperty("QPID_WORK",
-                          System.getProperty("QPID_WORK",
-                                             System.getProperty("java.io.tmpdir"))
-                          + File.separator + getName());
-
         // Update the configuration to make our virtualhost Persistent.
         makeVirtualHostPersistent(VIRTUALHOST);
 

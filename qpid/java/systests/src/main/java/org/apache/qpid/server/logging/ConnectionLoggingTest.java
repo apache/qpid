@@ -30,17 +30,8 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 {
     private static final String CONNECTION_PREFIX = "CON-";
 
-    public void setUp() throws Exception
-    {
-        // set QPID_WORK to be [QPID_WORK|io.tmpdir]/<testName>
-        setSystemProperty("QPID_WORK",
-                          System.getProperty("QPID_WORK",
-                                             System.getProperty("java.io.tmpdir"))
-                          + File.separator + getName());
-
-        //Start the broker
-        super.setUp();
-    }
+    // No explicit startup configuration is required for this test
+    // so no setUp() method
 
     /**
      * Description:
@@ -64,7 +55,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 
         Connection connection = getConnection();
 
-        List<String> results = _monitor.findMatches(CONNECTION_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(CONNECTION_PREFIX, DEFAULT_LOG_WAIT);
 
         assertTrue("No CON messages logged", results.size() > 0);        
 
@@ -155,7 +146,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // Open and then close the conneciton
         getConnection().close();
 
-        List<String> results = _monitor.findMatches(CONNECTION_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(CONNECTION_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
