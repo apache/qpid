@@ -81,6 +81,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerStartupConfiguration() throws Exception
     {
+        String TESTID="BRK-1006";
+
         // This logging startup code only occurs when you run a Java broker,
         // that broker must be started via Main so not an InVM broker.
         if (isJavaBroker() && isExternalBroker())
@@ -93,6 +95,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             String configFilePath = _configFile.toString();
 
+            // Ensure we wait for TESTID to be logged
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+
             List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
@@ -103,10 +108,10 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 String log = getLog(results.get(0));
 
                 //1
-                validateMessageID("BRK-1006", log);
+                validateMessageID(TESTID, log);
 
                 //2
-                results = _monitor.findMatches("BRK-1006");
+                results = _monitor.findMatches(TESTID);
                 assertEquals("More than one configuration message found.",
                              1, results.size());
 
@@ -171,6 +176,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             // Ensure broker has fully started up.
             getConnection();
+
+            // Ensure we wait for TESTID to be logged
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
 
             List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
@@ -270,6 +278,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure broker has fully started up.
             getConnection();
 
+            // Ensure we wait for TESTID to be logged
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+
             List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try
             {
@@ -355,8 +366,14 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             // Now we can create the monitor as _outputFile will now be defined
             _monitor = new LogMonitor(_outputFile);
+            
+            // Ensure we wait for TESTID to be logged
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            // Retrieve all BRK- log messages so we can check for an erroneous
+            // BRK-1002 message.
+            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
+
             try
             {
                 // Validation
@@ -439,7 +456,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure broker has fully started up.
             getConnection();
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            // Ensure we wait for TESTID to be logged
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+
+            // Retrieve all BRK- log messages so we can check for an erroneous
+            // BRK-1002 message.
+            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -539,7 +561,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure broker has fully started up.
             getConnection();
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            // Ensure we wait for TESTID to be logged
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+
+            // Retrieve all BRK- log messages so we can check for an erroneous
+            // BRK-1002 message.
+            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -632,8 +659,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             //Ensure the broker has fully started up.
             getConnection();
+            // Ensure we wait for TESTID to be logged
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            // Retrieve all BRK- log messages so we can check for an erroneous
+            // BRK-1001 message.
+            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -647,7 +678,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     assertFalse("More broker log statements present after ready message", validation);
                     String log = getLog(rawLog);
 
-                    // Ensure we do not have a BRK-1002 message
+                    // Ensure we do not have a BRK-1001 message
                     if (!getMessageID(log).equals(TESTID))
                     {
                         if (getMessageID(log).equals("BRK-1001"))
@@ -911,6 +942,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             // Ensure the broker has shutdown before retreving results
             checkSocketClosed(getPort());
+
+            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
 
             List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
             try

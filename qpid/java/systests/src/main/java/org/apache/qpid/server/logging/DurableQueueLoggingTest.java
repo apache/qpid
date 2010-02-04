@@ -94,7 +94,10 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
-        List<String> results = _monitor.waitAndFindMatches(QUEUE_PREFIX, DEFAULT_LOG_WAIT);
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());
@@ -145,7 +148,10 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
-        List<String> results = _monitor.waitAndFindMatches(QUEUE_PREFIX, DEFAULT_LOG_WAIT);
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());
@@ -196,7 +202,10 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
-        List<String> results = _monitor.waitAndFindMatches(QUEUE_PREFIX, DEFAULT_LOG_WAIT);
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());
@@ -256,7 +265,10 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(_session.createQueue(getTestQueueName()));
 
         // Validation
-        List<String> results = _monitor.waitAndFindMatches(QUEUE_PREFIX, DEFAULT_LOG_WAIT);
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());
@@ -317,7 +329,10 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(_session.createQueue(getTestQueueName()));
 
         // Validation
-        List<String> results = _monitor.waitAndFindMatches(QUEUE_PREFIX, DEFAULT_LOG_WAIT);
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());

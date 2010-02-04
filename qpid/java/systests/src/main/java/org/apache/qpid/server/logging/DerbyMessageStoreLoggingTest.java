@@ -516,7 +516,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             assertTrue("MST-1004 does end with queue '" + queueName + "':" + getMessageString(result),
                        getMessageString(result).endsWith(queueName));
 
-            results = _monitor.findMatches("MST-1005");
+            results = _monitor.waitAndFindMatches("MST-1005", DEFAULT_LOG_WAIT);
 
             assertTrue("Insufficient MST-1005 logged.", results.size()>0);
 

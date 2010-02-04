@@ -64,7 +64,10 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Test that calling session.close gives us the expected output
         ((AMQConnection)connection).createSession(false, Session.AUTO_ACKNOWLEDGE,PREFETCH);
 
-        List<String> results = _monitor.waitAndFindMatches(CHANNEL_PREFIX, DEFAULT_LOG_WAIT);
+        // Wait to ensure that the CHN-1004 message is logged
+        _monitor.waitForMessage("CHN-1004", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         // Validation
 
@@ -119,13 +122,16 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         connection.start();
 
-        List<String> results = _monitor.waitAndFindMatches(CHANNEL_PREFIX, DEFAULT_LOG_WAIT);
+        // Wait to ensure that the CHN-1002 message is logged
+        _monitor.waitForMessage("CHN-1002", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
         // The last channel message should be:
         //
-        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow Off
+        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow Stopped
 
         // Verify
         int resultSize = results.size();
@@ -178,7 +184,10 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // incase it did take more than 2 seconds to log.
         _monitor.waitForMessage(CHANNEL_PREFIX, 2000);
 
-        List<String> results = _monitor.waitAndFindMatches(CHANNEL_PREFIX, DEFAULT_LOG_WAIT);
+        // Wait to ensure that the CHN-1002 message is logged
+        _monitor.waitForMessage("CHN-1002", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
@@ -227,7 +236,10 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Close the connection to verify the created session closing is logged.
         connection.close();
 
-        List<String> results = _monitor.waitAndFindMatches(CHANNEL_PREFIX, DEFAULT_LOG_WAIT);
+        // Wait to ensure that the CHN-1003 message is logged
+        _monitor.waitForMessage("CHN-1003", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
@@ -274,16 +286,14 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Create a session and then close it
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
 
-        List<String> results = _monitor.waitAndFindMatches(CHANNEL_PREFIX, DEFAULT_LOG_WAIT);
+        // Wait to ensure that the CHN-1003 message is logged
+        _monitor.waitForMessage("CHN-1003", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
-        // The last two channel messages should be:
-        //
-        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
-
         // Verify
-
         int resultSize = results.size();
         String log = getLog(results.get(resultSize - 1));
 

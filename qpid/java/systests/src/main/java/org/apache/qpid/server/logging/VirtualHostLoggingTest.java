@@ -59,8 +59,10 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
      */
     public void testVirtualhostCreation() throws Exception
     {
+        //Wait for the correct VHT message to arrive.                                 
+        _monitor.waitForMessage("VHT-1001",DEFAULT_LOG_WAIT);
 
-        List<String> results = _monitor.waitAndFindMatches(VHT_PREFIX, DEFAULT_LOG_WAIT);
+        List<String> results = _monitor.findMatches(VHT_PREFIX);
         try
         {
             // Validation
@@ -112,7 +114,10 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
     {
         stopBroker();
 
-        List<String> results = _monitor.waitAndFindMatches(VHT_PREFIX, DEFAULT_LOG_WAIT);
+        //Wait for the correct VHT message to arrive.
+        _monitor.waitForMessage("VHT-1002",DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(VHT_PREFIX);
         try
         {
             // Validation

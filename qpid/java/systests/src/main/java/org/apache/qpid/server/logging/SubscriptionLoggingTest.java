@@ -91,7 +91,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
-        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
@@ -126,7 +129,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createDurableSubscriber(_topic, getName());
 
         //Validate
-        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, 2000);
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set not as expected.", 1, results.size());
 
@@ -162,7 +168,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createBrowser(_queue);
 
         //Validate
-        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 2, results.size());
 
@@ -206,7 +215,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
-        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
@@ -244,7 +256,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
-        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, 2000);
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
@@ -282,7 +297,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createConsumer(_queue).close();
 
         //Validate
-        List<String> results = _monitor.waitAndFindMatches(SUB_PREFIX, DEFAULT_LOG_WAIT);
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1002", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         //3
         assertEquals("Result set larger than expected.", 2, results.size());

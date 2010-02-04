@@ -146,7 +146,10 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // Open and then close the conneciton
         getConnection().close();
 
-        List<String> results = _monitor.waitAndFindMatches(CONNECTION_PREFIX, DEFAULT_LOG_WAIT);
+        // Wait to ensure that the desired message is logged
+        _monitor.waitForMessage("CON-1002", DEFAULT_LOG_WAIT);
+
+        List<String> results = _monitor.findMatches(CONNECTION_PREFIX);
 
         // Validation
 

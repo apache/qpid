@@ -85,7 +85,11 @@ public class ManagementLoggingTest extends AbstractTestLogging
             // Now we can create the monitor as _outputFile will now be defined
             _monitor = new LogMonitor(_outputFile);
 
-            List<String> results = _monitor.waitAndFindMatches(MNG_PREFIX, DEFAULT_LOG_WAIT);
+            // Ensure we have received the MNG log msg.
+            _monitor.waitForMessage("MNG-1001", DEFAULT_LOG_WAIT);
+
+            List<String> results = _monitor.findMatches(MNG_PREFIX);
+            
             try
             {
                 // Validation
@@ -144,7 +148,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             // Now we can create the monitor as _outputFile will now be defined
             _monitor = new LogMonitor(_outputFile);
 
-            List<String> results = _monitor.waitAndFindMatches(MNG_PREFIX, DEFAULT_LOG_WAIT);
+            List<String> results = _monitor.findMatches(MNG_PREFIX);
             try
             {
                 // Validation
