@@ -24,3 +24,4 @@ import basic_query
 import basic_method
 import obj_gets
 import events
+import multi_response
