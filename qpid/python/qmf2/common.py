@@ -969,6 +969,28 @@ class QmfQuery(_mapEncoder):
         return cls(_target=target, _target_params=_target_params)
     create_wildcard = classmethod(_create_wildcard)
 
+    def _create_wildcard_object_id(cls, schema_id):
+        """
+        Create a wildcard to match all object_ids for a given schema.
+        """
+        if not isinstance(schema_id, SchemaClassId):
+            raise TypeError("class SchemaClassId expected")
+        params = {QmfData.KEY_SCHEMA_ID: schema_id}
+        return cls(_target=QmfQuery.TARGET_OBJECT_ID,
+                   _target_params=params)
+    create_wildcard_object_id = classmethod(_create_wildcard_object_id)
+
+    def _create_wildcard_object(cls, schema_id):
+        """
+        Create a wildcard to match all objects for a given schema.
+        """
+        if not isinstance(schema_id, SchemaClassId):
+            raise TypeError("class SchemaClassId expected")
+        params = {QmfData.KEY_SCHEMA_ID: schema_id}
+        return cls(_target=QmfQuery.TARGET_OBJECT,
+                   _target_params=params)
+    create_wildcard_object = classmethod(_create_wildcard_object)
+
     def _create_predicate(cls, target, predicate, _target_params=None): 
         return cls(_target=target, _target_params=_target_params,
                    _predicate=predicate)
