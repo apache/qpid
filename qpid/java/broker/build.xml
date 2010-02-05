@@ -30,7 +30,7 @@
 
     <property name="qmf.input.file" value="${project.root}/../specs/management-schema.xml"/>
     <property name="qmf.xsl.file" value="${project.root}/broker/src/xsl/qmf.xsl"/>
-    <property name="qmf.output.dir" value="${module.precompiled}/org/apache/qpid/server/qmf/schema"/>
+    <property name="qmf.output.dir" value="${module.precompiled}/org/apache/qpid/qmf/schema"/>
     <property name="qmf.output.file" value="BrokerSchema.java"/>
 
     <property name="gentools.home" location="${project.root}/../gentools" />
