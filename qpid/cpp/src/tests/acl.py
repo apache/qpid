@@ -41,7 +41,8 @@ class ACLTests(TestBase010):
 
     def get_session(self, user, passwd):
         socket = connect(self.broker.host, self.broker.port)
-        connection = Connection (sock=socket, username=user, password=passwd)
+        connection = Connection (sock=socket, username=user, password=passwd,
+                                 mechanism="PLAIN")
         connection.start()
         return connection.session(str(uuid4()))
 
