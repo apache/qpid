@@ -32,6 +32,7 @@ import java.util.List;
 
 public class AbstractTestLogging extends QpidTestCase
 {
+    public static final long DEFAULT_LOG_WAIT = 2000;
     protected LogMonitor _monitor;
 
     @Override

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedList;
 
 /**
  * Utility to simplify the monitoring of Log4j file output
@@ -91,6 +92,30 @@ public class LogMonitor
     }
 
     /**
+     * Checks the log file for a given message to appear and returns all
+     * instances of that appearance.
+     *
+     * @param message the message to wait for in the log
+     * @param wait    the time in ms to wait for the message to occur
+     * @return true if the message was found
+     *
+     * @throws java.io.FileNotFoundException if the Log file can nolonger be found
+     * @throws IOException                   thrown when reading the log file
+     */
+    public List<String> waitAndFindMatches(String message, long wait)
+            throws FileNotFoundException, IOException
+    {
+        if (waitForMessage(message, wait, true))
+        {
+            return findMatches(message);
+        }
+        else
+        {
+            return new LinkedList<String>();
+        }
+    }
+
+    /**
      * Checks the log for instances of the search string.
      *
      * The pattern parameter can take any valid argument used in String.contains()
@@ -114,6 +139,8 @@ public class LogMonitor
      * @param message the message to wait for in the log
      * @param wait    the time in ms to wait for the message to occur
      *
+     * @param printFileOnFailure should we print the contents that have been
+     * read if we fail ot find the message.
      * @return true if the message was found
      *
      * @throws java.io.FileNotFoundException if the Log file can nolonger be found

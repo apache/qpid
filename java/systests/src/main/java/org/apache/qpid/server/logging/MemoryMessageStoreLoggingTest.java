@@ -78,7 +78,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         startBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -93,7 +93,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
-        results = _monitor.findMatches("MST-1001");
+        results = _monitor.waitAndFindMatches("MST-1001", DEFAULT_LOG_WAIT);
 
         assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
@@ -149,7 +149,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         //Stop the broker so we get the close messages.
         stopBroker();
 
-        List<String> results = _monitor.findMatches(MESSAGES_STORE_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
         // Validation
 
@@ -160,7 +160,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
-        results = _monitor.findMatches("MST-1003");
+        results = _monitor.waitAndFindMatches("MST-1003", DEFAULT_LOG_WAIT);
 
         assertEquals("Each vhost did not close its store.", vhosts.size(), results.size());
 

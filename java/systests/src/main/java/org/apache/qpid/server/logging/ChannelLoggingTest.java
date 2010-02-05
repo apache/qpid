@@ -26,24 +26,14 @@ import javax.jms.Connection;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
-import java.io.File;
 import java.util.List;
 
 public class ChannelLoggingTest extends AbstractTestLogging
 {
     private static final String CHANNEL_PREFIX = "CHN-";
 
-    public void setUp() throws Exception
-    {
-        // set QPID_WORK to be [QPID_WORK|io.tmpdir]/<testName>
-        setSystemProperty("QPID_WORK",
-                          System.getProperty("QPID_WORK",
-                                             System.getProperty("java.io.tmpdir"))
-                          + File.separator + getName());
-
-        //Start the broker
-        super.setUp();
-    }
+    // No explicit startup configuration is required for this test
+    // so no setUp() method
 
     /**
      * Description:
@@ -73,6 +63,9 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         // Test that calling session.close gives us the expected output
         ((AMQConnection)connection).createSession(false, Session.AUTO_ACKNOWLEDGE,PREFETCH);
+
+        // Wait to ensure that the CHN-1004 message is logged
+        _monitor.waitForMessage("CHN-1004", DEFAULT_LOG_WAIT);
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
@@ -129,13 +122,16 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         connection.start();
 
+        // Wait to ensure that the CHN-1002 message is logged
+        _monitor.waitForMessage("CHN-1002", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
         // The last channel message should be:
         //
-        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow Off
+        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow Stopped
 
         // Verify
         int resultSize = results.size();
@@ -183,22 +179,30 @@ public class ChannelLoggingTest extends AbstractTestLogging
         //Call receive to send the Flow On message
         consumer.receiveNoWait();
 
+        //Wait for up to 2 seconds for message to appear
+        // ignore response as we will use the findMatches afterwards just
+        // incase it did take more than 2 seconds to log.
+        _monitor.waitForMessage(CHANNEL_PREFIX, 2000);
+
+        // Wait to ensure that the CHN-1002 message is logged
+        _monitor.waitForMessage("CHN-1002", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
-        // The last two channel messages should be:
+        // The last two channel messages(before the close) should be:
         //
-        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
+        // INFO [qpid.message] MESSAGE [con:1(guest@/127.0.0.1:49869/test)/ch:1] [con:1(guest@/127.0.0.1:49869/test)/ch:1] CHN-1002 : Flow Stopped
+        // INFO [qpid.message] MESSAGE [con:1(guest@/127.0.0.1:49869/test)/ch:1] [con:1(guest@/127.0.0.1:49869/test)/ch:1] CHN-1002 : Flow Started
 
-        // Verify
 
+        // Verify the last channel msg is Started.
         int resultSize = results.size();
         String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1002", log);
         assertEquals("Message should be Flow Started", "Flow Started", getMessageString(fromMessage(log)));
-
     }
 
     /**
@@ -231,6 +235,9 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         // Close the connection to verify the created session closing is logged.
         connection.close();
+
+        // Wait to ensure that the CHN-1003 message is logged
+        _monitor.waitForMessage("CHN-1003", DEFAULT_LOG_WAIT);
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
@@ -279,16 +286,14 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Create a session and then close it
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
 
+        // Wait to ensure that the CHN-1003 message is logged
+        _monitor.waitForMessage("CHN-1003", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
-        // The last two channel messages should be:
-        //
-        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
-
         // Verify
-
         int resultSize = results.size();
         String log = getLog(results.get(resultSize - 1));
 
