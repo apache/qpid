@@ -32,6 +32,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * This test extends the synchronous AcknowledgeTest to use a MessageListener
+ * and receive messages asynchronously.
+ */
 public class AcknowledgeOnMessageTest extends AcknowledgeTest implements MessageListener
 {
     protected CountDownLatch _receivedAll;
@@ -43,6 +47,13 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
         super.setUp();
     }
 
+    /**
+     * Override the synchronous AcknowledgeTest init to provide the _receivedAll
+     * CountDownLatch init and ensure that we set the MessageListener.
+     * @param transacted
+     * @param mode
+     * @throws Exception
+     */
     @Override
     public void init(boolean transacted, int mode) throws Exception
     {
@@ -53,11 +64,25 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
     }
 
     /**
+     * This test overrides the testAcking from the simple recieve() model to all
+     * for asynchronous receiving of messages.
+     *
+     * Again the transaction/ack mode is provided to this main test run
+     *
+     * The init method is called which will setup the listener so that we can
+     * then sit and await using the _receivedAll CountDownLatch. We wait for up
+     * to 10s if no messages have been received in the last 10s then test will
+     * fail.
+     *
+     * If the test fails then it will attempt to retrieve any exception that the
+     * asynchronous delivery thread may have recorded.
+     *
      * @param transacted
      * @param mode
      *
      * @throws Exception
      */
+    @Override
     protected void testAcking(boolean transacted, int mode) throws Exception
     {
         init(transacted, mode);
@@ -69,7 +94,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
         int lastCount = NUM_MESSAGES;
 
         // Wait for messages to arrive
-        boolean complete = _receivedAll.await(5000L, TimeUnit.MILLISECONDS);
+        boolean complete = _receivedAll.await(10000L, TimeUnit.MILLISECONDS);
 
         // If the messasges haven't arrived
         while (!complete)
@@ -90,7 +115,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             lastCount = currentCount;
 
             // Wait again for messages to arrive.
-            complete = _receivedAll.await(5000L, TimeUnit.MILLISECONDS);
+            complete = _receivedAll.await(10000L, TimeUnit.MILLISECONDS);
         }
 
         // If we failed to receive all the messages then fail the test.
@@ -105,6 +130,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             }
             else
             {
+                _logger.info("AOMT: Check QueueDepth:" + _queue);
                 long onQueue=((AMQSession) getConnection().createSession(false, Session.AUTO_ACKNOWLEDGE)).getQueueDepth((AMQDestination) _queue);
                 fail("All messages not received missing:" + _receivedAll.getCount() + "/" + NUM_MESSAGES+" On Queue:"+onQueue);
 
@@ -136,14 +162,27 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
 
         _consumerSession.close();
 
+        _logger.info("AOMT: check number of message at end of test.");
         assertEquals("Wrong number of messages on queue", 0,
                      ((AMQSession) getConnection().createSession(false, Session.AUTO_ACKNOWLEDGE)).getQueueDepth((AMQDestination) _queue));
     }
 
+    /**
+     * The MessageListener interface that recieves the message and counts down
+     * the _receivedAll CountDownLatch.
+     *
+     * Again like AcknowledgeTest acknowledgement is actually handled in
+     * doAcknowlegement.
+     *
+     * The message INDEX is validated to ensure the correct message order is
+     * preserved.
+     *
+     * @param message
+     */
     public void onMessage(Message message)
     {
         // Log received Message for debugging
-        System.out.println("RECEIVED MESSAGE:" + message);
+        _logger.info("RECEIVED MESSAGE:" + message);
 
         try
         {
@@ -164,7 +203,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
         }
         catch (Exception e)
         {
-            // This will end the test run by counting down _receviedAll 
+            // This will end the test run by counting down _receivedAll
             fail(e);
         }
     }
@@ -176,6 +215,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
      */
     protected void fail(Exception e)
     {
+        //record the failure
         _causeOfFailure.set(e);
         // End the test.
         while (_receivedAll.getCount() != 0)

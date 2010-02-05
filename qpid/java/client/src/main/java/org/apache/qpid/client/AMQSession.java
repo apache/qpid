@@ -504,6 +504,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             _queue = new FlowControllingBlockingQueue(_prefetchHighMark, null);
         }
+        
+        // Add creation logging to tie in with the existing close logging
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Created session:" + this);
+        }
     }
 
     /**
