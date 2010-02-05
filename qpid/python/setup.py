@@ -19,7 +19,17 @@
 #
 from distutils.core import setup
 
-setup(name="qpid", version="0.7", packages=["qpid", "mllib"], scripts=["amqp-doc"],
+setup(name="qpid",
+      version="0.7",
+      packages=["mllib", "qpid", "qpid.tests", "qmf", "qmf2", "qmf2.tests"],
+      scripts=["qpid-python-test",
+               "commands/qpid-cluster",
+               "commands/qpid-config",
+               "commands/qpid-printevents",
+               "commands/qpid-queue-stats",
+               "commands/qpid-route",
+               "commands/qpid-stat",
+               "commands/qpid-tool"],
       url="http://qpid.apache.org/",
       license="Apache Software License",
       description="Python language client implementation for Apache Qpid")
