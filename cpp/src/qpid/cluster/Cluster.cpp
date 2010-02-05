@@ -509,10 +509,8 @@ ConnectionPtr Cluster::getConnection(const EventFrame& e, Lock&) {
             assert(cp);
         }
         else {              // New remote connection, create a shadow.
-            std::ostringstream mgmtId;
             unsigned int ssf = (announce && announce->hasSsf()) ? announce->getSsf() : 0;
-            mgmtId << id;
-            cp = new Connection(*this, shadowOut, mgmtId.str(), id, ssf);
+            cp = new Connection(*this, shadowOut, announce->getManagementId(), id, ssf);
         }
         connections.insert(ConnectionMap::value_type(id, cp));
     }

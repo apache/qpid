@@ -193,7 +193,6 @@ class BrokerManager:
         self.qmf.delBroker(self.broker)
         self.broker = None
         self.brokers = []
-        pattern = re.compile("^\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+$")
 
         idx = 0
         for host in hostList:
@@ -209,7 +208,7 @@ class BrokerManager:
                 print "Clients on Member: ID=%s:" % displayList[idx]
             connList = self.qmf.getObjects(_class="connection", _package="org.apache.qpid.broker", _broker=broker)
             for conn in connList:
-                if pattern.match(conn.address):
+                if not conn.shadow:
                     if self.config._numeric or self.config._delConn:
                         a = conn.address
                     else:
