@@ -30,6 +30,8 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -37,12 +39,14 @@ import java.util.concurrent.CountDownLatch;
 
 public class FailoverMethodTest extends TestCase implements ExceptionListener
 {
-    private CountDownLatch _failoverComplete = new CountDownLatch(1);
+    private CountDownLatch _failoverComplete;
+    protected static final Logger _logger = LoggerFactory.getLogger(FailoverMethodTest.class);
 
     public void setUp() throws AMQVMBrokerCreationException
     {
         ApplicationRegistry.getInstance();
         TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        _failoverComplete = new CountDownLatch(1);
     }
 
     public void tearDown()
@@ -153,14 +157,29 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
     {
         if (e.getLinkedException() instanceof AMQDisconnectedException)
         {
+            _logger.debug("Received AMQDisconnectedException");
             _failoverComplete.countDown();
         }
     }
 
+    /**
+     * Test that setting 'nofailover' as the failover policy does not result in
+     * delays or connection attempts when the initial connection is lost.
+     *
+     * Test validates that there is a connection delay as required on initial
+     * connection.
+     *
+     * @throws URLSyntaxException
+     * @throws AMQVMBrokerCreationException
+     * @throws InterruptedException
+     * @throws JMSException
+     */
     public void testNoFailover() throws URLSyntaxException, AMQVMBrokerCreationException,
                                         InterruptedException, JMSException
     {
-        String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='500',retries='3'',failover='nofailover'";
+        int CONNECT_DELAY = 2000;
+        String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='" + CONNECT_DELAY + "'," +
+                                  "retries='3'',failover='nofailover'";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
 
@@ -204,7 +223,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             long duration = (end - start);
 
             // Check that we actually had a delay had a delay in connection
-            assertTrue("Initial connection should be longer than 1 delay : 500 <:(" + duration + ")", duration > 500);
+            assertTrue("Initial connection should be longer than 1 delay : " + CONNECT_DELAY + " <:(" + duration + ")", duration > CONNECT_DELAY);
 
 
             connection.setExceptionListener(this);
@@ -226,7 +245,8 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
 
             // Notification of the connection failure should be very quick as we are denying the ability to failover.
             // It may not be as quick for Java profile tests so lets just make sure it is less than the connectiondelay
-            assertTrue("Notification of the connection failure took was : 100 >:(" + duration + ")", duration < 500);
+            // Occasionally it takes 1s so we have to set CONNECT_DELAY to be higher to take that in to account. 
+            assertTrue("Notification of the connection failure took was : " + CONNECT_DELAY + " >:(" + duration + ")", duration < CONNECT_DELAY);
         }
         catch (AMQException e)
         {
