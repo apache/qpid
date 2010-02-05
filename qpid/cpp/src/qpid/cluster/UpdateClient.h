@@ -29,7 +29,6 @@
 #include "qpid/client/AsyncSession.h"
 #include "qpid/broker/SemanticState.h"
 #include "qpid/sys/Runnable.h"
-#include "qmf/org/apache/qpid/broker/ManagementSetupState.h"
 #include <boost/shared_ptr.hpp>
 
 
@@ -98,7 +97,8 @@ class UpdateClient : public sys::Runnable {
     void updateConsumer(const broker::SemanticState::ConsumerImpl::shared_ptr&);
     void updateQueueListeners(const boost::shared_ptr<broker::Queue>&);
     void updateQueueListener(std::string& q, const boost::shared_ptr<broker::Consumer>& c);
-    void updateManagementSetupState(broker::Broker & b);
+    void updateManagementSetupState();
+    void updateManagementAgent();
 
     Numbering<broker::SemanticState::ConsumerImpl::shared_ptr> consumerNumbering;
     MemberId updaterId;

@@ -164,6 +164,7 @@ class Connection :
 
     void addQueueListener(const std::string& queue, uint32_t listener);
     void managementSchema(const std::string& data);
+    void managementAgents(const std::string& data);
     void managementSetupState(uint64_t objectNum, uint16_t bootSequence);
 
     uint32_t getSsf() const { return connectionCtor.ssf; }

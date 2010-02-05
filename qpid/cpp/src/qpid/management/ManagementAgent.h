@@ -71,6 +71,9 @@ public:
     /** Called after plugins are initialized. */
     void pluginsInitialized();
 
+    /** Called by cluster to suppress management output during update. */
+    void suppress(bool s) { suppressed = s; }
+
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
                           qpid::broker::Exchange::shared_ptr directExchange);
@@ -90,6 +93,8 @@ public:
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
 
+    QPID_BROKER_EXTERN void clusterUpdate();
+
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
@@ -105,8 +110,14 @@ public:
     /** Serialize my schemas as a binary blob into schemaOut */
     void exportSchemas(std::string& schemaOut);
 
+    /** Serialize my remote-agent map as a binary blob into agentsOut */
+    void exportAgents(std::string& agentsOut);
+
     /** Decode a serialized schemas and add to my schema cache */
     void importSchemas(framing::Buffer& inBuf);
+
+    /** Decode a serialized agent map */
+    void importAgents(framing::Buffer& inBuf);
 
     // these are in support of the managementSetup-state stuff, for synch'ing clustered brokers
     uint64_t getNextObjectId(void) { return nextObjectId; }
@@ -136,9 +147,13 @@ private:
         std::string       routingKey;
         ObjectId          connectionRef;
         qmf::org::apache::qpid::broker::Agent*    mgmtObject;
-        RemoteAgent(ManagementAgent& _agent) : agent(_agent) {}
+        RemoteAgent(ManagementAgent& _agent) : agent(_agent), mgmtObject(0) {}
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
+
         virtual ~RemoteAgent ();
+        void encode(framing::Buffer& buffer) const;
+        void decode(framing::Buffer& buffer);
+        uint32_t encodedSize() const;
     };
 
     // TODO: Eventually replace string with entire reply-to structure.  reply-to
@@ -205,9 +220,6 @@ private:
     ManagementObjectMap          managementObjects;
     ManagementObjectMap          newManagementObjects;
 
-    static ManagementAgent*      agent;
-    static bool                  enabled;
-
     framing::Uuid                uuid;
     sys::Mutex                   addLock;
     sys::Mutex                   userLock;
@@ -224,6 +236,7 @@ private:
     uint32_t                     nextRequestSequence;
     bool                         clientWasAdded;
     const uint64_t               startTime;
+    bool                         suppressed;
 
     std::auto_ptr<IdAllocator> allocator;
 
@@ -282,6 +295,7 @@ private:
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);
     size_t validateEventSchema(framing::Buffer&);
+    void debugSnapshot(const char*);
 };
 
 }}
