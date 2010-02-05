@@ -34,8 +34,10 @@ if [ ! -d $PYTHON_DIR -a -d $top_srcdir/../python ]; then
     export PYTHON_DIR=$top_srcdir/../python
     export QPID_PYTHON_TEST=$PYTHON_DIR/qpid-python-test
 fi
+export QPID_TESTS=$top_srcdir/../tests
+export QPID_TESTS_PY=$QPID_TESTS/src/py
 export PYTHON_COMMANDS=$PYTHON_DIR/commands
-export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$PYTHONPATH
+export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$QPID_TESTS_PY:$PYTHONPATH
 export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_CLUSTER_EXEC=$PYTHON_COMMANDS/qpid-cluster

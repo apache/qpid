@@ -53,8 +53,6 @@ if test -d ${PYTHON_DIR} ;  then
     cp $srcdir/policy.acl $DATA_DIR
     start_brokers
     echo "Running acl tests using brokers on ports $LOCAL_PORT"
-    PYTHONPATH=$PYTHON_DIR:$srcdir
-    export PYTHONPATH
     $QPID_PYTHON_TEST -b localhost:$LOCAL_PORT -m acl || EXITCODE=1
     stop_brokers || EXITCODE=1
     test_loading_acl_from_absolute_path || EXITCODE=1

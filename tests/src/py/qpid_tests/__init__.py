@@ -1,4 +1,4 @@
-#!/bin/sh
+# Do not delete - marks this directory as a python package.
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,11 +19,4 @@
 # under the License.
 #
 
-# Run the python tests.
-source ./test_env.sh
-test -d $PYTHON_DIR || { echo "Skipping python tests, no python dir."; exit 0; }
-QPID_PORT=${QPID_PORT:-5672}
-PYTHON_TESTS=${PYTHON_TESTS:-$*}
-FAILING=${FAILING:-/dev/null}
-
-python $QPID_PYTHON_TEST -m qpid_tests.broker_0_10 -m qpid.tests -b localhost:$QPID_PORT -I $FAILING $PYTHON_TESTS || exit 1
+import broker_0_10, broker_0_9, broker_0_8

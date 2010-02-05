@@ -31,7 +31,7 @@ else
 AMQP_SPEC_DIR=$(PWD)/$(DATA_DIR)/amqp
 endif
 
-DIRS=qmf qpid mllib models examples tests tests_0-8 tests_0-9 tests_0-10
+DIRS=qmf qpid mllib models examples tests
 SRCS=$(shell find $(DIRS) -name "*.py") qpid_config.py
 BUILD=build
 TARGETS=$(SRCS:%.py=$(BUILD)/%.py)
@@ -78,18 +78,6 @@ install: build
 	install -d $(PYTHON_LIB)/tests
 	install -pm 0644 $(BUILD)/tests/*.* $(PYTHON_LIB)/tests
 	$(PYCC) $(PYTHON_LIB)/tests
-
-	install -d $(PYTHON_LIB)/tests_0-8
-	install -pm 0644 $(BUILD)/tests_0-8/*.* $(PYTHON_LIB)/tests_0-8
-	$(PYCC) $(PYTHON_LIB)/tests_0-8
-
-	install -d $(PYTHON_LIB)/tests_0-9
-	install -pm 0644 $(BUILD)/tests_0-9/*.* $(PYTHON_LIB)/tests_0-9
-	$(PYCC) $(PYTHON_LIB)/tests_0-9
-
-	install -d $(PYTHON_LIB)/tests_0-10
-	install -pm 0644 $(BUILD)/tests_0-10/*.* $(PYTHON_LIB)/tests_0-10
-	$(PYCC) $(PYTHON_LIB)/tests_0-10
 
 	install -d $(EXEC_PREFIX)
 	install -pm 0755 qpid-python-test commands/* $(EXEC_PREFIX)
