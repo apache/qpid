@@ -248,6 +248,9 @@
       <field name="bootSequence" type="uint16"/>
     </control>
 
-
+    <!-- Replicate management agent's remote-agent map -->
+    <control name="management-agents" code="0x37">
+      <field name="data" type="vbin32"/>
+    </control>
   </class>
 </amqp>
