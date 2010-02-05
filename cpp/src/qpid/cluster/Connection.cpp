@@ -197,7 +197,6 @@ struct GiveReadCreditOnExit {
 
 void Connection::deliverDoOutput(uint32_t limit) {
     output.deliverDoOutput(limit);
-    cluster.debugSnapshot("deliver-do-output", this);
 }
 
 // Called in delivery thread, in cluster order.
@@ -530,6 +529,15 @@ void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
         throw Exception(QPID_MSG("Management schema update but no management agent."));
     agent->setNextObjectId(objectNum);
     agent->setBootSequence(bootSequence);
+}
+
+void Connection::managementAgents(const std::string& data) {
+    management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
+    if (!agent)
+        throw Exception(QPID_MSG("Management agents update but no management agent."));
+    framing::Buffer buf(const_cast<char*>(data.data()), data.size());
+    agent->importAgents(buf);
+    QPID_LOG(debug, cluster << " updated management agents");
 }
 
 }} // Namespace qpid::cluster

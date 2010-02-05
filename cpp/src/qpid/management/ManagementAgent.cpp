@@ -32,6 +32,7 @@
 #include <list>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 using boost::intrusive_ptr;
 using qpid::framing::Uuid;
@@ -53,7 +54,8 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
 
 ManagementAgent::ManagementAgent () :
     threadPoolSize(1), interval(10), broker(0), timer(0),
-    startTime(uint64_t(Duration(now())))
+    startTime(uint64_t(Duration(now()))),
+    suppressed(false)
 {
     nextObjectId   = 1;
     brokerBank     = 1;
@@ -87,7 +89,7 @@ ManagementAgent::~ManagementAgent ()
 }
 
 void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
-                                 qpid::broker::Broker* _broker, int _threads)
+                                qpid::broker::Broker* _broker, int _threads)
 {
     dataDir        = _dataDir;
     interval       = _interval;
@@ -151,16 +153,16 @@ void ManagementAgent::writeData ()
 }
 
 void ManagementAgent::setExchange (qpid::broker::Exchange::shared_ptr _mexchange,
-                                    qpid::broker::Exchange::shared_ptr _dexchange)
+                                   qpid::broker::Exchange::shared_ptr _dexchange)
 {
     mExchange = _mexchange;
     dExchange = _dexchange;
 }
 
 void ManagementAgent::registerClass (const string&  packageName,
-                                      const string&  className,
-                                      uint8_t* md5Sum,
-                                      ManagementObject::writeSchemaCall_t schemaCall)
+                                     const string&  className,
+                                     uint8_t* md5Sum,
+                                     ManagementObject::writeSchemaCall_t schemaCall)
 {
     Mutex::ScopedLock lock(userLock);
     PackageMap::iterator pIter = findOrAddPackageLH(packageName);
@@ -168,9 +170,9 @@ void ManagementAgent::registerClass (const string&  packageName,
 }
 
 void ManagementAgent::registerEvent (const string&  packageName,
-                                      const string&  eventName,
-                                      uint8_t* md5Sum,
-                                      ManagementObject::writeSchemaCall_t schemaCall)
+                                     const string&  eventName,
+                                     uint8_t* md5Sum,
+                                     ManagementObject::writeSchemaCall_t schemaCall)
 {
     Mutex::ScopedLock lock(userLock);
     PackageMap::iterator pIter = findOrAddPackageLH(packageName);
@@ -240,7 +242,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
 ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
     : TimerTask (qpid::sys::Duration((_seconds ? _seconds : 1) * qpid::sys::TIME_SEC),
                  "ManagementAgent::periodicProcessing"),
-                 agent(_agent) {}
+      agent(_agent) {}
 
 ManagementAgent::Periodic::~Periodic () {}
 
@@ -271,6 +273,14 @@ void ManagementAgent::clientAdded (const std::string& routingKey)
     }
 }
 
+void ManagementAgent::clusterUpdate() {
+    // Called on all cluster memebesr when a new member joins a cluster.
+    // Set clientWasAdded so that on the next periodicProcessing we will do 
+    // a full update on all cluster members.
+    clientWasAdded = true;
+    debugSnapshot("update");
+}
+
 void ManagementAgent::encodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
 {
     buf.putOctet ('A');
@@ -293,12 +303,15 @@ bool ManagementAgent::checkHeader (Buffer& buf, uint8_t *opcode, uint32_t *seq)
 }
 
 void ManagementAgent::sendBuffer(Buffer&  buf,
-                                  uint32_t length,
-                                  qpid::broker::Exchange::shared_ptr exchange,
-                                  string   routingKey)
+                                 uint32_t length,
+                                 qpid::broker::Exchange::shared_ptr exchange,
+                                 string   routingKey)
 {
-    if (exchange.get() == 0)
+    if (suppressed) {
+        QPID_LOG(trace, "Suppressed management message to " << routingKey);
         return;
+    }
+    if (exchange.get() == 0) return;
 
     intrusive_ptr<Message> msg(new Message());
     AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange->getName (), 0, 0)));
@@ -341,7 +354,7 @@ void ManagementAgent::periodicProcessing (void)
 #define BUFSIZE   65536
 #define HEADROOM  4096
     QPID_LOG(trace, "Management agent periodic processing")
-    Mutex::ScopedLock lock (userLock);
+        Mutex::ScopedLock lock (userLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     string              routingKey;
@@ -452,6 +465,7 @@ void ManagementAgent::periodicProcessing (void)
         sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         QPID_LOG(trace, "SEND HeartbeatInd to=" << routingKey);
     }
+    debugSnapshot("periodic");
 }
 
 void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
@@ -481,7 +495,7 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
 }
 
 void ManagementAgent::sendCommandComplete (string replyToKey, uint32_t sequence,
-                                            uint32_t code, string text)
+                                           uint32_t code, string text)
 {
     Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
@@ -497,8 +511,8 @@ void ManagementAgent::sendCommandComplete (string replyToKey, uint32_t sequence,
 }
 
 bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
-                                        const string&     routingKey,
-                                        const FieldTable* /*args*/)
+                                       const string&     routingKey,
+                                       const FieldTable* /*args*/)
 {
     Mutex::ScopedLock lock (userLock);
     Message&  msg = ((DeliverableMessage&) deliverable).getMessage ();
@@ -533,7 +547,7 @@ bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
 }
 
 void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey,
-                                              uint32_t sequence, const ConnectionToken* connToken)
+                                             uint32_t sequence, const ConnectionToken* connToken)
 {
     string   methodName;
     string   packageName;
@@ -562,7 +576,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
         outBuffer.reset();
         sendBuffer(outBuffer, outLen, dExchange, replyToKey);
         QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN text=" << i->second << " seq=" << sequence)
-        return;
+            return;
     }
 
     if (acl != 0) {
@@ -578,7 +592,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
             outBuffer.reset();
             sendBuffer(outBuffer, outLen, dExchange, replyToKey);
             QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN" << " seq=" << sequence)
-            return;
+                return;
         }
     }
 
@@ -917,7 +931,6 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
     agent->mgmtObject->set_brokerBank   (brokerBank);
     agent->mgmtObject->set_agentBank    (assignedBank);
     addObject (agent->mgmtObject, 0, true);
-
     remoteAgents[connectionRef] = agent;
 
     QPID_LOG(trace, "Remote Agent registered bank=[" << brokerBank << "." << assignedBank << "] replyTo=" << replyToKey);
@@ -1062,7 +1075,7 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
             outBuffer.reset();
             sendBuffer(outBuffer, outLen, dExchange, replyToKey);
             QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN" << " seq=" << sequence)
-        }
+                }
 
         return false;
     }
@@ -1135,7 +1148,7 @@ ManagementAgent::PackageMap::iterator ManagementAgent::findOrAddPackageLH(string
     sendBuffer (outBuffer, outLen, mExchange, "schema.package");
     QPID_LOG(trace, "SEND PackageInd package=" << name << " to=schema.package")
 
-    return result.first;
+        return result.first;
 }
 
 void ManagementAgent::addClassLH(uint8_t               kind,
@@ -1366,3 +1379,69 @@ void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
     }
 }
 
+void ManagementAgent::RemoteAgent::encode(qpid::framing::Buffer& outBuf) const {
+    outBuf.checkAvailable(encodedSize());
+    outBuf.putLong(brokerBank);
+    outBuf.putLong(agentBank);
+    outBuf.putShortString(routingKey);
+    connectionRef.encode(outBuf);
+    mgmtObject->writeProperties(outBuf);
+}
+
+void ManagementAgent::RemoteAgent::decode(qpid::framing::Buffer& inBuf) {
+    brokerBank = inBuf.getLong();
+    agentBank = inBuf.getLong();
+    inBuf.getShortString(routingKey);
+    connectionRef.decode(inBuf);
+    mgmtObject = new _qmf::Agent(&agent, this);
+    mgmtObject->readProperties(inBuf);
+    agent.addObject(mgmtObject, 0, true);
+}
+
+uint32_t ManagementAgent::RemoteAgent::encodedSize() const {
+    return sizeof(uint32_t) + sizeof(uint32_t) // 2 x Long
+        + routingKey.size() + sizeof(uint8_t) // ShortString
+        + connectionRef.encodedSize()
+        + mgmtObject->writePropertiesSize();
+}
+
+void ManagementAgent::exportAgents(std::string& out) {
+    out.clear();
+    for (RemoteAgentMap::const_iterator i = remoteAgents.begin();
+         i != remoteAgents.end();
+         ++i)
+    {
+        ObjectId id = i->first;
+        RemoteAgent* agent = i->second;
+        size_t encodedSize = id.encodedSize() + agent->encodedSize();
+        size_t end = out.size();
+        out.resize(end + encodedSize);
+        framing::Buffer outBuf(&out[end], encodedSize);
+        id.encode(outBuf);
+        agent->encode(outBuf);
+    }
+}
+
+void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
+    while (inBuf.available()) {
+        ObjectId id;
+        inBuf.checkAvailable(id.encodedSize());
+        id.decode(inBuf);
+        std::auto_ptr<RemoteAgent> agent(new RemoteAgent(*this));
+        agent->decode(inBuf);
+        addObject (agent->mgmtObject, 0, false);
+        remoteAgents[agent->connectionRef] = agent.release();
+    }
+}
+
+void ManagementAgent::debugSnapshot(const char* type) {
+    std::ostringstream msg;
+    msg << type << " snapshot, agents:";
+    for (RemoteAgentMap::const_iterator i=remoteAgents.begin();
+         i != remoteAgents.end(); ++i)
+        msg << " " << i->second->routingKey;
+    msg << " packages: " << packages.size();
+    msg << " objects: " << managementObjects.size();
+    msg << " new objects: " << newManagementObjects.size();
+    QPID_LOG(trace, msg.str());
+}
