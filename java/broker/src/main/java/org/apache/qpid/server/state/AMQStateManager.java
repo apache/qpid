@@ -196,7 +196,7 @@ public class AMQStateManager implements AMQMethodListener
                   || (body instanceof ChannelCloseOkBody)
                   || (body instanceof ChannelCloseBody)))
             {
-                throw body.getConnectionException(AMQConstant.CHANNEL_ERROR, "channel is closed");
+                throw body.getConnectionException(AMQConstant.CHANNEL_ERROR, "channel is closed won't process:" + body);
             }
 
         }
