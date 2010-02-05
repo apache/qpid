@@ -327,7 +327,19 @@ EXTRA_DIST +=								\
   run_perftest								\
   ring_queue_test							\
   run_ring_queue_test							\
-  cluster.cmake
+  CMakeLists.txt							\
+  cluster.cmake								\
+  windows/DisableWin32ErrorWindows.cpp					\
+  background.ps1							\
+  find_prog.ps1								\
+  python_tests.ps1							\
+  quick_topictest.ps1							\
+  run_federation_tests.ps1						\
+  run_header_test.ps1							\
+  run_test.ps1								\
+  start_broker.ps1							\
+  stop_broker.ps1							\
+  topictest.ps1
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -343,15 +355,13 @@ LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_p
  federated_cluster_test_with_node_failure
 
 EXTRA_DIST+=						\
-	CMakeLists.txt					\
 	fanout_perftest					\
 	shared_perftest					\
 	multiq_perftest					\
 	topic_perftest					\
 	run_failover_soak				\
 	reliable_replication_test			\
-	federated_cluster_test_with_node_failure        \
-	windows/DisableWin32ErrorWindows.cpp
+	federated_cluster_test_with_node_failure
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
