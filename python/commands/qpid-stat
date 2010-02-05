@@ -34,7 +34,6 @@ _types = ""
 _limit = 50
 _increasing = False
 _sortcol = None
-pattern = re.compile("^\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+$")
 
 def Usage ():
     print "Usage:  qpid-stat [OPTIONS] [broker-addr]"
@@ -108,7 +107,7 @@ class Broker(object):
 
         list = qmf.getObjects(_class="connection", _package=package, _agent=self.brokerAgent)
         for conn in list:
-            if pattern.match(conn.address):
+            if not conn.shadow:
                 self.connections[conn.getObjectId()] = conn
 
         list = qmf.getObjects(_class="session", _package=package, _agent=self.brokerAgent)

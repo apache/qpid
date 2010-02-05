@@ -117,6 +117,7 @@
 
     <!-- Announce a new connection -->
     <control name="announce" code="0x1">
+      <field name="management-id" type="str16"/>
       <!-- Security Strength Factor (ssf): if the transport provides
       encryption (e.g. ssl), ssf is the bit length of the key.  Zero if no
       encryption provided. -->
@@ -135,13 +136,18 @@
     <control name="abort" code="0x4"/>
     
     <!-- Update controls. Sent to a new broker in joining mode.
-	 A connection is updateed as followed:
-	 - open as a normal connection.
+	 A connection is updated as followed:
+	 - send the shadow's management ID in shadow-perpare on the update connection
+	 - open the shadow as a normal connection.
 	 - attach sessions, create consumers, set flow with normal AMQP cokmmands.
 	 - send /reset additional session state with controls below.
 	 - send shadow-ready to mark end of shadow update.
 	 - send membership when entire update is complete.
     -->
+    <!-- Prepare to send a shadow connection with the given ID. -->
+    <control name="shadow-prepare" code="0x0F">
+      <field name="management-id" type="str16"/>
+    </control>
     
     <!-- Consumer state that cannot be set by standard AMQP controls. -->
     <control name="consumer-state" code="0x10">
@@ -202,6 +208,7 @@
     <control name="shadow-ready" code="0x20" label="End of shadow connection update.">
       <field name="member-id" type="uint64"/>
       <field name="connection-id" type="uint64"/>
+      <field name="management-id" type="str16"/>
       <field name="user-name" type="str8"/>
       <field name="fragment" type="str32"/>
       <field name="send-max" type="uint32"/>

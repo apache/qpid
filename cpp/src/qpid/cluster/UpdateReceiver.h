@@ -36,6 +36,9 @@ class UpdateReceiver {
     /** Numbering used to identify Queue listeners as consumers */ 
     typedef Numbering<boost::shared_ptr<broker::SemanticState::ConsumerImpl> > ConsumerNumbering;
     ConsumerNumbering consumerNumbering;
+
+    /** Management-id for the next shadow connection */
+    std::string nextShadowMgmtId;
 };
 }} // namespace qpid::cluster
 
