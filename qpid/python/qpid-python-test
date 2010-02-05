@@ -107,7 +107,7 @@ if not includes:
   if opts.modules:
     includes.append("*")
   else:
-    includes.extend(["qpid.tests.*", "tests.*"])
+    includes.extend(["qpid.tests.*"])
 
 def is_ignored(path):
   for p in excludes:
@@ -512,7 +512,7 @@ class Harness:
 
 modules = opts.modules
 if not modules:
-  modules.extend(["qpid.tests", "tests"])
+  modules.extend(["qpid.tests"])
 h = Harness()
 for name in modules:
   m = __import__(name, None, None, ["dummy"])

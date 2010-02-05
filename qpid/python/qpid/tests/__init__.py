@@ -25,4 +25,8 @@ class Test:
   def configure(self, config):
     self.config = config
 
+# API Tests
 import address, framing, mimetype, messaging
+
+# Legacy Tests
+import codec, queue, datatypes, connection, spec010, codec010
