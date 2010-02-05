@@ -79,7 +79,7 @@ class Connection : public sys::ConnectionInputHandler,
     };
 
     Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, unsigned int ssf,
-               bool isLink = false, uint64_t objectId = 0);
+               bool isLink = false, uint64_t objectId = 0, bool shadow=false);
     ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */
@@ -132,8 +132,6 @@ class Connection : public sys::ConnectionInputHandler,
 
     /** True if this is a shadow connection in a cluster. */
     bool isShadow() { return shadow; }
-    /** Called by cluster to mark shadow connections */
-    void setShadow() { shadow = true; }
 
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }

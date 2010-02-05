@@ -65,10 +65,10 @@ class Connection :
   public:
     
     /** Local connection. */
-    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& logId, MemberId, bool catchUp, bool isLink,
+    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& mgmtId, MemberId, bool catchUp, bool isLink,
                unsigned int ssf);
     /** Shadow connection. */
-    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& logId, const ConnectionId& id,
+    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& mgmtId, const ConnectionId& id,
                unsigned int ssf);
     ~Connection();
     
@@ -109,6 +109,8 @@ class Connection :
     // ==== Used in catch-up mode to build initial state.
     // 
     // State update methods.
+    void shadowPrepare(const std::string&);
+
     void sessionState(const framing::SequenceNumber& replayStart,
                       const framing::SequenceNumber& sendCommandPoint,
                       const framing::SequenceSet& sentIncomplete,
@@ -119,7 +121,12 @@ class Connection :
     
     void outputTask(uint16_t channel, const std::string& name);
     
-    void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment, uint32_t sendMax);
+    void shadowReady(uint64_t memberId,
+                     uint64_t connectionId,
+                     const std::string& managementId,
+                     const std::string& username,
+                     const std::string& fragment,
+                     uint32_t sendMax);
 
     void membership(const framing::FieldTable&, const framing::FieldTable&,
                     const framing::SequenceNumber& frameSeq,
@@ -156,7 +163,7 @@ class Connection :
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
-    void announce(uint32_t ssf);
+    void announce(const std::string& mgmtId, uint32_t ssf);
     void abort();
     void deliverClose();
 
@@ -182,6 +189,7 @@ class Connection :
         unsigned int ssf;
         bool isLink;
         uint64_t objectId;
+        bool shadow;
 
         ConnectionCtor(
             sys::ConnectionOutputHandler* out_,
@@ -189,12 +197,15 @@ class Connection :
             const std::string& mgmtId_,
             unsigned int ssf_,
             bool isLink_=false,
-            uint64_t objectId_=0
-        ) : out(out_), broker(broker_), mgmtId(mgmtId_), ssf(ssf_), isLink(isLink_), objectId(objectId_) {}
+            uint64_t objectId_=0,
+            bool shadow_=false
+        ) : out(out_), broker(broker_), mgmtId(mgmtId_), ssf(ssf_),
+            isLink(isLink_), objectId(objectId_), shadow(shadow_)
+        {}
 
         std::auto_ptr<broker::Connection> construct() {
             return std::auto_ptr<broker::Connection>(
-                new broker::Connection(out, broker, mgmtId, ssf, isLink, objectId));
+                new broker::Connection(out, broker, mgmtId, ssf, isLink, objectId, shadow));
         }
     };
 
@@ -225,7 +236,7 @@ class Connection :
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     bool expectProtocolHeader;
     McastFrameHandler mcastFrameHandler;
-    UpdateReceiver::ConsumerNumbering& consumerNumbering;
+    UpdateReceiver& updateIn;
 
     static qpid::sys::AtomicValue<uint64_t> catchUpId;
     

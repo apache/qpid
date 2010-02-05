@@ -72,7 +72,7 @@ struct ConnectionTimeoutTask : public sys::TimerTask {
     }
 };
 
-Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, unsigned int ssf, bool isLink_, uint64_t objectId) :
+Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, unsigned int ssf, bool isLink_, uint64_t objectId, bool shadow_) :
     ConnectionState(out_, broker_),
     ssf(ssf),
     adapter(*this, isLink_),
@@ -84,7 +84,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     agent(0),
     timer(broker_.getTimer()),
     errorListener(0),
-    shadow(false)
+    shadow(shadow_)
 {
     Manageable* parent = broker.GetVhostObject();
 
@@ -95,10 +95,10 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     {
         agent = broker_.getManagementAgent();
 
-
         // TODO set last bool true if system connection
         if (agent != 0) {
             mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
+            mgmtObject->set_shadow(shadow);
             agent->addObject(mgmtObject, objectId, true);
         }
         ConnectionState::setUrl(mgmtId);

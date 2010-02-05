@@ -57,6 +57,7 @@
 #include <boost/bind.hpp>
 #include <boost/cast.hpp>
 #include <algorithm>
+#include <sstream>
 
 namespace qpid {
 namespace cluster {
@@ -148,7 +149,7 @@ void UpdateClient::update() {
     ClusterConnectionProxy(session).expiryId(expiry.getId());
 
     updateManagementAgent();
-    
+
     ClusterConnectionMembershipBody membership;
     map.toMethodBody(membership);
     AMQFrame frame(membership);
@@ -328,6 +329,14 @@ void UpdateClient::updateOutputTask(const sys::OutputTask* task) {
 
 void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& updateConnection) {
     QPID_LOG(debug, updaterId << " updating connection " << *updateConnection);
+
+    // Send the management ID first on the main connection.
+    std::string mgmtId = updateConnection->getBrokerConnection().getMgmtId();
+    ClusterConnectionProxy(session).shadowPrepare(mgmtId);
+    // Make sure its received before opening shadow connection
+    session.sync();
+
+    // Open shadow connection and update it.
     shadowConnection = catchUpConnection();
 
     broker::Connection& bc = updateConnection->getBrokerConnection();
@@ -341,6 +350,7 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
     ClusterConnectionProxy(shadowConnection).shadowReady(
         updateConnection->getId().getMember(),
         updateConnection->getId().getNumber(),
+        bc.getMgmtId(),
         bc.getUserId(),
         string(fragment.first, fragment.second),
         updateConnection->getOutput().getSendMax()
