@@ -91,6 +91,9 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
@@ -126,10 +129,12 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createDurableSubscriber(_topic, getName());
 
         //Validate
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
 
         List<String> results = _monitor.findMatches(SUB_PREFIX);
 
-        assertEquals("Result set larger than expected.", 1, results.size());
+        assertEquals("Result set not as expected.", 1, results.size());
 
         String log = getLog(results.get(0));
 
@@ -163,6 +168,9 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createBrowser(_queue);
 
         //Validate
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 2, results.size());
@@ -207,6 +215,9 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
 
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
@@ -244,6 +255,9 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createDurableSubscriber(_topic, getName(), SELECTOR, false);
 
         //Validate
+
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
 
         List<String> results = _monitor.findMatches(SUB_PREFIX);
 
@@ -283,6 +297,9 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.createConsumer(_queue).close();
 
         //Validate
+        //Ensure that we wait for the SUB log message
+        _monitor.waitAndFindMatches("SUB-1002", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(SUB_PREFIX);
 
         //3
@@ -369,7 +386,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.commit();
 
         //Validate
-        List<String> results = _monitor.findMatches("SUB-1003");
+        List<String> results = _monitor.waitAndFindMatches("SUB-1003", DEFAULT_LOG_WAIT);
 
         try
         {

@@ -94,6 +94,9 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
         // They should all be durable
 
+        // Ensure we have received the EXH log msg.
+        _monitor.waitForMessage("EXH-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(EXH_PREFIX);
 
         assertTrue("No Results found for Exchange.", results.size()>0);
@@ -131,6 +134,8 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         _monitor.reset();
 
         _session.createConsumer(_queue);
+        // Ensure we have received the EXH log msg.
+        _monitor.waitForMessage("EXH-1001", DEFAULT_LOG_WAIT);
 
         List<String> results = _monitor.findMatches(EXH_PREFIX);
 
@@ -179,6 +184,9 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         AMQFrame exchangeDeclare = body.generateFrame(0);
 
         ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeleteOkBody.class);
+
+        //Wait and ensure we get our last EXH-1002 msg
+        _monitor.waitForMessage("EXH-1002", DEFAULT_LOG_WAIT);
 
         List<String> results = _monitor.findMatches(EXH_PREFIX);
 
