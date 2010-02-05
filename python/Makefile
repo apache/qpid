@@ -31,7 +31,7 @@ else
 AMQP_SPEC_DIR=$(PWD)/$(DATA_DIR)/amqp
 endif
 
-DIRS=qmf qpid mllib models examples tests
+DIRS=qmf qpid mllib examples
 SRCS=$(shell find $(DIRS) -name "*.py") qpid_config.py
 BUILD=build
 TARGETS=$(SRCS:%.py=$(BUILD)/%.py)
@@ -74,10 +74,6 @@ install: build
 	install -d $(PYTHON_LIB)/qmf
 	install -pm 0644 LICENSE.txt NOTICE.txt qmf/*.* $(PYTHON_LIB)/qmf
 	$(PYCC) $(PYTHON_LIB)/qmf
-
-	install -d $(PYTHON_LIB)/tests
-	install -pm 0644 $(BUILD)/tests/*.* $(PYTHON_LIB)/tests
-	$(PYCC) $(PYTHON_LIB)/tests
 
 	install -d $(EXEC_PREFIX)
 	install -pm 0755 qpid-python-test commands/* $(EXEC_PREFIX)
