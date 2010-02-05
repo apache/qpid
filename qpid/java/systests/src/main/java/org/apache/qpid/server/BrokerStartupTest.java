@@ -102,7 +102,7 @@ public class BrokerStartupTest extends AbstractTestLogging
                          0, _monitor.findMatches("log4j:ERROR Could not read configuration file from URL").size());
 
             assertEquals("Logging did not error as expected",
-                         1, _monitor.findMatches("Logging configuration error: unable to read file ").size());
+                         1, _monitor.waitAndFindMatches("Logging configuration error: unable to read file ", DEFAULT_LOG_WAIT).size());
 
 
             // Perfom some action on the broker to ensure that we hit the DEBUG
@@ -120,7 +120,7 @@ public class BrokerStartupTest extends AbstractTestLogging
 
             assertEquals(COUNT,drainQueue(queue));
 
-            List<String> results = _monitor.findMatches("DEBUG");
+            List<String> results = _monitor.waitAndFindMatches("DEBUG", DEFAULT_LOG_WAIT);
             try
             {
                 // Validation

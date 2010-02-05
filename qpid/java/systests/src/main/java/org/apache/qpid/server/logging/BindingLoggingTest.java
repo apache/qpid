@@ -104,7 +104,7 @@ public class BindingLoggingTest extends AbstractTestLogging
     {
         _session.createConsumer(_queue).close();
 
-        List<String> results = _monitor.findMatches(BND_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(BND_PREFIX, DEFAULT_LOG_WAIT);
 
         // We will have two binds as we bind all queues to the default exchange
         assertEquals("Result set larger than expected.", 2, results.size());
@@ -141,7 +141,7 @@ public class BindingLoggingTest extends AbstractTestLogging
 
         _session.createDurableSubscriber(_topic, getName(), SELECTOR, false).close();
 
-        List<String> results = _monitor.findMatches(BND_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(BND_PREFIX, DEFAULT_LOG_WAIT);
 
         // We will have two binds as we bind all queues to the default exchange
         assertEquals("Result set larger than expected.", 2, results.size());
@@ -212,7 +212,7 @@ public class BindingLoggingTest extends AbstractTestLogging
         // and so unbind.
         _session.createConsumer(_session.createTemporaryQueue()).close();
 
-        List<String> results = _monitor.findMatches(BND_PREFIX);
+        List<String> results = _monitor.waitAndFindMatches(BND_PREFIX, DEFAULT_LOG_WAIT);
 
         // We will have two binds as we bind all queues to the default exchange
         assertEquals("Result not as expected." + results, 4, results.size());

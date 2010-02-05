@@ -94,6 +94,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
@@ -145,6 +148,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
@@ -196,6 +202,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
@@ -260,6 +269,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
@@ -325,6 +337,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         _session.createConsumer(queue);
 
         // Validation
+        // Ensure we have received the QUE log msg.
+        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged

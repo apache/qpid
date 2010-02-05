@@ -94,6 +94,9 @@ public class QueueLoggingTest extends AbstractTestLogging
         _session.close();
 
         // Validation
+        //Ensure that we wait for the QUE log message
+        _monitor.waitAndFindMatches("QUE-1002", DEFAULT_LOG_WAIT);
+
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
@@ -145,6 +148,9 @@ public class QueueLoggingTest extends AbstractTestLogging
            _session.createConsumer(_session.createTemporaryQueue()).close();
 
            // Validation
+           //Ensure that we wait for the QUE log message
+           _monitor.waitAndFindMatches("QUE-1002", DEFAULT_LOG_WAIT);
+
            List<String> results = _monitor.findMatches(QUEUE_PREFIX);
 
            // Only 1 Queue message should hav been logged
