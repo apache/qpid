@@ -99,6 +99,12 @@ public class AcknowledgeTest extends FailoverBaseCase
             msg = _consumer.receive(1500);
         }
 
+        if (_consumerSession.getTransacted())
+        {
+            //Acknowledge the last msg if we are testing transacted otherwise queueDepth will be 1
+            doAcknowlegement(msg);
+        }
+
         assertEquals("Wrong number of messages on queue", 0,
                      ((AMQSession) _consumerSession).getQueueDepth((AMQDestination) _queue));
     }
