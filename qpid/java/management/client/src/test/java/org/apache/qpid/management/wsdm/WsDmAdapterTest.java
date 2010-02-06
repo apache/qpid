@@ -126,12 +126,12 @@ public class WsDmAdapterTest
 	public static Test suite()
 	{
 		TestSuite suite = new TestSuite("Test suite for QMan WS-DM.");
-		suite.addTestSuite(MetadataExchangeInterfaceTestCase.class);
+		/*suite.addTestSuite(MetadataExchangeInterfaceTestCase.class);
 		suite.addTestSuite(OperationInvocationInterfaceTestCase.class);
 		suite.addTestSuite(GetResourcePropertyDocumentTestCase.class);
 		suite.addTestSuite(SetResourcePropertiesTestCase.class);		
 		suite.addTestSuite(GetMultipleResourcePropertiesTestCase.class);	
-		suite.addTestSuite(GetResourcePropertiesTestCase.class);			
+		suite.addTestSuite(GetResourcePropertiesTestCase.class); */		
 		return new WsDmAdapterTestSetup(suite);
 	}
 	
