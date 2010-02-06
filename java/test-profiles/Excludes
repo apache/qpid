@@ -29,5 +29,3 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#*
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#*
 
-// The WSDM adapter test is failing again. Sadly there is no maintaince in this area
-org.apache.qpid.management.wsdm.WsDmAdapterTest#*
