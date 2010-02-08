@@ -409,6 +409,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       /wd4800
       /wd4355
     )
+    if (MSVC80)
+      add_definitions(/D "_WIN32_WINNT=0x0501")
+    endif (MSVC80)
   endif (MSVC)
 
   set (qpidcommon_platform_SOURCES
@@ -915,6 +918,15 @@ set_target_properties (qmfconsole PROPERTIES
 install (TARGETS qmfconsole
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
+# On Windows, also grab the debug version of qmfconsole.
+if (WIN32)
+    install (PROGRAMS
+             ${CMAKE_CURRENT_BINARY_DIR}/Release/qmfconsoled.dll
+             ${CMAKE_CURRENT_BINARY_DIR}/Release/qmfconsoled.lib
+             ${CMAKE_CURRENT_BINARY_DIR}/Release/qmfconsoled.pdb
+             DESTINATION ${QPID_INSTALL_LIBDIR}
+             COMPONENT ${QPID_COMPONENT_QMF})
+endif (WIN32)
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
