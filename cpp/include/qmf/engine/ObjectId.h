@@ -49,6 +49,7 @@ namespace engine {
         bool operator>(const ObjectId& other) const;
         bool operator<=(const ObjectId& other) const;
         bool operator>=(const ObjectId& other) const;
+        ObjectId& operator=(const ObjectId &other);
 
     private:
         friend struct ObjectIdImpl;

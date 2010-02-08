@@ -196,4 +196,14 @@ bool ObjectId::operator<(const ObjectId& other) const { return *impl < *other.im
 bool ObjectId::operator>(const ObjectId& other) const { return *impl > *other.impl; }
 bool ObjectId::operator<=(const ObjectId& other) const { return !(*impl > *other.impl); }
 bool ObjectId::operator>=(const ObjectId& other) const { return !(*impl < *other.impl); }
+ObjectId&  ObjectId::operator=(const ObjectId& other) {
+    ObjectIdImpl *old;
+    if (this != &other) {
+        old = impl;
+        impl = new ObjectIdImpl(*(other.impl));
+        if (old)
+            delete old;
+    }
+    return *this;
+}
 
