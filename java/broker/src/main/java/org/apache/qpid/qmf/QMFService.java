@@ -1235,6 +1235,13 @@ public class QMFService implements ConfigStore.ConfigEventListener
             // TODO
             return 0;
         }
+
+        @Override
+        public Boolean getShadow()
+        {
+            // TODO Auto-generated method stub
+            return null;
+        }
     }
 
     private class SessionDelegate implements BrokerSchema.SessionDelegate
