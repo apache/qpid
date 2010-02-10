@@ -71,11 +71,15 @@ class Connection
 
   public:
     /**
-     * Creates a connection object, but does not open the connection.
+     * Creates a Connection object, but does not open the connection.
      * @see open()
      */
     QPID_CLIENT_EXTERN Connection();
 
+    /**
+     * Destroys a Connection object but does not close the connection if it
+     * was open. @see close()
+     */
     QPID_CLIENT_EXTERN ~Connection();
 
     /**
