@@ -844,6 +844,8 @@ set (qmfengine_SOURCES
      qmf/engine/ConnectionSettingsImpl.h
      qmf/engine/ConsoleImpl.cpp
      qmf/engine/ConsoleImpl.h
+     qmf/engine/EventImpl.cpp
+     qmf/Engine/EventImpl.h
      qmf/engine/MessageImpl.cpp
      qmf/engine/MessageImpl.h
      qmf/engine/ObjectIdImpl.cpp
@@ -921,9 +923,9 @@ install (TARGETS qmfconsole
 # On Windows, also grab the debug version of qmfconsole.
 if (WIN32)
     install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Release/qmfconsoled.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Release/qmfconsoled.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Release/qmfconsoled.pdb
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.dll
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.lib
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.pdb
              DESTINATION ${QPID_INSTALL_LIBDIR}
              COMPONENT ${QPID_COMPONENT_QMF})
 endif (WIN32)
