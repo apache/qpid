@@ -107,6 +107,8 @@ public final class IoTransport<E>
             this.endpoint = binding.endpoint(sender);
             this.receiver = new IoReceiver(this, new SSLReceiver(engine,binding.receiver(endpoint),(SSLSender)sender),
                                            2*readBufferSize, timeout);
+            
+            log.info("SSL Sender and Receiver initiated");
         }
         else
         {
