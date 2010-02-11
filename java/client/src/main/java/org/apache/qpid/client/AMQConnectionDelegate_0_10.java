@@ -171,7 +171,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                                 brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME):
                                 System.getProperty("qpid.sasl_server_name", "localhost");
 
-            boolean useSSL = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION);
+            boolean useSSL = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL);
                              
             boolean useSASLEncryption = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION)?
                                         brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION):
