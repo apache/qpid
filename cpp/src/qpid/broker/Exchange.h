@@ -45,14 +45,17 @@ public:
         typedef boost::shared_ptr<Binding>       shared_ptr;
         typedef std::vector<Binding::shared_ptr> vector;
 
+        Exchange*                 parent;
         Queue::shared_ptr         queue;
         const std::string         key;
         const framing::FieldTable args;
+        std::string               origin;
         qmf::org::apache::qpid::broker::Binding* mgmtBinding;
 
         Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
                 framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
         ~Binding();
+        void startManagement();
         management::ManagementObject* GetManagementObject() const;
     };
 

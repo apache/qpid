@@ -217,8 +217,18 @@ private:
 
     RemoteAgentMap               remoteAgents;
     PackageMap                   packages;
+
+    //
+    // Protected by userLock
+    //
     ManagementObjectMap          managementObjects;
+    ManagementObjectVector       deletedManagementObjects;
+
+    //
+    // Protected by addLock
+    //
     ManagementObjectMap          newManagementObjects;
+    ManagementObjectVector       newDeletedManagementObjects;
 
     framing::Uuid                uuid;
     sys::Mutex                   addLock;
@@ -295,6 +305,7 @@ private:
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);
     size_t validateEventSchema(framing::Buffer&);
+    ManagementObjectMap::iterator numericFind(const ObjectId& oid);
     void debugSnapshot(const char*);
 };
 
