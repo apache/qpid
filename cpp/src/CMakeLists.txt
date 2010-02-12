@@ -845,7 +845,7 @@ set (qmfengine_SOURCES
      qmf/engine/ConsoleImpl.cpp
      qmf/engine/ConsoleImpl.h
      qmf/engine/EventImpl.cpp
-     qmf/Engine/EventImpl.h
+     qmf/engine/EventImpl.h
      qmf/engine/MessageImpl.cpp
      qmf/engine/MessageImpl.h
      qmf/engine/ObjectIdImpl.cpp
