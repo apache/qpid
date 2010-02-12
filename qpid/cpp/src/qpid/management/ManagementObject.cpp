@@ -109,16 +109,18 @@ void ObjectId::fromString(const std::string& text)
 
 bool ObjectId::operator==(const ObjectId &other) const
 {
-    uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
-
-    return first == otherFirst && second == other.second;
+    return v2Key == other.v2Key;
 }
 
 bool ObjectId::operator<(const ObjectId &other) const
 {
-    uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
+    return v2Key < other.v2Key;
+}
 
-    return (first < otherFirst) || ((first == otherFirst) && (second < other.second));
+bool ObjectId::equalV1(const ObjectId &other) const
+{
+    uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
+    return first == otherFirst && second == other.second;
 }
 
 void ObjectId::encode(framing::Buffer& buffer) const
@@ -135,6 +137,14 @@ void ObjectId::decode(framing::Buffer& buffer)
     first  = buffer.getLongLong();
     second = buffer.getLongLong();
 }
+
+void ObjectId::setV2Key(const ManagementObject& object)
+{
+    std::stringstream oname;
+    oname << object.getPackageName() << "." << object.getClassName() << ":" << object.getKey();
+    v2Key = oname.str();
+}
+
 
 namespace qpid {
 namespace management {

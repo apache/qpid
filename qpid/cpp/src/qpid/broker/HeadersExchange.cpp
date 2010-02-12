@@ -114,6 +114,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
             Binding::shared_ptr binding (new Binding (bindingKey, queue, this, *args));
             BoundKey bk(binding);
             if (bindings.add_unless(bk, MatchArgs(queue, args))) {
+                binding->startManagement();
                 propagate = bk.fedBinding.addOrigin(fedOrigin);
                 if (mgmtExchange != 0) {
                     mgmtExchange->inc_bindingCount();

@@ -306,9 +306,23 @@ void Exchange::propagateFedOp(const string& routingKey, const string& tags, cons
         (*iter)->propagateBinding(routingKey, tags, op, origin, extra_args);
 }
 
-Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* parent,
-                           FieldTable _args, const string& origin)
-    : queue(_queue), key(_key), args(_args), mgmtBinding(0)
+Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* _parent,
+                           FieldTable _args, const string& _origin)
+    : parent(_parent), queue(_queue), key(_key), args(_args), origin(_origin), mgmtBinding(0)
+{
+}
+
+Exchange::Binding::~Binding ()
+{
+    if (mgmtBinding != 0) {
+        ManagementObject* mo = queue->GetManagementObject();
+        if (mo != 0)
+            static_cast<_qmf::Queue*>(mo)->dec_bindingCount();
+        mgmtBinding->resourceDestroy ();
+    }
+}
+
+void Exchange::Binding::startManagement()
 {
     if (parent != 0)
     {
@@ -330,16 +344,6 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
                         }
                 }
         }
-    }
-}
-
-Exchange::Binding::~Binding ()
-{
-    if (mgmtBinding != 0) {
-        ManagementObject* mo = queue->GetManagementObject();
-        if (mo != 0)
-            static_cast<_qmf::Queue*>(mo)->dec_bindingCount();
-        mgmtBinding->resourceDestroy ();
     }
 }
 

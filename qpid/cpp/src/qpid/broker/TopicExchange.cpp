@@ -207,6 +207,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
             return false;
         } else {
             Binding::shared_ptr binding (new Binding (routingPattern, queue, this, FieldTable(), fedOrigin));
+            binding->startManagement();
             BoundKey& bk = bindings[routingPattern];
             bk.bindingVector.push_back(binding);
             propagate = bk.fedBinding.addOrigin(fedOrigin);

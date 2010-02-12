@@ -77,6 +77,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
         if (exclusiveBinding) bk.queues.clear();
 
         if (bk.queues.add_unless(b, MatchQueue(queue))) {
+            b->startManagement();
             propagate = bk.fedBinding.addOrigin(fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
