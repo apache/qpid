@@ -155,6 +155,14 @@ namespace engine {
          */
         void setNotifyFd(int fd);
 
+        /**
+         * Send a byte into the notify file descriptor.
+         *
+         * This can be used to wake up the event processing portion of the engine from either the
+         * wrapped implementation or the engine itself.
+         */
+        void notify();
+
     private:
         ResilientConnectionImpl* impl;
     };

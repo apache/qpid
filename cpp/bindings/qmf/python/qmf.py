@@ -242,8 +242,7 @@ class Connection(Thread):
 
 
     def kick(self):
-        self._sockEngine.send(".")
-        # self._sockEngine.flush()  Not available with python?
+        self.impl.notify()
 
 
     def add_conn_handler(self, handler):

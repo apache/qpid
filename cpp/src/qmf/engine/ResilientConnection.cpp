@@ -96,6 +96,7 @@ namespace engine {
         void bind(SessionHandle handle, char* exchange, char* queue, char* key);
         void unbind(SessionHandle handle, char* exchange, char* queue, char* key);
         void setNotifyFd(int fd);
+        void notify();
 
         void run();
         void failure();
@@ -329,6 +330,16 @@ void ResilientConnectionImpl::unbind(SessionHandle handle,
     sess->session.exchangeUnbind(client::arg::exchange=exchange, client::arg::queue=queue, client::arg::bindingKey=key);
 }
 
+void ResilientConnectionImpl::notify()
+{
+    if (notifyFd != -1)
+    {
+        int unused_ret;    //Suppress warnings about ignoring return value.
+        unused_ret = ::write(notifyFd, ".", 1);
+    }
+}
+
+
 void ResilientConnectionImpl::setNotifyFd(int fd)
 {
     notifyFd = fd;
@@ -494,5 +505,10 @@ void ResilientConnection::unbind(SessionHandle handle, char* exchange, char* que
 void ResilientConnection::setNotifyFd(int fd)
 {
     impl->setNotifyFd(fd);
+}
+
+void ResilientConnection::notify()
+{
+    impl->notify();
 }
 
