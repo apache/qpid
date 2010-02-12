@@ -216,8 +216,7 @@ module Qmf
     end
 
     def kick
-      @sockEngine.write(".")
-      @sockEngine.flush
+      @impl.notify
     end
 
     def add_conn_handler(handler)
