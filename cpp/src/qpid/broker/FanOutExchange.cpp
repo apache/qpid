@@ -63,6 +63,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
     if (args == 0 || fedOp.empty() || fedOp == fedOpBind) {
         Binding::shared_ptr binding (new Binding ("", queue, this, FieldTable(), fedOrigin));
         if (bindings.add_unless(binding, MatchQueue(queue))) {
+            binding->startManagement();
             propagate = fedBinding.addOrigin(fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();

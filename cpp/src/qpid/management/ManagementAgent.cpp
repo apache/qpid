@@ -85,6 +85,12 @@ ManagementAgent::~ManagementAgent ()
             delete object;
         }
         managementObjects.clear();
+
+        while (!deletedManagementObjects.empty()) {
+            ManagementObject* object = deletedManagementObjects.back();
+            delete object;
+            deletedManagementObjects.pop_back();
+        }
     }
 }
 
@@ -196,9 +202,20 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
     }
 
     ObjectId objId(0 /*flags*/ , sequence, brokerBank, 0, objectNum);
-    objId.setV2Key(object->getKey());
+    objId.setV2Key(*object);
 
     object->setObjectId(objId);
+    ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
+    if (destIter != newManagementObjects.end()) {
+        if (destIter->second->isDeleted()) {
+            newDeletedManagementObjects.push_back(destIter->second);
+            newManagementObjects.erase(destIter);
+        } else {
+            QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
+                     " key=" << objId.getV2Key());
+            return objId;
+        }
+    }
     newManagementObjects[objId] = object;
 
     if (publishNow) {
@@ -344,9 +361,31 @@ void ManagementAgent::moveNewObjectsLH()
     Mutex::ScopedLock lock (addLock);
     for (ManagementObjectMap::iterator iter = newManagementObjects.begin ();
          iter != newManagementObjects.end ();
-         iter++)
-        managementObjects[iter->first] = iter->second;
+         iter++) {
+        bool skip = false;
+        ManagementObjectMap::iterator destIter = managementObjects.find(iter->first);
+        if (destIter != managementObjects.end()) {
+            // We have an objectId collision with an existing object.  If the old object
+            // is deleted, move it to the deleted list.
+            if (destIter->second->isDeleted()) {
+                deletedManagementObjects.push_back(destIter->second);
+                managementObjects.erase(destIter);
+            } else {
+                QPID_LOG(error, "ObjectId collision in moveNewObjects. class=" <<
+                         iter->second->getClassName() << " key=" << iter->first.getV2Key());
+                skip = true;
+            }
+        }
+
+        if (!skip)
+            managementObjects[iter->first] = iter->second;
+    }
     newManagementObjects.clear();
+
+    while (!newDeletedManagementObjects.empty()) {
+        deletedManagementObjects.push_back(newDeletedManagementObjects.back());
+        newDeletedManagementObjects.pop_back();
+    }
 }
 
 void ManagementAgent::periodicProcessing (void)
@@ -449,7 +488,23 @@ void ManagementAgent::periodicProcessing (void)
         managementObjects.erase(iter->first);
     }
 
-    if (!deleteList.empty()) {
+    // Publish the deletion of objects created by insert-collision
+    bool collisionDeletions = false;
+    for (ManagementObjectVector::iterator cdIter = deletedManagementObjects.begin();
+         cdIter != deletedManagementObjects.end(); cdIter++) {
+        collisionDeletions = true;
+        Buffer msgBuffer(msgChars, BUFSIZE);
+        encodeHeader(msgBuffer, 'c');
+        (*cdIter)->writeProperties(msgBuffer);
+        contentSize = BUFSIZE - msgBuffer.available ();
+        msgBuffer.reset ();
+        stringstream key;
+        key << "console.obj.1.0." << (*cdIter)->getPackageName() << "." << (*cdIter)->getClassName();
+        sendBuffer (msgBuffer, contentSize, mExchange, key.str());
+        QPID_LOG(trace, "SEND ContentInd for deleted object to=" << key.str());
+    }
+
+    if (!deleteList.empty() || collisionDeletions) {
         deleteList.clear();
         deleteOrphanedAgentsLH();
     }
@@ -596,7 +651,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
         }
     }
 
-    ManagementObjectMap::iterator iter = managementObjects.find(objId);
+    ManagementObjectMap::iterator iter = numericFind(objId);
     if (iter == managementObjects.end() || iter->second->isDeleted()) {
         outBuffer.putLong        (Manageable::STATUS_UNKNOWN_OBJECT);
         outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_UNKNOWN_OBJECT));
@@ -967,7 +1022,7 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
             return;
 
         ObjectId selector(value->get<string>());
-        ManagementObjectMap::iterator iter = managementObjects.find(selector);
+        ManagementObjectMap::iterator iter = numericFind(selector);
         if (iter != managementObjects.end()) {
             ManagementObject* object = iter->second;
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
@@ -1293,6 +1348,18 @@ size_t ManagementAgent::validateEventSchema(Buffer& inBuffer)
     inBuffer.restore(); // restore original position
     return end - start;
 }
+
+ManagementObjectMap::iterator ManagementAgent::numericFind(const ObjectId& oid)
+{
+    ManagementObjectMap::iterator iter = managementObjects.begin();
+    for (; iter != managementObjects.end(); iter++) {
+        if (oid.equalV1(iter->first))
+            break;
+    }
+
+    return iter;
+}
+
 
 void ManagementAgent::setAllocator(std::auto_ptr<IdAllocator> a)
 {

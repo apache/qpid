@@ -27,12 +27,14 @@
 #include <qpid/framing/Buffer.h>
 #include "qpid/CommonImportExport.h"
 #include <map>
+#include <vector>
 
 namespace qpid {
 namespace management {
 
 class Manageable;
 class ObjectId;
+class ManagementObject;
 
 
 class AgentAttachment {
@@ -65,7 +67,9 @@ public:
     QPID_COMMON_EXTERN uint32_t encodedSize() const { return 16; };
     QPID_COMMON_EXTERN void encode(framing::Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(framing::Buffer& buffer);
-    QPID_COMMON_EXTERN void setV2Key(const std::string& key) { v2Key = key; }
+    QPID_COMMON_EXTERN void setV2Key(const std::string& _key) { v2Key = _key; }
+    QPID_COMMON_EXTERN void setV2Key(const ManagementObject& object);
+    QPID_COMMON_EXTERN bool equalV1(const ObjectId &other) const;
     QPID_COMMON_EXTERN const std::string& getV2Key() const { return v2Key; }
     friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const ObjectId&);
 };
@@ -192,6 +196,7 @@ protected:
 };
 
 typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;
+typedef std::vector<ManagementObject*> ManagementObjectVector;
 
 }}
 

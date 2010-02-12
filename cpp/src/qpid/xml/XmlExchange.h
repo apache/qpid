@@ -53,7 +53,7 @@ class XmlExchange : public virtual Exchange {
 		   const ::qpid::framing::FieldTable& _arguments, Query query):
             Binding(key, queue, parent, _arguments),
 	      xquery(query),
-	      parse_message_content(true) {}
+                parse_message_content(true) { startManagement(); }
     };
 
         
