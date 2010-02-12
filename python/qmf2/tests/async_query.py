@@ -227,7 +227,8 @@ class BaseTest(unittest.TestCase):
 
             # send queries
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_SCHEMA_ID)
-            rc = self.console.do_async_query(agent, query, aname)
+            rc = self.console.do_query(agent, query,
+                                       _reply_handle=aname)
             self.assertTrue(rc)
 
         # done.  Now wait for async responses
@@ -273,7 +274,7 @@ class BaseTest(unittest.TestCase):
 
             # send queries
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT)
-            rc = self.console.do_async_query(agent, query, aname)
+            rc = self.console.do_query(agent, query, _reply_handle=aname)
             self.assertTrue(rc)
 
         # done.  Now wait for async responses
@@ -320,7 +321,7 @@ class BaseTest(unittest.TestCase):
             t_params = {QmfData.KEY_SCHEMA_ID: SchemaClassId("MyPackage", "MyClass")}
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT, t_params)
             #
-            rc = self.console.do_async_query(agent, query, aname)
+            rc = self.console.do_query(agent, query, _reply_handle=aname)
             self.assertTrue(rc)
 
         # done.  Now wait for async responses
@@ -371,7 +372,7 @@ class BaseTest(unittest.TestCase):
 
             # send queries
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_SCHEMA)
-            rc = self.console.do_async_query(agent, query, aname)
+            rc = self.console.do_query(agent, query, _reply_handle=aname)
             self.assertTrue(rc)
 
         # done.  Now wait for async responses
@@ -436,8 +437,9 @@ class BaseTest(unittest.TestCase):
         # now send queries to agents that no longer exist
         for agent in agents:
             query = QmfQuery.create_wildcard(QmfQuery.TARGET_SCHEMA)
-            rc = self.console.do_async_query(agent, query, agent.get_name(),
-                                             _timeout=2)
+            rc = self.console.do_query(agent, query,
+                                       _reply_handle=agent.get_name(),
+                                       _timeout=2)
             self.assertTrue(rc)
 
         # done.  Now wait for async responses due to timeouts
