@@ -131,6 +131,7 @@ class WorkItem(object):
     OBJECT_UPDATE=5
     EVENT_RECEIVED=7
     AGENT_HEARTBEAT=8
+    QUERY_COMPLETE=9
     # Enumeration of the types of WorkItems produced on the Agent
     METHOD_CALL=1000
     QUERY=1001
