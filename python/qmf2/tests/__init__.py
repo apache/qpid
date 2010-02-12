@@ -26,3 +26,4 @@ import obj_gets
 import events
 import multi_response
 import async_query
+import async_method
