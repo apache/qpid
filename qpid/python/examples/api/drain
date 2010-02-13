@@ -27,6 +27,10 @@ parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS ...",
                                description="Drain messages from the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
+parser.add_option("-c", "--count", type=int,
+                  help="number of messages to drain")
+parser.add_option("-f", "--forever", action="store_true",
+                  help="ignore timeout and wait forever")
 parser.add_option("-r", "--reconnect", action="store_true",
                   help="enable auto reconnect")
 parser.add_option("-d", "--reconnect-delay", type=float, default=3,
@@ -35,8 +39,8 @@ parser.add_option("-l", "--reconnect-limit", type=int,
                   help="maximum number of reconnect attempts")
 parser.add_option("-t", "--timeout", type=float, default=0,
                   help="timeout in seconds to wait before exiting (default %default)")
-parser.add_option("-f", "--forever", action="store_true",
-                  help="ignore timeout and wait forever")
+parser.add_option("-p", "--print", dest="format", default="%(M)s",
+                  help="format string for printing messages (default %default)")
 parser.add_option("-v", dest="verbose", action="store_true",
                   help="enable logging")
 
@@ -57,6 +61,17 @@ if opts.forever:
 else:
   timeout = opts.timeout
 
+class Formatter:
+
+  def __init__(self, message):
+    self.message = message
+    self.environ = {"M": self.message,
+                    "P": self.message.properties,
+                    "C": self.message.content}
+
+  def __getitem__(self, st):
+    return eval(st, self.environ)
+
 # XXX: should make URL default the port for us
 conn = Connection.open(url.host, url.port or AMQP_PORT,
                        username=url.user,
@@ -67,9 +82,12 @@ conn = Connection.open(url.host, url.port or AMQP_PORT,
 ssn = conn.session()
 rcv = ssn.receiver(addr)
 
-while True:
+count = 0
+while not opts.count or count < opts.count:
   try:
-    print rcv.fetch(timeout=timeout)
+    msg = rcv.fetch(timeout=timeout)
+    print opts.format % Formatter(msg)
+    count += 1
     ssn.acknowledge()
   except Empty:
     break
