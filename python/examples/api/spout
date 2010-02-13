@@ -92,31 +92,35 @@ else:
   content = text
 
 # XXX: should make URL default the port for us
-conn = Connection.open(url.host, url.port or AMQP_PORT,
-                       username=url.user,
-                       password=url.password,
-                       reconnect=opts.reconnect,
-                       reconnect_delay=opts.reconnect_delay,
-                       reconnect_limit=opts.reconnect_limit)
-ssn = conn.session()
-snd = ssn.sender(addr)
+conn = Connection(url.host, url.port or AMQP_PORT,
+                  username=url.user,
+                  password=url.password,
+                  reconnect=opts.reconnect,
+                  reconnect_delay=opts.reconnect_delay,
+                  reconnect_limit=opts.reconnect_limit)
+try:
+  conn.connect()
+  ssn = conn.session()
+  snd = ssn.sender(addr)
 
-count = 0
-start = time.time()
-while (opts.count == 0 or count < opts.count) and \
-      (opts.timeout is None or time.time() - start < opts.timeout):
-  msg = Message(content, reply_to=opts.reply_to)
-  msg.properties["spout-id"] = "%s:%s" % (spout_id, count)
-  for p in opts.properties:
-    name, val = nameval(p)
-    msg.properties[name] = val
+  count = 0
+  start = time.time()
+  while (opts.count == 0 or count < opts.count) and \
+        (opts.timeout is None or time.time() - start < opts.timeout):
+    msg = Message(content, reply_to=opts.reply_to)
+    msg.properties["spout-id"] = "%s:%s" % (spout_id, count)
+    for p in opts.properties:
+      name, val = nameval(p)
+      msg.properties[name] = val
 
-  try:
-    snd.send(msg)
-    count += 1
-    print msg
-  except SendError, e:
-    print e
-    break
+    try:
+      snd.send(msg)
+      count += 1
+      print msg
+    except SendError, e:
+      print e
+      break
+except KeyboardInterrupt:
+  pass
 
 conn.close()
