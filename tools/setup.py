@@ -19,10 +19,15 @@
 #
 from distutils.core import setup
 
-setup(name="qpid",
+setup(name="qpid-tools",
       version="0.7",
-      packages=["mllib", "qpid", "qpid.tests"],
-      scripts=["qpid-python-test"],
+      scripts=["src/py/qpid-cluster",
+               "src/py/qpid-config",
+               "src/py/qpid-printevents",
+               "src/py/qpid-queue-stats",
+               "src/py/qpid-route",
+               "src/py/qpid-stat",
+               "src/py/qpid-tool"],
       url="http://qpid.apache.org/",
       license="Apache Software License",
-      description="Python language client implementation for Apache Qpid")
+      description="Diagnostic and management tools for Apache Qpid brokers.")

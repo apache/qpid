@@ -24,6 +24,8 @@ MY_DIR=`dirname \`which $0\``
 QPID_DIR=${MY_DIR}/../../../..
 BUILD_DIR=../../..
 PYTHON_DIR=${QPID_DIR}/python
+QMF_DIR=${QPID_DIR}/extras/qmf
+QMF_DIR_PY=${QMF_DIR}/src/py
 BROKER_DIR=${BUILD_DIR}/src
 API_DIR=${BUILD_DIR}/bindings/qmf
 SPEC_DIR=${QPID_DIR}/specs
@@ -66,7 +68,7 @@ TESTS_FAILED=0
 if test -d ${PYTHON_DIR} ;  then
     start_broker
     echo "Running qmf interop tests using broker on port $BROKER_PORT"
-    PYTHONPATH=${PYTHON_DIR}:${MY_DIR}
+    PYTHONPATH=${PYTHON_DIR}:${QMF_DIR_PY}:${MY_DIR}
     export PYTHONPATH
 
     if test -d ${PYTHON_LIB_DIR} ; then
