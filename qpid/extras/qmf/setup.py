@@ -19,10 +19,10 @@
 #
 from distutils.core import setup
 
-setup(name="qpid",
+setup(name="qpid-qmf",
       version="0.7",
-      packages=["mllib", "qpid", "qpid.tests"],
-      scripts=["qpid-python-test"],
+      packages=["qmf", "qmf2", "qmf2.tests"],
+      package_dir={"": "src/py"},
       url="http://qpid.apache.org/",
       license="Apache Software License",
-      description="Python language client implementation for Apache Qpid")
+      description="QMF Library")
