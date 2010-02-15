@@ -20,7 +20,7 @@
 
 import unittest
 from qpid.codec import Codec
-from qpid.spec import load
+from qpid.spec08 import load
 from cStringIO import StringIO
 from qpid.reference import ReferenceId
 
@@ -53,7 +53,7 @@ __doc__ = """
 
 """
 
-from qpid_config import amqp_spec_0_8
+from qpid.specs_config import amqp_spec_0_8
 SPEC = load(amqp_spec_0_8)
 
 # --------------------------------------

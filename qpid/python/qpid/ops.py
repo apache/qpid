@@ -144,7 +144,7 @@ def default(f):
   else:
     return None
 
-def make_compound(decl, base):
+def make_compound(decl, base, domains):
   dict = {}
   fields = decl.query["field"]
   dict["__doc__"] = pydoc(decl, fields)
@@ -152,11 +152,13 @@ def make_compound(decl, base):
   dict["SIZE"] = num(decl["@size"])
   dict["CODE"] = code(decl)
   dict["PACK"] = num(decl["@pack"])
-  dict["FIELDS"] = [Field(pythonize(f["@name"]), resolve(f), default(f)) for f in fields]
+  dict["FIELDS"] = [Field(pythonize(f["@name"]), resolve(f, domains),
+                          default(f))
+                    for f in fields]
   dict["ARGS"] = dict["FIELDS"] + base.UNENCODED
   return str(studly(decl["@name"])), (base,), dict
 
-def make_restricted(decl):
+def make_restricted(decl, domains):
   name = pythonize(decl["@name"])
   dict = {}
   choices = decl.query["choice"]
@@ -171,7 +173,7 @@ def make_restricted(decl):
   dict["VALUES"] = values
   return name, (Enum,), dict
 
-def make_type(decl):
+def make_type(decl, domains):
   name = pythonize(decl["@name"])
   dict = {}
   dict["__doc__"] = pydoc(decl)
@@ -179,65 +181,55 @@ def make_type(decl):
   dict["CODE"] = code(decl)
   return str(studly(decl["@name"])), (Primitive,), dict
 
-def make_command(decl):
+def make_command(decl, domains):
   decl.set_attr("name", "%s-%s" % (decl.parent["@name"], decl["@name"]))
   decl.set_attr("size", "0")
   decl.set_attr("pack", "2")
-  name, bases, dict = make_compound(decl, Command)
+  name, bases, dict = make_compound(decl, Command, domains)
   dict["RESULT"] = pythonize(decl["result/@type"]) or pythonize(decl["result/struct/@name"])
   return name, bases, dict
 
-def make_control(decl):
+def make_control(decl, domains):
   decl.set_attr("name", "%s-%s" % (decl.parent["@name"], decl["@name"]))
   decl.set_attr("size", "0")
   decl.set_attr("pack", "2")
-  return make_compound(decl, Control)
+  return make_compound(decl, Control, domains)
 
-def make_struct(decl):
-  return make_compound(decl, Compound)
+def make_struct(decl, domains):
+  return make_compound(decl, Compound, domains)
 
-def make_enum(decl):
+def make_enum(decl, domains):
   decl.set_attr("name", decl.parent["@name"])
-  return make_restricted(decl)
+  return make_restricted(decl, domains)
 
 
 vars = globals()
 
-def make(nd):
-  return vars["make_%s" % nd.name](nd)
+def make(nd, domains):
+  return vars["make_%s" % nd.name](nd, domains)
 
-from qpid_config import amqp_spec as file
-pclfile = "%s.ops.pcl" % file
+def qualify(nd, field="@name"):
+  cls = klass(nd)
+  if cls is None:
+    return pythonize(nd[field])
+  else:
+    return pythonize("%s.%s" % (cls["@name"], nd[field]))
 
-if os.path.exists(pclfile) and \
-      os.path.getmtime(pclfile) > os.path.getmtime(file):
-  f = open(pclfile, "r")
-  types = pickle.load(f)
-  f.close()
-else:
+def resolve(nd, domains):
+  candidates = qualify(nd, "@type"), pythonize(nd["@type"])
+  for c in candidates:
+    if domains.has_key(c):
+      while domains.has_key(c):
+        c = domains[c]
+      return c
+  else:
+    return c
+
+def load_types_from_xml(file):
   spec = mllib.xml_parse(file)
-
-  def qualify(nd, field="@name"):
-    cls = klass(nd)
-    if cls is None:
-      return pythonize(nd[field])
-    else:
-      return pythonize("%s.%s" % (cls["@name"], nd[field]))
-
   domains = dict([(qualify(d), pythonize(d["@type"]))
                   for d in spec.query["amqp/domain", included] + \
                     spec.query["amqp/class/domain", included]])
-
-  def resolve(nd):
-    candidates = qualify(nd, "@type"), pythonize(nd["@type"])
-    for c in candidates:
-      if domains.has_key(c):
-        while domains.has_key(c):
-          c = domains[c]
-        return c
-    else:
-      return c
-
   type_decls = \
       spec.query["amqp/class/command", included] + \
       spec.query["amqp/class/control", included] + \
@@ -246,12 +238,26 @@ else:
       spec.query["amqp/class/domain/enum", included] + \
       spec.query["amqp/domain/enum", included] + \
       spec.query["amqp/type"]
-  types = [make(nd) for nd in type_decls]
+  types = [make(nd, domains) for nd in type_decls]
+  return types
 
-  if os.access(os.path.dirname(os.path.abspath(pclfile)), os.W_OK):
-    f = open(pclfile, "w")
-    pickle.dump(types, f)
+def load_types(file):
+  pclfile = "%s.ops.pcl" % file
+  if os.path.exists(pclfile) and \
+        os.path.getmtime(pclfile) > os.path.getmtime(file):
+    f = open(pclfile, "rb")
+    types = pickle.load(f)
     f.close()
+  else:
+    types = load_types_from_xml(file)
+    if os.access(os.path.dirname(os.path.abspath(pclfile)), os.W_OK):
+      f = open(pclfile, "wb")
+      pickle.dump(types, f)
+      f.close()
+  return types
+
+from specs_config import amqp_spec as file
+types = load_types(file)
 
 ENUMS = {}
 PRIMITIVE = {}

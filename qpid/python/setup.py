@@ -20,8 +20,7 @@
 import os, re, sys
 from distutils.core import setup, Command
 from distutils.command.build_py import build_py as _build_py
-from distutils.command.install import install as _install
-from distutils.command.install_lib import install_lib
+from distutils.command.install_lib import install_lib as _install_lib
 from distutils.dep_util import newer
 from distutils.errors import DistutilsFileError
 from distutils import log
@@ -136,68 +135,39 @@ class build_py(preprocessor, _build_py):
     else:
       return None, None
 
-options = [('amqp-spec-dir=', None, "location of the AMQP specifications")]
-
-class install(_install):
-
-  user_options = _install.user_options + options
-
-  def initialize_options(self):
-    _install.initialize_options(self)
-    self.amqp_spec_dir = None
-
-  def get_sub_commands(self):
-    return ['qpid_config'] + _install.get_sub_commands(self)
-
-class qpid_config(preprocessor, install_lib):
-
-  user_options = options
-
-  def initialize_options(self):
-    install_lib.initialize_options(self)
-    self.prefix = None
-    self.amqp_spec_dir = None
-
-  def finalize_options(self):
-    install_lib.finalize_options(self)
-    self.set_undefined_options('install',
-                               ('prefix', 'prefix'),
-                               ('amqp_spec_dir', 'amqp_spec_dir'))
-    if self.amqp_spec_dir is None:
-      self.amqp_spec_dir = "%s/share/amqp" % self.prefix
+class install_lib(_install_lib):
 
   def get_outputs(self):
-    return [os.path.join(self.install_dir, "qpid_config.py"),
-            os.path.join(self.install_dir, "qpid_config.pyc")]
+    outputs = _install_lib.get_outputs(self)
+    extra = []
+    for of in outputs:
+      if os.path.basename(of) == "amqp.0-10-qpid-errata.xml":
+        extra.append("%s.ops.pcl" % of)
+    return outputs + extra
 
   def install(self):
-    self.mkpath(self.install_dir)
-    file, _ = self.copy_file("qpid_config.py", self.install_dir)
-    return [file]
-
-  def configure(self, input):
-    idx = input.index("AMQP_SPEC_DIR")
-    end = input.index(os.linesep, idx)
-    return input[:idx] + \
-        ('AMQP_SPEC_DIR="%s"' % self.amqp_spec_dir) + \
-        input[end:]
-
-  def actor(self, src, dst):
-    file = os.path.basename(src)
-    if file == "qpid_config.py":
-      return "configuring", self.configure
-    else:
-      return None, None
+    outfiles = _install_lib.install(self)
+    extra = []
+    for of in outfiles:
+      if os.path.basename(of) == "amqp.0-10-qpid-errata.xml":
+        tgt = "%s.ops.pcl" % of
+        if self.force or newer(of, tgt):
+          log.info("preloading %s to %s" % (of, os.path.basename(tgt)))
+          if not self.dry_run:
+            from qpid.ops import load_types
+            load_types(of)
+        extra.append(tgt)
+    return outfiles + extra
 
 setup(name="qpid-python",
       version="0.7",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       packages=["mllib", "qpid", "qpid.tests"],
+      package_data={"qpid": ["specs/*.dtd", "specs/*.xml"]},
       scripts=["qpid-python-test"],
       url="http://qpid.apache.org/",
       license="Apache Software License",
       description="Python client implementation for Apache Qpid",
       cmdclass={"build_py": build_py,
-                "install": install,
-                "qpid_config": qpid_config})
+                "install_lib": install_lib})
