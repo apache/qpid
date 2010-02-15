@@ -377,6 +377,9 @@ all-am: python_prep
 
 python_prep:
 	if test -d $(PYTHON_SRC_DIR) -a -d $(AMQP_SPEC_DIR); \
-	then $(MAKE) -C $(PYTHON_SRC_DIR) install PREFIX=$(PYTHON_BLD_DIR) PYTHON_LIB=$(PYTHON_BLD_DIR) EXEC_PREFIX=$(PYTHON_BLD_DIR)/commands AMQP_SPEC_DIR=$(AMQP_SPEC_DIR); \
+	then cd $(PYTHON_SRC_DIR) && python $(PYTHON_SRC_DIR)/setup.py install \
+		--prefix=$(PYTHON_BLD_DIR) --install-lib=$(PYTHON_BLD_DIR) \
+		--install-scripts=$(PYTHON_BLD_DIR)/commands \
+		--amqp-spec-dir=$(AMQP_SPEC_DIR); \
 	else echo "WARNING: python client not built, missing one of $(PYTHON_SRC_DIR) $(AMQP_SPEC_DIR)"; fi
 
