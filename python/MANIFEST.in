@@ -1,0 +1,3 @@
+include qpid_config.py
+recursive-include examples *
+recursive-exclude examples verify verify.in
