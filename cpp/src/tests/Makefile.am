@@ -370,16 +370,13 @@ check: python_prep
 
 PYTHON_SRC_DIR=$(abs_srcdir)/../../../python
 PYTHON_BLD_DIR=$(abs_builddir)/python
-AMQP_SPEC_DIR=$(abs_srcdir)/../../../specs
 
 # Generate python client as part of the all-am target so it gets built before tests.
 all-am: python_prep
 
 python_prep:
-	if test -d $(PYTHON_SRC_DIR) -a -d $(AMQP_SPEC_DIR); \
+	if test -d $(PYTHON_SRC_DIR); \
 	then cd $(PYTHON_SRC_DIR) && python $(PYTHON_SRC_DIR)/setup.py install \
 		--prefix=$(PYTHON_BLD_DIR) --install-lib=$(PYTHON_BLD_DIR) \
-		--install-scripts=$(PYTHON_BLD_DIR)/commands \
-		--amqp-spec-dir=$(AMQP_SPEC_DIR); \
-	else echo "WARNING: python client not built, missing one of $(PYTHON_SRC_DIR) $(AMQP_SPEC_DIR)"; fi
-
+		--install-scripts=$(PYTHON_BLD_DIR)/commands; \
+	else echo "WARNING: python client not built, missing $(PYTHON_SRC_DIR)"; fi

@@ -26,7 +26,7 @@ import os, threading
 from peer import Peer, Channel, Closed
 from delegate import Delegate
 from connection08 import Connection, Frame, connect
-from spec import load
+from spec08 import load
 from queue import Queue
 from reference import ReferenceId, References
 
@@ -39,7 +39,7 @@ class Client:
     if spec:
       self.spec = spec
     else:
-      from qpid_config import amqp_spec_0_9
+      from specs_config import amqp_spec_0_9
       self.spec = load(amqp_spec_0_9)
     self.structs = StructFactory(self.spec)
     self.sessions = {}

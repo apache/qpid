@@ -25,7 +25,6 @@ server, or even a proxy implementation.
 
 import socket, codec, logging, qpid
 from cStringIO import StringIO
-from spec import load
 from codec import EOF
 from compat import SHUT_RDWR
 from exceptions import VersionError
