@@ -19,9 +19,12 @@
 #
 import os, re, sys
 from distutils.core import setup, Command
+from distutils.command.build import build as _build
 from distutils.command.build_py import build_py as _build_py
+from distutils.command.clean import clean as _clean
 from distutils.command.install_lib import install_lib as _install_lib
 from distutils.dep_util import newer
+from distutils.dir_util import remove_tree
 from distutils.errors import DistutilsFileError
 from distutils import log
 from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE
@@ -91,6 +94,64 @@ class preprocessor:
       return Command.copy_file(self, src, dst, preserve_mode, preserve_times,
                                link, level)
 
+doc_option = [('build-doc', None, 'build directory for documentation')]
+
+class build(_build):
+
+  user_options = _build.user_options + doc_option
+
+  def initialize_options(self):
+    _build.initialize_options(self)
+    self.build_doc = None
+
+  def finalize_options(self):
+    _build.finalize_options(self)
+    if self.build_doc is None:
+      self.build_doc = "%s/doc" % self.build_base
+
+  def get_sub_commands(self):
+    return _build.get_sub_commands(self) + ["build_doc"]
+
+class build_doc(Command):
+
+  user_options = doc_option
+
+  def initialize_options(self):
+    self.build_doc = None
+
+  def finalize_options(self):
+    self.set_undefined_options('build', ('build_doc', 'build_doc'))
+
+  def run(self):
+    from epydoc.docbuilder import build_doc_index
+    from epydoc.docwriter.html import HTMLWriter
+
+    names = ["qpid.messaging"]
+    doc_index = build_doc_index(names, True, True)
+    html_writer = HTMLWriter(doc_index)
+    self.mkpath(self.build_doc)
+    log.info('epydoc %s to %s' % (", ".join(names), self.build_doc))
+    html_writer.write(self.build_doc)
+
+class clean(_clean):
+
+  user_options = _clean.user_options + doc_option
+
+  def initialize_options(self):
+    _clean.initialize_options(self)
+    self.build_doc = None
+
+  def finalize_options(self):
+    _clean.finalize_options(self)
+    self.set_undefined_options('build', ('build_doc', 'build_doc'))
+
+  def run(self):
+    if self.all:
+      if os.path.exists(self.build_doc):
+        remove_tree(self.build_doc, dry_run=self.dry_run)
+      else:
+        log.debug("%s doesn't exist -- can't clean it", self.build_doc)
+    _clean.run(self)
 
 ann = re.compile(r"([ \t]*)@([_a-zA-Z][_a-zA-Z0-9]*)([ \t\n\r]+def[ \t]+)([_a-zA-Z][_a-zA-Z0-9]*)")
 line = re.compile(r"\n([ \t]*)[^ \t\n#]+")
@@ -169,5 +230,8 @@ setup(name="qpid-python",
       url="http://qpid.apache.org/",
       license="Apache Software License",
       description="Python client implementation for Apache Qpid",
-      cmdclass={"build_py": build_py,
+      cmdclass={"build": build,
+                "build_py": build_py,
+                "build_doc": build_doc,
+                "clean": clean,
                 "install_lib": install_lib})
