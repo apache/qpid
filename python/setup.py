@@ -25,6 +25,7 @@ from distutils.command.clean import clean as _clean
 from distutils.command.install_lib import install_lib as _install_lib
 from distutils.dep_util import newer
 from distutils.dir_util import remove_tree
+from distutils.dist import Distribution
 from distutils.errors import DistutilsFileError, DistutilsOptionError
 from distutils import log
 from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE
@@ -159,10 +160,79 @@ class clean(_clean):
         log.debug("%s doesn't exist -- can't clean it", self.build_doc)
     _clean.run(self)
 
+if MAJOR <= 2 and MINOR <= 3:
+  from glob import glob
+  from distutils.util import convert_path
+  class distclass(Distribution):
+
+    def __init__(self, *args, **kwargs):
+      self.package_data = None
+      Distribution.__init__(self, *args, **kwargs)
+else:
+  distclass = Distribution
+
 ann = re.compile(r"([ \t]*)@([_a-zA-Z][_a-zA-Z0-9]*)([ \t\n\r]+def[ \t]+)([_a-zA-Z][_a-zA-Z0-9]*)")
 line = re.compile(r"\n([ \t]*)[^ \t\n#]+")
 
 class build_py(preprocessor, _build_py):
+
+  if MAJOR <= 2 and MINOR <= 3:
+    def initialize_options(self):
+      _build_py.initialize_options(self)
+      self.package_data = None
+
+    def finalize_options(self):
+      _build_py.finalize_options(self)
+      self.package_data = self.distribution.package_data
+      self.data_files = self.get_data_files()
+
+    def get_data_files (self):
+      data = []
+      if not self.packages:
+        return data
+      for package in self.packages:
+        # Locate package source directory
+        src_dir = self.get_package_dir(package)
+
+        # Compute package build directory
+        build_dir = os.path.join(*([self.build_lib] + package.split('.')))
+
+        # Length of path to strip from found files
+        plen = 0
+        if src_dir:
+          plen = len(src_dir)+1
+
+        # Strip directory from globbed filenames
+        filenames = [file[plen:]
+                     for file in self.find_data_files(package, src_dir)]
+        data.append((package, src_dir, build_dir, filenames))
+      return data
+
+    def find_data_files (self, package, src_dir):
+      globs = (self.package_data.get('', [])
+               + self.package_data.get(package, []))
+      files = []
+      for pattern in globs:
+        # Each pattern has to be converted to a platform-specific path
+        filelist = glob(os.path.join(src_dir, convert_path(pattern)))
+        # Files that match more than one pattern are only added once
+        files.extend([fn for fn in filelist if fn not in files])
+      return files
+
+    def build_package_data (self):
+      lastdir = None
+      for package, src_dir, build_dir, filenames in self.data_files:
+        for filename in filenames:
+          target = os.path.join(build_dir, filename)
+          self.mkpath(os.path.dirname(target))
+          self.copy_file(os.path.join(src_dir, filename), target,
+                         preserve_mode=False)
+
+    def build_packages(self):
+      _build_py.build_packages(self)
+      self.build_package_data()
+
+  # end if MAJOR <= 2 and MINOR <= 3
 
   def backport(self, input):
     output = ""
@@ -217,7 +287,7 @@ class install_lib(_install_lib):
       if os.path.basename(of) == "amqp.0-10-qpid-errata.xml":
         tgt = "%s.ops.pcl" % of
         if self.force or newer(of, tgt):
-          log.info("preloading %s to %s" % (of, os.path.basename(tgt)))
+          log.info("caching %s to %s" % (of, os.path.basename(tgt)))
           if not self.dry_run:
             from qpid.ops import load_types
             load_types(of)
@@ -238,4 +308,5 @@ setup(name="qpid-python",
                 "build_py": build_py,
                 "build_doc": build_doc,
                 "clean": clean,
-                "install_lib": install_lib})
+                "install_lib": install_lib},
+      distclass=distclass)
