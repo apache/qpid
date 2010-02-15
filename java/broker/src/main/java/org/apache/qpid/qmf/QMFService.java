@@ -1240,7 +1240,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
         public Boolean getShadow()
         {
             // TODO Auto-generated method stub
-            return null;
+            return false;
         }
     }
 
