@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os, re, sys
+import os, re, sys, string
 from distutils.core import setup, Command
 from distutils.command.build import build as _build
 from distutils.command.build_py import build_py as _build_py
@@ -25,9 +25,11 @@ from distutils.command.clean import clean as _clean
 from distutils.command.install_lib import install_lib as _install_lib
 from distutils.dep_util import newer
 from distutils.dir_util import remove_tree
-from distutils.errors import DistutilsFileError
+from distutils.errors import DistutilsFileError, DistutilsOptionError
 from distutils import log
 from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE
+
+MAJOR, MINOR = sys.version_info[0:2]
 
 class preprocessor:
 
@@ -123,8 +125,12 @@ class build_doc(Command):
     self.set_undefined_options('build', ('build_doc', 'build_doc'))
 
   def run(self):
-    from epydoc.docbuilder import build_doc_index
-    from epydoc.docwriter.html import HTMLWriter
+    try:
+      from epydoc.docbuilder import build_doc_index
+      from epydoc.docwriter.html import HTMLWriter
+    except ImportError, e:
+      log.warn('%s -- skipping build_doc', e)
+      return
 
     names = ["qpid.messaging"]
     doc_index = build_doc_index(names, True, True)
@@ -155,8 +161,6 @@ class clean(_clean):
 
 ann = re.compile(r"([ \t]*)@([_a-zA-Z][_a-zA-Z0-9]*)([ \t\n\r]+def[ \t]+)([_a-zA-Z][_a-zA-Z0-9]*)")
 line = re.compile(r"\n([ \t]*)[^ \t\n#]+")
-
-major, minor = sys.version_info[0:2]
 
 class build_py(preprocessor, _build_py):
 
@@ -191,7 +195,7 @@ class build_py(preprocessor, _build_py):
 
   def actor(self, src, dst):
     base, ext = os.path.splitext(src)
-    if ext == ".py" and major <= 2 and minor <= 3:
+    if ext == ".py" and MAJOR <= 2 and MINOR <= 3:
       return "backporting", self.backport
     else:
       return None, None
