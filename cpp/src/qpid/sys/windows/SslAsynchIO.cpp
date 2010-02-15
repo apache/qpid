@@ -145,7 +145,7 @@ void SslAsynchIO::queueWrite(AsynchIO::BufferBase* buff) {
     assert(sslBuff != 0);
 
     // Encrypt and hand off to the io layer. Remember that the upper layer's
-    // encoding was working on, and adjustoing counts for, the SslIoBuff.
+    // encoding was working on, and adjusting counts for, the SslIoBuff.
     // Update the count of the original BufferBase before handing off to
     // the I/O layer.
     buff = sslBuff->release();
@@ -340,7 +340,14 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
             buff->dataCount -= recvBuffs[i].cbBuffer;
             break;
         case SECBUFFER_EXTRA:
-            extraBuff = getQueuedBuffer();
+            // Very important to get this buffer from the downstream aio.
+            // The ones constructed from the local getQueuedBuffer() are
+            // restricted size for encrypting. However, data coming up from
+            // TCP may have a bunch of SSL segments coalesced and be much
+            // larger than the maximum single SSL segment.
+            extraBuff = a.getQueuedBuffer();
+            if (0 == extraBuff)
+                throw QPID_WINDOWS_ERROR(WSAENOBUFS);
             memmove(extraBuff->bytes,
                     recvBuffs[i].pvBuffer,
                     recvBuffs[i].cbBuffer);
