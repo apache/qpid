@@ -642,6 +642,36 @@ QPID_AUTO_TEST_CASE(testQueueDeleted)
     BOOST_CHECK_THROW(queue.get(1*qpid::sys::TIME_SEC), qpid::framing::ResourceDeletedException);
 }
 
+QPID_AUTO_TEST_CASE(testTtl)
+{
+    const uint64_t ms = 1000ULL;           // convert sec to ms
+    const uint64_t us = 1000ULL * 1000ULL; // convert sec to us
+
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(arg::queue="ttl-test", arg::exclusive=true, arg::autoDelete=true);
+    Message msg1 = Message("AAA", "ttl-test");
+    uint64_t ttl = 2 * ms; // 2 sec
+    msg1.getDeliveryProperties().setTtl(ttl);
+    Connection c = fix.session.getConnection();
+    Session s = c.newSession();
+    s.messageTransfer(arg::content=msg1);
+
+    Message msg2 = Message("BBB", "ttl-test");
+    ttl = 10 * ms; // 10 sec
+    msg2.getDeliveryProperties().setTtl(ttl);
+    s.messageTransfer(arg::content=msg2);
+
+    ::usleep(5 * us); // 5 sec
+
+    // Message "AAA" should be expired and never be delivered
+    // Check "BBB" has ttl somewhere between 1 and 5 secs
+    Message got;
+    BOOST_CHECK(fix.subs.get(got, "ttl-test"));
+    BOOST_CHECK_EQUAL("BBB", got.getData());
+    BOOST_CHECK(got.getDeliveryProperties().getTtl() > 1 * ms);
+    BOOST_CHECK(got.getDeliveryProperties().getTtl() < ttl - (5 * ms));
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

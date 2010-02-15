@@ -76,6 +76,7 @@ void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, ui
     if (msg.payload->getRedelivered()){
         msg.payload->getProperties<framing::DeliveryProperties>()->setRedelivered(true);
     }
+    msg.payload->adjustTtl();
 
     framing::AMQFrame method((framing::MessageTransferBody(framing::ProtocolVersion(), tag, acceptExpected ? 0 : 1, acquired ? 0 : 1)));
     method.setEof(false);

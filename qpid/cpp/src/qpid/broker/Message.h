@@ -81,6 +81,7 @@ public:
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e);
     bool hasExpired();
     sys::AbsTime getExpiration() const { return expiration; }
+    void adjustTtl();
 
     framing::FrameSet& getFrames() { return frames; } 
     const framing::FrameSet& getFrames() const { return frames; } 
