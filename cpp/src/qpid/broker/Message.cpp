@@ -361,6 +361,16 @@ void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e)
     }
 }
 
+void Message::adjustTtl()
+{
+    DeliveryProperties* props = getProperties<DeliveryProperties>();
+    if (props->getTtl()) {
+        sys::Mutex::ScopedLock l(lock);
+        sys::Duration d(sys::AbsTime::now(), getExpiration());
+        props->setTtl(int64_t(d) > 0 ? int64_t(d)/1000000 : 1); // convert from ns to ms; set to 1 if expired
+    }
+}
+
 void Message::setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) {
     expiryPolicy = e;
     if (expiryPolicy) 
