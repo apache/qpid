@@ -93,9 +93,8 @@ try:
       ssn.acknowledge()
     except Empty:
       break
-    except ReceiveError, e:
-      print e
-      break
+except ReceiveError, e:
+  print e
 except KeyboardInterrupt:
   pass
 
