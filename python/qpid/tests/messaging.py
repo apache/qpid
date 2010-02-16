@@ -214,6 +214,15 @@ class SessionTests(Base):
     self.ssn.acknowledge(msg)
     snd2 = self.ssn.receiver('test-rcv-queue; {delete: always}')
 
+  def testDisconnectedReceiver(self):
+    self.conn.disconnect()
+    rcv = self.ssn.receiver("test-dis-rcv-queue; {create: always, delete: always}")
+    m = self.content("testDisconnectedReceiver")
+    self.conn.connect()
+    snd = self.ssn.sender("test-dis-rcv-queue")
+    snd.send(m)
+    self.drain(rcv, expected=[m])
+
   def testNextReceiver(self):
     ADDR = 'test-next-rcv-queue; {create: always, delete: always}'
     rcv1 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
@@ -581,16 +590,14 @@ class AddressTests(Base):
     return self.conn.session()
 
   def badOption(self, options, error):
-    snd = self.ssn.sender("test-bad-options-snd; %s" % options)
     try:
-      snd.send("ping")
+      self.ssn.sender("test-bad-options-snd; %s" % options)
       assert False
     except SendError, e:
       assert "error in options: %s" % error == str(e), e
 
-    rcv = self.ssn.receiver("test-bad-options-rcv; %s" % options)
     try:
-      rcv.fetch(timeout=0)
+      self.ssn.receiver("test-bad-options-rcv; %s" % options)
       assert False
     except ReceiveError, e:
       assert "error in options: %s" % error == str(e), e
@@ -673,9 +680,8 @@ class AddressTests(Base):
     snd = self.ssn.sender("test-delete; {delete: always}")
     snd.send("ping")
     snd.close()
-    snd = self.ssn.sender("test-delete")
     try:
-      snd.send("ping")
+      self.ssn.sender("test-delete")
     except SendError, e:
       assert "no such queue" in str(e)
 
@@ -689,7 +695,8 @@ class AddressTests(Base):
 
     try:
       self.ssn.receiver("test-delete")
-    except SendError, e:
+      assert False
+    except ReceiveError, e:
       assert "no such queue" in str(e)
 
   def testDeleteSpecial(self):
@@ -789,59 +796,55 @@ class AddressErrorTests(Base):
   def setup_session(self):
     return self.conn.session()
 
-  def sendErrorTest(self, addr, exc, check=lambda e: True):
-    snd = self.ssn.sender(addr, durable=self.durable())
+  def senderErrorTest(self, addr, exc, check=lambda e: True):
     try:
-      snd.send("hello")
-      assert False, "send succeeded"
+      self.ssn.sender(addr, durable=self.durable())
+      assert False, "sender creation succeeded"
     except exc, e:
       assert check(e), "unexpected error: %s" % compat.format_exc(e)
-      snd.close()
 
-  def fetchErrorTest(self, addr, exc, check=lambda e: True):
-    rcv = self.ssn.receiver(addr)
+  def receiverErrorTest(self, addr, exc, check=lambda e: True):
     try:
-      rcv.fetch(timeout=0)
-      assert False, "fetch succeeded"
+      self.ssn.receiver(addr)
+      assert False, "receiver creation succeeded"
     except exc, e:
       assert check(e), "unexpected error: %s" % compat.format_exc(e)
-      rcv.close()
 
   def testNoneTarget(self):
     # XXX: should have specific exception for this
-    self.sendErrorTest(None, SendError)
+    self.senderErrorTest(None, SendError)
 
   def testNoneSource(self):
     # XXX: should have specific exception for this
-    self.fetchErrorTest(None, ReceiveError)
+    self.receiverErrorTest(None, ReceiveError)
 
   def testNoTarget(self):
     # XXX: should have specific exception for this
-    self.sendErrorTest(NOSUCH_Q, SendError, lambda e: NOSUCH_Q in str(e))
+    self.senderErrorTest(NOSUCH_Q, SendError, lambda e: NOSUCH_Q in str(e))
 
   def testNoSource(self):
     # XXX: should have specific exception for this
-    self.fetchErrorTest(NOSUCH_Q, ReceiveError, lambda e: NOSUCH_Q in str(e))
+    self.receiverErrorTest(NOSUCH_Q, ReceiveError, lambda e: NOSUCH_Q in str(e))
 
   def testUnparseableTarget(self):
     # XXX: should have specific exception for this
-    self.sendErrorTest(UNPARSEABLE_ADDR, SendError,
-                       lambda e: "expecting COLON" in str(e))
+    self.senderErrorTest(UNPARSEABLE_ADDR, SendError,
+                         lambda e: "expecting COLON" in str(e))
 
   def testUnparseableSource(self):
     # XXX: should have specific exception for this
-    self.fetchErrorTest(UNPARSEABLE_ADDR, ReceiveError,
-                        lambda e: "expecting COLON" in str(e))
+    self.receiverErrorTest(UNPARSEABLE_ADDR, ReceiveError,
+                           lambda e: "expecting COLON" in str(e))
 
   def testUnlexableTarget(self):
     # XXX: should have specific exception for this
-    self.sendErrorTest(UNLEXABLE_ADDR, SendError,
-                       lambda e: "unrecognized characters" in str(e))
+    self.senderErrorTest(UNLEXABLE_ADDR, SendError,
+                         lambda e: "unrecognized characters" in str(e))
 
   def testUnlexableSource(self):
     # XXX: should have specific exception for this
-    self.fetchErrorTest(UNLEXABLE_ADDR, ReceiveError,
-                        lambda e: "unrecognized characters" in str(e))
+    self.receiverErrorTest(UNLEXABLE_ADDR, ReceiveError,
+                           lambda e: "unrecognized characters" in str(e))
 
 SENDER_Q = 'test-sender-q; {create: always, delete: always}'
 
