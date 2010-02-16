@@ -12,7 +12,7 @@ broker.module.store=${store.module.dir}/msgstore.so
 broker.stopped=Exception constructed
 
 broker.modules=
-broker.args=
+broker.args=--queue-purge-interval 1
 
 broker=${broker.executable} -p @PORT --data-dir ${build.data}/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
 
