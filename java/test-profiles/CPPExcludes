@@ -59,7 +59,7 @@ org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
 // c++ broker doesn't support priorities, TTL or message bouncing
 org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
 org.apache.qpid.server.queue.PriorityTest#*
-org.apache.qpid.server.queue.TimeToLiveTest#*
+#org.apache.qpid.server.queue.TimeToLiveTest#*
 
 // QPID-1727 , QPID-1726 :c++ broker does not support flow to disk on transient queues. Also it requries a persistent store impl. for Apache
 org.apache.qpid.test.client.QueueBrowsingFlowToDiskTest#*
