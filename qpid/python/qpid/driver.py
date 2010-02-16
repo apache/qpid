@@ -560,6 +560,8 @@ class Driver:
         self.delete(sst, _snd.name, do_unlink)
       else:
         do_unlink()
+    elif not snd.linked and snd.closing and not snd.closed:
+      snd.closed = True
 
   def link_in(self, rcv):
     sst = self._attachments.get(rcv.session)
@@ -633,6 +635,8 @@ class Driver:
         else:
           sst.write_cmd(MessageCancel(_rcv.destination), do_unlink)
         _rcv.canceled = True
+    elif not rcv.linked and rcv.closing and not rcv.closed:
+      rcv.closed = True
 
   POLICIES = Values("always", "sender", "receiver", "never")
 

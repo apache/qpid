@@ -113,13 +113,11 @@ try:
       name, val = nameval(p)
       msg.properties[name] = val
 
-    try:
-      snd.send(msg)
-      count += 1
-      print msg
-    except SendError, e:
-      print e
-      break
+    snd.send(msg)
+    count += 1
+    print msg
+except SendError, e:
+  print e
 except KeyboardInterrupt:
   pass
 
