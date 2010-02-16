@@ -661,7 +661,7 @@ QPID_AUTO_TEST_CASE(testTtl)
     msg2.getDeliveryProperties().setTtl(ttl);
     s.messageTransfer(arg::content=msg2);
 
-    ::usleep(5 * us); // 5 sec
+    qpid::sys::usleep(5 * us); // 5 sec
 
     // Message "AAA" should be expired and never be delivered
     // Check "BBB" has ttl somewhere between 1 and 5 secs
