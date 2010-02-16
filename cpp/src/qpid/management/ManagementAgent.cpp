@@ -348,6 +348,11 @@ void ManagementAgent::sendBuffer(Buffer&  buf,
     MessageProperties* props =
         msg->getFrames().getHeaders()->get<MessageProperties>(true);
     props->setContentLength(length);
+
+    DeliveryProperties* dp =
+        msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
+    dp->setRoutingKey(routingKey);
+
     msg->getFrames().append(content);
 
     DeliverableMessage deliverable (msg);
