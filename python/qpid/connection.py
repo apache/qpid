@@ -163,13 +163,15 @@ class Connection(Framer):
           break
       except socket.timeout:
         if self.aborted():
+          self.close_code = (None, "connection timed out")
           self.detach_all()
-          raise Closed("connection timed out")
+          break
         else:
           continue
       except socket.error, e:
+        self.close_code = (None, str(e))
         self.detach_all()
-        raise Closed(e)
+        break
       frame_dec.write(data)
       seg_dec.write(*frame_dec.read())
       op_dec.write(*seg_dec.read())
