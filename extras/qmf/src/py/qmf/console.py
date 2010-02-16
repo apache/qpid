@@ -858,10 +858,16 @@ class Session:
     dp = msg.get("delivery_properties")
     if dp:
       key = dp["routing_key"]
-      keyElements = key.split(".")
-      if len(keyElements) == 4:
-        brokerBank = int(keyElements[2])
-        agentBank = int(keyElements[3])
+      if key:
+        keyElements = key.split(".")
+        if len(keyElements) == 4:
+          brokerBank = int(keyElements[2])
+          agentBank = int(keyElements[3])
+      else:
+        # If there's no routing key in the delivery properties,
+        # assume the message is from the broker.
+        brokerBank = 1
+        agentBank = 0
 
     agent = broker.getAgent(brokerBank, agentBank)
     timestamp = codec.read_uint64()
