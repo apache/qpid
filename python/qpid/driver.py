@@ -742,7 +742,8 @@ class Driver:
         type, subtype = "queue", None
       else:
         type, subtype = "topic", er.type
-      self.address_cache[name] = (type, subtype)
+      if type is not None:
+        self.address_cache[name] = (type, subtype)
       action(type, subtype)
     sst.write_query(ExchangeQuery(name), do_result)
     sst.write_query(QueueQuery(name), do_action)
