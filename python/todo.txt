@@ -167,7 +167,7 @@ Address:
     + need to handle cleanup of temp queues/topics: F, NR
     + passthrough options for creating exchanges/queues: F, NR
   - integration with java: NF
-  - queue browsing: NF
+  - queue browsing: F, NR
   - temporary queues: NF
   - xquery: NF
 
@@ -190,3 +190,5 @@ Examples:
 
 Miscellaneous:
   - standard ping-like (drain/spout) utilities for all clients: NF
+  - caching of resolved addresses
+  - consider using separate session for query/deletion/creation of addresses
