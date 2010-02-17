@@ -349,7 +349,7 @@ class Session:
   -------
   The options map permits the following parameters::
 
-    <name> [ / <subject> ] {
+    <name> [ / <subject> ] ; {
       create: <create-policy>,
       delete: <delete-policy>,
       assert: <assert-policy>,
