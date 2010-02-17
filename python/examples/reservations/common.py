@@ -46,7 +46,6 @@ class Dispatcher:
       return ()
 
   def run(self, session):
-    senders = {}
     while self.running():
       msg = session.next_receiver().fetch()
       replies = self.dispatch(msg)
@@ -54,22 +53,17 @@ class Dispatcher:
       count = len(replies)
       sequence = 1
       for r in replies:
-        if senders.has_key(r.to):
-          rsnd = senders[r.to]
-        else:
-          rsnd = session.sender(r.to)
-          senders[r.to] = rsnd
-
         r.correlation_id = msg.correlation_id
         r.properties["count"] = count
         r.properties["sequence"] = sequence
         sequence += 1
         try:
-          rsnd.send(r)
+          snd = session.sender(r.to)
+          snd.send(r)
         except SendError, e:
           print e
-          del senders[r.to]
-          rsnd.close()
+        finally:
+          snd.close()
 
       session.acknowledge(msg)
 
