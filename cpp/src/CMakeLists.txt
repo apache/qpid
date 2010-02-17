@@ -166,13 +166,14 @@ endif(NOT Boost_FOUND)
 
 # Boost.system was introduced at Boost 1.35; it's needed secondarily by other
 # Boost libs Qpid needs, so be sure it's there.
-if (NOT Boost_VERSION LESS 103500)
+if (Boost_VERSION GREATER 103499)
   find_package(Boost COMPONENTS system)
+
+  # Allow for cmake pre 2.6 and boost post 1.35
   if (NOT Boost_SYSTEM_LIBRARY)
     set(Boost_SYSTEM_LIBRARY boost_system)
   endif (NOT Boost_SYSTEM_LIBRARY)
-
-endif (NOT Boost_VERSION LESS 103500)
+endif (Boost_VERSION GREATER 103499)
 
 # Versions of cmake pre 2.6 don't set the Boost_*_LIBRARY variables correctly
 # these values are correct for Linux
@@ -191,10 +192,6 @@ endif (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
 if (NOT Boost_REGEX_LIBRARY)
   set(Boost_REGEX_LIBRARY boost_regex)
 endif (NOT Boost_REGEX_LIBRARY)
-
-if (NOT Boost_SYSTEM_LIBRARY)
-  set(Boost_SYSTEM_LIBRARY boost_system)
-endif (NOT Boost_SYSTEM_LIBRARY)
 
 # The Windows install also wants the Boost DLLs and headers that the release
 # is built with. The DLLs enable everything to run, and the headers ensure
