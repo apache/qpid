@@ -231,7 +231,8 @@ rdma_la_SOURCES = \
   qpid/sys/RdmaIOPlugin.cpp
 rdma_la_LIBADD = \
   libqpidbroker.la \
-  librdmawrap.la
+  librdmawrap.la \
+  -libverbs
 rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
@@ -242,7 +243,8 @@ rdmaconnector_la_SOURCES = \
   qpid/client/RdmaConnector.cpp
 rdmaconnector_la_LIBADD = \
   libqpidclient.la \
-  librdmawrap.la
+  librdmawrap.la \
+  -libverbs
 rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdmaconnector_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
