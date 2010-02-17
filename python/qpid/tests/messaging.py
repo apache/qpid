@@ -799,6 +799,19 @@ test-bindings-additive-queue; {
     self.drain(rcv_a, expected=[m1])
     self.drain(rcv_b, expected=[m2])
 
+  def testSubjectDefault(self):
+    m1 = self.content("testSubjectDefault", 1)
+    m2 = self.content("testSubjectDefault", 2)
+    snd = self.ssn.sender("amq.topic/a")
+    rcv = self.ssn.receiver("amq.topic")
+    snd.send(m1)
+    snd.send(Message(subject="b", content=m2))
+    e1 = rcv.fetch(timeout=0)
+    e2 = rcv.fetch(timeout=0)
+    assert e1.subject == "a", "subject: %s" % e1.subject
+    assert e2.subject == "b", "subject: %s" % e2.subject
+    self.assertEmpty(rcv)
+
 NOSUCH_Q = "this-queue-should-not-exist"
 UNPARSEABLE_ADDR = "name/subject; {bad options"
 UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"

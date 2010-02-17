@@ -950,6 +950,12 @@ class Driver:
       rk = _snd._routing_key
     else:
       rk = msg.subject
+
+    if msg.subject is None:
+      subject = _snd.subject
+    else:
+      subject = msg.subject
+
     # XXX: do we need to query to figure out how to create the reply-to interoperably?
     if msg.reply_to:
       rt = addr2reply_to(msg.reply_to)
@@ -962,10 +968,10 @@ class Driver:
                            correlation_id=msg.correlation_id,
                            content_type=msg.content_type,
                            application_headers=msg.properties)
-    if msg.subject is not None:
+    if subject is not None:
       if mp.application_headers is None:
         mp.application_headers = {}
-      mp.application_headers[SUBJECT] = msg.subject
+      mp.application_headers[SUBJECT] = subject
     if msg.to is not None:
       if mp.application_headers is None:
         mp.application_headers = {}
