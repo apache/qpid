@@ -49,7 +49,8 @@ struct SslServerOptions : qpid::Options
     uint16_t port;
     bool clientAuth;
 
-    SslServerOptions() : certStore("My"), port(5671), clientAuth(false)
+    SslServerOptions() : qpid::Options("SSL Options"),
+                         certStore("My"), port(5671), clientAuth(false)
     {
         qpid::TcpAddress me;
         if (qpid::sys::SystemInfo::getLocalHostname(me))
@@ -67,11 +68,11 @@ struct SslServerOptions : qpid::Options
 };
 
 class SslProtocolFactory : public qpid::sys::ProtocolFactory {
+    qpid::sys::Socket listener;
     const bool tcpNoDelay;
     const uint16_t listeningPort;
     std::string brokerHost;
     const bool clientAuthSelected;
-    qpid::sys::Socket listener;
     std::auto_ptr<qpid::sys::AsynchAcceptor> acceptor;
     ConnectFailedCallback connectFailedCallback;
     CredHandle credHandle;
@@ -129,7 +130,7 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
                                        int backlog,
                                        bool nodelay)
     : tcpNoDelay(nodelay),
-      listeningPort(options.port),
+      listeningPort(listener.listen(options.port, backlog)),
       clientAuthSelected(options.clientAuth) {
 
     SecInvalidateHandle(&credHandle);
@@ -174,7 +175,6 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
                                                         NULL);
     if (status != SEC_E_OK)
         throw QPID_WINDOWS_ERROR(status);
-    listener.listen(options.port, backlog);
     ::CertFreeCertificateContext(certContext);
     ::CertCloseStore(certStoreHandle, 0);
 }
