@@ -158,6 +158,7 @@ RdmaConnector::RdmaConnector(Poller::shared_ptr p,
 
 RdmaConnector::~RdmaConnector() {
     close();
+    if (aio) aio->deferDelete();
 }
 
 void RdmaConnector::connect(const std::string& host, int port){
@@ -213,6 +214,9 @@ bool RdmaConnector::closeInternal() {
     Mutex::ScopedLock l(pollingLock);
     bool ret = polling;
     polling = false;
+    if (ret) {
+        if (aio) aio->queueWriteClose();
+    }
     return ret;
 }
 
