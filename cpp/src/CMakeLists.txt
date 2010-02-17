@@ -357,10 +357,6 @@ endif (BUILD_XML)
 
 # Build the ACL plugin
 set (acl_default ON)
-# Like this until we fix exporting symbols from the generated management code
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set(acl_default OFF)
-endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 option(BUILD_ACL "Build ACL enforcement broker plugin" ${acl_default})
 if (BUILD_ACL)
   set (acl_SOURCES
@@ -372,17 +368,22 @@ if (BUILD_ACL)
        qpid/acl/AclReader.cpp
        qpid/acl/AclReader.h
       )
-  add_library (acl MODULE ${acl_SOURCES})
-  set_target_properties (acl PROPERTIES PREFIX "")
-  target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties (acl PROPERTIES
-                           PREFIX ""
-                           LINK_FLAGS -Wl,--no-undefined)
-  endif (CMAKE_COMPILER_IS_GNUCXX)
-  install (TARGETS acl
-           DESTINATION ${QPIDD_MODULE_DIR}
-           COMPONENT ${QPID_COMPONENT_BROKER})
+  # Windows builds the ACL code into the qpidbroker library; see QPID-1842
+  # for history and rationale. If this is changed, remove the acl_SOURCES from
+  # the qpidbroker platform-specific source list.
+  if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+    add_library (acl MODULE ${acl_SOURCES})
+    set_target_properties (acl PROPERTIES PREFIX "")
+    target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    if (CMAKE_COMPILER_IS_GNUCXX)
+      set_target_properties (acl PROPERTIES
+                             PREFIX ""
+                             LINK_FLAGS -Wl,--no-undefined)
+    endif (CMAKE_COMPILER_IS_GNUCXX)
+    install (TARGETS acl
+             DESTINATION ${QPIDD_MODULE_DIR}
+             COMPONENT ${QPID_COMPONENT_BROKER})
+  endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (BUILD_ACL)
 
 # Check for optional cluster support requirements
@@ -439,6 +440,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
+    ${acl_SOURCES}
     ${sslbroker_windows_SOURCES}
   )
   set (qpidbroker_platform_LIBS
