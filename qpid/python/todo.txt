@@ -186,6 +186,9 @@ Examples:
   - spout: F, NR
   - server: F, NR
   - client: NF
+  - reservations: F, NR
+     + code: F, NR
+     + doc: NF
   - other examples, e.g. async?
 
 Miscellaneous:
