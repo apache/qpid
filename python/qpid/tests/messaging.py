@@ -580,6 +580,22 @@ class ReceiverTests(Base):
 
   # XXX: need testClose
 
+  def testMode(self):
+    msgs = [self.content("testMode", 1),
+            self.content("testMode", 2),
+            self.content("testMode", 3)]
+
+    for m in msgs:
+      self.snd.send(m)
+
+    rb = self.ssn.receiver('test-receiver-queue; {mode: browse}')
+    rc = self.ssn.receiver('test-receiver-queue; {mode: consume}')
+    self.drain(rb, expected=msgs)
+    self.drain(rc, expected=msgs)
+    rb2 = self.ssn.receiver(rb.source)
+    self.assertEmpty(rb2)
+    self.drain(self.rcv, expected=[])
+
 class AddressTests(Base):
 
   def setup_connection(self):
@@ -845,6 +861,12 @@ class AddressErrorTests(Base):
     # XXX: should have specific exception for this
     self.receiverErrorTest(UNLEXABLE_ADDR, ReceiveError,
                            lambda e: "unrecognized characters" in str(e))
+
+  def testInvalidMode(self):
+    # XXX: should have specific exception for this
+    self.receiverErrorTest('name; {mode: "this-is-a-bad-receiver-mode"}',
+                           ReceiveError,
+                           lambda e: "not in ('browse', 'consume')" in str(e))
 
 SENDER_Q = 'test-sender-q; {create: always, delete: always}'
 
