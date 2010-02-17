@@ -941,12 +941,12 @@ class Message:
 
   @type id: str
   @ivar id: the message id
-  @type user_id: ???
+  @type user_id: str
   @ivar user_id: the user-id of the message producer
-  @type to: ???
-  @ivar to: ???
-  @type reply_to: ???
-  @ivar reply_to: ???
+  @type to: str
+  @ivar to: the destination address
+  @type reply_to: str
+  @ivar reply_to: the address to send replies
   @type correlation_id: str
   @ivar correlation_id: a correlation-id for the message
   @type properties: dict
