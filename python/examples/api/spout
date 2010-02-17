@@ -48,6 +48,7 @@ parser.add_option("-c", "--count", type=int, default=1,
 parser.add_option("-t", "--timeout", type=float, default=None,
                   help="exit after the specified time")
 parser.add_option("-i", "--id", help="use the supplied id instead of generating one")
+parser.add_option("-S", "--subject", help="specify a subject")
 parser.add_option("-R", "--reply-to", help="specify reply-to address")
 parser.add_option("-P", "--property", dest="properties", action="append", default=[],
                   metavar="NAME=VALUE", help="specify message property")
@@ -107,7 +108,9 @@ try:
   start = time.time()
   while (opts.count == 0 or count < opts.count) and \
         (opts.timeout is None or time.time() - start < opts.timeout):
-    msg = Message(content, reply_to=opts.reply_to)
+    msg = Message(subject=opts.subject,
+                  reply_to=opts.reply_to,
+                  content=content)
     msg.properties["spout-id"] = "%s:%s" % (spout_id, count)
     for p in opts.properties:
       name, val = nameval(p)
