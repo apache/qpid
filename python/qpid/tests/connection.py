@@ -17,6 +17,7 @@
 # under the License.
 #
 
+import time
 from threading import *
 from unittest import TestCase
 from qpid.util import connect, listen
@@ -183,8 +184,8 @@ class ConnectionTest(TestCase):
     condition = Condition()
     def listener(m): messages.append(m)
     def exc_listener(e):
-      exceptions.append(e)
       condition.acquire()
+      exceptions.append(e)
       condition.notify()
       condition.release()
 
@@ -197,7 +198,11 @@ class ConnectionTest(TestCase):
     ssn.message_transfer("abort")
 
     condition.acquire()
-    condition.wait(10)
+    start = time.time()
+    elapsed = 0
+    while not exceptions and elapsed < 10:
+      condition.wait(10 - elapsed)
+      elapsed = time.time() - start
     condition.release()
 
     for i in range(10):
