@@ -190,5 +190,5 @@ Examples:
 
 Miscellaneous:
   - standard ping-like (drain/spout) utilities for all clients: NF
-  - caching of resolved addresses
+  - caching of resolved addresses: F, NR
   - consider using separate session for query/deletion/creation of addresses
