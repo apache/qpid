@@ -270,22 +270,25 @@ class build_py(preprocessor, _build_py):
     else:
       return None, None
 
+def pclfile(xmlfile):
+  return "%s.pcl" % os.path.splitext(xmlfile)[0]
+
 class install_lib(_install_lib):
 
   def get_outputs(self):
     outputs = _install_lib.get_outputs(self)
     extra = []
     for of in outputs:
-      if os.path.basename(of) == "amqp.0-10-qpid-errata.xml":
-        extra.append("%s.ops.pcl" % of)
+      if os.path.basename(of) == "amqp-0-10-qpid-errata.xml":
+        extra.append(pclfile(of))
     return outputs + extra
 
   def install(self):
     outfiles = _install_lib.install(self)
     extra = []
     for of in outfiles:
-      if os.path.basename(of) == "amqp.0-10-qpid-errata.xml":
-        tgt = "%s.ops.pcl" % of
+      if os.path.basename(of) == "amqp-0-10-qpid-errata.xml":
+        tgt = pclfile(of)
         if self.force or newer(of, tgt):
           log.info("caching %s to %s" % (of, os.path.basename(tgt)))
           if not self.dry_run:
