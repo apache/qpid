@@ -17,8 +17,8 @@
 # under the License.
 #
 import re
-from lexer import Lexicon, LexError
-from parser import Parser, ParseError
+from qpid.lexer import Lexicon, LexError
+from qpid.parser import Parser, ParseError
 
 l = Lexicon()
 

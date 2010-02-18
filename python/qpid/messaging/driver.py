@@ -17,18 +17,25 @@
 # under the License.
 #
 
-import address, compat, connection, sasl, socket, struct, sys, time
-from concurrency import synchronized
-from datatypes import RangedSet, Serial
-from exceptions import Timeout, VersionError
-from framing import OpEncoder, SegmentEncoder, FrameEncoder, FrameDecoder, SegmentDecoder, OpDecoder
+import socket, struct, sys, time
 from logging import getLogger
-from messaging import get_codec, ConnectError, Message, Pattern, UNLIMITED
-from ops import *
-from selector import Selector
+from qpid import compat
+from qpid import sasl
+from qpid.concurrency import synchronized
+from qpid.datatypes import RangedSet, Serial
+from qpid.exceptions import Timeout, VersionError
+from qpid.framing import OpEncoder, SegmentEncoder, FrameEncoder, \
+    FrameDecoder, SegmentDecoder, OpDecoder
+from qpid.messaging import address
+from qpid.messaging.constants import UNLIMITED
+from qpid.messaging.endpoints import Pattern
+from qpid.messaging.exceptions import ConnectError
+from qpid.messaging.message import get_codec, Message
+from qpid.ops import *
+from qpid.selector import Selector
+from qpid.util import connect
+from qpid.validator import And, Context, Map, Types, Values
 from threading import Condition, Thread
-from util import connect
-from validator import And, Context, Map, Types, Values
 
 log = getLogger("qpid.messaging")
 rawlog = getLogger("qpid.messaging.io.raw")
@@ -190,7 +197,6 @@ class LinkIn:
         raise Exception("can't supply both subject and filter")
       elif _rcv.subject:
         # XXX
-        from messaging import Pattern
         f = Pattern(_rcv.subject)
       else:
         f = filter
