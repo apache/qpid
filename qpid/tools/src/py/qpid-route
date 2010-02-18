@@ -440,7 +440,7 @@ nargs = len(cargs)
 if nargs < 2:
     Usage()
 if nargs == 2:
-    localBroker = "localhost"
+    localBroker = socket.gethostname()
 else:
     if _srclocal:
         localBroker = cargs[3]
