@@ -19,11 +19,11 @@
 
 
 from qpid.tests import Test
-from qpid.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE, \
+from qpid.messaging.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE, \
     LEXER
 from qpid.lexer import Token
 from qpid.harness import Skipped
-from parser import ParserBase
+from qpid.tests.parser import ParserBase
 
 def indent(st):
   return "  " + st.replace("\n", "\n  ")

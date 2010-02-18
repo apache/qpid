@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,44 +17,16 @@
 # under the License.
 #
 
-class Test:
+class Constant:
 
-  def __init__(self, name):
+  def __init__(self, name, value=None):
     self.name = name
+    self.value = value
 
-  def configure(self, config):
-    self.config = config
+  def __repr__(self):
+    return self.name
 
-# API Tests
-import qpid.tests.framing
-import qpid.tests.mimetype
-import qpid.tests.messaging
+AMQP_PORT = 5672
+AMQPS_PORT = 5671
 
-# Legacy Tests
-import qpid.tests.codec
-import qpid.tests.queue
-import qpid.tests.datatypes
-import qpid.tests.connection
-import qpid.tests.spec010
-import qpid.tests.codec010
-
-class TestTestsXXX(Test):
-
-  def testFoo(self):
-    print "this test has output"
-
-  def testBar(self):
-    print "this test "*8
-    print "has"*10
-    print "a"*75
-    print "lot of"*10
-    print "output"*10
-
-  def testQux(self):
-    import sys
-    sys.stdout.write("this test has output with no newline")
-
-  def testQuxFail(self):
-    import sys
-    sys.stdout.write("this test has output with no newline")
-    fdsa
+UNLIMITED = Constant("UNLIMITED", 0xFFFFFFFFL)
