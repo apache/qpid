@@ -60,7 +60,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
     }
     QPID_LOG(info, "ACL Plugin loaded");
-	   if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
+	if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
 }
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
@@ -130,6 +130,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 
       data = d;
 	  transferAcl = data->transferAcl; // any transfer ACL
+      data->aclSource = aclFile; 
 	  if (mgmtObject!=0){
 	      mgmtObject->set_transferAcl(transferAcl?1:0);
 		  mgmtObject->set_policyFile(aclFile);
