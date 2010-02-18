@@ -28,44 +28,20 @@ Areas that still need work:
   - protocol negotiation/multiprotocol impl
 """
 
-from codec010 import StringCodec
-from concurrency import synchronized, Waiter, Condition
-from datatypes import timestamp, uuid4, Serial
 from logging import getLogger
-from ops import PRIMITIVE
+from qpid.codec010 import StringCodec
+from qpid.concurrency import synchronized, Waiter, Condition
+from qpid.datatypes import Serial, uuid4
+from qpid.messaging.constants import *
+from qpid.messaging.exceptions import *
+from qpid.messaging.message import *
+from qpid.ops import PRIMITIVE
+from qpid.util import default
 from threading import Thread, RLock
-from util import default
 
 log = getLogger("qpid.messaging")
 
 static = staticmethod
-
-AMQP_PORT = 5672
-AMQPS_PORT = 5671
-
-class Constant:
-
-  def __init__(self, name, value=None):
-    self.name = name
-    self.value = value
-
-  def __repr__(self):
-    return self.name
-
-UNLIMITED = Constant("UNLIMITED", 0xFFFFFFFFL)
-
-class ConnectionError(Exception):
-  """
-  The base class for all connection related exceptions.
-  """
-  pass
-
-class ConnectError(ConnectionError):
-  """
-  Exception raised when there is an error connecting to the remote
-  peer.
-  """
-  pass
 
 class Connection:
 
@@ -229,26 +205,6 @@ class Pattern:
     from qpid.ops import ExchangeBind
     sst.write_cmd(ExchangeBind(exchange=exchange, queue=queue,
                                binding_key=self.value.replace("*", "#")))
-
-class SessionError(Exception):
-  pass
-
-class Disconnected(SessionError):
-  """
-  Exception raised when an operation is attempted that is illegal when
-  disconnected.
-  """
-  pass
-
-class NontransactionalSession(SessionError):
-  """
-  Exception raised when commit or rollback is attempted on a non
-  transactional session.
-  """
-  pass
-
-class TransactionAborted(SessionError):
-  pass
 
 class Session:
 
@@ -639,12 +595,6 @@ class Session:
     self._ewait(lambda: self.closed)
     self.connection._remove_session(self)
 
-class SendError(SessionError):
-  pass
-
-class InsufficientCapacity(SendError):
-  pass
-
 class Sender:
 
   """
@@ -756,16 +706,6 @@ class Sender:
       self.session._ewait(lambda: self.closed)
     finally:
       self.session.senders.remove(self)
-
-class ReceiveError(SessionError):
-  pass
-
-class Empty(ReceiveError):
-  """
-  Exception raised by L{Receiver.fetch} when there is no message
-  available within the alloted time.
-  """
-  pass
 
 class Receiver(object):
 
@@ -889,125 +829,4 @@ class Receiver(object):
     finally:
       self.session.receivers.remove(self)
 
-def codec(name):
-  type = PRIMITIVE[name]
-
-  def encode(x):
-    sc = StringCodec()
-    sc.write_primitive(type, x)
-    return sc.encoded
-
-  def decode(x):
-    sc = StringCodec(x)
-    return sc.read_primitive(type)
-
-  return encode, decode
-
-# XXX: need to correctly parse the mime type and deal with
-# content-encoding header
-
-TYPE_MAPPINGS={
-  dict: "amqp/map",
-  list: "amqp/list",
-  unicode: "text/plain; charset=utf8",
-  unicode: "text/plain",
-  buffer: None,
-  str: None,
-  None.__class__: None
-  }
-
-TYPE_CODEC={
-  "amqp/map": codec("map"),
-  "amqp/list": codec("list"),
-  "text/plain; charset=utf8": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
-  "text/plain": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
-  "": (lambda x: x, lambda x: x),
-  None: (lambda x: x, lambda x: x)
-  }
-
-def get_type(content):
-  return TYPE_MAPPINGS[content.__class__]
-
-def get_codec(content_type):
-  return TYPE_CODEC[content_type]
-
-UNSPECIFIED = object()
-
-class Message:
-
-  """
-  A message consists of a standard set of fields, an application
-  defined set of properties, and some content.
-
-  @type id: str
-  @ivar id: the message id
-  @type user_id: str
-  @ivar user_id: the user-id of the message producer
-  @type to: str
-  @ivar to: the destination address
-  @type reply_to: str
-  @ivar reply_to: the address to send replies
-  @type correlation_id: str
-  @ivar correlation_id: a correlation-id for the message
-  @type properties: dict
-  @ivar properties: application specific message properties
-  @type content_type: str
-  @ivar content_type: the content-type of the message
-  @type content: str, unicode, buffer, dict, list
-  @ivar content: the message content
-  """
-
-  def __init__(self, content=None, content_type=UNSPECIFIED, id=None,
-               subject=None, to=None, user_id=None, reply_to=None,
-               correlation_id=None, durable=None, properties=None):
-    """
-    Construct a new message with the supplied content. The
-    content-type of the message will be automatically inferred from
-    type of the content parameter.
-
-    @type content: str, unicode, buffer, dict, list
-    @param content: the message content
-
-    @type content_type: str
-    @param content_type: the content-type of the message
-    """
-    self.id = id
-    self.subject = subject
-    self.to = to
-    self.user_id = user_id
-    self.reply_to = reply_to
-    self.correlation_id = correlation_id
-    self.durable = durable
-    self.redelivered = False
-    if properties is None:
-      self.properties = {}
-    else:
-      self.properties = properties
-    if content_type is UNSPECIFIED:
-      self.content_type = get_type(content)
-    else:
-      self.content_type = content_type
-    self.content = content
-
-  def __repr__(self):
-    args = []
-    for name in ["id", "subject", "to", "user_id", "reply_to",
-                 "correlation_id"]:
-      value = self.__dict__[name]
-      if value is not None: args.append("%s=%r" % (name, value))
-    for name in ["durable", "properties"]:
-      value = self.__dict__[name]
-      if value: args.append("%s=%r" % (name, value))
-    if self.content_type != get_type(self.content):
-      args.append("content_type=%r" % self.content_type)
-    if self.content is not None:
-      if args:
-        args.append("content=%r" % self.content)
-      else:
-        args.append(repr(self.content))
-    return "Message(%s)" % ", ".join(args)
-
-__all__ = ["Connection", "Session", "Sender", "Receiver", "Pattern", "Message",
-           "ConnectionError", "ConnectError", "SessionError", "Disconnected",
-           "SendError", "InsufficientCapacity", "ReceiveError", "Empty",
-           "timestamp", "uuid4", "UNLIMITED", "AMQP_PORT", "AMQPS_PORT"]
+__all__ = ["Connection", "Session", "Sender", "Receiver"]
