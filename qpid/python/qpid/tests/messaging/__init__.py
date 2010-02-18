@@ -18,6 +18,7 @@
 #
 
 import time
+from qpid.harness import Skipped
 from qpid.messaging import *
 from qpid.tests import Test
 
