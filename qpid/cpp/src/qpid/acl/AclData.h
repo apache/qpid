@@ -64,9 +64,10 @@ public:
   
    // Action*[] -> Object*[] -> map<user -> set<Rule> >
    aclAction* actionList[qpid::acl::ACTIONSIZE];
-   qpid::acl::AclResult decisionMode;  // determines if the rule set is an deny or accept basis. 
+   qpid::acl::AclResult decisionMode;  // determines if the rule set is a deny or allow mode. 
    bool transferAcl;
-  
+   std::string aclSource; 
+   
    AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params=0);
    AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey);
    AclResult getACLResult(bool logOnly, bool log);

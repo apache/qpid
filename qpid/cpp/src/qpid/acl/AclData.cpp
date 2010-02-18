@@ -24,7 +24,7 @@
 namespace qpid {
 namespace acl {
 
-AclData::AclData():decisionMode(qpid::acl::DENY),transferAcl(false)
+AclData::AclData():decisionMode(qpid::acl::DENY),transferAcl(false),aclSource("UNKNOWN")
 {
 	for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++){
 	    actionList[cnt]=0;
@@ -95,14 +95,40 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 								 << AclHelper::getPropertyStr(pMItr->first) << "'");
 						}else if ( pMItr->first == acl::PROP_MAXQUEUECOUNT || pMItr->first == acl::PROP_MAXQUEUESIZE ) {
                                                       if ( pMItr->first == paramItr->first ) {
-                                                          uint64_t aclMax = boost::lexical_cast<uint64_t>(pMItr->second);
-                                                          uint64_t paramMax = boost::lexical_cast<uint64_t>(paramItr->second);
+
+                                                          uint64_t aclMax = 0;
+                                                          uint64_t paramMax = 0;
+
+                                                          try{                      
+                                                              aclMax = boost::lexical_cast<uint64_t>(pMItr->second);
+                                                          }catch(const boost::bad_lexical_cast& e){
+                                                              match = false;  
+                                                              QPID_LOG(error,"Error evaluating rule. " << 
+                                                              "Illegal value given in ACL source <" << aclSource <<
+                                                              "> for property '" <<  
+                                                              AclHelper::getPropertyStr(pMItr->first) << "' : " << 
+                                                              boost::lexical_cast<std::string>(pMItr->second));
+                                                              break;  
+                                                          } 
+                                        
+                                                          try{
+                                                              paramMax = boost::lexical_cast<uint64_t>(paramItr->second);
+                                                          }catch(const boost::bad_lexical_cast& e){
+                                                              match = false;
+                                                              QPID_LOG(error,"Error evaluating rule. " <<
+                                                              "Illegal value given in lookup for property '" <<  
+                                                              AclHelper::getPropertyStr(pMItr->first) << "' : " << 
+                                                              boost::lexical_cast<std::string>(paramItr->second));
+                                                              break;                                                                
+                                                          } 
+
                                                           QPID_LOG(debug, "ACL: Numeric comparison for property " <<
                                                                    AclHelper::getPropertyStr(paramItr->first)  <<
                                                                    " (value given in lookup = " << 
                                                                    boost::lexical_cast<std::string>(paramItr->second) << 
                                                                    ", value give in rule = " <<
-                                                                   boost::lexical_cast<std::string>(pMItr->second) << " )");  
+                                                                   boost::lexical_cast<std::string>(pMItr->second) << " )");
+
                                                           if (( aclMax ) && ( paramMax == 0 || paramMax > aclMax)){
                                                               match = decisionMode == qpid::acl::ALLOW ;
                                                               QPID_LOG(debug, "ACL: Limit exceeded and match=" << 
@@ -110,8 +136,8 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
                                                               " as decision mode is " << AclHelper::getAclResultStr(decisionMode));
                                                           }
                                                       }
-                                                }else if (matchProp(pMItr->second, paramItr->second)) {
-                                                       QPID_LOG(debug, "ACL: the pair("
+                        }else if (matchProp(pMItr->second, paramItr->second)) {
+                            QPID_LOG(debug, "ACL: the pair("
 								 << AclHelper::getPropertyStr(paramItr->first) << "," << paramItr->second
 								 << ") given in lookup matched the pair("
 								 << AclHelper::getPropertyStr(pMItr->first) << "," << pMItr->second << ") given in the rule"); 
@@ -121,8 +147,7 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 								 << ") given in lookup doesn't match the pair("
 								 << AclHelper::getPropertyStr(pMItr->first) << "," << pMItr->second << ") given in the rule");
 							match = false;
-                  
-                                                } 
+                        } 
 					}
 				}
 				if (match)
