@@ -242,7 +242,8 @@ def load_types_from_xml(file):
   return types
 
 def load_types(file):
-  pclfile = "%s.ops.pcl" % file
+  base, ext = os.path.splitext(file)
+  pclfile = "%s.pcl" % base
   if os.path.exists(pclfile) and \
         os.path.getmtime(pclfile) > os.path.getmtime(file):
     f = open(pclfile, "rb")
