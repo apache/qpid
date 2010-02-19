@@ -28,7 +28,6 @@ from qpid.framing import OpEncoder, SegmentEncoder, FrameEncoder, \
     FrameDecoder, SegmentDecoder, OpDecoder
 from qpid.messaging import address
 from qpid.messaging.constants import UNLIMITED
-from qpid.messaging.endpoints import Pattern
 from qpid.messaging.exceptions import ConnectError
 from qpid.messaging.message import get_codec, Message
 from qpid.ops import *
@@ -63,6 +62,21 @@ class Attachment:
 DURABLE_DEFAULT=True
 
 # XXX
+
+class Pattern:
+  """
+  The pattern filter matches the supplied wildcard pattern against a
+  message subject.
+  """
+
+  def __init__(self, value):
+    self.value = value
+
+  # XXX: this should become part of the driver
+  def _bind(self, sst, exchange, queue):
+    from qpid.ops import ExchangeBind
+    sst.write_cmd(ExchangeBind(exchange=exchange, queue=queue,
+                               binding_key=self.value.replace("*", "#")))
 
 FILTER_DEFAULTS = {
   "topic": Pattern("*"),

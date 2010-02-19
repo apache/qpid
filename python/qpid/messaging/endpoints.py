@@ -191,21 +191,6 @@ class Connection:
       ssn.close()
     self.disconnect()
 
-class Pattern:
-  """
-  The pattern filter matches the supplied wildcard pattern against a
-  message subject.
-  """
-
-  def __init__(self, value):
-    self.value = value
-
-  # XXX: this should become part of the driver
-  def _bind(self, sst, exchange, queue):
-    from qpid.ops import ExchangeBind
-    sst.write_cmd(ExchangeBind(exchange=exchange, queue=queue,
-                               binding_key=self.value.replace("*", "#")))
-
 class Session:
 
   """
