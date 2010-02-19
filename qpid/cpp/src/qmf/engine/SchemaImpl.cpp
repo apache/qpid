@@ -18,33 +18,19 @@
  */
 
 #include "qmf/engine/SchemaImpl.h"
-#include <qpid/framing/Buffer.h>
-#include <qpid/framing/FieldTable.h>
-#include <qpid/framing/Uuid.h>
+#include "qmf/Protocol.h"
 #include <string.h>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace qmf::engine;
-using qpid::framing::Buffer;
-using qpid::framing::FieldTable;
-using qpid::framing::Uuid;
+using namespace qpid::messaging;
 
 SchemaHash::SchemaHash()
 {
     for (int idx = 0; idx < 16; idx++)
         hash[idx] = 0x5A;
-}
-
-void SchemaHash::encode(Buffer& buffer) const
-{
-    buffer.putBin128(hash);
-}
-
-void SchemaHash::decode(Buffer& buffer)
-{
-    buffer.getBin128(hash);
 }
 
 void SchemaHash::update(uint8_t data)
@@ -81,48 +67,68 @@ bool SchemaHash::operator>(const SchemaHash& other) const
     return ::memcmp(&hash, &other.hash, 16) > 0;
 }
 
-SchemaArgumentImpl::SchemaArgumentImpl(Buffer& buffer)
-{
-    FieldTable map;
-    map.decode(buffer);
 
-    name = map.getAsString("name");
-    typecode = (Typecode) map.getAsInt("type");
-    unit = map.getAsString("unit");
-    description = map.getAsString("desc");
+SchemaArgumentImpl::SchemaArgumentImpl(const Variant::Map& map)
+{
+    Variant::Map::const_iterator iter;
+
+    iter = map.find(Protocol::SCHEMA_ELT_NAME);
+    if (iter == map.end())
+        throw SchemaException("SchemaArgument", Protocol::SCHEMA_ELT_NAME);
+    name = iter->second.asString();
+
+    iter = map.find(Protocol::SCHEMA_ELT_TYPE);
+    if (iter == map.end())
+        throw SchemaException("SchemaArgument", Protocol::SCHEMA_ELT_TYPE);
+    typecode = (Typecode) iter->second.asUint8();
+
+    iter = map.find(Protocol::SCHEMA_ELT_UNIT);
+    if (iter != map.end())
+        unit = iter->second.asString();
+
+    iter = map.find(Protocol::SCHEMA_ELT_DESC);
+    if (iter != map.end())
+        description = iter->second.asString();
 
     dir = DIR_IN;
-    string dstr(map.getAsString("dir"));
-    if (dstr == "O")
-        dir = DIR_OUT;
-    else if (dstr == "IO")
-        dir = DIR_IN_OUT;
+    iter = map.find(Protocol::SCHEMA_ELT_DIR);
+    if (iter != map.end()) {
+        string dstr(iter->second.asString());
+        if (dstr == "O")
+            dir = DIR_OUT;
+        else if (dstr == "IO")
+            dir = DIR_IN_OUT;
+    }
 }
 
-SchemaArgument* SchemaArgumentImpl::factory(Buffer& buffer)
+SchemaArgument* SchemaArgumentImpl::factory(Variant::Map& map)
 {
-    SchemaArgumentImpl* impl(new SchemaArgumentImpl(buffer));
+    SchemaArgumentImpl* impl(new SchemaArgumentImpl(map));
     return new SchemaArgument(impl);
 }
 
-void SchemaArgumentImpl::encode(Buffer& buffer) const
+Variant::Map SchemaArgumentImpl::asMap() const
 {
-    FieldTable map;
+    Variant::Map map;
 
-    map.setString("name", name);
-    map.setInt("type", (int) typecode);
+    map[Protocol::SCHEMA_ELT_NAME] = Variant(name);
+    map[Protocol::SCHEMA_ELT_TYPE] = Variant((uint8_t) typecode);
+
+    string dirStr;
     if (dir == DIR_IN)
-        map.setString("dir", "I");
+        dirStr = "I";
     else if (dir == DIR_OUT)
-        map.setString("dir", "O");
+        dirStr = "O";
     else
-        map.setString("dir", "IO");
-    if (!unit.empty())
-        map.setString("unit", unit);
-    if (!description.empty())
-        map.setString("desc", description);
+        dirStr = "IO";
+    map[Protocol::SCHEMA_ELT_DIR] = Variant(dirStr);
 
-    map.encode(buffer);
+    if (!unit.empty())
+        map[Protocol::SCHEMA_ELT_UNIT] = Variant(unit);
+    if (!description.empty())
+        map[Protocol::SCHEMA_ELT_DESC] = Variant(description);
+
+    return map;
 }
 
 void SchemaArgumentImpl::updateHash(SchemaHash& hash) const
@@ -134,41 +140,51 @@ void SchemaArgumentImpl::updateHash(SchemaHash& hash) const
     hash.update(description);
 }
 
-SchemaMethodImpl::SchemaMethodImpl(Buffer& buffer)
+SchemaMethodImpl::SchemaMethodImpl(const Variant::Map& map)
 {
-    FieldTable map;
-    int argCount;
+    Variant::Map::const_iterator iter;
 
-    map.decode(buffer);
-    name = map.getAsString("name");
-    argCount = map.getAsInt("argCount");
-    description = map.getAsString("desc");
+    iter = map.find(Protocol::SCHEMA_ELT_NAME);
+    if (iter == map.end())
+        throw SchemaException("SchemaMethod", Protocol::SCHEMA_ELT_NAME);
+    name = iter->second.asString();
 
-    for (int idx = 0; idx < argCount; idx++) {
-        SchemaArgument* arg = SchemaArgumentImpl::factory(buffer);
-        addArgument(arg);
+    iter = map.find(Protocol::SCHEMA_ELT_DESC);
+    if (iter != map.end())
+        description = iter->second.asString();
+
+    iter = map.find(Protocol::SCHEMA_ARGS);
+    if (iter != map.end()) {
+        Variant::List list(iter->second.asList());
+        for (Variant::List::const_iterator aiter = list.begin(); aiter != list.end(); aiter++) {
+            Variant::Map argMap(aiter->asMap());
+            SchemaArgument* arg = SchemaArgumentImpl::factory(argMap);
+            addArgument(arg);
+        }
     }
 }
 
-SchemaMethod* SchemaMethodImpl::factory(Buffer& buffer)
+SchemaMethod* SchemaMethodImpl::factory(Variant::Map& map)
 {
-    SchemaMethodImpl* impl(new SchemaMethodImpl(buffer));
+    SchemaMethodImpl* impl(new SchemaMethodImpl(map));
     return new SchemaMethod(impl);
 }
 
-void SchemaMethodImpl::encode(Buffer& buffer) const
+Variant::Map SchemaMethodImpl::asMap() const
 {
-    FieldTable map;
+    Variant::Map map;
 
-    map.setString("name", name);
-    map.setInt("argCount", arguments.size());
+    map[Protocol::SCHEMA_ELT_NAME] = Variant(name);
     if (!description.empty())
-        map.setString("desc", description);
-    map.encode(buffer);
+        map[Protocol::SCHEMA_ELT_DESC] = Variant(description);
 
+    Variant::List list;
     for (vector<const SchemaArgument*>::const_iterator iter = arguments.begin();
          iter != arguments.end(); iter++)
-        (*iter)->impl->encode(buffer);
+        list.push_back((*iter)->impl->asMap());
+    map[Protocol::SCHEMA_ARGS] = list;
+
+    return map;
 }
 
 void SchemaMethodImpl::addArgument(const SchemaArgument* argument)
@@ -195,41 +211,58 @@ void SchemaMethodImpl::updateHash(SchemaHash& hash) const
         (*iter)->impl->updateHash(hash);
 }
 
-SchemaPropertyImpl::SchemaPropertyImpl(Buffer& buffer)
+SchemaPropertyImpl::SchemaPropertyImpl(const Variant::Map& map)
 {
-    FieldTable map;
-    map.decode(buffer);
+    Variant::Map::const_iterator iter;
 
-    name = map.getAsString("name");
-    typecode = (Typecode) map.getAsInt("type");
-    access = (Access) map.getAsInt("access");
-    index = map.getAsInt("index") != 0;
-    optional = map.getAsInt("optional") != 0;
-    unit = map.getAsString("unit");
-    description = map.getAsString("desc");
+    iter = map.find(Protocol::SCHEMA_ELT_NAME);
+    if (iter == map.end())
+        throw SchemaException("SchemaProperty", Protocol::SCHEMA_ELT_NAME);
+    name = iter->second.asString();
+
+    iter = map.find(Protocol::SCHEMA_ELT_TYPE);
+    if (iter == map.end())
+        throw SchemaException("SchemaProperty", Protocol::SCHEMA_ELT_TYPE);
+    typecode = (Typecode) iter->second.asUint8();
+
+    iter = map.find(Protocol::SCHEMA_ELT_ACCESS);
+    if (iter != map.end())
+        access = (Access) iter->second.asUint8();
+
+    iter = map.find(Protocol::SCHEMA_ELT_UNIT);
+    if (iter != map.end())
+        unit = iter->second.asString();
+
+    iter = map.find(Protocol::SCHEMA_ELT_DESC);
+    if (iter != map.end())
+        description = iter->second.asString();
+
+    iter = map.find(Protocol::SCHEMA_ELT_OPTIONAL);
+    if (iter != map.end())
+        optional = true;
 }
 
-SchemaProperty* SchemaPropertyImpl::factory(Buffer& buffer)
+SchemaProperty* SchemaPropertyImpl::factory(Variant::Map& map)
 {
-    SchemaPropertyImpl* impl(new SchemaPropertyImpl(buffer));
+    SchemaPropertyImpl* impl(new SchemaPropertyImpl(map));
     return new SchemaProperty(impl);
 }
 
-void SchemaPropertyImpl::encode(Buffer& buffer) const
+Variant::Map SchemaPropertyImpl::asMap() const
 {
-    FieldTable map;
+    Variant::Map map;
 
-    map.setString("name", name);
-    map.setInt("type", (int) typecode);
-    map.setInt("access", (int) access);
-    map.setInt("index", index ? 1 : 0);
-    map.setInt("optional", optional ? 1 : 0);
+    map[Protocol::SCHEMA_ELT_NAME] = Variant(name);
+    map[Protocol::SCHEMA_ELT_TYPE] = Variant((uint8_t) typecode);
+    map[Protocol::SCHEMA_ELT_ACCESS] = Variant((uint8_t) access);
+    if (optional)
+        map[Protocol::SCHEMA_ELT_OPTIONAL] = Variant();
     if (!unit.empty())
-        map.setString("unit", unit);
+        map[Protocol::SCHEMA_ELT_UNIT] = Variant(unit);
     if (!description.empty())
-        map.setString("desc", description);
+        map[Protocol::SCHEMA_ELT_DESC] = Variant(description);
 
-    map.encode(buffer);
+    return map;
 }
 
 void SchemaPropertyImpl::updateHash(SchemaHash& hash) const
@@ -243,52 +276,28 @@ void SchemaPropertyImpl::updateHash(SchemaHash& hash) const
     hash.update(description);
 }
 
-SchemaStatisticImpl::SchemaStatisticImpl(Buffer& buffer)
+SchemaClassKeyImpl::SchemaClassKeyImpl(const string& p, const string& n, const SchemaHash& h) :
+    package(p), name(n), hash(h) {}
+
+SchemaClassKeyImpl::SchemaClassKeyImpl(const Variant::Map& map) :
+    package(packageContainer), name(nameContainer), hash(hashContainer)
 {
-    FieldTable map;
-    map.decode(buffer);
+    Variant::Map::const_iterator iter;
 
-    name = map.getAsString("name");
-    typecode = (Typecode) map.getAsInt("type");
-    unit = map.getAsString("unit");
-    description = map.getAsString("desc");
-}
+    iter = map.find(Protocol::SCHEMA_PACKAGE);
+    if (iter == map.end())
+        throw SchemaException("SchemaClassKey", Protocol::SCHEMA_PACKAGE);
+    packageContainer = iter->second.asString();
 
-SchemaStatistic* SchemaStatisticImpl::factory(Buffer& buffer)
-{
-    SchemaStatisticImpl* impl(new SchemaStatisticImpl(buffer));
-    return new SchemaStatistic(impl);
-}
+    iter = map.find(Protocol::SCHEMA_CLASS);
+    if (iter == map.end())
+        throw SchemaException("SchemaClassKey", Protocol::SCHEMA_CLASS);
+    nameContainer = iter->second.asString();
 
-void SchemaStatisticImpl::encode(Buffer& buffer) const
-{
-    FieldTable map;
-
-    map.setString("name", name);
-    map.setInt("type", (int) typecode);
-    if (!unit.empty())
-        map.setString("unit", unit);
-    if (!description.empty())
-        map.setString("desc", description);
-
-    map.encode(buffer);
-}
-
-void SchemaStatisticImpl::updateHash(SchemaHash& hash) const
-{
-    hash.update(name);
-    hash.update(typecode);
-    hash.update(unit);
-    hash.update(description);
-}
-
-SchemaClassKeyImpl::SchemaClassKeyImpl(const string& p, const string& n, const SchemaHash& h) : package(p), name(n), hash(h) {}
-
-SchemaClassKeyImpl::SchemaClassKeyImpl(Buffer& buffer) : package(packageContainer), name(nameContainer), hash(hashContainer)
-{
-    buffer.getShortString(packageContainer);
-    buffer.getShortString(nameContainer);
-    hashContainer.decode(buffer);
+    iter = map.find(Protocol::SCHEMA_HASH);
+    if (iter == map.end())
+        throw SchemaException("SchemaClassKey", Protocol::SCHEMA_HASH);
+    hashContainer.set(iter->second.asUuid().data());
 }
 
 SchemaClassKey* SchemaClassKeyImpl::factory(const string& package, const string& name, const SchemaHash& hash)
@@ -297,17 +306,21 @@ SchemaClassKey* SchemaClassKeyImpl::factory(const string& package, const string&
     return new SchemaClassKey(impl);
 }
 
-SchemaClassKey* SchemaClassKeyImpl::factory(Buffer& buffer)
+SchemaClassKey* SchemaClassKeyImpl::factory(Variant::Map& map)
 {
-    SchemaClassKeyImpl* impl(new SchemaClassKeyImpl(buffer));
+    SchemaClassKeyImpl* impl(new SchemaClassKeyImpl(map));
     return new SchemaClassKey(impl);
 }
 
-void SchemaClassKeyImpl::encode(Buffer& buffer) const
+Variant::Map SchemaClassKeyImpl::asMap() const
 {
-    buffer.putShortString(package);
-    buffer.putShortString(name);
-    hash.encode(buffer);
+    Variant::Map map;
+
+    map[Protocol::SCHEMA_PACKAGE] = Variant(package);
+    map[Protocol::SCHEMA_CLASS] = Variant(name);
+    map[Protocol::SCHEMA_HASH] = Variant();  // TODO: use UUID type when available
+
+    return map;
 }
 
 bool SchemaClassKeyImpl::operator==(const SchemaClassKeyImpl& other) const
@@ -335,10 +348,21 @@ const string& SchemaClassKeyImpl::str() const
     return repr;
 }
 
-SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) : hasHash(true), classKey(SchemaClassKeyImpl::factory(package, name, hash))
+SchemaObjectClassImpl::SchemaObjectClassImpl(const Variant::Map& map) :
+    hasHash(true), classKey(SchemaClassKeyImpl::factory(package, name, hash))
 {
-    buffer.getShortString(package);
-    buffer.getShortString(name);
+    Variant::Map::const_iterator iter;
+
+    iter = map.find(Protocol::SCHEMA_PACKAGE);
+    if (iter == map.end())
+        throw SchemaException("SchemaObjectClass", Protocol::SCHEMA_PACKAGE);
+    package = iter->second.asString();
+
+    iter = map.find(Protocol::SCHEMA_CLASS);
+    if (iter == map.end())
+        throw SchemaException("SchemaObjectClass", Protocol::SCHEMA_CLASS);
+    name = iter->second.asString();
+
     hash.decode(buffer);
 
     uint16_t propCount     = buffer.getShort();
@@ -350,24 +374,19 @@ SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) : hasHash(true), cl
         addProperty(property);
     }
 
-    for (uint16_t idx = 0; idx < statCount; idx++) {
-        const SchemaStatistic* statistic = SchemaStatisticImpl::factory(buffer);
-        addStatistic(statistic);
-    }
-
     for (uint16_t idx = 0; idx < methodCount; idx++) {
         SchemaMethod* method = SchemaMethodImpl::factory(buffer);
         addMethod(method);
     }
 }
 
-SchemaObjectClass* SchemaObjectClassImpl::factory(Buffer& buffer)
+SchemaObjectClass* SchemaObjectClassImpl::factory(Variant::Map& map)
 {
     SchemaObjectClassImpl* impl(new SchemaObjectClassImpl(buffer));
     return new SchemaObjectClass(impl);
 }
 
-void SchemaObjectClassImpl::encode(Buffer& buffer) const
+void SchemaObjectClassImpl::encode(Variant::Map& map) const
 {
     buffer.putOctet((uint8_t) CLASS_OBJECT);
     buffer.putShortString(package);
@@ -454,11 +473,12 @@ const SchemaMethod* SchemaObjectClassImpl::getMethod(int idx) const
     return 0;
 }
 
-SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) : hasHash(true), classKey(SchemaClassKeyImpl::factory(package, name, hash))
+SchemaEventClassImpl::SchemaEventClassImpl(Variant::Map& map) : hasHash(true), classKey(SchemaClassKeyImpl::factory(package, name, hash))
 {
     buffer.getShortString(package);
     buffer.getShortString(name);
     hash.decode(buffer);
+    buffer.putOctet(0); // No parent class
 
     uint16_t argCount = buffer.getShort();
 
@@ -468,13 +488,13 @@ SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) : hasHash(true), clas
     }
 }
 
-SchemaEventClass* SchemaEventClassImpl::factory(Buffer& buffer)
+SchemaEventClass* SchemaEventClassImpl::factory(Variant::Map& map)
 {
     SchemaEventClassImpl* impl(new SchemaEventClassImpl(buffer));
     return new SchemaEventClass(impl);
 }
 
-void SchemaEventClassImpl::encode(Buffer& buffer) const
+void SchemaEventClassImpl::encode(Variant::Map& map) const
 {
     buffer.putOctet((uint8_t) CLASS_EVENT);
     buffer.putShortString(package);
@@ -561,17 +581,6 @@ bool SchemaProperty::isOptional() const { return impl->isOptional(); }
 const char* SchemaProperty::getUnit() const { return impl->getUnit().c_str(); }
 const char* SchemaProperty::getDesc() const { return impl->getDesc().c_str(); }
 
-SchemaStatistic::SchemaStatistic(const char* name, Typecode typecode) : impl(new SchemaStatisticImpl(name, typecode)) {}
-SchemaStatistic::SchemaStatistic(SchemaStatisticImpl* i) : impl(i) {}
-SchemaStatistic::SchemaStatistic(const SchemaStatistic& from) : impl(new SchemaStatisticImpl(*(from.impl))) {}
-SchemaStatistic::~SchemaStatistic() { delete impl; }
-void SchemaStatistic::setUnit(const char* val) { impl->setUnit(val); }
-void SchemaStatistic::setDesc(const char* desc) { impl->setDesc(desc); }
-const char* SchemaStatistic::getName() const { return impl->getName().c_str(); }
-Typecode SchemaStatistic::getType() const { return impl->getType(); }
-const char* SchemaStatistic::getUnit() const { return impl->getUnit().c_str(); }
-const char* SchemaStatistic::getDesc() const { return impl->getDesc().c_str(); }
-
 SchemaClassKey::SchemaClassKey(SchemaClassKeyImpl* i) : impl(i) {}
 SchemaClassKey::SchemaClassKey(const SchemaClassKey& from) : impl(new SchemaClassKeyImpl(*(from.impl))) {}
 SchemaClassKey::~SchemaClassKey() { delete impl; }
@@ -587,24 +596,20 @@ SchemaObjectClass::SchemaObjectClass(SchemaObjectClassImpl* i) : impl(i) {}
 SchemaObjectClass::SchemaObjectClass(const SchemaObjectClass& from) : impl(new SchemaObjectClassImpl(*(from.impl))) {}
 SchemaObjectClass::~SchemaObjectClass() { delete impl; }
 void SchemaObjectClass::addProperty(const SchemaProperty* property) { impl->addProperty(property); }
-void SchemaObjectClass::addStatistic(const SchemaStatistic* statistic) { impl->addStatistic(statistic); }
 void SchemaObjectClass::addMethod(const SchemaMethod* method) { impl->addMethod(method); }
 const SchemaClassKey* SchemaObjectClass::getClassKey() const { return impl->getClassKey(); }
 int SchemaObjectClass::getPropertyCount() const { return impl->getPropertyCount(); }
-int SchemaObjectClass::getStatisticCount() const { return impl->getStatisticCount(); }
 int SchemaObjectClass::getMethodCount() const { return impl->getMethodCount(); }
 const SchemaProperty* SchemaObjectClass::getProperty(int idx) const { return impl->getProperty(idx); }
-const SchemaStatistic* SchemaObjectClass::getStatistic(int idx) const { return impl->getStatistic(idx); }
 const SchemaMethod* SchemaObjectClass::getMethod(int idx) const { return impl->getMethod(idx); }
 
-SchemaEventClass::SchemaEventClass(const char* package, const char* name, Severity s) : impl(new SchemaEventClassImpl(package, name, s)) {}
+SchemaEventClass::SchemaEventClass(const char* package, const char* name) : impl(new SchemaEventClassImpl(package, name)) {}
 SchemaEventClass::SchemaEventClass(SchemaEventClassImpl* i) : impl(i) {}
 SchemaEventClass::SchemaEventClass(const SchemaEventClass& from) : impl(new SchemaEventClassImpl(*(from.impl))) {}
 SchemaEventClass::~SchemaEventClass() { delete impl; }
 void SchemaEventClass::addArgument(const SchemaArgument* argument) { impl->addArgument(argument); }
 void SchemaEventClass::setDesc(const char* desc) { impl->setDesc(desc); }
 const SchemaClassKey* SchemaEventClass::getClassKey() const { return impl->getClassKey(); }
-Severity SchemaEventClass::getSeverity() const { return impl->getSeverity(); }
 int SchemaEventClass::getArgumentCount() const { return impl->getArgumentCount(); }
 const SchemaArgument* SchemaEventClass::getArgument(int idx) const { return impl->getArgument(idx); }
 

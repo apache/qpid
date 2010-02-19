@@ -22,7 +22,7 @@
 
 #include <qmf/engine/Schema.h>
 #include <qmf/engine/ObjectId.h>
-#include <qmf/engine/Value.h>
+#include <qpid/messaging/Variant.h>
 
 namespace qmf {
 namespace engine {
@@ -30,23 +30,26 @@ namespace engine {
     struct ObjectImpl;
     class Object {
     public:
-        Object(const SchemaObjectClass* type);
+        Object();
+        Object(SchemaObjectClass* type);
         Object(const Object& from);
         virtual ~Object();
 
+        const qpid::messaging::Variant::Map& getValues() const;
+        qpid::messaging::Variant::Map& getValues();
+
+        const SchemaObjectClass* getSchema() const;
+        void setSchema(SchemaObjectClass* schema);
+
+        const char* getKey() const;
+        void setKey(const char* key);
+
+        void touch();
         void destroy();
-        const ObjectId* getObjectId() const;
-        void setObjectId(ObjectId* oid);
-        const SchemaObjectClass* getClass() const;
-        Value* getValue(const char* key) const;
-        void invokeMethod(const char* methodName, const Value* inArgs, void* context) const;
-        bool isDeleted() const;
-        void merge(const Object& from);
 
     private:
         friend struct ObjectImpl;
         friend class  AgentImpl;
-        Object(ObjectImpl* impl);
         ObjectImpl* impl;
     };
 }

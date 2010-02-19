@@ -21,79 +21,41 @@
  */
 
 #include "qmf/engine/Query.h"
-#include "qmf/engine/Schema.h"
+#include <qpid/messaging/Variant.h>
 #include <string>
 #include <boost/shared_ptr.hpp>
-
-namespace qpid {
-    namespace framing {
-        class Buffer;
-    }
-}
 
 namespace qmf {
 namespace engine {
 
-    struct QueryElementImpl {
-        QueryElementImpl(const std::string& a, const Value* v, ValueOper o) : attrName(a), value(v), oper(o) {}
-        ~QueryElementImpl() {}
-        bool evaluate(const Object* object) const;
-
-        std::string attrName;
-        const Value* value;
-        ValueOper oper;
-    };
-
-    struct QueryExpressionImpl {
-        QueryExpressionImpl(ExprOper o, const QueryOperand* operand1, const QueryOperand* operand2) : oper(o), left(operand1), right(operand2) {}
-        ~QueryExpressionImpl() {}
-        bool evaluate(const Object* object) const;
-
-        ExprOper oper;
-        const QueryOperand* left;
-        const QueryOperand* right;
-    };
-
     struct QueryImpl {
-        // Constructors mapped to public
-        QueryImpl(const std::string& c, const std::string& p) : packageName(p), className(c), select(0), resultLimit(0) {}
-        QueryImpl(const SchemaClassKey* key) : packageName(key->getPackageName()), className(key->getClassName()), select(0), resultLimit(0) {}
-        QueryImpl(const ObjectId* oid) : oid(new ObjectId(*oid)), select(0), resultLimit(0) {}
+        QueryImpl(const char* _target) : target(_target), resultLimit(0) {}
+        QueryImpl(const char* _target, const qpid::messaging::Variant::List& _predicate) :
+            target(_target), predicate(_predicate), resultLimit(0) {}
+        QueryImpl(const char* _target, const char* expression) :
+            target(_target), resultLimit(0) { parsePredicate(expression); }
+        ~QueryImpl() {}
 
-        // Factory constructors
-        QueryImpl(qpid::framing::Buffer& buffer);
+        void where(const qpid::messaging::Variant::List& _predicate) { predicate = _predicate; }
+        void where(const char* expression) { parsePredicate(expression); }
+        void limit(uint32_t maxResults) { resultLimit = maxResults; }
+        void orderBy(const char* attrName, bool decreasing) { sortAttr = attrName; orderDecreasing = decreasing; }
 
-        ~QueryImpl() {};
-        static Query* factory(qpid::framing::Buffer& buffer);
-
-        void setSelect(const QueryOperand* criterion) { select = criterion; }
-        void setLimit(uint32_t maxResults) { resultLimit = maxResults; }
-        void setOrderBy(const std::string& attrName, bool decreasing) {
-            orderBy = attrName; orderDecreasing = decreasing;
-        }
-
-        const std::string& getPackage() const { return packageName; }
-        const std::string&  getClass() const { return className; }
-        const ObjectId* getObjectId() const { return oid.get(); }
-
-        bool haveSelect() const { return select != 0; }
-        bool haveLimit() const { return resultLimit > 0; }
-        bool haveOrderBy() const { return !orderBy.empty(); }
-        const QueryOperand* getSelect() const { return select; }
+        bool havePredicate() const { return !predicate.empty(); }
+        bool haveLimit() const { return resultLimit != 0; }
+        bool haveOrderBy() const { return !sortAttr.empty(); }
+        const qpid::messaging::Variant::List& getPredicate() const { return predicate; }
         uint32_t getLimit() const { return resultLimit; }
-        const std::string& getOrderBy() const { return orderBy; }
+        const char* getOrderBy() const { return sortAttr.c_str(); }
         bool getDecreasing() const { return orderDecreasing; }
+        bool matches(const Object& object) const;
 
-        void encode(qpid::framing::Buffer& buffer) const;
-        bool singleAgent() const { return oid.get() != 0; }
-        uint32_t agentBank() const { return singleAgent() ? oid->getAgentBank() : 0; }
+        void parsePredicate(const std::string& expression);
 
-        std::string packageName;
-        std::string className;
-        boost::shared_ptr<ObjectId> oid;
-        const QueryOperand* select;
+        const std::string target;
+        qpid::messaging::Variant::List predicate;
         uint32_t resultLimit;
-        std::string orderBy;
+        std::string sortAttr;
         bool orderDecreasing;
     };
 }

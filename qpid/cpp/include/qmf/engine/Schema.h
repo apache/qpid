@@ -20,8 +20,8 @@
  * under the License.
  */
 
-#include <qmf/engine/Typecode.h>
 #include <qpid/sys/IntegerTypes.h>
+#include <qpid/messaging/Variant.h>
 
 namespace qmf {
 namespace engine {
@@ -29,12 +29,10 @@ namespace engine {
     enum Access { ACCESS_READ_CREATE = 1, ACCESS_READ_WRITE = 2, ACCESS_READ_ONLY = 3 };
     enum Direction { DIR_IN = 1, DIR_OUT = 2, DIR_IN_OUT = 3 };
     enum ClassKind { CLASS_OBJECT = 1, CLASS_EVENT = 2 };
-    enum Severity { SEV_EMERG = 0, SEV_ALERT = 1, SEV_CRIT = 2, SEV_ERROR = 3, SEV_WARN = 4, SEV_NOTICE = 5, SEV_INFORM = 6, SEV_DEBUG = 7 };
 
     struct SchemaArgumentImpl;
     struct SchemaMethodImpl;
     struct SchemaPropertyImpl;
-    struct SchemaStatisticImpl;
     struct SchemaObjectClassImpl;
     struct SchemaEventClassImpl;
     struct SchemaClassKeyImpl;
@@ -43,14 +41,14 @@ namespace engine {
      */
     class SchemaArgument {
     public:
-        SchemaArgument(const char* name, Typecode typecode);
+        SchemaArgument(const char* name, qpid::messaging::VariantType typecode);
         SchemaArgument(const SchemaArgument& from);
         ~SchemaArgument();
         void setDirection(Direction dir);
         void setUnit(const char* val);
         void setDesc(const char* desc);
         const char* getName() const;
-        Typecode getType() const;
+        qpid::messaging::VariantType getType() const;
         Direction getDirection() const;
         const char* getUnit() const;
         const char* getDesc() const;
@@ -89,7 +87,7 @@ namespace engine {
      */
     class SchemaProperty {
     public:
-        SchemaProperty(const char* name, Typecode typecode);
+        SchemaProperty(const char* name, qpid::messaging::VariantType typecode);
         SchemaProperty(const SchemaProperty& from);
         ~SchemaProperty();
         void setAccess(Access access);
@@ -98,7 +96,7 @@ namespace engine {
         void setUnit(const char* val);
         void setDesc(const char* desc);
         const char* getName() const;
-        Typecode getType() const;
+        qpid::messaging::VariantType getType() const;
         Access getAccess() const;
         bool isIndex() const;
         bool isOptional() const;
@@ -110,27 +108,6 @@ namespace engine {
         friend struct SchemaObjectClassImpl;
         SchemaProperty(SchemaPropertyImpl* impl);
         SchemaPropertyImpl* impl;
-    };
-
-    /**
-     */
-    class SchemaStatistic {
-    public:
-        SchemaStatistic(const char* name, Typecode typecode);
-        SchemaStatistic(const SchemaStatistic& from);
-        ~SchemaStatistic();
-        void setUnit(const char* val);
-        void setDesc(const char* desc);
-        const char* getName() const;
-        Typecode getType() const;
-        const char* getUnit() const;
-        const char* getDesc() const;
-
-    private:
-        friend struct SchemaStatisticImpl;
-        friend struct SchemaObjectClassImpl;
-        SchemaStatistic(SchemaStatisticImpl* impl);
-        SchemaStatisticImpl* impl;
     };
 
     /**
@@ -164,15 +141,12 @@ namespace engine {
         SchemaObjectClass(const SchemaObjectClass& from);
         ~SchemaObjectClass();
         void addProperty(const SchemaProperty* property);
-        void addStatistic(const SchemaStatistic* statistic);
         void addMethod(const SchemaMethod* method);
 
         const SchemaClassKey* getClassKey() const;
         int getPropertyCount() const;
-        int getStatisticCount() const;
         int getMethodCount() const;
         const SchemaProperty* getProperty(int idx) const;
-        const SchemaStatistic* getStatistic(int idx) const;
         const SchemaMethod* getMethod(int idx) const;
 
     private:
@@ -187,14 +161,13 @@ namespace engine {
      */
     class SchemaEventClass {
     public:
-        SchemaEventClass(const char* package, const char* name, Severity severity);
+        SchemaEventClass(const char* package, const char* name);
         SchemaEventClass(const SchemaEventClass& from);
         ~SchemaEventClass();
         void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc);
 
         const SchemaClassKey* getClassKey() const;
-        Severity getSeverity() const;
         int getArgumentCount() const;
         const SchemaArgument* getArgument(int idx) const;
 

@@ -20,14 +20,12 @@
  * under the License.
  */
 
-#include <qmf/engine/ResilientConnection.h>
 #include <qmf/engine/Schema.h>
 #include <qmf/engine/ObjectId.h>
 #include <qmf/engine/Object.h>
 #include <qmf/engine/Event.h>
 #include <qmf/engine/Query.h>
-#include <qmf/engine/Value.h>
-#include <qmf/engine/Message.h>
+#include <qpid/messaging/Variant.h>
 
 namespace qmf {
 namespace engine {
@@ -49,8 +47,8 @@ namespace engine {
         MethodResponse(const MethodResponse& from);
         ~MethodResponse();
         uint32_t getStatus() const;
-        const Value* getException() const;
-        const Value* getArgs() const;
+        const qpid::messaging::Variant* getException() const;
+        const qpid::messaging::Variant::Map* getArgs() const;
 
     private:
         friend struct MethodResponseImpl;
@@ -66,7 +64,7 @@ namespace engine {
     public:
         ~QueryResponse();
         uint32_t getStatus() const;
-        const Value* getException() const;
+        const qpid::messaging::Variant* getException() const;
         uint32_t getObjectCount() const;
         const Object* getObject(uint32_t idx) const;
 
@@ -160,10 +158,6 @@ namespace engine {
         void sessionOpened(SessionHandle& sh);
         void sessionClosed();
         void startProtocol();
-
-        void handleRcvMessage(Message& message);
-        bool getXmtMessage(Message& item) const;
-        void popXmt();
 
         bool getEvent(BrokerEvent& event) const;
         void popEvent();

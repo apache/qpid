@@ -23,12 +23,11 @@
 #include "qmf/engine/Console.h"
 #include "qmf/engine/ObjectImpl.h"
 #include "qmf/engine/SchemaImpl.h"
-#include "qmf/engine/ValueImpl.h"
 #include "qmf/engine/QueryImpl.h"
 #include "qmf/engine/SequenceManager.h"
 #include "qmf/engine/MessageImpl.h"
-#include "qpid/framing/Buffer.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/messaging/Variant.h"
 #include "qpid/sys/Mutex.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/noncopyable.hpp"
@@ -46,8 +45,8 @@ namespace engine {
     struct MethodResponseImpl {
         uint32_t status;
         const SchemaMethod* schema;
-        std::auto_ptr<Value> exception;
-        std::auto_ptr<Value> arguments;
+        std::auto_ptr<qpid::messaging::Variant> exception;
+        std::auto_ptr<qpid::messaging::Variant::Map> arguments;
 
         MethodResponseImpl(const MethodResponseImpl& from);
         MethodResponseImpl(qpid::framing::Buffer& buf, const SchemaMethod* schema);
@@ -56,14 +55,14 @@ namespace engine {
         static MethodResponse* factory(uint32_t status, const std::string& text);
         ~MethodResponseImpl() {}
         uint32_t getStatus() const { return status; }
-        const Value* getException() const { return exception.get(); }
-        const Value* getArgs() const { return arguments.get(); }
+        const qpid::messaging::Variant* getException() const { return exception.get(); }
+        const qpid::messaging::Variant::Map* getArgs() const { return arguments.get(); }
     };
 
     typedef boost::shared_ptr<QueryResponse> QueryResponsePtr;
     struct QueryResponseImpl {
         uint32_t status;
-        std::auto_ptr<Value> exception;
+        std::auto_ptr<qpid::messaging::Variant> exception;
         std::vector<ObjectPtr> results;
 
         QueryResponseImpl() : status(0) {}
@@ -73,7 +72,7 @@ namespace engine {
         }
         ~QueryResponseImpl() {}
         uint32_t getStatus() const { return status; }
-        const Value* getException() const { return exception.get(); }
+        const qpid::messaging::Variant* getException() const { return exception.get(); }
         uint32_t getObjectCount() const { return results.size(); }
         const Object* getObject(uint32_t idx) const;
     };
@@ -140,8 +139,8 @@ namespace engine {
         const AgentProxy* getAgent(uint32_t idx) const;
         void sendQuery(const Query& query, void* context, const AgentProxy* agent);
         bool sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent);
-        std::string encodeMethodArguments(const SchemaMethod* schema, const Value* args, qpid::framing::Buffer& buffer);
-        void sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls, const std::string& method, const Value* args, void* context);
+        std::string encodeMethodArguments(const SchemaMethod* schema, const qpid::messaging::Variant::Map* args, qpid::framing::Buffer& buffer);
+        void sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls, const std::string& method, const qpid::messaging::Variant::Map* args, void* context);
 
         void addBinding(const std::string& exchange, const std::string& key);
         void staticRelease() { decOutstanding(); }
@@ -219,6 +218,9 @@ namespace engine {
         QueryResponsePtr queryResponse;
     };
 
+    //
+    // MethodContext is used to track and handle the response associated with a single Method Request
+    //
     struct MethodContext : public SequenceContext {
         MethodContext(BrokerProxyImpl& b, void* u, const SchemaMethod* s) : broker(b), userContext(u), schema(s) {}
         virtual ~MethodContext() {}

@@ -18,23 +18,19 @@
  */
 
 #include "qmf/engine/Agent.h"
-#include "qmf/engine/MessageImpl.h"
 #include "qmf/engine/SchemaImpl.h"
-#include "qmf/engine/Typecode.h"
-#include "qmf/engine/EventImpl.h"
 #include "qmf/engine/ObjectImpl.h"
-#include "qmf/engine/ObjectIdImpl.h"
 #include "qmf/engine/QueryImpl.h"
-#include "qmf/engine/ValueImpl.h"
-#include "qmf/engine/Protocol.h"
-#include <qpid/framing/Buffer.h>
-#include <qpid/framing/Uuid.h>
-#include <qpid/framing/FieldTable.h>
-#include <qpid/framing/FieldValue.h>
+#include "qmf/Protocol.h"
 #include <qpid/sys/Mutex.h>
 #include <qpid/log/Statement.h>
 #include <qpid/sys/Time.h>
-#include <string.h>
+#include <qpid/sys/Thread.h>
+#include <qpid/sys/Runnable.h>
+#include <qpid/messaging/Session.h>
+#include <qpid/messaging/Receiver.h>
+#include <qpid/messaging/Sender.h>
+#include <qpid/messaging/Message.h>
 #include <string>
 #include <deque>
 #include <map>
@@ -45,8 +41,8 @@
 
 using namespace std;
 using namespace qmf::engine;
-using namespace qpid::framing;
 using namespace qpid::sys;
+using namespace qpid::messaging;
 
 namespace qmf {
 namespace engine {
@@ -59,11 +55,9 @@ namespace engine {
         string      authToken;
         string      name;
         Object*     object;
-        boost::shared_ptr<ObjectId> objectId;
+        string      objectKey;
         boost::shared_ptr<Query> query;
-        boost::shared_ptr<Value> arguments;
-        string      exchange;
-        string      bindingKey;
+        boost::shared_ptr<Variant::Map> arguments;
         const SchemaObjectClass* objectClass;
 
         AgentEventImpl(AgentEvent::EventKind k) :
@@ -72,81 +66,70 @@ namespace engine {
         AgentEvent copy();
     };
 
+    /**
+     * AgentQueryContext is used to track asynchronous requests (Query, Sync, or Method)
+     * sent up to the application.
+     */
     struct AgentQueryContext {
         typedef boost::shared_ptr<AgentQueryContext> Ptr;
         uint32_t sequence;
-        string   exchange;
-        string   key;
+        string   consoleAddr;
         const SchemaMethod* schemaMethod;
         AgentQueryContext() : schemaMethod(0) {}
     };
 
-    class AgentImpl : public boost::noncopyable {
+    class AgentImpl : public boost::noncopyable, public qpid::sys::Runnable {
     public:
-        AgentImpl(char* label, bool internalStore);
+        AgentImpl(const char* vendor, const char* product, const char* name, const char* domain, bool internalStore);
         ~AgentImpl();
 
+        void setAttr(const char* key, const Variant& value);
         void setStoreDir(const char* path);
         void setTransferDir(const char* path);
-        void handleRcvMessage(Message& message);
-        bool getXmtMessage(Message& item) const;
-        void popXmt();
         bool getEvent(AgentEvent& event) const;
         void popEvent();
-        void newSession();
-        void startProtocol();
-        void heartbeat();
-        void methodResponse(uint32_t sequence, uint32_t status, char* text, const Value& arguments);
-        void queryResponse(uint32_t sequence, Object& object, bool prop, bool stat);
+        void setConnection(Connection& conn);
+        void methodResponse(uint32_t sequence, uint32_t status, char* text, const Variant::Map& arguments);
+        void queryResponse(uint32_t sequence, Object& object);
         void queryComplete(uint32_t sequence);
         void registerClass(SchemaObjectClass* cls);
         void registerClass(SchemaEventClass* cls);
-        const ObjectId* addObject(Object& obj, uint64_t persistId);
-        const ObjectId* allocObjectId(uint64_t persistId);
-        const ObjectId* allocObjectId(uint32_t persistIdLo, uint32_t persistIdHi);
+        const char* addObject(Object& obj, const char* key);
         void raiseEvent(Event& event);
+
+        void run();
+        void stop();
 
     private:
         mutable Mutex lock;
         Mutex     addLock;
-        string    label;
-        string    queueName;
+        const string    vendor;
+        const string    product;
+        const string    name;
+        const string    domain;
+        string directAddr;
+        map<string, Variant> attrMap;
         string    storeDir;
         string    transferDir;
         bool      internalStore;
-        uint64_t  nextTransientId;
         Uuid      systemId;
-        uint32_t  requestedBrokerBank;
-        uint32_t  requestedAgentBank;
-        uint32_t  assignedBrokerBank;
-        uint32_t  assignedAgentBank;
-        AgentAttachment attachment;
         uint16_t  bootSequence;
-        uint64_t  nextObjectId;
         uint32_t  nextContextNum;
+        bool      running;
         deque<AgentEventImpl::Ptr> eventQueue;
-        deque<MessageImpl::Ptr> xmtQueue;
         map<uint32_t, AgentQueryContext::Ptr> contextMap;
-
-        static const char* QMF_EXCHANGE;
-        static const char* DIR_EXCHANGE;
-        static const char* BROKER_KEY;
-        static const uint32_t MERR_UNKNOWN_METHOD = 2;
-        static const uint32_t MERR_UNKNOWN_PACKAGE = 8;
-        static const uint32_t MERR_UNKNOWN_CLASS = 9;
-        static const uint32_t MERR_INTERNAL_ERROR = 10;
-#       define MA_BUFFER_SIZE 65536
-        char outputBuffer[MA_BUFFER_SIZE];
+        Connection connection;
+        Session session;
+        Receiver directReceiver;
+        Receiver topicReceiver;
+        Sender sender;
+        qpid::sys::Thread* thread;
 
         struct AgentClassKey {
             string name;
             uint8_t hash[16];
             AgentClassKey(const string& n, const uint8_t* h) : name(n) {
                 memcpy(hash, h, 16);
-            }
-            AgentClassKey(Buffer& buffer) {
-                buffer.getShortString(name);
-                buffer.getBin128(hash);
             }
             string repr() {
                 return name;
@@ -176,36 +159,28 @@ namespace engine {
 
         map<string, ClassMaps> packages;
 
-        AgentEventImpl::Ptr eventDeclareQueue(const string& queueName);
-        AgentEventImpl::Ptr eventBind(const string& exchange, const string& queue, const string& key);
-        AgentEventImpl::Ptr eventSetupComplete();
         AgentEventImpl::Ptr eventQuery(uint32_t num, const string& userId, const string& package, const string& cls,
-                                       boost::shared_ptr<ObjectId> oid);
+                                       const string& key);
         AgentEventImpl::Ptr eventMethod(uint32_t num, const string& userId, const string& method,
-                                        boost::shared_ptr<ObjectId> oid, boost::shared_ptr<Value> argMap,
+                                        const string& key, boost::shared_ptr<Variant::Map> argMap,
                                         const SchemaObjectClass* objectClass);
-        void sendBufferLH(Buffer& buf, const string& destination, const string& routingKey);
+        void handleRcvMessageLH(qpid::messaging::Message& message);
 
         void sendPackageIndicationLH(const string& packageName);
         void sendClassIndicationLH(ClassKind kind, const string& packageName, const AgentClassKey& key);
         void sendCommandCompleteLH(const string& exchange, const string& key, uint32_t seq,
                                    uint32_t code = 0, const string& text = "OK");
         void sendMethodErrorLH(uint32_t sequence, const string& key, uint32_t code, const string& text="");
-        void handleAttachResponse(Buffer& inBuffer);
-        void handlePackageRequest(Buffer& inBuffer);
-        void handleClassQuery(Buffer& inBuffer);
-        void handleSchemaRequest(Buffer& inBuffer, uint32_t sequence,
+        void handleAttachResponse(Message& msg);
+        void handlePackageRequest(Message& msg);
+        void handleClassQuery(Message& msg);
+        void handleSchemaRequest(Message& msg, uint32_t sequence,
                                  const string& replyToExchange, const string& replyToKey);
-        void handleGetQuery(Buffer& inBuffer, uint32_t sequence, const string& replyTo, const string& userId);
-        void handleMethodRequest(Buffer& inBuffer, uint32_t sequence, const string& replyTo, const string& userId);
-        void handleConsoleAddedIndication();
+        void handleGetQuery(Message& msg, uint32_t sequence, const string& replyTo, const string& userId);
+        void handleMethodRequest(Message& msg, uint32_t sequence, const string& replyTo, const string& userId);
     };
 }
 }
-
-const char* AgentImpl::QMF_EXCHANGE = "qpid.management";
-const char* AgentImpl::DIR_EXCHANGE = "amq.direct";
-const char* AgentImpl::BROKER_KEY   = "broker";
 
 #define STRING_REF(s) {if (!s.empty()) item.s = const_cast<char*>(s.c_str());}
 
@@ -217,31 +192,36 @@ AgentEvent AgentEventImpl::copy()
     item.kind      = kind;
     item.sequence  = sequence;
     item.object    = object;
-    item.objectId  = objectId.get();
     item.query     = query.get();
     item.arguments = arguments.get();
     item.objectClass = objectClass;
 
+    STRING_REF(objectKey);
     STRING_REF(authUserId);
     STRING_REF(authToken);
     STRING_REF(name);
-    STRING_REF(exchange);
-    STRING_REF(bindingKey);
 
     return item;
 }
 
-AgentImpl::AgentImpl(char* _label, bool i) :
-    label(_label), queueName("qmfa-"), internalStore(i), nextTransientId(1),
-    requestedBrokerBank(0), requestedAgentBank(0),
-    assignedBrokerBank(0), assignedAgentBank(0),
-    bootSequence(1), nextObjectId(1), nextContextNum(1)
+AgentImpl::AgentImpl(const char* _v, const char* _p, const char* _n, const char* _d, bool _i) :
+    vendor(_v), product(_p), name(_n), domain(_d ? _d : "default"), internalStore(_i),
+    bootSequence(1), nextContextNum(1), running(true), thread(0)
 {
-    queueName += label;
+    directAddr = "qmf." + domain + ".direct/" + vendor + ":" + product + ":" + name;
+    if (_d == 0) {
+        directAddr += " { create:always }";
+    }
 }
+
 
 AgentImpl::~AgentImpl()
 {
+}
+
+void AgentImpl::setAttr(const char* key, const Variant& value)
+{
+    attrMap.insert(pair<string, Variant>(key, value));
 }
 
 void AgentImpl::setStoreDir(const char* path)
@@ -262,6 +242,7 @@ void AgentImpl::setTransferDir(const char* path)
         transferDir.clear();
 }
 
+/*
 void AgentImpl::handleRcvMessage(Message& message)
 {
     Buffer   inBuffer(message.body, message.length);
@@ -283,22 +264,7 @@ void AgentImpl::handleRcvMessage(Message& message)
         }
     }
 }
-
-bool AgentImpl::getXmtMessage(Message& item) const
-{
-    Mutex::ScopedLock _lock(lock);
-    if (xmtQueue.empty())
-        return false;
-    item =  xmtQueue.front()->copy();
-    return true;
-}
-
-void AgentImpl::popXmt()
-{
-    Mutex::ScopedLock _lock(lock);
-    if (!xmtQueue.empty())
-        xmtQueue.pop_front();
-}
+*/
 
 bool AgentImpl::getEvent(AgentEvent& event) const
 {
@@ -316,47 +282,16 @@ void AgentImpl::popEvent()
         eventQueue.pop_front();
 }
 
-void AgentImpl::newSession()
+void AgentImpl::setConnection(Connection& conn)
 {
     Mutex::ScopedLock _lock(lock);
-    eventQueue.clear();
-    xmtQueue.clear();
-    eventQueue.push_back(eventDeclareQueue(queueName));
-    eventQueue.push_back(eventBind("amq.direct", queueName, queueName));
-    eventQueue.push_back(eventSetupComplete());
+    if (connection == 0)
+        return;
+    connection = conn;
+    thread = new qpid::sys::Thread(*this);
 }
 
-void AgentImpl::startProtocol()
-{
-    Mutex::ScopedLock _lock(lock);
-    char    rawbuffer[512];
-    Buffer  buffer(rawbuffer, 512);
-
-    Protocol::encodeHeader(buffer, Protocol::OP_ATTACH_REQUEST);
-    buffer.putShortString("qmfa");
-    systemId.encode(buffer);
-    buffer.putLong(requestedBrokerBank);
-    buffer.putLong(requestedAgentBank);
-    sendBufferLH(buffer, QMF_EXCHANGE, BROKER_KEY);
-    QPID_LOG(trace, "SENT AttachRequest: reqBroker=" << requestedBrokerBank <<
-             " reqAgent=" << requestedAgentBank);
-}
-
-void AgentImpl::heartbeat()
-{
-    Mutex::ScopedLock _lock(lock);
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-
-    Protocol::encodeHeader(buffer, Protocol::OP_HEARTBEAT_INDICATION);
-    buffer.putLongLong(uint64_t(Duration(now())));
-    stringstream key;
-    key << "console.heartbeat." << assignedBrokerBank << "." << assignedAgentBank;
-    sendBufferLH(buffer, QMF_EXCHANGE, key.str());
-    QPID_LOG(trace, "SENT HeartbeatIndication");
-}
-
-void AgentImpl::methodResponse(uint32_t sequence, uint32_t status, char* text,
-                                     const Value& argMap)
+void AgentImpl::methodResponse(uint32_t sequence, uint32_t status, char* text, const Variant::Map& /*argMap*/)
 {
     Mutex::ScopedLock _lock(lock);
     map<uint32_t, AgentQueryContext::Ptr>::iterator iter = contextMap.find(sequence);
@@ -365,30 +300,11 @@ void AgentImpl::methodResponse(uint32_t sequence, uint32_t status, char* text,
     AgentQueryContext::Ptr context = iter->second;
     contextMap.erase(iter);
 
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-    Protocol::encodeHeader(buffer, Protocol::OP_METHOD_RESPONSE, context->sequence);
-    buffer.putLong(status);
-    buffer.putMediumString(text);
-    if (status == 0) {
-        for (vector<const SchemaArgument*>::const_iterator aIter = context->schemaMethod->impl->arguments.begin();
-             aIter != context->schemaMethod->impl->arguments.end(); aIter++) {
-            const SchemaArgument* schemaArg = *aIter;
-            if (schemaArg->getDirection() == DIR_OUT || schemaArg->getDirection() == DIR_IN_OUT) {
-                if (argMap.keyInMap(schemaArg->getName())) {
-                    const Value* val = argMap.byKey(schemaArg->getName());
-                    val->impl->encode(buffer);
-                } else {
-                    Value val(schemaArg->getType());
-                    val.impl->encode(buffer);
-                }
-            }
-        }
-    }
-    sendBufferLH(buffer, context->exchange, context->key);
+    // TODO: Encode method response
     QPID_LOG(trace, "SENT MethodResponse seq=" << context->sequence << " status=" << status << " text=" << text);
 }
 
-void AgentImpl::queryResponse(uint32_t sequence, Object& object, bool prop, bool stat)
+void AgentImpl::queryResponse(uint32_t sequence, Object&)
 {
     Mutex::ScopedLock _lock(lock);
     map<uint32_t, AgentQueryContext::Ptr>::iterator iter = contextMap.find(sequence);
@@ -396,17 +312,8 @@ void AgentImpl::queryResponse(uint32_t sequence, Object& object, bool prop, bool
         return;
     AgentQueryContext::Ptr context = iter->second;
 
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-    Protocol::encodeHeader(buffer, Protocol::OP_OBJECT_INDICATION, context->sequence);
+    // TODO: accumulate data records and send response messages when we have "enough"
 
-    object.impl->encodeSchemaKey(buffer);
-    object.impl->encodeManagedObjectData(buffer);
-    if (prop)
-        object.impl->encodeProperties(buffer);
-    if (stat)
-        object.impl->encodeStatistics(buffer);
-    
-    sendBufferLH(buffer, context->exchange, context->key);
     QPID_LOG(trace, "SENT ContentIndication seq=" << context->sequence);
 }
 
@@ -417,9 +324,11 @@ void AgentImpl::queryComplete(uint32_t sequence)
     if (iter == contextMap.end())
         return;
 
+    // TODO: send a response message if there are any unsent data records
+
     AgentQueryContext::Ptr context = iter->second;
     contextMap.erase(iter);
-    sendCommandCompleteLH(context->exchange, context->key, context->sequence, 0, "OK");
+    //sendCommandCompleteLH(context->exchange, context->key, context->sequence, 0, "OK");
 }
 
 void AgentImpl::registerClass(SchemaObjectClass* cls)
@@ -456,413 +365,148 @@ void AgentImpl::registerClass(SchemaEventClass* cls)
     // TODO: Indicate this schema if connected.
 }
 
-const ObjectId* AgentImpl::addObject(Object&, uint64_t)
+const char* AgentImpl::addObject(Object&, const char*)
 {
     Mutex::ScopedLock _lock(lock);
     return 0;
 }
 
-const ObjectId* AgentImpl::allocObjectId(uint64_t persistId)
+void AgentImpl::raiseEvent(Event&)
 {
     Mutex::ScopedLock _lock(lock);
-    uint16_t sequence  = persistId ? 0 : bootSequence;
-    uint64_t objectNum = persistId ? persistId : nextObjectId++;
-
-    ObjectId* oid = ObjectIdImpl::factory(&attachment, 0, sequence, objectNum);
-    return oid;
 }
 
-const ObjectId* AgentImpl::allocObjectId(uint32_t persistIdLo, uint32_t persistIdHi)
+void AgentImpl::run()
 {
-    return allocObjectId(((uint64_t) persistIdHi) << 32 | (uint64_t) persistIdLo);
+    qpid::sys::Duration duration = qpid::sys::TIME_MSEC * 500;
+
+    session = connection.newSession();
+    directReceiver = session.createReceiver(directAddr);
+    directReceiver.setCapacity(10);
+
+    Mutex::ScopedLock _lock(lock);
+    while (running) {
+        Receiver rcvr;
+        bool available;
+        {
+            Mutex::ScopedUnlock _unlock(lock);
+            available = session.nextReceiver(rcvr, duration);
+        }
+
+        if (available) {
+            Message msg(rcvr.get());
+            handleRcvMessageLH(msg);
+        }
+    }
+
+    directReceiver.close();
+    session.close();
 }
 
-void AgentImpl::raiseEvent(Event& event)
+void AgentImpl::stop()
 {
     Mutex::ScopedLock _lock(lock);
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-    Protocol::encodeHeader(buffer, Protocol::OP_EVENT_INDICATION);
-
-    event.impl->encodeSchemaKey(buffer);
-    buffer.putLongLong(uint64_t(Duration(now())));
-    event.impl->encode(buffer);
-    string key(event.impl->getRoutingKey(assignedBrokerBank, assignedAgentBank));
-
-    sendBufferLH(buffer, QMF_EXCHANGE, key);
-    QPID_LOG(trace, "SENT EventIndication");
+    running = false;
 }
 
-AgentEventImpl::Ptr AgentImpl::eventDeclareQueue(const string& name)
-{
-    AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::DECLARE_QUEUE));
-    event->name = name;
-
-    return event;
-}
-
-AgentEventImpl::Ptr AgentImpl::eventBind(const string& exchange, const string& queue,
-                                               const string& key)
-{
-    AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::BIND));
-    event->name       = queue;
-    event->exchange   = exchange;
-    event->bindingKey = key;
-
-    return event;
-}
-
-AgentEventImpl::Ptr AgentImpl::eventSetupComplete()
-{
-    AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::SETUP_COMPLETE));
-    return event;
-}
-
-AgentEventImpl::Ptr AgentImpl::eventQuery(uint32_t num, const string& userId, const string& package,
-                                                const string& cls, boost::shared_ptr<ObjectId> oid)
+AgentEventImpl::Ptr AgentImpl::eventQuery(uint32_t num, const string& userId, const string&, const string&, const string& key)
 {
     AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::GET_QUERY));
     event->sequence = num;
     event->authUserId = userId;
-    if (oid.get())
-        event->query.reset(new Query(oid.get()));
-    else
-        event->query.reset(new Query(cls.c_str(), package.c_str()));
+    event->objectKey = key;
     return event;
 }
 
 AgentEventImpl::Ptr AgentImpl::eventMethod(uint32_t num, const string& userId, const string& method,
-                                                 boost::shared_ptr<ObjectId> oid, boost::shared_ptr<Value> argMap,
-                                                 const SchemaObjectClass* objectClass)
+                                           const string& key, boost::shared_ptr<Variant::Map> argMap,
+                                           const SchemaObjectClass* objectClass)
 {
     AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::METHOD_CALL));
     event->sequence = num;
     event->authUserId = userId;
     event->name = method;
-    event->objectId = oid;
+    event->objectKey = key;
     event->arguments = argMap;
     event->objectClass = objectClass;
     return event;
 }
 
-void AgentImpl::sendBufferLH(Buffer& buf, const string& destination, const string& routingKey)
+void AgentImpl::handleRcvMessageLH(qpid::messaging::Message& /*msg*/)
 {
-    uint32_t length = buf.getPosition();
-    MessageImpl::Ptr message(new MessageImpl);
-
-    buf.reset();
-    buf.getRawData(message->body, length);
-    message->destination   = destination;
-    message->routingKey    = routingKey;
-    message->replyExchange = "amq.direct";
-    message->replyKey      = queueName;
-
-    xmtQueue.push_back(message);
 }
 
 void AgentImpl::sendPackageIndicationLH(const string& packageName)
 {
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-    Protocol::encodeHeader(buffer, Protocol::OP_PACKAGE_INDICATION);
-    buffer.putShortString(packageName);
-    sendBufferLH(buffer, QMF_EXCHANGE, BROKER_KEY);
+    // TODO
     QPID_LOG(trace, "SENT PackageIndication:  package_name=" << packageName);
 }
 
-void AgentImpl::sendClassIndicationLH(ClassKind kind, const string& packageName, const AgentClassKey& key)
+void AgentImpl::sendClassIndicationLH(ClassKind /*kind*/, const string& packageName, const AgentClassKey& key)
 {
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-    Protocol::encodeHeader(buffer, Protocol::OP_CLASS_INDICATION);
-    buffer.putOctet((int) kind);
-    buffer.putShortString(packageName);
-    buffer.putShortString(key.name);
-    buffer.putBin128(const_cast<uint8_t*>(key.hash)); // const_cast needed for older Qpid libraries
-    sendBufferLH(buffer, QMF_EXCHANGE, BROKER_KEY);
+    // TODO
     QPID_LOG(trace, "SENT ClassIndication:  package_name=" << packageName << " class_name=" << key.name);
 }
 
-void AgentImpl::sendCommandCompleteLH(const string& exchange, const string& replyToKey,
-                                            uint32_t sequence, uint32_t code, const string& text)
+void AgentImpl::sendCommandCompleteLH(const string&, const string&, uint32_t sequence, uint32_t code, const string& text)
 {
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-    Protocol::encodeHeader(buffer, Protocol::OP_COMMAND_COMPLETE, sequence);
-    buffer.putLong(code);
-    buffer.putShortString(text);
-    sendBufferLH(buffer, exchange, replyToKey);
+    // TODO
     QPID_LOG(trace, "SENT CommandComplete: seq=" << sequence << " code=" << code << " text=" << text);
 }
 
-void AgentImpl::sendMethodErrorLH(uint32_t sequence, const string& key, uint32_t code, const string& text)
+void AgentImpl::sendMethodErrorLH(uint32_t /*sequence*/, const string& /*key*/, uint32_t code, const string& text)
 {
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-    Protocol::encodeHeader(buffer, Protocol::OP_METHOD_RESPONSE, sequence);
-    buffer.putLong(code);
-
-    string fulltext;
-    switch (code) {
-    case MERR_UNKNOWN_PACKAGE: fulltext = "Unknown Package";  break;
-    case MERR_UNKNOWN_CLASS:   fulltext = "Unknown Class"; break;
-    case MERR_UNKNOWN_METHOD:  fulltext = "Unknown Method"; break;
-    case MERR_INTERNAL_ERROR:  fulltext = "Internal Error"; break;
-    default:                   fulltext = "Unspecified Error"; break;
-    }
-
-    if (!text.empty()) {
-        fulltext += " (";
-        fulltext += text;
-        fulltext += ")";
-    }
-
-    buffer.putMediumString(fulltext);
-    sendBufferLH(buffer, DIR_EXCHANGE, key);
-    QPID_LOG(trace, "SENT MethodResponse: errorCode=" << code << " text=" << fulltext);
+    // TODO
+    QPID_LOG(trace, "SENT MethodResponse: errorCode=" << code << " text=" << text);
 }
 
-void AgentImpl::handleAttachResponse(Buffer& inBuffer)
-{
-    Mutex::ScopedLock _lock(lock);
-
-    assignedBrokerBank = inBuffer.getLong();
-    assignedAgentBank  = inBuffer.getLong();
-
-    QPID_LOG(trace, "RCVD AttachResponse: broker=" << assignedBrokerBank << " agent=" << assignedAgentBank);
-
-    if ((assignedBrokerBank != requestedBrokerBank) ||
-        (assignedAgentBank  != requestedAgentBank)) {
-        if (requestedAgentBank == 0) {
-            QPID_LOG(notice, "Initial object-id bank assigned: " << assignedBrokerBank << "." <<
-                     assignedAgentBank);
-        } else {
-            QPID_LOG(warning, "Collision in object-id! New bank assigned: " << assignedBrokerBank <<
-                     "." << assignedAgentBank);
-        }
-        //storeData(); // TODO
-        requestedBrokerBank = assignedBrokerBank;
-        requestedAgentBank = assignedAgentBank;
-    }
-
-    attachment.setBanks(assignedBrokerBank, assignedAgentBank);
-
-    // Bind to qpid.management to receive commands
-    stringstream key;
-    key << "agent." << assignedBrokerBank << "." << assignedAgentBank;
-    eventQueue.push_back(eventBind(QMF_EXCHANGE, queueName, key.str()));
-
-    // Send package indications for all local packages
-    for (map<string, ClassMaps>::iterator pIter = packages.begin();
-         pIter != packages.end();
-         pIter++) {
-        sendPackageIndicationLH(pIter->first);
-
-        // Send class indications for all local classes
-        ClassMaps cMap = pIter->second;
-        for (ObjectClassMap::iterator cIter = cMap.objectClasses.begin();
-             cIter != cMap.objectClasses.end(); cIter++)
-            sendClassIndicationLH(CLASS_OBJECT, pIter->first, cIter->first);
-        for (EventClassMap::iterator cIter = cMap.eventClasses.begin();
-             cIter != cMap.eventClasses.end(); cIter++)
-            sendClassIndicationLH(CLASS_EVENT, pIter->first, cIter->first);
-    }
-}
-
-void AgentImpl::handlePackageRequest(Buffer&)
+void AgentImpl::handlePackageRequest(Message&)
 {
     Mutex::ScopedLock _lock(lock);
 }
 
-void AgentImpl::handleClassQuery(Buffer&)
+void AgentImpl::handleClassQuery(Message&)
 {
     Mutex::ScopedLock _lock(lock);
 }
 
-void AgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence,
-                                          const string& replyExchange, const string& replyKey)
+void AgentImpl::handleSchemaRequest(Message&, uint32_t, const string&, const string&)
 {
     Mutex::ScopedLock _lock(lock);
-    string rExchange(replyExchange);
-    string rKey(replyKey);
-    string packageName;
-    inBuffer.getShortString(packageName);
-    AgentClassKey key(inBuffer);
-
-    if (rExchange.empty())
-        rExchange = QMF_EXCHANGE;
-    if (rKey.empty())
-        rKey = BROKER_KEY;
-
-    QPID_LOG(trace, "RCVD SchemaRequest: package=" << packageName << " class=" << key.name);
-
-    map<string, ClassMaps>::iterator pIter = packages.find(packageName);
-    if (pIter == packages.end()) {
-        sendCommandCompleteLH(rExchange, rKey, sequence, 1, "package not found");
-        return;
-    }
-
-    ClassMaps cMap = pIter->second;
-    ObjectClassMap::iterator ocIter = cMap.objectClasses.find(key);
-    if (ocIter != cMap.objectClasses.end()) {
-        SchemaObjectClass* oImpl = ocIter->second;
-        Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-        Protocol::encodeHeader(buffer, Protocol::OP_SCHEMA_RESPONSE, sequence);
-        oImpl->impl->encode(buffer);
-        sendBufferLH(buffer, rExchange, rKey);
-        QPID_LOG(trace, "SENT SchemaResponse: (object) package=" << packageName << " class=" << key.name);
-        return;
-    }
-
-    EventClassMap::iterator ecIter = cMap.eventClasses.find(key);
-    if (ecIter != cMap.eventClasses.end()) {
-        SchemaEventClass* eImpl = ecIter->second;
-        Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
-        Protocol::encodeHeader(buffer, Protocol::OP_SCHEMA_RESPONSE, sequence);
-        eImpl->impl->encode(buffer);
-        sendBufferLH(buffer, rExchange, rKey);
-        QPID_LOG(trace, "SENT SchemaResponse: (event) package=" << packageName << " class=" << key.name);
-        return;
-    }
-
-    sendCommandCompleteLH(rExchange, rKey, sequence, 1, "class not found");
 }
 
-void AgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, const string& replyTo, const string& userId)
+void AgentImpl::handleGetQuery(Message&, uint32_t, const string&, const string&)
 {
     Mutex::ScopedLock _lock(lock);
-    FieldTable ft;
-    FieldTable::ValuePtr value;
-    map<string, ClassMaps>::const_iterator pIter = packages.end();
-    string pname;
-    string cname;
-    string oidRepr;
-    boost::shared_ptr<ObjectId> oid;
+}
 
-    ft.decode(inBuffer);
-    
-    QPID_LOG(trace, "RCVD GetQuery: seq=" << sequence << " map=" << ft);
-
-    value = ft.get("_package");
-    if (value.get() && value->convertsTo<string>()) {
-        pname = value->get<string>();
-        pIter = packages.find(pname);
-        if (pIter == packages.end()) {
-            sendCommandCompleteLH(DIR_EXCHANGE, replyTo, sequence);
-            return;
-        }
-    }
-
-    value = ft.get("_class");
-    if (value.get() && value->convertsTo<string>()) {
-        cname = value->get<string>();
-        // TODO - check for validity of class (in package or any package)
-        if (pIter == packages.end()) {
-        } else {
-            
-        }
-    }
-
-    value = ft.get("_objectid");
-    if (value.get() && value->convertsTo<string>()) {
-        oidRepr = value->get<string>();
-        oid.reset(new ObjectId());
-        oid->impl->fromString(oidRepr);
-    }
+void AgentImpl::handleMethodRequest(Message& /*msg*/, uint32_t sequence, const string& /*replyTo*/, const string& /*userId*/)
+{
+    Mutex::ScopedLock _lock(lock);
+    QPID_LOG(trace, "RCVD MethodRequest seq=" << sequence << " method=");
 
     AgentQueryContext::Ptr context(new AgentQueryContext);
     uint32_t contextNum = nextContextNum++;
-    context->sequence = sequence;
-    context->exchange = DIR_EXCHANGE;
-    context->key = replyTo;
     contextMap[contextNum] = context;
-
-    eventQueue.push_back(eventQuery(contextNum, userId, pname, cname, oid));
-}
-
-void AgentImpl::handleMethodRequest(Buffer& buffer, uint32_t sequence, const string& replyTo, const string& userId)
-{
-    Mutex::ScopedLock _lock(lock);
-    string pname;
-    string method;
-    boost::shared_ptr<ObjectId> oid(ObjectIdImpl::factory(buffer));
-    buffer.getShortString(pname);
-    AgentClassKey classKey(buffer);
-    buffer.getShortString(method);
-
-    QPID_LOG(trace, "RCVD MethodRequest seq=" << sequence << " method=" << method);
-
-    map<string, ClassMaps>::const_iterator pIter = packages.find(pname);
-    if (pIter == packages.end()) {
-        sendMethodErrorLH(sequence, replyTo, MERR_UNKNOWN_PACKAGE, pname);
-        return;
-    }
-
-    ObjectClassMap::const_iterator cIter = pIter->second.objectClasses.find(classKey);
-    if (cIter == pIter->second.objectClasses.end()) {
-        sendMethodErrorLH(sequence, replyTo, MERR_UNKNOWN_CLASS, classKey.repr());
-        return;
-    }
-
-    const SchemaObjectClass* schema = cIter->second;
-    vector<const SchemaMethod*>::const_iterator mIter = schema->impl->methods.begin();
-    for (; mIter != schema->impl->methods.end(); mIter++) {
-        if ((*mIter)->getName() == method)
-            break;
-    }
-
-    if (mIter == schema->impl->methods.end()) {
-        sendMethodErrorLH(sequence, replyTo, MERR_UNKNOWN_METHOD, method);
-        return;
-    }
-
-    const SchemaMethod* schemaMethod = *mIter;
-    boost::shared_ptr<Value> argMap(new Value(TYPE_MAP));
-    Value* value;
-    for (vector<const SchemaArgument*>::const_iterator aIter = schemaMethod->impl->arguments.begin();
-         aIter != schemaMethod->impl->arguments.end(); aIter++) {
-        const SchemaArgument* schemaArg = *aIter;
-        if (schemaArg->getDirection() == DIR_IN || schemaArg->getDirection() == DIR_IN_OUT)
-            value = ValueImpl::factory(schemaArg->getType(), buffer);
-        else
-            value = ValueImpl::factory(schemaArg->getType());
-        argMap->insert(schemaArg->getName(), value);
-    }
-
-    AgentQueryContext::Ptr context(new AgentQueryContext);
-    uint32_t contextNum = nextContextNum++;
-    context->sequence = sequence;
-    context->exchange = DIR_EXCHANGE;
-    context->key = replyTo;
-    context->schemaMethod = schemaMethod;
-    contextMap[contextNum] = context;
-
-    eventQueue.push_back(eventMethod(contextNum, userId, method, oid, argMap, schema));
-}
-
-void AgentImpl::handleConsoleAddedIndication()
-{
-    Mutex::ScopedLock _lock(lock);
 }
 
 //==================================================================
 // Wrappers
 //==================================================================
 
-Agent::Agent(char* label, bool internalStore) { impl = new AgentImpl(label, internalStore); }
+Agent::Agent(const char* v, const char* p, const char* n, const char* d, bool i) { impl = new AgentImpl(v, p, n, d, i); }
 Agent::~Agent() { delete impl; }
+void Agent::setAttr(const char* key, const Variant& value) { impl->setAttr(key, value); }
 void Agent::setStoreDir(const char* path) { impl->setStoreDir(path); }
 void Agent::setTransferDir(const char* path) { impl->setTransferDir(path); }
-void Agent::handleRcvMessage(Message& message) { impl->handleRcvMessage(message); }
-bool Agent::getXmtMessage(Message& item) const { return impl->getXmtMessage(item); }
-void Agent::popXmt() { impl->popXmt(); }
 bool Agent::getEvent(AgentEvent& event) const { return impl->getEvent(event); }
 void Agent::popEvent() { impl->popEvent(); }
-void Agent::newSession() { impl->newSession(); }
-void Agent::startProtocol() { impl->startProtocol(); }
-void Agent::heartbeat() { impl->heartbeat(); }
-void Agent::methodResponse(uint32_t sequence, uint32_t status, char* text, const Value& arguments) { impl->methodResponse(sequence, status, text, arguments); }
-void Agent::queryResponse(uint32_t sequence, Object& object, bool prop, bool stat) { impl->queryResponse(sequence, object, prop, stat); }
+void Agent::setConnection(Connection& conn) { impl->setConnection(conn); }
+void Agent::methodResponse(uint32_t sequence, uint32_t status, char* text, const Variant::Map& arguments) { impl->methodResponse(sequence, status, text, arguments); }
+void Agent::queryResponse(uint32_t sequence, Object& object) { impl->queryResponse(sequence, object); }
 void Agent::queryComplete(uint32_t sequence) { impl->queryComplete(sequence); }
 void Agent::registerClass(SchemaObjectClass* cls) { impl->registerClass(cls); }
 void Agent::registerClass(SchemaEventClass* cls) { impl->registerClass(cls); }
-const ObjectId* Agent::addObject(Object& obj, uint64_t persistId) { return impl->addObject(obj, persistId); }
-const ObjectId* Agent::allocObjectId(uint64_t persistId) { return impl->allocObjectId(persistId); }
-const ObjectId* Agent::allocObjectId(uint32_t persistIdLo, uint32_t persistIdHi) { return impl->allocObjectId(persistIdLo, persistIdHi); }
+const char* Agent::addObject(Object& obj, const char* key) { return impl->addObject(obj, key); }
 void Agent::raiseEvent(Event& event) { impl->raiseEvent(event); }
 

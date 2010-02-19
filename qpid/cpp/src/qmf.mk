@@ -31,9 +31,7 @@ QMF_API =					\
   ../include/qpid/agent/ManagementAgent.h	\
   ../include/qpid/agent/QmfAgentImportExport.h	\
   ../include/qmf/Agent.h			\
-  ../include/qmf/Connection.h			\
   ../include/qmf/QmfImportExport.h		\
-  ../include/qmf/ConnectionSettings.h		\
   ../include/qmf/AgentObject.h
 
 #
@@ -41,18 +39,14 @@ QMF_API =					\
 #
 QMF_ENGINE_API =				\
   ../include/qmf/engine/Agent.h			\
-  ../include/qmf/engine/ConnectionSettings.h	\
   ../include/qmf/engine/Console.h		\
   ../include/qmf/engine/Event.h			\
-  ../include/qmf/engine/Message.h		\
   ../include/qmf/engine/Object.h		\
-  ../include/qmf/engine/ObjectId.h		\
   ../include/qmf/engine/QmfEngineImportExport.h	\
   ../include/qmf/engine/Query.h			\
-  ../include/qmf/engine/ResilientConnection.h	\
-  ../include/qmf/engine/Schema.h		\
-  ../include/qmf/engine/Typecode.h		\
-  ../include/qmf/engine/Value.h
+  ../include/qmf/engine/Schema.h
+
+# ../include/qmf/engine/ObjectId.h
 
 # Public header files
 nobase_include_HEADERS +=	\
@@ -67,31 +61,23 @@ libqmf_la_SOURCES =			\
 libqmfengine_la_SOURCES =			\
   $(QMF_ENGINE_API)				\
   qmf/engine/Agent.cpp				\
-  qmf/engine/BrokerProxyImpl.cpp		\
-  qmf/engine/BrokerProxyImpl.h			\
-  qmf/engine/ConnectionSettingsImpl.cpp		\
-  qmf/engine/ConnectionSettingsImpl.h		\
-  qmf/engine/ConsoleImpl.cpp			\
-  qmf/engine/ConsoleImpl.h			\
-  qmf/engine/EventImpl.cpp			\
-  qmf/engine/EventImpl.h			\
-  qmf/engine/MessageImpl.cpp			\
-  qmf/engine/MessageImpl.h			\
-  qmf/engine/ObjectIdImpl.cpp			\
-  qmf/engine/ObjectIdImpl.h			\
   qmf/engine/ObjectImpl.cpp			\
   qmf/engine/ObjectImpl.h			\
-  qmf/engine/Protocol.cpp			\
-  qmf/engine/Protocol.h				\
+  qmf/Protocol.cpp				\
+  qmf/Protocol.h				\
   qmf/engine/QueryImpl.cpp			\
   qmf/engine/QueryImpl.h			\
-  qmf/engine/ResilientConnection.cpp		\
-  qmf/engine/SequenceManager.cpp		\
-  qmf/engine/SequenceManager.h			\
   qmf/engine/SchemaImpl.cpp			\
-  qmf/engine/SchemaImpl.h			\
-  qmf/engine/ValueImpl.cpp			\
-  qmf/engine/ValueImpl.h
+  qmf/engine/SchemaImpl.h
+
+# qmf/engine/BrokerProxyImpl.cpp
+# qmf/engine/BrokerProxyImpl.h
+# qmf/engine/ConsoleImpl.cpp
+# qmf/engine/ConsoleImpl.h
+# qmf/engine/ObjectIdImpl.cpp
+# qmf/engine/ObjectIdImpl.h
+# qmf/engine/SequenceManager.cpp
+# qmf/engine/SequenceManager.h
 
 libqmf_la_LIBADD = libqmfengine.la
 libqmfengine_la_LIBADD = libqpidclient.la

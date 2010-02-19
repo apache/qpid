@@ -21,53 +21,55 @@
  */
 
 #include <qmf/engine/Object.h>
-#include <qmf/engine/ObjectIdImpl.h>
+#include <qpid/sys/Mutex.h>
+#include <qpid/messaging/Variant.h>
 #include <map>
 #include <set>
 #include <string>
-#include <qpid/framing/Buffer.h>
 #include <boost/shared_ptr.hpp>
-#include <qpid/sys/Mutex.h>
 
 namespace qmf {
 namespace engine {
 
-    class BrokerProxyImpl;
+    class SchemaObjectClass;
 
     typedef boost::shared_ptr<Object> ObjectPtr;
 
     struct ObjectImpl {
-        typedef boost::shared_ptr<Value> ValuePtr;
-        const SchemaObjectClass* objectClass;
-        BrokerProxyImpl* broker;
-        boost::shared_ptr<ObjectId> objectId;
+        /**
+         * Content of the object's data
+         */
+        qpid::messaging::Variant::Map values;
+
+        /**
+         * Schema reference if this object is "described"
+         */
+        SchemaObjectClass* objectClass;
+
+        /**
+         * Address and lifecycle information if this object is "managed"
+         * The object is considered "managed" if the key is non-empty.
+         */
+        std::string key;
         uint64_t createTime;
         uint64_t destroyTime;
         uint64_t lastUpdatedTime;
-        mutable std::map<std::string, ValuePtr> properties;
-        mutable std::map<std::string, ValuePtr> statistics;
 
-        ObjectImpl(const SchemaObjectClass* type);
-        ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, qpid::framing::Buffer& buffer,
-                   bool prop, bool stat, bool managed);
-        static Object* factory(const SchemaObjectClass* type, BrokerProxyImpl* b, qpid::framing::Buffer& buffer,
-                               bool prop, bool stat, bool managed);
-        ~ObjectImpl();
+        ObjectImpl();
+        ObjectImpl(SchemaObjectClass* type);
+        ~ObjectImpl() {}
 
+        const qpid::messaging::Variant::Map& getValues() const { return values; }
+        qpid::messaging::Variant::Map& getValues() { return values; }
+
+        const SchemaObjectClass* getSchema() const { return objectClass; }
+        void setSchema(SchemaObjectClass* schema) { objectClass = schema; }
+
+        const char* getKey() const { return key.c_str(); }
+        void setKey(const char* _key) { key = _key; }
+
+        void touch();
         void destroy();
-        const ObjectId* getObjectId() const { return objectId.get(); }
-        void setObjectId(ObjectId* oid) { objectId.reset(new ObjectId(*oid)); }
-        const SchemaObjectClass* getClass() const { return objectClass; }
-        Value* getValue(const std::string& key) const;
-        void invokeMethod(const std::string& methodName, const Value* inArgs, void* context) const;
-        bool isDeleted() const { return destroyTime != 0; }
-        void merge(const Object& from);
-
-        void parsePresenceMasks(qpid::framing::Buffer& buffer, std::set<std::string>& excludeList);
-        void encodeSchemaKey(qpid::framing::Buffer& buffer) const;
-        void encodeManagedObjectData(qpid::framing::Buffer& buffer) const;
-        void encodeProperties(qpid::framing::Buffer& buffer) const;
-        void encodeStatistics(qpid::framing::Buffer& buffer) const;
     };
 }
 }

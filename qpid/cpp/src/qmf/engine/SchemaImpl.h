@@ -21,9 +21,10 @@
  */
 
 #include "qmf/engine/Schema.h"
+#include <string.h>
 #include <string>
 #include <vector>
-#include <qpid/framing/Buffer.h>
+#include <exception>
 
 namespace qmf {
 namespace engine {
@@ -32,20 +33,33 @@ namespace engine {
     // TODO: Add "frozen" attribute for schema classes so they can't be modified after
     //       they've been registered.
 
+    typedef qpid::messaging::VariantType Typecode;
+
+    class SchemaException : public std::exception {
+    public:
+        SchemaException(const std::string& context, const std::string& expected) {
+            text = context + ": Expected item with key " + expected;
+        }
+        virtual ~SchemaException() throw();
+        virtual const char* what() const throw() { return text.c_str(); }
+
+    private:
+        std::string text;
+    };
+
     class SchemaHash {
         uint8_t hash[16];
     public:
         SchemaHash();
-        void encode(qpid::framing::Buffer& buffer) const;
-        void decode(qpid::framing::Buffer& buffer);
         void update(const char* data, uint32_t len);
         void update(uint8_t data);
         void update(const std::string& data) { update(data.c_str(), data.size()); }
-        void update(Typecode t) { update((uint8_t) t); }
         void update(Direction d) { update((uint8_t) d); }
         void update(Access a) { update((uint8_t) a); }
+        void update(Typecode a) { update((uint8_t) a); }
         void update(bool b) { update((uint8_t) (b ? 1 : 0)); }
         const uint8_t* get() const { return hash; }
+        void set(const uint8_t* val) { ::memcpy(hash, val, 16); }
         bool operator==(const SchemaHash& other) const;
         bool operator<(const SchemaHash& other) const;
         bool operator>(const SchemaHash& other) const;
@@ -59,9 +73,9 @@ namespace engine {
         std::string description;
 
         SchemaArgumentImpl(const char* n, Typecode t) : name(n), typecode(t), dir(DIR_IN) {}
-        SchemaArgumentImpl(qpid::framing::Buffer& buffer);
-        static SchemaArgument* factory(qpid::framing::Buffer& buffer);
-        void encode(qpid::framing::Buffer& buffer) const;
+        SchemaArgumentImpl(const qpid::messaging::Variant::Map& map);
+        static SchemaArgument* factory(qpid::messaging::Variant::Map& map);
+        qpid::messaging::Variant::Map asMap() const;
         void setDirection(Direction d) { dir = d; }
         void setUnit(const char* val) { unit = val; }
         void setDesc(const char* desc) { description = desc; }
@@ -79,9 +93,9 @@ namespace engine {
         std::vector<const SchemaArgument*> arguments;
 
         SchemaMethodImpl(const char* n) : name(n) {}
-        SchemaMethodImpl(qpid::framing::Buffer& buffer);
-        static SchemaMethod* factory(qpid::framing::Buffer& buffer);
-        void encode(qpid::framing::Buffer& buffer) const;
+        SchemaMethodImpl(const qpid::messaging::Variant::Map& map);
+        static SchemaMethod* factory(qpid::messaging::Variant::Map& map);
+        qpid::messaging::Variant::Map asMap() const;
         void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc) { description = desc; }
         const std::string& getName() const { return name; }
@@ -101,9 +115,9 @@ namespace engine {
         std::string description;
 
         SchemaPropertyImpl(const char* n, Typecode t) : name(n), typecode(t), access(ACCESS_READ_ONLY), index(false), optional(false) {}
-        SchemaPropertyImpl(qpid::framing::Buffer& buffer);
-        static SchemaProperty* factory(qpid::framing::Buffer& buffer);
-        void encode(qpid::framing::Buffer& buffer) const;
+        SchemaPropertyImpl(const qpid::messaging::Variant::Map& map);
+        static SchemaProperty* factory(qpid::messaging::Variant::Map& map);
+        qpid::messaging::Variant::Map asMap() const;
         void setAccess(Access a) { access = a; }
         void setIndex(bool val) { index = val; }
         void setOptional(bool val) { optional = val; }
@@ -114,25 +128,6 @@ namespace engine {
         Access getAccess() const { return access; }
         bool isIndex() const { return index; }
         bool isOptional() const { return optional; }
-        const std::string& getUnit() const { return unit; }
-        const std::string& getDesc() const { return description; }
-        void updateHash(SchemaHash& hash) const;
-    };
-
-    struct SchemaStatisticImpl {
-        std::string name;
-        Typecode typecode;
-        std::string unit;
-        std::string description;
-
-        SchemaStatisticImpl(const char* n, Typecode t) : name(n), typecode(t) {}
-        SchemaStatisticImpl(qpid::framing::Buffer& buffer);
-        static SchemaStatistic* factory(qpid::framing::Buffer& buffer);
-        void encode(qpid::framing::Buffer& buffer) const;
-        void setUnit(const char* val) { unit = val; }
-        void setDesc(const char* desc) { description = desc; }
-        const std::string& getName() const { return name; }
-        Typecode getType() const { return typecode; }
         const std::string& getUnit() const { return unit; }
         const std::string& getDesc() const { return description; }
         void updateHash(SchemaHash& hash) const;
@@ -151,15 +146,15 @@ namespace engine {
         SchemaHash hashContainer;
 
         SchemaClassKeyImpl(const std::string& package, const std::string& name, const SchemaHash& hash);
-        SchemaClassKeyImpl(qpid::framing::Buffer& buffer);
+        SchemaClassKeyImpl(const qpid::messaging::Variant::Map& map);
         static SchemaClassKey* factory(const std::string& package, const std::string& name, const SchemaHash& hash);
-        static SchemaClassKey* factory(qpid::framing::Buffer& buffer);
+        static SchemaClassKey* factory(qpid::messaging::Variant::Map& map);
 
         const std::string& getPackageName() const { return package; }
         const std::string& getClassName() const { return name; }
         const uint8_t* getHash() const { return hash.get(); }
 
-        void encode(qpid::framing::Buffer& buffer) const;
+        qpid::messaging::Variant::Map asMap() const;
         bool operator==(const SchemaClassKeyImpl& other) const;
         bool operator<(const SchemaClassKeyImpl& other) const;
         const std::string& str() const;
@@ -172,25 +167,21 @@ namespace engine {
         mutable bool hasHash;
         std::auto_ptr<SchemaClassKey> classKey;
         std::vector<const SchemaProperty*> properties;
-        std::vector<const SchemaStatistic*> statistics;
         std::vector<const SchemaMethod*> methods;
 
         SchemaObjectClassImpl(const char* p, const char* n) :
             package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)) {}
-        SchemaObjectClassImpl(qpid::framing::Buffer& buffer);
-        static SchemaObjectClass* factory(qpid::framing::Buffer& buffer);
+        SchemaObjectClassImpl(const qpid::messaging::Variant::Map& map);
+        static SchemaObjectClass* factory(qpid::messaging::Variant::Map& map);
 
-        void encode(qpid::framing::Buffer& buffer) const;
+        qpid::messaging::Variant::Map asMap() const;
         void addProperty(const SchemaProperty* property);
-        void addStatistic(const SchemaStatistic* statistic);
         void addMethod(const SchemaMethod* method);
 
         const SchemaClassKey* getClassKey() const;
         int getPropertyCount() const { return properties.size(); }
-        int getStatisticCount() const { return statistics.size(); }
         int getMethodCount() const { return methods.size(); }
         const SchemaProperty* getProperty(int idx) const;
-        const SchemaStatistic* getStatistic(int idx) const;
         const SchemaMethod* getMethod(int idx) const;
     };
 
@@ -201,20 +192,18 @@ namespace engine {
         mutable bool hasHash;
         std::auto_ptr<SchemaClassKey> classKey;
         std::string description;
-        Severity severity;
         std::vector<const SchemaArgument*> arguments;
 
-    SchemaEventClassImpl(const char* p, const char* n, Severity sev) :
-        package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)), severity(sev) {}
-        SchemaEventClassImpl(qpid::framing::Buffer& buffer);
-        static SchemaEventClass* factory(qpid::framing::Buffer& buffer);
+        SchemaEventClassImpl(const char* p, const char* n) :
+            package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)) {}
+        SchemaEventClassImpl(const qpid::messaging::Variant::Map& map);
+        static SchemaEventClass* factory(qpid::messaging::Variant::Map& map);
 
-        void encode(qpid::framing::Buffer& buffer) const;
+        qpid::messaging::Variant::Map asMap() const;
         void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc) { description = desc; }
 
         const SchemaClassKey* getClassKey() const;
-        Severity getSeverity() const { return severity; }
         int getArgumentCount() const { return arguments.size(); }
         const SchemaArgument* getArgument(int idx) const;
     };

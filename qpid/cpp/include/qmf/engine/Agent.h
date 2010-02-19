@@ -25,8 +25,8 @@
 #include <qmf/engine/Object.h>
 #include <qmf/engine/Event.h>
 #include <qmf/engine/Query.h>
-#include <qmf/engine/Value.h>
-#include <qmf/engine/Message.h>
+#include <qpid/messaging/Connection.h>
+#include <qpid/messaging/Variant.h>
 
 namespace qmf {
 namespace engine {
@@ -42,12 +42,7 @@ namespace engine {
             GET_QUERY      = 1,
             START_SYNC     = 2,
             END_SYNC       = 3,
-            METHOD_CALL    = 4,
-            DECLARE_QUEUE  = 5,
-            DELETE_QUEUE   = 6,
-            BIND           = 7,
-            UNBIND         = 8,
-            SETUP_COMPLETE = 9
+            METHOD_CALL    = 4
         };
 
         EventKind    kind;
@@ -55,13 +50,11 @@ namespace engine {
         char*        authUserId;  // Authenticated user ID (for all kinds)
         char*        authToken;   // Authentication token if issued (for all kinds)
         char*        name;        // Name of the method/sync query
-                                  //    (METHOD_CALL, START_SYNC, END_SYNC, DECLARE_QUEUE, BIND, UNBIND)
+                                  //    (METHOD_CALL, START_SYNC, END_SYNC)
         Object*      object;      // Object involved in method call (METHOD_CALL)
-        ObjectId*    objectId;    // ObjectId for method call (METHOD_CALL)
+        char*        objectKey;   // Object key for method call (METHOD_CALL)
         Query*       query;       // Query parameters (GET_QUERY, START_SYNC)
-        Value*       arguments;   // Method parameters (METHOD_CALL)
-        char*        exchange;    // Exchange for bind (BIND, UNBIND)
-        char*        bindingKey;  // Key for bind (BIND, UNBIND)
+        qpid::messaging::Variant::Map*  arguments;   // Method parameters (METHOD_CALL)
         const SchemaObjectClass* objectClass; // (METHOD_CALL)
     };
 
@@ -72,8 +65,15 @@ namespace engine {
      */
     class Agent {
     public:
-        Agent(char* label, bool internalStore=true);
+        Agent(const char* vendor, const char* product, const char* name, const char* domain=0, bool internalStore=true);
         ~Agent();
+
+        /**
+         * Set an agent attribute that can be used to describe this agent to consoles.
+         *@param key Null-terminated string that is the name of the attribute.
+         *@param value Variant value (or any API type) of the attribute.
+         */
+        void setAttr(const char* key, const qpid::messaging::Variant& value);
 
         /**
          * Configure the directory path for storing persistent data.
@@ -92,24 +92,6 @@ namespace engine {
         void setTransferDir(const char* path);
 
         /**
-         * Pass messages received from the AMQP session to the Agent engine.
-         *@param message AMQP messages received on the agent session.
-         */
-        void handleRcvMessage(Message& message);
-
-        /**
-         * Get the next message to be sent to the AMQP network.
-         *@param item The Message structure describing the message to be produced.
-         *@return true if the Message is valid, false if there are no messages to send.
-         */
-        bool getXmtMessage(Message& item) const;
-
-        /**
-         * Remove and discard one message from the head of the transmit queue.
-         */
-        void popXmt();
-
-        /**
          * Get the next application event from the agent engine.
          *@param event The event iff the return value is true
          *@return true if event is valid, false if there are no events to process
@@ -122,20 +104,9 @@ namespace engine {
         void popEvent();
 
         /**
-         * A new AMQP session has been established for Agent communication.
+         * Provide the AMQP connection to be used for this agent.
          */
-        void newSession();
-
-        /**
-         * Start the QMF Agent protocol.  This should be invoked after a SETUP_COMPLETE event
-         * is received from the Agent engine.
-         */
-        void startProtocol();
-
-        /**
-         * This method is called periodically so the agent can supply a heartbeat.
-         */
-        void heartbeat();
+        void setConnection(qpid::messaging::Connection& conn);
 
         /**
          * Respond to a method request.
@@ -144,7 +115,7 @@ namespace engine {
          *@param text      Status text ("OK" or an error message)
          *@param arguments The list of output arguments from the method call.
          */
-        void methodResponse(uint32_t sequence, uint32_t status, char* text, const Value& arguments);
+        void methodResponse(uint32_t sequence, uint32_t status, char* text, const qpid::messaging::Variant::Map& arguments);
 
         /**
          * Send a content indication to the QMF bus.  This is only needed for objects that are
@@ -152,10 +123,8 @@ namespace engine {
          * (inserted using addObject).
          *@param sequence The sequence number of the GET request or the SYNC_START request.
          *@param object   The object (annotated with "changed" flags) for publication.
-         *@param prop     If true, changed object properties are transmitted.
-         *@param stat     If true, changed object statistics are transmitted.
          */
-        void queryResponse(uint32_t sequence, Object& object, bool prop = true, bool stat = true);
+        void queryResponse(uint32_t sequence, Object& object);
 
         /**
          * Indicate the completion of a query.  This is not used for SYNC_START requests.
@@ -178,20 +147,12 @@ namespace engine {
         /**
          * Give an object to the Agent for storage and management.  Once added, the agent takes
          * responsibility for the life cycle of the object.
-         *@param obj       The object to be managed by the Agent.
-         *@param persistId A unique non-zero value if the object-id is to be persistent.
-         *@return The objectId of the managed object.
+         *@param obj The object to be managed by the Agent.
+         *@param key A unique name (a primary key) to be used to address this object. If
+         *           left null, the agent will create a unique name for the object.
+         *@return The key for the managed object.
          */
-        const ObjectId* addObject(Object& obj, uint64_t persistId);
-        //        const ObjectId* addObject(Object& obj, uint32_t persistIdLo, uint32_t persistIdHi);
-
-        /**
-         * Allocate an object-id for an object that will be managed by the application.
-         *@param persistId A unique non-zero value if the object-id is to be persistent.
-         *@return The objectId structure for the allocated ID.
-         */
-        const ObjectId* allocObjectId(uint64_t persistId);
-        const ObjectId* allocObjectId(uint32_t persistIdLo, uint32_t persistIdHi);
+        const char* addObject(Object& obj, const char* key=0);
 
         /**
          * Raise an event into the QMF network..
