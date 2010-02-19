@@ -21,6 +21,8 @@ from distutils.core import setup
 
 setup(name="qpid-qmf",
       version="0.7",
+      author="Apache Qpid",
+      author_email="dev@qpid.apache.org",
       packages=["qmf", "qmf2", "qmf2.tests"],
       package_dir={"": "src/py"},
       url="http://qpid.apache.org/",
