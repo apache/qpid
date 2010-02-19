@@ -22,14 +22,13 @@
 using namespace std;
 using namespace qmf;
 
-const string Protocol::SCHEMA_ELT_NAME("name");
 const string Protocol::SCHEMA_ELT_TYPE("type");
 const string Protocol::SCHEMA_ELT_DIR("dir");
 const string Protocol::SCHEMA_ELT_UNIT("unit");
 const string Protocol::SCHEMA_ELT_DESC("desc");
 const string Protocol::SCHEMA_ELT_ACCESS("access");
 const string Protocol::SCHEMA_ELT_OPTIONAL("optional");
-const string Protocol::SCHEMA_ARGS("args");
+const string Protocol::SCHEMA_ARGS("_arguments");
 const string Protocol::SCHEMA_PACKAGE("_package_name");
 const string Protocol::SCHEMA_CLASS_KIND("_type");
 const string Protocol::SCHEMA_CLASS_KIND_DATA("_data");
@@ -39,6 +38,11 @@ const string Protocol::SCHEMA_HASH("_hash_str");
 const string Protocol::AGENT_NAME("_agent_name");
 const string Protocol::OBJECT_NAME("_object_name");
 const string Protocol::SCHEMA_ID("_schema_id");
+const string Protocol::VALUES("_values");
+const string Protocol::SUBTYPES("_subtypes");
+const string Protocol::SUBTYPE_SCHEMA_PROPERTY("qmfProperty");
+const string Protocol::SUBTYPE_SCHEMA_METHOD("qmfMethod");
+
 
 #if 0
 bool Protocol::checkHeader(const Message& /*msg*/, string& /*opcode*/, uint32_t* /*seq*/)

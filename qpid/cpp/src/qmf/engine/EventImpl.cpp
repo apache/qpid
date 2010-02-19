@@ -26,12 +26,12 @@ using qpid::framing::Buffer;
 
 EventImpl::EventImpl(const SchemaEventClass* type) : eventClass(type)
 {
-    int argCount = eventClass->getArgumentCount();
+    int argCount = eventClass->getPropertyCount();
     int idx;
 
     for (idx = 0; idx < argCount; idx++) {
-        const SchemaArgument* arg = eventClass->getArgument(idx);
-        arguments[arg->getName()] = ValuePtr(new Value(arg->getType()));
+        const SchemaProperty* arg = eventClass->getProperty(idx);
+        properties[arg->getName()] = ValuePtr(new Value(arg->getType()));
     }
 }
 
@@ -53,8 +53,8 @@ Value* EventImpl::getValue(const char* key) const
 {
     map<string, ValuePtr>::const_iterator iter;
 
-    iter = arguments.find(key);
-    if (iter != arguments.end())
+    iter = properties.find(key);
+    if (iter != properties.end())
         return iter->second.get();
 
     return 0;
@@ -65,7 +65,7 @@ void EventImpl::encodeSchemaKey(Buffer& buffer) const
 {
     buffer.putShortString(eventClass->getClassKey()->getPackageName());
     buffer.putShortString(eventClass->getClassKey()->getClassName());
-    buffer.putBin128(const_cast<uint8_t*>(eventClass->getClassKey()->getHash()));
+    buffer.putBin128(const_cast<uint8_t*>(eventClass->getClassKey()->getHashData()));
 }
 
 
@@ -73,10 +73,10 @@ void EventImpl::encode(Buffer& buffer) const
 {
     buffer.putOctet((uint8_t) eventClass->getSeverity());
 
-    int argCount = eventClass->getArgumentCount();
+    int argCount = eventClass->getPropertyCount();
     for (int idx = 0; idx < argCount; idx++) {
-        const SchemaArgument* arg = eventClass->getArgument(idx);
-        ValuePtr value = arguments[arg->getName()];
+        const SchemaProperty* arg = eventClass->getProperty(idx);
+        ValuePtr value = properties[arg->getName()];
         value->impl->encode(buffer);
     }
 }

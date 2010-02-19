@@ -23,17 +23,17 @@
 namespace qmf {
 namespace engine {
 
-    class SchemaEventClass;
+    class SchemaClass;
     class Value;
     struct EventImpl;
 
     class Event {
     public:
-        Event(const SchemaEventClass* type);
+        Event(const SchemaClass* type);
         Event(const Event& from);
         ~Event();
 
-        const SchemaEventClass* getClass() const;
+        const SchemaClass* getClass() const;
         Value* getValue(const char* key) const;
 
     private:

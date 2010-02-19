@@ -31,7 +31,7 @@
 namespace qmf {
 namespace engine {
 
-    class SchemaObjectClass;
+    class SchemaClass;
 
     typedef boost::shared_ptr<Object> ObjectPtr;
 
@@ -44,7 +44,7 @@ namespace engine {
         /**
          * Schema reference if this object is "described"
          */
-        SchemaObjectClass* objectClass;
+        SchemaClass* objectClass;
 
         /**
          * Address and lifecycle information if this object is "managed"
@@ -56,14 +56,14 @@ namespace engine {
         uint64_t lastUpdatedTime;
 
         ObjectImpl();
-        ObjectImpl(SchemaObjectClass* type);
+        ObjectImpl(SchemaClass* type);
         ~ObjectImpl() {}
 
         const qpid::messaging::Variant::Map& getValues() const { return values; }
         qpid::messaging::Variant::Map& getValues() { return values; }
 
-        const SchemaObjectClass* getSchema() const { return objectClass; }
-        void setSchema(SchemaObjectClass* schema) { objectClass = schema; }
+        const SchemaClass* getSchema() const { return objectClass; }
+        void setSchema(SchemaClass* schema) { objectClass = schema; }
 
         const char* getKey() const { return key.c_str(); }
         void setKey(const char* _key) { key = _key; }

@@ -28,60 +28,12 @@ namespace engine {
 
     enum Access { ACCESS_READ_CREATE = 1, ACCESS_READ_WRITE = 2, ACCESS_READ_ONLY = 3 };
     enum Direction { DIR_IN = 1, DIR_OUT = 2, DIR_IN_OUT = 3 };
-    enum ClassKind { CLASS_OBJECT = 1, CLASS_EVENT = 2 };
+    enum ClassKind { CLASS_DATA = 1, CLASS_EVENT = 2 };
 
-    struct SchemaArgumentImpl;
     struct SchemaMethodImpl;
     struct SchemaPropertyImpl;
-    struct SchemaObjectClassImpl;
-    struct SchemaEventClassImpl;
+    struct SchemaClassImpl;
     struct SchemaClassKeyImpl;
-
-    /**
-     */
-    class SchemaArgument {
-    public:
-        SchemaArgument(const char* name, qpid::messaging::VariantType typecode);
-        SchemaArgument(const SchemaArgument& from);
-        ~SchemaArgument();
-        void setDirection(Direction dir);
-        void setUnit(const char* val);
-        void setDesc(const char* desc);
-        const char* getName() const;
-        qpid::messaging::VariantType getType() const;
-        Direction getDirection() const;
-        const char* getUnit() const;
-        const char* getDesc() const;
-
-    private:
-        friend struct SchemaArgumentImpl;
-        friend struct SchemaMethodImpl;
-        friend struct SchemaEventClassImpl;
-        SchemaArgument(SchemaArgumentImpl* impl);
-        SchemaArgumentImpl* impl;
-    };
-
-    /**
-     */
-    class SchemaMethod {
-    public:
-        SchemaMethod(const char* name);
-        SchemaMethod(const SchemaMethod& from);
-        ~SchemaMethod();
-        void addArgument(const SchemaArgument* argument);
-        void setDesc(const char* desc);
-        const char* getName() const;
-        const char* getDesc() const;
-        int getArgumentCount() const;
-        const SchemaArgument* getArgument(int idx) const;
-
-    private:
-        friend struct SchemaMethodImpl;
-        friend struct SchemaObjectClassImpl;
-        friend class  AgentImpl;
-        SchemaMethod(SchemaMethodImpl* impl);
-        SchemaMethodImpl* impl;
-    };
 
     /**
      */
@@ -93,6 +45,7 @@ namespace engine {
         void setAccess(Access access);
         void setIndex(bool val);
         void setOptional(bool val);
+        void setDirection(Direction dir);
         void setUnit(const char* val);
         void setDesc(const char* desc);
         const char* getName() const;
@@ -100,14 +53,38 @@ namespace engine {
         Access getAccess() const;
         bool isIndex() const;
         bool isOptional() const;
+        Direction getDirection() const;
         const char* getUnit() const;
         const char* getDesc() const;
 
     private:
         friend struct SchemaPropertyImpl;
-        friend struct SchemaObjectClassImpl;
+        friend struct SchemaClassImpl;
+        friend struct SchemaMethodImpl;
         SchemaProperty(SchemaPropertyImpl* impl);
         SchemaPropertyImpl* impl;
+    };
+
+    /**
+     */
+    class SchemaMethod {
+    public:
+        SchemaMethod(const char* name);
+        SchemaMethod(const SchemaMethod& from);
+        ~SchemaMethod();
+        void addProperty(const SchemaProperty* property);
+        void setDesc(const char* desc);
+        const char* getName() const;
+        const char* getDesc() const;
+        int getPropertyCount() const;
+        const SchemaProperty* getProperty(int idx) const;
+
+    private:
+        friend struct SchemaMethodImpl;
+        friend struct SchemaClassImpl;
+        friend class  AgentImpl;
+        SchemaMethod(SchemaMethodImpl* impl);
+        SchemaMethodImpl* impl;
     };
 
     /**
@@ -117,9 +94,10 @@ namespace engine {
         SchemaClassKey(const SchemaClassKey& from);
         ~SchemaClassKey();
 
+        ClassKind getKind() const;
         const char* getPackageName() const;
         const char* getClassName() const;
-        const uint8_t* getHash() const;
+        const uint8_t* getHashData() const;
         const char* asString() const;
 
         bool operator==(const SchemaClassKey& other) const;
@@ -127,6 +105,7 @@ namespace engine {
 
     private:
         friend struct SchemaClassKeyImpl;
+        friend struct SchemaClassImpl;
         friend class BrokerProxyImpl;
         friend class ConsoleImpl;
         SchemaClassKey(SchemaClassKeyImpl* impl);
@@ -135,14 +114,15 @@ namespace engine {
 
     /**
      */
-    class SchemaObjectClass {
+    class SchemaClass {
     public:
-        SchemaObjectClass(const char* package, const char* name);
-        SchemaObjectClass(const SchemaObjectClass& from);
-        ~SchemaObjectClass();
+        SchemaClass(ClassKind kind, const char* package, const char* name);
+        SchemaClass(const SchemaClass& from);
+        ~SchemaClass();
         void addProperty(const SchemaProperty* property);
         void addMethod(const SchemaMethod* method);
 
+        ClassKind getKind() const;
         const SchemaClassKey* getClassKey() const;
         int getPropertyCount() const;
         int getMethodCount() const;
@@ -150,33 +130,11 @@ namespace engine {
         const SchemaMethod* getMethod(int idx) const;
 
     private:
-        friend struct SchemaObjectClassImpl;
+        friend struct SchemaClassImpl;
         friend class  BrokerProxyImpl;
         friend class  AgentImpl;
-        SchemaObjectClass(SchemaObjectClassImpl* impl);
-        SchemaObjectClassImpl* impl;
-    };
-
-    /**
-     */
-    class SchemaEventClass {
-    public:
-        SchemaEventClass(const char* package, const char* name);
-        SchemaEventClass(const SchemaEventClass& from);
-        ~SchemaEventClass();
-        void addArgument(const SchemaArgument* argument);
-        void setDesc(const char* desc);
-
-        const SchemaClassKey* getClassKey() const;
-        int getArgumentCount() const;
-        const SchemaArgument* getArgument(int idx) const;
-
-    private:
-        friend struct SchemaEventClassImpl;
-        friend class  BrokerProxyImpl;
-        friend class  AgentImpl;
-        SchemaEventClass(SchemaEventClassImpl* impl);
-        SchemaEventClassImpl* impl;
+        SchemaClass(SchemaClassImpl* impl);
+        SchemaClassImpl* impl;
     };
 }
 }

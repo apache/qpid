@@ -65,22 +65,32 @@ namespace engine {
         bool operator>(const SchemaHash& other) const;
     };
 
-    struct SchemaArgumentImpl {
+    struct SchemaPropertyImpl {
         std::string name;
         Typecode typecode;
+        Access access;
+        bool index;
+        bool optional;
         Direction dir;
         std::string unit;
         std::string description;
 
-        SchemaArgumentImpl(const char* n, Typecode t) : name(n), typecode(t), dir(DIR_IN) {}
-        SchemaArgumentImpl(const qpid::messaging::Variant::Map& map);
-        static SchemaArgument* factory(qpid::messaging::Variant::Map& map);
+        SchemaPropertyImpl(const char* n, Typecode t) :
+            name(n), typecode(t), access(ACCESS_READ_ONLY), index(false), optional(false), dir(DIR_IN) {}
+        SchemaPropertyImpl(const std::string& name, const qpid::messaging::Variant::Map& map);
+        static SchemaProperty* factory(const std::string& name, const qpid::messaging::Variant::Map& map);
         qpid::messaging::Variant::Map asMap() const;
+        void setAccess(Access a) { access = a; }
+        void setIndex(bool val) { index = val; }
+        void setOptional(bool val) { optional = val; }
         void setDirection(Direction d) { dir = d; }
         void setUnit(const char* val) { unit = val; }
         void setDesc(const char* desc) { description = desc; }
         const std::string& getName() const { return name; }
         Typecode getType() const { return typecode; }
+        Access getAccess() const { return access; }
+        bool isIndex() const { return index; }
+        bool isOptional() const { return optional; }
         Direction getDirection() const { return dir; }
         const std::string& getUnit() const { return unit; }
         const std::string& getDesc() const { return description; }
@@ -90,69 +100,38 @@ namespace engine {
     struct SchemaMethodImpl {
         std::string name;
         std::string description;
-        std::vector<const SchemaArgument*> arguments;
+        std::vector<const SchemaProperty*> properties;
 
         SchemaMethodImpl(const char* n) : name(n) {}
-        SchemaMethodImpl(const qpid::messaging::Variant::Map& map);
-        static SchemaMethod* factory(qpid::messaging::Variant::Map& map);
+        SchemaMethodImpl(const std::string& name, const qpid::messaging::Variant::Map& map);
+        static SchemaMethod* factory(const std::string& name, const qpid::messaging::Variant::Map& map);
         qpid::messaging::Variant::Map asMap() const;
-        void addArgument(const SchemaArgument* argument);
+        void addProperty(const SchemaProperty* property);
         void setDesc(const char* desc) { description = desc; }
         const std::string& getName() const { return name; }
         const std::string& getDesc() const { return description; }
-        int getArgumentCount() const { return arguments.size(); }
-        const SchemaArgument* getArgument(int idx) const;
-        void updateHash(SchemaHash& hash) const;
-    };
-
-    struct SchemaPropertyImpl {
-        std::string name;
-        Typecode typecode;
-        Access access;
-        bool index;
-        bool optional;
-        std::string unit;
-        std::string description;
-
-        SchemaPropertyImpl(const char* n, Typecode t) : name(n), typecode(t), access(ACCESS_READ_ONLY), index(false), optional(false) {}
-        SchemaPropertyImpl(const qpid::messaging::Variant::Map& map);
-        static SchemaProperty* factory(qpid::messaging::Variant::Map& map);
-        qpid::messaging::Variant::Map asMap() const;
-        void setAccess(Access a) { access = a; }
-        void setIndex(bool val) { index = val; }
-        void setOptional(bool val) { optional = val; }
-        void setUnit(const char* val) { unit = val; }
-        void setDesc(const char* desc) { description = desc; }
-        const std::string& getName() const { return name; }
-        Typecode getType() const { return typecode; }
-        Access getAccess() const { return access; }
-        bool isIndex() const { return index; }
-        bool isOptional() const { return optional; }
-        const std::string& getUnit() const { return unit; }
-        const std::string& getDesc() const { return description; }
+        int getPropertyCount() const { return properties.size(); }
+        const SchemaProperty* getProperty(int idx) const;
         void updateHash(SchemaHash& hash) const;
     };
 
     struct SchemaClassKeyImpl {
-        const std::string& package;
-        const std::string& name;
-        const SchemaHash& hash;
+        ClassKind kind;
+        std::string package;
+        std::string name;
+        SchemaHash hash;
         mutable std::string repr;
 
-        // The *Container elements are only used if there isn't an external place to
-        // store these values.
-        std::string packageContainer;
-        std::string nameContainer;
-        SchemaHash hashContainer;
-
-        SchemaClassKeyImpl(const std::string& package, const std::string& name, const SchemaHash& hash);
+        SchemaClassKeyImpl(ClassKind kind, const std::string& package, const std::string& name);
         SchemaClassKeyImpl(const qpid::messaging::Variant::Map& map);
-        static SchemaClassKey* factory(const std::string& package, const std::string& name, const SchemaHash& hash);
-        static SchemaClassKey* factory(qpid::messaging::Variant::Map& map);
+        static SchemaClassKey* factory(ClassKind kind, const std::string& package, const std::string& name);
+        static SchemaClassKey* factory(const qpid::messaging::Variant::Map& map);
 
+        ClassKind getKind() const { return kind; }
         const std::string& getPackageName() const { return package; }
         const std::string& getClassName() const { return name; }
-        const uint8_t* getHash() const { return hash.get(); }
+        const uint8_t* getHashData() const { return hash.get(); }
+        SchemaHash& getHash() { return hash; }
 
         qpid::messaging::Variant::Map asMap() const;
         bool operator==(const SchemaClassKeyImpl& other) const;
@@ -160,19 +139,16 @@ namespace engine {
         const std::string& str() const;
     };
 
-    struct SchemaObjectClassImpl {
-        std::string package;
-        std::string name;
-        mutable SchemaHash hash;
+    struct SchemaClassImpl {
         mutable bool hasHash;
         std::auto_ptr<SchemaClassKey> classKey;
         std::vector<const SchemaProperty*> properties;
         std::vector<const SchemaMethod*> methods;
 
-        SchemaObjectClassImpl(const char* p, const char* n) :
-            package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)) {}
-        SchemaObjectClassImpl(const qpid::messaging::Variant::Map& map);
-        static SchemaObjectClass* factory(qpid::messaging::Variant::Map& map);
+        SchemaClassImpl(ClassKind kind, const char* package, const char* name) :
+            hasHash(false), classKey(SchemaClassKeyImpl::factory(kind, package, name)) {}
+        SchemaClassImpl(const qpid::messaging::Variant::Map& map);
+        static SchemaClass* factory(const qpid::messaging::Variant::Map& map);
 
         qpid::messaging::Variant::Map asMap() const;
         void addProperty(const SchemaProperty* property);
@@ -183,29 +159,6 @@ namespace engine {
         int getMethodCount() const { return methods.size(); }
         const SchemaProperty* getProperty(int idx) const;
         const SchemaMethod* getMethod(int idx) const;
-    };
-
-    struct SchemaEventClassImpl {
-        std::string package;
-        std::string name;
-        mutable SchemaHash hash;
-        mutable bool hasHash;
-        std::auto_ptr<SchemaClassKey> classKey;
-        std::string description;
-        std::vector<const SchemaArgument*> arguments;
-
-        SchemaEventClassImpl(const char* p, const char* n) :
-            package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)) {}
-        SchemaEventClassImpl(const qpid::messaging::Variant::Map& map);
-        static SchemaEventClass* factory(qpid::messaging::Variant::Map& map);
-
-        qpid::messaging::Variant::Map asMap() const;
-        void addArgument(const SchemaArgument* argument);
-        void setDesc(const char* desc) { description = desc; }
-
-        const SchemaClassKey* getClassKey() const;
-        int getArgumentCount() const { return arguments.size(); }
-        const SchemaArgument* getArgument(int idx) const;
     };
 }
 }

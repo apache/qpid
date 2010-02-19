@@ -246,13 +246,13 @@ bool BrokerProxyImpl::sendGetRequestLH(SequenceContext::Ptr queryContext, const 
 
 string BrokerProxyImpl::encodeMethodArguments(const SchemaMethod* schema, const Value* argmap, Buffer& buffer)
 {
-    int argCount = schema->getArgumentCount();
+    int argCount = schema->getPropertyCount();
 
     if (argmap == 0 || !argmap->isMap())
         return string("Arguments must be in a map value");
 
     for (int aIdx = 0; aIdx < argCount; aIdx++) {
-        const SchemaArgument* arg(schema->getArgument(aIdx));
+        const SchemaProperty* arg(schema->getProperty(aIdx));
         if (arg->getDirection() == DIR_IN || arg->getDirection() == DIR_IN_OUT) {
             if (argmap->keyInMap(arg->getName())) {
                 const Value* argVal(argmap->byKey(arg->getName()));
@@ -592,9 +592,9 @@ MethodResponseImpl::MethodResponseImpl(Buffer& buf, const SchemaMethod* s) : sch
         return;
 
     arguments.reset(new Value(TYPE_MAP));
-    int argCount(schema->getArgumentCount());
+    int argCount(schema->getPropertyCount());
     for (int idx = 0; idx < argCount; idx++) {
-        const SchemaArgument* arg = schema->getArgument(idx);
+        const SchemaProperty* arg = schema->getProperty(idx);
         if (arg->getDirection() == DIR_OUT || arg->getDirection() == DIR_IN_OUT) {
             Value* value(ValueImpl::factory(arg->getType(), buf));
             arguments->insert(arg->getName(), value);

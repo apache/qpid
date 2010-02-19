@@ -58,7 +58,7 @@ namespace engine {
         string      objectKey;
         boost::shared_ptr<Query> query;
         boost::shared_ptr<Variant::Map> arguments;
-        const SchemaObjectClass* objectClass;
+        const SchemaClass* objectClass;
 
         AgentEventImpl(AgentEvent::EventKind k) :
             kind(k), sequence(0), object(0), objectClass(0) {}
@@ -92,8 +92,7 @@ namespace engine {
         void methodResponse(uint32_t sequence, uint32_t status, char* text, const Variant::Map& arguments);
         void queryResponse(uint32_t sequence, Object& object);
         void queryComplete(uint32_t sequence);
-        void registerClass(SchemaObjectClass* cls);
-        void registerClass(SchemaEventClass* cls);
+        void registerClass(SchemaClass* cls);
         const char* addObject(Object& obj, const char* key);
         void raiseEvent(Event& event);
 
@@ -149,21 +148,14 @@ namespace engine {
             }
         };
 
-        typedef map<AgentClassKey, SchemaObjectClass*, AgentClassKeyComp> ObjectClassMap;
-        typedef map<AgentClassKey, SchemaEventClass*, AgentClassKeyComp>  EventClassMap;
-
-        struct ClassMaps {
-            ObjectClassMap objectClasses;
-            EventClassMap  eventClasses;
-        };
-
-        map<string, ClassMaps> packages;
+        typedef map<AgentClassKey, SchemaClass*, AgentClassKeyComp> ClassMap;
+        map<string, ClassMap> packages;
 
         AgentEventImpl::Ptr eventQuery(uint32_t num, const string& userId, const string& package, const string& cls,
                                        const string& key);
         AgentEventImpl::Ptr eventMethod(uint32_t num, const string& userId, const string& method,
                                         const string& key, boost::shared_ptr<Variant::Map> argMap,
-                                        const SchemaObjectClass* objectClass);
+                                        const SchemaClass* cls);
         void handleRcvMessageLH(qpid::messaging::Message& message);
 
         void sendPackageIndicationLH(const string& packageName);
@@ -331,36 +323,19 @@ void AgentImpl::queryComplete(uint32_t sequence)
     //sendCommandCompleteLH(context->exchange, context->key, context->sequence, 0, "OK");
 }
 
-void AgentImpl::registerClass(SchemaObjectClass* cls)
+void AgentImpl::registerClass(SchemaClass* cls)
 {
     Mutex::ScopedLock _lock(lock);
 
-    map<string, ClassMaps>::iterator iter = packages.find(cls->getClassKey()->getPackageName());
+    map<string, ClassMap>::iterator iter = packages.find(cls->getClassKey()->getPackageName());
     if (iter == packages.end()) {
-        packages[cls->getClassKey()->getPackageName()] = ClassMaps();
+        packages[cls->getClassKey()->getPackageName()] = ClassMap();
         iter = packages.find(cls->getClassKey()->getPackageName());
         // TODO: Indicate this package if connected
     }
 
-    AgentClassKey key(cls->getClassKey()->getClassName(), cls->getClassKey()->getHash());
-    iter->second.objectClasses[key] = cls;
-
-    // TODO: Indicate this schema if connected.
-}
-
-void AgentImpl::registerClass(SchemaEventClass* cls)
-{
-    Mutex::ScopedLock _lock(lock);
-
-    map<string, ClassMaps>::iterator iter = packages.find(cls->getClassKey()->getPackageName());
-    if (iter == packages.end()) {
-        packages[cls->getClassKey()->getPackageName()] = ClassMaps();
-        iter = packages.find(cls->getClassKey()->getPackageName());
-        // TODO: Indicate this package if connected
-    }
-
-    AgentClassKey key(cls->getClassKey()->getClassName(), cls->getClassKey()->getHash());
-    iter->second.eventClasses[key] = cls;
+    AgentClassKey key(cls->getClassKey()->getClassName(), cls->getClassKey()->getHashData());
+    iter->second[key] = cls;
 
     // TODO: Indicate this schema if connected.
 }
@@ -420,7 +395,7 @@ AgentEventImpl::Ptr AgentImpl::eventQuery(uint32_t num, const string& userId, co
 
 AgentEventImpl::Ptr AgentImpl::eventMethod(uint32_t num, const string& userId, const string& method,
                                            const string& key, boost::shared_ptr<Variant::Map> argMap,
-                                           const SchemaObjectClass* objectClass)
+                                           const SchemaClass* cls)
 {
     AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::METHOD_CALL));
     event->sequence = num;
@@ -428,7 +403,7 @@ AgentEventImpl::Ptr AgentImpl::eventMethod(uint32_t num, const string& userId, c
     event->name = method;
     event->objectKey = key;
     event->arguments = argMap;
-    event->objectClass = objectClass;
+    event->objectClass = cls;
     return event;
 }
 
@@ -505,8 +480,7 @@ void Agent::setConnection(Connection& conn) { impl->setConnection(conn); }
 void Agent::methodResponse(uint32_t sequence, uint32_t status, char* text, const Variant::Map& arguments) { impl->methodResponse(sequence, status, text, arguments); }
 void Agent::queryResponse(uint32_t sequence, Object& object) { impl->queryResponse(sequence, object); }
 void Agent::queryComplete(uint32_t sequence) { impl->queryComplete(sequence); }
-void Agent::registerClass(SchemaObjectClass* cls) { impl->registerClass(cls); }
-void Agent::registerClass(SchemaEventClass* cls) { impl->registerClass(cls); }
+void Agent::registerClass(SchemaClass* cls) { impl->registerClass(cls); }
 const char* Agent::addObject(Object& obj, const char* key) { return impl->addObject(obj, key); }
 void Agent::raiseEvent(Event& event) { impl->raiseEvent(event); }
 

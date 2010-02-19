@@ -55,7 +55,7 @@ namespace engine {
         char*        objectKey;   // Object key for method call (METHOD_CALL)
         Query*       query;       // Query parameters (GET_QUERY, START_SYNC)
         qpid::messaging::Variant::Map*  arguments;   // Method parameters (METHOD_CALL)
-        const SchemaObjectClass* objectClass; // (METHOD_CALL)
+        const SchemaClass* objectClass; // (METHOD_CALL)
     };
 
     class AgentImpl;
@@ -134,15 +134,9 @@ namespace engine {
 
         /**
          * Register a schema class with the Agent.
-         *@param cls A SchemaObejctClass object that defines data managed by the agent.
+         *@param cls A SchemaClass object that defines data managed by the agent.
          */
-        void registerClass(SchemaObjectClass* cls);
-
-        /**
-         * Register a schema class with the Agent.
-         *@param cls A SchemaEventClass object that defines events sent by the agent.
-         */
-        void registerClass(SchemaEventClass* cls);
+        void registerClass(SchemaClass* cls);
 
         /**
          * Give an object to the Agent for storage and management.  Once added, the agent takes

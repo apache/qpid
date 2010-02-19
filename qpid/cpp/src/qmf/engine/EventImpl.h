@@ -32,7 +32,7 @@ namespace engine {
     struct EventImpl {
         typedef boost::shared_ptr<Value> ValuePtr;
         const SchemaEventClass* eventClass;
-        mutable std::map<std::string, ValuePtr> arguments;
+        mutable std::map<std::string, ValuePtr> properties;
 
         EventImpl(const SchemaEventClass* type);
         EventImpl(const SchemaEventClass* type, qpid::framing::Buffer& buffer);

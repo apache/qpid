@@ -31,7 +31,7 @@ ObjectImpl::ObjectImpl() :
 }
 
 
-ObjectImpl::ObjectImpl(SchemaObjectClass* type) :
+ObjectImpl::ObjectImpl(SchemaClass* type) :
     objectClass(type), createTime(uint64_t(Duration(now()))), destroyTime(0), lastUpdatedTime(createTime)
 {
 }
@@ -54,13 +54,13 @@ void ObjectImpl::destroy()
 //==================================================================
 
 Object::Object() : impl(new ObjectImpl()) {}
-Object::Object(SchemaObjectClass* type) : impl(new ObjectImpl(type)) {}
+Object::Object(SchemaClass* type) : impl(new ObjectImpl(type)) {}
 Object::Object(const Object& from) : impl(new ObjectImpl(*(from.impl))) {}
 Object::~Object() { delete impl; }
 const Variant::Map& Object::getValues() const { return impl->getValues(); }
 Variant::Map& Object::getValues() { return impl->getValues(); }
-const SchemaObjectClass* Object::getSchema() const { return impl->getSchema(); }
-void Object::setSchema(SchemaObjectClass* schema) { impl->setSchema(schema); }
+const SchemaClass* Object::getSchema() const { return impl->getSchema(); }
+void Object::setSchema(SchemaClass* schema) { impl->setSchema(schema); }
 const char* Object::getKey() const { return impl->getKey(); }
 void Object::setKey(const char* key) { impl->setKey(key); }
 void Object::touch() { impl->touch(); }

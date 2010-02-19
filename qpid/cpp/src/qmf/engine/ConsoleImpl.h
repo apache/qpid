@@ -83,8 +83,7 @@ namespace engine {
         const SchemaClassKey* getClass(const char* packageName, uint32_t idx) const;
 
         ClassKind getClassKind(const SchemaClassKey* key) const;
-        const SchemaObjectClass* getObjectClass(const SchemaClassKey* key) const;
-        const SchemaEventClass* getEventClass(const SchemaClassKey* key) const;
+        const SchemaClass* getClass(const SchemaClassKey* key) const;
 
         void bindPackage(const char* packageName);
         void bindClass(const SchemaClassKey* key);
@@ -114,17 +113,15 @@ namespace engine {
             }
         };
 
-        typedef std::map<const SchemaClassKey*, SchemaObjectClass*, KeyCompare> ObjectClassList;
-        typedef std::map<const SchemaClassKey*, SchemaEventClass*, KeyCompare> EventClassList;
-        typedef std::map<std::string, std::pair<ObjectClassList, EventClassList> > PackageList;
+        typedef std::map<const SchemaClassKey*, SchemaClass*, KeyCompare> ClassList;
+        typedef std::map<std::string, ClassList> PackageList;
 
         PackageList packages;
 
         void learnPackage(const std::string& packageName);
-        void learnClass(SchemaObjectClass* cls);
-        void learnClass(SchemaEventClass* cls);
+        void learnClass(SchemaClass* cls);
         bool haveClass(const SchemaClassKey* key) const;
-        SchemaObjectClass* getSchema(const SchemaClassKey* key) const;
+        SchemaClass* getSchema(const SchemaClassKey* key) const;
 
         void eventAgentAdded(boost::shared_ptr<AgentProxy> agent);
         void eventAgentDeleted(boost::shared_ptr<AgentProxy> agent);

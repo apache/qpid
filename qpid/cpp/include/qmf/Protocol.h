@@ -36,7 +36,6 @@ namespace qmf {
         //static bool checkHeader(const qpid::messaging::Message& msg, std::string& opcode, uint32_t *seq);
         //static void encodeHeader(qpid::messaging::Message& msg, const std::string& opcode, uint32_t seq = 0);
 
-        const static std::string SCHEMA_ELT_NAME;
         const static std::string SCHEMA_ELT_TYPE;
         const static std::string SCHEMA_ELT_DIR;
         const static std::string SCHEMA_ELT_UNIT;
@@ -53,6 +52,10 @@ namespace qmf {
         const static std::string AGENT_NAME;
         const static std::string OBJECT_NAME;
         const static std::string SCHEMA_ID;
+        const static std::string VALUES;
+        const static std::string SUBTYPES;
+        const static std::string SUBTYPE_SCHEMA_PROPERTY;
+        const static std::string SUBTYPE_SCHEMA_METHOD;
 
         /*
         const static uint8_t OP_ATTACH_REQUEST  = 'A';

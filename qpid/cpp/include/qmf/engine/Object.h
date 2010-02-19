@@ -31,15 +31,15 @@ namespace engine {
     class Object {
     public:
         Object();
-        Object(SchemaObjectClass* type);
+        Object(SchemaClass* type);
         Object(const Object& from);
         virtual ~Object();
 
         const qpid::messaging::Variant::Map& getValues() const;
         qpid::messaging::Variant::Map& getValues();
 
-        const SchemaObjectClass* getSchema() const;
-        void setSchema(SchemaObjectClass* schema);
+        const SchemaClass* getSchema() const;
+        void setSchema(SchemaClass* schema);
 
         const char* getKey() const;
         void setKey(const char* key);
