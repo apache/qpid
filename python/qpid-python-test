@@ -20,7 +20,7 @@
 
 # TODO: summarize, test harness preconditions (e.g. broker is alive)
 
-import logging, optparse, os, struct, sys, traceback, types
+import logging, optparse, os, struct, sys, time, traceback, types
 from fnmatch import fnmatchcase as match
 from getopt import GetoptError
 from logging import getLogger, StreamHandler, Formatter, Filter, \
@@ -60,6 +60,8 @@ parser.add_option("-I", "--ignore-file", metavar="IFILE", action="append",
                   help="ignore tests matching patterns in IFILE")
 parser.add_option("-H", "--halt-on-error", action="store_true", default=False,
                   dest="hoe", help="halt if an error is encountered")
+parser.add_option("-t", "--time", action="store_true", default=False,
+                  help="report timing information on test run")
 parser.add_option("-D", "--define", metavar="DEFINE", dest="defines",
                   action="append", default=[], help="define test parameters")
 
@@ -165,7 +167,9 @@ KEYWORDS = {"pass": (32,),
             "start": (34,),
             "total": (34,),
             "ignored": (33,),
-            "selected": (34,)}
+            "selected": (34,),
+            "elapsed": (34,),
+            "average": (34,)}
 
 COLORIZE = is_smart()
 
@@ -525,6 +529,7 @@ total = len(filtered) + len(ignored)
 passed = 0
 failed = 0
 skipped = 0
+start = time.time()
 for t in filtered:
   if list_only:
     print t.name()
@@ -538,6 +543,7 @@ for t in filtered:
       failed += 1
       if opts.hoe:
         break
+end = time.time()
 
 run = passed + failed
 
@@ -558,16 +564,22 @@ if not list_only:
     skip = "skip"
   else:
     skip = "pass"
-  print colorize("Totals:", 1), \
-      colorize_word("total", "%s tests" % total) + ",", \
-      colorize_word(_pass, "%s passed" % passed) + ",", \
-      colorize_word(skip, "%s skipped" % skipped) + ",", \
-      colorize_word(ign, "%s ignored" % len(ignored)) + ",", \
-      colorize_word(outcome, "%s failed" % failed),
+  print colorize("Totals:", 1),
+  totals = [colorize_word("total", "%s tests" % total),
+            colorize_word(_pass, "%s passed" % passed),
+            colorize_word(skip, "%s skipped" % skipped),
+            colorize_word(ign, "%s ignored" % len(ignored)),
+            colorize_word(outcome, "%s failed" % failed)]
+  print ", ".join(totals),
   if opts.hoe and failed > 0:
     print " -- (halted after %s)" % run
   else:
     print
+  if opts.time:
+    print colorize("Timing:", 1),
+    timing = [colorize_word("elapsed", "%.2fs elapsed" % (end - start)),
+              colorize_word("average", "%.2fs average" % ((end - start)/run))]
+    print ", ".join(timing)
 
 if failed or skipped:
   sys.exit(1)
