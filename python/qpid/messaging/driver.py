@@ -303,7 +303,6 @@ class Driver:
     self.reset()
 
   def reset(self):
-    self._opening = False
     self._closing = False
     self._connected = False
     self._attachments = {}
@@ -586,7 +585,7 @@ class Driver:
 
   def dispatch(self):
     try:
-      if self._socket is None and self.connection._connected and not self._opening:
+      if self._socket is None and self.connection._connected:
         self.connect()
       elif self._socket is not None and not self.connection._connected and not self._closing:
         self.disconnect()
@@ -615,7 +614,6 @@ class Driver:
       self._host = 0
       self._retrying = False
       self._buf += struct.pack(HEADER, "AMQP", 1, 1, 0, 10)
-      self._opening = True
     except socket.error, e:
       self._host = (self._host + 1) % len(self._hosts)
       self._error(e, True)
