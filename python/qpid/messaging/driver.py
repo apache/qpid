@@ -377,51 +377,64 @@ class Driver:
 
   @synchronized
   def readable(self):
-    error = None
-    recoverable = False
     try:
       data = self._socket.recv(64*1024)
       if data:
         rawlog.debug("READ[%s]: %r", self.log_id, data)
-        if self._sasl_decode:
-          data = self._sasl.decode(data)
+        self.engine_write(data)
       else:
-        rawlog.debug("ABORTED[%s]: %s", self.log_id, self._socket.getpeername())
-        error = "connection aborted"
-        recoverable = True
+        rawlog.debug("CLOSED[%s]: %s", self.log_id, self._socket.getpeername())
+        self.engine_close()
     except socket.error, e:
-      error = e
-      recoverable = True
-
-    if not error:
-      try:
-        if len(self._hdr) < 8:
-          r = 8 - len(self._hdr)
-          self._hdr += data[:r]
-          data = data[r:]
-
-          if len(self._hdr) == 8:
-            self.do_header(self._hdr)
-
-        self._frame_dec.write(data)
-        self._seg_dec.write(*self._frame_dec.read())
-        self._op_dec.write(*self._seg_dec.read())
-        for op in self._op_dec.read():
-          self.assign_id(op)
-          opslog.debug("RCVD[%s]: %r", self.log_id, op)
-          op.dispatch(self)
-      except VersionError, e:
-        error = e
-      except:
-        msg = compat.format_exc()
-        error = msg
-
-    if error:
-      self._error(error, recoverable)
-    else:
-      self.dispatch()
-
+      self.engine_close(e)
     self.connection._waiter.notifyAll()
+
+  @synchronized
+  def writeable(self):
+    try:
+      n = self._socket.send(self.engine_peek())
+      sent = self.engine_read(n)
+      rawlog.debug("SENT[%s]: %r", self.log_id, sent)
+    except socket.error, e:
+      self.engine_close(e)
+      self.connection._waiter.notifyAll()
+
+  @synchronized
+  def timeout(self):
+    self.dispatch()
+    self.connection._waiter.notifyAll()
+
+  def engine_write(self, data):
+    try:
+      if self._sasl_decode:
+        data = self._sasl.decode(data)
+
+      if len(self._hdr) < 8:
+        r = 8 - len(self._hdr)
+        self._hdr += data[:r]
+        data = data[r:]
+
+        if len(self._hdr) == 8:
+          self.do_header(self._hdr)
+
+      self._frame_dec.write(data)
+      self._seg_dec.write(*self._frame_dec.read())
+      self._op_dec.write(*self._seg_dec.read())
+      for op in self._op_dec.read():
+        self.assign_id(op)
+        opslog.debug("RCVD[%s]: %r", self.log_id, op)
+        op.dispatch(self)
+      self.dispatch()
+    except VersionError, e:
+      self._error(e, False)
+    except:
+      self._error(compat.format_exc(), False)
+
+  def engine_close(self, e=None):
+    if e is None:
+      self._error("connection aborted", True)
+    else:
+      self._error(e, True)
 
   def assign_id(self, op):
     if isinstance(op, Command):
@@ -429,20 +442,16 @@ class Driver:
       op.id = sst.received
       sst.received += 1
 
-  @synchronized
-  def writeable(self):
-    try:
-      n = self._socket.send(self._buf)
-      rawlog.debug("SENT[%s]: %r", self.log_id, self._buf[:n])
-      self._buf = self._buf[n:]
-    except socket.error, e:
-      self._error(e, True)
-      self.connection._waiter.notifyAll()
+  def engine_pending(self):
+    return len(self._buf)
 
-  @synchronized
-  def timeout(self):
-    self.dispatch()
-    self.connection._waiter.notifyAll()
+  def engine_read(self, n):
+    result = self._buf[:n]
+    self._buf = self._buf[n:]
+    return result
+
+  def engine_peek(self):
+    return self._buf
 
   def _error(self, err, recoverable):
     if self._socket is not None:
