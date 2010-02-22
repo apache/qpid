@@ -1032,7 +1032,6 @@ class Driver:
     rcv.received += 1
     log.debug("RCVD[%s]: %s", ssn.log_id, msg)
     ssn.incoming.append(msg)
-    self.connection._waiter.notifyAll()
 
   def _decode(self, xfr):
     dp = EMPTY_DP
