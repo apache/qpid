@@ -1375,7 +1375,7 @@ class Console(Thread):
         """
         mbox = self._get_mailbox(subscription_id)
         if not mbox:
-            return None
+            return
 
         agent = self.get_agent(mbox.agent_name)
         if agent:
@@ -1602,6 +1602,8 @@ class Console(Thread):
         elif opcode == OpCode.query_rsp:
             self._handle_response_msg(msg, cmap, version, _direct)
         elif opcode == OpCode.subscribe_rsp:
+            self._handle_response_msg(msg, cmap, version, _direct)
+        elif opcode == OpCode.subscribe_refresh_rsp:
             self._handle_response_msg(msg, cmap, version, _direct)
         elif opcode == OpCode.method_rsp:
             self._handle_response_msg(msg, cmap, version, _direct)
