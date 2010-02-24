@@ -21,17 +21,18 @@ import logging
 import datetime
 import time
 import Queue
-from threading import Thread, Lock, currentThread, Event
+from threading import Thread, RLock, currentThread, Event
 from qpid.messaging import Connection, Message, Empty, SendError
 from uuid import uuid4
-from common import (make_subject, parse_subject, OpCode, QmfQuery,
-                    SchemaObjectClass, MsgKey, QmfData, QmfAddress,
-                    SchemaClass, SchemaClassId, WorkItem, SchemaMethod,
-                    timedelta_to_secs)
+from common import (OpCode, QmfQuery, ContentType, SchemaObjectClass,
+                    QmfData, QmfAddress, SchemaClass, SchemaClassId, WorkItem,
+                    SchemaMethod, timedelta_to_secs, QMF_APP_ID)
 
 # global flag that indicates which thread (if any) is
 # running the agent notifier callback
 _callback_thread=None
+
+
 
   ##==============================================================================
   ## METHOD CALL
@@ -78,14 +79,73 @@ class MethodCallParams(object):
         return self._user_id
 
 
+  ##==============================================================================
+  ## SUBSCRIPTIONS
+  ##==============================================================================
+
+class _ConsoleHandle(object):
+    """
+    """
+    def __init__(self, handle, reply_to):
+        self.console_handle = handle
+        self.reply_to = reply_to
+
+class SubscriptionParams(object):
+    """
+    """
+    def __init__(self, console_handle, query, interval, duration, user_id):
+        self._console_handle = console_handle
+        self._query = query
+        self._interval = interval
+        self._duration = duration
+        self._user_id = user_id
+
+    def get_console_handle(self):
+        return self._console_handle
+
+    def get_query(self):
+        return self._query
+
+    def get_interval(self):
+        return self._interval
+
+    def get_duration(self):
+        return self._duration
+
+    def get_user_id(self):
+        return self._user_id
+
+class _SubscriptionState(object):
+    """
+    An internally-managed subscription.
+    """
+    def __init__(self, reply_to, cid, query, interval, duration):
+        self.reply_to = reply_to
+        self.correlation_id = cid
+        self.query = query
+        self.interval = interval
+        self.duration = duration
+        now = datetime.datetime.utcnow()
+        self.next_update = now  # do an immediate update
+        self.expiration = now + datetime.timedelta(seconds=duration)
+        self.id = 0
+
+    def resubscribe(self, now, _duration=None):
+        if _duration is not None:
+            self.duration = _duration
+        self.expiration = now + datetime.timedelta(seconds=self.duration)
+
+    def reset_interval(self, now):
+        self.next_update = now + datetime.timedelta(seconds=self.interval)
+
+
 
   ##==============================================================================
   ## AGENT
   ##==============================================================================
 
 class Agent(Thread):
-    def __init__(self, name, _domain=None, _notifier=None, _heartbeat_interval=30, 
-                 _max_msg_size=0, _capacity=10):
+    def __init__(self, name, _domain=None, _notifier=None, **options):
         Thread.__init__(self)
         self._running = False
         self._ready = Event()
@@ -94,11 +154,20 @@ class Agent(Thread):
         self._domain = _domain
         self._address = QmfAddress.direct(self.name, self._domain)
         self._notifier = _notifier
-        self._heartbeat_interval = _heartbeat_interval
+
+        # configurable parameters
+        #
+        self._heartbeat_interval = options.get("heartbeat_interval", 30)
+        self._capacity = options.get("capacity", 10)
+        self._default_duration = options.get("default_duration", 300)
+        self._max_duration = options.get("max_duration", 3600)
+        self._min_duration = options.get("min_duration", 10)
+        self._default_interval = options.get("default_interval", 30)
+        self._min_interval = options.get("min_interval", 5)
+
         # @todo: currently, max # of objects in a single reply message, would
         # be better if it were max bytesize of per-msg content...
-        self._max_msg_size = _max_msg_size
-        self._capacity = _capacity
+        self._max_msg_size = options.get("max_msg_size", 0)
 
         self._conn = None
         self._session = None
@@ -107,7 +176,7 @@ class Agent(Thread):
         self._direct_sender = None
         self._topic_sender = None
 
-        self._lock = Lock()
+        self._lock = RLock()
         self._packages = {}
         self._schema_timestamp = long(0)
         self._schema = {}
@@ -119,6 +188,10 @@ class Agent(Thread):
         self._undescribed_data = {}
         self._work_q = Queue.Queue()
         self._work_q_put = False
+        # subscriptions
+        self._subscription_id = long(time.time())
+        self._subscriptions = {}
+        self._next_subscribe_event = None
 
 
     def destroy(self, timeout=None):
@@ -192,10 +265,11 @@ class Agent(Thread):
         if self.isAlive():
             # kick my thread to wake it up
             try:
-                msg = Message(properties={"method":"request",
-                                          "qmf.subject":make_subject(OpCode.noop)},
+                msg = Message(id=QMF_APP_ID,
                               subject=self.name,
-                              content={"noop":"noop"})
+                              properties={ "method":"request",
+                                          "qmf.opcode":OpCode.noop},
+                              content={})
 
                 # TRACE
                 #logging.error("!!! sending wakeup to myself: %s" % msg)
@@ -258,13 +332,14 @@ class Agent(Thread):
             raise Exception("No connection available")
 
         # @todo: should we validate against the schema?
-        _map = {"_name": self.get_name(),
-                "_event": qmfEvent.map_encode()}
-        msg = Message(subject=QmfAddress.SUBJECT_AGENT_EVENT + "." +
+        msg = Message(id=QMF_APP_ID,
+                      subject=QmfAddress.SUBJECT_AGENT_EVENT + "." +
                       qmfEvent.get_severity() + "." + self.name,
-                      properties={"method":"response",
-                                  "qmf.subject":make_subject(OpCode.event_ind)},
-                      content={MsgKey.event:_map})
+                      properties={"method":"indication",
+                                  "qmf.opcode":OpCode.data_ind,
+                                  "qmf.content": ContentType.event,
+                                  "qmf.agent":self.name},
+                      content=[qmfEvent.map_encode()])
         # TRACE
         # logging.error("!!! Agent %s sending Event (%s)" % 
         # (self.name, str(msg)))
@@ -330,9 +405,10 @@ class Agent(Thread):
                 raise TypeError("Invalid type for error - must be QmfData")
             _map[SchemaMethod.KEY_ERROR] = _error.map_encode()
 
-        msg = Message( properties={"method":"response",
-                                   "qmf.subject":make_subject(OpCode.response)},
-                       content={MsgKey.method:_map})
+        msg = Message(id=QMF_APP_ID,
+                      properties={"method":"response",
+                                  "qmf.opcode":OpCode.method_rsp},
+                      content=_map)
         msg.correlation_id = handle.correlation_id
 
         self._send_reply(msg, handle.reply_to)
@@ -370,25 +446,10 @@ class Agent(Thread):
 
         while self._running:
 
-            now = datetime.datetime.utcnow()
-            # print("now=%s next_heartbeat=%s" % (now, next_heartbeat))
-            if  now >= next_heartbeat:
-                ind = self._makeAgentIndMsg()
-                ind.subject = QmfAddress.SUBJECT_AGENT_HEARTBEAT
-                # TRACE
-                #logging.error("!!! Agent %s sending Heartbeat (%s)" % 
-                # (self.name, str(ind)))
-                self._topic_sender.send(ind)
-                logging.debug("Agent Indication Sent")
-                next_heartbeat = now + datetime.timedelta(seconds = self._heartbeat_interval)
-
-            timeout = timedelta_to_secs(next_heartbeat - now)
-            # print("now=%s next_heartbeat=%s timeout=%s" % (now, next_heartbeat, timeout))
-            try:
-                self._session.next_receiver(timeout=timeout)
-            except Empty:
-                continue
-
+            #
+            # Process inbound messages
+            #
+            logging.debug("%s processing inbound messages..." % self.name)
             for i in range(batch_limit):
                 try:
                     msg = self._topic_receiver.fetch(timeout=0)
@@ -409,7 +470,71 @@ class Agent(Thread):
                 # (self.name, self._direct_receiver.source, msg))
                 self._dispatch(msg, _direct=True)
 
+            #
+            # Send Heartbeat Notification
+            #
+            now = datetime.datetime.utcnow()
+            if now >= next_heartbeat:
+                logging.debug("%s sending heartbeat..." % self.name)
+                ind = Message(id=QMF_APP_ID,
+                              subject=QmfAddress.SUBJECT_AGENT_HEARTBEAT,
+                              properties={"method":"indication",
+                                          "qmf.opcode":OpCode.agent_heartbeat_ind,
+                                          "qmf.agent":self.name},
+                              content=self._makeAgentInfoBody())
+                # TRACE
+                #logging.error("!!! Agent %s sending Heartbeat (%s)" % 
+                # (self.name, str(ind)))
+                self._topic_sender.send(ind)
+                logging.debug("Agent Indication Sent")
+                next_heartbeat = now + datetime.timedelta(seconds = self._heartbeat_interval)
+
+
+
+            #
+            # Monitor Subscriptions
+            #
+            if (self._next_subscribe_event is None or
+                now >= self._next_subscribe_event):
+
+                logging.debug("%s polling subscriptions..." % self.name)
+                self._next_subscribe_event = now + datetime.timedelta(seconds=
+                                                                      self._max_duration)
+                self._lock.acquire()
+                try:
+                    dead_ss = []
+                    for sid,ss in self._subscriptions.iteritems():
+                        if now >= ss.expiration:
+                            dead_ss.append(sid)
+                            continue
+                        if now >= ss.next_update:
+                            response = []
+                            objs = self._queryData(ss.query)
+                            if objs:
+                                for obj in objs:
+                                    response.append(obj.map_encode())
+                                logging.debug("!!! %s publishing %s!!!" % (self.name, ss.correlation_id))
+                                self._send_query_response( ContentType.data,
+                                                           ss.correlation_id,
+                                                           ss.reply_to,
+                                                           response)
+                            ss.reset_interval(now)
+
+                        next_timeout = min(ss.expiration, ss.next_update)
+                        if next_timeout < self._next_subscribe_event:
+                            self._next_subscribe_event = next_timeout
+
+                    for sid in dead_ss:
+                        del self._subscriptions[sid]
+                finally:
+                    self._lock.release()
+
+            #
+            # notify application of pending WorkItems
+            #
+
             if self._work_q_put and self._notifier:
+                logging.debug("%s notifying application..." % self.name)
                 # new stuff on work queue, kick the the application...
                 self._work_q_put = False
                 _callback_thread = currentThread()
@@ -417,19 +542,33 @@ class Agent(Thread):
                 self._notifier.indication()
                 _callback_thread = None
 
+            #
+            # Sleep until messages arrive or something times out
+            #
+            next_timeout = min(next_heartbeat, self._next_subscribe_event)
+            timeout = timedelta_to_secs(next_timeout -
+                                        datetime.datetime.utcnow())
+            if timeout > 0.0:
+                logging.debug("%s sleeping %s seconds..." % (self.name,
+                                                             timeout))
+                try:
+                    self._session.next_receiver(timeout=timeout)
+                except Empty:
+                    pass
+
+
+
+
     #
     # Private:
     #
 
-    def _makeAgentIndMsg(self):
+    def _makeAgentInfoBody(self):
         """
-        Create an agent indication message identifying this agent
+        Create an agent indication message body identifying this agent
         """
-        _map = {"_name": self.get_name(),
+        return {"_name": self.get_name(),
                 "_schema_timestamp": self._schema_timestamp}
-        return Message(properties={"method":"response",
-                                   "qmf.subject":make_subject(OpCode.agent_ind)},
-                       content={MsgKey.agent_info: _map})
 
     def _send_reply(self, msg, reply_to):
         """
@@ -458,7 +597,7 @@ class Agent(Thread):
         except SendError, e:
             logging.error("Failed to send reply msg '%s' (%s)" % (msg, str(e)))
 
-    def _send_query_response(self, subject, msgkey, cid, reply_to, objects):
+    def _send_query_response(self, content_type, cid, reply_to, objects):
         """
         Send a response to a query, breaking the result into multiple
         messages based on the agent's _max_msg_size config parameter
@@ -472,24 +611,28 @@ class Agent(Thread):
 
         start = 0
         end = min(total, max_count)
-        while end <= total:
-            m = Message(properties={"qmf.subject":subject,
-                                    "method":"response"},
+        # send partial response if too many objects present
+        while end < total:
+            m = Message(id=QMF_APP_ID,
+                        properties={"method":"response",
+                                    "partial":None,
+                                    "qmf.opcode":OpCode.data_ind,
+                                    "qmf.content":content_type,
+                                    "qmf.agent":self.name},
                         correlation_id = cid,
-                        content={msgkey:objects[start:end]})
+                        content=objects[start:end])
             self._send_reply(m, reply_to)
-            if end == total:
-                break;
             start = end
             end = min(total, end + max_count)
 
-        # response terminator - last message has empty object array
-        if total:
-            m = Message(properties={"qmf.subject":subject,
-                                    "method":"response"},
-                        correlation_id = cid,
-                        content={msgkey: []} )
-            self._send_reply(m, reply_to)
+        m = Message(id=QMF_APP_ID,
+                    properties={"method":"response",
+                                "qmf.opcode":OpCode.data_ind,
+                                "qmf.content":content_type,
+                                "qmf.agent":self.name},
+                    correlation_id = cid,
+                    content=objects[start:end])
+        self._send_reply(m, reply_to)
 
     def _dispatch(self, msg, _direct=False):
         """
@@ -497,33 +640,32 @@ class Agent(Thread):
 
         @param _direct: True if msg directly addressed to this agent.
         """
-        logging.debug( "Message received from Console! [%s]" % msg )
-        try:
-            version,opcode = parse_subject(msg.properties.get("qmf.subject"))
-        except:
-            logging.warning("Ignoring unrecognized message '%s'" % msg.subject)
-            return
+        # logging.debug( "Message received from Console! [%s]" % msg )
+        # logging.error( "%s Message received from Console! [%s]" % (self.name, msg) )
 
+        opcode = msg.properties.get("qmf.opcode")
+        if not opcode:
+            logging.warning("Ignoring unrecognized message '%s'" % msg)
+            return
+        version = 2  # @todo: fix me
         cmap = {}; props={}
         if msg.content_type == "amqp/map":
             cmap = msg.content
         if msg.properties:
             props = msg.properties
 
-        if opcode == OpCode.agent_locate:
+        if opcode == OpCode.agent_locate_req:
             self._handleAgentLocateMsg( msg, cmap, props, version, _direct )
-        elif opcode == OpCode.get_query:
+        elif opcode == OpCode.query_req:
             self._handleQueryMsg( msg, cmap, props, version, _direct )
         elif opcode == OpCode.method_req:
             self._handleMethodReqMsg(msg, cmap, props, version, _direct)
-        elif opcode == OpCode.cancel_subscription:
-            logging.warning("!!! CANCEL_SUB TBD !!!")
-        elif opcode == OpCode.create_subscription:
-            logging.warning("!!! CREATE_SUB TBD !!!")
-        elif opcode == OpCode.renew_subscription:
-            logging.warning("!!! RENEW_SUB TBD !!!")
-        elif opcode == OpCode.schema_query:
-            logging.warning("!!! SCHEMA_QUERY TBD !!!")
+        elif opcode == OpCode.subscribe_req:
+            self._handleSubscribeReqMsg(msg, cmap, props, version, _direct)
+        elif opcode == OpCode.subscribe_refresh_req:
+            self._handleResubscribeReqMsg(msg, cmap, props, version, _direct)
+        elif opcode == OpCode.subscribe_cancel_ind:
+            self._handleUnsubscribeReqMsg(msg, cmap, props, version, _direct)
         elif opcode == OpCode.noop:
             logging.debug("No-op msg received.")
         else:
@@ -536,18 +678,28 @@ class Agent(Thread):
         """
         logging.debug("_handleAgentLocateMsg")
 
-        reply = True
-        if "method" in props and props["method"] == "request":
-            query = cmap.get(MsgKey.query)
-            if query is not None:
-                # fake a QmfData containing my identifier for the query compare
-                tmpData = QmfData.create({QmfQuery.KEY_AGENT_NAME:
-                                              self.get_name()},
-                                         _object_id="my-name")
-                reply = QmfQuery.from_map(query).evaluate(tmpData)
+        reply = False
+        if props.get("method") == "request":
+            # if the message is addressed to me or wildcard, process it
+            if (msg.subject == "console.ind" or
+                msg.subject == "console.ind.locate" or
+                msg.subject == "console.ind.locate." + self.name):
+                pred = msg.content
+                if not pred:
+                    reply = True
+                elif isinstance(pred, type([])):
+                    # fake a QmfData containing my identifier for the query compare
+                    query = QmfQuery.create_predicate(QmfQuery.TARGET_AGENT, pred)
+                    tmpData = QmfData.create({QmfQuery.KEY_AGENT_NAME:
+                                                  self.get_name()},
+                                             _object_id="my-name")
+                    reply = query.evaluate(tmpData)
 
         if reply:
-            m = self._makeAgentIndMsg()
+            m = Message(id=QMF_APP_ID,
+                        properties={"method":"response",
+                                    "qmf.opcode":OpCode.agent_locate_rsp},
+                        content=self._makeAgentInfoBody())
             m.correlation_id = msg.correlation_id
             self._send_reply(m, msg.reply_to)
         else:
@@ -561,22 +713,25 @@ class Agent(Thread):
         logging.debug("_handleQueryMsg")
 
         if "method" in props and props["method"] == "request":
-            qmap = cmap.get(MsgKey.query)
-            if qmap:
-                query = QmfQuery.from_map(qmap)
+            if cmap:
+                try:
+                    query = QmfQuery.from_map(cmap)
+                except TypeError:
+                    logging.error("Invalid Query format: '%s'" % str(cmap))
+                    return
                 target = query.get_target()
                 if target == QmfQuery.TARGET_PACKAGES:
-                    self._queryPackages( msg, query )
+                    self._queryPackagesReply( msg, query )
                 elif target == QmfQuery.TARGET_SCHEMA_ID:
-                    self._querySchema( msg, query, _idOnly=True )
+                    self._querySchemaReply( msg, query, _idOnly=True )
                 elif target == QmfQuery.TARGET_SCHEMA:
-                    self._querySchema( msg, query)
+                    self._querySchemaReply( msg, query)
                 elif target == QmfQuery.TARGET_AGENT:
                     logging.warning("!!! @todo: Query TARGET=AGENT TBD !!!")
                 elif target == QmfQuery.TARGET_OBJECT_ID:
-                    self._queryData(msg, query, _idOnly=True)
+                    self._queryDataReply(msg, query, _idOnly=True)
                 elif target == QmfQuery.TARGET_OBJECT:
-                    self._queryData(msg, query)
+                    self._queryDataReply(msg, query)
                 else:
                     logging.warning("Unrecognized query target: '%s'" % str(target))
 
@@ -634,7 +789,159 @@ class Agent(Thread):
             self._work_q.put(WorkItem(WorkItem.METHOD_CALL, handle, param))
             self._work_q_put = True
 
-    def _queryPackages(self, msg, query):
+    def _handleSubscribeReqMsg(self, msg, cmap, props, version, _direct):
+        """
+        Process received Subscription Request
+        """
+        if "method" in props and props["method"] == "request":
+            query_map = cmap.get("_query")
+            interval = cmap.get("_interval")
+            duration = cmap.get("_duration")
+
+            try:
+                query = QmfQuery.from_map(query_map)
+            except TypeError:
+                logging.warning("Invalid query for subscription: %s" %
+                                str(query_map))
+                return
+
+            if isinstance(self, AgentExternal):
+                # param = SubscriptionParams(_ConsoleHandle(console_handle,
+                #                                           msg.reply_to),
+                #                            query,
+                #                            interval,
+                #                            duration,
+                #                            msg.user_id)
+                # self._work_q.put(WorkItem(WorkItem.SUBSCRIBE_REQUEST,
+                #                           msg.correlation_id, param))
+                # self._work_q_put = True
+                logging.error("External Subscription TBD")
+                return
+
+            # validate the query - only specific objects, or
+            # objects wildcard, are currently supported.
+            if (query.get_target() != QmfQuery.TARGET_OBJECT or
+                (query.get_selector() == QmfQuery.PREDICATE and
+                 query.get_predicate())):
+                logging.error("Subscriptions only support (wildcard) Object"
+                              " Queries.")
+                err = QmfData.create(
+                    {"reason": "Unsupported Query type for subscription.",
+                     "query": str(query.map_encode())})
+                m = Message(id=QMF_APP_ID,
+                            properties={"method":"response",
+                                        "qmf.opcode":OpCode.subscribe_rsp},
+                            correlation_id = msg.correlation_id,
+                            content={"_error": err.map_encode()})
+                self._send_reply(m, msg.reply_to)
+                return
+
+            if duration is None:
+                duration = self._default_duration
+            else:
+                try:
+                    duration = float(duration)
+                    if duration > self._max_duration:
+                        duration = self._max_duration
+                    elif duration < self._min_duration:
+                        duration = self._min_duration
+                except:
+                    logging.warning("Bad duration value: %s" % str(msg))
+                    duration = self._default_duration
+
+            if interval is None:
+                interval = self._default_interval
+            else:
+                try:
+                    interval = float(interval)
+                    if interval < self._min_interval:
+                        interval = self._min_interval
+                except:
+                    logging.warning("Bad interval value: %s" % str(msg))
+                    interval = self._default_interval
+
+            ss = _SubscriptionState(msg.reply_to,
+                                    msg.correlation_id,
+                                    query,
+                                    interval,
+                                    duration)
+            self._lock.acquire()
+            try:
+                sid = self._subscription_id
+                self._subscription_id += 1
+                ss.id = sid
+                self._subscriptions[sid] = ss
+                self._next_subscribe_event = None
+            finally:
+                self._lock.release()
+
+            sr_map = {"_subscription_id": sid,
+                      "_interval": interval,
+                      "_duration": duration}
+            m = Message(id=QMF_APP_ID,
+                        properties={"method":"response",
+                                   "qmf.opcode":OpCode.subscribe_rsp},
+                        correlation_id = msg.correlation_id,
+                        content=sr_map)
+            self._send_reply(m, msg.reply_to)
+
+
+
+    def _handleResubscribeReqMsg(self, msg, cmap, props, version, _direct):
+        """
+        Process received Renew Subscription Request
+        """
+        if props.get("method") == "request":
+            sid = cmap.get("_subscription_id")
+            if not sid:
+                logging.debug("Invalid subscription refresh msg: %s" %
+                              str(msg))
+                return
+
+            self._lock.acquire()
+            try:
+                ss = self._subscriptions.get(sid)
+                if not ss:
+                    logging.debug("Ignoring unknown subscription: %s" %
+                                  str(sid))
+                    return
+                duration = cmap.get("_duration")
+                if duration is not None:
+                    try:
+                        duration = float(duration)
+                        if duration > self._max_duration:
+                            duration = self._max_duration
+                        elif duration < self._min_duration:
+                            duration = self._min_duration
+                    except:
+                        logging.debug("Bad duration value: %s" % str(msg))
+                        duration = None  # use existing duration
+
+                ss.resubscribe(datetime.datetime.utcnow(), duration)
+
+            finally:
+                self._lock.release()
+
+
+    def _handleUnsubscribeReqMsg(self, msg, cmap, props, version, _direct):
+        """
+        Process received Cancel Subscription Request
+        """
+        if props.get("method") == "request":
+            sid = cmap.get("_subscription_id")
+            if not sid:
+                logging.warning("No subscription id supplied: %s" % msg)
+                return
+
+            self._lock.acquire()
+            try:
+                if sid in self._subscriptions:
+                    del self._subscriptions[sid]
+            finally:
+                self._lock.release()
+
+
+    def _queryPackagesReply(self, msg, query):
         """
         Run a query against the list of known packages
         """
@@ -646,58 +953,83 @@ class Agent(Thread):
                                          _object_id="_package")
                 if query.evaluate(qmfData):
                     pnames.append(name)
+
+            self._send_query_response(ContentType.schema_package,
+                                      msg.correlation_id,
+                                      msg.reply_to,
+                                      pnames)
         finally:
             self._lock.release()
 
-        self._send_query_response(make_subject(OpCode.data_ind),
-                                  MsgKey.package_info,
-                                  msg.correlation_id,
-                                  msg.reply_to,
-                                  pnames)
 
-    def _querySchema( self, msg, query, _idOnly=False ):
+    def _querySchemaReply( self, msg, query, _idOnly=False ):
         """
         """
         schemas = []
-        # if querying for a specific schema, do a direct lookup
-        if query.get_selector() == QmfQuery.ID:
-            found = None
-            self._lock.acquire()
-            try:
+
+        self._lock.acquire()
+        try:
+            # if querying for a specific schema, do a direct lookup
+            if query.get_selector() == QmfQuery.ID:
                 found = self._schema.get(query.get_id())
-            finally:
-                self._lock.release()
-            if found:
-                if _idOnly:
-                    schemas.append(query.get_id().map_encode())
-                else:
-                    schemas.append(found.map_encode())
-        else: # otherwise, evaluate all schema
-            self._lock.acquire()
-            try:
+                if found:
+                    if _idOnly:
+                        schemas.append(query.get_id().map_encode())
+                    else:
+                        schemas.append(found.map_encode())
+            else: # otherwise, evaluate all schema
                 for sid,val in self._schema.iteritems():
                     if query.evaluate(val):
                         if _idOnly:
                             schemas.append(sid.map_encode())
                         else:
                             schemas.append(val.map_encode())
-            finally:
-                self._lock.release()
+            if _idOnly:
+                msgkey = ContentType.schema_id
+            else:
+                msgkey = ContentType.schema_class
 
-        if _idOnly:
-            msgkey = MsgKey.schema_id
-        else:
-            msgkey = MsgKey.schema
-
-        self._send_query_response(make_subject(OpCode.data_ind),
-                                  msgkey,
-                                  msg.correlation_id,
-                                  msg.reply_to,
-                                  schemas)
+            self._send_query_response(msgkey,
+                                      msg.correlation_id,
+                                      msg.reply_to,
+                                      schemas)
+        finally:
+            self._lock.release()
 
 
-    def _queryData( self, msg, query, _idOnly=False ):
+    def _queryDataReply( self, msg, query, _idOnly=False ):
         """
+        """
+        # hold the (recursive) lock for the duration so the Agent
+        # won't send data that is currently being modified by the
+        # app.
+        self._lock.acquire()
+        try:
+            response = []
+            data_objs = self._queryData(query)
+            if _idOnly:
+                for obj in data_objs:
+                    response.append(obj.get_object_id())
+            else:
+                for obj in data_objs:
+                    response.append(obj.map_encode())
+
+            if _idOnly:
+                msgkey = ContentType.object_id
+            else:
+                msgkey = ContentType.data
+
+            self._send_query_response(msgkey,
+                                      msg.correlation_id,
+                                      msg.reply_to,
+                                      response)
+        finally:
+            self._lock.release()
+
+
+    def _queryData(self, query):
+        """
+        Return a list of QmfData objects that match a given query
         """
         data_objs = []
         # extract optional schema_id from target params
@@ -705,12 +1037,12 @@ class Agent(Thread):
         t_params = query.get_target_param()
         if t_params:
             sid = t_params.get(QmfData.KEY_SCHEMA_ID)
-        # if querying for a specific object, do a direct lookup
-        if query.get_selector() == QmfQuery.ID:
-            oid = query.get_id()
-            found = None
-            self._lock.acquire()
-            try:
+
+        self._lock.acquire()
+        try:
+            # if querying for a specific object, do a direct lookup
+            if query.get_selector() == QmfQuery.ID:
+                oid = query.get_id()
                 if sid and not sid.get_hash_string():
                     # wildcard schema_id match, check each schema
                     for name,db in self._described_data.iteritems():
@@ -718,11 +1050,9 @@ class Agent(Thread):
                             and name.get_package_name() == sid.get_package_name()):
                             found = db.get(oid)
                             if found:
-                                if _idOnly:
-                                    data_objs.append(oid)
-                                else:
-                                    data_objs.append(found.map_encode())
+                                data_objs.append(found)
                 else:
+                    found = None
                     if sid:
                         db = self._described_data.get(sid)
                         if db:
@@ -730,15 +1060,9 @@ class Agent(Thread):
                     else:
                         found = self._undescribed_data.get(oid)
                     if found:
-                        if _idOnly:
-                            data_objs.append(oid)
-                        else:
-                            data_objs.append(found.map_encode())
-            finally:
-                self._lock.release()
-        else: # otherwise, evaluate all data
-            self._lock.acquire()
-            try:
+                        data_objs.append(found)
+
+            else: # otherwise, evaluate all data
                 if sid and not sid.get_hash_string():
                     # wildcard schema_id match, check each schema
                     for name,db in self._described_data.iteritems():
@@ -746,10 +1070,7 @@ class Agent(Thread):
                             and name.get_package_name() == sid.get_package_name()):
                             for oid,data in db.iteritems():
                                 if query.evaluate(data):
-                                    if _idOnly:
-                                        data_objs.append(oid)
-                                    else:
-                                        data_objs.append(data.map_encode())
+                                    data_objs.append(data)
                 else:
                     if sid:
                         db = self._described_data.get(sid)
@@ -759,23 +1080,28 @@ class Agent(Thread):
                     if db:
                         for oid,data in db.iteritems():
                             if query.evaluate(data):
-                                if _idOnly:
-                                    data_objs.append(oid)
-                                else:
-                                    data_objs.append(data.map_encode())
-            finally:
-                self._lock.release()
+                                data_objs.append(data)
+        finally:
+            self._lock.release()
 
-        if _idOnly:
-            msgkey = MsgKey.object_id
-        else:
-            msgkey = MsgKey.data_obj
+        return data_objs
 
-        self._send_query_response(make_subject(OpCode.data_ind),
-                                  msgkey,
-                                  msg.correlation_id,
-                                  msg.reply_to,
-                                  data_objs)
+
+
+  ##==============================================================================
+  ## EXTERNAL DATABASE AGENT
+  ##==============================================================================
+
+class AgentExternal(Agent):
+    """
+    An Agent which uses an external management database.
+    """
+    def __init__(self, name, _domain=None, _notifier=None,
+                 _heartbeat_interval=30, _max_msg_size=0, _capacity=10):
+        super(AgentExternal, self).__init__(name, _domain, _notifier,
+                                            _heartbeat_interval,
+                                            _max_msg_size, _capacity)
+        logging.error("AgentExternal TBD")
 
 
 
@@ -823,9 +1149,11 @@ class QmfAgentData(QmfData):
                                            _schema_id=schema_id, _const=False)
         self._agent = agent
         self._validated = False
+        self._modified = True
 
     def destroy(self): 
         self._dtime = long(time.time() * 1000)
+        self._touch()
         # @todo: publish change
 
     def is_deleted(self): 
@@ -833,6 +1161,7 @@ class QmfAgentData(QmfData):
 
     def set_value(self, _name, _value, _subType=None):
         super(QmfAgentData, self).set_value(_name, _value, _subType)
+        self._touch()
         # @todo: publish change
 
     def inc_value(self, name, delta=1):
@@ -849,6 +1178,7 @@ class QmfAgentData(QmfData):
         """ subtract the delta from the property """
         # @todo: need to take write-lock
         logging.error(" TBD!!!")
+        self._touch()
 
     def validate(self):
         """
@@ -867,6 +1197,13 @@ class QmfAgentData(QmfData):
                 else:
                     raise Exception("Required property '%s' not present." % name)
         self._validated = True
+
+    def _touch(self):
+        """
+        Mark this object as modified.  Used to force a publish of this object
+        if on subscription.
+        """
+        self._modified = True
 
 
 

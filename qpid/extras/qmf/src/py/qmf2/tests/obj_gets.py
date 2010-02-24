@@ -54,7 +54,7 @@ class _agentApp(Thread):
         self.broker_url = broker_url
         self.agent = Agent(name,
                            _notifier=self.notifier,
-                           _heartbeat_interval=heartbeat)
+                           heartbeat_interval=heartbeat)
 
         # Management Database 
         # - two different schema packages, 

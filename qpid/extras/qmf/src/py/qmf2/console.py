@@ -24,14 +24,14 @@ import time
 import datetime
 import Queue
 from threading import Thread, Event
-from threading import Lock
+from threading import RLock
 from threading import currentThread
 from threading import Condition
 
 from qpid.messaging import Connection, Message, Empty, SendError
 
-from common import (make_subject, parse_subject, OpCode, QmfQuery, Notifier,
-                    MsgKey, QmfData, QmfAddress, SchemaClass, SchemaClassId,
+from common import (QMF_APP_ID, OpCode, QmfQuery, Notifier, ContentType,
+                    QmfData, QmfAddress, SchemaClass, SchemaClassId,
                     SchemaEventClass, SchemaObjectClass, WorkItem,
                     SchemaMethod, QmfEvent, timedelta_to_secs)
 
@@ -141,6 +141,7 @@ class _AsyncMailbox(_Mailbox):
         console._lock.acquire()
         try:
             console._async_mboxes[self.cid] = self
+            console._next_mbox_expire = None
         finally:
             console._lock.release()
 
@@ -177,7 +178,7 @@ class _QueryMailbox(_AsyncMailbox):
     def __init__(self, console, 
                  agent_name,
                  context,
-                 target, msgkey,
+                 target,
                  _timeout=None):
         """
         Invoked by application thread.
@@ -186,7 +187,6 @@ class _QueryMailbox(_AsyncMailbox):
                                             _timeout)
         self.agent_name = agent_name
         self.target = target
-        self.msgkey = msgkey
         self.context = context
         self.result = []
 
@@ -195,11 +195,8 @@ class _QueryMailbox(_AsyncMailbox):
         Process query response messages delivered to this mailbox.
         Invoked by Console Management thread only.
         """
-        done = False
-        objects = reply.content.get(self.msgkey)
-        if not objects:
-            done = True
-        else:
+        objects = reply.content
+        if isinstance(objects, type([])):
             # convert from map to native types if needed
             if self.target == QmfQuery.TARGET_SCHEMA_ID:
                 for sid_map in objects:
@@ -237,8 +234,7 @@ class _QueryMailbox(_AsyncMailbox):
                 # no conversion needed.
                 self.result += objects
 
-        if done:
-            # create workitem
+        if not "partial" in reply.properties:
             # logging.error("QUERY COMPLETE for %s" % str(self.context))
             wi = WorkItem(WorkItem.QUERY_COMPLETE, self.context, self.result)
             self.console._work_q.put(wi)
@@ -278,8 +274,8 @@ class _SchemaPrefetchMailbox(_AsyncMailbox):
         Process schema response messages.
         """
         done = False
-        schemas = reply.content.get(MsgKey.schema)
-        if schemas:
+        schemas = reply.content
+        if schemas and isinstance(schemas, type([])):
             for schema_map in schemas:
                 # extract schema id, convert based on schema type
                 sid_map = schema_map.get(SchemaClass.KEY_SCHEMA_ID)
@@ -319,8 +315,8 @@ class _MethodMailbox(_AsyncMailbox):
         Invoked by Console Management thread only.
         """
 
-        _map = reply.content.get(MsgKey.method)
-        if not _map:
+        _map = reply.content
+        if not _map or not isinstance(_map, type({})):
             logging.error("Invalid method call reply message")
             result = None
         else:
@@ -352,6 +348,128 @@ class _MethodMailbox(_AsyncMailbox):
         self.console._work_q_put = True
 
         self.destroy()
+
+
+
+class _SubscriptionMailbox(_AsyncMailbox):
+    """
+    A Mailbox for a single subscription.
+    """
+    def __init__(self, console, lifetime, context, agent):
+        """
+        Invoked by application thread.
+        """
+        super(_SubscriptionMailbox, self).__init__(console, lifetime)
+        self.cv = Condition()
+        self.data = []
+        self.result = []
+        self.context = context
+        self.agent_name = agent.get_name()
+        self.agent_subscription_id = None          # from agent
+
+    def deliver(self, msg):
+        """
+        """
+        opcode = msg.properties.get("qmf.opcode")
+        if (opcode == OpCode.subscribe_rsp or
+            opcode == OpCode.subscribe_refresh_rsp):
+            #
+            # sync only - just deliver the msg
+            #
+            self.cv.acquire()
+            try:
+                self.data.append(msg)
+                # if was empty, notify waiters
+                if len(self.data) == 1:
+                    self.cv.notify()
+            finally:
+                self.cv.release()
+            return
+
+            # sid = msg.content.get("_subscription_id")
+            # lifetime = msg.content.get("_duration")
+            # error = msg.content.get("_error")
+            # sp = SubscribeParams(sid,
+            #                      msg.content.get("_interval"),
+            #                      lifetime, error)
+            # if sid and self.subscription_id is None:
+            #     self.subscription_id = sid
+            # if lifetime:
+            #     self.console._lock.acquire()
+            #     try:
+            #         self.expiration_date = (datetime.datetime.utcnow() +
+            #                                 datetime.timedelta(seconds=lifetime))
+            #     finally:
+            #         self.console._lock.release()
+
+            # if self.waiting:
+            #     self.cv.acquire()
+            #     try:
+            #         self.data.append(sp)
+            #         # if was empty, notify waiters
+            #         if len(self._data) == 1:
+            #             self._cv.notify()
+            #     finally:
+            #         self._cv.release()
+            # else:
+            #     if opcode == OpCode.subscribe_rsp:
+            #         wi = WorkItem(WorkItem.SUBSCRIBE_RESPONSE,
+            #                       self.context, sp)
+            #     else:
+            #         wi = WorkItem(WorkItem.RESUBSCRIBE_RESPONSE,
+            #                       self.context, sp)
+            #     self.console._work_q.put(wi)
+            #     self.console._work_q_put = True
+            #     if error:
+            #         self.destroy()
+
+        agent_name = msg.properties.get("qmf.agent")
+        if not agent_name:
+            logging.warning("Ignoring data_ind - no agent name given: %s" %
+                            msg)
+            return
+        agent = self.console.get_agent(agent_name)
+        if not agent:
+            logging.warning("Ignoring data_ind - unknown agent '%s'" %
+                            agent_name)
+            return
+
+        objects = msg.content
+        for obj_map in objects:
+            obj = QmfConsoleData(map_=obj_map, agent=agent)
+            # start fetch of schema if not known
+            sid = obj.get_schema_class_id()
+            if sid:
+                self.console._prefetch_schema(sid, agent)
+            self.result.append(obj)
+
+        if not "partial" in msg.properties:
+            wi = WorkItem(WorkItem.SUBSCRIBE_INDICATION, self.context, self.result)
+            self.result = []
+            self.console._work_q.put(wi)
+            self.console._work_q_put = True
+
+    def fetch(self, timeout=None):
+        """
+        Get one data item from a mailbox, with timeout.
+        Invoked by application thread.
+        """
+        self.cv.acquire()
+        try:
+            if len(self.data) == 0:
+                self.cv.wait(timeout)
+            if len(self.data):
+                return self.data.pop(0)
+            return None
+        finally:
+            self.cv.release()
+
+    def expire(self):
+        """ The subscription expired.
+        """
+        self.destroy()
+
+
 
 
 
@@ -481,8 +599,8 @@ class QmfConsoleData(QmfData):
             logging.debug("Agent method req wait timed-out.")
             return None
 
-        _map = replyMsg.content.get(MsgKey.method)
-        if not _map:
+        _map = replyMsg.content
+        if not _map or not isinstance(_map, type({})):
             logging.error("Invalid method call reply message")
             return None
 
@@ -650,8 +768,8 @@ class Agent(object):
             logging.debug("Agent method req wait timed-out.")
             return None
 
-        _map = replyMsg.content.get(MsgKey.method)
-        if not _map:
+        _map = replyMsg.content
+        if not _map or not isinstance(_map, type({})):
             logging.error("Invalid method call reply message")
             return None
 
@@ -676,19 +794,65 @@ class Agent(object):
     def _send_query(self, query, correlation_id=None):
         """
         """
-        msg = Message(properties={"method":"request",
-                                   "qmf.subject":make_subject(OpCode.get_query)},
-                      content={MsgKey.query: query.map_encode()})
+        msg = Message(id=QMF_APP_ID,
+                      properties={"method":"request",
+                                  "qmf.opcode":OpCode.query_req},
+                      content=query.map_encode())
         self._send_msg( msg, correlation_id )
 
 
     def _send_method_req(self, mr_map, correlation_id=None):
         """
         """
-        msg = Message(properties={"method":"request",
-                                  "qmf.subject":make_subject(OpCode.method_req)},
+        msg = Message(id=QMF_APP_ID,
+                      properties={"method":"request",
+                                  "qmf.opcode":OpCode.method_req},
                       content=mr_map)
         self._send_msg( msg, correlation_id )
+
+    def _send_subscribe_req(self, query, correlation_id, _interval=None,
+                            _lifetime=None):
+        """
+        """
+        sr_map = {"_query":query.map_encode()}
+        if _interval is not None:
+            sr_map["_interval"] = _interval
+        if _lifetime is not None:
+            sr_map["_duration"] = _lifetime
+
+        msg = Message(id=QMF_APP_ID,
+                      properties={"method":"request",
+                                  "qmf.opcode":OpCode.subscribe_req},
+                      content=sr_map)
+        self._send_msg(msg, correlation_id)
+
+
+    def _send_resubscribe_req(self, correlation_id,
+                              subscription_id,
+                              _lifetime=None):
+        """
+        """
+        sr_map = {"_subscription_id":subscription_id}
+        if _lifetime is not None:
+            sr_map["_duration"] = _lifetime
+
+        msg = Message(id=QMF_APP_ID,
+                      properties={"method":"request",
+                                  "qmf.opcode":OpCode.subscribe_refresh_req},
+                      content=sr_map)
+        self._send_msg(msg, correlation_id)
+
+
+    def _send_unsubscribe_ind(self, correlation_id, subscription_id):
+        """
+        """
+        sr_map = {"_subscription_id":subscription_id}
+
+        msg = Message(id=QMF_APP_ID,
+                      properties={"method":"request",
+                                  "qmf.opcode":OpCode.subscribe_cancel_ind},
+                      content=sr_map)
+        self._send_msg(msg, correlation_id)
 
 
   ##==============================================================================
@@ -714,6 +878,36 @@ class MethodResult(object):
         if self._out_args:
             arg = self._out_args.get(name)
         return arg
+
+
+
+  ##==============================================================================
+  ## SUBSCRIPTION
+  ##==============================================================================
+
+class SubscribeParams(object):
+    """ Represents a standing subscription for this console.
+    """
+    def __init__(self, sid, interval, duration, _error=None):
+        self._sid = sid
+        self._interval = interval
+        self._duration = duration
+        self._error = _error
+
+    def succeeded(self):
+        return self._error is None
+
+    def get_error(self):
+        return self._error
+
+    def get_subscription_id(self):
+        return self._sid
+
+    def get_publish_interval(self):
+        return self._interval
+
+    def get_duration(self):
+        return self._duration
 
 
   ##==============================================================================
@@ -753,7 +947,7 @@ class Console(Thread):
         self._domain = _domain
         self._address = QmfAddress.direct(self._name, self._domain)
         self._notifier = notifier
-        self._lock = Lock()
+        self._lock = RLock()
         self._conn = None
         self._session = None
         # dict of "agent-direct-address":class Agent entries
@@ -766,6 +960,7 @@ class Console(Thread):
         self._agent_discovery_filter = None
         self._reply_timeout = reply_timeout
         self._agent_timeout = agent_timeout
+        self._subscribe_timeout = 300  # @todo: parameterize
         self._next_agent_expire = None
         self._next_mbox_expire = None
         # for passing WorkItems to the application
@@ -775,18 +970,6 @@ class Console(Thread):
         self._correlation_id = long(time.time())  # pseudo-randomize
         self._post_office = {} # indexed by cid
         self._async_mboxes = {} # indexed by cid, used to expire them
-
-        ## Old stuff below???
-        #self._broker_list = []
-        #self.impl = qmfengine.Console()
-        #self._event = qmfengine.ConsoleEvent()
-        ##self._cv = Condition()
-        ##self._sync_count = 0
-        ##self._sync_result = None
-        ##self._select = {}
-        ##self._cb_cond = Condition()
-
-
 
     def destroy(self, timeout=None):
         """
@@ -800,8 +983,6 @@ class Console(Thread):
         if self._conn:
             self.remove_connection(self._conn, timeout)
         logging.debug("Console Destroyed")
-
-
 
     def add_connection(self, conn):
         """
@@ -934,10 +1115,11 @@ class Console(Thread):
         cid = mbox.get_address()
 
         query = QmfQuery.create_id(QmfQuery.TARGET_AGENT, name)
-        msg = Message(subject="console.ind.locate." + name,
+        msg = Message(id=QMF_APP_ID,
+                      subject="console.ind.locate." + name,
                       properties={"method":"request",
-                                  "qmf.subject":make_subject(OpCode.agent_locate)},
-                      content={MsgKey.query: query.map_encode()})
+                                  "qmf.opcode":OpCode.agent_locate_req},
+                      content=query._predicate)
         msg.reply_to = str(self._address)
         msg.correlation_id = str(cid)
         logging.debug("Sending Agent Locate (%s)" % time.time())
@@ -995,23 +1177,13 @@ class Console(Thread):
     def do_query(self, agent, query, _reply_handle=None, _timeout=None ):
         """
         """
-        query_keymap={QmfQuery.TARGET_PACKAGES: MsgKey.package_info,
-                      QmfQuery.TARGET_OBJECT_ID: MsgKey.object_id,
-                      QmfQuery.TARGET_SCHEMA_ID: MsgKey.schema_id,
-                      QmfQuery.TARGET_SCHEMA: MsgKey.schema,
-                      QmfQuery.TARGET_OBJECT: MsgKey.data_obj,
-                      QmfQuery.TARGET_AGENT: MsgKey.agent_info}
-
         target = query.get_target()
-        msgkey = query_keymap.get(target)
-        if not msgkey:
-            raise Exception("Invalid target for query: %s" % str(query))
 
         if _reply_handle is not None:
             mbox = _QueryMailbox(self,
                                  agent.get_name(),
                                  _reply_handle,
-                                 target, msgkey,
+                                 target,
                                  _timeout)
         else:
             mbox = _SyncMailbox(self)
@@ -1045,9 +1217,8 @@ class Console(Thread):
                 logging.debug("Query wait timed-out.")
                 break
 
-            objects = reply.content.get(msgkey)
-            if not objects:
-                # last response is empty
+            objects = reply.content
+            if not objects or not isinstance(objects, type([])):
                 break
 
             # convert from map to native types if needed
@@ -1081,10 +1252,142 @@ class Console(Thread):
                 # no conversion needed.
                 response += objects
 
+            if not "partial" in reply.properties:
+                # reply not broken up over multiple msgs
+                break
+
             now = datetime.datetime.utcnow()
 
         mbox.destroy()
         return response
+
+
+    def create_subscription(self, agent, query, console_handle,
+                            _interval=None, _duration=None,
+                            _reply_handle=None, _timeout=None):
+        if not _duration:
+            _duration = self._subscribe_timeout
+
+        if _reply_handle is not None:
+            assert(False)  # async TBD
+        else:
+            mbox = _SubscriptionMailbox(self, _duration, console_handle, agent)
+
+        cid = mbox.get_address()
+
+        try:
+            logging.debug("Sending Subscribe to Agent (%s)" % time.time())
+            agent._send_subscribe_req(query, cid, _interval, _duration)
+        except SendError, e:
+            logging.error(str(e))
+            mbox.destroy()
+            return None
+
+        if _reply_handle is not None:
+            return True
+
+        # wait for reply
+        if _timeout is None:
+            _timeout = self._reply_timeout
+
+        logging.debug("Waiting for response to subscription (%s)" % _timeout)
+        # @todo: what if mbox expires here?
+        replyMsg = mbox.fetch(_timeout)
+
+        if not replyMsg:
+            logging.debug("Subscription request wait timed-out.")
+            mbox.destroy()
+            return None
+
+        error = replyMsg.content.get("_error")
+        if error:
+            mbox.destroy()
+            try:
+                e_map = QmfData.from_map(error)
+            except TypeError:
+                e_map = QmfData.create({"error":"Unknown error"})
+            return SubscribeParams(None, None, None, e_map)
+
+        mbox.agent_subscription_id = replyMsg.content.get("_subscription_id")
+        return SubscribeParams(mbox.get_address(),
+                               replyMsg.content.get("_interval"),
+                               replyMsg.content.get("_duration"),
+                               None)
+
+    def refresh_subscription(self, subscription_id,
+                             _duration=None,
+                             _reply_handle=None, _timeout=None):
+        if _reply_handle is not None:
+            assert(False)  # async TBD
+
+        mbox = self._get_mailbox(subscription_id)
+        if not mbox:
+            logging.warning("Subscription %s not found." % subscription_id)
+            return None
+
+        agent = self.get_agent(mbox.agent_name)
+        if not agent:
+            logging.warning("Subscription %s agent %s not found." %
+                            (mbox.agent_name, subscription_id))
+            return None
+
+        try:
+            logging.debug("Sending Subscribe to Agent (%s)" % time.time())
+            agent._send_resubscribe_req(subscription_id,
+                                        mbox.agent_subscription_id,
+                                        _duration)
+        except SendError, e:
+            logging.error(str(e))
+            # @todo ???? mbox.destroy()
+            return None
+
+        if _reply_handle is not None:
+            return True
+
+        # wait for reply
+        if _timeout is None:
+            _timeout = self._reply_timeout
+
+        logging.debug("Waiting for response to subscription (%s)" % _timeout)
+        replyMsg = mbox.fetch(_timeout)
+
+        if not replyMsg:
+            logging.debug("Subscription request wait timed-out.")
+            # @todo???? mbox.destroy()
+            return None
+
+        error = replyMsg.content.get("_error")
+        if error:
+            # @todo mbox.destroy()
+            try:
+                e_map = QmfData.from_map(error)
+            except TypeError:
+                e_map = QmfData.create({"error":"Unknown error"})
+            return SubscribeParams(None, None, None, e_map)
+
+        return SubscribeParams(mbox.get_address(),
+                               replyMsg.content.get("_interval"),
+                               replyMsg.content.get("_duration"),
+                               None)
+
+    def cancel_subscription(self, subscription_id):
+        """
+        """
+        mbox = self._get_mailbox(subscription_id)
+        if not mbox:
+            return None
+
+        agent = self.get_agent(mbox.agent_name)
+        if agent:
+            try:
+                logging.debug("Sending UnSubscribe to Agent (%s)" % time.time())
+                agent._send_unsubscribe_ind(subscription_id,
+                                            mbox.agent_subscription_id)
+            except SendError, e:
+                logging.error(str(e))
+
+        mbox.destroy()
+
 
     def _wake_thread(self):
         """
@@ -1092,10 +1395,11 @@ class Console(Thread):
         sleep.
         """
         logging.debug("Sending noop to wake up [%s]" % self._address)
-        msg = Message(properties={"method":"request",
-                                  "qmf.subject":make_subject(OpCode.noop)},
+        msg = Message(id=QMF_APP_ID,
                       subject=self._name,
-                      content={"noop":"noop"})
+                      properties={"method":"request",
+                                  "qmf.opcode":OpCode.noop},
+                      content={})
         try:
             self._direct_sender.send( msg, sync=True )
         except SendError, e:
@@ -1152,9 +1456,17 @@ class Console(Thread):
                 # to expire, or a mailbox requrest to time out
                 now = datetime.datetime.utcnow()
                 next_expire = self._next_agent_expire
-                if (self._next_mbox_expire and
-                    self._next_mbox_expire < next_expire):
-                    next_expire = self._next_mbox_expire
+
+                # the mailbox expire flag may be cleared by the
+                # app thread(s)
+                self._lock.acquire()
+                try:
+                    if (self._next_mbox_expire and
+                        self._next_mbox_expire < next_expire):
+                        next_expire = self._next_mbox_expire
+                finally:
+                    self._lock.release()
+
                 if next_expire > now:
                     timeout = timedelta_to_secs(next_expire - now)
                     try:
@@ -1268,13 +1580,14 @@ class Console(Thread):
         """
         PRIVATE: Process a message received from an Agent
         """
-        logging.debug( "Message received from Agent! [%s]" % msg )
-        try:
-            version,opcode = parse_subject(msg.properties.get("qmf.subject"))
-            # @todo: deal with version mismatch!!!
-        except:
+        #logging.debug( "Message received from Agent! [%s]" % msg )
+        #logging.error( "Message received from Agent! [%s]" % msg )
+
+        opcode = msg.properties.get("qmf.opcode")
+        if not opcode:
             logging.error("Ignoring unrecognized message '%s'" % msg)
             return
+        version = 2 # @todo: fix me
 
         cmap = {}; props = {}
         if msg.content_type == "amqp/map":
@@ -1282,20 +1595,21 @@ class Console(Thread):
         if msg.properties:
             props = msg.properties
 
-        if opcode == OpCode.agent_ind:
+        if opcode == OpCode.agent_heartbeat_ind:
             self._handle_agent_ind_msg( msg, cmap, version, _direct )
-        elif opcode == OpCode.data_ind:
-            self._handle_data_ind_msg(msg, cmap, version, _direct)
-        elif opcode == OpCode.event_ind:
-            self._handle_event_ind_msg(msg, cmap, version, _direct)
-        elif opcode == OpCode.managed_object:
-            logging.warning("!!! managed_object TBD !!!")
-        elif opcode == OpCode.object_ind:
-            logging.warning("!!! object_ind TBD !!!")
-        elif opcode == OpCode.response:
+        elif opcode == OpCode.agent_locate_rsp:
+            self._handle_agent_ind_msg( msg, cmap, version, _direct )
+        elif opcode == OpCode.query_rsp:
             self._handle_response_msg(msg, cmap, version, _direct)
-        elif opcode == OpCode.schema_ind:
-            logging.warning("!!! schema_ind TBD !!!")
+        elif opcode == OpCode.subscribe_rsp:
+            self._handle_response_msg(msg, cmap, version, _direct)
+        elif opcode == OpCode.method_rsp:
+            self._handle_response_msg(msg, cmap, version, _direct)
+        elif opcode == OpCode.data_ind:
+            if msg.correlation_id:
+                self._handle_response_msg(msg, cmap, version, _direct)
+            else:
+                self._handle_indication_msg(msg, cmap, version, _direct)
         elif opcode == OpCode.noop:
              logging.debug("No-op msg received.")
         else:
@@ -1309,7 +1623,7 @@ class Console(Thread):
         """
         logging.debug("_handle_agent_ind_msg '%s' (%s)" % (msg, time.time()))
 
-        ai_map = cmap.get(MsgKey.agent_info)
+        ai_map = msg.content
         if not ai_map or not isinstance(ai_map, type({})):
             logging.warning("Bad agent-ind message received: '%s'" % msg)
             return
@@ -1359,29 +1673,10 @@ class Console(Thread):
             logging.debug("waking waiters for correlation id %s" % msg.correlation_id)
             mbox.deliver(msg)
 
-    def _handle_data_ind_msg(self, msg, cmap, version, direct):
-        """
-        Process a received data-ind message.
-        """
-        logging.debug("_handle_data_ind_msg '%s' (%s)" % (msg, time.time()))
-
-        mbox = self._get_mailbox(msg.correlation_id)
-        if not mbox:
-            logging.debug("Data indicate received with unknown correlation_id"
-                          " msg='%s'" % str(msg)) 
-            return
-
-        # wake up all waiters
-        logging.debug("waking waiters for correlation id %s" %
-                      msg.correlation_id)
-        mbox.deliver(msg)
-
-
     def _handle_response_msg(self, msg, cmap, version, direct):
         """
         Process a received data-ind message.
         """
-        # @todo code replication - clean me.
         logging.debug("_handle_response_msg '%s' (%s)" % (msg, time.time()))
 
         mbox = self._get_mailbox(msg.correlation_id)
@@ -1394,19 +1689,22 @@ class Console(Thread):
         logging.debug("waking waiters for correlation id %s" % msg.correlation_id)
         mbox.deliver(msg)
 
-    def _handle_event_ind_msg(self, msg, cmap, version, _direct):
-        ei_map = cmap.get(MsgKey.event)
-        if not ei_map or not isinstance(ei_map, type({})):
+    def _handle_indication_msg(self, msg, cmap, version, _direct):
+
+        aname = msg.properties.get("qmf.agent")
+        if not aname:
+            logging.debug("No agent name field in indication message.")
+            return
+
+        content_type = msg.properties.get("qmf.content")
+        if (content_type != ContentType.event or
+            not isinstance(msg.content, type([]))):
             logging.warning("Bad event indication message received: '%s'" % msg)
             return
 
-        aname = ei_map.get("_name")
-        emap = ei_map.get("_event")
-        if not aname:
-            logging.debug("No '_name' field in event indication message.")
-            return
-        if not emap:
-            logging.debug("No '_event' field in event indication message.")
+        emap = msg.content[0]
+        if not isinstance(emap, type({})):
+            logging.debug("Invalid event body in indication message: '%s'" % msg)
             return
 
         agent = None
@@ -1439,13 +1737,13 @@ class Console(Thread):
         """
         Check all async mailboxes for outstanding requests that have expired.
         """
-        now = datetime.datetime.utcnow()
-        if self._next_mbox_expire and now < self._next_mbox_expire:
-            return
-        expired_mboxes = []
-        self._next_mbox_expire = None
         self._lock.acquire()
         try:
+            now = datetime.datetime.utcnow()
+            if self._next_mbox_expire and now < self._next_mbox_expire:
+                return
+            expired_mboxes = []
+            self._next_mbox_expire = None
             for mbox in self._async_mboxes.itervalues():
                 if now >= mbox.expiration_date:
                     expired_mboxes.append(mbox)
