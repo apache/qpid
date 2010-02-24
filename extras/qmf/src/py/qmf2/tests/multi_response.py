@@ -60,8 +60,8 @@ class _agentApp(Thread):
         self.broker_url = broker_url
         self.agent = Agent(name,
                            _notifier=self.notifier,
-                           _heartbeat_interval=heartbeat,
-                           _max_msg_size=_MAX_OBJS_PER_MSG)
+                           heartbeat_interval=heartbeat,
+                           max_msg_size=_MAX_OBJS_PER_MSG)
 
         # Dynamically construct a management database
         for i in range(self.schema_count):
