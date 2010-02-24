@@ -894,7 +894,7 @@ class Agent(Thread):
         if props.get("method") == "request":
             sid = cmap.get("_subscription_id")
             if not sid:
-                logging.debug("Invalid subscription refresh msg: %s" %
+                logging.error("Invalid subscription refresh msg: %s" %
                               str(msg))
                 return
 
@@ -902,7 +902,7 @@ class Agent(Thread):
             try:
                 ss = self._subscriptions.get(sid)
                 if not ss:
-                    logging.debug("Ignoring unknown subscription: %s" %
+                    logging.error("Ignoring unknown subscription: %s" %
                                   str(sid))
                     return
                 duration = cmap.get("_duration")
@@ -914,13 +914,27 @@ class Agent(Thread):
                         elif duration < self._min_duration:
                             duration = self._min_duration
                     except:
-                        logging.debug("Bad duration value: %s" % str(msg))
+                        logging.error("Bad duration value: %s" % str(msg))
                         duration = None  # use existing duration
 
                 ss.resubscribe(datetime.datetime.utcnow(), duration)
 
+                new_duration = ss.duration
+                new_interval = ss.interval
+
             finally:
                 self._lock.release()
+
+
+            sr_map = {"_subscription_id": sid,
+                      "_interval": new_interval,
+                      "_duration": new_duration}
+            m = Message(id=QMF_APP_ID,
+                        properties={"method":"response",
+                                   "qmf.opcode":OpCode.subscribe_refresh_rsp},
+                        correlation_id = msg.correlation_id,
+                        content=sr_map)
+            self._send_reply(m, msg.reply_to)
 
 
     def _handleUnsubscribeReqMsg(self, msg, cmap, props, version, _direct):
