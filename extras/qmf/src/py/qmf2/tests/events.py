@@ -58,7 +58,7 @@ class _agentApp(Thread):
         self.notifier = _testNotifier()
         self.agent = Agent(name,
                            _notifier=self.notifier,
-                           _heartbeat_interval=heartbeat)
+                           heartbeat_interval=heartbeat)
 
         # Dynamically construct a management database
 

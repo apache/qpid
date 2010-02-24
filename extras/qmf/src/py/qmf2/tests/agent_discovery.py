@@ -52,8 +52,8 @@ class _agentApp(Thread):
         self.broker_url = broker_url
         self.notifier = _testNotifier()
         self.agent = qmf2.agent.Agent(name,
-                           _notifier=self.notifier,
-                           _heartbeat_interval=heartbeat)
+                                      _notifier=self.notifier,
+                                      heartbeat_interval=heartbeat)
         # No database needed for this test
         self.running = False
         self.ready = Event()
