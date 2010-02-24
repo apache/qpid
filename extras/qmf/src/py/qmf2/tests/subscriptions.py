@@ -262,9 +262,9 @@ class BaseTest(unittest.TestCase):
             subscriptions.append([sp, 0])
             index += 1
 
-        # now wait for the duration + interval + 1 and count the updates
+        # now wait for the (2 * interval) and count the updates
         r_count = 0
-        while self.notifier.wait_for_work(10 + 2 + 1):
+        while self.notifier.wait_for_work(4):
             wi = self.console.get_next_workitem(timeout=0)
             while wi is not None:
                 r_count += 1
@@ -336,10 +336,10 @@ class BaseTest(unittest.TestCase):
             subscriptions.append([sp, 0])
             index += 1
 
-        # now wait for all subscriptions to expire (duration + interval + 1 for
-        # luck)
+        # now wait for all subscriptions to expire (2x interval w/o
+        # indications)
         r_count = 0
-        while self.notifier.wait_for_work(10 + 2 + 1):
+        while self.notifier.wait_for_work(4):
             wi = self.console.get_next_workitem(timeout=0)
             while wi is not None:
                 r_count += 1
@@ -407,10 +407,10 @@ class BaseTest(unittest.TestCase):
             subscriptions.append([sp, 0])
             index += 1
 
-        # now wait for all subscriptions to expire (duration + interval + 1 for
-        # luck)
+        # now wait for all subscriptions to expire (2x interval w/o
+        # indications)
         r_count = 0
-        while self.notifier.wait_for_work(10 + 2 + 1):
+        while self.notifier.wait_for_work(4):
             wi = self.console.get_next_workitem(timeout=0)
             while wi is not None:
                 r_count += 1
@@ -439,7 +439,145 @@ class BaseTest(unittest.TestCase):
         #for ii in range(len(subscriptions)):
         #    self.assertTrue(subscriptions[ii][1] == 5)
 
+        self.console.destroy(10)
 
+
+
+    def test_sync_refresh(self):
+        # create console
+        # find one agent
+        # subscribe to changes to any object in package1/class1
+        # after 3 data indications, refresh
+        # verify > 5 more data indications received
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        # query to match object "p2c1_key2" in schema package2/class1
+        sid = SchemaClassId.create("package2", "class1")
+        query = QmfQuery.create_id_object("p2c1_key2", sid)
+
+        agent_app = self.agents[0]
+        aname = agent_app.agent.get_name()
+        agent = self.console.find_agent(aname, timeout=3)
+        self.assertTrue(agent and agent.get_name() == aname)
+
+        # setup subscription on agent
+
+        sp = self.console.create_subscription(agent,
+                                              query,
+                                              "my-handle")
+        self.assertTrue(isinstance(sp, qmf2.console.SubscribeParams))
+        self.assertTrue(sp.succeeded())
+        self.assertTrue(sp.get_error() == None)
+
+        # refresh after three subscribe indications, count all
+        # indications to verify refresh worked
+        r_count = 0
+        while self.notifier.wait_for_work(4):
+            wi = self.console.get_next_workitem(timeout=0)
+            while wi is not None:
+                r_count += 1
+                self.assertTrue(wi.get_type() == WorkItem.SUBSCRIBE_INDICATION)
+                reply = wi.get_params()
+                self.assertTrue(isinstance(reply, type([])))
+                self.assertTrue(len(reply) == 1)
+                self.assertTrue(isinstance(reply[0], QmfData))
+                self.assertTrue(reply[0].get_object_id() == "p2c1_key2")
+                sid = reply[0].get_schema_class_id()
+                self.assertTrue(isinstance(sid, SchemaClassId))
+                self.assertTrue(sid.get_package_name() == "package2")
+                self.assertTrue(sid.get_class_name() == "class1")
+                self.assertTrue(wi.get_handle() == "my-handle")
+
+                self.console.release_workitem(wi)
+
+                if r_count == 3:
+                    rp = self.console.refresh_subscription(sp.get_subscription_id())
+                    self.assertTrue(isinstance(rp, qmf2.console.SubscribeParams))
+
+                wi = self.console.get_next_workitem(timeout=0)
+
+        # for now, I expect 5 publish per subscription
+        self.assertTrue(r_count > 5)
+        # print("!!! total r_count=%d" % r_count)
+        #for ii in range(len(subscriptions)):
+        #    self.assertTrue(subscriptions[ii][1] == 5)
+
+        self.console.destroy(10)
+
+
+
+    def test_sync_cancel(self):
+        # create console
+        # find one agent
+        # subscribe to changes to any object in package1/class1
+        # after 2 data indications, cancel subscription
+        # verify < 5 data indications received
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        # query to match object "p2c1_key2" in schema package2/class1
+        sid = SchemaClassId.create("package2", "class1")
+        query = QmfQuery.create_id_object("p2c1_key2", sid)
+
+        agent_app = self.agents[0]
+        aname = agent_app.agent.get_name()
+        agent = self.console.find_agent(aname, timeout=3)
+        self.assertTrue(agent and agent.get_name() == aname)
+
+        # setup subscription on agent
+
+        sp = self.console.create_subscription(agent,
+                                              query,
+                                              "my-handle")
+        self.assertTrue(isinstance(sp, qmf2.console.SubscribeParams))
+        self.assertTrue(sp.succeeded())
+        self.assertTrue(sp.get_error() == None)
+
+        # refresh after three subscribe indications, count all
+        # indications to verify refresh worked
+        r_count = 0
+        while self.notifier.wait_for_work(4):
+            wi = self.console.get_next_workitem(timeout=0)
+            while wi is not None:
+                r_count += 1
+                self.assertTrue(wi.get_type() == WorkItem.SUBSCRIBE_INDICATION)
+                reply = wi.get_params()
+                self.assertTrue(isinstance(reply, type([])))
+                self.assertTrue(len(reply) == 1)
+                self.assertTrue(isinstance(reply[0], QmfData))
+                self.assertTrue(reply[0].get_object_id() == "p2c1_key2")
+                sid = reply[0].get_schema_class_id()
+                self.assertTrue(isinstance(sid, SchemaClassId))
+                self.assertTrue(sid.get_package_name() == "package2")
+                self.assertTrue(sid.get_class_name() == "class1")
+                self.assertTrue(wi.get_handle() == "my-handle")
+
+                self.console.release_workitem(wi)
+
+                if r_count == 3:
+                    self.console.cancel_subscription(sp.get_subscription_id())
+
+                wi = self.console.get_next_workitem(timeout=0)
+
+        # for now, I expect 5 publish per subscription full duration
+        self.assertTrue(r_count < 5)
+        #for ii in range(len(subscriptions)):
+        #    self.assertTrue(subscriptions[ii][1] == 5)
 
         self.console.destroy(10)
 
