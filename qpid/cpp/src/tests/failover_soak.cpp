@@ -54,6 +54,8 @@ using namespace qpid::client;
 namespace qpid {
 namespace tests {
 
+vector<pid_t> pids;
+
 typedef vector<ForkedBroker *> brokerVector;
 
 typedef enum
@@ -184,17 +186,29 @@ struct children : public vector<child *>
     int
     checkChildren ( )
     {
-       vector<child *>::iterator i;
-        for ( i = begin(); i != end(); ++ i )
-            if ( (COMPLETED == (*i)->status) && (0 != (*i)->retval) )
-            {
-              cerr << "checkChildren: error on child of type "
-                   << (*i)->type
-                   << endl;
-              return (*i)->retval;
-            }
+      for ( unsigned int i = 0; i < pids.size(); ++ i )
+      {
+        int pid = pids[i];
+        int returned_pid;
+        int status;
 
-        return 0;
+        child * kid = get ( pid );
+
+        if ( kid->status != COMPLETED )
+        {
+          returned_pid = waitpid ( pid, &status, WNOHANG );
+
+          if ( returned_pid == pid )
+          {
+            int exit_status = WEXITSTATUS(status);
+            exited ( pid, exit_status );
+            if ( exit_status )  // this is a child error.
+              return exit_status;
+          }
+        }
+      }
+
+      return 0;
     }
 
 
@@ -323,6 +337,7 @@ startNewBroker ( brokerVector & brokers,
                  int verbosity,
                  int durable )
 {
+        // ("--log-enable=notice+")
     static int brokerId = 0;
     stringstream path, prefix;
     prefix << "soak-" << brokerId;
@@ -516,6 +531,7 @@ startReceivingClient ( brokerVector brokers,
     argv.push_back ( 0 );
 
     pid_t pid = fork();
+    pids.push_back ( pid );
 
     if ( ! pid ) {
         execv ( receiverPath, const_cast<char * const *>(&argv[0]) );
@@ -571,6 +587,7 @@ startSendingClient ( brokerVector brokers,
     argv.push_back ( 0 );
 
     pid_t pid = fork();
+    pids.push_back ( pid );
 
     if ( ! pid ) {
         execv ( senderPath, const_cast<char * const *>(&argv[0]) );
@@ -602,6 +619,7 @@ using namespace qpid::tests;
 int
 main ( int argc, char const ** argv )
 {
+  int brokerKills = 0;
     if ( argc != 11 ) {
         cerr << "Usage: "
              << argv[0]
@@ -625,7 +643,6 @@ main ( int argc, char const ** argv )
     int          n_brokers          = atoi(argv[i++]);
 
     char const * host               = "127.0.0.1";
-    int maxBrokers = 50;
 
     allMyChildren.verbosity = verbosity;
 
@@ -722,104 +739,86 @@ main ( int argc, char const ** argv )
 
 
      int minSleep = 2,
-         maxSleep = 4;
+         maxSleep = 6;
 
+     int totalBrokers = n_brokers;
 
-     for ( int totalBrokers = n_brokers;
-           totalBrokers < maxBrokers;
-           ++ totalBrokers
-         )
+     int loop = 0;
+
+     while ( 1 )
      {
+         ++ loop;
+
+         /*
+         if ( verbosity > 1 )
+           std::cerr << "------- loop " << loop << " --------\n";
+
          if ( verbosity > 0 )
              cout << totalBrokers << " brokers have been added to the cluster.\n\n\n";
+             */
 
          // Sleep for a while. -------------------------
          int sleepyTime = mrand ( minSleep, maxSleep );
-         if ( verbosity > 0 )
-             cout << "Sleeping for " << sleepyTime << " seconds.\n";
          sleep ( sleepyTime );
 
-         // Kill the oldest broker. --------------------------
-         if ( ! killFrontBroker ( brokers, verbosity ) )
+         int bullet = mrand ( 100 );
+         if ( bullet >= 95 )
+	 {
+           fprintf ( stderr, "Killing oldest broker...\n" );
+
+	   // Kill the oldest broker. --------------------------
+	   if ( ! killFrontBroker ( brokers, verbosity ) )
+	   {
+	     allMyChildren.killEverybody();
+	     killAllBrokers ( brokers, 5 );
+	     std::cerr << "END_OF_TEST ERROR_BROKER\n";
+	     return ERROR_KILLING_BROKER;
+	   }
+           ++ brokerKills;
+
+	   // Start a new broker. --------------------------
+	   if ( verbosity > 0 )
+	       cout << "Starting new broker.\n\n";
+
+	   startNewBroker ( brokers,
+			    moduleOrDir,
+			    clusterName,
+			    verbosity,
+			    durable );
+	   ++ totalBrokers;
+           printBrokers ( brokers );
+           cerr << brokerKills << " brokers have been killed.\n\n\n";
+	 }
+
+         int retval = allMyChildren.checkChildren();
+         if ( retval )
          {
-           allMyChildren.killEverybody();
-           killAllBrokers ( brokers, 5 );
-           std::cerr << "END_OF_TEST ERROR_BROKER\n";
-           return ERROR_KILLING_BROKER;
+             std::cerr << "END_OF_TEST ERROR_CLIENT\n";
+             allMyChildren.killEverybody();
+             killAllBrokers ( brokers, 5 );
+             return ERROR_ON_CHILD;
          }
-
-         // Sleep for a while. -------------------------
-         sleepyTime = mrand ( minSleep, maxSleep );
-         if ( verbosity > 1 )
-             cerr << "Sleeping for " << sleepyTime << " seconds.\n";
-         sleep ( sleepyTime );
-
-         // Start a new broker. --------------------------
-         if ( verbosity > 0 )
-             cout << "Starting new broker.\n\n";
-
-         startNewBroker ( brokers,
-                          moduleOrDir,
-                          clusterName,
-                          verbosity,
-                          durable );
-
-         if ( verbosity > 1 )
-             printBrokers ( brokers );
 
          // If all children have exited, quit.
          int unfinished = allMyChildren.unfinished();
-         if ( ! unfinished ) {
+         if ( unfinished == 0 ) {
              killAllBrokers ( brokers, 5 );
 
              if ( verbosity > 1 )
                  cout << "failoverSoak: all children have exited.\n";
-           int retval = allMyChildren.checkChildren();
-           if ( verbosity > 1 )
-             std::cerr << "failoverSoak: checkChildren: " << retval << endl;
 
-           if ( retval )
-           {
-               std::cerr << "END_OF_TEST ERROR_CLIENT\n";
-               return ERROR_ON_CHILD;
-           }
-           else
-           {
-               std::cerr << "END_OF_TEST SUCCESSFUL\n";
-               return HUNKY_DORY;
-           }
+             std::cerr << "END_OF_TEST SUCCESSFUL\n";
+             return HUNKY_DORY;
          }
 
-         // Even if some are still running, if there's an error, quit.
-         if ( allMyChildren.checkChildren() )
-         {
-             if ( verbosity > 0 )
-                 cout << "failoverSoak: error on child.\n";
-             allMyChildren.killEverybody();
-             killAllBrokers ( brokers, 5 );
-             std::cerr << "END_OF_TEST ERROR_CLIENT\n";
-             return ERROR_ON_CHILD;
-         }
-
-         if ( verbosity > 1 ) {
-           std::cerr << "------- next kill-broker loop --------\n";
-           allMyChildren.print();
-         }
      }
-
-     retval = allMyChildren.checkChildren();
-     if ( verbosity > 1 )
-       std::cerr << "failoverSoak: checkChildren: " << retval << endl;
-
-     if ( verbosity > 1 )
-         cout << "failoverSoak: maxBrokers reached.\n";
 
      allMyChildren.killEverybody();
      killAllBrokers ( brokers, 5 );
 
      std::cerr << "END_OF_TEST SUCCESSFUL\n";
 
-     return retval ? ERROR_ON_CHILD : HUNKY_DORY;
+     return HUNKY_DORY;
 }
 
 
