@@ -118,12 +118,23 @@ public class DurableSubscriptionTest extends QpidTestCase
     
     public void testDurabilityNOACK() throws Exception
     {
-        durabilityImpl(AMQSession.NO_ACKNOWLEDGE);
+        durabilityImpl(AMQSession.NO_ACKNOWLEDGE, false);
     }
 
     public void testDurabilityAUTOACK() throws Exception
     {
-        durabilityImpl(Session.AUTO_ACKNOWLEDGE);
+        durabilityImpl(Session.AUTO_ACKNOWLEDGE, false);
+    }
+    
+    public void testDurabilityAUTOACKwithRestartIfPersistent() throws Exception
+    {
+        if(!isBrokerStorePersistent())
+        {
+            System.out.println("The broker store is not persistent, skipping this test.");
+            return;
+        }
+        
+        durabilityImpl(Session.AUTO_ACKNOWLEDGE, true);
     }
 
     public void testDurabilityNOACKSessionPerConnection() throws Exception
@@ -136,8 +147,8 @@ public class DurableSubscriptionTest extends QpidTestCase
         durabilityImplSessionPerConnection(Session.AUTO_ACKNOWLEDGE);
     }
 
-    private void durabilityImpl(int ackMode) throws Exception
-    {
+    private void durabilityImpl(int ackMode, boolean restartBroker) throws Exception
+    {        
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con, "MyTopic");
         Session session1 = con.createSession(false, ackMode);
@@ -225,6 +236,18 @@ public class DurableSubscriptionTest extends QpidTestCase
         session3.unsubscribe("MySubscription");
 
         con.close();
+        
+        if(restartBroker)
+        {
+            try
+            {
+                restartBroker();
+            }
+            catch (Exception e)
+            {
+                fail("Error restarting the broker");
+            }
+        }
     }
 
     private void durabilityImplSessionPerConnection(int ackMode) throws Exception
