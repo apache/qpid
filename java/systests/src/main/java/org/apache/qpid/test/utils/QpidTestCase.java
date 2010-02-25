@@ -166,6 +166,7 @@ public class QpidTestCase extends TestCase
     private static final String TEST_OUTPUT = "test.output";
     private static final String BROKER_LOG_INTERLEAVE = "broker.log.interleave";
     private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
+    private static final String BROKER_PERSITENT = "broker.persistent";
 
     // values
     protected static final String JAVA = "java";
@@ -187,6 +188,7 @@ public class QpidTestCase extends TestCase
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     private String _output = System.getProperty(TEST_OUTPUT);
+    protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
     private static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
     protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
@@ -928,6 +930,11 @@ public class QpidTestCase extends TestCase
     protected boolean isExternalBroker()
     {
         return !_broker.equals("vm");
+    }
+    
+    protected boolean isBrokerStorePersistent()
+    {
+        return _brokerPersistent;
     }
 
     public void restartBroker() throws Exception
