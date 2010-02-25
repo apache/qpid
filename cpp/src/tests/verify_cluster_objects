@@ -75,6 +75,12 @@ class IpAddr:
                 bestAddr = addrPort
         return bestAddr
 
+class ObjectId:
+    """Object identity, use for dictionaries by object id"""
+    def __init__(self, object): self.object = object
+    def __eq__(self, other): return self.object is other.object
+    def __hash__(self): return hash(id(self.object))
+
 class Broker(object):
     def __init__(self, qmf, broker):
         self.broker = broker
@@ -94,6 +100,7 @@ class Broker(object):
             self.uptime = 0
         self.tablesByName = {}
         self.package = "org.apache.qpid.broker"
+        self.id_cache = {}              # Cache for getAbstractId
 
     def getUrl(self):
         return self.broker.getUrl()
@@ -114,13 +121,14 @@ class Broker(object):
     #
     def getAbstractId(self, object):
       """ return a string the of the hierarchical name """
+      if (ObjectId(object) in self.id_cache): return self.id_cache[ObjectId(object)]
       global _debug_recursion
       result = u""
       valstr = u""
       _debug_recursion += 1
       debug_prefix = _debug_recursion
       if (_verbose > 9):
-          print debug_prefix, "  enter gai: props ", self._properties
+          print debug_prefix, "  enter gai: props ", object._properties
       for property, value in object._properties:
 
           # we want to recurse on things which are refs.  we tell by
@@ -138,6 +146,7 @@ class Broker(object):
 
           if property.name == "systemRef":
               _debug_recursion -= 1
+              self.id_cache[ObjectId(object)] = ""
               return ""
 
           if property.index:
@@ -176,6 +185,7 @@ class Broker(object):
           if (_verbose > 9):
               print debug_prefix, "    id ", self, " -> ", result
       _debug_recursion -= 1
+      self.id_cache[ObjectId(object)] = result
       return result
 
     def loadTable(self, cls):
@@ -196,13 +206,12 @@ class Broker(object):
             # error (ie, the name-generation code is busted) if we do
             key = self.getAbstractId(obj)
             if key in self.tablesByName[cls.getClassName()]:
-                print "internal error: collision for %s on key %s\n" % (obj, key)
-                sys.exit(1)
+                raise Exception("internal error: collision for %s on key %s\n"
+                                % (obj, key))
                 
-            self.tablesByName[cls.getClassName()][self.getAbstractId(obj)] = obj
-#            sys.exit(1)
+            self.tablesByName[cls.getClassName()][key] = obj
             if _verbose > 1:
-                print "   ", obj.getObjectId(), " ", obj.getIndex(), " ", self.getAbstractId(obj)
+                print "   ", obj.getObjectId(), " ", obj.getIndex(), " ", key
 
 
 class BrokerManager:
@@ -253,9 +262,10 @@ class BrokerManager:
                     raise Exception("Invalid URL 2")
                 addrList.append((tokens[1], tokens[2]))
 
-            # Find the address in the list that is most likely to be in the same subnet as the address
-            # with which we made the original QMF connection.  This increases the probability that we will
-            # be able to reach the cluster member.
+            # Find the address in the list that is most likely to be
+            # in the same subnet as the address with which we made the
+            # original QMF connection.  This increases the probability
+            # that we will be able to reach the cluster member.
 
             best = hostAddr.bestAddr(addrList)
             bestUrl = best[0] + ":" + best[1]
@@ -284,8 +294,7 @@ class BrokerManager:
                 if _verbose > 0:
                     print "   ", b
         else:
-            print "Failed - Not a cluster"
-            sys.exit(1)
+            raise Exception("Failed - Not a cluster")
 
         failures = []
 
@@ -348,11 +357,10 @@ class BrokerManager:
             print "Failures:"
             for failure in failures:
                 print "  %s" % failure
-            sys.exit(1)
+            raise Exception("Failures")
 
         if _verbose > 0:
             print "Success"
-        sys.exit(0)
 
 ##
 ## Main Program
