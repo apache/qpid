@@ -148,7 +148,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
             {
                 // Manually set the correlation ID to 1. This is not ideal but it is the
                 // value that the main test loop will use.
-                perThreadSetup._pingClient.pingNoWaitForReply(null, preFill, "1");
+                perThreadSetup._pingClient.pingNoWaitForReply(null, preFill, String.valueOf(perThreadSetup._pingClient.getClientCount()));
 
                 // Note with a large preFill and non-tx session the messages will be
                 // rapidly pushed in to the mina buffers. OOM's are a real risk here.

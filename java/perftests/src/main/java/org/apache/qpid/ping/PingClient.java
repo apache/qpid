@@ -104,4 +104,9 @@ public class PingClient extends PingPongProducer
             return _pingClientCount * _noOfConsumers;
         }
     }
+
+    public int getClientCount()
+    {
+        return _pingClientCount;
+    }
 }
