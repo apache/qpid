@@ -22,6 +22,7 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/Msg.h"
 
 namespace qpid {
 namespace framing {

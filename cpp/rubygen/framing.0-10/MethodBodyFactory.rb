@@ -35,6 +35,7 @@ class MethodBodyFactoryGen < CppGen
       include "qpid/framing/BodyFactory"
       @amqp.methods_.each { |m| include "qpid/framing/#{m.body_name}" }
       include "qpid/Exception.h"
+      include "qpid/Msg.h"
       genl
       namespace(@namespace) {
         scope("boost::intrusive_ptr<AMQMethodBody> #{@classname}::create(ClassId c, MethodId m) {") {

@@ -23,6 +23,7 @@
  */
 
 #include "qpid/Exception.h"
+#include "qpid/Msg.h"
 #include "qpid/sys/StrError.h"
 
 #define QPID_WINDOWS_ERROR(ERRVAL) qpid::Exception(QPID_MSG(qpid::sys::strError(ERRVAL)))

@@ -25,6 +25,7 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/Msg.h"
 #include <assert.h>
 
 namespace qpid {
