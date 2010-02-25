@@ -20,6 +20,7 @@
  */
 #include "StoreStatus.h"
 #include "qpid/Exception.h"
+#include "qpid/Msg.h"
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
