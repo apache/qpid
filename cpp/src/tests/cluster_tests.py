@@ -305,21 +305,47 @@ class StoreTests(BrokerTest):
         self.assertRaises(Exception, lambda: a.ready())
         self.assertRaises(Exception, lambda: b.ready())
 
-    def test_total_failure(self):
-        # Verify we abort with sutiable error message if no clean stores.
-        cluster = self.cluster(0, args=self.args()+["--cluster-size=2"])
-        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
-        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=True)
-        a.kill()
-        b.kill()
-        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
-        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait=False)
-        self.assertRaises(Exception, lambda: a.ready())
-        self.assertRaises(Exception, lambda: b.ready())
+    def assert_dirty_store(self, broker):
+        self.assertRaises(Exception, lambda: broker.ready())
         msg = re.compile("critical.*no clean store")
-        assert msg.search(readfile(a.log))
-        assert msg.search(readfile(b.log))
+        assert msg.search(readfile(broker.log))
 
-        # FIXME aconway 2009-12-03: verify manual restore procedure
+    def test_solo_store_clean(self):
+        # A single node cluster should always leave a clean store.
+        cluster = self.cluster(0, self.args())
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL)
+        a.send_message("q", Message("x", durable=True))
+        a.kill()
+        a = cluster.start("a")
+        self.assertEqual(a.get_message("q").content, "x")
+
+    def test_last_store_clean(self):
+
+        # Verify that only the last node in a cluster to shut down has
+        # a clean store. Start with cluster of 3, reduce to 1 then
+        # increase again to ensure that a node that was once alone but
+        # finally did not finish as the last node does not get a clean
+        # store.
+        cluster = self.cluster(0, self.args())
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL)
+        b = cluster.start("b", expect=EXPECT_EXIT_FAIL)
+        c = cluster.start("c", expect=EXPECT_EXIT_FAIL)
+        a.send_message("q", Message("x", durable=True))
+        a.kill()
+        b.kill()          # c is last man
+        time.sleep(0.1)   # pause for c to find out hes last.
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL) # c no longer last man
+        c.kill()          # a is now last man
+        time.sleep(0.1)   # pause for a to find out hes last.
+        a.kill()          # really last
+        # b & c should be dirty
+        b = cluster.start("b", wait=False, expect=EXPECT_EXIT_OK)
+        self.assert_dirty_store(b)
+        c = cluster.start("c", wait=False, expect=EXPECT_EXIT_OK)
+        self.assert_dirty_store(c)
+        # a should be clean
+        a = cluster.start("a")
+        self.assertEqual(a.get_message("q").content, "x")
+
 
 

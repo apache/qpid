@@ -914,6 +914,12 @@ void Cluster::memberUpdate(Lock& l) {
     size_t size = urls.size();
     failoverExchange->updateUrls(urls);
 
+    if (store.hasStore()) {
+        // Mark store clean if I am the only broker, dirty otherwise.
+        if (size == 1) store.clean(Uuid(true));
+        else store.dirty(clusterId);
+    }
+
     if (size == 1 && lastSize > 1 && state >= CATCHUP) {
         QPID_LOG(notice, *this << " last broker standing, update queue policies");
         lastBroker = true;

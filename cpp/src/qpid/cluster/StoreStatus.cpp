@@ -114,7 +114,12 @@ void StoreStatus::save() {
     }
 }
 
+bool StoreStatus::hasStore() const {
+    return state != framing::cluster::STORE_STATE_NO_STORE;
+}
+
 void StoreStatus::dirty(const Uuid& clusterId_) {
+    if (!hasStore()) return;
     assert(clusterId_);
     clusterId = clusterId_;
     shutdownId = Uuid();
@@ -123,6 +128,7 @@ void StoreStatus::dirty(const Uuid& clusterId_) {
 }
 
 void StoreStatus::clean(const Uuid& shutdownId_) {
+    if (!hasStore()) return;
     assert(shutdownId_);
     state = STORE_STATE_CLEAN_STORE;
     shutdownId = shutdownId_;
