@@ -21,9 +21,11 @@
  */
 
 #include "qmf/engine/Schema.h"
+#include "qpid/framing/Buffer.h"
+
 #include <string>
 #include <vector>
-#include <qpid/framing/Buffer.h>
+#include <memory>
 
 namespace qmf {
 namespace engine {

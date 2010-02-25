@@ -78,6 +78,7 @@ EOS
     cpp_file(path) {
       include(path);
       include("qpid/Exception.h")
+      include("qpid/Msg.h")
       include("<ostream>")
       namespace(@namespace) { 
         scope("const char* typeName(TypeCode t) {") {
@@ -181,6 +182,7 @@ EOS
   def reply_exceptions_cpp()
     cpp_file("#{@dir}/reply_exceptions") {
       include "#{@dir}/reply_exceptions"
+      include "qpid/Msg.h"
       include "<sstream>"
       include "<assert.h>"
       namespace("qpid::framing") {

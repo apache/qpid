@@ -24,6 +24,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <sstream>
 
 using namespace std;
 using namespace qmf::engine;

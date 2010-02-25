@@ -19,6 +19,7 @@
 
 #include "qmf/engine/ObjectIdImpl.h"
 #include <stdlib.h>
+#include <sstream>
 
 using namespace std;
 using namespace qmf::engine;
