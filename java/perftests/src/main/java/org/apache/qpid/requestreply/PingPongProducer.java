@@ -324,6 +324,25 @@ public class PingPongProducer implements Runnable, ExceptionListener
     /** Holds the name of the property to store nanosecond timestamps in ping messages with. */
     public static final String MESSAGE_TIMESTAMP_PROPNAME = "timestamp";
 
+    /** Holds the name of the property to get the number of message to prefill the broker with before starting the main test. */
+    public static final String PREFILL_PROPNAME = "preFill";
+
+    /** Defines the default value for the number of messages to prefill. 0,default, no messages. */
+    public static final int PREFILL_DEFAULT = 0;
+
+    /** Holds the name of the property to get the delay to wait in ms before starting the main test after having prefilled. */
+    public static final String DELAY_BEFORE_CONSUME_PROPNAME = "delayBeforeConsume";
+
+    /** Defines the default value for delay in ms to wait before starting thet test run. 0,default, no delay. */
+    public static final long  DELAY_BEFORE_CONSUME = 0;
+
+    /** Holds the name of the property to get when no messasges should be sent. */
+    public static final String CONSUME_ONLY_PROPNAME = "consumeOnly";
+
+    /** Defines the default value of the consumeOnly flag to use when publishing messages is not desired. */
+    public static final boolean CONSUME_ONLY_DEFAULT = false;
+
+
     /** Holds the default configuration properties. */
     public static ParsedProperties defaults = new ParsedProperties();
 
@@ -360,6 +379,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
         defaults.setPropertyIfNull(RATE_PROPNAME, RATE_DEFAULT);
         defaults.setPropertyIfNull(TIMEOUT_PROPNAME, TIMEOUT_DEFAULT);
         defaults.setPropertyIfNull(MAX_PENDING_PROPNAME, MAX_PENDING_DEFAULT);
+        defaults.setPropertyIfNull(PREFILL_PROPNAME, PREFILL_DEFAULT);
+        defaults.setPropertyIfNull(DELAY_BEFORE_CONSUME_PROPNAME, DELAY_BEFORE_CONSUME);
+        defaults.setPropertyIfNull(CONSUME_ONLY_PROPNAME, CONSUME_ONLY_DEFAULT);        
     }
 
     /** Allows setting of client ID on the connection, rather than through the connection URL. */
@@ -454,6 +476,24 @@ public class PingPongProducer implements Runnable, ExceptionListener
      * if this limit is breached.
      */
     protected int _maxPendingSize;
+
+    /**
+     * Holds the number of messages to send during the setup phase, before the clients start consuming.
+     */
+    private Integer _preFill;
+
+    /**
+     * Holds the time in ms to wait after preFilling before starting thet test.
+     */
+    private Long _delayBeforeConsume;
+
+    /**
+     * Holds a boolean value of wither this test should just consume, i.e. skips
+     * sending messages, but still expects to receive the specified number.
+     * Use in conjuction with numConsumers=0 to fill the broker.
+     */
+    private boolean _consumeOnly;
+
 
     /** A source for providing sequential unique correlation ids. These will be unique within the same JVM. */
     private static AtomicLong _correlationIdGenerator = new AtomicLong(0L);
@@ -588,6 +628,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
         _ackMode = _transacted ? 0 : properties.getPropertyAsInteger(ACK_MODE_PROPNAME);
         _consAckMode = _consTransacted ? 0 : properties.getPropertyAsInteger(CONSUMER_ACK_MODE_PROPNAME);
         _maxPendingSize = properties.getPropertyAsInteger(MAX_PENDING_PROPNAME);
+        _preFill = properties.getPropertyAsInteger(PREFILL_PROPNAME);
+        _delayBeforeConsume = properties.getPropertyAsLong(DELAY_BEFORE_CONSUME_PROPNAME);
+        _consumeOnly = properties.getPropertyAsBoolean(CONSUME_ONLY_PROPNAME);
 
         // Check that one or more destinations were specified.
         if (_noOfDestinations < 1)
@@ -638,7 +681,10 @@ public class PingPongProducer implements Runnable, ExceptionListener
         }
 
         // Create the destinations to send pings to and receive replies from.
-        _replyDestination = _consumerSession[0].createTemporaryQueue();
+        if (_noOfConsumers > 0)
+        {
+            _replyDestination = _consumerSession[0].createTemporaryQueue();
+        }
         createPingDestinations(_noOfDestinations, _selector, _destinationName, _isUnique, _isDurable);
 
         // Create the message producer only if instructed to.
@@ -871,6 +917,14 @@ public class PingPongProducer implements Runnable, ExceptionListener
         {
             _consumer = new MessageConsumer[_noOfConsumers];
 
+            // If we don't have consumers then ensure we have created the
+            // destination.   
+            if (_noOfConsumers == 0)
+            {
+                _producerSession.createConsumer(destination, selector,
+                                                NO_LOCAL_DEFAULT).close();
+            }
+
             for (int i = 0; i < _noOfConsumers; i++)
             {
                 // Create a consumer for the destination and set this pinger to listen to its messages.
@@ -980,6 +1034,11 @@ public class PingPongProducer implements Runnable, ExceptionListener
                         // When running in client ack mode, an ack is done instead of a commit, on the commit batch
                         // size boundaries.
                         long commitCount = _isPubSub ? remainingCount : (remainingCount / _noOfConsumers);
+                        // _noOfConsumers can be set to 0 on the command line but we will not get here to
+                        // divide by 0 as this is executed by the onMessage code when a message is recevied.
+                        // no consumers means no message reception.
+
+
                         // log.debug("commitCount = " + commitCount);
 
                         if ((commitCount % _txBatchSize) == 0)
@@ -1014,6 +1073,7 @@ public class PingPongProducer implements Runnable, ExceptionListener
                 else
                 {
                     log.warn("Got unexpected message with correlationId: " + correlationID);
+                    log.warn("Map contains:" + perCorrelationIds.entrySet());
                 }
             }
             else
@@ -1037,13 +1097,18 @@ public class PingPongProducer implements Runnable, ExceptionListener
      * before a reply arrives, then a null reply is returned from this method. This method allows the caller to specify
      * the correlation id.
      *
+     * Can be augmented through a pre-fill property (PingPongProducer.PREFILL_PROPNAME) that will populate the destination
+     * with a set number of messages so the total pings sent and therefore expected will be PREFILL + numPings.
+     *
+     * If pre-fill is specified then the consumers will start paused to allow the prefilling to occur.
+     *
      * @param message              The message to send. If this is null, one is generated.
      * @param numPings             The number of ping messages to send.
      * @param timeout              The timeout in milliseconds.
      * @param messageCorrelationId The message correlation id. If this is null, one is generated.
      *
      * @return The number of replies received. This may be less than the number sent if the timeout terminated the wait
-     *         for all prematurely.
+     *         for all prematurely. If we are running in noConsumer=0 so send only mode then it will return the no msgs sent.
      *
      * @throws JMSException         All underlying JMSExceptions are allowed to fall through.
      * @throws InterruptedException When interrupted by a timeout
@@ -1051,6 +1116,16 @@ public class PingPongProducer implements Runnable, ExceptionListener
     public int pingAndWaitForReply(Message message, int numPings, long timeout, String messageCorrelationId)
         throws JMSException, InterruptedException
     {
+        return pingAndWaitForReply(message, numPings, 0, timeout, messageCorrelationId);
+    }
+
+    public int pingAndWaitForReply(Message message, int numPings, int preFill, long timeout, String messageCorrelationId)
+        throws JMSException, InterruptedException
+    {
+
+        // If we are runnning a consumeOnly test then don't send any messages
+
+
         /*log.debug("public int pingAndWaitForReply(Message message, int numPings = " + numPings + ", long timeout = "
             + timeout + ", String messageCorrelationId = " + messageCorrelationId + "): called");*/
 
@@ -1071,19 +1146,31 @@ public class PingPongProducer implements Runnable, ExceptionListener
             // countdown needs to be done before the chained listener can be called.
             PerCorrelationId perCorrelationId = new PerCorrelationId();
 
-            perCorrelationId.trafficLight = new CountDownLatch(getExpectedNumPings(numPings) + 1);
+            int totalPingsRequested = numPings + preFill;
+            perCorrelationId.trafficLight = new CountDownLatch(getExpectedNumPings(totalPingsRequested) + 1);
             perCorrelationIds.put(messageCorrelationId, perCorrelationId);
 
             // Set up the current time as the start time for pinging on the correlation id. This is used to determine
             // timeouts.
             perCorrelationId.timeOutStart = System.nanoTime();
 
-            // Send the specifed number of messages.
+            // Send the specifed number of messages for this test            
             pingNoWaitForReply(message, numPings, messageCorrelationId);
 
             boolean timedOut;
             boolean allMessagesReceived;
             int numReplies;
+
+            // We don't have a consumer so don't try and wait for the messages.
+            // this does mean that if the producerSession is !TXed then we may
+            // get to exit before all msgs have been received.
+            //
+            // Return the number of requested messages, this will let the test
+            // report a pass.
+            if (_noOfConsumers == 0)
+            {
+                return totalPingsRequested;
+            }
 
             do
             {
@@ -1091,9 +1178,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
                 perCorrelationId.trafficLight.await(timeout, TimeUnit.MILLISECONDS);
 
                 // Work out how many replies were receieved.
-                numReplies = getExpectedNumPings(numPings) - (int) perCorrelationId.trafficLight.getCount();
+                numReplies = getExpectedNumPings(totalPingsRequested) - (int) perCorrelationId.trafficLight.getCount();
 
-                allMessagesReceived = numReplies == getExpectedNumPings(numPings);
+                allMessagesReceived = numReplies == getExpectedNumPings(totalPingsRequested);
 
                 // log.debug("numReplies = " + numReplies);
                 // log.debug("allMessagesReceived = " + allMessagesReceived);
@@ -1108,7 +1195,7 @@ public class PingPongProducer implements Runnable, ExceptionListener
             }
             while (!timedOut && !allMessagesReceived);
 
-            if ((numReplies < getExpectedNumPings(numPings)) && _verbose)
+            if ((numReplies < getExpectedNumPings(totalPingsRequested)) && _verbose)
             {
                 log.info("Timed out (" + timeout + " ms) before all replies received on id, " + messageCorrelationId);
             }
@@ -1146,6 +1233,12 @@ public class PingPongProducer implements Runnable, ExceptionListener
         /*log.debug("public void pingNoWaitForReply(Message message, int numPings = " + numPings
             + ", String messageCorrelationId = " + messageCorrelationId + "): called");*/
 
+        // If we are runnning a consumeOnly test then don't send any messages
+        if (_consumeOnly)
+        {
+            return;
+        }
+        
         if (message == null)
         {
             message = getTestMessage(getReplyDestinations().get(0), _messageSize, _persistent);
@@ -1666,6 +1759,10 @@ public class PingPongProducer implements Runnable, ExceptionListener
 
     /**
      * Calculates how many pings are expected to be received for the given number sent.
+     *
+     * Note : that if you have set noConsumers to 0 then this will also return 0
+     * in the case of PubSub testing. This is correct as without consumers there
+     * will be no-one to receive the sent messages so they will be unable to respond. 
      *
      * @param numpings The number of pings that will be sent.
      *
