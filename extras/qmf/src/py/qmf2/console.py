@@ -151,6 +151,24 @@ class _AsyncMailbox(_Mailbox):
 
         console._wake_thread()
 
+    def reset_timeout(self, _timeout=None):
+        """ Reset the expiration date for this mailbox.
+        """
+        if _timeout is None:
+            _timeout = self.console._reply_timeout
+        self.console._lock.acquire()
+        try:
+            self.expiration_date = (datetime.datetime.utcnow() +
+                                    datetime.timedelta(seconds=_timeout))
+            self.console._next_mbox_expire = None
+        finally:
+            self.console._lock.release()
+
+        # wake the console mgmt thread so it will learn about the mbox
+        # expiration date (and adjust its idle sleep period correctly)
+
+        self.console._wake_thread()
+
     def deliver(self, msg):
         """
         """
@@ -353,19 +371,52 @@ class _MethodMailbox(_AsyncMailbox):
 
 class _SubscriptionMailbox(_AsyncMailbox):
     """
-    A Mailbox for a single subscription.
+    A Mailbox for a single subscription.  Allows only sychronous "subscribe"
+    and "refresh" requests.
     """
-    def __init__(self, console, lifetime, context, agent):
+    def __init__(self, console, context, agent, duration, interval):
         """
         Invoked by application thread.
         """
-        super(_SubscriptionMailbox, self).__init__(console, lifetime)
+        super(_SubscriptionMailbox, self).__init__(console, duration)
         self.cv = Condition()
         self.data = []
         self.result = []
         self.context = context
+        self.duration = duration
+        self.interval = interval
         self.agent_name = agent.get_name()
         self.agent_subscription_id = None          # from agent
+
+    def subscribe(self, query):
+        agent = self.console.get_agent(self.agent_name)
+        if not agent:
+            logging.warning("subscribed failed - unknown agent '%s'" %
+                            self.agent_name)
+            return False
+        try:
+            logging.debug("Sending Subscribe to Agent (%s)" % self.agent_name)
+            agent._send_subscribe_req(query, self.get_address(), self.interval,
+                                      self.duration)
+        except SendError, e:
+            logging.error(str(e))
+            return False
+        return True
+
+    def resubscribe(self, duration):
+        agent = self.console.get_agent(self.agent_name)
+        if not agent:
+            logging.warning("resubscribed failed - unknown agent '%s'" %
+                            self.agent_name)
+            return False
+        try:
+            logging.debug("Sending resubscribe to Agent (%s)" % self.agent_name)
+            agent._send_resubscribe_req(self.get_address(),
+                                        self.agent_subscription_id, duration)
+        except SendError, e:
+            logging.error(str(e))
+            return False
+        return True
 
     def deliver(self, msg):
         """
@@ -373,12 +424,28 @@ class _SubscriptionMailbox(_AsyncMailbox):
         opcode = msg.properties.get("qmf.opcode")
         if (opcode == OpCode.subscribe_rsp or
             opcode == OpCode.subscribe_refresh_rsp):
-            #
-            # sync only - just deliver the msg
-            #
+
+            error = msg.content.get("_error")
+            if error:
+                try:
+                    e_map = QmfData.from_map(error)
+                except TypeError:
+                    logging.warning("Invalid QmfData map received: '%s'"
+                                    % str(error))
+                    e_map = QmfData.create({"error":"Unknown error"})
+                sp = SubscribeParams(None, None, None, e_map)
+            else:
+                self.agent_subscription_id = msg.content.get("_subscription_id")
+                self.duration = msg.content.get("_duration", self.duration)
+                self.interval = msg.content.get("_interval", self.interval)
+                self.reset_timeout(self.duration)
+                sp = SubscribeParams(self.get_address(),
+                                     self.interval,
+                                     self.duration,
+                                     None)
             self.cv.acquire()
             try:
-                self.data.append(msg)
+                self.data.append(sp)
                 # if was empty, notify waiters
                 if len(self.data) == 1:
                     self.cv.notify()
@@ -386,43 +453,7 @@ class _SubscriptionMailbox(_AsyncMailbox):
                 self.cv.release()
             return
 
-            # sid = msg.content.get("_subscription_id")
-            # lifetime = msg.content.get("_duration")
-            # error = msg.content.get("_error")
-            # sp = SubscribeParams(sid,
-            #                      msg.content.get("_interval"),
-            #                      lifetime, error)
-            # if sid and self.subscription_id is None:
-            #     self.subscription_id = sid
-            # if lifetime:
-            #     self.console._lock.acquire()
-            #     try:
-            #         self.expiration_date = (datetime.datetime.utcnow() +
-            #                                 datetime.timedelta(seconds=lifetime))
-            #     finally:
-            #         self.console._lock.release()
-
-            # if self.waiting:
-            #     self.cv.acquire()
-            #     try:
-            #         self.data.append(sp)
-            #         # if was empty, notify waiters
-            #         if len(self._data) == 1:
-            #             self._cv.notify()
-            #     finally:
-            #         self._cv.release()
-            # else:
-            #     if opcode == OpCode.subscribe_rsp:
-            #         wi = WorkItem(WorkItem.SUBSCRIBE_RESPONSE,
-            #                       self.context, sp)
-            #     else:
-            #         wi = WorkItem(WorkItem.RESUBSCRIBE_RESPONSE,
-            #                       self.context, sp)
-            #     self.console._work_q.put(wi)
-            #     self.console._work_q_put = True
-            #     if error:
-            #         self.destroy()
-
+        # else: data indication
         agent_name = msg.properties.get("qmf.agent")
         if not agent_name:
             logging.warning("Ignoring data_ind - no agent name given: %s" %
@@ -471,6 +502,72 @@ class _SubscriptionMailbox(_AsyncMailbox):
 
 
 
+
+class _AsyncSubscriptionMailbox(_SubscriptionMailbox):
+    """
+    A Mailbox for a single subscription.  Allows only asychronous "subscribe"
+    and "refresh" requests.
+    """
+    def __init__(self, console, context, agent, duration, interval):
+        """
+        Invoked by application thread.
+        """
+        super(_AsyncSubscriptionMailbox, self).__init__(console, context,
+                                                        agent, duration,
+                                                        interval)
+        self.subscribe_pending = False
+        self.resubscribe_pending = False
+
+
+    def subscribe(self, query, reply_timeout):
+        if super(_AsyncSubscriptionMailbox, self).subscribe(query):
+            self.subscribe_pending = True
+            self.reset_timeout(reply_timeout)
+            return True
+        return False
+
+    def resubscribe(self, duration, reply_timeout):
+        if super(_AsyncSubscriptionMailbox, self).resubscribe(duration):
+            self.resubscribe_pending = True
+            self.reset_timeout(reply_timeout)
+            return True
+        return False
+
+    def deliver(self, msg):
+        """
+        """
+        super(_AsyncSubscriptionMailbox, self).deliver(msg)
+        sp = self.fetch(0)
+        if sp:
+            # if the message was a reply to a subscribe or
+            # re-subscribe, then we get here.
+            if self.subscribe_pending:
+                wi = WorkItem(WorkItem.SUBSCRIBE_RESPONSE,
+                              self.context, sp)
+            else:
+                wi = WorkItem(WorkItem.RESUBSCRIBE_RESPONSE,
+                              self.context, sp)
+
+            self.subscribe_pending = False
+            self.resubscribe_pending = False
+
+            self.console._work_q.put(wi)
+            self.console._work_q_put = True
+
+            if not sp.succeeded():
+                self.destroy()
+
+
+    def expire(self):
+        """ Either the subscription expired, or a request timedout.
+        """
+        if self.subscribe_pending:
+            wi = WorkItem(WorkItem.SUBSCRIBE_RESPONSE,
+                          self.context, None)
+        elif self.resubscribe_pending:
+            wi = WorkItem(WorkItem.RESUBSCRIBE_RESPONSE,
+                          self.context, None)
+        self.destroy()
 
 
 ##==============================================================================
@@ -1264,111 +1361,73 @@ class Console(Thread):
 
     def create_subscription(self, agent, query, console_handle,
                             _interval=None, _duration=None,
-                            _reply_handle=None, _timeout=None):
+                            _blocking=True, _timeout=None):
         if not _duration:
             _duration = self._subscribe_timeout
 
-        if _reply_handle is not None:
-            assert(False)  # async TBD
-        else:
-            mbox = _SubscriptionMailbox(self, _duration, console_handle, agent)
-
-        cid = mbox.get_address()
-
-        try:
-            logging.debug("Sending Subscribe to Agent (%s)" % time.time())
-            agent._send_subscribe_req(query, cid, _interval, _duration)
-        except SendError, e:
-            logging.error(str(e))
-            mbox.destroy()
-            return None
-
-        if _reply_handle is not None:
-            return True
-
-        # wait for reply
         if _timeout is None:
             _timeout = self._reply_timeout
 
-        logging.debug("Waiting for response to subscription (%s)" % _timeout)
-        # @todo: what if mbox expires here?
-        replyMsg = mbox.fetch(_timeout)
+        if not _blocking:
+            mbox = _AsyncSubscriptionMailbox(self, console_handle, agent,
+                                             _duration, _interval)
+            if not mbox.subscribe(query, _timeout):
+                mbox.destroy()
+                return False
+            return True
+        else:
+            mbox = _SubscriptionMailbox(self, console_handle, agent, _duration,
+                                        _interval)
 
-        if not replyMsg:
-            logging.debug("Subscription request wait timed-out.")
-            mbox.destroy()
-            return None
+            if not mbox.subscribe(query):
+                mbox.destroy()
+                return None
 
-        error = replyMsg.content.get("_error")
-        if error:
-            mbox.destroy()
-            try:
-                e_map = QmfData.from_map(error)
-            except TypeError:
-                e_map = QmfData.create({"error":"Unknown error"})
-            return SubscribeParams(None, None, None, e_map)
+            logging.debug("Waiting for response to subscription (%s)" % _timeout)
+            # @todo: what if mbox expires here?
+            sp = mbox.fetch(_timeout)
 
-        mbox.agent_subscription_id = replyMsg.content.get("_subscription_id")
-        return SubscribeParams(mbox.get_address(),
-                               replyMsg.content.get("_interval"),
-                               replyMsg.content.get("_duration"),
-                               None)
+            if not sp:
+                logging.debug("Subscription request wait timed-out.")
+                mbox.destroy()
+                return None
+
+            if not sp.succeeded():
+                mbox.destroy()
+
+            return sp
 
     def refresh_subscription(self, subscription_id,
                              _duration=None,
-                             _reply_handle=None, _timeout=None):
-        if _reply_handle is not None:
-            assert(False)  # async TBD
+                             _timeout=None):
+        if _timeout is None:
+            _timeout = self._reply_timeout
 
         mbox = self._get_mailbox(subscription_id)
         if not mbox:
             logging.warning("Subscription %s not found." % subscription_id)
             return None
 
-        agent = self.get_agent(mbox.agent_name)
-        if not agent:
-            logging.warning("Subscription %s agent %s not found." %
-                            (mbox.agent_name, subscription_id))
-            return None
+        if isinstance(mbox, _AsyncSubscriptionMailbox):
+            return mbox.resubscribe(_duration, _timeout)
+        else:
+            # synchronous - wait for reply
+            if not mbox.resubscribe(_duration):
+                # @todo ???? mbox.destroy()
+                return None
 
-        try:
-            logging.debug("Sending Subscribe to Agent (%s)" % time.time())
-            agent._send_resubscribe_req(subscription_id,
-                                        mbox.agent_subscription_id,
-                                        _duration)
-        except SendError, e:
-            logging.error(str(e))
-            # @todo ???? mbox.destroy()
-            return None
+            # wait for reply
 
-        if _reply_handle is not None:
-            return True
+            logging.debug("Waiting for response to subscription (%s)" % _timeout)
+            sp = mbox.fetch(_timeout)
 
-        # wait for reply
-        if _timeout is None:
-            _timeout = self._reply_timeout
+            if not sp:
+                logging.debug("re-subscribe request wait timed-out.")
+                # @todo???? mbox.destroy()
+                return None
 
-        logging.debug("Waiting for response to subscription (%s)" % _timeout)
-        replyMsg = mbox.fetch(_timeout)
+            return sp
 
-        if not replyMsg:
-            logging.debug("Subscription request wait timed-out.")
-            # @todo???? mbox.destroy()
-            return None
-
-        error = replyMsg.content.get("_error")
-        if error:
-            # @todo mbox.destroy()
-            try:
-                e_map = QmfData.from_map(error)
-            except TypeError:
-                e_map = QmfData.create({"error":"Unknown error"})
-            return SubscribeParams(None, None, None, e_map)
-
-        return SubscribeParams(mbox.get_address(),
-                               replyMsg.content.get("_interval"),
-                               replyMsg.content.get("_duration"),
-                               None)
 
     def cancel_subscription(self, subscription_id):
         """
