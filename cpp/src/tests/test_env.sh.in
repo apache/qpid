@@ -73,3 +73,6 @@ exportmodule XML_LIB xml.so
 export QPID_NO_MODULE_DIR=1	# Don't accidentally load installed modules
 export QPID_DATA_DIR= 		# Default to no data dir, not ~/.qpidd
 
+# Options for boost test framework
+export BOOST_TEST_SHOW_PROGRESS=yes
+export BOOST_TEST_CATCH_SYSTEM_ERRORS=no
