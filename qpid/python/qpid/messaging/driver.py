@@ -350,7 +350,7 @@ class Driver:
     if e is None:
       e = "connection aborted"
 
-    if (recoverable and self.connection.reconnect and
+    if (self.connection.reconnect and
         (self.connection.reconnect_limit is None or
          self.connection.reconnect_limit <= 0 or
          self._attempts <= self.connection.reconnect_limit)):
@@ -359,7 +359,7 @@ class Driver:
       else:
         delay = self.connection.reconnect_delay
       self._timeout = time.time() + delay
-      log.warn("recoverable error[attempt %s]: %s" % (self._attempts, err))
+      log.warn("recoverable error[attempt %s]: %s" % (self._attempts, e))
       if delay > 0:
         log.warn("sleeping %s seconds" % delay)
       self._retrying = True
@@ -420,6 +420,8 @@ class Driver:
       host, port = self._hosts[self._host]
       if self._retrying:
         log.warn("trying: %s:%s", host, port)
+      self.engine = Engine(self.connection)
+      self.engine.open()
       rawlog.debug("OPEN[%s]: %s:%s", self.log_id, host, port)
       self._socket = connect(host, port)
       if self._retrying:
@@ -428,8 +430,6 @@ class Driver:
       self._attempts = 0
       self._host = 0
       self._retrying = False
-      self.engine = Engine(self.connection)
-      self.engine.open()
     except socket.error, e:
       self._host = (self._host + 1) % len(self._hosts)
       self.close_engine(e)
