@@ -37,6 +37,11 @@ class MapContentImpl : public Variant
         }
     }
 
+    MapContentImpl(Message& m, const Variant::Map& i) : Variant(i), msg(&m)
+    {
+        msg->getContent().clear();
+    }
+
     void encode()
     {
         qpid::client::amqp0_10::MapCodec codec;
@@ -46,6 +51,7 @@ class MapContentImpl : public Variant
 };
 
 MapContent::MapContent(Message& m) : impl(new MapContentImpl(m)) {}
+MapContent::MapContent(Message& m, const Variant::Map& i) : impl(new MapContentImpl(m, i)) {}
 MapContent::~MapContent() { delete impl; }
 MapContent& MapContent::operator=(const MapContent& m) { *impl = *m.impl; return *this; }
 

@@ -42,6 +42,7 @@ class ListContent
     typedef Variant::List::const_reverse_iterator const_reverse_iterator;
 
     QPID_CLIENT_EXTERN ListContent(Message&);
+    QPID_CLIENT_EXTERN ListContent(Message&, const Variant::List&);
     QPID_CLIENT_EXTERN ~ListContent();
 
     QPID_CLIENT_EXTERN const_iterator begin() const;
