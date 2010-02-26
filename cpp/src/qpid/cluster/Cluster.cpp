@@ -285,6 +285,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
 }
 
 Cluster::~Cluster() {
+    broker.setClusterTimer(std::auto_ptr<sys::Timer>(0)); // Delete cluster timer
     if (updateThread.id()) updateThread.join(); // Join the previous updatethread.
 }
 
@@ -1002,7 +1003,6 @@ void Cluster::errorCheck(const MemberId& from, uint8_t type, framing::SequenceNu
 }
 
 void Cluster::timerWakeup(const MemberId& , const std::string& name, Lock&) {
-    QPID_LOG(debug, "Cluster timer wakeup " << map.getFrameSeq() << ": " << name)
     timer->deliverWakeup(name);
 }
 
