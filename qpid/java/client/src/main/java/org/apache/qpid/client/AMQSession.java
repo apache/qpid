@@ -1696,6 +1696,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
         if (subscriber != null)
         {
+            subscriber.close();
             // send a queue.delete for the subscription
             deleteQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
             _subscriptions.remove(name);
