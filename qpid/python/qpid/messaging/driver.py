@@ -372,7 +372,8 @@ class Driver:
     return getattr(self, "st_%s" % status.lower())()
 
   def st_closed(self):
-    rawlog.debug("CLOSE[%s]: %s", self.log_id, self._socket.getpeername())
+    # XXX: this log statement seems to sometimes hit when the socket is not connected
+    # XXX: rawlog.debug("CLOSE[%s]: %s", self.log_id, self._socket.getpeername())
     self._socket.close()
     self._socket = None
     self.engine = None
