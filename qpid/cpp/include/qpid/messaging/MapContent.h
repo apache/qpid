@@ -47,6 +47,7 @@ class MapContent
     typedef std::map<key_type, Variant>::reverse_iterator reverse_iterator;
 
     QPID_CLIENT_EXTERN MapContent(Message&);
+    QPID_CLIENT_EXTERN MapContent(Message&, const Variant::Map&);
     QPID_CLIENT_EXTERN ~MapContent();
 
     QPID_CLIENT_EXTERN const_iterator begin() const;
