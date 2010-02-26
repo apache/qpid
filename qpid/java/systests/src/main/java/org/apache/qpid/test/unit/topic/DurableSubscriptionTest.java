@@ -162,6 +162,7 @@ public class DurableSubscriptionTest extends QpidTestCase
         assertEquals(null, msg);
 
         consumer2.close();
+        session2.close();
 
         producer.send(session1.createTextMessage("B"));
 
