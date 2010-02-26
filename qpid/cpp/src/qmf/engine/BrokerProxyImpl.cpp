@@ -19,7 +19,7 @@
 
 #include "qmf/engine/BrokerProxyImpl.h"
 #include "qmf/engine/ConsoleImpl.h"
-#include "qmf/engine/Protocol.h"
+#include "qmf/Protocol.h"
 #include "qpid/Address.h"
 #include "qpid/sys/SystemInfo.h"
 #include <qpid/log/Statement.h>
@@ -30,7 +30,7 @@
 
 using namespace std;
 using namespace qmf::engine;
-using namespace qpid::framing;
+using namespace qpid::messaging;
 using namespace qpid::sys;
 
 namespace {
@@ -64,10 +64,6 @@ BrokerEvent BrokerEventImpl::copy()
 
     ::memset(&item, 0, sizeof(BrokerEvent));
     item.kind = kind;
-
-    STRING_REF(name);
-    STRING_REF(exchange);
-    STRING_REF(bindingKey);
     item.context = context;
     item.queryResponse = queryResponse.get();
     item.methodResponse = methodResponse.get();
@@ -87,63 +83,12 @@ BrokerProxyImpl::BrokerProxyImpl(BrokerProxy& pub, Console& _console) : publicOb
     seqMgr.setUnsolicitedContext(SequenceContext::Ptr(new StaticContext(*this)));
 }
 
-void BrokerProxyImpl::sessionOpened(SessionHandle& /*sh*/)
+void BrokerProxyImpl::sendBufferLH(Buffer&, const string&, const string&)
 {
-    Mutex::ScopedLock _lock(lock);
-    agentList.clear();
-    eventQueue.clear();
-    xmtQueue.clear();
-    eventQueue.push_back(eventDeclareQueue(queueName));
-    eventQueue.push_back(eventBind(DIR_EXCHANGE, queueName, queueName));
-    eventQueue.push_back(eventSetupComplete());
-
-    // TODO: Store session handle
+    // TODO
 }
 
-void BrokerProxyImpl::sessionClosed()
-{
-    Mutex::ScopedLock _lock(lock);
-    agentList.clear();
-    eventQueue.clear();
-    xmtQueue.clear();
-}
-
-void BrokerProxyImpl::startProtocol()
-{
-    AgentProxyPtr agent(AgentProxyImpl::factory(console, publicObject, 0, "Agent embedded in broker"));
-    {
-        Mutex::ScopedLock _lock(lock);
-        char rawbuffer[512];
-        Buffer buffer(rawbuffer, 512);
-
-        agentList[0] = agent;
-
-        requestsOutstanding = 1;
-        topicBound = false;
-        uint32_t sequence(seqMgr.reserve());
-        Protocol::encodeHeader(buffer, Protocol::OP_BROKER_REQUEST, sequence);
-        sendBufferLH(buffer, QMF_EXCHANGE, BROKER_KEY);
-        QPID_LOG(trace, "SENT BrokerRequest seq=" << sequence);
-    }
-
-    console.impl->eventAgentAdded(agent);
-}
-
-void BrokerProxyImpl::sendBufferLH(Buffer& buf, const string& destination, const string& routingKey)
-{
-    uint32_t length = buf.getPosition();
-    MessageImpl::Ptr message(new MessageImpl);
-
-    buf.reset();
-    buf.getRawData(message->body, length);
-    message->destination   = destination;
-    message->routingKey    = routingKey;
-    message->replyExchange = DIR_EXCHANGE;
-    message->replyKey      = queueName;
-
-    xmtQueue.push_back(message);
-}
-
+/*
 void BrokerProxyImpl::handleRcvMessage(Message& message)
 {
     Buffer inBuffer(message.body, message.length);
@@ -153,22 +98,7 @@ void BrokerProxyImpl::handleRcvMessage(Message& message)
     while (Protocol::checkHeader(inBuffer, &opcode, &sequence))
         seqMgr.dispatch(opcode, sequence, message.routingKey ? string(message.routingKey) : string(), inBuffer);
 }
-
-bool BrokerProxyImpl::getXmtMessage(Message& item) const
-{
-    Mutex::ScopedLock _lock(lock);
-    if (xmtQueue.empty())
-        return false;
-    item =  xmtQueue.front()->copy();
-    return true;
-}
-
-void BrokerProxyImpl::popXmt()
-{
-    Mutex::ScopedLock _lock(lock);
-    if (!xmtQueue.empty())
-        xmtQueue.pop_front();
-}
+*/
 
 bool BrokerProxyImpl::getEvent(BrokerEvent& event) const
 {
@@ -227,10 +157,6 @@ void BrokerProxyImpl::sendQuery(const Query& query, void* context, const AgentPr
 
 bool BrokerProxyImpl::sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent)
 {
-    if (query.impl->singleAgent()) {
-        if (query.impl->agentBank() != agent->getAgentBank())
-            return false;
-    }
     stringstream key;
     Buffer outBuffer(outputBuffer, MA_BUFFER_SIZE);
     uint32_t sequence(seqMgr.reserve(queryContext));
@@ -269,7 +195,7 @@ string BrokerProxyImpl::encodeMethodArguments(const SchemaMethod* schema, const 
     return string();
 }
 
-void BrokerProxyImpl::sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls,
+void BrokerProxyImpl::sendMethodRequest(ObjectId* oid, const SchemaClass* cls,
                                         const string& methodName, const Value* args, void* userContext)
 {
     int methodCount = cls->getMethodCount();
@@ -452,43 +378,13 @@ void BrokerProxyImpl::handleEventIndication(Buffer& /*inBuffer*/, uint32_t /*seq
 
 void BrokerProxyImpl::handleSchemaResponse(Buffer& inBuffer, uint32_t seq)
 {
-    SchemaObjectClass* oClassPtr;
-    SchemaEventClass* eClassPtr;
+    SchemaClass* classPtr;
     uint8_t kind = inBuffer.getOctet();
     const SchemaClassKey* key;
-    if (kind == CLASS_OBJECT) {
-        oClassPtr = SchemaObjectClassImpl::factory(inBuffer);
-        console.impl->learnClass(oClassPtr);
-        key = oClassPtr->getClassKey();
-        QPID_LOG(trace, "RCVD SchemaResponse seq=" << seq << " kind=object key=" << key->impl->str());
-
-        //
-        // If we have just learned about the org.apache.qpid.broker:agent class, send a get
-        // request for the current list of agents so we can have it on-hand before we declare
-        // this session "stable".
-        //
-        if (key->impl->getClassName() == AGENT_CLASS && key->impl->getPackageName() == BROKER_PACKAGE) {
-            Mutex::ScopedLock _lock(lock);
-            incOutstandingLH();
-            Buffer outBuffer(outputBuffer, MA_BUFFER_SIZE);
-            uint32_t sequence(seqMgr.reserve());
-            Protocol::encodeHeader(outBuffer, Protocol::OP_GET_QUERY, sequence);
-            FieldTable ft;
-            ft.setString("_class", AGENT_CLASS);
-            ft.setString("_package", BROKER_PACKAGE);
-            ft.encode(outBuffer);
-            sendBufferLH(outBuffer, QMF_EXCHANGE, BROKER_AGENT_KEY);
-            QPID_LOG(trace, "SENT GetQuery seq=" << sequence << " key=" << BROKER_AGENT_KEY);
-        }
-    } else if (kind == CLASS_EVENT) {
-        eClassPtr = SchemaEventClassImpl::factory(inBuffer);
-        console.impl->learnClass(eClassPtr);
-        key = eClassPtr->getClassKey();
-        QPID_LOG(trace, "RCVD SchemaResponse seq=" << seq << " kind=event key=" << key->impl->str());
-    }
-    else {
-        QPID_LOG(error, "BrokerProxyImpl::handleSchemaResponse received unknown class kind: " << (int) kind);
-    }
+    classPtr = SchemaClassImpl::factory(inBuffer);
+    console.impl->learnClass(classPtr);
+    key = classPtr->getClassKey();
+    QPID_LOG(trace, "RCVD SchemaResponse seq=" << seq << " kind=object key=" << key->impl->str());
 }
 
 ObjectPtr BrokerProxyImpl::handleObjectIndication(Buffer& inBuffer, uint32_t seq, bool prop, bool stat)
@@ -496,7 +392,7 @@ ObjectPtr BrokerProxyImpl::handleObjectIndication(Buffer& inBuffer, uint32_t seq
     auto_ptr<SchemaClassKey> classKey(SchemaClassKeyImpl::factory(inBuffer));
     QPID_LOG(trace, "RCVD ObjectIndication seq=" << seq << " key=" << classKey->impl->str());
 
-    SchemaObjectClass* schema = console.impl->getSchema(classKey.get());
+    SchemaClass* schema = console.impl->getSchema(classKey.get());
     if (schema == 0) {
         QPID_LOG(trace, "No Schema Found for ObjectIndication. seq=" << seq << " key=" << classKey->impl->str());
         return ObjectPtr();
@@ -749,12 +645,6 @@ uint32_t AgentProxy::getAgentBank() const { return impl->getAgentBank(); }
 
 BrokerProxy::BrokerProxy(Console& console) : impl(new BrokerProxyImpl(*this, console)) {}
 BrokerProxy::~BrokerProxy() { delete impl; }
-void BrokerProxy::sessionOpened(SessionHandle& sh) { impl->sessionOpened(sh); }
-void BrokerProxy::sessionClosed() { impl->sessionClosed(); }
-void BrokerProxy::startProtocol() { impl->startProtocol(); }
-void BrokerProxy::handleRcvMessage(Message& message) { impl->handleRcvMessage(message); }
-bool BrokerProxy::getXmtMessage(Message& item) const { return impl->getXmtMessage(item); }
-void BrokerProxy::popXmt() { impl->popXmt(); }
 bool BrokerProxy::getEvent(BrokerEvent& event) const { return impl->getEvent(event); }
 void BrokerProxy::popEvent() { impl->popEvent(); }
 uint32_t BrokerProxy::agentCount() const { return impl->agentCount(); }

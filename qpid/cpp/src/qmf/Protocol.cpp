@@ -43,6 +43,30 @@ const string Protocol::SUBTYPES("_subtypes");
 const string Protocol::SUBTYPE_SCHEMA_PROPERTY("qmfProperty");
 const string Protocol::SUBTYPE_SCHEMA_METHOD("qmfMethod");
 
+const string Protocol::AMQP_CONTENT_MAP("amqp/map");
+const string Protocol::AMQP_CONTENT_LIST("amqp/list");
+
+const string Protocol::APP_OPCODE("qmf.opcode");
+
+const string Protocol::OP_AGENT_LOCATE_REQUEST("_agent_locate_request");
+const string Protocol::OP_AGENT_LOCATE_RESPONSE("_agent_locate_response");
+const string Protocol::OP_AGENT_HEARTBEAT_INDICATION("_agent_heartbeat_indication");
+const string Protocol::OP_QUERY_REQUEST("_query_request");
+const string Protocol::OP_QUERY_RESPONSE("_query_response");
+const string Protocol::OP_SUBSCRIBE_REQUEST("_subscribe_request");
+const string Protocol::OP_SUBSCRIBE_RESPONSE("_subscribe_response");
+const string Protocol::OP_SUBSCRIBE_CANCEL_INDICATION("_subscribe_cancel_indication");
+const string Protocol::OP_SUBSCRIBE_REFRESH_REQUEST("_subscribe_refresh_request");
+const string Protocol::OP_DATA_INDICATION("_data_indication");
+const string Protocol::OP_METHOD_REQUEST("_method_request");
+const string Protocol::OP_METHOD_RESPONSE("_method_response");
+
+const string Protocol::CONTENT_PACKAGE("_schema_package");
+const string Protocol::CONTENT_SCHEMA_ID("_schema_id");
+const string Protocol::CONTENT_SCHEMA_CLASS("_schema_class");
+const string Protocol::CONTENT_OBJECT_ID("_object_id");
+const string Protocol::CONTENT_DATA("_data");
+const string Protocol::CONTENT_EVENT("_event");
 
 #if 0
 bool Protocol::checkHeader(const Message& /*msg*/, string& /*opcode*/, uint32_t* /*seq*/)

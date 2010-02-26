@@ -20,6 +20,7 @@
  * under the License.
  */
 
+#include <qmf/Notifiable.h>
 #include <qmf/engine/Schema.h>
 #include <qmf/engine/ObjectId.h>
 #include <qmf/engine/Object.h>
@@ -65,8 +66,26 @@ namespace engine {
      */
     class Agent {
     public:
+        /**
+         * Declare a type for a notification callback.
+         */
+        typedef void (*notifyCb)();
+
         Agent(const char* vendor, const char* product, const char* name, const char* domain=0, bool internalStore=true);
         ~Agent();
+
+        /**
+         * Provide the Agent with a notification callback that is invoked whenever there is new work
+         * placed on the event queue.
+         *
+         * There are two flavors of notification callback: C-style based on the
+         * type "notifyCb"; and the C++ style based on the Notifiable class.
+         * The C++ style can be used for C++ wrappers/applications and the
+         * C-style can be used for C wrappers/applications and also for
+         * Swig-based script wrappers.
+         */
+        void setNotifyCallback(notifyCb handler);
+        void setNotifyCallback(Notifiable* handler);
 
         /**
          * Set an agent attribute that can be used to describe this agent to consoles.

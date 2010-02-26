@@ -57,6 +57,43 @@ namespace qmf {
         const static std::string SUBTYPE_SCHEMA_PROPERTY;
         const static std::string SUBTYPE_SCHEMA_METHOD;
 
+        /**
+         * Message Content Types
+         */
+        const static std::string AMQP_CONTENT_MAP;
+        const static std::string AMQP_CONTENT_LIST;
+
+        /**
+         * Application Header Keys
+         */
+        const static std::string APP_OPCODE;
+
+        /**
+         * QMF Op Codes
+         */
+        const static std::string OP_AGENT_LOCATE_REQUEST;
+        const static std::string OP_AGENT_LOCATE_RESPONSE;
+        const static std::string OP_AGENT_HEARTBEAT_INDICATION;
+        const static std::string OP_QUERY_REQUEST;
+        const static std::string OP_QUERY_RESPONSE;
+        const static std::string OP_SUBSCRIBE_REQUEST;
+        const static std::string OP_SUBSCRIBE_RESPONSE;
+        const static std::string OP_SUBSCRIBE_CANCEL_INDICATION;
+        const static std::string OP_SUBSCRIBE_REFRESH_REQUEST;
+        const static std::string OP_DATA_INDICATION;
+        const static std::string OP_METHOD_REQUEST;
+        const static std::string OP_METHOD_RESPONSE;
+
+        /**
+         * Content type definitions
+         */
+        const static std::string CONTENT_PACKAGE;
+        const static std::string CONTENT_SCHEMA_ID;
+        const static std::string CONTENT_SCHEMA_CLASS;
+        const static std::string CONTENT_OBJECT_ID;
+        const static std::string CONTENT_DATA;
+        const static std::string CONTENT_EVENT;
+
         /*
         const static uint8_t OP_ATTACH_REQUEST  = 'A';
         const static uint8_t OP_ATTACH_RESPONSE = 'a';

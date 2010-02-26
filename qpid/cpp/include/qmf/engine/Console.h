@@ -98,8 +98,6 @@ namespace engine {
         Event*          event;          // (EVENT_RECEIVED)
         uint64_t        timestamp;      // (AGENT_HEARTBEAT)
         QueryResponse*  queryResponse;  // (QUERY_COMPLETE)
-        bool            hasProps;
-        bool            hasStats;
     };
 
     /**
@@ -107,21 +105,11 @@ namespace engine {
      */
     struct BrokerEvent {
         enum EventKind {
-            BROKER_INFO     = 10,
-            DECLARE_QUEUE   = 11,
-            DELETE_QUEUE    = 12,
-            BIND            = 13,
-            UNBIND          = 14,
-            SETUP_COMPLETE  = 15,
-            STABLE          = 16,
             QUERY_COMPLETE  = 17,
             METHOD_RESPONSE = 18
         };
 
         EventKind kind;
-        char*           name;           // ([DECLARE|DELETE]_QUEUE, [UN]BIND)
-        char*           exchange;       // ([UN]BIND)
-        char*           bindingKey;     // ([UN]BIND)
         void*           context;        // (QUERY_COMPLETE, METHOD_RESPONSE)
         QueryResponse*  queryResponse;  // (QUERY_COMPLETE)
         MethodResponse* methodResponse; // (METHOD_RESPONSE)
@@ -154,10 +142,6 @@ namespace engine {
     public:
         BrokerProxy(Console& console);
         ~BrokerProxy();
-
-        void sessionOpened(SessionHandle& sh);
-        void sessionClosed();
-        void startProtocol();
 
         bool getEvent(BrokerEvent& event) const;
         void popEvent();

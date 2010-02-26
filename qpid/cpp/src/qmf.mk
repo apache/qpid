@@ -44,7 +44,9 @@ QMF_ENGINE_API =				\
   ../include/qmf/engine/Object.h		\
   ../include/qmf/engine/QmfEngineImportExport.h	\
   ../include/qmf/engine/Query.h			\
-  ../include/qmf/engine/Schema.h
+  ../include/qmf/engine/Schema.h		\
+  ../include/qmf/Agent.h			\
+  ../include/qmf/Notifiable.h
 
 # ../include/qmf/engine/ObjectId.h
 
@@ -57,6 +59,8 @@ libqmf_la_SOURCES =			\
   $(QMF_API)				\
   qpid/agent/ManagementAgentImpl.cpp	\
   qpid/agent/ManagementAgentImpl.h
+
+#  qmf/Agent.cpp
 
 libqmfengine_la_SOURCES =			\
   $(QMF_ENGINE_API)				\

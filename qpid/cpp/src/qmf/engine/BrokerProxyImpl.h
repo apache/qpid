@@ -25,8 +25,6 @@
 #include "qmf/engine/SchemaImpl.h"
 #include "qmf/engine/QueryImpl.h"
 #include "qmf/engine/SequenceManager.h"
-#include "qmf/engine/MessageImpl.h"
-#include "qpid/framing/Uuid.h"
 #include "qpid/messaging/Variant.h"
 #include "qpid/sys/Mutex.h"
 #include "boost/shared_ptr.hpp"
@@ -80,9 +78,6 @@ namespace engine {
     struct BrokerEventImpl {
         typedef boost::shared_ptr<BrokerEventImpl> Ptr;
         BrokerEvent::EventKind kind;
-        std::string name;
-        std::string exchange;
-        std::string bindingKey;
         void* context;
         QueryResponsePtr queryResponse;
         MethodResponsePtr methodResponse;
@@ -123,14 +118,7 @@ namespace engine {
         BrokerProxyImpl(BrokerProxy& pub, Console& _console);
         ~BrokerProxyImpl() {}
 
-        void sessionOpened(SessionHandle& sh);
-        void sessionClosed();
-        void startProtocol();
-
         void sendBufferLH(qpid::framing::Buffer& buf, const std::string& destination, const std::string& routingKey);
-        void handleRcvMessage(Message& message);
-        bool getXmtMessage(Message& item) const;
-        void popXmt();
 
         bool getEvent(BrokerEvent& event) const;
         void popEvent();
@@ -140,7 +128,7 @@ namespace engine {
         void sendQuery(const Query& query, void* context, const AgentProxy* agent);
         bool sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent);
         std::string encodeMethodArguments(const SchemaMethod* schema, const qpid::messaging::Variant::Map* args, qpid::framing::Buffer& buffer);
-        void sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls, const std::string& method, const qpid::messaging::Variant::Map* args, void* context);
+        void sendMethodRequest(ObjectId* oid, const SchemaClass* cls, const std::string& method, const qpid::messaging::Variant::Map* args, void* context);
 
         void addBinding(const std::string& exchange, const std::string& key);
         void staticRelease() { decOutstanding(); }
@@ -153,12 +141,11 @@ namespace engine {
         mutable qpid::sys::Mutex lock;
         Console& console;
         std::string queueName;
-        qpid::framing::Uuid brokerId;
+        qpid::messaging::Uuid brokerId;
         SequenceManager seqMgr;
         uint32_t requestsOutstanding;
         bool topicBound;
         std::map<uint32_t, AgentProxyPtr> agentList;
-        std::deque<MessageImpl::Ptr> xmtQueue;
         std::deque<BrokerEventImpl::Ptr> eventQueue;
 
 #       define MA_BUFFER_SIZE 65536

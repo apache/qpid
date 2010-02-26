@@ -21,15 +21,13 @@
  */
 
 #include "qmf/engine/Console.h"
-#include "qmf/engine/MessageImpl.h"
 #include "qmf/engine/SchemaImpl.h"
 #include "qmf/engine/ObjectImpl.h"
 #include "qmf/engine/ObjectIdImpl.h"
 #include "qmf/engine/QueryImpl.h"
-#include "qmf/engine/Protocol.h"
+#include "qmf/Protocol.h"
 #include "qmf/engine/SequenceManager.h"
 #include "qmf/engine/BrokerProxyImpl.h"
-#include <qpid/framing/Uuid.h>
 #include <qpid/sys/Mutex.h>
 #include <qpid/sys/Time.h>
 #include <qpid/sys/SystemInfo.h>

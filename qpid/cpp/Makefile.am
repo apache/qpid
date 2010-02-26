@@ -27,7 +27,7 @@ EXTRA_DIST = \
   xml/cluster.xml INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
   packaging/NSIS
 
-SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf
+SUBDIRS = managementgen etc src docs/api docs/man examples
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)

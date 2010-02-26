@@ -53,6 +53,7 @@ namespace engine {
 
     private:
         friend struct QueryImpl;
+        friend struct BrokerProxyImpl;
         QueryImpl* impl;
     };
 }
