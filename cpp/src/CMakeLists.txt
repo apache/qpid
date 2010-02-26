@@ -855,7 +855,6 @@ set (qmfengine_SOURCES
      qmf/engine/Protocol.h
      qmf/engine/QueryImpl.cpp
      qmf/engine/QueryImpl.h
-     qmf/engine/ResilientConnection.cpp
      qmf/engine/SequenceManager.cpp
      qmf/engine/SequenceManager.h
      qmf/engine/SchemaImpl.cpp
@@ -863,6 +862,10 @@ set (qmfengine_SOURCES
      qmf/engine/ValueImpl.cpp
      qmf/engine/ValueImpl.h
     )
+if (NOT WIN32)
+	list(APPEND qmfengine_SOURCES qmf/engine/ResilientConnection.cpp)
+endif (NOT WIN32)
+
 add_library (qmfengine SHARED ${qmfengine_SOURCES})
 target_link_libraries (qmfengine qpidclient)
 set_target_properties (qmfengine PROPERTIES
