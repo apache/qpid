@@ -38,7 +38,7 @@ public class DurableSubscriberTest extends QpidTestCase
      */
     public void testDurSubRestoredAfterNonPersistentMessageSent() throws Exception
     {
-        if (!isBroker08())
+        if (isBrokerStorePersistent() || !isBroker08())
         {
             TopicConnectionFactory factory = getConnectionFactory();
             Topic topic = (Topic) getInitialContext().lookup(_topicName);
@@ -102,7 +102,7 @@ public class DurableSubscriberTest extends QpidTestCase
      */
     public void testDurSubRestoresMessageSelector() throws Exception
     {
-        if (!isBroker08())
+        if (isBrokerStorePersistent() || !isBroker08())
         {
             TopicConnectionFactory factory = getConnectionFactory();
             Topic topic = (Topic) getInitialContext().lookup(_topicName);

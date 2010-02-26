@@ -271,6 +271,7 @@
       <sysproperty key="broker" value="${broker}"/>
       <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.clean.between.tests" value="${broker.clean.between.tests}"/>
+      <sysproperty key="broker.persistent" value="${broker.persistent}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="broker.stopped" value="${broker.stopped}" />
