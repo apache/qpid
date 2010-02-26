@@ -37,6 +37,11 @@ class ListContentImpl : public Variant
         }
     }
 
+    ListContentImpl(Message& m, const Variant::List& i) : Variant(i), msg(&m)
+    {
+        msg->getContent().clear();
+    }
+
     void encode()
     {
         qpid::client::amqp0_10::ListCodec codec;
@@ -45,6 +50,7 @@ class ListContentImpl : public Variant
 };
 
 ListContent::ListContent(Message& m) : impl(new ListContentImpl(m)) {}
+ListContent::ListContent(Message& m, const Variant::List& i) : impl(new ListContentImpl(m, i)) {}
 ListContent::~ListContent() { delete impl; }
 ListContent& ListContent::operator=(const ListContent& l) { *impl = *l.impl; return *this; }
 

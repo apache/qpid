@@ -346,6 +346,25 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     fix.session.acknowledge();
 }
 
+QPID_AUTO_TEST_CASE(testMapMessageWithInitial)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out;
+    Variant::Map imap;
+    imap["abc"] = "def";
+    imap["pi"] = 3.14f;
+    MapContent content(out, imap);
+    content.encode();
+    sender.send(out);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
+    MapView view(in);
+    BOOST_CHECK_EQUAL(view["abc"].asString(), "def");
+    BOOST_CHECK_EQUAL(view["pi"].asFloat(), 3.14f);
+    fix.session.acknowledge();
+}
+
 QPID_AUTO_TEST_CASE(testListMessage)
 {
     QueueFixture fix;
@@ -356,6 +375,40 @@ QPID_AUTO_TEST_CASE(testListMessage)
     content.push_back(Variant(1234));
     content.push_back(Variant("def"));
     content.push_back(Variant(56.789));
+    content.encode();
+    sender.send(out);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
+    ListView view(in);
+    BOOST_CHECK_EQUAL(view.size(), content.size());
+    BOOST_CHECK_EQUAL(view.front().asString(), "abc");
+    BOOST_CHECK_EQUAL(view.back().asDouble(), 56.789);
+
+    ListView::const_iterator i = view.begin();
+    BOOST_CHECK(i != view.end());
+    BOOST_CHECK_EQUAL(i->asString(), "abc");
+    BOOST_CHECK(++i != view.end());
+    BOOST_CHECK_EQUAL(i->asInt64(), 1234);
+    BOOST_CHECK(++i != view.end());
+    BOOST_CHECK_EQUAL(i->asString(), "def");
+    BOOST_CHECK(++i != view.end());
+    BOOST_CHECK_EQUAL(i->asDouble(), 56.789);
+    BOOST_CHECK(++i == view.end());
+
+    fix.session.acknowledge();
+}
+
+QPID_AUTO_TEST_CASE(testListMessageWithInitial)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out;
+    Variant::List ilist;
+    ilist.push_back(Variant("abc"));
+    ilist.push_back(Variant(1234));
+    ilist.push_back(Variant("def"));
+    ilist.push_back(Variant(56.789));
+    ListContent content(out, ilist);
     content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
