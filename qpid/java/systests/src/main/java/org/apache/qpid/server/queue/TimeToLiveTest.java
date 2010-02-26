@@ -305,6 +305,7 @@ public class TimeToLiveTest extends QpidTestCase
         Assert.assertFalse("Final message has first set.", receivedSecond.getBooleanProperty("first"));
         Assert.assertEquals("Final message has incorrect TTL.", 0L, receivedSecond.getLongProperty("TTL"));
 
+        clientSession.unsubscribe(getTestQueueName());
         clientConnection.close();
 
         producerConnection.close();
@@ -360,6 +361,10 @@ public class TimeToLiveTest extends QpidTestCase
         producer.close();
         producerSession.close();
         producerConnection.close();
+        
+        clientSession.unsubscribe("MyDurableTTLSubscription");
+        clientSession.close();
+        clientConnection.close();
     }
 
 }
