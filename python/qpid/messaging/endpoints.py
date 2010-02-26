@@ -94,6 +94,7 @@ class Connection:
     self.session_counter = 0
     self.sessions = {}
     self._connected = False
+    self._transport_connected = False
     self._lock = RLock()
     self._condition = Condition(self._lock)
     self._waiter = Waiter(self._condition)
@@ -157,7 +158,7 @@ class Connection:
     """
     self._connected = True
     self._wakeup()
-    self._ewait(lambda: self._driver._connected and not self._unlinked(),
+    self._ewait(lambda: self._transport_connected and not self._unlinked(),
                 exc=ConnectError)
 
   def _unlinked(self):
@@ -173,7 +174,7 @@ class Connection:
     """
     self._connected = False
     self._wakeup()
-    self._ewait(lambda: not self._driver._connected)
+    self._ewait(lambda: not self._transport_connected)
 
   @synchronized
   def connected(self):
