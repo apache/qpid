@@ -283,6 +283,11 @@ EMPTY_MP = MessageProperties()
 SUBJECT = "qpid.subject"
 TO = "qpid.to"
 
+CLOSED = "CLOSED"
+READ_ONLY = "READ_ONLY"
+WRITE_ONLY = "WRITE_ONLY"
+OPEN = "OPEN"
+
 class Driver:
 
   def __init__(self, connection):
@@ -290,67 +295,17 @@ class Driver:
     self.log_id = "%x" % id(self.connection)
     self._lock = self.connection._lock
 
-    self._in = LinkIn()
-    self._out = LinkOut()
-
     self._selector = Selector.default()
     self._attempts = 0
     self._hosts = [(self.connection.host, self.connection.port)] + \
         self.connection.backups
     self._host = 0
     self._retrying = False
-
-    self.reset()
-
-  def reset(self):
-    self._opening = False
-    self._closing = False
-    self._connected = False
-    self._attachments = {}
-
-    self._channel_max = 65536
-    self._channels = 0
-    self._sessions = {}
-
-    options = self.connection.options
-
-    self.address_cache = Cache(options.get("address_ttl", 60))
-
     self._socket = None
-    self._buf = ""
-    self._hdr = ""
-    self._op_enc = OpEncoder()
-    self._seg_enc = SegmentEncoder()
-    self._frame_enc = FrameEncoder()
-    self._frame_dec = FrameDecoder()
-    self._seg_dec = SegmentDecoder()
-    self._op_dec = OpDecoder()
+
     self._timeout = None
 
-    self._sasl = sasl.Client()
-    if self.connection.username:
-      self._sasl.setAttr("username", self.connection.username)
-    if self.connection.password:
-      self._sasl.setAttr("password", self.connection.password)
-    if self.connection.host:
-      self._sasl.setAttr("host", self.connection.host)
-    self._sasl.setAttr("service", options.get("service", "qpidd"))
-    if "min_ssf" in options:
-      self._sasl.setAttr("minssf", options["min_ssf"])
-    if "max_ssf" in options:
-      self._sasl.setAttr("maxssf", options["max_ssf"])
-    self._sasl.init()
-    self._sasl_encode = False
-    self._sasl_decode = False
-
-    for ssn in self.connection.sessions.values():
-      for m in ssn.acked + ssn.unacked + ssn.incoming:
-        m._transfer_id = None
-      for snd in ssn.senders:
-        snd.linked = False
-      for rcv in ssn.receivers:
-        rcv.impending = rcv.received
-        rcv.linked = False
+    self.engine = None
 
   @synchronized
   def wakeup(self):
@@ -369,7 +324,7 @@ class Driver:
 
   @synchronized
   def writing(self):
-    return self._socket is not None and self._buf
+    return self._socket is not None and self.engine.pending()
 
   @synchronized
   def timing(self):
@@ -377,78 +332,25 @@ class Driver:
 
   @synchronized
   def readable(self):
-    error = None
-    recoverable = False
     try:
       data = self._socket.recv(64*1024)
       if data:
         rawlog.debug("READ[%s]: %r", self.log_id, data)
-        if self._sasl_decode:
-          data = self._sasl.decode(data)
+        self.engine.write(data)
       else:
-        rawlog.debug("ABORTED[%s]: %s", self.log_id, self._socket.getpeername())
-        error = "connection aborted"
-        recoverable = True
+        self.close_engine()
     except socket.error, e:
-      error = e
-      recoverable = True
+      self.close_engine(e)
 
-    if not error:
-      try:
-        if len(self._hdr) < 8:
-          r = 8 - len(self._hdr)
-          self._hdr += data[:r]
-          data = data[r:]
-
-          if len(self._hdr) == 8:
-            self.do_header(self._hdr)
-
-        self._frame_dec.write(data)
-        self._seg_dec.write(*self._frame_dec.read())
-        self._op_dec.write(*self._seg_dec.read())
-        for op in self._op_dec.read():
-          self.assign_id(op)
-          opslog.debug("RCVD[%s]: %r", self.log_id, op)
-          op.dispatch(self)
-      except VersionError, e:
-        error = e
-      except:
-        msg = compat.format_exc()
-        error = msg
-
-    if error:
-      self._error(error, recoverable)
-    else:
-      self.dispatch()
+    self.update_status()
 
     self.connection._waiter.notifyAll()
 
-  def assign_id(self, op):
-    if isinstance(op, Command):
-      sst = self.get_sst(op)
-      op.id = sst.received
-      sst.received += 1
+  def close_engine(self, e=None):
+    if e is None:
+      e = "connection aborted"
 
-  @synchronized
-  def writeable(self):
-    try:
-      n = self._socket.send(self._buf)
-      rawlog.debug("SENT[%s]: %r", self.log_id, self._buf[:n])
-      self._buf = self._buf[n:]
-    except socket.error, e:
-      self._error(e, True)
-      self.connection._waiter.notifyAll()
-
-  @synchronized
-  def timeout(self):
-    self.dispatch()
-    self.connection._waiter.notifyAll()
-
-  def _error(self, err, recoverable):
-    if self._socket is not None:
-      self._socket.close()
-    self.reset()
-    if (recoverable and self.connection.reconnect and
+    if (self.connection.reconnect and
         (self.connection.reconnect_limit is None or
          self.connection.reconnect_limit <= 0 or
          self._attempts <= self.connection.reconnect_limit)):
@@ -457,12 +359,191 @@ class Driver:
       else:
         delay = self.connection.reconnect_delay
       self._timeout = time.time() + delay
-      log.warn("recoverable error[attempt %s]: %s" % (self._attempts, err))
+      log.warn("recoverable error[attempt %s]: %s" % (self._attempts, e))
       if delay > 0:
         log.warn("sleeping %s seconds" % delay)
       self._retrying = True
+      self.engine.close()
     else:
-      self.connection.error = (err,)
+      self.engine.close(e)
+
+  def update_status(self):
+    status = self.engine.status()
+    return getattr(self, "st_%s" % status.lower())()
+
+  def st_closed(self):
+    # XXX: this log statement seems to sometimes hit when the socket is not connected
+    # XXX: rawlog.debug("CLOSE[%s]: %s", self.log_id, self._socket.getpeername())
+    self._socket.close()
+    self._socket = None
+    self.engine = None
+    return True
+
+  def st_open(self):
+    return False
+
+  @synchronized
+  def writeable(self):
+    notify = False
+    try:
+      n = self._socket.send(self.engine.peek())
+      sent = self.engine.read(n)
+      rawlog.debug("SENT[%s]: %r", self.log_id, sent)
+    except socket.error, e:
+      self.close_engine(e)
+      notify = True
+
+    if self.update_status() or notify:
+      self.connection._waiter.notifyAll()
+
+  @synchronized
+  def timeout(self):
+    self.dispatch()
+    self.connection._waiter.notifyAll()
+
+  def dispatch(self):
+    try:
+      if self._socket is None:
+        if self.connection._connected:
+          self.connect()
+      else:
+        self.engine.dispatch()
+    except:
+      # XXX: Does socket get leaked if this occurs?
+      msg = compat.format_exc()
+      self.connection.error = (msg,)
+
+  def connect(self):
+    try:
+      # XXX: should make this non blocking
+      if self._host == 0:
+        self._attempts += 1
+      host, port = self._hosts[self._host]
+      if self._retrying:
+        log.warn("trying: %s:%s", host, port)
+      self.engine = Engine(self.connection)
+      self.engine.open()
+      rawlog.debug("OPEN[%s]: %s:%s", self.log_id, host, port)
+      self._socket = connect(host, port)
+      if self._retrying:
+        log.warn("reconnect succeeded: %s:%s", host, port)
+      self._timeout = None
+      self._attempts = 0
+      self._host = 0
+      self._retrying = False
+    except socket.error, e:
+      self._host = (self._host + 1) % len(self._hosts)
+      self.close_engine(e)
+
+class Engine:
+
+  def __init__(self, connection):
+    self.connection = connection
+    self.log_id = "%x" % id(self.connection)
+    self._closing = False
+    self._connected = False
+    self._attachments = {}
+
+    self._in = LinkIn()
+    self._out = LinkOut()
+
+    self._channel_max = 65536
+    self._channels = 0
+    self._sessions = {}
+
+    options = self.connection.options
+
+    self.address_cache = Cache(options.get("address_ttl", 60))
+
+    self._status = CLOSED
+    self._buf = ""
+    self._hdr = ""
+    self._op_enc = OpEncoder()
+    self._seg_enc = SegmentEncoder()
+    self._frame_enc = FrameEncoder()
+    self._frame_dec = FrameDecoder()
+    self._seg_dec = SegmentDecoder()
+    self._op_dec = OpDecoder()
+
+    self._sasl = sasl.Client()
+    if self.connection.username:
+      self._sasl.setAttr("username", self.connection.username)
+    if self.connection.password:
+      self._sasl.setAttr("password", self.connection.password)
+    if self.connection.host:
+      self._sasl.setAttr("host", self.connection.host)
+    self._sasl.setAttr("service", options.get("service", "qpidd"))
+    if "min_ssf" in options:
+      self._sasl.setAttr("minssf", options["min_ssf"])
+    if "max_ssf" in options:
+      self._sasl.setAttr("maxssf", options["max_ssf"])
+    self._sasl.init()
+    self._sasl_encode = False
+    self._sasl_decode = False
+
+  def _reset(self):
+    self.connection._transport_connected = False
+
+    for ssn in self.connection.sessions.values():
+      for m in ssn.acked + ssn.unacked + ssn.incoming:
+        m._transfer_id = None
+      for snd in ssn.senders:
+        snd.linked = False
+      for rcv in ssn.receivers:
+        rcv.impending = rcv.received
+        rcv.linked = False
+
+  def status(self):
+    return self._status
+
+  def write(self, data):
+    try:
+      if self._sasl_decode:
+        data = self._sasl.decode(data)
+
+      if len(self._hdr) < 8:
+        r = 8 - len(self._hdr)
+        self._hdr += data[:r]
+        data = data[r:]
+
+        if len(self._hdr) == 8:
+          self.do_header(self._hdr)
+
+      self._frame_dec.write(data)
+      self._seg_dec.write(*self._frame_dec.read())
+      self._op_dec.write(*self._seg_dec.read())
+      for op in self._op_dec.read():
+        self.assign_id(op)
+        opslog.debug("RCVD[%s]: %r", self.log_id, op)
+        op.dispatch(self)
+      self.dispatch()
+    except VersionError, e:
+      self.close(e)
+    except:
+      self.close(compat.format_exc())
+
+  def close(self, e=None):
+    self._reset()
+    if e:
+      self.connection.error = (e,)
+    self._status = CLOSED
+
+  def assign_id(self, op):
+    if isinstance(op, Command):
+      sst = self.get_sst(op)
+      op.id = sst.received
+      sst.received += 1
+
+  def pending(self):
+    return len(self._buf)
+
+  def read(self, n):
+    result = self._buf[:n]
+    self._buf = self._buf[n:]
+    return result
+
+  def peek(self):
+    return self._buf
 
   def write_op(self, op):
     opslog.debug("SENT[%s]: %r", self.log_id, op)
@@ -507,6 +588,7 @@ class Driver:
   def do_connection_open_ok(self, open_ok):
     self._connected = True
     self._sasl_decode = True
+    self.connection._transport_connected = True
 
   def connection_heartbeat(self, hrt):
     self.write_op(ConnectionHeartbeat())
@@ -522,8 +604,7 @@ class Driver:
     # probably the right thing to do
 
   def do_connection_close_ok(self, close_ok):
-    self._socket.close()
-    self.reset()
+    self.close()
 
   def do_session_attached(self, atc):
     pass
@@ -576,40 +657,18 @@ class Driver:
     sst.session.error = (ex,)
 
   def dispatch(self):
-    try:
-      if self._socket is None and self.connection._connected and not self._opening:
-        self.connect()
-      elif self._socket is not None and not self.connection._connected and not self._closing:
-        self.disconnect()
+    if not self.connection._connected and not self._closing and self._status != CLOSED:
+      self.disconnect()
 
-      if self._connected and not self._closing:
-        for ssn in self.connection.sessions.values():
-          self.attach(ssn)
-          self.process(ssn)
-    except:
-      msg = compat.format_exc()
-      self.connection.error = (msg,)
+    if self._connected and not self._closing:
+      for ssn in self.connection.sessions.values():
+        self.attach(ssn)
+        self.process(ssn)
 
-  def connect(self):
-    try:
-      # XXX: should make this non blocking
-      if self._host == 0:
-        self._attempts += 1
-      host, port = self._hosts[self._host]
-      if self._retrying:
-        log.warn("trying: %s:%s", host, port)
-      self._socket = connect(host, port)
-      if self._retrying:
-        log.warn("reconnect succeeded: %s:%s", host, port)
-      self._timeout = None
-      self._attempts = 0
-      self._host = 0
-      self._retrying = False
-      self._buf += struct.pack(HEADER, "AMQP", 1, 1, 0, 10)
-      self._opening = True
-    except socket.error, e:
-      self._host = (self._host + 1) % len(self._hosts)
-      self._error(e, True)
+  def open(self):
+    self._reset()
+    self._status = OPEN
+    self._buf += struct.pack(HEADER, "AMQP", 1, 1, 0, 10)
 
   def disconnect(self):
     self.write_op(ConnectionClose(close_code.normal))
@@ -1023,7 +1082,6 @@ class Driver:
     rcv.received += 1
     log.debug("RCVD[%s]: %s", ssn.log_id, msg)
     ssn.incoming.append(msg)
-    self.connection._waiter.notifyAll()
 
   def _decode(self, xfr):
     dp = EMPTY_DP

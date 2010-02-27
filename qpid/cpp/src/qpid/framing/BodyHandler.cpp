@@ -25,6 +25,7 @@
 #include "qpid/framing/AMQHeartbeatBody.h"
 #include <boost/cast.hpp>
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/Msg.h"
 
 using namespace qpid::framing;
 using namespace boost;

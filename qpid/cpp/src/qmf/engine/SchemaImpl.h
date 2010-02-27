@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <memory>
 
 namespace qmf {
 namespace engine {

@@ -141,9 +141,65 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                 perThreadSetup._pingClient = new PingClient(testParameters);
                 perThreadSetup._pingClient.establishConnection(true, true);
             }
-            // Start the client connection
-            perThreadSetup._pingClient.start();
 
+            // Prefill the broker unless we are in consume only mode. 
+            int preFill = testParameters.getPropertyAsInteger(PingPongProducer.PREFILL_PROPNAME);
+            if (!testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME) && preFill > 0)
+            {
+                // Manually set the correlation ID to 1. This is not ideal but it is the
+                // value that the main test loop will use.
+                perThreadSetup._pingClient.pingNoWaitForReply(null, preFill, String.valueOf(perThreadSetup._pingClient.getClientCount()));
+
+                // Note with a large preFill and non-tx session the messages will be
+                // rapidly pushed in to the mina buffers. OOM's are a real risk here.
+                // Should perhaps consider using a TX session for the prefill.
+
+                long delayBeforeConsume = testParameters.getPropertyAsLong(PingPongProducer.DELAY_BEFORE_CONSUME_PROPNAME);
+
+                //  Only delay if we have consumers and a delayBeforeConsume
+                if ((testParameters.getPropertyAsInteger(PingPongProducer.NUM_CONSUMERS_PROPNAME) > 0)
+                    && delayBeforeConsume > 0)
+                {
+
+                    boolean verbose = testParameters.getPropertyAsBoolean(PingPongProducer.VERBOSE_PROPNAME);
+                    // Only do logging if in verbose mode.
+                    if (verbose)
+                    {
+                        if (delayBeforeConsume > 60000)
+                        {
+                            long minutes = delayBeforeConsume / 60000;
+                            long seconds = (delayBeforeConsume - (minutes * 60000)) / 1000;
+                            long ms = delayBeforeConsume - (minutes * 60000) - (seconds * 1000);
+                                _logger.info("Delaying for " + minutes + "m " + seconds + "s " + ms + "ms before starting test.");
+                        }
+                        else
+                        {
+                                _logger.info("Delaying for " + delayBeforeConsume + "ms before starting test.");
+                        }
+                    }
+
+                    Thread.sleep(delayBeforeConsume);
+
+                    if (verbose)
+                    {
+                        _logger.info("Starting Test.");
+                    }
+                }
+
+                // We can't start the client's here as the test client has not yet been configured to receieve messages.
+                // only when the test method is executed will the correlationID map be set up and ready to consume
+                // the messages we have sent here.
+            }
+            else //Only start the consumer if we are not preFilling.
+            {
+                // Only start the consumer if we don't have messages waiting to be received.
+                // we need to set up the correlationID mapping first
+                if (!testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME))
+                {
+                    // Start the client connection
+                    perThreadSetup._pingClient.start();
+                }
+            }
             // Attach the per-thread set to the thread.
             threadSetup.set(perThreadSetup);
         }
@@ -157,7 +213,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
      * Performs test fixture clean
      */
     public void threadTearDown()
-    {
+    {                                                                                       
         _logger.debug("public void threadTearDown(): called");
 
         try

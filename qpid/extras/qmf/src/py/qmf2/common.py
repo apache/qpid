@@ -34,61 +34,44 @@ log_query = getLogger("qmf.query")
 ## Constants
 ##
 
-AMQP_QMF_SUBJECT = "qmf"
-AMQP_QMF_VERSION = 4
-AMQP_QMF_SUBJECT_FMT = "%s%d.%s"
+QMF_APP_ID="qmf2"
 
-class MsgKey(object):
-    agent_info = "agent_info"
-    query = "query"
-    package_info = "package_info"
-    schema_id = "schema_id"
-    schema = "schema"
-    object_id="object_id"
-    data_obj="object"
-    method="method"
-    event="event"
+
+class ContentType(object):
+    """ Values for the 'qmf.content' message header
+    """
+    schema_package = "_schema_package"
+    schema_id = "_schema_id"
+    schema_class = "_schema_class"
+    object_id = "_object_id"
+    data = "_data"
+    event = "_event"
 
 
 class OpCode(object):
-    noop = "noop"
+    """ Values for the 'qmf.opcode' message header.
+    """
+    noop = "_noop"
 
     # codes sent by a console and processed by the agent
-    agent_locate = "agent-locate"
-    cancel_subscription = "cancel-subscription"
-    create_subscription = "create-subscription"
-    get_query = "get-query"
-    method_req = "method"
-    renew_subscription = "renew-subscription"
-    schema_query = "schema-query"  # @todo: deprecate
+    agent_locate_req = "_agent_locate_request"
+    subscribe_req = "_subscribe_request"
+    subscribe_cancel_ind = "_subscribe_cancel_indication"
+    subscribe_refresh_req = "_subscribe_refresh_indication"
+    query_req = "_query_request"
+    method_req = "_method_request"
+
 
     # codes sent by the agent to a console
-    agent_ind = "agent"
-    data_ind = "data"
-    event_ind = "event"
-    managed_object = "managed-object"
-    object_ind = "object"
-    response = "response"
-    schema_ind="schema"   # @todo: deprecate
+    agent_locate_rsp = "_agent_locate_response"
+    agent_heartbeat_ind = "_agent_heartbeat_indication"
+    query_rsp = "_query_response"
+    subscribe_rsp = "_subscribe_response"
+    subscribe_refresh_rsp = "_subscribe_refresh_response"
+    data_ind = "_data_indication"
+    method_rsp = "_method_response"
 
 
-
-
-def make_subject(_code): 
-    """
-    Create a message subject field value.
-    """
-    return AMQP_QMF_SUBJECT_FMT % (AMQP_QMF_SUBJECT, AMQP_QMF_VERSION, _code)
-
-
-def parse_subject(_sub):
-    """
-    Deconstruct a subject field, return version,opcode values
-    """
-    if _sub[:3] != "qmf":
-        raise Exception("Non-QMF message received")
-
-    return _sub[3:].split('.', 1)
 
 def timedelta_to_secs(td):
     """
@@ -133,11 +116,15 @@ class WorkItem(object):
     AGENT_HEARTBEAT=8
     QUERY_COMPLETE=9
     METHOD_RESPONSE=10
+    SUBSCRIBE_RESPONSE=11
+    SUBSCRIBE_INDICATION=12
+    RESUBSCRIBE_RESPONSE=13
     # Enumeration of the types of WorkItems produced on the Agent
     METHOD_CALL=1000
     QUERY=1001
-    SUBSCRIBE=1002
-    UNSUBSCRIBE=1003
+    SUBSCRIBE_REQUEST=1002
+    RESUBSCRIBE_REQUEST=1003
+    UNSUBSCRIBE_REQUEST=1004
 
     def __init__(self, kind, handle, _params=None):
         """

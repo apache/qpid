@@ -24,6 +24,7 @@
 #include "qpid/framing/Endian.h"
 #include "qpid/framing/List.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/Msg.h"
 
 namespace qpid {
 namespace framing {

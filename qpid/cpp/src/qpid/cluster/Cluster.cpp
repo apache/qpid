@@ -285,6 +285,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
 }
 
 Cluster::~Cluster() {
+    broker.setClusterTimer(std::auto_ptr<sys::Timer>(0)); // Delete cluster timer
     if (updateThread.id()) updateThread.join(); // Join the previous updatethread.
 }
 
@@ -914,6 +915,12 @@ void Cluster::memberUpdate(Lock& l) {
     size_t size = urls.size();
     failoverExchange->updateUrls(urls);
 
+    if (store.hasStore()) {
+        // Mark store clean if I am the only broker, dirty otherwise.
+        if (size == 1) store.clean(Uuid(true));
+        else store.dirty(clusterId);
+    }
+
     if (size == 1 && lastSize > 1 && state >= CATCHUP) {
         QPID_LOG(notice, *this << " last broker standing, update queue policies");
         lastBroker = true;
@@ -996,7 +1003,6 @@ void Cluster::errorCheck(const MemberId& from, uint8_t type, framing::SequenceNu
 }
 
 void Cluster::timerWakeup(const MemberId& , const std::string& name, Lock&) {
-    QPID_LOG(debug, "Cluster timer wakeup " << map.getFrameSeq() << ": " << name)
     timer->deliverWakeup(name);
 }
 

@@ -46,14 +46,14 @@ class StoreStatus
     const Uuid& getShutdownId() const { return shutdownId; }
     framing::SequenceNumber getConfigSeq() const { return configSeq; }
 
-    void dirty(const Uuid& start); // Start using the store.
-    void clean(const Uuid& stop); // Stop using the store.
+    void dirty(const Uuid& clusterId);  // Mark the store in use by clusterId.
+    void clean(const Uuid& shutdownId); // Mark the store clean at shutdownId
     void setConfigSeq(framing::SequenceNumber seq); // Update the config seq number.
 
     void load();
     void save();
 
-    bool hasStore() { return state != framing::cluster::STORE_STATE_NO_STORE; }
+    bool hasStore() const;
 
   private:
     framing::cluster::StoreState state;

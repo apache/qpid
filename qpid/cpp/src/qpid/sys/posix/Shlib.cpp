@@ -20,6 +20,7 @@
 
 #include "qpid/sys/Shlib.h"
 #include "qpid/Exception.h"
+#include "qpid/Msg.h"
 #include <dlfcn.h>
 
 

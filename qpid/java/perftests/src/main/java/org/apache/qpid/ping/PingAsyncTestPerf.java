@@ -133,8 +133,11 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
     {
         // _logger.debug("public void testAsyncPingOk(int numPings): called");
 
+        // get prefill count to update the expected count
+        int preFill = testParameters.getPropertyAsInteger(PingPongProducer.PREFILL_PROPNAME);
+
         // Ensure that at least one ping was requeusted.
-        if (numPings == 0)
+        if (numPings + preFill == 0)
         {
             _logger.error("Number of pings requested was zero.");
             fail("Number of pings requested was zero.");
@@ -149,16 +152,24 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         // String messageCorrelationId = perThreadSetup._correlationId;
         // _logger.debug("messageCorrelationId = " + messageCorrelationId);
 
+
         // Initialize the count and timing controller for the new correlation id.
         PerCorrelationId perCorrelationId = new PerCorrelationId();
         TimingController tc = getTimingController().getControllerForCurrentThread();
         perCorrelationId._tc = tc;
-        perCorrelationId._expectedCount = pingClient.getExpectedNumPings(numPings);
+        perCorrelationId._expectedCount = pingClient.getExpectedNumPings(numPings + preFill);
         perCorrelationIds.put(perThreadSetup._correlationId, perCorrelationId);
+
+        // Start the client that will have been paused due to preFill requirement.
+        // or if we have not yet started client because messages are sitting on broker. 
+        if (preFill > 0 || testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME))
+        {
+            pingClient.start();
+        }
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
-        int numReplies = pingClient.pingAndWaitForReply(null, numPings, timeout, perThreadSetup._correlationId);
+        int numReplies = pingClient.pingAndWaitForReply(null, numPings , preFill, timeout, perThreadSetup._correlationId);
 
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < perCorrelationId._expectedCount)

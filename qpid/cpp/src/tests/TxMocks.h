@@ -23,6 +23,7 @@
 
 
 #include "qpid/Exception.h"
+#include "qpid/Msg.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/broker/TxOp.h"
 #include <iostream>

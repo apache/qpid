@@ -20,6 +20,8 @@
 #include <qmf/engine/EventImpl.h>
 #include <qmf/engine/ValueImpl.h>
 
+#include <sstream>
+
 using namespace std;
 using namespace qmf::engine;
 using qpid::framing::Buffer;

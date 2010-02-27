@@ -24,6 +24,8 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/BodyFactory.h"
 #include "qpid/framing/MethodBodyFactory.h"
+#include "qpid/Msg.h"
+
 #include <boost/format.hpp>
 #include <iostream>
 

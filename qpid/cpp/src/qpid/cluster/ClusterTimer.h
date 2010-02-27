@@ -30,6 +30,12 @@ namespace cluster {
 
 class Cluster;
 
+/**
+ * Timer implementation that executes tasks consistently in the
+ * deliver thread across a cluster. Task is not executed when timer
+ * fires, instead the elder multicasts a wakeup. The task is executed
+ * when the wakeup is delivered.
+ */
 class ClusterTimer : public sys::Timer {
   public:
     ClusterTimer(Cluster&);

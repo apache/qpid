@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <assert.h>
+#include <sstream>
 
 using namespace std;
 using namespace qmf::engine;

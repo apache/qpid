@@ -22,6 +22,7 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/Msg.h"
 
 using namespace qpid::framing;
 using std::max;

@@ -20,6 +20,7 @@
  */
 #include "StoreStatus.h"
 #include "qpid/Exception.h"
+#include "qpid/Msg.h"
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -113,7 +114,12 @@ void StoreStatus::save() {
     }
 }
 
+bool StoreStatus::hasStore() const {
+    return state != framing::cluster::STORE_STATE_NO_STORE;
+}
+
 void StoreStatus::dirty(const Uuid& clusterId_) {
+    if (!hasStore()) return;
     assert(clusterId_);
     clusterId = clusterId_;
     shutdownId = Uuid();
@@ -122,6 +128,7 @@ void StoreStatus::dirty(const Uuid& clusterId_) {
 }
 
 void StoreStatus::clean(const Uuid& shutdownId_) {
+    if (!hasStore()) return;
     assert(shutdownId_);
     state = STORE_STATE_CLEAN_STORE;
     shutdownId = shutdownId_;

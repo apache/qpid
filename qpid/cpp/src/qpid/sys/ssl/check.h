@@ -21,6 +21,8 @@
  * under the License.
  *
  */
+#include "qpid/Msg.h"
+
 #include <iostream>
 #include <string>
 #include <nspr.h>

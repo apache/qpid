@@ -54,7 +54,6 @@ void Cpg::callCpg ( CpgOp & c ) {
     unsigned int snooze = 10;
     for ( unsigned int nth_try = 0; nth_try < cpgRetries; ++ nth_try ) {
         if ( CPG_OK == (result = c.op(handle, & group))) {
-            QPID_LOG(info, c.opName << " successful.");
             break;
         }
         else if ( result == CPG_ERR_TRY_AGAIN ) {

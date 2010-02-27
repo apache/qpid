@@ -7,3 +7,4 @@ broker.config=${project.root}/build/etc/config-systests-derby.xml
 qpid.amqp.version=0-9
 profile.excludes=JavaStandaloneExcludes
 broker.clean.between.tests=true
+broker.persistent=true
