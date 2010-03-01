@@ -21,7 +21,7 @@
 -->
 
 <section><title>
-      Apache Qpid : Qpid JMX Management Console FAQ
+      Qpid JMX Management Console FAQ
     </title>
 <!--
 h3. {toggle-cloak:id=qManagementConsoleSecurity} How do I connect the management console to my broker using security ?

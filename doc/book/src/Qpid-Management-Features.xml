@@ -22,7 +22,7 @@
 
 <section>
   <title>
-      Apache Qpid : Qpid Management Features
+      Qpid Management Features
     </title>
   <para>
             <emphasis>Management tool:</emphasis> See our <xref linkend="qpid_Qpid-JMX-Management-Console"/> for

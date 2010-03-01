@@ -23,7 +23,7 @@
 
 <section id="BindingURLFormat">
   <title>
-      Apache Qpid : Binding URL Format
+      Binding URL Format
     </title>
             <programlisting>
 &lt;Exchange Class&gt;://&lt;Exchange Name&gt;/[&lt;Destination&gt;]/[&lt;Queue&gt;][?&lt;option&gt;='&lt;value&gt;'[&amp;&lt;option&gt;='&lt;value&gt;']]
