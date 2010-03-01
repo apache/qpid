@@ -168,8 +168,31 @@ public interface TimingController
      * @param param      The test parameter size for parameterized tests.
      * @param timeNanos  The time in nano seconds to log the test result with.
      *
+     * A null value for timeNanos is a request to this method that it should
+     * calculate the time for the given test run.
+     *
+     *
      * @throws InterruptedException If the test runner decides that testing should stop it throws this exception to
      *                              indicate to the test method that it should stop immediately.
      */
-    public void completeTest(boolean testPassed, int param, long timeNanos) throws InterruptedException;
+    public void completeTest(boolean testPassed, int param, Long timeNanos) throws InterruptedException;
+
+    /**
+     * Register an additional pass/fail for the current test. The test result is applies to a test of the specified
+     * 'size' parmeter and allows the caller to sepecify the timing to log.
+     *
+     * @param testPassed Whether or not this timing is for a test pass or fail.
+     * @param param      The test parameter size for parameterized tests.
+     * @param timeNanos  The time in nano seconds to log the test result with.
+     *
+     * A null value for timeNanos is a request to this method that it should
+     * calculate the time for the given test run.
+     * A null value for timeNanos2 means this test does not provide a second
+     * timing value so a '-' is printed in the log.
+     *
+     *
+     * @throws InterruptedException If the test runner decides that testing should stop it throws this exception to
+     *                              indicate to the test method that it should stop immediately.
+     */
+    public void completeTest(boolean testPassed, int param, Long timeNanos, Long time2Nanos) throws InterruptedException;
 }

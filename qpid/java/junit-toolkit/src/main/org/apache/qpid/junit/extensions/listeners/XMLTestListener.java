@@ -160,6 +160,16 @@ public class XMLTestListener implements TKTestListener, ShutdownHookable
     { }
 
     /**
+     * Optionally called every time a test completes with the second timing test.
+     *
+     * @param test    The name of the test.
+     * @param nanos   The second timing information of the test in nanoseconds.
+     * @param threadId Optional thread id if not calling from thread that started the test method. May be null.
+     */
+    public void timing2(Test test, Long nanos, Long threadId)
+    { }
+
+    /**
      * Should be called every time a test completed with the amount of memory used before and after the test was run.
      *
      * @param test     The test which memory was measured for.

@@ -228,6 +228,9 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         /** The test results logging batch size. */
         int _batchSize;
 
+        /** The latency recoreded for the batch */
+        private long _batchLatency = 0;
+
         /**
          * Creates a results listener on the specified batch size.
          *
@@ -250,6 +253,8 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
          */
         public void onMessage(Message message, int remainingCount, long latency) throws JMSException
         {
+            // Record the latency for the whole batch
+            _batchLatency += latency;
             // Check if a batch boundary has been crossed.
             if ((remainingCount % _batchSize) == 0)
             {
@@ -278,7 +283,11 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                     // Register a test result for the correlation id.
                     try
                     {
-                        tc.completeTest(true, receivedInBatch);
+                        // Record the total latency for the batch.
+                        // if batchSize=1 then this will just be the message latency
+                        tc.completeTest(true, receivedInBatch, null, _batchLatency);
+                        // Reset latency
+                        _batchLatency = 0;
                     }
                     catch (InterruptedException e)
                     {

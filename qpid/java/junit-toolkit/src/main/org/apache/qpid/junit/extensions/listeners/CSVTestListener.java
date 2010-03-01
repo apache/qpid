@@ -96,13 +96,19 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
     private int totalSize;
 
     /**
-     * Used to record the summation of all of the individual test timgings. Note that total time and summed time
+     * Used to record the summation of all of the individual test timings. Note that total time and summed time
      * are unlikely to be in agreement, exception for a single threaded test (with no setup time). Total time is
      * the time taken to run all the tests, summed time is the added up time that each individual test took. So if
      * two tests run in parallel and take one second each, total time will be one seconds, summed time will be two
      * seconds.
      */
     private long summedTime;
+
+    /**
+     * Used to record the summation of all of the second test timing information.
+     * One use of the second timing would be to provide latency as well as test timing. 
+     */
+    private long summedTime2;
 
     /** Flag to indicate when batch has been started but not ended to ensure end batch stats are output only once. */
     private boolean batchStarted = false;
@@ -134,6 +140,7 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
             (threadId == null) ? threadLocalResults.get(Thread.currentThread().getId()) : threadLocalResults.get(threadId);
 
         r.testTime = 0L;
+        r.testTime2 = null;
         r.testStartMem = 0L;
         r.testEndMem = 0L;
         r.testState = "Pass";
@@ -236,6 +243,26 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
     }
 
     /**
+     * Optionally called every time a test completes with the second timing test.
+     *
+     * @param test    The name of the test.
+     * @param nanos   The second timing information of the test in nanoseconds.
+     * @param threadId Optional thread id if not calling from thread that started the test method. May be null.
+     */
+    public void timing2(Test test, Long nanos, Long threadId)
+    {
+        TestResult r =
+            (threadId == null) ? threadLocalResults.get(Thread.currentThread().getId()) : threadLocalResults.get(threadId);
+
+
+        if (nanos != null)
+        {
+            r.testTime2 = nanos;
+            summedTime2 += nanos;
+        }
+    }
+
+    /**
      * Should be called every time a test completed with the amount of memory used before and after the test was run.
      *
      * @param test     The test which memory was measured for.
@@ -322,6 +349,7 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
         totalSize = 0;
         batchStartTime = System.nanoTime();
         summedTime = 0;
+        summedTime2 = 0;
         batchStarted = true;
 
         // Write out the column headers for the batch.
@@ -344,6 +372,8 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
             long batchEndTime = System.nanoTime();
             float totalTimeMillis = ((float) (batchEndTime - batchStartTime)) / 1000000f;
             float summedTimeMillis = ((float) summedTime) / 1000000f;
+            float summedTime2Millis = ((float) summedTime2) / 1000000f;
+
 
             // Write the stats for the batch out.
             try
@@ -356,8 +386,10 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
                     timingsWriter.write("Total Error:, " + numError + ", ");
                     timingsWriter.write("Total Size:, " + totalSize + ", ");
                     timingsWriter.write("Summed Time:, " + summedTimeMillis + ", ");
+                    timingsWriter.write("Summed Custom Time:, " + summedTime2Millis + ", ");
                     timingsWriter.write("Concurrency Level:, " + concurrencyLevel + ", ");
                     timingsWriter.write("Total Time:, " + totalTimeMillis + ", ");
+                    timingsWriter.write("Average Custom Time:, " + ((summedTime2Millis/ (float) totalTests)) + ", ");
                     timingsWriter.write("Test Throughput:, " + (((float) totalTests) / totalTimeMillis) + ", ");
                     timingsWriter.write("Test * Size Throughput:, " + (((float) totalSize) / totalTimeMillis)
                         + (noParams ? "\n\n" : ", "));
@@ -430,6 +462,7 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
             timingsWriter.write("Thread, ");
             timingsWriter.write("Test Outcome, ");
             timingsWriter.write("Time (milliseconds), ");
+            timingsWriter.write("Custom Time (milliseconds), ");
             timingsWriter.write("Memory Used (bytes), ");
             timingsWriter.write("Concurrency level, ");
             timingsWriter.write("Test Size\n");
@@ -477,6 +510,9 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
                 timingsWriter.write(Thread.currentThread().getName() + ", ");
                 timingsWriter.write(r.testState + ", ");
                 timingsWriter.write((((float) r.testTime) / 1000000f) + ", ");
+
+                timingsWriter.write(r.testTime2 == null ? "- , " :
+                                    (((float) r.testTime2) / 1000000f) + ", ");
                 timingsWriter.write((r.testEndMem - r.testStartMem) + ", ");
                 timingsWriter.write(r.testConcurrency + ", ");
                 timingsWriter.write(r.testParam + "\n");
@@ -514,6 +550,9 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
         /** Used to hold the test timing. */
         public long testTime;
 
+        /** Use to hold the second timing information. */
+        public Long testTime2;
+
         /** Used to hold the test start memory usage. */
         public long testStartMem;
 
@@ -528,5 +567,6 @@ public class CSVTestListener implements TestListener, TKTestListener, ShutdownHo
 
         /** Used to hold the concurrency level under which the test was run. */
         public int testConcurrency;
+
     }
 }
