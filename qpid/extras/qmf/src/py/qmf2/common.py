@@ -620,208 +620,9 @@ class QmfEvent(QmfData):
 
 
 
-
-
-#==============================================================================
-#==============================================================================
-#==============================================================================
-
-
-
-
-class Arguments(object):
-    def __init__(self, map):
-        pass
-#         self.map = map
-#         self._by_hash = {}
-#         key_count = self.map.keyCount()
-#         a = 0
-#         while a < key_count:
-#             self._by_hash[self.map.key(a)] = self.by_key(self.map.key(a))
-#             a += 1
-    
-    
-#     def __getitem__(self, key):
-#         return self._by_hash[key]
-    
-    
-#     def __setitem__(self, key, value):
-#         self._by_hash[key] = value
-#         self.set(key, value)
-    
-    
-#     def __iter__(self):
-#         return self._by_hash.__iter__
-
-
-#     def __getattr__(self, name):
-#         if name in self._by_hash:
-#             return self._by_hash[name]
-#         return super.__getattr__(self, name)
-
-
-#     def __setattr__(self, name, value):
-#         #
-#         # ignore local data members
-#         #
-#         if (name[0] == '_' or
-#             name == 'map'):
-#             return super.__setattr__(self, name, value)
-
-#         if name in self._by_hash:
-#             self._by_hash[name] = value
-#             return self.set(name, value)
-
-#         return super.__setattr__(self, name, value)
-
-
-#     def by_key(self, key):
-#         val = self.map.byKey(key)
-#         vType = val.getType()
-#         if vType == TYPE_UINT8: return val.asUint()
-#         elif vType == TYPE_UINT16: return val.asUint()
-#         elif vType == TYPE_UINT32: return val.asUint()
-#         elif vType == TYPE_UINT64: return val.asUint64()
-#         elif vType == TYPE_SSTR: return val.asString()
-#         elif vType == TYPE_LSTR: return val.asString()
-#         elif vType == TYPE_ABSTIME:   return val.asInt64()
-#         elif vType == TYPE_DELTATIME: return val.asUint64()
-#         elif vType == TYPE_REF:  return ObjectId(val.asObjectId())
-#         elif vType == TYPE_BOOL: return val.asBool()
-#         elif vType == TYPE_FLOAT:  return val.asFloat()
-#         elif vType == TYPE_DOUBLE: return val.asDouble()
-#         elif vType == TYPE_UUID: return val.asUuid()
-#         elif vType == TYPE_INT8: return val.asInt()
-#         elif vType == TYPE_INT16: return val.asInt()
-#         elif vType == TYPE_INT32: return val.asInt()
-#         elif vType == TYPE_INT64: return val.asInt64()
-#         else:
-#             # when TYPE_MAP
-#             # when TYPE_OBJECT
-#             # when TYPE_LIST
-#             # when TYPE_ARRAY
-#             logging.error( "Unsupported Type for Get? '%s'" % str(val.getType()))
-#             return None
-    
-    
-#     def set(self, key, value):
-#         val = self.map.byKey(key)
-#         vType = val.getType()
-#         if vType == TYPE_UINT8: return val.setUint(value)
-#         elif vType == TYPE_UINT16: return val.setUint(value)
-#         elif vType == TYPE_UINT32: return val.setUint(value)
-#         elif vType == TYPE_UINT64: return val.setUint64(value)
-#         elif vType == TYPE_SSTR: 
-#             if value:
-#                 return val.setString(value)
-#             else:
-#                 return val.setString('')
-#         elif vType == TYPE_LSTR:
-#             if value:
-#                 return val.setString(value)
-#             else:
-#                 return val.setString('')
-#         elif vType == TYPE_ABSTIME: return val.setInt64(value)
-#         elif vType == TYPE_DELTATIME: return val.setUint64(value)
-#         elif vType == TYPE_REF: return val.setObjectId(value.impl)
-#         elif vType == TYPE_BOOL: return val.setBool(value)
-#         elif vType == TYPE_FLOAT: return val.setFloat(value)
-#         elif vType == TYPE_DOUBLE: return val.setDouble(value)
-#         elif vType == TYPE_UUID: return val.setUuid(value)
-#         elif vType == TYPE_INT8: return val.setInt(value)
-#         elif vType == TYPE_INT16: return val.setInt(value)
-#         elif vType == TYPE_INT32: return val.setInt(value)
-#         elif vType == TYPE_INT64: return val.setInt64(value)
-#         else:
-#             # when TYPE_MAP
-#             # when TYPE_OBJECT
-#             # when TYPE_LIST
-#             # when TYPE_ARRAY
-#             logging.error("Unsupported Type for Set? '%s'" % str(val.getType()))
-#             return None
-
-
-
-#class MethodResponse(object):
-#    def __init__(self, impl):
-#        pass
-#         self.impl = qmfengine.MethodResponse(impl)
-
-
-#     def status(self):
-#         return self.impl.getStatus()
-
-
-#     def exception(self):
-#         return self.impl.getException()
-
-
-#     def text(self):
-#         return exception().asString()
-
-
-#     def args(self):
-#         return Arguments(self.impl.getArgs())
-
-
-#     def __getattr__(self, name):
-#         myArgs = self.args()
-#         return myArgs.__getattr__(name)
-
-
-#     def __setattr__(self, name, value):
-#         if name == 'impl':
-#             return super.__setattr__(self, name, value)
-
-#         myArgs = self.args()
-#         return myArgs.__setattr__(name, value)
-
-
-
-#   ##==============================================================================
-#   ## QUERY
-#   ##==============================================================================
-
-
-
-# def _doQuery(predicate, params ):
-#     """
-#     Given the predicate from a query, and a map of named parameters, apply the predicate
-#     to the parameters, and return True or False.
-#     """
-#     if type(predicate) != list or len(predicate) < 1:
-#         return False
-
-#     elif opr == Query._LOGIC_AND:
-#         logging.debug("_doQuery() AND: [%s]" % predicate )
-#         rc = False
-#         for exp in predicate[1:]:
-#             rc = _doQuery( exp, params )
-#             if not rc:
-#                 break
-#         return rc
-
-#     elif opr == Query._LOGIC_OR:
-#         logging.debug("_doQuery() OR: [%s]" % predicate )
-#         rc = False
-#         for exp in predicate[1:]:
-#             rc = _doQuery( exp, params )
-#             if rc:
-#                 break
-#         return rc
-
-#     elif opr == Query._LOGIC_NOT:
-#         logging.debug("_doQuery() NOT: [%s]" % predicate )
-#         if len(predicate) != 2:
-#             logging.warning("Malformed query not-expression received: '%s'" % predicate)
-#             return False
-#         return not _doQuery( predicate[1:], params )
-
-
-
-#     else:
-#         logging.warning("Unknown query operator received: '%s'" % opr)
-#     return False
+##==============================================================================
+## QUERY
+##==============================================================================
 
 
 
@@ -1095,7 +896,7 @@ class QmfQuery(_mapEncoder):
             raise TypeError("Query expects to evaluate QmfData types.")
 
         if not isinstance(pred, type([])):
-            log_query.warning("Invalid type for predicate expression: '%s'" % str(pred))
+            log.warning("Invalid type for predicate expression: '%s'" % str(pred))
             return False
 
         # empty predicate - match all???
@@ -1140,8 +941,8 @@ class QmfQuery(_mapEncoder):
 
         if oper == QmfQuery.EXISTS:
             if len(pred) != 2:
-                log_query.warning("Malformed query: 'exists' operator"
-                                " - bad arguments '%s'" % str(pred))
+                log.warning("Malformed query: 'exists' operator"
+                            " - bad arguments '%s'" % str(pred))
                 return False
             ### Q: Should we assume "quote", or should it be explicit?
             ### "foo" or ["quote" "foo"] 
@@ -1150,7 +951,7 @@ class QmfQuery(_mapEncoder):
             try:
                 arg = self._fetch_pred_arg(pred[1], qmfData)
             except AttributeError:
-                log_query.debug("query parameter not found: '%s'" % str(pred))
+                log.warning("query parameter not found: '%s'" % str(pred))
                 return False
             v = qmfData.has_value(arg)
             log_query.debug("---> %s" % str(v))
@@ -1161,9 +962,9 @@ class QmfQuery(_mapEncoder):
                     QmfQuery.LE, QmfQuery.GT, QmfQuery.GE,
                     QmfQuery.RE_MATCH]:
             if len(pred) != 3:
-                log_query.warning("Malformed query: '%s' operator"
-                                " - requires 2 arguments '%s'" %
-                                (oper, str(pred)))
+                log.warning("Malformed query: '%s' operator"
+                            " - requires 2 arguments '%s'" %
+                            (oper, str(pred)))
                 return False
             # @todo: support regular expression match
             log_query.debug("query evaluate binary op: [%s]" % str(pred))
@@ -1171,7 +972,7 @@ class QmfQuery(_mapEncoder):
                 arg1 = self._fetch_pred_arg(pred[1], qmfData)
                 arg2 = self._fetch_pred_arg(pred[2], qmfData)
             except AttributeError:
-                log_query.debug("query parameter not found: '%s'" % str(pred))
+                log.warning("query parameter not found: '%s'" % str(pred))
                 return False
             log_query.debug("query evaluate %s: %s, %s" % (oper, str(arg1), str(arg2)))
             v = False
@@ -1183,11 +984,11 @@ class QmfQuery(_mapEncoder):
                 elif oper == QmfQuery.GT: v = arg1 > arg2
                 elif oper == QmfQuery.GE: v = arg1 >= arg2
             except TypeError:
-                log_query.warning("query comparison failed: '%s'" %  str(pred))
+                log.warning("query comparison failed: '%s'" %  str(pred))
             log_query.debug("---> %s" % str(v))
             return v
 
-        log_query.warning("Unrecognized query operator: [%s]" % str(pred[0]))
+        log.warning("Unrecognized query operator: [%s]" % str(pred[0]))
         return False
 
     def _fetch_pred_arg(self, arg, qmfData):
