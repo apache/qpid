@@ -1447,12 +1447,17 @@ class SchemaProperty(_mapEncoder):
     map["unit"] = str, describes units used
     map["min"] = int, minimum allowed value
     map["max"] = int, maximun allowed value
-    map["maxlen"] = int, if string type, this is the maximum length in bytes 
+    map["maxlen"] = int, if string type, this is the maximum length in bytes
     required to represent the longest instance of this string.
     map["desc"] = str, human-readable description of this argument
     map["reference"] = str, ???
     map["parent_ref"] = bool, true if this property references an object  in
     which this object is in a child-parent relationship. Default False
+    map["continuous"] = bool, true if the value potentially changes too fast to
+    be directly monitorable.  Example: fast changing statistic or random
+    number. Subscriptions to objects containing continuous data will publish
+    only on an interval basis, rather than every time the data changes. Default
+    False.
     """
     __hash__ = None
     _access_strings = ["RO","RW","RC"]
@@ -1479,6 +1484,7 @@ class SchemaProperty(_mapEncoder):
         self._isParentRef  = False
         self._dir = None
         self._default = None
+        self._is_continuous = False
 
         for key, value in kwargs.items():
             if key == "access":
@@ -1495,6 +1501,8 @@ class SchemaProperty(_mapEncoder):
             elif key == "desc"    : self._desc    = value
             elif key == "reference" : self._reference = value
             elif key == "parent_ref"   : self._isParentRef = _to_bool(value)
+            elif key == "parent_ref"   : self._isParentRef = _to_bool(value)
+            elif key == "continuous"   : self._is_continuous = _to_bool(value)
             elif key == "dir":
                 value = str(value).upper()
                 if value not in self._dir_strings:
@@ -1503,7 +1511,7 @@ class SchemaProperty(_mapEncoder):
             elif key == "default" : self._default = value
 
     # constructor
-    def _create(cls, type_code, kwargs={}):
+    def _create(cls, type_code, **kwargs):
         return cls(_type_code=type_code, kwargs=kwargs)
     create = classmethod(_create)
 
@@ -1538,6 +1546,8 @@ class SchemaProperty(_mapEncoder):
 
     def get_default(self): return self._default
 
+    def is_continuous(self): return self._is_continuous
+
     def map_encode(self):
         """
         Return the map encoding of this schema.
@@ -1556,6 +1566,7 @@ class SchemaProperty(_mapEncoder):
         _map["parent_ref"] = self._isParentRef
         if self._dir: _map["dir"] = self._dir
         if self._default: _map["default"] = self._default
+        if self._is_continuous: _map["continuous"] = self._is_continuous
         return _map
 
     def __repr__(self): 
@@ -1568,12 +1579,12 @@ class SchemaProperty(_mapEncoder):
         hasher.update(str(self._type))
         hasher.update(str(self._isIndex))
         hasher.update(str(self._isOptional))
+        hasher.update(str(self._is_continuous))
         if self._access: hasher.update(self._access)
         if self._unit: hasher.update(self._unit)
         if self._desc: hasher.update(self._desc)
         if self._dir: hasher.update(self._dir)
         if self._default: hasher.update(self._default)
-
 
 
 class SchemaMethod(_mapEncoder):

@@ -75,7 +75,13 @@ class _agentApp(Thread):
                                      _object_id_names=["key"] )
 
         _schema.add_property( "key", SchemaProperty(qmfTypes.TYPE_LSTR))
-        _schema.add_property( "count1", SchemaProperty(qmfTypes.TYPE_UINT32))
+
+        # note: count1 is continuous, count2 is not
+        count1_prop = SchemaProperty.create(qmfTypes.TYPE_UINT32,
+                                            continuous=True)
+        _schema.add_property( "count1", count1_prop)
+        count2_prop = SchemaProperty.create(qmfTypes.TYPE_UINT32,
+                                            continuous=False)
         _schema.add_property( "count2", SchemaProperty(qmfTypes.TYPE_UINT32))
 
         self.agent.register_object_class(_schema)
@@ -224,7 +230,7 @@ class BaseTest(unittest.TestCase):
         # create console
         # find all agents
         # subscribe to changes to any object in package1/class1
-        # should succeed
+        # should succeed - verify 1 publish
         self.notifier = _testNotifier()
         self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
@@ -288,10 +294,10 @@ class BaseTest(unittest.TestCase):
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 5 publish per subscription
-        self.assertTrue(r_count == 5 * len(subscriptions))
+        # expect 1 publish per subscription
+        self.assertTrue(r_count == 5)
         for ii in range(len(subscriptions)):
-            self.assertTrue(subscriptions[ii][1] == 5)
+            self.assertTrue(subscriptions[ii][1] == 1)
 
         self.console.destroy(10)
 
@@ -349,21 +355,17 @@ class BaseTest(unittest.TestCase):
                 self.assertTrue(len(reply) == 1)
                 self.assertTrue(isinstance(reply[0], QmfData))
                 self.assertTrue(reply[0].get_object_id() == "undesc-2")
-                # print("!!! get_params() = %s" % wi.get_params())
                 self.assertTrue(wi.get_handle() < len(subscriptions))
                 subscriptions[wi.get_handle()][1] += 1
-                # self.assertTrue(isinstance(reply, qmf2.console.MethodResult))
-                # self.assertTrue(reply.succeeded())
-                # self.assertTrue(reply.get_argument("cookie") ==
-                # wi.get_handle())
+
                 self.console.release_workitem(wi)
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 5 publish per subscription
-        self.assertTrue(r_count == 5 * len(subscriptions))
-        #for ii in range(len(subscriptions)):
-        #    self.assertTrue(subscriptions[ii][1] == 5)
+        # expect 1 publish per subscription
+        self.assertTrue(r_count == 5)
+        for ii in range(len(subscriptions)):
+            self.assertTrue(subscriptions[ii][1] == 1)
 
         self.console.destroy(10)
 
@@ -426,18 +428,15 @@ class BaseTest(unittest.TestCase):
                 self.assertTrue(sid.get_class_name() == "class1")
                 self.assertTrue(wi.get_handle() < len(subscriptions))
                 subscriptions[wi.get_handle()][1] += 1
-                # self.assertTrue(isinstance(reply, qmf2.console.MethodResult))
-                # self.assertTrue(reply.succeeded())
-                # self.assertTrue(reply.get_argument("cookie") ==
-                # wi.get_handle())
+
                 self.console.release_workitem(wi)
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 5 publish per subscription
-        self.assertTrue(r_count == 5 * len(subscriptions))
-        #for ii in range(len(subscriptions)):
-        #    self.assertTrue(subscriptions[ii][1] == 5)
+        # expect 1 publish per subscription
+        self.assertTrue(r_count == 5)
+        for ii in range(len(subscriptions)):
+            self.assertTrue(subscriptions[ii][1] == 1)
 
         self.console.destroy(10)
 
@@ -459,9 +458,9 @@ class BaseTest(unittest.TestCase):
         self.conn.connect()
         self.console.add_connection(self.conn)
 
-        # query to match object "p2c1_key2" in schema package2/class1
-        sid = SchemaClassId.create("package2", "class1")
-        query = QmfQuery.create_id_object("p2c1_key2", sid)
+        # query to match object "p1c1_key2" in schema package1/class1
+        sid = SchemaClassId.create("package1", "class1")
+        query = QmfQuery.create_id_object("p1c1_key2", sid)
 
         agent_app = self.agents[0]
         aname = agent_app.agent.get_name()
@@ -489,12 +488,19 @@ class BaseTest(unittest.TestCase):
                 self.assertTrue(isinstance(reply, type([])))
                 self.assertTrue(len(reply) == 1)
                 self.assertTrue(isinstance(reply[0], QmfData))
-                self.assertTrue(reply[0].get_object_id() == "p2c1_key2")
+                self.assertTrue(reply[0].get_object_id() == "p1c1_key2")
                 sid = reply[0].get_schema_class_id()
                 self.assertTrue(isinstance(sid, SchemaClassId))
-                self.assertTrue(sid.get_package_name() == "package2")
+                self.assertTrue(sid.get_package_name() == "package1")
                 self.assertTrue(sid.get_class_name() == "class1")
                 self.assertTrue(wi.get_handle() == "my-handle")
+
+                # count1 is continuous, touching it will force a
+                # publish on the interval
+                self.assertTrue(sid is not None)
+                test_obj = agent_app.agent.get_object("p1c1_key2", sid)
+                self.assertTrue(test_obj is not None)
+                test_obj.set_value("count1", r_count)
 
                 self.console.release_workitem(wi)
 
@@ -504,11 +510,8 @@ class BaseTest(unittest.TestCase):
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 5 publish per subscription
+        # expect 5 publish per subscription, more if refreshed
         self.assertTrue(r_count > 5)
-        # print("!!! total r_count=%d" % r_count)
-        #for ii in range(len(subscriptions)):
-        #    self.assertTrue(subscriptions[ii][1] == 5)
 
         self.console.destroy(10)
 
@@ -530,9 +533,9 @@ class BaseTest(unittest.TestCase):
         self.conn.connect()
         self.console.add_connection(self.conn)
 
-        # query to match object "p2c1_key2" in schema package2/class1
-        sid = SchemaClassId.create("package2", "class1")
-        query = QmfQuery.create_id_object("p2c1_key2", sid)
+        # query to match object "p1c1_key2" in schema package1/class1
+        sid = SchemaClassId.create("package1", "class1")
+        query = QmfQuery.create_id_object("p1c1_key2", sid)
 
         agent_app = self.agents[0]
         aname = agent_app.agent.get_name()
@@ -560,12 +563,19 @@ class BaseTest(unittest.TestCase):
                 self.assertTrue(isinstance(reply, type([])))
                 self.assertTrue(len(reply) == 1)
                 self.assertTrue(isinstance(reply[0], QmfData))
-                self.assertTrue(reply[0].get_object_id() == "p2c1_key2")
+                self.assertTrue(reply[0].get_object_id() == "p1c1_key2")
                 sid = reply[0].get_schema_class_id()
                 self.assertTrue(isinstance(sid, SchemaClassId))
-                self.assertTrue(sid.get_package_name() == "package2")
+                self.assertTrue(sid.get_package_name() == "package1")
                 self.assertTrue(sid.get_class_name() == "class1")
                 self.assertTrue(wi.get_handle() == "my-handle")
+
+                # count1 is continuous, touching it will force a
+                # publish on the interval
+                self.assertTrue(sid is not None)
+                test_obj = agent_app.agent.get_object("p1c1_key2", sid)
+                self.assertTrue(test_obj is not None)
+                test_obj.set_value("count1", r_count)
 
                 self.console.release_workitem(wi)
 
@@ -574,10 +584,8 @@ class BaseTest(unittest.TestCase):
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 5 publish per subscription full duration
-        self.assertTrue(r_count < 5)
-        #for ii in range(len(subscriptions)):
-        #    self.assertTrue(subscriptions[ii][1] == 5)
+        # expect only 3 publish received before cancel
+        self.assertTrue(r_count == 3)
 
         self.console.destroy(10)
 
@@ -645,8 +653,8 @@ class BaseTest(unittest.TestCase):
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 5 publish per subscription
-        self.assertTrue(r_count == 6)
+        # one response + one publish = 2
+        self.assertTrue(r_count == 2)
 
         self.console.destroy(10)
 
@@ -665,9 +673,9 @@ class BaseTest(unittest.TestCase):
         self.conn.connect()
         self.console.add_connection(self.conn)
 
-        # query to match object "p2c1_key2" in schema package2/class1
-        sid = SchemaClassId.create("package2", "class1")
-        query = QmfQuery.create_id_object("p2c1_key2", sid)
+        # query to match object "p1c1_key2" in schema package1/class1
+        sid = SchemaClassId.create("package1", "class1")
+        query = QmfQuery.create_id_object("p1c1_key2", sid)
 
         agent_app = self.agents[0]
         aname = agent_app.agent.get_name()
@@ -685,6 +693,7 @@ class BaseTest(unittest.TestCase):
         # refresh after three subscribe indications, count all
         # indications to verify refresh worked
         r_count = 0
+        i_count = 0
         sp = None
         rp = None
         while self.notifier.wait_for_work(4):
@@ -706,20 +715,28 @@ class BaseTest(unittest.TestCase):
                 else:
                     self.assertTrue(wi.get_type() ==
                                     WorkItem.SUBSCRIBE_INDICATION)
+                    i_count += 1
                     # sp better be set up by now!
                     self.assertTrue(isinstance(sp, qmf2.console.SubscribeParams))
                     reply = wi.get_params()
                     self.assertTrue(isinstance(reply, type([])))
                     self.assertTrue(len(reply) == 1)
                     self.assertTrue(isinstance(reply[0], QmfData))
-                    self.assertTrue(reply[0].get_object_id() == "p2c1_key2")
+                    self.assertTrue(reply[0].get_object_id() == "p1c1_key2")
                     sid = reply[0].get_schema_class_id()
                     self.assertTrue(isinstance(sid, SchemaClassId))
-                    self.assertTrue(sid.get_package_name() == "package2")
+                    self.assertTrue(sid.get_package_name() == "package1")
                     self.assertTrue(sid.get_class_name() == "class1")
                     self.assertTrue(wi.get_handle() == "my-handle")
 
-                    if r_count == 4:  # + 1 for subscribe reply
+                    # count1 is continuous, touching it will force a
+                    # publish on the interval
+                    self.assertTrue(sid is not None)
+                    test_obj = agent_app.agent.get_object("p1c1_key2", sid)
+                    self.assertTrue(test_obj is not None)
+                    test_obj.set_value("count1", r_count)
+
+                    if r_count == 4:  # 3 data + 1 subscribe reply
                         rp = self.console.refresh_subscription(sp.get_subscription_id())
                         self.assertTrue(rp)
 
@@ -727,8 +744,9 @@ class BaseTest(unittest.TestCase):
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 5 publish per subscription, + 2 replys
-        self.assertTrue(r_count > 7)
+        # expect 5 publish per subscription, more if refreshed
+        self.assertTrue(sp is not None and rp is not None)
+        self.assertTrue(i_count > 5)
 
         self.console.destroy(10)
 
@@ -748,9 +766,9 @@ class BaseTest(unittest.TestCase):
         self.conn.connect()
         self.console.add_connection(self.conn)
 
-        # query to match object "p2c1_key2" in schema package2/class1
-        sid = SchemaClassId.create("package2", "class1")
-        query = QmfQuery.create_id_object("p2c1_key2", sid)
+        # query to match object "p1c1_key2" in schema package1/class1
+        sid = SchemaClassId.create("package1", "class1")
+        query = QmfQuery.create_id_object("p1c1_key2", sid)
 
         agent_app = self.agents[0]
         aname = agent_app.agent.get_name()
@@ -765,8 +783,6 @@ class BaseTest(unittest.TestCase):
                                               _blocking=False)
         self.assertTrue(rc)
 
-        # refresh after three subscribe indications, count all
-        # indications to verify refresh worked
         r_count = 0
         sp = None
         rp = None
@@ -789,20 +805,220 @@ class BaseTest(unittest.TestCase):
                     self.assertTrue(isinstance(reply, type([])))
                     self.assertTrue(len(reply) == 1)
                     self.assertTrue(isinstance(reply[0], QmfData))
-                    self.assertTrue(reply[0].get_object_id() == "p2c1_key2")
+                    self.assertTrue(reply[0].get_object_id() == "p1c1_key2")
                     sid = reply[0].get_schema_class_id()
                     self.assertTrue(isinstance(sid, SchemaClassId))
-                    self.assertTrue(sid.get_package_name() == "package2")
+                    self.assertTrue(sid.get_package_name() == "package1")
                     self.assertTrue(sid.get_class_name() == "class1")
                     self.assertTrue(wi.get_handle() == "my-handle")
 
+                    # count1 is continuous, touching it will force a
+                    # publish on the interval
+                    self.assertTrue(sid is not None)
+                    test_obj = agent_app.agent.get_object("p1c1_key2", sid)
+                    self.assertTrue(test_obj is not None)
+                    test_obj.set_value("count1", r_count)
+
+                if r_count == 3:
                     self.console.cancel_subscription(sp.get_subscription_id())
 
                 self.console.release_workitem(wi)
 
                 wi = self.console.get_next_workitem(timeout=0)
 
-        # for now, I expect 1 subscribe reply and 1 data_indication
-        self.assertTrue(r_count == 2)
+        # expect cancel after 3 replies
+        self.assertTrue(r_count == 3)
+
+        self.console.destroy(10)
+
+
+
+
+    def test_sync_periodic_publish_continuous(self):
+        # create console
+        # find all agents
+        # subscribe to changes to any object in package1/class1
+        # should succeed - verify 1 publish
+        # Change continuous property on each publish,
+        # should only see 1 publish per interval
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        subscriptions = []
+        index = 0
+
+        # query to match all objects in schema package1/class1
+        sid = SchemaClassId.create("package1", "class1")
+        t_params = {QmfData.KEY_SCHEMA_ID: sid}
+        query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT,
+                                         _target_params=t_params)
+        # find an agent
+        agent_app = self.agents[0]
+        aname = agent_app.agent.get_name()
+        agent = self.console.find_agent(aname, timeout=3)
+        self.assertTrue(agent and agent.get_name() == aname)
+
+        # setup subscription on agent
+
+        sp = self.console.create_subscription(agent,
+                                              query,
+                                              "some-handle")
+        self.assertTrue(isinstance(sp, qmf2.console.SubscribeParams))
+        self.assertTrue(sp.succeeded())
+        self.assertTrue(sp.get_error() == None)
+        self.assertTrue(sp.get_duration() == 10)
+        self.assertTrue(sp.get_publish_interval() == 2)
+
+        # now wait for the (2 * interval) and count the updates
+        r_count = 0
+        sid = None
+        while self.notifier.wait_for_work(4):
+            wi = self.console.get_next_workitem(timeout=0)
+            while wi is not None:
+                r_count += 1
+                self.assertTrue(wi.get_type() == WorkItem.SUBSCRIBE_INDICATION)
+                self.assertTrue(wi.get_handle() == "some-handle")
+                if r_count == 1:
+                    # first indication - returns all matching objects
+                    reply = wi.get_params()
+                    self.assertTrue(isinstance(reply, type([])))
+                    self.assertTrue(len(reply) == 2)
+                    for obj in reply:
+                        self.assertTrue(isinstance(obj, QmfData))
+                        self.assertTrue(obj.get_object_id() == "p1c1_key2" or
+                                        obj.get_object_id() == "p1c1_key1")
+                        sid = obj.get_schema_class_id()
+                        self.assertTrue(isinstance(sid, SchemaClassId))
+                        self.assertTrue(sid.get_package_name() == "package1")
+                        self.assertTrue(sid.get_class_name() == "class1")
+
+                else:
+                    # verify publish of modified object only!
+                    reply = wi.get_params()
+                    self.assertTrue(isinstance(reply, type([])))
+                    self.assertTrue(len(reply) == 1)
+                    obj = reply[0]
+                    self.assertTrue(isinstance(obj, QmfData))
+                    self.assertTrue(obj.get_object_id() == "p1c1_key2")
+                    self.assertTrue(obj.get_value("count1") == r_count - 1)
+                    # fail test if we receive more than expected
+                    self.assertTrue(r_count < 10)
+
+
+                # now update one of the objects!
+                self.assertTrue(sid is not None)
+                test_obj = agent_app.agent.get_object("p1c1_key2", sid)
+                self.assertTrue(test_obj is not None)
+                test_obj.set_value("count1", r_count)
+
+                self.console.release_workitem(wi)
+
+                wi = self.console.get_next_workitem(timeout=0)
+
+        # expect at most 1 publish per interval seen
+        self.assertTrue(r_count < 10)
+
+        self.console.destroy(10)
+
+
+
+
+    def test_sync_periodic_publish_noncontinuous(self):
+        # create console, find agent
+        # subscribe to changes to any object in package1/class1
+        # should succeed - verify 1 publish
+        # Change noncontinuous property on each publish,
+        # should only see 1 publish per each update 
+        self.notifier = _testNotifier()
+        self.console = qmf2.console.Console(notifier=self.notifier,
+                                              agent_timeout=3)
+        self.conn = qpid.messaging.Connection(self.broker.host,
+                                              self.broker.port,
+                                              self.broker.user,
+                                              self.broker.password)
+        self.conn.connect()
+        self.console.add_connection(self.conn)
+
+        subscriptions = []
+        index = 0
+
+        # query to match all objects in schema package1/class1
+        sid = SchemaClassId.create("package1", "class1")
+        t_params = {QmfData.KEY_SCHEMA_ID: sid}
+        query = QmfQuery.create_wildcard(QmfQuery.TARGET_OBJECT,
+                                         _target_params=t_params)
+        # find an agent
+        agent_app = self.agents[0]
+        aname = agent_app.agent.get_name()
+        agent = self.console.find_agent(aname, timeout=3)
+        self.assertTrue(agent and agent.get_name() == aname)
+
+        # setup subscription on agent
+
+        sp = self.console.create_subscription(agent,
+                                              query,
+                                              "some-handle")
+        self.assertTrue(isinstance(sp, qmf2.console.SubscribeParams))
+        self.assertTrue(sp.succeeded())
+        self.assertTrue(sp.get_error() == None)
+        self.assertTrue(sp.get_duration() == 10)
+        self.assertTrue(sp.get_publish_interval() == 2)
+
+        # now wait for the (2 * interval) and count the updates
+        r_count = 0
+        sid = None
+        while self.notifier.wait_for_work(4):
+            wi = self.console.get_next_workitem(timeout=0)
+            while wi is not None:
+                r_count += 1
+                self.assertTrue(wi.get_type() == WorkItem.SUBSCRIBE_INDICATION)
+                self.assertTrue(wi.get_handle() == "some-handle")
+                if r_count == 1:
+                    # first indication - returns all matching objects
+                    reply = wi.get_params()
+                    self.assertTrue(isinstance(reply, type([])))
+                    self.assertTrue(len(reply) == 2)
+                    for obj in reply:
+                        self.assertTrue(isinstance(obj, QmfData))
+                        self.assertTrue(obj.get_object_id() == "p1c1_key2" or
+                                        obj.get_object_id() == "p1c1_key1")
+                        sid = obj.get_schema_class_id()
+                        self.assertTrue(isinstance(sid, SchemaClassId))
+                        self.assertTrue(sid.get_package_name() == "package1")
+                        self.assertTrue(sid.get_class_name() == "class1")
+
+                else:
+                    # verify publish of modified object only!
+                    reply = wi.get_params()
+                    self.assertTrue(isinstance(reply, type([])))
+                    self.assertTrue(len(reply) == 1)
+                    obj = reply[0]
+                    self.assertTrue(isinstance(obj, QmfData))
+                    self.assertTrue(obj.get_object_id() == "p1c1_key2")
+                    self.assertTrue(obj.get_value("count2") == r_count - 1)
+                    # fail test if we receive more than expected
+                    self.assertTrue(r_count < 30)
+
+
+                # now update the noncontinuous field of one of the objects!
+                if r_count < 20:
+                    self.assertTrue(sid is not None)
+                    test_obj = agent_app.agent.get_object("p1c1_key2", sid)
+                    self.assertTrue(test_obj is not None)
+                    test_obj.set_value("count2", r_count)
+
+                self.console.release_workitem(wi)
+
+                wi = self.console.get_next_workitem(timeout=0)
+
+        # expect at least 1 publish per update
+        self.assertTrue(r_count > 10)
 
         self.console.destroy(10)
