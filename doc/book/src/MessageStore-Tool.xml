@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : MessageStore Tool
     </title><section role="h2" id="MessageStoreTool-MessageStoreTool"><title>
             MessageStore Tool
@@ -39,7 +39,7 @@
 
 	 <itemizedlist>
             <listitem><para>
-              <xref linkend="qpid_BDBMessageStore-20-3rd-20Party-"/>
+              <xref linkend="qpid_BDBMessageStore--3rd-Party-"/>
             </para></listitem>
             <listitem><para>
               <xref linkend="qpid_JDBCStore"/>
@@ -147,4 +147,4 @@ bdb$
           </para>
 <!--h3--></section>
 <!--h2--></section>
-</chapter>
+</section>

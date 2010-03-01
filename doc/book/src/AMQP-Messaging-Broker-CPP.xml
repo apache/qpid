@@ -40,29 +40,29 @@
       Running the AMQP Messaging Broker
     </title>
     
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="RASC.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat%20Sheet%20for%20configuring%20Queue%20Options.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat%20Sheet%20for%20configuring%20Exchange%20Options.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Running-CPP-Broker.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat-Sheet-for-configuring-Queue-Options.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Cheat-Sheet-for-configuring-Exchange-Options.xml"/>
 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using%20Broker%20Federation.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-Broker-Federation.xml"/>
 
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="SSL.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="LVQ.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="queue%20state%20replication.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Starting%20a%20cluster.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="queue-state-replication.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Starting-a-cluster.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ACL.xml"/> 
 </chapter>
  
 
-<chapter>
+<chapter id="chapter-Managing-CPP-Broker">
     <title>            
       Managing the AMQP Messaging Broker
     </title>
 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="82403.xml"/> 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMan%20-%20Qpid%20Management%20bridge.xml"/> 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Management%20Framework.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Management%20Design%20notes.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMF%20Python%20Console%20Tutorial.xml"/> 
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Managing-CPP-Broker.xml"/> 
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMan-Qpid-Management-bridge.xml"/> 
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Management-Framework.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Management-Design-notes.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QMF-Python-Console-Tutorial.xml"/> 
 </chapter>
 </part>

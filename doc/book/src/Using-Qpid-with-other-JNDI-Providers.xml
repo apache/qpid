@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<chapter>
 
   <title>
     Apache Qpid : Using Qpid with other JNDI Providers

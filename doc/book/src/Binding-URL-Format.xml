@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,8 +21,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : BindingURLFormat
+<section id="BindingURLFormat">
+  <title>
+      Apache Qpid : Binding URL Format
     </title>
             <programlisting>
 &lt;Exchange Class&gt;://&lt;Exchange Name&gt;/[&lt;Destination&gt;]/[&lt;Queue&gt;][?&lt;option&gt;='&lt;value&gt;'[&amp;&lt;option&gt;='&lt;value&gt;']]
@@ -169,4 +171,4 @@ topic://amq.topic?routingkey='stocks.nyse.ibm'
 </programlisting>
 </example>
 <!--h4--></section>
-</chapter>
+</section>

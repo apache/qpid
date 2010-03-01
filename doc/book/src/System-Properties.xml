@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
 
   <title>
     Apache Qpid : System Properties
@@ -79,7 +79,7 @@
 
 
 
-	<varlistentry>
+	<varlistentry id="SystemProperties-STRICTAMQPFATAL">
 	  <term>STRICT_AMQP_FATAL</term>
 	  <listitem>
 	    <variablelist>
@@ -414,4 +414,4 @@
       </variablelist>
 </section>
 </section>
-</chapter>
+</section>

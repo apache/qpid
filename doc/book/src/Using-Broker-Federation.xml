@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Using Broker Federation
     </title><section role="h1" id="UsingBrokerFederation-Introduction"><title>
             Introduction
@@ -29,10 +29,12 @@
             Please note: Whereas broker federation was introduced in the M3
             milestone release, the discussion in this document is based on
             the richer capabilities of federation in the M4 release.
-          </para><para>
-            This document presents broker federation for the administrative
-            user. For design and developer information, please see <xref linkend="qpid_Federation-20Design-20Note"/>.
           </para>
+<!--
+	  <para>
+            This document presents broker federation for the administrative
+            user. For design and developer information, please see <xref linkend="qpid_Federation-Design-Note"/>.
+          </para> -->
 	<!--h1--></section>
 
 	  <section role="h1" id="UsingBrokerFederation-WhatIsBrokerFederation-3F"><title>
@@ -699,4 +701,4 @@ qpid-route dynamic add $broker8 $broker6 fed.topic
 	  </section>
           
 	
-</chapter>
+</section>

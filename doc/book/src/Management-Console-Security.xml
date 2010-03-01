@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Management Console Security
     </title><section role="h1" id="ManagementConsoleSecurity-ManagementConsoleSecurity"><title>
             Management
@@ -106,7 +106,7 @@
             when starting the console. This can be done at the command line,
             or alternatively an example configuration has been made within
             the console's qpidmc.ini launcher configuration file that may
-            pre-configured in advance for repeated usage. See the <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/> for more
+            pre-configured in advance for repeated usage. See the <xref linkend="Qpid-JMX-Management-Console-User-Guide"/> for more
             information on this configuration process.
           </para>
 <!--h3--></section>
@@ -132,7 +132,7 @@
 	  <para>
             More information on Java's handling of SSL certificate
             verification and customizing the keystores can be found in the
-            <xref linkend="qpid_JSSERefGuide"/> .
+	    <ulink url="http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.html#CustomizingStores">http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.html#CustomizingStores</ulink>.
           </para>
 <!--h3--></section>
 <!--h2--></section>
@@ -183,7 +183,7 @@ qpid-server -run:external-classpath=first
           </para>
 <!--h3--></section>
 
-	  <section role="h3" id="ManagementConsoleSecurity-BrokerConfiguration"><title>
+	  <section role="h3" id="ManagementConsoleSecurity-BrokerConfiguration2"><title>
             Broker
             Configuration
           </title>
@@ -209,7 +209,7 @@ qpid-server -run:external-classpath=first
           </para>
 <!--h3--></section>
 
-	  <section role="h3" id="ManagementConsoleSecurity-JMXManagementConsoleConfiguration"><title>
+	  <section role="h3" id="ManagementConsoleSecurity-JMXManagementConsoleConfiguration-2"><title>
             JMX
             Management Console Configuration
           </title>
@@ -243,10 +243,10 @@ qpid-server -run:external-classpath=first
 	  <para>
             In order to access the management operations via JMX, users must
             have an account and have been assigned appropriate access rights.
-            See <xref linkend="qpid_Configuring-20Management-20Users"/>
+            See <xref linkend="qpid_Configuring-Management-Users"/>
           </para>
 <!--h2--></section>
 <!--h1--></section>
 
 	  
-</chapter>
+</section>

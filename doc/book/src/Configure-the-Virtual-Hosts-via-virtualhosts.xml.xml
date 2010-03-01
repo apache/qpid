@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +21,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Configure the Virtual Hosts via virtualhosts.xml
     </title><section role="h2" id="ConfiguretheVirtualHostsviavirtualhosts.xml-virtualhosts.xmlOverview"><title>
             virtualhosts.xml Overview
@@ -127,4 +128,4 @@
           </para>
 <!--h3--></section>
 <!--h2--></section>
-</chapter>
+</section>

@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Use Priority Queues
     </title>
 
@@ -111,7 +111,7 @@
 </programlisting>
           <para>
             The prefetch can be also be adjusted on a per connection basis by
-            adding a 'maxprefetch' value to the <xref linkend="qpid_Connection-20URL-20Format"/>
+            adding a 'maxprefetch' value to the <xref linkend="Connection-URL-Format"/>
           </para>
             <programlisting>
 amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://localhost:5672'
@@ -135,4 +135,4 @@ amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://loc
           </para>
 <!--h3--></section>
 <!--h2--></section>
-</chapter>
+</section>

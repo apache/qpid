@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
     Apache Qpid : WCF
   </title>
@@ -134,4 +134,4 @@ service.Open();
     </programlisting>
     <!--h1-->
   </section>
-</chapter>
+</section>

@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Qpid Java FAQ
     </title>
 
@@ -55,7 +55,7 @@
             <listitem><para>Persistence using the high performance Berkeley DB Java
             Edition. The persistence layer is also pluggable should an
             alternative implementation be required. The BDB store is
-            available from the <xref linkend="qpid_3rd-20Party-20Libraries"/> page
+            available from the <xref linkend="qpid_3rd-Party-Libraries"/> page
             </para></listitem>
             <listitem><para>Pluggable security using SASL. Any Java SASL provider can be
             used
@@ -168,7 +168,7 @@ at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatab
             manifest files to your classpath.
           </para><para>
             For more information on running the broker please see our
-            <xref linkend="qpid_Getting-20Started"/> page.
+            <xref linkend="Getting-Started"/> page.
           </para>
 <!--h3--></section>
 
@@ -178,7 +178,7 @@ at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatab
           </title>
 
 	  <para>
-            Please see the <xref linkend="qpid_Connection-20URL-20Format"/> documentation.
+            Please see the <xref linkend="qpid_Connection-URL-Format"/> documentation.
           </para>
 <!--h3--></section>
 
@@ -203,7 +203,7 @@ at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatab
             Queue names may consist of any mixture of digits, letters, and
             underscores.
           </para><para>
-            The <xref linkend="qpid_BindingURLFormat"/> is described in more
+            The <xref linkend="BindingURLFormat"/> is described in more
             detail on it's own page.
           </para>
 <!--h4--></section>
@@ -252,7 +252,7 @@ at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatab
           </title>
 
 	  <para>
-            see <xref linkend="qpid_How-20to-20Use-20JNDI"/>
+            see <xref linkend="How-to-Use-JNDI"/>
           </para>
 <!--h3--></section>
 
@@ -262,8 +262,10 @@ at org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatab
           </title>
 
 	  <para>
-            Here is a donated Spring configuration file <xref linkend="qpid_2264.zip"/> which shows the
-            config for Qpid side by side with Weblogic. HtH !
+            Here is a donated Spring configuration file <ulink
+            url="http://qpid.apache.org/qpid-java-faq.data/appContext.zip">appContext.zip</ulink>
+            which shows the config for Qpid side by side with
+            Weblogic. HtH !
           </para>
 <!--h3--></section>
 
@@ -323,13 +325,13 @@ amqj.logging.level
             qpid-server -c &lt;your_config_file's_path&gt;
           </para><para>
             For more detailed information on configuration, please see
-            <xref linkend="qpid_Qpid-20Design-20--20Configuration"/>
+            <xref linkend="qpid_Qpid-Design---Configuration"/>
           </para><para>
             
           </para>
 <!--h3--></section>
 
-	  <section role="h3" id="QpidJavaFAQ-Whatportsdoesthebrokeruse-3F"><title>
+	  <section role="h3" id="QpidJavaFAQ-Whatportsdoesthebrokeruse"><title>
             What ports
             does the broker use?
           </title>
@@ -371,7 +373,7 @@ amqj.logging.level
             For additional details on what ports the broker uses see <xref linkend="QpidJavaFAQ-Whatportsdoesthebrokeruse"/> FAQ
             entry.
             For more detailed information on configuration, please see
-            <xref linkend="qpid_Qpid-20Design-20--20Configuration"/>
+            <xref linkend="qpid_Qpid-Design---Configuration"/>
           </para>
 <!--h3--></section>
 
@@ -586,7 +588,7 @@ amqj.logging.level
 
 	  <para>
             There are a number of tuning options available, please see the
-            <xref linkend="qpid_How-20to-20Tune-20M3-20Java-20Broker-20Performance"/> page for more information.
+            <xref linkend="How-to-Tune-M3-Java-Broker-Performance"/> page for more information.
           </para>
 <!--h3--></section>
 
@@ -678,12 +680,12 @@ amqj.logging.level
 
 	  <para>
             For general questions, please subscribe to the
-            users@qpid.apache.org mailing list (<xref linkend="qpid_"/>).
+            <ulink url="mailto:users@qpid.apache.org">users@qpid.apache.org</ulink> mailing list.
           </para><para>
             For development questions, please subscribe to the
-            dev@qpid.apache.org mailing list (<xref linkend="qpid_"/>).
+            <ulink url="mailto:dev@qpid.apache.org">dev@qpid.apache.org</ulink> mailing list.
           </para><para>
-            More details on these lists are available on our <xref linkend="qpid_Mailing-20Lists"/>
+            More details on these lists are available on our <xref linkend="qpid_Mailing-Lists"/>
             page.
           </para>
 <!--h3--></section>
@@ -693,7 +695,7 @@ amqj.logging.level
           </title>
 
 	  <para>
-            You can do this via the <xref linkend="qpid_Qpid-20JMX-20Management-20Console"/>. To
+            You can do this via the <xref linkend="qpid_Qpid-JMX-Management-Console"/>. To
             do this simply log in to the management console as an admin user
             (you need to have created an admin account in the
             jmxremote.access file first) and then select the 'UserManagement'
@@ -705,7 +707,7 @@ amqj.logging.level
             to be disconnected if they are already connected.
           </para><para>
             For more information on the Management Console please see our
-            <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>
+            <xref linkend="Qpid-JMX-Management-Console-User-Guide"/>
           </para>
 <!--h3--></section>
 
@@ -740,14 +742,15 @@ amqj.logging.level
           </title>
 
 	  <para>
-            I would take a look at the testPassiveTTL in <xref linkend="qpid_TimeToLiveTest.java?revision=683950&amp;view=markup"/>
+            I would take a look at the testPassiveTTL in
+	    <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/systests/src/main/java/org/apache/qpid/server/queue/TimeToLiveTest.java">TimeToLiveTest.java</ulink>
           </para><para>
             The setUp and tearDown methods show how to correctly start up a
             broker for InVM testing. If you write your tests using a file for
             the JNDI you can then very easily swap between running your tests
             InVM and against a real broker.
           </para><para>
-            See our <xref linkend="qpid_How-20to-20Use-20JNDI"/> on how to confgure it
+            See our <xref linkend="How-to-Use-JNDI"/> on how to confgure it
           </para><para>
             Basically though you just need to set two System Properites:
           </para><para>
@@ -771,10 +774,10 @@ amqj.logging.level
             There are two possibilities here:
           </para><para>
             1) The management console can be used to interogate an active
-            broker and browse the contents of a queue.See the <xref linkend="qpid_Qpid-20JMX-20Management-20Console"/>
+            broker and browse the contents of a queue.See the <xref linkend="qpid_Qpid-JMX-Management-Console"/>
             page for further details.
           </para><para>
-            2) The <xref linkend="qpid_MessageStore-20Tool"/> can be used to inspect
+            2) The <xref linkend="qpid_MessageStore-Tool"/> can be used to inspect
             the contents of a persistent message store. Note: this can
             currently only be used when the broker is offline.
           </para>
@@ -821,7 +824,7 @@ amqj.logging.level
           </para><para>
             You may also want to increase the memory allowance to the broker
             though this will only delay the exception if you are publishing
-            messages faster than you are consuming. See <xref linkend="qpid_Java-20Environment-20Variables"/> for
+            messages faster than you are consuming. See <xref linkend="qpid_Java-Environment-Variables"/> for
             details of changing the memory settings.
           </para>
 <!--h3--></section>
@@ -899,7 +902,7 @@ java.lang.NullPointerException
 
 	  <para>
             You have not configured the console's SSL trust store properly,
-            see <xref linkend="qpid_Management-20Console-20Security"/> for
+            see <xref linkend="qpid_Management-Console-Security"/> for
             more details.
           </para>
 <!--h3--></section>
@@ -923,7 +926,7 @@ java.lang.NullPointerException
             Transfer accross the network and b) to be fully written to disk.
           </para><para>
             These situations require that the default timeout value be
-            increased. A cilent <xref linkend="qpid_System-20Properties"/> 'amqj.default_syncwrite_timeout' can be set
+            increased. A cilent <xref linkend="qpid_System-Properties"/> 'amqj.default_syncwrite_timeout' can be set
             on the client to increase the wait time. The default in 0.5 is
             30000 (30s).
           </para>
@@ -935,7 +938,7 @@ java.lang.NullPointerException
           </title>
 
 	  <para>
-            See <xref linkend="qpid_Configure-20Broker-20and-20Client-20Heartbeating"/>
+            See <xref linkend="qpid_Configure-Broker-and-Client-Heartbeating"/>
           </para>
 
 <!--h3--></section>            
@@ -943,4 +946,4 @@ java.lang.NullPointerException
 
 	            
 
-</chapter>
+</section>

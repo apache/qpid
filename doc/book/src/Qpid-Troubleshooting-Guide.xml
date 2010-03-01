@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
 
   <title>
       Apache Qpid : Qpid Troubleshooting Guide
@@ -149,8 +149,8 @@
             should always be created at broker startup. If you don't want to
             use this config, then simply ensure that you consume first from
             queue before staring to publish to it. See the entry on our
-            <xref linkend="qpid_Qpid-20Java-20FAQ"/> for more details of using the virtualhosts.xml route.
+            <xref linkend="qpid_Qpid-Java-FAQ"/> for more details of using the virtualhosts.xml route.
           </para>
 <!--h2--></section>
 
-</chapter>
+</section>

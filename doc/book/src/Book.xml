@@ -1,4 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,39 +21,39 @@
  
 -->
 
-<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 ]>
 
-<book xmlns:xi="http://www.w3.org/2001/XInclude">
-        <xi:include href="Book_Info.xml"/>
+<book>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Book-Info.xml"/>
 	<part>
 	  <title>Basics</title>
-	  <xi:include href="Introduction.xml"/>
-	  <xi:include href="AMQP.xml"/>
-	  <xi:include href="Getting_Started.xml"/>
-	  <xi:include href="Download.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Introduction.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Getting-Started.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Download.xml"/>
 	</part>
 
 <!--
     The broker sections define their own <part/> elements, with <partintro/> text.
 -->
-	<xi:include href="AMQP-Messaging-Broker-CPP.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-	<xi:include href="AMQP-Messaging-Broker-Java.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Messaging-Broker-CPP.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Messaging-Broker-Java.xml"/>
 
 	<part>
 	  <title>AMQP Messaging Clients Clients</title>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Java%20JMS%20Messaging%20Client.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20C++%20Messaging%20Client.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20.NET%20Messaging%20Client.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Python%20Messaging%20Client.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP%20Ruby%20Messaging%20Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Java-JMS-Messaging-Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-C++-Messaging-Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-.NET-Messaging-Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Python-Messaging-Client.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Ruby-Messaging-Client.xml"/>
 
 	</part>
 	<part>
 	  <title>Appendices</title>
-	  <xi:include href="AMQP%20Compatibility.xml"/>
-	  <xi:include href="Qpid%20Interoperability%20Documentation.xml"/>
-<!--	  <xi:include href="FAQ.xml"/> -->
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Compatibility.xml"/>
+	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Interoperability-Documentation.xml"/>
+<!--	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="FAQ.xml"/> -->
 	</part>
 </book>
 

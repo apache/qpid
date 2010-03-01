@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : QMF Python Console Tutorial
     </title>
             <itemizedlist>
@@ -84,7 +84,7 @@
             network. Qpid can be downloaded as source from Apache, is
             packaged with a number of Linux distributions, and can be
             purchased from commercial vendors that use Qpid. Please see
-            <xref linkend="qpid_Download"/> for
+            <xref linkend="chapter-Download"/> for
             information as to where to get Qpid Messaging.
           </para><para>
             Qpid Messaging includes a message broker (qpidd) which typically
@@ -891,4 +891,4 @@ sess.bindClass("org.apache.qpid.broker", "queue")
 	  <!--h1--></section>
 
 	 
-</chapter>
+</section>

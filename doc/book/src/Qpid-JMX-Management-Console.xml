@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<chapter id="Qpid-JMX-Management-Console">
 
   <title>
     Apache Qpid : Qpid JMX Management Console
@@ -42,12 +42,12 @@
 	JMX.
       </para>
        
-	  <xi:include href="Configuring%20Management%20Users.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-	  <xi:include href="Configuring%20Qpid%20JMX%20Management%20Console.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-          <xi:include href="Management%20Console%20Security.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-          <xi:include href="Qpid%20JMX%20Management%20Console%20FAQ.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-	  <xi:include href="Qpid%20JMX%20Management%20Console%20User%20Guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/> 
-	  <xi:include href="Qpid%20Management%20Features.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	  <xi:include href="Configuring-Management-Users.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	  <xi:include href="Configuring-Qpid-JMX-Management-Console.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+          <xi:include href="Management-Console-Security.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+          <xi:include href="Qpid-JMX-Management-Console-FAQ.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	  <xi:include href="Qpid-JMX-Management-Console-User-Guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/> 
+	  <xi:include href="Qpid-Management-Features.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 <!--h3--></section>
 <!--h2--></section>            
 </chapter>

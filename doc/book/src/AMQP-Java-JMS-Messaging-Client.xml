@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<chapter>
 
   <title>
       Apache Qpid : AMQP Java JMS Messaging Client
@@ -42,13 +42,12 @@ Does not seem to exist!
             <listitem><para>AMQP Java JMS Client Feature Guide
             </para></listitem>
 
-http://cwiki.apache.org/confluence/pages/createpage.action?spaceKey=qpid&title=JMS%20Client%20Feature%20Guide&linkCreation=true&fromPageId=4589057
+http://cwiki.apache.org/confluence/pages/createpage.action?spaceKey=qpid&title=JMS-Client-Feature-Guide&linkCreation=true&fromPageId=4589057
 -->
 
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20FAQ.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="System%20Properties.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Connection%20URL%20Format.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Binding%20URL%20Format.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="System-Properties.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Connection-URL-Format.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Binding-URL-Format.xml"/>
 
 <!--
             <listitem><para>How to Use JNDI to configure the AMQP Java JMS Client
