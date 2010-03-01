@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : SSL
     </title>
 
@@ -177,4 +177,4 @@ public void connectSSL(String host, int port, String virtualHost, String usernam
           </para>
 	  <!--h2--></section>
 	<!--h1--></section>
-</chapter>
+</section>

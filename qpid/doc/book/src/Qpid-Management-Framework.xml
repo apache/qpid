@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Qpid Management Framework
     </title>
             <itemizedlist>
@@ -58,7 +58,7 @@
             </itemizedlist>
           
             <para>
-              Please visit the <xref linkend="qpid_QMFv2-20Project-20Page"/> for information
+              Please visit the <xref linkend="qpid_QMFv2-Project-Page"/> for information
               about the future of QMF.
             </para>
           <section role="h1" id="QpidManagementFramework-WhatIsQMF"><title>
@@ -915,10 +915,10 @@
             one another.
           </para><para>
             A description of the current version of the QMF protocol can be
-            found at <xref linkend="qpid_QMF-20Protocol"/>.
+            found at <xref linkend="qpid_QMF-Protocol"/>.
           </para><para>
             A proposal for an updated protocol based on map-messages is in
-            progress and can be found at <xref linkend="qpid_QMF-20Map-20Message-20Protocol"/>.
+            progress and can be found at <xref linkend="qpid_QMF-Map-Message-Protocol"/>.
           </para>
 <!--h1--></section>
 
@@ -928,7 +928,7 @@
           </title>
 
 	 <para>
-            Please see the <xref linkend="qpid_QMF-20Python-20Console-20Tutorial"/> for information about using the console API with
+            Please see the <xref linkend="qpid_QMF-Python-Console-Tutorial"/> for information about using the console API with
             Python.
           </para>
 <!--h1--></section>
@@ -941,4 +941,4 @@
 	  <!--h1--></section>
 
 	 
-</chapter>
+</section>

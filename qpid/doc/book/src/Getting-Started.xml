@@ -1,16 +1,36 @@
-<chapter>
-<section>
+<chapter id="Getting-Started">
+
+<!--
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
+-->
 <title>Getting Started</title>
 <para>To get started with Apache Qpid, follow the steps below.</para>
 
 <orderedlist>
-<listitem><para>Download the software [Download]</para></listitem>
+<listitem><para><xref linkend="chapter-Download"/></para></listitem>
 <listitem>
   <para>Start a broker. </para>
   <itemizedlist>
-    <listitem><para>Instructions for [running a Qpid Java broker (AMQP 0-8, 0-9) | Getting Started Guide]</para></listitem>
-    <listitem><para>Instructions for [running a Qpid C++ broker (AMQP 0-10) | RASC]</para></listitem>
-    <listitem><para>[Management tools |  MgmtC++]  (AMQP 0-10, works with the Qpid C++ broker)</para></listitem>
+    <listitem><para><xref linkend="chapter-Running-a-Qpid-Java-Broker"/></para></listitem>
+    <listitem><para><xref linkend="section-Running-a-Qpid-CPP-Broker"/></para></listitem>
+    <listitem><para><xref linkend="chapter-Managing-CPP-Broker"/>(AMQP 0-10, works with the Qpid C++ broker)</para></listitem>
   </itemizedlist>
 </listitem>
 <listitem>
@@ -18,35 +38,35 @@
   <itemizedlist>
     <listitem><para>C++ (AMQP 0-10):</para>
     <itemizedlist>
-      <listitem><para>Examples: [https://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/examples/ | https://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/examples/]</para></listitem>
-      <listitem><para>[Running the C++ Examples | https://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/examples/README.txt]</para></listitem>
+      <listitem><para>Examples:</para><para><ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/examples/">https://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/examples/</ulink></para></listitem>
+      <listitem><para>Running the C++ Examples:</para><para><ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/examples/README.txt">https://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/examples/README.txt</ulink></para></listitem>
     </itemizedlist>
 </listitem>
 <listitem>
   <para>Java JMS (AMQP 0-10):</para>
   <itemizedlist>
-    <listitem><para>Examples: [https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/ | https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/]</para></listitem>
-    <listitem><para>[Script for Running the Java JMS Examples | https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/runSample.sh]</para></listitem>
+    <listitem><para>Examples:</para><para><ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/">https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/</ulink></para></listitem>
+    <listitem><para>Script for Running the Java JMS Examples </para><para><ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/runSample.sh">https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/runSample.sh</ulink></para></listitem>
   </itemizedlist>
 </listitem>
 <listitem>
   <para>Python (AMQP 0-10):</para>
   <itemizedlist>
-    <listitem><para>Examples: [https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/ | https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/]</para></listitem>
-    <listitem><para>[Running the Python Examples | https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/README]</para></listitem>
+    <listitem><para>Examples:</para><para><ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/">https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/</ulink></para></listitem>
+    <listitem><para>Running the Python Examples</para><para><ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/README">https://svn.apache.org/repos/asf/qpid/trunk/qpid/python/examples/README</ulink></para></listitem>
   </itemizedlist>
 </listitem>
 <listitem>
   <para>Ruby (AMQP 0-10):</para>
   <itemizedlist>
-    <listitem><para>Examples: [https://svn.apache.org/repos/asf/qpid/trunk/qpid/ruby/examples/ | https://svn.apache.org/repos/asf/qpid/trunk/qpid/ruby/examples/]</para></listitem>
+    <listitem><para>Examples: </para><para><ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/ruby/examples/">https://svn.apache.org/repos/asf/qpid/trunk/qpid/ruby/examples/</ulink></para></listitem>
   </itemizedlist>
 </listitem>
 <listitem>
   <para>.NET (AMQP 0-10):</para>
   <itemizedlist>
-    <listitem><para>Examples: [http://svn.apache.org/viewvc/qpid/trunk/qpid/dotnet/client-010/examples/ | http://svn.apache.org/viewvc/qpid/trunk/qpid/dotnet/client-010/examples/]</para></listitem>
-    <listitem><para>[.NET Tutorial | http://cwiki.apache.org/confluence/display/qpid/.NET+User+Guide]</para></listitem>
+    <listitem><para>Examples:</para><para><ulink url="http://svn.apache.org/viewvc/qpid/trunk/qpid/dotnet/client-010/examples/">http://svn.apache.org/viewvc/qpid/trunk/qpid/dotnet/client-010/examples/</ulink></para></listitem>
+    <listitem><para><xref linkend="NETUserGuide-Tutorial"/></para></listitem>
   </itemizedlist>
 </listitem>
 </itemizedlist>
@@ -54,19 +74,17 @@
 <listitem>
   <para>Read the API Guides and Documentation</para>
   <itemizedlist>
-    <listitem><para>[C++ Client API (AMQP 0-10) | http://qpid.apache.org/docs/api/cpp/html/index.html]</para></listitem>
-    <listitem><para>[JNDI Configuration for Java JMS | http://cwiki.apache.org/confluence/display/qpid/How+to+Use+JNDI]</para></listitem>
-    <listitem><para>[Python Client API  (AMQP 0-10) | http://qpid.apache.org/docs/api/python/html/index.html]</para></listitem>
-    <listitem><para>[Documentation]</para></listitem>
+    <listitem><para>C++ Client API (AMQP 0-10)</para><para><ulink url="http://qpid.apache.org/docs/api/cpp/html/index.html"></ulink></para></listitem>
+    <listitem><para><xref linkend="How-to-Use-JNDI"/></para></listitem>
+    <listitem><para>Python Client API  (AMQP 0-10)</para><para><ulink url="http://qpid.apache.org/docs/api/python/html/index.html">http://qpid.apache.org/docs/api/python/html/index.html</ulink></para></listitem>
   </itemizedlist>
 </listitem>
 <listitem>
   <para>Get your Questions Answered</para>
   <itemizedlist>
-    <listitem><para>Read the [FAQ|FAQ]</para></listitem>
-    <listitem><para>Ask a question on the user list mailto:users-subscribe@qpid.apache.org</para></listitem>
+    <listitem><para>Read the <xref linkend="FAQ"/></para></listitem>
+    <listitem><para>Ask a question on the user list</para><para>mailto:users-subscribe@qpid.apache.org</para></listitem>
   </itemizedlist>
 </listitem>
 </orderedlist>
-</section>
 </chapter>

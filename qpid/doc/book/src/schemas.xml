@@ -21,6 +21,12 @@
 -->
 
 <locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <uri resource="Download.xml" typeId="DocBook"/>
+  <uri resource="Getting-Started.xml" typeId="DocBook"/>
+  <uri resource="WCF.xml" typeId="DocBook"/>
+  <uri resource="Book-Info.xml" typeId="DocBook"/>
+  <uri resource="Book-Info.xml" typeId="DocBook"/>
+  <uri resource="Book.xml" uri="../../../../../../../usr/share/xml/docbook5/schema/rng/5.0/docbookxi.rnc"/>
   <uri resource="queue%20state%20replication.xml" typeId="DocBook"/>
   <uri resource="queue state replication.xml" typeId="DocBook"/>
   <uri resource="AMQP Ruby Messaging Client.xml" typeId="DocBook"/>
