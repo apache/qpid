@@ -99,6 +99,8 @@ def main():
 # Process the log files we know of
 #
 def preProcessBrokerLogs(resultDir):
+    
+    print "Pre Processing Broker Logs"
     # Pre-Process GC - no pre processing required 
     
     # Process Log4j - no processing required as file is already time stamped.
@@ -153,7 +155,6 @@ def processCPUUsage(resultDir):
     sumCPU=0.0
     sumMem=0.0
     
-    entries = 0
     output= open(datedFile, "w")
     for line in logfile:        
 	    #
@@ -357,6 +358,7 @@ def createResultSetPackage(root, resultFile):
      
     sliceBrokerLogs(resultDir, start, end)
     createGraphData(resultDir, testName)
+    createTestStatData(resultDir, testName)
     
     log("Created Result Package for:"+ testName)
     
@@ -387,9 +389,7 @@ def sliceCPULog(resultDir, start, end):
     entries=0
     sumCPU=0.0
     sumMem=0.0
-    
-    entries = 0
-    
+
     #
     # Create outputfile
     #
@@ -721,6 +721,73 @@ def extractTestData(property,resultDir,testName,type):
 	    found=True
 	
     return result.strip()    
+
+def createTestStatData(resultDir, testName):
+    csvFilePath=resultDir + os.sep + testName + ".csv"
+   
+    # Open the output file, erasing any existing version
+    # Keep track of the min/max sum and entries,.
+    minLatency=float(sys.maxint)
+    maxLatency=0.0
+    
+    entries=0
+    sumLatency=0.0    
+    
+    #
+    # Open csv File
+    #
+    csvFile = open(csvFilePath,"r")    
+    for line in csvFile:
+	
+        # The PingAsyncTestPerf test class outputs the latency and throughput data.
+    	if line.find("PingAsyncTestPerf") != -1:               
+            #
+            # Data format is
+            # <Test> <TestName> <Thread> <Status> <Time> <Latency> <Concurrency> <Thread> <TestSize>
+            #org.apache.qpid.ping.PingAsyncTestPerf, testAsyncPingOk, Dispatcher-Channel-1, Pass, 209.074, 219.706, 0, 1, 10
+            LatencyIndex = 5 
+            
+        # The PingLatencyTestPerf test class just outputs the latency data.    
+    	if line.find("PingLatencyTestPerf") != -1:               
+            #
+            # Data format is
+            # <Test> <TestName> <Thread> <Status> <Time> <Latency> <Concurrency> <Thread> <TestSize>
+            # org.apache.qpid.ping.PingLatencyTestPerf, testPingLatency, Dispatcher-Channel-1, Pass, 397.05502, 0, 2, 1000
+            LatencyIndex = 4          
+            
+    
+        # Only process the test lines that have 'org.apache.qpid.ping', i.e. skip header and footer.
+        if line.find("org.apache.qpid.ping") != -1:               
+            # Perform stat processing for the min/max/avg            
+            data = line.split(",")
+    
+            # Record entires
+            entries = entries + 1
+            
+            # Record Metrics
+            # Record Lateny data
+            latency = float(data[LatencyIndex])
+            if (latency < minLatency):
+                minLatency = latency
+        
+            if (latency > maxLatency):
+                maxLatency = latency
+            
+            sumLatency = sumLatency + latency
+
+
+    csvFile.close()
+    
+    # Output stats file
+    statFile=resultDir + os.sep + testName+".stats"
+    output= open(statFile, "w")
+    output.write("#type:min/max/avg")        
+    output.write('\n')
+    output.write("LATENCY:"+str(minLatency)+"/"+str(maxLatency)+"/"+str(float(sumLatency)/float(entries)))
+    output.write('\n')
+    output.close
+    
+    log("Generated stat data from test "+testName+" CSV file")    
     
 
 def ackModeToString(ackMode):
@@ -753,6 +820,5 @@ def mkdir(dir):
     if not os.path.exists(dir):
         os.mkdir(dir)
     
-if __name__ == "__main__":
-    
+if __name__ == "__main__":    
     main()

@@ -27,7 +27,11 @@ for file in `find $1 -name $graphFile` ; do
 
   echo Copying Images
   cp work/*png $root/results/
+
+  echo Copying Stats
+  cp work/*.statistics.txt $root/results/
   
+
   popd &> /dev/null
   echo Done
 done

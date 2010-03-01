@@ -32,7 +32,7 @@ processCMSGCFile()
 
  calculateStats "MEM_PRE" HEAP_PRE_GC.log
  calculateStats "MEM_POST" HEAP_POST_GC.log
- calcualteStatsBC "GC_FREQ" GC_FREQ.log
+ calculateStatsBC "GC_FREQ" GC_FREQ.log
  
      
  # Calculate ParNew GC Cumulative total 
@@ -115,7 +115,7 @@ processG1GCFile()
 calculateStatsBC()
 {
 label=$1
-file=$2
+statFile=$2
 # Calculate GC Frequencies
  prevFreq=0
  countFreq=0
@@ -124,7 +124,7 @@ file=$2
  maxFreq=0
 
  echo "" > GC_FREQ.log
- for time in `cat $file` ; do
+ for time in `cat $statFile` ; do
    if [ $prevFreq == 0 ] ; then
      prevFreq=$time
    else
@@ -146,15 +146,22 @@ file=$2
  done
 
  # Extract Min/Max/Avg
- echo "#type:min/max/avg" > $file.stats
- avgFreq=`echo $gcFreqTotal / $countFreq | bc -l`
- echo "$1:$minFreq/$maxFreq/$avgFreq" >> $file.stats
+ echo "#type:min/max/avg" > $statFile.stats
+ 
+ if [ $countFreq != 0 ] ; then
+   avgFreq=`echo $gcFreqTotal / $countFreq | bc -l 2&> /dev/null`
+    echo "$label:$minFreq/$maxFreq/$avgFreq" >> $statFile.stats
+    echo "Done GC Freq Stat generation for $statFile"
+ else
+    echo "$label:-/-/-" >> $statFile.stats
+    echo "Unable to calculate GC Freq stats as no freq entries found."
+ fi
 }
 
 calculateStats()
 {
 label=$1
-file=$2
+statFile=$2
 
 # Calculate GC Frequencies
  count=0
@@ -163,7 +170,7 @@ file=$2
  max=0
 
 
- for item in `cat $file` ; do
+ for item in `cat $statFile` ; do
      if [ $min == 0 ] ; then
        min=$item
      fi
@@ -181,11 +188,18 @@ file=$2
  done
 
  # Extract Min/Max/Avg
- echo "#type:min/max/avg" > $file.stats
- avg=`echo $gcTotal / $count | bc -l`
- 
- echo "$label:$min/$max/$avg" >> $file.stats
- echo "Done Stat generation for $file"
+ echo "#type:min/max/avg" > $statFile.stats
+    
+ if [ $count != 0 ] ; then
+    avg=`echo $gcTotal / $count | bc -l`
+    
+    echo "$label:$min/$max/$avg" >> $statFile.stats
+    echo "Done $label Stat generation for $statFile"
+ else    
+    echo "$label:-/-/-" >> $statFile.stats    
+    echo "Unable to calculate $label stats as no entries found."
+ fi
+
 }
 
 #
@@ -266,6 +280,12 @@ else
  PLOT="\"GC.Dur.data\" with lines axis x1y1 ti \"G1 Young Time ($youngGCCount)\", "
 fi
 
+#
+# Colate Stats
+#
+echo -n "Colating stat Data : "
+echo "#type:min/max/avg" > $file.statistics.txt 
+find .. -name "*stats" -exec grep -v "type" {} >> $file.statistics.txt \;
 
 
 # Prepare the plot command
@@ -341,4 +361,7 @@ set format x "%H:%M"
 plot "CPU.data" using 1:2 with lines 
 EOGNUPLOT
 
+#" 
+# Pop out of $work directory.
+#
 popd &> /dev/null
