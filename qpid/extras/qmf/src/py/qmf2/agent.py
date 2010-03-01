@@ -83,37 +83,6 @@ class MethodCallParams(object):
   ## SUBSCRIPTIONS
   ##==============================================================================
 
-class _ConsoleHandle(object):
-    """
-    """
-    def __init__(self, handle, reply_to):
-        self.console_handle = handle
-        self.reply_to = reply_to
-
-class SubscriptionParams(object):
-    """
-    """
-    def __init__(self, console_handle, query, interval, duration, user_id):
-        self._console_handle = console_handle
-        self._query = query
-        self._interval = interval
-        self._duration = duration
-        self._user_id = user_id
-
-    def get_console_handle(self):
-        return self._console_handle
-
-    def get_query(self):
-        return self._query
-
-    def get_interval(self):
-        return self._interval
-
-    def get_duration(self):
-        return self._duration
-
-    def get_user_id(self):
-        return self._user_id
 
 class _SubscriptionState(object):
     """
@@ -128,6 +97,7 @@ class _SubscriptionState(object):
         now = datetime.datetime.utcnow()
         self.next_update = now  # do an immediate update
         self.expiration = now + datetime.timedelta(seconds=duration)
+        self.last_update = None
         self.id = 0
 
     def resubscribe(self, now, _duration=None):
@@ -135,9 +105,9 @@ class _SubscriptionState(object):
             self.duration = _duration
         self.expiration = now + datetime.timedelta(seconds=self.duration)
 
-    def reset_interval(self, now):
+    def published(self, now):
         self.next_update = now + datetime.timedelta(seconds=self.interval)
-
+        self.last_update = now
 
 
   ##==============================================================================
@@ -192,6 +162,9 @@ class Agent(Thread):
         self._subscription_id = long(time.time())
         self._subscriptions = {}
         self._next_subscribe_event = None
+
+        # prevents multiple _wake_thread() calls
+        self._noop_pending = False
 
 
     def destroy(self, timeout=None):
@@ -264,18 +237,7 @@ class Agent(Thread):
         self._running = False
         if self.isAlive():
             # kick my thread to wake it up
-            try:
-                msg = Message(id=QMF_APP_ID,
-                              subject=self.name,
-                              properties={ "method":"request",
-                                          "qmf.opcode":OpCode.noop},
-                              content={})
-
-                # TRACE
-                #logging.error("!!! sending wakeup to myself: %s" % msg)
-                self._direct_sender.send( msg, sync=True )
-            except SendError, e:
-                logging.error(str(e))
+            self._wake_thread()
             logging.debug("waiting for agent receiver thread to exit")
             self.join(timeout)
             if self.isAlive():
@@ -349,7 +311,6 @@ class Agent(Thread):
         """
         Register an instance of a QmfAgentData object.
         """
-        # @todo: need to update subscriptions
         # @todo: need to mark schema as "non-const"
         if not isinstance(data, QmfAgentData):
             raise TypeError("QmfAgentData instance expected")
@@ -369,6 +330,18 @@ class Agent(Thread):
                     self._described_data[sid][oid] = data
             else:
                 self._undescribed_data[oid] = data
+
+            # does the new object match any subscriptions?
+            now = datetime.datetime.utcnow()
+            for sid,sub in self._subscriptions.iteritems():
+                if sub.query.evaluate(data):
+                    # matched.  Mark the subscription as needing to be
+                    # serviced. The _publish() method will notice the new
+                    # object and will publish it next time it runs.
+                    sub.next_update = now
+                    self._next_subscribe_event = None
+                    # @todo: should we immediately publish?
+
         finally:
             self._lock.release()
 
@@ -387,7 +360,7 @@ class Agent(Thread):
         return data
 
 
-    def method_response(self, handle, _out_args=None, _error=None): 
+    def method_response(self, handle, _out_args=None, _error=None):
         """
         """
         if not isinstance(handle, _MethodCallHandle):
@@ -489,50 +462,37 @@ class Agent(Thread):
                 logging.debug("Agent Indication Sent")
                 next_heartbeat = now + datetime.timedelta(seconds = self._heartbeat_interval)
 
-
-
             #
             # Monitor Subscriptions
             #
-            if (self._next_subscribe_event is None or
-                now >= self._next_subscribe_event):
-
-                logging.debug("%s polling subscriptions..." % self.name)
-                self._next_subscribe_event = now + datetime.timedelta(seconds=
+            self._lock.acquire()
+            try:
+                now = datetime.datetime.utcnow()
+                if (self._next_subscribe_event is None or
+                    now >= self._next_subscribe_event):
+                    logging.debug("%s polling subscriptions..." % self.name)
+                    self._next_subscribe_event = now + datetime.timedelta(seconds=
                                                                       self._max_duration)
-                self._lock.acquire()
-                try:
-                    dead_ss = []
+                    dead_ss = {}
                     for sid,ss in self._subscriptions.iteritems():
                         if now >= ss.expiration:
-                            dead_ss.append(sid)
+                            dead_ss[sid] = ss
                             continue
                         if now >= ss.next_update:
-                            response = []
-                            objs = self._queryData(ss.query)
-                            if objs:
-                                for obj in objs:
-                                    response.append(obj.map_encode())
-                                logging.debug("!!! %s publishing %s!!!" % (self.name, ss.correlation_id))
-                                self._send_query_response( ContentType.data,
-                                                           ss.correlation_id,
-                                                           ss.reply_to,
-                                                           response)
-                            ss.reset_interval(now)
-
+                            self._publish(ss)
                         next_timeout = min(ss.expiration, ss.next_update)
                         if next_timeout < self._next_subscribe_event:
                             self._next_subscribe_event = next_timeout
 
-                    for sid in dead_ss:
+                    for sid,ss in dead_ss.iteritems():
                         del self._subscriptions[sid]
-                finally:
-                    self._lock.release()
+                        self._unpublish(ss)
+            finally:
+                self._lock.release()
 
             #
             # notify application of pending WorkItems
             #
-
             if self._work_q_put and self._notifier:
                 logging.debug("%s notifying application..." % self.name)
                 # new stuff on work queue, kick the the application...
@@ -545,10 +505,22 @@ class Agent(Thread):
             #
             # Sleep until messages arrive or something times out
             #
-            next_timeout = min(next_heartbeat, self._next_subscribe_event)
-            timeout = timedelta_to_secs(next_timeout -
-                                        datetime.datetime.utcnow())
-            if timeout > 0.0:
+            now = datetime.datetime.utcnow()
+            next_timeout = next_heartbeat
+            self._lock.acquire()
+            try:
+                # the mailbox expire flag may be cleared by the
+                # app thread(s) in order to force an immediate publish
+                if self._next_subscribe_event is None:
+                    next_timeout = now
+                elif self._next_subscribe_event < next_timeout:
+                    next_timeout = self._next_subscribe_event
+            finally:
+                self._lock.release()
+
+            timeout = timedelta_to_secs(next_timeout - now)
+
+            if self._running and timeout > 0.0:
                 logging.debug("%s sleeping %s seconds..." % (self.name,
                                                              timeout))
                 try:
@@ -557,7 +529,7 @@ class Agent(Thread):
                     pass
 
 
-
+        logging.debug("Shutting down Agent %s thread" % self.name)
 
     #
     # Private:
@@ -667,6 +639,7 @@ class Agent(Thread):
         elif opcode == OpCode.subscribe_cancel_ind:
             self._handleUnsubscribeReqMsg(msg, cmap, props, version, _direct)
         elif opcode == OpCode.noop:
+            self._noop_pending = False
             logging.debug("No-op msg received.")
         else:
             logging.warning("Ignoring message with unrecognized 'opcode' value: '%s'"
@@ -950,9 +923,12 @@ class Agent(Thread):
             self._lock.acquire()
             try:
                 if sid in self._subscriptions:
+                    dead_sub = self._subscriptions[sid]
                     del self._subscriptions[sid]
             finally:
                 self._lock.release()
+
+            self._unpublish(dead_sub)
 
 
     def _queryPackagesReply(self, msg, query):
@@ -1100,6 +1076,70 @@ class Agent(Thread):
 
         return data_objs
 
+    def _publish(self, sub):
+        """ Publish a subscription.
+        """
+        response = []
+        now = datetime.datetime.utcnow()
+        objs = self._queryData(sub.query)
+        if objs:
+            for obj in objs:
+                if sub.id not in obj._subscriptions:
+                    # new to subscription - publish it
+                    obj._subscriptions[sub.id] = sub
+                    response.append(obj.map_encode())
+                elif obj._dtime:
+                    # obj._dtime is millisec since utc.  Convert to datetime
+                    utcdt = datetime.datetime.utcfromtimestamp(obj._dtime/1000.0)
+                    if utcdt > sub.last_update:
+                        response.append(obj.map_encode())
+                else:
+                    # obj._utime is millisec since utc.  Convert to datetime
+                    utcdt = datetime.datetime.utcfromtimestamp(obj._utime/1000.0)
+                    if utcdt > sub.last_update:
+                        response.append(obj.map_encode())
+
+            if response:
+                logging.debug("!!! %s publishing %s!!!" % (self.name, sub.correlation_id))
+                self._send_query_response( ContentType.data,
+                                           sub.correlation_id,
+                                           sub.reply_to,
+                                           response)
+        sub.published(now)
+
+    def _unpublish(self, sub):
+        """ This subscription is about to be deleted, remove it from any
+        referencing objects.
+        """
+        objs = self._queryData(sub.query)
+        if objs:
+            for obj in objs:
+                if sub.id in obj._subscriptions:
+                    del obj._subscriptions[sub.id]
+
+
+
+    def _wake_thread(self):
+        """
+        Make the agent management thread loop wakeup from its next_receiver
+        sleep.
+        """
+        self._lock.acquire()
+        try:
+            if not self._noop_pending:
+                logging.debug("Sending noop to wake up [%s]" % self._address)
+                msg = Message(id=QMF_APP_ID,
+                              subject=self.name,
+                              properties={"method":"indication",
+                                          "qmf.opcode":OpCode.noop},
+                              content={})
+                try:
+                    self._direct_sender.send( msg, sync=True )
+                    self._noop_pending = True
+                except SendError, e:
+                    logging.error(str(e))
+        finally:
+            self._lock.release()
 
 
   ##==============================================================================
@@ -1164,6 +1204,7 @@ class QmfAgentData(QmfData):
         self._agent = agent
         self._validated = False
         self._modified = True
+        self._subscriptions = {}
 
     def destroy(self): 
         self._dtime = long(time.time() * 1000)
@@ -1175,7 +1216,8 @@ class QmfAgentData(QmfData):
 
     def set_value(self, _name, _value, _subType=None):
         super(QmfAgentData, self).set_value(_name, _value, _subType)
-        self._touch()
+        self._utime = long(time.time() * 1000)
+        self._touch(_name)
         # @todo: publish change
 
     def inc_value(self, name, delta=1):
@@ -1191,8 +1233,12 @@ class QmfAgentData(QmfData):
     def dec_value(self, name, delta=1): 
         """ subtract the delta from the property """
         # @todo: need to take write-lock
-        logging.error(" TBD!!!")
-        self._touch()
+        val = self.get_value(name)
+        try:
+            val -= delta
+        except:
+            raise
+        self.set_value(name, val)
 
     def validate(self):
         """
@@ -1212,12 +1258,32 @@ class QmfAgentData(QmfData):
                     raise Exception("Required property '%s' not present." % name)
         self._validated = True
 
-    def _touch(self):
+    def _touch(self, field=None):
         """
         Mark this object as modified.  Used to force a publish of this object
         if on subscription.
         """
-        self._modified = True
+        now = datetime.datetime.utcnow()
+        publish = False
+        if field:
+            # if the named field is not continuous, mark any subscriptions as
+            # needing to be published.
+            sid = self.get_schema_class_id()
+            if sid:
+                self._agent._lock.acquire()
+                try:
+                    schema = self._agent._schema.get(sid)
+                    if schema:
+                        prop = schema.get_property(field)
+                        if prop and not prop.is_continuous():
+                            for sid,sub in self._subscriptions.iteritems():
+                                sub.next_update = now
+                                publish = True
+                    if publish:
+                        self._agent._next_subscribe_event = None
+                        self._agent._wake_thread()
+                finally:
+                    self._agent._lock.release()
 
 
 
