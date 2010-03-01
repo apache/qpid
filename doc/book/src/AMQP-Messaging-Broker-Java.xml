@@ -38,34 +38,33 @@
 <chapter>
   <title>General User Guides</title>
 
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java%20Broker%20Feature%20Guide.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20FAQ.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java%20Environment%20Variables.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Troubleshooting%20Guide.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Feature-Guide.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Java-FAQ.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Environment-Variables.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Troubleshooting-Guide.xml"/>
 </chapter>
 
-<chapter  id="AMQPMessagingBroker%28implementedinJava%29-HowTos">
+<chapter  id="Qpid-Java-Broker-HowTos">
 <title>How Tos</title>
 
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Add%20New%20Users.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20ACLs.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20Java%20Qpid%20to%20use%20a%20SSL%20connection..xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20Log4j%20CompositeRolling%20Appender.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20the%20Broker%20via%20config.xml.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure%20the%20Virtual%20Hosts%20via%20virtualhosts.xml.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Debug%20using%20log4j.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How%20to%20Tune%20M3%20Java%20Broker%20Performance.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20Build%20How%20To.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Use%20Priority%20Queues.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Add-New-Users.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-ACLs.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-Java-Qpid-to-use-a-SSL-connection.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-Log4j-CompositeRolling-Appender.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-the-Broker-via-config.xml.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Configure-the-Virtual-Hosts-via-virtualhosts.xml.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Debug-using-log4j.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How-to-Tune-M3-Java-Broker-Performance.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Java-Build-How-To.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Use-Priority-Queues.xml"/>
 </chapter>
 
-<chapter id="AMQPMessagingBroker%28implementedinJava%29-ManagementTools">
+
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-JMX-Management-Console.xml"/>
+
+<chapter id="QpidJavaBroker-ManagementTools">
 <title>Management Tools</title>
-
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20JMX%20Management%20Console.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="MessageStore%20Tool.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid%20Java%20Broker%20Management%20CLI.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Management%20Design%20notes.xml"/>
-
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="MessageStore-Tool.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Java-Broker-Management-CLI.xml"/>
 </chapter>
 </part>

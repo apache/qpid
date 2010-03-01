@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +21,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
       Apache Qpid : Configure ACLs
     </title>
@@ -34,7 +35,7 @@
           </title>
   <itemizedlist>
             <listitem><para>
-              <xref linkend="qpid_Java-20XML-20ACLs"/>
+              <xref linkend="qpid_Java-XML-ACLs"/>
             </para></listitem>
             <listitem><para>
               <xref linkend="qpid_ACL"/>
@@ -62,7 +63,7 @@
 
 	  <itemizedlist>
             <listitem><para>
-              <xref linkend="qpid_Java-20XML-20ACLs"/>
+              <xref linkend="qpid_Java-XML-ACLs"/>
             </para></listitem>
             <listitem><para>Support for Version 2 specification is in progress.
             </para></listitem>
@@ -74,4 +75,4 @@
   <!--h2-->
   </section>
 
-</chapter>
+</section>

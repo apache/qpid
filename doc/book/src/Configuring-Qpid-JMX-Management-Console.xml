@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +21,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Configuring Qpid JMX Management Console
     </title><section role="h2" id="ConfiguringQpidJMXManagementConsole-ConfiguringQpidJMXManagementConsole"><title>
             Configuring Qpid JMX Management Console
@@ -30,7 +31,7 @@
             Qpid has a JMX management interface that exposes a number of
             components of the running broker.
             You can find out more about the features exposed by the JMX
-            interfaces <xref linkend="qpid_Qpid-20Management-20Features"/>.
+            interfaces <xref linkend="qpid_Qpid-Management-Features"/>.
           </para><para>
             
           </para>
@@ -49,7 +50,7 @@
                         being connected to is making use of this ability then
                         additional console configuration may be required,
                         particularly when using self-signed certificates. See
-                        <xref linkend="qpid_Management-20Console-20Security"/> for details.
+                        <xref linkend="qpid_Management-Console-Security"/> for details.
                       </para>
 	    </note>
 	  </listitem>
@@ -66,7 +67,7 @@
 	      However, if you wish to connect to an older broker using
 	      JMXMP the console will support this so long as the
 	      <emphasis>jmxremote_optional.jar</emphasis> file is provided to it.
-	      For details see <xref linkend="qpid_Management-20Console-20Security"/>.
+	      For details see <xref linkend="qpid_Management-Console-Security"/>.
 	    </para>
 	  </note>
 <!--h3--></section>
@@ -98,7 +99,7 @@
           </title>
 
 	 <para>
-            Please see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/> for details on using this Eclipse RCP
+            Please see <xref linkend="Qpid-JMX-Management-Console-User-Guide"/> for details on using this Eclipse RCP
             application.
           </para>
 
@@ -124,7 +125,7 @@
 	 <para>
             HermesJMS also offers integration with the Qpid management
             interfaces. You can get instructions and more information from
-            <xref linkend="qpid_HermesJMS"/>.
+	    <ulink url="http://cwiki.apache.org/confluence/display/qpid/HermesJMS">HermesJMS</ulink>.
           </para>
 <!--h2--></section>
 
@@ -134,7 +135,7 @@
           </title>
 
 	 <para>
-            <xref linkend="qpid_www.mc4j.org"/> is an alternative
+            <ulink url="qpid_www.mc4j.org">MC4J</ulink> is an alternative
             management tool. It provide a richer "dashboard" that can
             customise the raw MBeans.
           </para>
@@ -177,4 +178,4 @@
           </para>
 <!--h4--></section>
 <!--h2--></section>
-</chapter>
+</section>

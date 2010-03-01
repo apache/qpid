@@ -1,11 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
- [ ]  <- ###############
-*<ulink>url</ulink>
-*Broker
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
 -->
 
-<chapter>
+<chapter id="chapter-Download">
+
 <title>Download Apache Qpid</title>
+
+<para/>
+
 
 <section><title>Production Releases</title>
 
@@ -23,13 +43,17 @@
 
 <section><title>Multiple Component Packages</title>
 
-<table>
-<thead><tr><td> Component </td><td> Download </td><td> AMQP 0-10 </td><td> AMQP 0-8/0-9 </td></tr></thead>
+<table frame="all">
+<title/>
+<tgroup cols='4' align='left' colsep='1' rowsep='1'>
+<thead><row><entry> Component </entry><entry> Download </entry><entry> AMQP 0-10 </entry><entry> AMQP 0-8/0-9 </entry></row></thead>
 <tbody>
-<tr><td> Full release &amp; keys </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/">http://www.apache.org/dist/qpid/0.5/</ulink> </td><td> Y </td><td> Y </td></tr>
-<tr><td> C++ broker &amp; client </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz</ulink> </td><td> Y </td><td> </td></tr>
-<tr><td> Java broker, client &amp; tools </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-0.5.tar.gz</ulink> </td><td> client </td><td> Y </td></tr>
-</tbody></table>
+<row><entry> Full release &amp; keys </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/">http://www.apache.org/dist/qpid/0.5/</ulink> </entry><entry> Y </entry><entry> Y </entry></row>
+<row><entry> C++ broker &amp; client </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-cpp-0.5.tar.gz</ulink> </entry><entry> Y </entry><entry> </entry></row>
+<row><entry> Java broker, client &amp; tools </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-0.5.tar.gz</ulink> </entry><entry> client </entry><entry> Y </entry></row>
+</tbody>
+</tgroup>
+</table>
 </section>
 
 <section><title>Single Component Package</title>
@@ -37,53 +61,61 @@
 
 <table>
 <title>Broker</title>
-<thead><tr><td> Language </td><td> Download </td><td> AMQP 0-10 </td><td> AMQP 0-8/0-9 </td></tr></thead>
+<tgroup cols="4" align='left' colsep='1' rowsep='1'>
+<thead><row><entry> Language </entry><entry> Download </entry><entry> AMQP 0-10 </entry><entry> AMQP 0-8/0-9 </entry></row></thead>
 <tbody>
-<tr><td> Java </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-broker-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-broker-0.5.tar.gz</ulink> </td><td> </td><td> Y </td></tr>
+<row><entry> Java </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-broker-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-broker-0.5.tar.gz</ulink> </entry><entry> </entry><entry> Y </entry></row>
 </tbody>
+</tgroup>
 </table>
 
 
 <table>
 <title>Client</title>
-<thead><tr><td> Language </td><td> Download </td><td> AMQP 0-10 </td><td> AMQP 0-8/0-9 </td></tr></thead>
+<tgroup cols="4" align='left' colsep='1' rowsep='1'>
+<thead><row><entry> Language </entry><entry> Download </entry><entry> AMQP 0-10 </entry><entry> AMQP 0-8/0-9 </entry></row></thead>
 <tbody>
-<tr><td> C# (.NET, WCF, Excel) 0-10 client (C++ Broker Compatible) </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip">http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip</ulink> </td><td> Y </td><td> </td></tr>
-<tr><td> C# (.NET) 0-8 client (Java Broker Compatible) </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-8-0.5.zip">http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-8-0.5.zip</ulink> </td><td> </td><td> Y </td></tr>
-<tr><td> Java </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-client-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-client-0.5.tar.gz</ulink> </td><td> Y </td><td> Y </td></tr>
-<tr><td> Python </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz</ulink> </td><td> Y </td><td> Y </td></tr>
-<tr><td> Ruby </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-ruby-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-ruby-0.5.tar.gz</ulink> </td><td> Y </td><td> Y </td></tr>
+<row><entry> C# (.NET, WCF, Excel) 0-10 client (C++ Broker Compatible) </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip">http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-10-0.5.zip</ulink> </entry><entry> Y </entry><entry> </entry></row>
+<row><entry> C# (.NET) 0-8 client (Java Broker Compatible) </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-8-0.5.zip">http://www.apache.org/dist/qpid/0.5/qpid-dotnet-0-8-0.5.zip</ulink> </entry><entry> </entry><entry> Y </entry></row>
+<row><entry> Java </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-java-client-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-java-client-0.5.tar.gz</ulink> </entry><entry> Y </entry><entry> Y </entry></row>
+<row><entry> Python </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz</ulink> </entry><entry> Y </entry><entry> Y </entry></row>
+<row><entry> Ruby </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-ruby-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-ruby-0.5.tar.gz</ulink> </entry><entry> Y </entry><entry> Y </entry></row>
 </tbody>
+</tgroup>
 </table>
 
 
 <table>
 <title>C++ broker management</title>
-<thead><tr><td> Component </td><td> Download </td><td> AMQP 0-10 </td></tr></thead>
+<tgroup cols="3" align='left' colsep='1' rowsep='1'>
+<thead><row><entry> Component </entry><entry> Download </entry><entry> AMQP 0-10 </entry></row></thead>
 <tbody>
-<tr><td> cmd line (packaged with python) </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz</ulink> </td><td> Y </td></tr>
-<tr><td> QMan JMX bridge, WS-DM </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-client-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-management-client-0.5.tar.gz</ulink> </td><td> Y </td></tr>
+<row><entry> cmd line (packaged with python) </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-python-0.5.tar.gz</ulink> </entry><entry> Y </entry></row>
+<row><entry> QMan JMX bridge, WS-DM </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-client-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-management-client-0.5.tar.gz</ulink> </entry><entry> Y </entry></row>
 </tbody>
+</tgroup>
 </table>
 
 
 <table>
 <title>Java broker management</title>
-<thead><tr><td> Component </td><td> Download </td></tr></thead>
+<tgroup cols="2" align='left' colsep='1' rowsep='1'>
+<thead><row><entry> Component </entry><entry> Download </entry></row></thead>
 <tbody>
-<tr><td> Eclipse RCP client </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-eclipse-plugin-0.5-linux-gtk-x86.tar.gz">Linux x86</ulink>
+<row><entry> Eclipse RCP client </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-eclipse-plugin-0.5-linux-gtk-x86.tar.gz">Linux x86</ulink>
 <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-eclipse-plugin-0.5-linux-gtk-x86_64.tar.gz">Linux x86_64</ulink>
 <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-eclipse-plugin-0.5-macosx.zip">Mac OS X</ulink>
 <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-eclipse-plugin-0.5-win32-win32-x86.zip">Windows x86</ulink>
-</td></tr>
-<tr><td> Command line interface </td><td> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-tools-qpid-cli-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-management-tools-qpid-cli-0.5.tar.gz</ulink> </td></tr>
+</entry></row>
+<row><entry> Command line interface </entry><entry> <ulink url="http://www.apache.org/dist/qpid/0.5/qpid-management-tools-qpid-cli-0.5.tar.gz">http://www.apache.org/dist/qpid/0.5/qpid-management-tools-qpid-cli-0.5.tar.gz</ulink> </entry></row>
 </tbody>
+</tgroup>
 </table>
 </section>
 </section>
 
 
-<section><title>QpidComponents.org</title>
+<section id="qpid_3rd-Party-Libraries"><title>QpidComponents.org</title>
 
 <para><ulink url="http://QpidComponents.org">http://QpidComponents.org</ulink> provides further components for Apache Qpid, including both persistence and management tools. These components are open source, but are not developed as part of the Apache Qpid project due to licensing or other restrictions.</para>
 

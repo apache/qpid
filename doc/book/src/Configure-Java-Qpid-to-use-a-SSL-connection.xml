@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +21,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Configure Java Qpid to use a SSL connection.
     </title>
 
@@ -80,4 +81,4 @@
           </title>
 	  <para/>
     <!--h2--></section>
-</chapter>
+</section>

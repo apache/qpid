@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"  xmlns:xi="http://www.w3.org/2001/XInclude">
+<chapter>
   <title>
     Apache Qpid : AMQP .NET Messaging Client
   </title>
@@ -40,9 +40,9 @@
       User Guides
     </title>
         
-    <xi:include href="NET%20User%20Guide.xml"/>
-    <xi:include href="Excel%20AddIn.xml"/>
-    <xi:include href="WCF.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="NET-User-Guide.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Excel-AddIn.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="WCF.xml"/>
   </section>
 
   <section role="h3" id="AMQP.NETMessagingClient-Examples">
@@ -68,7 +68,7 @@
     <itemizedlist>
     <listitem>
       <para>
-	<xref linkend="qpid_Developer-20Pages"/>
+	<xref linkend="qpid_Developer-Pages"/>
       </para>
     </listitem>
     <listitem>
@@ -79,7 +79,7 @@
       <itemizedlist>
 	<listitem>
 	  <para>
-	    <xref linkend="qpid_Build-20.NET-20Client"/>
+	    <xref linkend="qpid_Build-.NET-Client"/>
 	  </para>
 	</listitem>
 	<listitem>
@@ -89,12 +89,12 @@
 	</listitem>
 	<listitem>
 	  <para>
-	    <xref linkend="qpid_Run-20tests"/>
+	    <xref linkend="qpid_Run-tests"/>
 	  </para>
 	</listitem>
 	<listitem>
 	  <para>
-	    <xref linkend="qpid_Setup-20.Net-20Client-20on-20Windows"/>
+	    <xref linkend="qpid_Setup-.Net-Client-on-Windows"/>
 	  </para>
 	</listitem>
       </itemizedlist>

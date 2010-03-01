@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Add New Users
     </title><para>
             The Qpid Java Broker has a single reference source (<xref linkend="qpid_PrincipalDatabase"/>) that
@@ -43,10 +43,10 @@
             use they only need support the SASL mechanisms they provide.
           </para><itemizedlist>
             <listitem><para>
-              <xref linkend="AddNewUsers-plain"/>
+              <xref linkend="AddNewUsers-Plain"/>
             </para></listitem>
             <listitem><para>
-              <xref linkend="AddNewUsers-base64md5"/>
+              <xref linkend="AddNewUsers-Base64MD5PasswordFileFormat"/>
             </para></listitem>
           </itemizedlist><para>
             
@@ -156,11 +156,11 @@ martin:X03MO1qnZdYdgyfeuILPmQ==
               for qpid passwd files.
               <emphasis>NOTE:</emphasis> For the changes to be seen by the broker you must
               either restart the broker or reload the data with the
-              management tools (see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>)
+              management tools (see <xref linkend="Qpid-JMX-Management-Console-User-Guide"/>)
             </para></listitem>
             <listitem><para>Use the management tools to create a new user. The changes
             will be made by the broker to the password file and the new user
-            will be immediately available to the system (see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>).
+            will be immediately available to the system (see <xref linkend="Qpid-JMX-Management-Console-User-Guide"/>).
             </para></listitem>
           </orderedlist>
 <!--h3--></section>
@@ -176,7 +176,7 @@ martin:X03MO1qnZdYdgyfeuILPmQ==
             only read once on start up.
           </para><para>
             To make changes dynamically there are two options, both require
-            administrator access via the Management Console (see <xref linkend="qpid_Qpid-20JMX-20Management-20Console-20User-20Guide"/>)
+            administrator access via the Management Console (see <xref linkend="Qpid-JMX-Management-Console-User-Guide"/>)
           </para><orderedlist>
             <listitem><para>You can replace the file and use the console to reload its
             contents.
@@ -229,8 +229,8 @@ martin:X03MO1qnZdYdgyfeuILPmQ==
               </row>
             </tbody>
           </tgroup></table><para>
-            For details of SASL support see <xref linkend="qpid_Qpid-20Interoperability-20Documentation"/>
+            For details of SASL support see <xref linkend="qpid_Qpid-Interoperability-Documentation"/>
           </para>
 <!--h2--></section>
 
-</chapter>
+</section>

@@ -20,12 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : MgmtC++
-    </title><section role="h2" id="MgmtC-2B-2B-ManagingtheC-5CBroker"><title>
-            Managing the C++
-            Broker
-          </title>
+<section id="section-Managing-CPP-Broker">
+    <title> Managing the C++ Broker </title>
            <para>
             There are quite a few ways to interact with the C++ broker. The
             command line tools
@@ -463,5 +459,4 @@ Options:
             You get the idea... have fun!
           </para>
 <!--h3--></section>
-<!--h2--></section>
-</chapter>
+</section>

@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
+<section><title>
       Apache Qpid : Management Design notes
     </title><section role="h2" id="ManagementDesignnotes-StatusofThisDocument"><title>
             Status
@@ -35,7 +35,7 @@
           </para><para>
             Development continues on the Qpid Management Framework (QMF) for
             M4. If you are using M3, this is the document you need. If you
-            are using the SVN trunk, please refer to <xref linkend="qpid_Qpid-20Management-20Framework"/> for
+            are using the SVN trunk, please refer to <xref linkend="qpid_Qpid-Management-Framework"/> for
             up-to-date information.
           </para>
 	<!--h2--></section>
@@ -70,7 +70,7 @@
           </title>
 
 	 <para>
-            <xref linkend="qpid_JMX-20Gateway"/>
+            <xref linkend="qpid_JMX-Gateway"/>
           </para>
 	<!--h3--></section>
 
@@ -2132,5 +2132,5 @@
 	   <!--h2--></section>
 
 	 
-</chapter>
+</section>
 	  

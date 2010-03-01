@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +21,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section id="Connection-URL-Format">
   <title>
     Apache Qpid : Connection URL Format
   </title>
@@ -378,4 +379,4 @@ amqp://guest:guest@/test?brokerlist='vm://:1'&amp;failover='nofailover'
 </programlisting>
 
 <!--h3--></section>
-</chapter>
+</section>

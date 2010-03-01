@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<chapter id="How-to-Use-JNDI">
   <title>
     Apache Qpid : How to Use JNDI
   </title>
@@ -80,13 +80,13 @@ destination.direct = direct://amq.direct//directQueue
             The property file allows a number of queues to be defined that
             can then be discovered via JNDI. There are four properties used
             by the PFICFactory.
-            <emphasis>connectionfactory.&lt;jndiname&gt;</emphasis> this is the <xref linkend="qpid_Connection-20URL-20Format"/> that the connection
+            <emphasis>connectionfactory.&lt;jndiname&gt;</emphasis> this is the <xref linkend="Connection-URL-Format"/> that the connection
             factory will use to perform connections.
             <emphasis>queue.&lt;jndiname&gt;</emphasis> this defines a jms queue or in
             amqp a amq.direct exchange
             <emphasis>topic.&lt;jndiname&gt;</emphasis> this defines a jms topic or in
             amqp a amq.topic exchange
-            <emphasis>destination.&lt;jndiname&gt;</emphasis> this takes a <xref linkend="qpid_BindingURLFormat"/>
+            <emphasis>destination.&lt;jndiname&gt;</emphasis> this takes a <xref linkend="BindingURLFormat"/>
             and so can be used for defining all amq destinations, queues,
             topics and header matching.
           </para><para>
