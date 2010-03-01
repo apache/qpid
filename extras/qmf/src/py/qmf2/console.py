@@ -1456,7 +1456,7 @@ class Console(Thread):
         logging.debug("Sending noop to wake up [%s]" % self._address)
         msg = Message(id=QMF_APP_ID,
                       subject=self._name,
-                      properties={"method":"request",
+                      properties={"method":"indication",
                                   "qmf.opcode":OpCode.noop},
                       content={})
         try:
@@ -1510,30 +1510,31 @@ class Console(Thread):
                 self._notifier.indication()
                 _callback_thread = None
 
-            if self._operational:
-                # wait for a message to arrive, or an agent
-                # to expire, or a mailbox requrest to time out
-                now = datetime.datetime.utcnow()
-                next_expire = self._next_agent_expire
 
-                # the mailbox expire flag may be cleared by the
-                # app thread(s)
-                self._lock.acquire()
+            # wait for a message to arrive, or an agent
+            # to expire, or a mailbox requrest to time out
+            now = datetime.datetime.utcnow()
+            next_expire = self._next_agent_expire
+
+            self._lock.acquire()
+            try:
+            # the mailbox expire flag may be cleared by the
+            # app thread(s) to force an immedate mailbox scan
+                if self._next_mbox_expire is None:
+                    next_expire = now
+                elif self._next_mbox_expire < next_expire:
+                    next_expire = self._next_mbox_expire
+            finally:
+                self._lock.release()
+
+            timeout = timedelta_to_secs(next_expire - now)
+
+            if self._operational and timeout > 0.0:
                 try:
-                    if (self._next_mbox_expire and
-                        self._next_mbox_expire < next_expire):
-                        next_expire = self._next_mbox_expire
-                finally:
-                    self._lock.release()
-
-                if next_expire > now:
-                    timeout = timedelta_to_secs(next_expire - now)
-                    try:
-                        logging.debug("waiting for next rcvr (timeout=%s)..." % timeout)
-                        xxx = self._session.next_receiver(timeout = timeout)
-                    except Empty:
-                        pass
-
+                    logging.debug("waiting for next rcvr (timeout=%s)..." % timeout)
+                    self._session.next_receiver(timeout = timeout)
+                except Empty:
+                    pass
 
         logging.debug("Shutting down Console thread")
 
@@ -1742,8 +1743,8 @@ class Console(Thread):
 
         mbox = self._get_mailbox(msg.correlation_id)
         if not mbox:
-            logging.debug("Response msg received with unknown correlation_id"
-                          " msg='%s'" % str(msg))
+            logging.warning("Response msg received with unknown correlation_id"
+                            " msg='%s'" % str(msg))
             return
 
         # wake up all waiters
