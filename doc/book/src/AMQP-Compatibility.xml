@@ -22,7 +22,7 @@
 
 <chapter id="AMQP-Compatibility">
   <title>
-      Apache Qpid : AMQP compatibility
+      AMQP compatibility
     </title>
     <para>
             Qpid provides the most complete and compatible implementation

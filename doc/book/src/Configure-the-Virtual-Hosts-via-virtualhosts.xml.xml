@@ -22,7 +22,7 @@
 -->
 
 <section><title>
-      Apache Qpid : Configure the Virtual Hosts via virtualhosts.xml
+      Configure the Virtual Hosts via virtualhosts.xml
     </title><section role="h2" id="ConfiguretheVirtualHostsviavirtualhosts.xml-virtualhosts.xmlOverview"><title>
             virtualhosts.xml Overview
           </title>

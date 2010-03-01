@@ -22,7 +22,7 @@
 
 <chapter id="How-to-Use-JNDI">
   <title>
-    Apache Qpid : How to Use JNDI
+    How to Use JNDI
   </title>
   <section role="h2" id="HowtoUseJNDI-HowtousethePropertiesFileInitialContextFactory">
       <title>

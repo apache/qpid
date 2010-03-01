@@ -22,7 +22,7 @@
 
 <section>
   <title>
-    Apache Qpid : queue state replication
+    queue state replication
   </title>
 
   <section role="h2" id="queuestatereplication-AsynchronousReplicationofQueueState">

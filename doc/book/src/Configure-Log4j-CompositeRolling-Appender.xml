@@ -22,7 +22,7 @@
 -->
 
 <section><title>
-      Apache Qpid : Configure Log4j CompositeRolling Appender
+      Configure Log4j CompositeRolling Appender
     </title>
     <section role="h2" id="ConfigureLog4jCompositeRollingAppender-HowtoconfiguretheCompositeRollinglog4jAppender"><title>
             How to configure the CompositeRolling log4j Appender
