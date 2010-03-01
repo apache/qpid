@@ -22,7 +22,7 @@
 
 <chapter >
   <title>
-    Apache Qpid : AMQP C++ Messaging Client
+    AMQP C++ Messaging Client
   </title>
   <section role="h3" id="AMQPCPPMessagingClient-UserGuides">
     <title>

@@ -21,7 +21,7 @@
 -->
 
 <section><title>
-      Apache Qpid : Add New Users
+      Add New Users
     </title><para>
             The Qpid Java Broker has a single reference source (<xref linkend="qpid_PrincipalDatabase"/>) that
             defines all the users in the system.

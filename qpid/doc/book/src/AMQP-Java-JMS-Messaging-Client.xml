@@ -23,7 +23,7 @@
 <chapter>
 
   <title>
-      Apache Qpid : AMQP Java JMS Messaging Client
+      AMQP Java JMS Messaging Client
   </title>
 
   <para>The Java Client supported by Qpid implements the <ulink

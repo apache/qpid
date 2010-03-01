@@ -22,7 +22,7 @@
 
 <section><title>
             ACL Formats
-          </title>Apache Qpid : Qpid ACLs
+          </title>Qpid ACLs
             This page last changed on Nov 18, 2008 by ritchiem.
           <para>
             The Qpid project has two ACL implementations. An initial version

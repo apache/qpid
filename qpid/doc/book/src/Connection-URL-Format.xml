@@ -23,7 +23,7 @@
 
 <section id="Connection-URL-Format">
   <title>
-    Apache Qpid : Connection URL Format
+    Connection URL Format
   </title>
 
     <section role="h4" id="ConnectionURLFormat-Format">

@@ -22,7 +22,7 @@
 
 <chapter>
   <title>
-    Apache Qpid : AMQP .NET Messaging Client
+    AMQP .NET Messaging Client
   </title>
   <para>
     Currently the .NET code base provides two client libraries that
