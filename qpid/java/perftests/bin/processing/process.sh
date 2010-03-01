@@ -30,7 +30,11 @@ processCMSGCFile()
  cat parnew.gc.log | awk '{print $8}' | cut -d 'K' -f 2 | cut -d '>' -f 2 > HEAP_POST_GC.log
  cat parnew.gc.log | awk '{print $1}' | cut -d ':' -f 1 > GC_TIME.log
 
-
+ calculateStats "MEM_PRE" HEAP_PRE_GC.log
+ calculateStats "MEM_POST" HEAP_POST_GC.log
+ calcualteStatsBC "GC_FREQ" GC_FREQ.log
+ 
+     
  # Calculate ParNew GC Cumulative total 
  cat parnew.gc.log |awk '{sum=sum+$6; print $6, sum}' > GC_DUR.log
  # Give a count of GC occurances
@@ -106,6 +110,82 @@ processG1GCFile()
  cat GC.Full.data >> gc_all.log
  sort -n gc_all.log | awk '{sum=sum+$2;print $1 , sum}' > GC.Dur.All.data
 
+}
+
+calculateStatsBC()
+{
+label=$1
+file=$2
+# Calculate GC Frequencies
+ prevFreq=0
+ countFreq=0
+ gcFreqTotal=0
+ minFreq=99999999
+ maxFreq=0
+
+ echo "" > GC_FREQ.log
+ for time in `cat $file` ; do
+   if [ $prevFreq == 0 ] ; then
+     prevFreq=$time
+   else
+     freq=`echo $time - $prevFreq | bc`
+     echo $freq >> GC_FREQ.log
+
+     prevFreq=$time
+     gcFreqTotal=`echo $gcFreqTotal + $freq | bc`
+     countFreq=$[$countFreq + 1]
+
+     if [ `echo "$freq > $maxFreq " | bc` == 1 ] ; then
+        maxFreq=$freq
+     fi
+
+     if [ `echo "$freq < $minFreq " | bc ` == 1 ] ; then
+        minFreq=$freq
+     fi
+   fi
+ done
+
+ # Extract Min/Max/Avg
+ echo "#type:min/max/avg" > $file.stats
+ avgFreq=`echo $gcFreqTotal / $countFreq | bc -l`
+ echo "$1:$minFreq/$maxFreq/$avgFreq" >> $file.stats
+}
+
+calculateStats()
+{
+label=$1
+file=$2
+
+# Calculate GC Frequencies
+ count=0
+ gcTotal=0
+ min=0
+ max=0
+
+
+ for item in `cat $file` ; do
+     if [ $min == 0 ] ; then
+       min=$item
+     fi
+     
+     gcTotal=$[$gcTotal + $item]
+     count=$[$count + 1]
+
+     if [ $item -gt $max ] ; then
+        max=$item
+     fi
+
+     if [ $item -lt $min ] ; then
+        min=$item
+     fi
+ done
+
+ # Extract Min/Max/Avg
+ echo "#type:min/max/avg" > $file.stats
+ avg=`echo $gcTotal / $count | bc -l`
+ 
+ echo "$label:$min/$max/$avg" >> $file.stats
+ echo "Done Stat generation for $file"
 }
 
 #
