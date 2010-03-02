@@ -541,8 +541,8 @@ class Agent(Thread):
         """
         Create an agent indication message body identifying this agent
         """
-        return {"_name": self.get_name(),
-                "_schema_timestamp": self._schema_timestamp}
+        return QmfData.create({"_name": self.get_name(),
+                              "_schema_timestamp": self._schema_timestamp}).map_encode()
 
     def _send_reply(self, msg, reply_to):
         """
