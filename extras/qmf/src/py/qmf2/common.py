@@ -373,9 +373,6 @@ class QmfData(_mapEncoder):
             _utime = long(_map.get(self.KEY_UPDATE_TS, _utime))
             _dtime = long(_map.get(self.KEY_DELETE_TS, _dtime))
 
-        if _object_id is None:
-            raise Exception("An object_id must be provided.")
-
         self._values = _values.copy()
         self._subtypes = _subtypes.copy()
         self._tag = _tag
