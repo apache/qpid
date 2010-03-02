@@ -25,7 +25,6 @@
 namespace qmf {
 namespace engine {
 
-    class Object;
     class QueryImpl;
 
     class Query {
@@ -49,11 +48,12 @@ namespace engine {
         const char* getOrderBy() const;
         bool getDecreasing() const;
 
-        bool matches(const Object& object) const;
+        bool matches(const qpid::messaging::Variant::Map& data) const;
 
     private:
         friend struct QueryImpl;
         friend struct BrokerProxyImpl;
+        Query(QueryImpl*);
         QueryImpl* impl;
     };
 }

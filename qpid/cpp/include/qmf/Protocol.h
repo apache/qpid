@@ -71,6 +71,7 @@ namespace qmf {
         /**
          * QMF Op Codes
          */
+        const static std::string OP_EXCEPTION;
         const static std::string OP_AGENT_LOCATE_REQUEST;
         const static std::string OP_AGENT_LOCATE_RESPONSE;
         const static std::string OP_AGENT_HEARTBEAT_INDICATION;

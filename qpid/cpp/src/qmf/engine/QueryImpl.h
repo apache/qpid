@@ -22,6 +22,8 @@
 
 #include "qmf/engine/Query.h"
 #include <qpid/messaging/Variant.h>
+#include <qpid/messaging/MapView.h>
+#include <qpid/messaging/ListView.h>
 #include <string>
 #include <boost/shared_ptr.hpp>
 
@@ -34,7 +36,12 @@ namespace engine {
             target(_target), predicate(_predicate), resultLimit(0) {}
         QueryImpl(const char* _target, const char* expression) :
             target(_target), resultLimit(0) { parsePredicate(expression); }
+        QueryImpl(const qpid::messaging::MapView& map);
+        QueryImpl(const qpid::messaging::ListView& pred);
         ~QueryImpl() {}
+
+        static Query* factory(const qpid::messaging::MapView& map);
+        static Query* factory(const qpid::messaging::ListView& pred);
 
         void where(const qpid::messaging::Variant::List& _predicate) { predicate = _predicate; }
         void where(const char* expression) { parsePredicate(expression); }
@@ -48,7 +55,7 @@ namespace engine {
         uint32_t getLimit() const { return resultLimit; }
         const char* getOrderBy() const { return sortAttr.c_str(); }
         bool getDecreasing() const { return orderDecreasing; }
-        bool matches(const Object& object) const;
+        bool matches(const qpid::messaging::Variant::Map& data) const;
 
         void parsePredicate(const std::string& expression);
 

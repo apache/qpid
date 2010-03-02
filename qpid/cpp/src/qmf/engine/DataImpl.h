@@ -1,5 +1,5 @@
-#ifndef _QmfEngineObjectImpl_
-#define _QmfEngineObjectImpl_
+#ifndef _QmfEngineDataImpl_
+#define _QmfEngineDataImpl_
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +20,7 @@
  * under the License.
  */
 
-#include <qmf/engine/Object.h>
+#include <qmf/engine/Data.h>
 #include <qpid/sys/Mutex.h>
 #include <qpid/messaging/Variant.h>
 #include <map>
@@ -33,13 +33,14 @@ namespace engine {
 
     class SchemaClass;
 
-    typedef boost::shared_ptr<Object> ObjectPtr;
+    typedef boost::shared_ptr<Data> DataPtr;
 
-    struct ObjectImpl {
+    struct DataImpl {
         /**
          * Content of the object's data
          */
         qpid::messaging::Variant::Map values;
+        qpid::messaging::Variant::Map subtypes;
 
         /**
          * Schema reference if this object is "described"
@@ -55,12 +56,15 @@ namespace engine {
         uint64_t destroyTime;
         uint64_t lastUpdatedTime;
 
-        ObjectImpl();
-        ObjectImpl(SchemaClass* type);
-        ~ObjectImpl() {}
+        DataImpl();
+        DataImpl(SchemaClass* type, const qpid::messaging::Variant::Map&);
+        ~DataImpl() {}
 
         const qpid::messaging::Variant::Map& getValues() const { return values; }
         qpid::messaging::Variant::Map& getValues() { return values; }
+
+        const qpid::messaging::Variant::Map& getSubtypes() const { return subtypes; }
+        qpid::messaging::Variant::Map& getSubtypes() { return subtypes; }
 
         const SchemaClass* getSchema() const { return objectClass; }
         void setSchema(SchemaClass* schema) { objectClass = schema; }
@@ -70,6 +74,8 @@ namespace engine {
 
         void touch();
         void destroy();
+
+        qpid::messaging::Variant::Map asMap() const;
     };
 }
 }

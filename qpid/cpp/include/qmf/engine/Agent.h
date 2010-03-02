@@ -22,9 +22,7 @@
 
 #include <qmf/Notifiable.h>
 #include <qmf/engine/Schema.h>
-#include <qmf/engine/ObjectId.h>
-#include <qmf/engine/Object.h>
-#include <qmf/engine/Event.h>
+#include <qmf/engine/Data.h>
 #include <qmf/engine/Query.h>
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Variant.h>
@@ -40,10 +38,13 @@ namespace engine {
      */
     struct AgentEvent {
         enum EventKind {
-            GET_QUERY      = 1,
-            START_SYNC     = 2,
-            END_SYNC       = 3,
-            METHOD_CALL    = 4
+            GET_QUERY        = 1,
+            START_SYNC       = 2,
+            END_SYNC         = 3,
+            METHOD_CALL      = 4,
+            GET_AUTHORIZE    = 5,
+            METHOD_AUTHORIZE = 6,
+            SYNC_AUTHORIZE   = 7
         };
 
         EventKind    kind;
@@ -52,7 +53,7 @@ namespace engine {
         char*        authToken;   // Authentication token if issued (for all kinds)
         char*        name;        // Name of the method/sync query
                                   //    (METHOD_CALL, START_SYNC, END_SYNC)
-        Object*      object;      // Object involved in method call (METHOD_CALL)
+        Data*        object;      // Object involved in method call (METHOD_CALL)
         char*        objectKey;   // Object key for method call (METHOD_CALL)
         Query*       query;       // Query parameters (GET_QUERY, START_SYNC)
         qpid::messaging::Variant::Map*  arguments;   // Method parameters (METHOD_CALL)
@@ -128,6 +129,21 @@ namespace engine {
         void setConnection(qpid::messaging::Connection& conn);
 
         /**
+         * Respond to an authorize request by allowing the requested action.
+         *@param sequence The sequence number from the authorization request event.
+         */
+        void authAllow(uint32_t sequence);
+
+        /**
+         * Respond to an authorize request by denying the requested action.
+         *@param sequence The sequence number from the authorization request event.
+         *@param exception Value (typically a string) describing the reason for the
+         *                 rejection of authorization.
+         */
+        void authDeny(uint32_t sequence, const Data& exception=Data());
+        void authDeny(uint32_t sequence, const char* error);
+
+        /**
          * Respond to a method request.
          *@param sequence  The sequence number from the method request event.
          *@param status    The method's completion status.
@@ -143,7 +159,7 @@ namespace engine {
          *@param sequence The sequence number of the GET request or the SYNC_START request.
          *@param object   The object (annotated with "changed" flags) for publication.
          */
-        void queryResponse(uint32_t sequence, Object& object);
+        void queryResponse(uint32_t sequence, Data& object);
 
         /**
          * Indicate the completion of a query.  This is not used for SYNC_START requests.
@@ -165,13 +181,13 @@ namespace engine {
          *           left null, the agent will create a unique name for the object.
          *@return The key for the managed object.
          */
-        const char* addObject(Object& obj, const char* key=0);
+        const char* addObject(Data& obj, const char* key=0);
 
         /**
          * Raise an event into the QMF network..
          *@param event The event object for the event to be raised.
          */
-        void raiseEvent(Event& event);
+        void raiseEvent(Data& event);
 
     private:
         AgentImpl* impl;

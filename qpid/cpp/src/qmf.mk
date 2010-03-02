@@ -40,15 +40,12 @@ QMF_API =					\
 QMF_ENGINE_API =				\
   ../include/qmf/engine/Agent.h			\
   ../include/qmf/engine/Console.h		\
-  ../include/qmf/engine/Event.h			\
-  ../include/qmf/engine/Object.h		\
+  ../include/qmf/engine/Data.h			\
   ../include/qmf/engine/QmfEngineImportExport.h	\
   ../include/qmf/engine/Query.h			\
   ../include/qmf/engine/Schema.h		\
   ../include/qmf/Agent.h			\
   ../include/qmf/Notifiable.h
-
-# ../include/qmf/engine/ObjectId.h
 
 # Public header files
 nobase_include_HEADERS +=	\
@@ -65,8 +62,8 @@ libqmf_la_SOURCES =			\
 libqmfengine_la_SOURCES =			\
   $(QMF_ENGINE_API)				\
   qmf/engine/Agent.cpp				\
-  qmf/engine/ObjectImpl.cpp			\
-  qmf/engine/ObjectImpl.h			\
+  qmf/engine/DataImpl.cpp			\
+  qmf/engine/DataImpl.h				\
   qmf/Protocol.cpp				\
   qmf/Protocol.h				\
   qmf/engine/QueryImpl.cpp			\
@@ -78,8 +75,6 @@ libqmfengine_la_SOURCES =			\
 # qmf/engine/BrokerProxyImpl.h
 # qmf/engine/ConsoleImpl.cpp
 # qmf/engine/ConsoleImpl.h
-# qmf/engine/ObjectIdImpl.cpp
-# qmf/engine/ObjectIdImpl.h
 # qmf/engine/SequenceManager.cpp
 # qmf/engine/SequenceManager.h
 

@@ -1,5 +1,5 @@
-#ifndef _QmfEngineObject_
-#define _QmfEngineObject_
+#ifndef _QmfEngineData_
+#define _QmfEngineData_
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,22 +21,24 @@
  */
 
 #include <qmf/engine/Schema.h>
-#include <qmf/engine/ObjectId.h>
 #include <qpid/messaging/Variant.h>
 
 namespace qmf {
 namespace engine {
 
-    struct ObjectImpl;
-    class Object {
+    struct DataImpl;
+    class Data {
     public:
-        Object();
-        Object(SchemaClass* type);
-        Object(const Object& from);
-        virtual ~Object();
+        Data();
+        Data(SchemaClass* type, const qpid::messaging::Variant::Map& values=qpid::messaging::Variant::Map());
+        Data(const Data& from);
+        virtual ~Data();
 
         const qpid::messaging::Variant::Map& getValues() const;
         qpid::messaging::Variant::Map& getValues();
+
+        const qpid::messaging::Variant::Map& getSubtypes() const;
+        qpid::messaging::Variant::Map& getSubtypes();
 
         const SchemaClass* getSchema() const;
         void setSchema(SchemaClass* schema);
@@ -47,10 +49,12 @@ namespace engine {
         void touch();
         void destroy();
 
+        qpid::messaging::Variant::Map asMap() const;
+
     private:
-        friend struct ObjectImpl;
+        friend struct DataImpl;
         friend class  AgentImpl;
-        ObjectImpl* impl;
+        DataImpl* impl;
     };
 }
 }

@@ -41,7 +41,7 @@ namespace engine {
         SchemaException(const std::string& context, const std::string& expected) {
             text = context + ": Expected item with key " + expected;
         }
-        virtual ~SchemaException() throw();
+        virtual ~SchemaException() throw() {}
         virtual const char* what() const throw() { return text.c_str(); }
 
     private:

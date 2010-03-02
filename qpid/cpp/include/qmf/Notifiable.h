@@ -40,7 +40,7 @@ namespace qmf {
      */
     class Notifiable {
     public:
-        QMF_EXTERN virtual ~Notifiable();
+        QMF_EXTERN virtual ~Notifiable() {}
         virtual void notify() = 0;
     };
 }

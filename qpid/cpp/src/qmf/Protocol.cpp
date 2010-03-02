@@ -48,6 +48,7 @@ const string Protocol::AMQP_CONTENT_LIST("amqp/list");
 
 const string Protocol::APP_OPCODE("qmf.opcode");
 
+const string Protocol::OP_EXCEPTION("_exception");
 const string Protocol::OP_AGENT_LOCATE_REQUEST("_agent_locate_request");
 const string Protocol::OP_AGENT_LOCATE_RESPONSE("_agent_locate_response");
 const string Protocol::OP_AGENT_HEARTBEAT_INDICATION("_agent_heartbeat_indication");

@@ -23,7 +23,17 @@ using namespace std;
 using namespace qmf::engine;
 using namespace qpid::messaging;
 
-bool QueryImpl::matches(const Object&) const
+QueryImpl::QueryImpl(const qpid::messaging::MapView&)
+{
+    // TODO
+}
+
+QueryImpl::QueryImpl(const qpid::messaging::ListView&)
+{
+    //TODO
+}
+
+bool QueryImpl::matches(const Variant::Map&) const
 {
     return true;
 }
@@ -34,6 +44,17 @@ void QueryImpl::parsePredicate(const std::string&)
     predicate.clear();
 }
 
+Query* QueryImpl::factory(const qpid::messaging::MapView& map)
+{
+    QueryImpl* impl(new QueryImpl(map));
+    return new Query(impl);
+}
+
+Query* QueryImpl::factory(const qpid::messaging::ListView& pred)
+{
+    QueryImpl* impl(new QueryImpl(pred));
+    return new Query(impl);
+}
 
 //==================================================================
 // Wrappers
@@ -43,6 +64,7 @@ Query::Query(const char* target) : impl(new QueryImpl(target)) {}
 Query::Query(const char* target, const Variant::List& predicate) : impl(new QueryImpl(target, predicate)) {}
 Query::Query(const char* target, const char* expression) : impl(new QueryImpl(target, expression)) {}
 Query::Query(const Query& from) : impl(new QueryImpl(*(from.impl))) {}
+Query::Query(QueryImpl* i) : impl(i) {}
 Query::~Query() { delete impl; }
 void Query::where(const Variant::List& predicate) { impl->where(predicate); }
 void Query::where(const char* expression) { impl->where(expression); }
@@ -55,5 +77,5 @@ const Variant::List& Query::getPredicate() const { return impl->getPredicate(); 
 uint32_t Query::getLimit() const { return impl->getLimit(); }
 const char* Query::getOrderBy() const { return impl->getOrderBy(); }
 bool Query::getDecreasing() const { return impl->getDecreasing(); }
-bool Query::matches(const Object& object) const { return impl->matches(object); }
+bool Query::matches(const Variant::Map& data) const { return impl->matches(data); }
 
