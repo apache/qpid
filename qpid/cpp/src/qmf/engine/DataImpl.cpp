@@ -27,27 +27,44 @@ using namespace qpid::sys;
 using namespace qpid::messaging;
 
 DataImpl::DataImpl() :
-    objectClass(0), createTime(uint64_t(Duration(now()))), destroyTime(0), lastUpdatedTime(createTime)
+    objectClass(0), createTime(uint64_t(Duration(now()))), destroyTime(0), lastUpdatedTime(createTime),
+    manager(0)
 {
 }
 
 
 DataImpl::DataImpl(SchemaClass* type, const qpid::messaging::Variant::Map& v) :
     values(v), objectClass(type), createTime(uint64_t(Duration(now()))),
-    destroyTime(0), lastUpdatedTime(createTime)
+    destroyTime(0), lastUpdatedTime(createTime), manager(0)
 {
 }
 
 
-void DataImpl::touch()
+void DataImpl::modifyStart()
 {
+    Mutex::ScopedLock _lock(lock);
     lastUpdatedTime = uint64_t(Duration(now()));
+    if (manager != 0)
+        manager->modifyStart(parent);
+}
+
+
+void DataImpl::modifyDone()
+{
+    Mutex::ScopedLock _lock(lock);
+    if (manager != 0)
+        manager->modifyDone(parent);
 }
 
 
 void DataImpl::destroy()
 {
+    Mutex::ScopedLock _lock(lock);
     destroyTime = uint64_t(Duration(now()));
+    if (manager != 0)
+        manager->destroy(parent);
+    parent.reset();
+    manager = 0;
 }
 
 Variant::Map DataImpl::asMap() const
@@ -62,6 +79,18 @@ Variant::Map DataImpl::asMap() const
     return map;
 }
 
+Variant::Map DataImpl::asMapDelta(Data&) const
+{
+    Variant::Map map;
+    return map;
+}
+
+void DataImpl::registerManager(DataManager* m, DataPtr d)
+{
+    Mutex::ScopedLock _lock(lock);
+    manager = m;
+    parent = d;
+}
 
 //==================================================================
 // Wrappers
@@ -76,9 +105,8 @@ Variant::Map& Data::getValues() { return impl->getValues(); }
 const Variant::Map& Data::getSubtypes() const { return impl->getSubtypes(); }
 Variant::Map& Data::getSubtypes() { return impl->getSubtypes(); }
 const SchemaClass* Data::getSchema() const { return impl->getSchema(); }
-void Data::setSchema(SchemaClass* schema) { impl->setSchema(schema); }
 const char* Data::getKey() const { return impl->getKey(); }
 void Data::setKey(const char* key) { impl->setKey(key); }
-void Data::touch() { impl->touch(); }
+void Data::modifyStart() { impl->modifyStart(); }
+void Data::modifyDone() { impl->modifyDone(); }
 void Data::destroy() { impl->destroy(); }
-Variant::Map Data::asMap() const { return impl->asMap(); }

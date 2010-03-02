@@ -67,6 +67,8 @@ namespace qmf {
          * Application Header Keys
          */
         const static std::string APP_OPCODE;
+        const static std::string APP_PARTIAL;
+        const static std::string APP_CONTENT;
 
         /**
          * QMF Op Codes
@@ -88,6 +90,7 @@ namespace qmf {
         /**
          * Content type definitions
          */
+        const static std::string CONTENT_NONE;
         const static std::string CONTENT_PACKAGE;
         const static std::string CONTENT_SCHEMA_ID;
         const static std::string CONTENT_SCHEMA_CLASS;

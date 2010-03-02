@@ -20,12 +20,12 @@
  * under the License.
  */
 
-#include <qmf/engine/Schema.h>
 #include <qpid/messaging/Variant.h>
 
 namespace qmf {
 namespace engine {
 
+    class SchemaClass;
     struct DataImpl;
     class Data {
     public:
@@ -41,15 +41,13 @@ namespace engine {
         qpid::messaging::Variant::Map& getSubtypes();
 
         const SchemaClass* getSchema() const;
-        void setSchema(SchemaClass* schema);
 
         const char* getKey() const;
         void setKey(const char* key);
 
-        void touch();
+        void modifyStart();
+        void modifyDone();
         void destroy();
-
-        qpid::messaging::Variant::Map asMap() const;
 
     private:
         friend struct DataImpl;

@@ -47,6 +47,8 @@ const string Protocol::AMQP_CONTENT_MAP("amqp/map");
 const string Protocol::AMQP_CONTENT_LIST("amqp/list");
 
 const string Protocol::APP_OPCODE("qmf.opcode");
+const string Protocol::APP_PARTIAL("partial");
+const string Protocol::APP_CONTENT("qmf.content");
 
 const string Protocol::OP_EXCEPTION("_exception");
 const string Protocol::OP_AGENT_LOCATE_REQUEST("_agent_locate_request");
@@ -62,6 +64,7 @@ const string Protocol::OP_DATA_INDICATION("_data_indication");
 const string Protocol::OP_METHOD_REQUEST("_method_request");
 const string Protocol::OP_METHOD_RESPONSE("_method_response");
 
+const string Protocol::CONTENT_NONE("");
 const string Protocol::CONTENT_PACKAGE("_schema_package");
 const string Protocol::CONTENT_SCHEMA_ID("_schema_id");
 const string Protocol::CONTENT_SCHEMA_CLASS("_schema_class");

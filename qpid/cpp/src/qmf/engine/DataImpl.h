@@ -35,7 +35,18 @@ namespace engine {
 
     typedef boost::shared_ptr<Data> DataPtr;
 
+    class DataManager {
+    public:
+        virtual ~DataManager() {}
+        virtual void modifyStart(DataPtr data) = 0;
+        virtual void modifyDone(DataPtr data) = 0;
+        virtual void destroy(DataPtr data) = 0;
+        
+    };
+
     struct DataImpl {
+        qpid::sys::Mutex lock;
+
         /**
          * Content of the object's data
          */
@@ -56,8 +67,15 @@ namespace engine {
         uint64_t destroyTime;
         uint64_t lastUpdatedTime;
 
+        DataManager* manager;
+        DataPtr parent;
+
         DataImpl();
         DataImpl(SchemaClass* type, const qpid::messaging::Variant::Map&);
+        DataImpl(const DataImpl& from) :
+            values(from.values), subtypes(from.subtypes), objectClass(from.objectClass),
+            key(from.key), createTime(from.createTime), destroyTime(from.destroyTime),
+            lastUpdatedTime(from.lastUpdatedTime), manager(0) {}
         ~DataImpl() {}
 
         const qpid::messaging::Variant::Map& getValues() const { return values; }
@@ -67,15 +85,17 @@ namespace engine {
         qpid::messaging::Variant::Map& getSubtypes() { return subtypes; }
 
         const SchemaClass* getSchema() const { return objectClass; }
-        void setSchema(SchemaClass* schema) { objectClass = schema; }
 
         const char* getKey() const { return key.c_str(); }
         void setKey(const char* _key) { key = _key; }
 
-        void touch();
+        void modifyStart();
+        void modifyDone();
         void destroy();
 
         qpid::messaging::Variant::Map asMap() const;
+        qpid::messaging::Variant::Map asMapDelta(Data& base) const;
+        void registerManager(DataManager* manager, DataPtr data);
     };
 }
 }
