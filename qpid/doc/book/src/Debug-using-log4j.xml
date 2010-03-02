@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,8 +21,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Debug using log4j
+<section><title>
+      Debug using log4j
     </title>
 
     <section role="h2" id="Debugusinglog4j-Debuggingwithlog4jconfigurations"><title>
@@ -59,7 +60,7 @@
           </title>
 	 <para>
             <emphasis>deprecation notice</emphasis> Version 0.6 of the Java broker includes
-            <xref linkend="qpid_Configure-20Operational-20Status-20Logging"/> functionality which improves upon these messages and
+            <xref linkend="qpid_Configure-Operational-Status-Logging"/> functionality which improves upon these messages and
             as such enabling status logging would be more beneficial.
             The configuration file has been left here for assistence with
             broker versions prior to 0.6.
@@ -294,4 +295,4 @@
 
 <!--h3--></section>            
 <!--h2--></section>
-</chapter>
+</section>

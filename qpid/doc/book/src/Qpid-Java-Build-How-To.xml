@@ -20,8 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Qpid Java Build How To
+<section><title>
+      Qpid Java Build How To
     </title>
 
     <section role="h1" id="QpidJavaBuildHowTo-BuildInstructionsGeneral"><title>
@@ -353,7 +353,7 @@ for i in `find . -name build.xml` ; do echo "$i:"; grep module.depends $i ; done
             What next ?
           </title>
 	 <para>
-            If you want to run your built Qpid package, see our <xref linkend="qpid_Getting-20Started-20Guide"/> for details of
+            If you want to run your built Qpid package, see our <xref linkend="qpid_Getting-Started-Guide"/> for details of
             how to do that.
           </para><para>
             If you want to run our tests, you can use the ant test or
@@ -362,4 +362,4 @@ for i in `find . -name build.xml` ; do echo "$i:"; grep module.depends $i ; done
             
 <!--h2--></section>
 <!--h1--></section>	   
-</chapter>
+</section>

@@ -20,9 +20,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<chapter>
   <title>
-    Apache Qpid : AMQP Python Messaging Client
+    AMQP Python Messaging Client
   </title>
   <section role="h3" id="AMQPPythonMessagingClient-UserGuides">
     <title>

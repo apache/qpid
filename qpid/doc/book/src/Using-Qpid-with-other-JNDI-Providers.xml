@@ -20,10 +20,10 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<chapter>
 
   <title>
-    Apache Qpid : Using Qpid with other JNDI Providers
+    Using Qpid with other JNDI Providers
   </title>
 
   <section role="h2" id="UsingQpidwithotherJNDIProviders-HowtouseaJNDIProvider">

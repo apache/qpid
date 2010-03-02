@@ -20,8 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Qpid Java Broker Management CLI
+<section><title>
+      Qpid Java Broker Management CLI
     </title>
 	  <section role="h2" id="QpidJavaBrokerManagementCLI-HowtobuildApacheQpidCLI"><title>
             How to
@@ -156,4 +156,4 @@ ant compile-tests
 
 <!--h3--></section>
 <!--h2--></section>
-</chapter>
+</section>

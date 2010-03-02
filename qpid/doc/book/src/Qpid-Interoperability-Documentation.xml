@@ -20,8 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Qpid Interoperability Documentation
+<chapter><title>
+      Qpid Interoperability Documentation
     </title><section role="h2" id="QpidInteroperabilityDocumentation-QpidInteroperabilityDocumentation"><title>
             Qpid Interoperability Documentation
           </title>
@@ -235,12 +235,14 @@
                 </entry>
               </row>
             </tbody>
-          </tgroup></table><para>
-            
+          </tgroup></table>
+
+	  <para id="QpidInteroperabilityDocumentation-1">        
             1: Support for these will be in M3 (currently available on
             trunk).
+	  </para>
             
-            2: C++ Broker uses <xref linkend="qpid_"/> which
+           <para id="QpidInteroperabilityDocumentation-2">2: C++ Broker uses <ulink url="http://freshmeat.net/projects/cyrussasl/">Cyrus SASL</ulink> which
             supports CRAM-MD5 and GSSAPI but these have not been tested yet
           </para>
 <!--h4--></section>

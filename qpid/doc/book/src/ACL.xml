@@ -20,17 +20,20 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : ACL
-    </title><section role="h2" id="ACL-v2ACLfileformatforbrokers"><title>
-            v2 ACL file format
-            for brokers
-          </title>
-          <para>
-            This new ACL implementation has been designed for implementation
-            and interoperability on all Qpid brokers. It is currently
-            supported in the following brokers:
-          </para>
+<section id="qpid_ACL">
+  <title>
+      ACL
+  </title>
+
+  <section role="h2" id="ACL-v2ACLfileformatforbrokers">
+    <title>
+      v2 ACL file format for brokers
+    </title>
+    <para>
+      This new ACL implementation has been designed for implementation
+      and interoperability on all Qpid brokers. It is currently
+      supported in the following brokers:
+    </para>
 
 	  <table><title/><tgroup cols="2">
 	  <thead>
@@ -789,4 +792,4 @@ ACL Options:
 	  <!--h3--></section>
 	<!--h2--></section>
 
-</chapter>
+</section>

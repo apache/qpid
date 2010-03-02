@@ -17,10 +17,10 @@
 #
 
 import sys
-import logging
 import datetime
 import time
 import Queue
+from logging import getLogger
 from threading import Thread, RLock, currentThread, Event
 from qpid.messaging import Connection, Message, Empty, SendError
 from uuid import uuid4
@@ -32,6 +32,8 @@ from common import (OpCode, QmfQuery, ContentType, SchemaObjectClass,
 # running the agent notifier callback
 _callback_thread=None
 
+log = getLogger("qmf")
+trace = getLogger("qmf.agent")
 
 
   ##==============================================================================
@@ -83,37 +85,6 @@ class MethodCallParams(object):
   ## SUBSCRIPTIONS
   ##==============================================================================
 
-class _ConsoleHandle(object):
-    """
-    """
-    def __init__(self, handle, reply_to):
-        self.console_handle = handle
-        self.reply_to = reply_to
-
-class SubscriptionParams(object):
-    """
-    """
-    def __init__(self, console_handle, query, interval, duration, user_id):
-        self._console_handle = console_handle
-        self._query = query
-        self._interval = interval
-        self._duration = duration
-        self._user_id = user_id
-
-    def get_console_handle(self):
-        return self._console_handle
-
-    def get_query(self):
-        return self._query
-
-    def get_interval(self):
-        return self._interval
-
-    def get_duration(self):
-        return self._duration
-
-    def get_user_id(self):
-        return self._user_id
 
 class _SubscriptionState(object):
     """
@@ -128,6 +99,7 @@ class _SubscriptionState(object):
         now = datetime.datetime.utcnow()
         self.next_update = now  # do an immediate update
         self.expiration = now + datetime.timedelta(seconds=duration)
+        self.last_update = None
         self.id = 0
 
     def resubscribe(self, now, _duration=None):
@@ -135,9 +107,9 @@ class _SubscriptionState(object):
             self.duration = _duration
         self.expiration = now + datetime.timedelta(seconds=self.duration)
 
-    def reset_interval(self, now):
+    def published(self, now):
         self.next_update = now + datetime.timedelta(seconds=self.interval)
-
+        self.last_update = now
 
 
   ##==============================================================================
@@ -193,6 +165,9 @@ class Agent(Thread):
         self._subscriptions = {}
         self._next_subscribe_event = None
 
+        # prevents multiple _wake_thread() calls
+        self._noop_pending = False
+
 
     def destroy(self, timeout=None):
         """
@@ -202,10 +177,10 @@ class Agent(Thread):
         @type timeout: float
         @param timeout: maximum time in seconds to wait for all background threads to terminate.  Default: forever.
         """
-        logging.debug("Destroying Agent %s" % self.name)
+        trace.debug("Destroying Agent %s" % self.name)
         if self._conn:
             self.remove_connection(timeout)
-        logging.debug("Agent Destroyed")
+        trace.debug("Agent Destroyed")
 
 
     def get_name(self):
@@ -223,7 +198,7 @@ class Agent(Thread):
                                                        " x-properties:"
                                                        " {type:direct}}}",
                                                        capacity=self._capacity)
-        logging.debug("my direct addr=%s" % self._direct_receiver.source)
+        trace.debug("my direct addr=%s" % self._direct_receiver.source)
 
         # for sending directly addressed messages.
         self._direct_sender = self._session.sender(str(self._address.get_node()) +
@@ -232,7 +207,7 @@ class Agent(Thread):
                                                    " {type:topic,"
                                                    " x-properties:"
                                                    " {type:direct}}}")
-        logging.debug("my default direct send addr=%s" % self._direct_sender.target)
+        trace.debug("my default direct send addr=%s" % self._direct_sender.target)
 
         # for receiving "broadcast" messages from consoles
         default_addr = QmfAddress.topic(QmfAddress.SUBJECT_CONSOLE_IND + ".#",
@@ -242,7 +217,7 @@ class Agent(Thread):
                                                        " node-properties:"
                                                        " {type:topic}}",
                                                        capacity=self._capacity)
-        logging.debug("console.ind addr=%s" % self._topic_receiver.source)
+        trace.debug("console.ind addr=%s" % self._topic_receiver.source)
 
         # for sending to topic subscribers
         ind_addr = QmfAddress.topic(QmfAddress.SUBJECT_AGENT_IND,
@@ -251,7 +226,7 @@ class Agent(Thread):
                                                 ";{create:always,"
                                                 " node-properties:"
                                                 " {type:topic}}")
-        logging.debug("agent.ind addr=%s" % self._topic_sender.target)
+        trace.debug("agent.ind addr=%s" % self._topic_sender.target)
 
         self._running = True
         self.start()
@@ -264,22 +239,11 @@ class Agent(Thread):
         self._running = False
         if self.isAlive():
             # kick my thread to wake it up
-            try:
-                msg = Message(id=QMF_APP_ID,
-                              subject=self.name,
-                              properties={ "method":"request",
-                                          "qmf.opcode":OpCode.noop},
-                              content={})
-
-                # TRACE
-                #logging.error("!!! sending wakeup to myself: %s" % msg)
-                self._direct_sender.send( msg, sync=True )
-            except SendError, e:
-                logging.error(str(e))
-            logging.debug("waiting for agent receiver thread to exit")
+            self._wake_thread()
+            trace.debug("waiting for agent receiver thread to exit")
             self.join(timeout)
             if self.isAlive():
-                logging.error( "Agent thread '%s' is hung..." % self.name)
+                log.error( "Agent thread '%s' is hung..." % self.name)
         self._direct_receiver.close()
         self._direct_receiver = None
         self._direct_sender.close()
@@ -291,7 +255,7 @@ class Agent(Thread):
         self._session.close()
         self._session = None
         self._conn = None
-        logging.debug("agent connection removal complete")
+        trace.debug("agent connection removal complete")
 
     def register_object_class(self, schema):
         """
@@ -341,7 +305,7 @@ class Agent(Thread):
                                   "qmf.agent":self.name},
                       content=[qmfEvent.map_encode()])
         # TRACE
-        # logging.error("!!! Agent %s sending Event (%s)" % 
+        # log.error("!!! Agent %s sending Event (%s)" % 
         # (self.name, str(msg)))
         self._topic_sender.send(msg)
 
@@ -349,7 +313,6 @@ class Agent(Thread):
         """
         Register an instance of a QmfAgentData object.
         """
-        # @todo: need to update subscriptions
         # @todo: need to mark schema as "non-const"
         if not isinstance(data, QmfAgentData):
             raise TypeError("QmfAgentData instance expected")
@@ -369,6 +332,18 @@ class Agent(Thread):
                     self._described_data[sid][oid] = data
             else:
                 self._undescribed_data[oid] = data
+
+            # does the new object match any subscriptions?
+            now = datetime.datetime.utcnow()
+            for sid,sub in self._subscriptions.iteritems():
+                if sub.query.evaluate(data):
+                    # matched.  Mark the subscription as needing to be
+                    # serviced. The _publish() method will notice the new
+                    # object and will publish it next time it runs.
+                    sub.next_update = now
+                    self._next_subscribe_event = None
+                    # @todo: should we immediately publish?
+
         finally:
             self._lock.release()
 
@@ -387,7 +362,7 @@ class Agent(Thread):
         return data
 
 
-    def method_response(self, handle, _out_args=None, _error=None): 
+    def method_response(self, handle, _out_args=None, _error=None):
         """
         """
         if not isinstance(handle, _MethodCallHandle):
@@ -449,14 +424,14 @@ class Agent(Thread):
             #
             # Process inbound messages
             #
-            logging.debug("%s processing inbound messages..." % self.name)
+            trace.debug("%s processing inbound messages..." % self.name)
             for i in range(batch_limit):
                 try:
                     msg = self._topic_receiver.fetch(timeout=0)
                 except Empty:
                     break
                 # TRACE
-                # logging.error("!!! Agent %s: msg on %s [%s]" %
+                # log.error("!!! Agent %s: msg on %s [%s]" %
                 # (self.name, self._topic_receiver.source, msg))
                 self._dispatch(msg, _direct=False)
 
@@ -466,7 +441,7 @@ class Agent(Thread):
                 except Empty:
                     break
                 # TRACE
-                # logging.error("!!! Agent %s: msg on %s [%s]" %
+                # log.error("!!! Agent %s: msg on %s [%s]" %
                 # (self.name, self._direct_receiver.source, msg))
                 self._dispatch(msg, _direct=True)
 
@@ -475,7 +450,7 @@ class Agent(Thread):
             #
             now = datetime.datetime.utcnow()
             if now >= next_heartbeat:
-                logging.debug("%s sending heartbeat..." % self.name)
+                trace.debug("%s sending heartbeat..." % self.name)
                 ind = Message(id=QMF_APP_ID,
                               subject=QmfAddress.SUBJECT_AGENT_HEARTBEAT,
                               properties={"method":"indication",
@@ -483,73 +458,72 @@ class Agent(Thread):
                                           "qmf.agent":self.name},
                               content=self._makeAgentInfoBody())
                 # TRACE
-                #logging.error("!!! Agent %s sending Heartbeat (%s)" % 
+                #log.error("!!! Agent %s sending Heartbeat (%s)" % 
                 # (self.name, str(ind)))
                 self._topic_sender.send(ind)
-                logging.debug("Agent Indication Sent")
+                trace.debug("Agent Indication Sent")
                 next_heartbeat = now + datetime.timedelta(seconds = self._heartbeat_interval)
-
-
 
             #
             # Monitor Subscriptions
             #
-            if (self._next_subscribe_event is None or
-                now >= self._next_subscribe_event):
-
-                logging.debug("%s polling subscriptions..." % self.name)
-                self._next_subscribe_event = now + datetime.timedelta(seconds=
+            self._lock.acquire()
+            try:
+                now = datetime.datetime.utcnow()
+                if (self._next_subscribe_event is None or
+                    now >= self._next_subscribe_event):
+                    trace.debug("%s polling subscriptions..." % self.name)
+                    self._next_subscribe_event = now + datetime.timedelta(seconds=
                                                                       self._max_duration)
-                self._lock.acquire()
-                try:
-                    dead_ss = []
+                    dead_ss = {}
                     for sid,ss in self._subscriptions.iteritems():
                         if now >= ss.expiration:
-                            dead_ss.append(sid)
+                            dead_ss[sid] = ss
                             continue
                         if now >= ss.next_update:
-                            response = []
-                            objs = self._queryData(ss.query)
-                            if objs:
-                                for obj in objs:
-                                    response.append(obj.map_encode())
-                                logging.debug("!!! %s publishing %s!!!" % (self.name, ss.correlation_id))
-                                self._send_query_response( ContentType.data,
-                                                           ss.correlation_id,
-                                                           ss.reply_to,
-                                                           response)
-                            ss.reset_interval(now)
-
+                            self._publish(ss)
                         next_timeout = min(ss.expiration, ss.next_update)
                         if next_timeout < self._next_subscribe_event:
                             self._next_subscribe_event = next_timeout
 
-                    for sid in dead_ss:
+                    for sid,ss in dead_ss.iteritems():
                         del self._subscriptions[sid]
-                finally:
-                    self._lock.release()
+                        self._unpublish(ss)
+            finally:
+                self._lock.release()
 
             #
             # notify application of pending WorkItems
             #
-
             if self._work_q_put and self._notifier:
-                logging.debug("%s notifying application..." % self.name)
+                trace.debug("%s notifying application..." % self.name)
                 # new stuff on work queue, kick the the application...
                 self._work_q_put = False
                 _callback_thread = currentThread()
-                logging.info("Calling agent notifier.indication")
+                trace.debug("Calling agent notifier.indication")
                 self._notifier.indication()
                 _callback_thread = None
 
             #
             # Sleep until messages arrive or something times out
             #
-            next_timeout = min(next_heartbeat, self._next_subscribe_event)
-            timeout = timedelta_to_secs(next_timeout -
-                                        datetime.datetime.utcnow())
-            if timeout > 0.0:
-                logging.debug("%s sleeping %s seconds..." % (self.name,
+            now = datetime.datetime.utcnow()
+            next_timeout = next_heartbeat
+            self._lock.acquire()
+            try:
+                # the mailbox expire flag may be cleared by the
+                # app thread(s) in order to force an immediate publish
+                if self._next_subscribe_event is None:
+                    next_timeout = now
+                elif self._next_subscribe_event < next_timeout:
+                    next_timeout = self._next_subscribe_event
+            finally:
+                self._lock.release()
+
+            timeout = timedelta_to_secs(next_timeout - now)
+
+            if self._running and timeout > 0.0:
+                trace.debug("%s sleeping %s seconds..." % (self.name,
                                                              timeout))
                 try:
                     self._session.next_receiver(timeout=timeout)
@@ -557,7 +531,7 @@ class Agent(Thread):
                     pass
 
 
-
+        trace.debug("Shutting down Agent %s thread" % self.name)
 
     #
     # Private:
@@ -578,24 +552,24 @@ class Agent(Thread):
             try:
                 reply_to = QmfAddress.from_string(str(reply_to))
             except ValueError:
-                logging.error("Invalid reply-to address '%s'" % reply_to)
+                log.error("Invalid reply-to address '%s'" % reply_to)
 
         msg.subject = reply_to.get_subject()
 
         try:
             if reply_to.is_direct():
                 # TRACE
-                #logging.error("!!! Agent %s direct REPLY-To:%s (%s)" % 
+                #log.error("!!! Agent %s direct REPLY-To:%s (%s)" % 
                 # (self.name, str(reply_to), str(msg)))
                 self._direct_sender.send(msg)
             else:
                 # TRACE
-                # logging.error("!!! Agent %s topic REPLY-To:%s (%s)" % 
+                # log.error("!!! Agent %s topic REPLY-To:%s (%s)" % 
                 # (self.name, str(reply_to), str(msg)))
                 self._topic_sender.send(msg)
-            logging.debug("reply msg sent to [%s]" % str(reply_to))
+            trace.debug("reply msg sent to [%s]" % str(reply_to))
         except SendError, e:
-            logging.error("Failed to send reply msg '%s' (%s)" % (msg, str(e)))
+            log.error("Failed to send reply msg '%s' (%s)" % (msg, str(e)))
 
     def _send_query_response(self, content_type, cid, reply_to, objects):
         """
@@ -640,12 +614,11 @@ class Agent(Thread):
 
         @param _direct: True if msg directly addressed to this agent.
         """
-        # logging.debug( "Message received from Console! [%s]" % msg )
-        # logging.error( "%s Message received from Console! [%s]" % (self.name, msg) )
+        trace.debug( "Message received from Console! [%s]" % msg )
 
         opcode = msg.properties.get("qmf.opcode")
         if not opcode:
-            logging.warning("Ignoring unrecognized message '%s'" % msg)
+            log.warning("Ignoring unrecognized message '%s'" % msg)
             return
         version = 2  # @todo: fix me
         cmap = {}; props={}
@@ -667,16 +640,17 @@ class Agent(Thread):
         elif opcode == OpCode.subscribe_cancel_ind:
             self._handleUnsubscribeReqMsg(msg, cmap, props, version, _direct)
         elif opcode == OpCode.noop:
-            logging.debug("No-op msg received.")
+            self._noop_pending = False
+            trace.debug("No-op msg received.")
         else:
-            logging.warning("Ignoring message with unrecognized 'opcode' value: '%s'"
+            log.warning("Ignoring message with unrecognized 'opcode' value: '%s'"
                             % opcode)
 
     def _handleAgentLocateMsg( self, msg, cmap, props, version, direct ):
         """
         Process a received agent-locate message
         """
-        logging.debug("_handleAgentLocateMsg")
+        trace.debug("_handleAgentLocateMsg")
 
         reply = False
         if props.get("method") == "request":
@@ -703,21 +677,21 @@ class Agent(Thread):
             m.correlation_id = msg.correlation_id
             self._send_reply(m, msg.reply_to)
         else:
-            logging.debug("agent-locate msg not mine - no reply sent")
+            trace.debug("agent-locate msg not mine - no reply sent")
 
 
     def _handleQueryMsg(self, msg, cmap, props, version, _direct ):
         """
         Handle received query message
         """
-        logging.debug("_handleQueryMsg")
+        trace.debug("_handleQueryMsg")
 
         if "method" in props and props["method"] == "request":
             if cmap:
                 try:
                     query = QmfQuery.from_map(cmap)
                 except TypeError:
-                    logging.error("Invalid Query format: '%s'" % str(cmap))
+                    log.error("Invalid Query format: '%s'" % str(cmap))
                     return
                 target = query.get_target()
                 if target == QmfQuery.TARGET_PACKAGES:
@@ -727,13 +701,13 @@ class Agent(Thread):
                 elif target == QmfQuery.TARGET_SCHEMA:
                     self._querySchemaReply( msg, query)
                 elif target == QmfQuery.TARGET_AGENT:
-                    logging.warning("!!! @todo: Query TARGET=AGENT TBD !!!")
+                    log.warning("!!! @todo: Query TARGET=AGENT TBD !!!")
                 elif target == QmfQuery.TARGET_OBJECT_ID:
                     self._queryDataReply(msg, query, _idOnly=True)
                 elif target == QmfQuery.TARGET_OBJECT:
                     self._queryDataReply(msg, query)
                 else:
-                    logging.warning("Unrecognized query target: '%s'" % str(target))
+                    log.warning("Unrecognized query target: '%s'" % str(target))
 
 
 
@@ -744,7 +718,7 @@ class Agent(Thread):
         if "method" in props and props["method"] == "request":
             mname = cmap.get(SchemaMethod.KEY_NAME)
             if not mname:
-                logging.warning("Invalid method call from '%s': no name"
+                log.warning("Invalid method call from '%s': no name"
                                 % msg.reply_to)
                 return
 
@@ -801,7 +775,7 @@ class Agent(Thread):
             try:
                 query = QmfQuery.from_map(query_map)
             except TypeError:
-                logging.warning("Invalid query for subscription: %s" %
+                log.warning("Invalid query for subscription: %s" %
                                 str(query_map))
                 return
 
@@ -815,7 +789,7 @@ class Agent(Thread):
                 # self._work_q.put(WorkItem(WorkItem.SUBSCRIBE_REQUEST,
                 #                           msg.correlation_id, param))
                 # self._work_q_put = True
-                logging.error("External Subscription TBD")
+                log.error("External Subscription TBD")
                 return
 
             # validate the query - only specific objects, or
@@ -823,7 +797,7 @@ class Agent(Thread):
             if (query.get_target() != QmfQuery.TARGET_OBJECT or
                 (query.get_selector() == QmfQuery.PREDICATE and
                  query.get_predicate())):
-                logging.error("Subscriptions only support (wildcard) Object"
+                log.error("Subscriptions only support (wildcard) Object"
                               " Queries.")
                 err = QmfData.create(
                     {"reason": "Unsupported Query type for subscription.",
@@ -846,7 +820,7 @@ class Agent(Thread):
                     elif duration < self._min_duration:
                         duration = self._min_duration
                 except:
-                    logging.warning("Bad duration value: %s" % str(msg))
+                    log.warning("Bad duration value: %s" % str(msg))
                     duration = self._default_duration
 
             if interval is None:
@@ -857,7 +831,7 @@ class Agent(Thread):
                     if interval < self._min_interval:
                         interval = self._min_interval
                 except:
-                    logging.warning("Bad interval value: %s" % str(msg))
+                    log.warning("Bad interval value: %s" % str(msg))
                     interval = self._default_interval
 
             ss = _SubscriptionState(msg.reply_to,
@@ -894,7 +868,7 @@ class Agent(Thread):
         if props.get("method") == "request":
             sid = cmap.get("_subscription_id")
             if not sid:
-                logging.error("Invalid subscription refresh msg: %s" %
+                log.error("Invalid subscription refresh msg: %s" %
                               str(msg))
                 return
 
@@ -902,7 +876,7 @@ class Agent(Thread):
             try:
                 ss = self._subscriptions.get(sid)
                 if not ss:
-                    logging.error("Ignoring unknown subscription: %s" %
+                    log.error("Ignoring unknown subscription: %s" %
                                   str(sid))
                     return
                 duration = cmap.get("_duration")
@@ -914,7 +888,7 @@ class Agent(Thread):
                         elif duration < self._min_duration:
                             duration = self._min_duration
                     except:
-                        logging.error("Bad duration value: %s" % str(msg))
+                        log.error("Bad duration value: %s" % str(msg))
                         duration = None  # use existing duration
 
                 ss.resubscribe(datetime.datetime.utcnow(), duration)
@@ -944,15 +918,18 @@ class Agent(Thread):
         if props.get("method") == "request":
             sid = cmap.get("_subscription_id")
             if not sid:
-                logging.warning("No subscription id supplied: %s" % msg)
+                log.warning("No subscription id supplied: %s" % msg)
                 return
 
             self._lock.acquire()
             try:
                 if sid in self._subscriptions:
+                    dead_sub = self._subscriptions[sid]
                     del self._subscriptions[sid]
             finally:
                 self._lock.release()
+
+            self._unpublish(dead_sub)
 
 
     def _queryPackagesReply(self, msg, query):
@@ -1100,6 +1077,70 @@ class Agent(Thread):
 
         return data_objs
 
+    def _publish(self, sub):
+        """ Publish a subscription.
+        """
+        response = []
+        now = datetime.datetime.utcnow()
+        objs = self._queryData(sub.query)
+        if objs:
+            for obj in objs:
+                if sub.id not in obj._subscriptions:
+                    # new to subscription - publish it
+                    obj._subscriptions[sub.id] = sub
+                    response.append(obj.map_encode())
+                elif obj._dtime:
+                    # obj._dtime is millisec since utc.  Convert to datetime
+                    utcdt = datetime.datetime.utcfromtimestamp(obj._dtime/1000.0)
+                    if utcdt > sub.last_update:
+                        response.append(obj.map_encode())
+                else:
+                    # obj._utime is millisec since utc.  Convert to datetime
+                    utcdt = datetime.datetime.utcfromtimestamp(obj._utime/1000.0)
+                    if utcdt > sub.last_update:
+                        response.append(obj.map_encode())
+
+            if response:
+                trace.debug("!!! %s publishing %s!!!" % (self.name, sub.correlation_id))
+                self._send_query_response( ContentType.data,
+                                           sub.correlation_id,
+                                           sub.reply_to,
+                                           response)
+        sub.published(now)
+
+    def _unpublish(self, sub):
+        """ This subscription is about to be deleted, remove it from any
+        referencing objects.
+        """
+        objs = self._queryData(sub.query)
+        if objs:
+            for obj in objs:
+                if sub.id in obj._subscriptions:
+                    del obj._subscriptions[sub.id]
+
+
+
+    def _wake_thread(self):
+        """
+        Make the agent management thread loop wakeup from its next_receiver
+        sleep.
+        """
+        self._lock.acquire()
+        try:
+            if not self._noop_pending:
+                trace.debug("Sending noop to wake up [%s]" % self._address)
+                msg = Message(id=QMF_APP_ID,
+                              subject=self.name,
+                              properties={"method":"indication",
+                                          "qmf.opcode":OpCode.noop},
+                              content={})
+                try:
+                    self._direct_sender.send( msg, sync=True )
+                    self._noop_pending = True
+                except SendError, e:
+                    log.error(str(e))
+        finally:
+            self._lock.release()
 
 
   ##==============================================================================
@@ -1115,7 +1156,7 @@ class AgentExternal(Agent):
         super(AgentExternal, self).__init__(name, _domain, _notifier,
                                             _heartbeat_interval,
                                             _max_msg_size, _capacity)
-        logging.error("AgentExternal TBD")
+        log.error("AgentExternal TBD")
 
 
 
@@ -1164,6 +1205,7 @@ class QmfAgentData(QmfData):
         self._agent = agent
         self._validated = False
         self._modified = True
+        self._subscriptions = {}
 
     def destroy(self): 
         self._dtime = long(time.time() * 1000)
@@ -1175,7 +1217,8 @@ class QmfAgentData(QmfData):
 
     def set_value(self, _name, _value, _subType=None):
         super(QmfAgentData, self).set_value(_name, _value, _subType)
-        self._touch()
+        self._utime = long(time.time() * 1000)
+        self._touch(_name)
         # @todo: publish change
 
     def inc_value(self, name, delta=1):
@@ -1191,8 +1234,12 @@ class QmfAgentData(QmfData):
     def dec_value(self, name, delta=1): 
         """ subtract the delta from the property """
         # @todo: need to take write-lock
-        logging.error(" TBD!!!")
-        self._touch()
+        val = self.get_value(name)
+        try:
+            val -= delta
+        except:
+            raise
+        self.set_value(name, val)
 
     def validate(self):
         """
@@ -1212,12 +1259,32 @@ class QmfAgentData(QmfData):
                     raise Exception("Required property '%s' not present." % name)
         self._validated = True
 
-    def _touch(self):
+    def _touch(self, field=None):
         """
         Mark this object as modified.  Used to force a publish of this object
         if on subscription.
         """
-        self._modified = True
+        now = datetime.datetime.utcnow()
+        publish = False
+        if field:
+            # if the named field is not continuous, mark any subscriptions as
+            # needing to be published.
+            sid = self.get_schema_class_id()
+            if sid:
+                self._agent._lock.acquire()
+                try:
+                    schema = self._agent._schema.get(sid)
+                    if schema:
+                        prop = schema.get_property(field)
+                        if prop and not prop.is_continuous():
+                            for sid,sub in self._subscriptions.iteritems():
+                                sub.next_update = now
+                                publish = True
+                    if publish:
+                        self._agent._next_subscribe_event = None
+                        self._agent._wake_thread()
+                finally:
+                    self._agent._lock.release()
 
 
 
@@ -1228,6 +1295,7 @@ class QmfAgentData(QmfData):
 
 if __name__ == '__main__':
     # static test cases - no message passing, just exercise API
+    import logging
     from common import (AgentName, SchemaProperty, qmfTypes, SchemaEventClass)
 
     logging.getLogger().setLevel(logging.INFO)

@@ -20,8 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : QMan - Qpid Management bridge
+<section><title>
+      QMan - Qpid Management bridge
     </title><section role="h1" id="QMan-QpidManagementbridge-QMan-3AQpidManagementBridge"><title>
             QMan
             : Qpid Management Bridge
@@ -76,7 +76,7 @@
               </row>
               <row>
                 <entry>
-                  <xref linkend="qpid_Get-20me-20up-20and-20running"/>
+                  <xref linkend="qpid_Get-me-up-and-running"/>
                 </entry>
                 <entry>
                   How to install &amp; start QMan.
@@ -84,7 +84,7 @@
               </row>
               <row>
                 <entry>
-                  <xref linkend="qpid_QMan-20User-20Guide"/>
+                  <xref linkend="qpid_QMan-User-Guide"/>
                 </entry>
                 <entry>
                   QMan (WS-DM version only) Administration Console.
@@ -92,7 +92,7 @@
               </row>
               <row>
                 <entry>
-                  <xref linkend="qpid_JMX-20Interface-20Specification"/>
+                  <xref linkend="qpid_JMX-Interface-Specification"/>
                 </entry>
                 <entry>
                   Describes each JMX interface exposed by QMan.
@@ -100,7 +100,7 @@
               </row>
               <row>
                 <entry>
-                  <xref linkend="qpid_WS-DM-20Interface-20Specification"/>
+                  <xref linkend="qpid_WS-DM-Interface-Specification"/>
                 </entry>
                 <entry>
                   Describes each WS-DM interface exposed by QMan.
@@ -108,7 +108,7 @@
               </row>
               <row>
                 <entry>
-                  <xref linkend="qpid_QMan-20Messages-20Catalogue"/>
+                  <xref linkend="qpid_QMan-Messages-Catalogue"/>
                 </entry>
                 <entry>
                   Informational / Debug / Error / Warning messages catalogue.
@@ -142,7 +142,7 @@
               </row>
               <row>
                 <entry>
-                  <xref linkend="qpid_QMan-20System-20Overview"/>
+                  <xref linkend="qpid_QMan-System-Overview"/>
                 </entry>
                 <entry>
                   A short introduction about QMan deployment context.
@@ -150,7 +150,7 @@
               </row>
               <row>
                 <entry>
-                  <xref linkend="qpid_QMan-20Components-20View"/>
+                  <xref linkend="qpid_QMan-Components-View"/>
                 </entry>
                 <entry>
                   Describes QMan components, their interactions and
@@ -163,4 +163,4 @@
 <!--h2--></section>
 <!--h1--></section>
 
-</chapter>
+</section>

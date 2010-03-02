@@ -20,9 +20,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
-      Apache Qpid : Java Environment Variables
+      Java Environment Variables
     </title>
   <section role="h2" id="JavaEnvironmentVariables-SettingQpidEnvironmentVariables">
     <title>
@@ -81,4 +81,4 @@
     <!--h2-->
   </section>
 
-</chapter>
+</section>

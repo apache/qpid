@@ -20,9 +20,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
-    Apache Qpid : PythonBrokerTest
+    PythonBrokerTest
   </title>
   <section role="h2" id="PythonBrokerTest-PythonBrokerSystemTestSuite">
     <title>
@@ -95,4 +95,4 @@
     <!--h2-->
   </section>
 
-</chapter>
+</section>

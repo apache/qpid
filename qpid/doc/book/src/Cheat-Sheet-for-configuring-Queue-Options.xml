@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,8 +21,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Cheat Sheet for configuring Queue Options
+<section><title>
+      Cheat Sheet for configuring Queue Options
     </title>
 
     <section role="h2" id="CheatSheetforconfiguringQueueOptions-ConfiguringQueueOptions"><title>
@@ -165,7 +166,7 @@
             ignored.
             </para></listitem>
           </itemizedlist><para>
-            A fully worked <xref linkend="qpid_LVQ-20Example"/> can be found here
+            A fully worked <xref linkend="qpid_LVQ-Example"/> can be found here
           </para>
 	  <!--h3--></section>
 	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"><title>
@@ -210,7 +211,7 @@
             This option is used to determine whether enqueue/dequeue events
             representing changes made to queue state are generated. These
             events can then be processed by plugins such as that used for
-            <xref linkend="qpid_queue-20state-20replication"/>.
+            <xref linkend="qpid_queue-state-replication"/>.
           </para><para>
             Example:
           </para>
@@ -245,4 +246,4 @@
 	<!--h2--></section>
 
 
-</chapter>
+</section>

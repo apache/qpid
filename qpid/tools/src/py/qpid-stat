@@ -52,6 +52,7 @@ def Usage ():
 #    print "     -s   Show Sessions"
     print "     -e   Show Exchanges"
     print "     -q   Show Queues"
+    print "     -u   Show Subscriptions"
     print
     print "     -S [--sort-by] COLNAME  Sort by column name"
     print "     -I [--increasing]       Sort by increasing value (default = decreasing)"
@@ -103,6 +104,7 @@ class Broker(object):
         self.sessions = {}
         self.exchanges = {}
         self.queues = {}
+        self.subscriptions = {}
         package = "org.apache.qpid.broker"
 
         list = qmf.getObjects(_class="connection", _package=package, _agent=self.brokerAgent)
@@ -122,6 +124,10 @@ class Broker(object):
         list = qmf.getObjects(_class="queue", _package=package, _agent=self.brokerAgent)
         for queue in list:
             self.queues[queue.getObjectId()] = queue
+
+        list = qmf.getObjects(_class="subscription", _package=package, _agent=self.brokerAgent)
+        for subscription in list:
+            self.subscriptions[subscription.getObjectId()] = subscription
 
     def getName(self):
         return self.broker.getUrl()
@@ -373,12 +379,57 @@ class BrokerManager(Console):
             dispRows = rows
         disp.formattedTable(title, heads, dispRows)
 
+    def displaySubscriptions(self, subs):
+        disp = Display(prefix="  ")
+        heads = []
+        if self.cluster:
+            heads.append(Header('broker'))
+        heads.append(Header("subscription"))
+        heads.append(Header("queue"))
+        heads.append(Header("connection"))
+        heads.append(Header("processName"))
+        heads.append(Header("processId"))
+        heads.append(Header("browsing", Header.Y))
+        heads.append(Header("acknowledged", Header.Y))
+        heads.append(Header("exclusive", Header.Y))
+        heads.append(Header("creditMode"))
+        heads.append(Header("delivered", Header.KMG))
+        rows = []
+        for broker in self.brokers:
+            for oid in broker.subscriptions:
+                s = broker.subscriptions[oid]
+                row = []
+                if self.cluster:
+                    row.append(broker.getName())
+                row.append(s.name)
+                row.append(self.qmf.getObjects(_objectId=s.queueRef)[0].name)
+                connectionRef = self.qmf.getObjects(_objectId=s.sessionRef)[0].connectionRef
+                row.append(self.qmf.getObjects(_objectId=connectionRef)[0].address)
+                row.append(self.qmf.getObjects(_objectId=connectionRef)[0].remoteProcessName)
+                row.append(self.qmf.getObjects(_objectId=connectionRef)[0].remotePid)
+                row.append(s.browsing)
+                row.append(s.acknowledged)
+                row.append(s.exclusive)
+                row.append(s.creditMode)
+                row.append(s.delivered)
+                rows.append(row)
+        title = "Subscriptions"
+        if self.cluster:
+            title += " for cluster '%s'" % self.cluster.clusterName
+        if _sortcol:
+            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+            dispRows = sorter.getSorted()
+        else:
+            dispRows = rows
+        disp.formattedTable(title, heads, dispRows)
+
     def displayMain(self, main, subs):
         if   main == 'b': self.displayBroker(subs)
         elif main == 'c': self.displayConn(subs)
         elif main == 's': self.displaySession(subs)
         elif main == 'e': self.displayExchange(subs)
         elif main == 'q': self.displayQueue(subs)
+        elif main == 'u': self.displaySubscriptions(subs)
 
     def display(self):
         self._getCluster()
@@ -406,7 +457,7 @@ class BrokerManager(Console):
 
 try:
     longOpts = ("top", "numeric", "sort-by=", "limit=", "increasing", "timeout=")
-    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "bceqS:L:I", longOpts)
+    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "bcequS:L:I", longOpts)
 except:
     Usage()
 
@@ -431,7 +482,7 @@ for opt in optlist:
         _limit = int(opt[1])
     elif len(opt[0]) == 2:
         char = opt[0][1]
-        if "bcseq".find(char) != -1:
+        if "bcequ".find(char) != -1:
             _types += char
         else:
             Usage()

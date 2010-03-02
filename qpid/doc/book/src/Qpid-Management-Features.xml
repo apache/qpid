@@ -20,12 +20,12 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
-      Apache Qpid : Qpid Management Features
+      Qpid Management Features
     </title>
   <para>
-            <emphasis>Management tool:</emphasis> See our <xref linkend="qpid_Qpid-20JMX-20Management-20Console"/> for
+            <emphasis>Management tool:</emphasis> See our <xref linkend="qpid_Qpid-JMX-Management-Console"/> for
             details of how to use various console options with the Qpid
             management features.
           </para>
@@ -152,7 +152,7 @@
             </para></listitem>
             <listitem><para>Dropping a connection.
             </para></listitem>
-            <listitem><para>The work for <xref linkend="qpid_Network-20IO-20Interface"/> implies that
+            <listitem><para>The work for <xref linkend="qpid_Network-IO-Interface"/> implies that
             there are potentially some additional requirements
               <orderedlist>
                 <listitem><para>Alert when tcp flow control kicks in
@@ -179,8 +179,7 @@
             </para></listitem>
             <listitem><para>Creating a Queue.
             </para></listitem>
-            <listitem><para>Deleting a
-            Queue.        
+            <listitem><para>Deleting a Queue.
             </para></listitem>
           </orderedlist>
-</chapter>
+</section>

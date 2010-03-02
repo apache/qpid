@@ -20,9 +20,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml" id="AMQP-Compatibility">
+<chapter id="AMQP-Compatibility">
   <title>
-      Apache Qpid : AMQP compatibility
+      AMQP compatibility
     </title>
     <para>
             Qpid provides the most complete and compatible implementation

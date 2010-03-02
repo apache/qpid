@@ -20,9 +20,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
-      Apache Qpid : Java Broker Feature Guide
+      Java Broker Feature Guide
     </title>
   <section role="h3" id="JavaBrokerFeatureGuide-TheQpidpureJavabrokercurrentlysupportsthefollowingfeatures-3A">
     <title>
@@ -81,4 +81,4 @@
     <!--h3-->
   </section>
 
-</chapter>
+</section>

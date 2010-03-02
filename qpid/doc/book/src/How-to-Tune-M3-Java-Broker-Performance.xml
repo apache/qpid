@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -19,10 +20,9 @@
  under the License.
  
 -->
-
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section id="How-to-Tune-M3-Java-Broker-Performance">
   <title>
-      Apache Qpid : How to Tune M3 Java Broker Performance
+      How to Tune M3 Java Broker Performance
     </title>
   <section role="h3" id="HowtoTuneM3JavaBrokerPerformance-ProblemStatement">
     <title>
@@ -169,4 +169,4 @@
           </para>
     <!--h3-->
   </section>
-</chapter>
+</section>

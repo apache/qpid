@@ -20,9 +20,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<chapter>
   <title>
-    Apache Qpid : AMQP Ruby Messaging Client
+    AMQP Ruby Messaging Client
   </title>
   <para>
     The Ruby Messaging Client currently has little documentation and

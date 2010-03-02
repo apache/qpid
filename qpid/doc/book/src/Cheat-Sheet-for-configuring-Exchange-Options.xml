@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,11 +21,15 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Cheat Sheet for configuring Exchange Options
-    </title><section role="h2" id="CheatSheetforconfiguringExchangeOptions-ConfiguringExchangeOptions"><title>
-            Configuring Exchange Options
-          </title>
+<section>
+  <title>
+    Cheat Sheet for configuring Exchange Options
+  </title>
+
+  <section role="h2" id="CheatSheetforconfiguringExchangeOptions-ConfiguringExchangeOptions">
+    <title>
+      Configuring Exchange Options
+    </title>
           <para>
             The C++ Broker M4 or later supports the following additional
             Exchange options in addition to the standard AMQP define options
@@ -136,4 +141,4 @@
 </programlisting>
 <!--h3--></section>
 <!--h2--></section>
-</chapter>
+</section>

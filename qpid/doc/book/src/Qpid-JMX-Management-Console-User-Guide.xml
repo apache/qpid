@@ -20,8 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Qpid JMX Management Console User Guide
+<section id="Qpid-JMX-Management-Console-User-Guide"><title>
+      Qpid JMX Management Console User Guide
     </title><section role="h1" id="QpidJMXManagementConsoleUserGuide-QpidJMXManagementConsoleUserGuide"><title>
             Qpid JMX Management Console User Guide
           </title>
@@ -105,7 +105,8 @@
             KeyStore and matching TrustStore. This script can serve as a
             guide on how to use the Java Keytool security utility to
             manipulate your own stores, and more information can be found in
-            the JSSE Reference Guide: <xref linkend="qpid_JSSERefGuide"/>
+            the JSSE Reference Guide: 
+	    <ulink url="http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.html#CustomizingStores">http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.html#CustomizingStores</ulink>.
           </para><para>
             Supplying the necessary details to the console is performed by
             setting the <emphasis>javax.net.ssl.trustStore</emphasis> and
@@ -789,4 +790,4 @@
           </para>
             
 <!--h1--></section>
-</chapter>
+</section>

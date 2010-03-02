@@ -20,7 +20,7 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
     Apache Qpid: Open Source AMQP Messaging - .NET User Guide
   </title>
@@ -1024,7 +1024,7 @@ noMoreMessages(session);
       <!--h3-->
     </section>    
     
-    <section role="h3" id="NETUserGuide-ReadingMessagesfromtheQueue">
+    <section role="h3" id="NETUserGuide-ReadingMessagesfromtheQueue2">
       <title>
 	Reading
 	Messages from the Queue
@@ -1380,4 +1380,4 @@ _session.messageTransfer("amq.direct", routingKey, response);
 	</section>
             
           
-      </chapter>
+      </section>

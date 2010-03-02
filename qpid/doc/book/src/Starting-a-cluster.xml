@@ -20,8 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Starting a cluster
+<section><title>
+      Starting a cluster
     </title><section role="h1" id="Startingacluster-RunningaQpiddcluster"><title>
             Running a
             Qpidd cluster
@@ -222,4 +222,4 @@ qpidd -p5674 --cluster-name=MY_CLUSTER --log-output=cluster0.log -d --no-data-di
           </para>
 <!--h2--></section>
 <!--h1--></section>
-</chapter>
+</section>

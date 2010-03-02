@@ -20,11 +20,12 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : RASC
-    </title>
+<section id="section-Running-a-Qpid-CPP-Broker">
+  <title>
+    Running a Qpid C++ Broker
+  </title>
 
-    <section role="h2" id="RASC-BuildingtheC-5CBrokerandClientLibraries"><title>
+    <section role="h2" id="RASC-BuildingtheCppBrokerandClientLibraries"><title>
             Building the
             C++ Broker and Client Libraries
           </title>
@@ -35,11 +36,11 @@
             most cases you will do the following:
           </para>
             <programlisting>
-[qpidc-0.4]$ ./configure}}
+[qpidc-0.4]$ ./configure
 [qpidc-0.4]$ make
 </programlisting>
     <!--h2--></section>
-    <section role="h2" id="RASC-RunningtheC-5CBroker"><title>
+    <section role="h2" id="RASC-RunningtheCppBroker"><title>
             Running the C++ Broker
           </title>
           <para>
@@ -145,7 +146,7 @@ daemon=yes
 log-to-syslog=yes
 </programlisting>
 	  <!--h3--></section>
-          <section role="h3" id="RASC-CanIuseanyLanguageclientwiththeC-5CBroker-3F"><title>
+          <section role="h3" id="RASC-CanIuseanyLanguageclientwiththeCppBroker-3F"><title>
             Can I use
             any Language client with the C++ Broker?
           </title>
@@ -159,13 +160,13 @@ log-to-syslog=yes
             using the Java client refer to these pages:
           </para><itemizedlist>
             <listitem><para>
-              <xref linkend="qpid_How-20to-20Use-20JNDI"/>
+              <xref linkend="How-to-Use-JNDI"/>
             </para></listitem>
             <listitem><para>
-              <xref linkend="qpid_URL-20Formats"/>
+              <xref linkend="qpid_URL-Formats"/>
             </para></listitem>
             <listitem><para>
-              <xref linkend="qpid_Example-20Classes"/>
+              <xref linkend="qpid_Example-Classes"/>
             </para></listitem>
           </itemizedlist>
 	  <!--h3--></section>
@@ -324,4 +325,4 @@ Store Options:
                             pages (1 read page = 64kiB)
 </programlisting>
 <!--h2--></section>
-</chapter>
+</section>

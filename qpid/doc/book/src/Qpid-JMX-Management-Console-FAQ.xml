@@ -20,8 +20,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Qpid JMX Management Console FAQ
+<section><title>
+      Qpid JMX Management Console FAQ
     </title>
 <!--
 h3. {toggle-cloak:id=qManagementConsoleSecurity} How do I connect the management console to my broker using security ?
@@ -51,7 +51,7 @@ To remedy this issue you can set the _java.rmi.server.hostname_ system property 
           </title>
 
 	  <para>
-            The <xref linkend="qpid_Management-20Console-20Security"/> page will give you the instructions that you should
+            The <xref linkend="qpid_Management-Console-Security"/> page will give you the instructions that you should
             use to set this up.
           </para>
 <!--h3--></section>
@@ -93,4 +93,4 @@ To remedy this issue you can set the _java.rmi.server.hostname_ system property 
           </para>
 <!--h3--></section>
 <!--h2--></section>
-</chapter>
+</section>

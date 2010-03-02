@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
  
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,8 +21,8 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml"><title>
-      Apache Qpid : Configure Log4j CompositeRolling Appender
+<section><title>
+      Configure Log4j CompositeRolling Appender
     </title>
     <section role="h2" id="ConfigureLog4jCompositeRollingAppender-HowtoconfiguretheCompositeRollinglog4jAppender"><title>
             How to configure the CompositeRolling log4j Appender
@@ -146,4 +147,4 @@
 </listitem>
 </orderedlist>
 <!--h2--></section>
-</chapter>
+</section>

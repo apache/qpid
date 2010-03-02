@@ -159,6 +159,11 @@ bool Connection::doOutput() {
 
 // Received from a directly connected client.
 void Connection::received(framing::AMQFrame& f) {
+    if (!connection.get()) {
+        QPID_LOG(warning, cluster << " ignoring frame on closed connection "
+                 << *this << ": " << f);
+        return;
+    }
     QPID_LOG(trace, cluster << " RECV " << *this << ": " << f);
     if (isLocal()) {            // Local catch-up connection.
         currentChannel = f.getChannel();
@@ -231,7 +236,7 @@ void Connection::closed() {
         }
         else if (isUpdated()) {
             QPID_LOG(debug, cluster << " closed update connection " << *this);
-            connection->closed();
+            if (connection.get()) connection->closed();
         }
         else if (isLocal()) {
             QPID_LOG(debug, cluster << " local close of replicated connection " << *this);
@@ -250,13 +255,21 @@ void Connection::closed() {
 // Self-delivery of close message, close the connection.
 void Connection::deliverClose () {
     assert(!catchUp);
-    connection->closed();
+    if (connection.get()) {
+        connection->closed();
+        // Ensure we delete the broker::Connection in the deliver thread.
+        connection.reset();
+    }
     cluster.erase(self);
 }
 
 // The connection has been killed for misbehaving
 void Connection::abort() {
-    if (connection.get()) connection->abort();
+    if (connection.get()) {
+        connection->abort();
+        // Ensure we delete the broker::Connection in the deliver thread.
+        connection.reset();
+    }
     cluster.erase(self);
 }
 
@@ -324,7 +337,6 @@ void Connection::sessionState(
     const SequenceSet& unknownCompleted,
     const SequenceSet& receivedIncomplete)
 {
-    
     sessionState().setState(
         replayStart,
         sendCommandPoint,

@@ -20,9 +20,9 @@
  
 -->
 
-<chapter xmlns:html="http://www.w3.org/1999/xhtml">
+<section>
   <title>
-    Apache Qpid : queue state replication
+    queue state replication
   </title>
 
   <section role="h2" id="queuestatereplication-AsynchronousReplicationofQueueState">
@@ -330,4 +330,4 @@ Queue Replication Options:
     </section>
     <!--h2-->
   </section>
-</chapter>
+</section>
