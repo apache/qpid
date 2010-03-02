@@ -1220,12 +1220,10 @@ class Console(Thread):
                       properties={"method":"request",
                                   "qmf.opcode":OpCode.agent_locate_req},
                       content=query._predicate)
+        msg.content_type="amqp/list"
         msg.reply_to = str(self._address)
         msg.correlation_id = str(cid)
-        trace.debug("Sending Agent Locate (%s)" % time.time())
-        # TRACE
-        #log.error("!!! Console %s sending agent locate (%s)" % 
-        # (self._name, str(msg)))
+        trace.debug("%s Sending Agent Locate (%s)", self._name, str(msg))
         try:
             self._topic_sender.send(msg)
         except SendError, e:
@@ -1685,16 +1683,20 @@ class Console(Thread):
         Process a received agent-ind message.  This message may be a response to a
         agent-locate, or it can be an unsolicited agent announce.
         """
-        trace.debug("_handle_agent_ind_msg '%s' (%s)" % (msg, time.time()))
 
-        ai_map = msg.content
-        if not ai_map or not isinstance(ai_map, type({})):
-            log.warning("Bad agent-ind message received: '%s'" % msg)
+        trace.debug("%s _handle_agent_ind_msg '%s'", self._name, str(msg))
+
+        try:
+            tmp = QmfData.from_map(msg.content)
+        except:
+            log.warning("%s invalid Agent Indication msg format '%s'",
+                        self._name, str(msg))
             return
-        name = ai_map.get("_name")
-        if not name:
-            log.warning("Bad agent-ind message received: agent name missing"
-                            " '%s'" % msg)
+
+        try:
+            name = tmp.get_value("_name")
+        except:
+            log.warning("Bad Agent ind msg received: %s", str(msg))
             return
 
         correlated = False
@@ -1716,7 +1718,6 @@ class Console(Thread):
             # need to create and add a new agent?
             matched = False
             if self._agent_discovery_filter:
-                tmp = QmfData.create(values=ai_map, _object_id="agent-filter")
                 matched = self._agent_discovery_filter.evaluate(tmp)
 
             if (correlated or matched):
