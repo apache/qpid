@@ -68,6 +68,7 @@ class CyrusAuthenticator : public SaslAuthenticator
     const bool encrypt;
 
     void processAuthenticationStep(int code, const char *challenge, unsigned int challenge_len);
+    bool getUsername(std::string& uid);
 
 public:
     CyrusAuthenticator(Connection& connection, bool encrypt);
@@ -76,8 +77,8 @@ public:
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string& response);
     void step(const std::string& response);
-    void getUid(std::string& uid);
     void getError(std::string& error);
+    void getUid(std::string& uid) { getUsername(uid); }
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
 
@@ -282,16 +283,18 @@ void CyrusAuthenticator::getError(string& error)
     error = string(sasl_errdetail(sasl_conn));
 }
 
-void CyrusAuthenticator::getUid(string& uid)
+bool CyrusAuthenticator::getUsername(string& uid)
 {
-    int code;
     const void* ptr;
 
-    code = sasl_getprop(sasl_conn, SASL_USERNAME, &ptr);
-    if (SASL_OK != code)
-        return;
-
-    uid = string(const_cast<char*>(static_cast<const char*>(ptr)));
+    int code = sasl_getprop(sasl_conn, SASL_USERNAME, &ptr);
+    if (SASL_OK == code) {
+        uid = string(const_cast<char*>(static_cast<const char*>(ptr)));
+        return true;
+    } else {
+        QPID_LOG(warning, "Failed to retrieve sasl username");
+        return false;
+    }
 }
 
 void CyrusAuthenticator::getMechanisms(Array& mechanisms)
@@ -339,7 +342,7 @@ void CyrusAuthenticator::start(const string& mechanism, const string& response)
     const char *challenge;
     unsigned int challenge_len;
     
-    QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
+    QPID_LOG(debug, "SASL: Starting authentication with mechanism: " << mechanism);
     int code = sasl_server_start(sasl_conn,
                                  mechanism.c_str(),
                                  response.c_str(), response.length(),
@@ -363,20 +366,15 @@ void CyrusAuthenticator::step(const string& response)
 void CyrusAuthenticator::processAuthenticationStep(int code, const char *challenge, unsigned int challenge_len)
 {
     if (SASL_OK == code) {
-        const void *uid;
-
-        code = sasl_getprop(sasl_conn, SASL_USERNAME, &uid);
-        if (SASL_OK != code) {
-            QPID_LOG(info, "SASL: Authentication succeeded, username unavailable");
+        std::string uid;
+        if (!getUsername(uid)) {
             // TODO: Change this to an exception signaling
             // authentication failure, when one is available
             throw ConnectionForcedException("Authenticated username unavailable");
         }
+        QPID_LOG(info, "SASL: Authentication succeeded for: " << uid);
 
-        QPID_LOG(info, "SASL: Authentication succeeded for: "
-                 << const_cast<char*>(static_cast<const char*>(uid)));
-
-        connection.setUserId(const_cast<char*>(static_cast<const char*>(uid)));
+        connection.setUserId(uid);
 
         client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
     } else if (SASL_CONTINUE == code) {
@@ -386,7 +384,12 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
 
         client.secure(challenge_str);
     } else {
-        QPID_LOG(info, "SASL: Authentication failed: " << sasl_errdetail(sasl_conn));
+        std::string uid;
+        if (!getUsername(uid)) {
+            QPID_LOG(info, "SASL: Authentication failed (no username available):" << sasl_errdetail(sasl_conn));
+        } else {
+            QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << sasl_errdetail(sasl_conn));
+        }
 
         // TODO: Change to more specific exceptions, when they are
         // available
