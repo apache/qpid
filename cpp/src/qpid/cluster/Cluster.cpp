@@ -232,7 +232,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     dispatcher(cpg, poller, boost::bind(&Cluster::leave, this)),
     deliverEventQueue(boost::bind(&Cluster::deliveredEvent, this, _1),
                       boost::bind(&Cluster::leave, this),
-                      "Error decoding events",
+                      "Error decoding events, may indicate a broker version mismatch",
                       poller),
     deliverFrameQueue(boost::bind(&Cluster::deliveredFrame, this, _1),
                       boost::bind(&Cluster::leave, this),
