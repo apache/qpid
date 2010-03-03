@@ -28,14 +28,10 @@
 #include <qpid/Options.h>
 #include <qpid/log/Logger.h>
 #include <qpid/log/Options.h>
-#include <qpid/sys/Time.h>
 
 #include <iostream>
 
 using namespace qpid::messaging;
-using qpid::sys::Duration;
-using qpid::sys::TIME_INFINITE;
-using qpid::sys::TIME_SEC;
 
 struct Options : public qpid::Options
 {
@@ -67,8 +63,8 @@ struct Options : public qpid::Options
 
     Duration getTimeout()
     {
-        if (forever) return TIME_INFINITE;
-        else return timeout*TIME_SEC;
+        if (forever) return INFINITE_DURATION;
+        else return timeout*DURATION_SEC;
 
     }
     bool parse(int argc, char** argv)

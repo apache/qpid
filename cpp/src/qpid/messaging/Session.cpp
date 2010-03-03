@@ -76,13 +76,13 @@ void Session::flush()
     impl->flush();
 }
 
-bool Session::nextReceiver(Receiver& receiver, qpid::sys::Duration timeout)
+bool Session::nextReceiver(Receiver& receiver, Duration timeout)
 {
     return impl->nextReceiver(receiver, timeout);
 }
 
 
-Receiver Session::nextReceiver(qpid::sys::Duration timeout)
+Receiver Session::nextReceiver(Duration timeout)
 {
     return impl->nextReceiver(timeout);
 }

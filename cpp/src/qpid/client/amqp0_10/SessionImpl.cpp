@@ -266,24 +266,33 @@ bool SessionImpl::accept(ReceiverImpl* receiver,
     }
 }
 
-bool SessionImpl::getIncoming(IncomingMessages::Handler& handler, qpid::sys::Duration timeout)
+qpid::sys::Duration adjust(qpid::messaging::Duration timeout)
 {
-    return incoming.get(handler, timeout);
+    if (timeout < (uint64_t) (qpid::sys::TIME_INFINITE/qpid::sys::TIME_MSEC)) {
+        return timeout * qpid::sys::TIME_MSEC;
+    } else {
+        return qpid::sys::TIME_INFINITE;
+    }
 }
 
-bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::sys::Duration timeout)
+bool SessionImpl::getIncoming(IncomingMessages::Handler& handler, qpid::messaging::Duration timeout)
+{
+    return incoming.get(handler, adjust(timeout));
+}
+
+bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     IncomingMessageHandler handler(boost::bind(&SessionImpl::accept, this, &receiver, &message, _1));
     return getIncoming(handler, timeout);
 }
 
-bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::Duration timeout)
+bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::messaging::Duration timeout)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     while (true) {
         try {
             std::string destination;
-            if (incoming.getNextDestination(destination, timeout)) {
+            if (incoming.getNextDestination(destination, adjust(timeout))) {
                 Receivers::const_iterator i = receivers.find(destination);
                 if (i == receivers.end()) {
                     throw qpid::Exception(QPID_MSG("Received message for unknown destination " << destination));
@@ -300,7 +309,7 @@ bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::D
     }
 }
 
-qpid::messaging::Receiver SessionImpl::nextReceiver(qpid::sys::Duration timeout)
+qpid::messaging::Receiver SessionImpl::nextReceiver(qpid::messaging::Duration timeout)
 {
     qpid::messaging::Receiver receiver;
     if (!nextReceiver(receiver, timeout)) throw Receiver::NoMessageAvailable();

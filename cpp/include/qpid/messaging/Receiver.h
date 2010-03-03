@@ -24,7 +24,7 @@
 #include "qpid/Exception.h"
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Handle.h"
-#include "qpid/sys/Time.h"
+#include "qpid/messaging/Duration.h"
 
 namespace qpid {
 namespace client {
@@ -57,14 +57,14 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * available. Returns false if there is no message to give after
      * waiting for the specified timeout.
      */
-    QPID_CLIENT_EXTERN bool get(Message& message, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN bool get(Message& message, Duration timeout=INFINITE_DURATION);
     /**
      * Retrieves a message from this receivers local queue, or waits
      * for upto the specified timeout for a message to become
      * available. Throws NoMessageAvailable if there is no
      * message to give after waiting for the specified timeout.
      */
-    QPID_CLIENT_EXTERN Message get(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN Message get(Duration timeout=INFINITE_DURATION);
     /**
      * Retrieves a message for this receivers subscription or waits
      * for upto the specified timeout for one to become
@@ -72,7 +72,7 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * that there is no message for the subscription this receiver is
      * serving before returning false.
      */
-    QPID_CLIENT_EXTERN bool fetch(Message& message, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN bool fetch(Message& message, Duration timeout=INFINITE_DURATION);
     /**
      * Retrieves a message for this receivers subscription or waits
      * for up to the specified timeout for one to become
@@ -80,7 +80,7 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * that there is no message for the subscription this receiver is
      * serving before throwing an exception.
      */
-    QPID_CLIENT_EXTERN Message fetch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN Message fetch(Duration timeout=INFINITE_DURATION);
     /**
      * Sets the capacity for the receiver. The capacity determines how
      * many incoming messages can be held in the receiver before being
