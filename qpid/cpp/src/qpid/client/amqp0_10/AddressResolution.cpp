@@ -277,6 +277,9 @@ bool AddressResolution::is_reliable(const Address& address)
 
 std::string checkAddressType(qpid::client::Session session, const Address& address)
 {
+    if (address.getName().empty()) {
+        throw InvalidAddress("Name cannot be null");
+    }
     std::string type = address.getType();
     if (type.empty()) {
         ExchangeBoundResult result = session.exchangeBound(arg::exchange=address.getName(), arg::queue=address.getName());
