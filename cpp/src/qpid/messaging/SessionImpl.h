@@ -23,7 +23,7 @@
  */
 #include "qpid/RefCounted.h"
 #include <string>
-#include "qpid/sys/Time.h"
+#include "qpid/messaging/Duration.h"
 
 namespace qpid {
 namespace client {
@@ -50,8 +50,8 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual void flush() = 0;
     virtual Sender createSender(const Address& address) = 0;
     virtual Receiver createReceiver(const Address& address) = 0;
-    virtual bool nextReceiver(Receiver& receiver, qpid::sys::Duration timeout) = 0;
-    virtual Receiver nextReceiver(qpid::sys::Duration timeout) = 0;
+    virtual bool nextReceiver(Receiver& receiver, Duration timeout) = 0;
+    virtual Receiver nextReceiver(Duration timeout) = 0;
     virtual uint32_t available() = 0;
     virtual uint32_t pendingAck() = 0;
     virtual Sender getSender(const std::string& name) const = 0;

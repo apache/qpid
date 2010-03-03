@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_RECEIVERIMPL_H
-#define QPID_MESSAGING_RECEIVERIMPL_H
+#ifndef QPID_MESSAGING_DURATION_H
+#define QPID_MESSAGING_DURATION_H
 
 /*
  *
@@ -21,34 +21,19 @@
  * under the License.
  *
  */
-#include "qpid/RefCounted.h"
+#include "qpid/sys/IntegerTypes.h"
+#include <limits>
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
 
-class Message;
-class MessageListener;
-class Session;
+/**
+ * A duration is a time in milliseconds.
+ */
+typedef uint64_t Duration;
+const Duration INFINITE_DURATION = std::numeric_limits<uint64_t>::max();
+const Duration DURATION_SEC  = 1000;
 
-class ReceiverImpl : public virtual qpid::RefCounted
-{
-  public:
-    virtual ~ReceiverImpl() {}
-    virtual bool get(Message& message, Duration timeout) = 0;
-    virtual Message get(Duration timeout) = 0;
-    virtual bool fetch(Message& message, Duration timeout) = 0;
-    virtual Message fetch(Duration timeout) = 0;
-    virtual void setCapacity(uint32_t) = 0;
-    virtual uint32_t getCapacity() = 0;
-    virtual uint32_t available() = 0;
-    virtual uint32_t pendingAck() = 0;
-    virtual void close() = 0;
-    virtual const std::string& getName() const = 0;
-    virtual Session getSession() const = 0;
-};
 }} // namespace qpid::messaging
 
-#endif  /*!QPID_MESSAGING_RECEIVERIMPL_H*/
+#endif  /*!QPID_MESSAGING_DURATION_H*/

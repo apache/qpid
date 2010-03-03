@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/messaging/SessionImpl.h"
+#include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Variant.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
@@ -68,12 +69,12 @@ class SessionImpl : public qpid::messaging::SessionImpl
     qpid::messaging::Sender getSender(const std::string& name) const;
     qpid::messaging::Receiver getReceiver(const std::string& name) const;
 
-    bool nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::Duration timeout);
-    qpid::messaging::Receiver nextReceiver(qpid::sys::Duration timeout);
+    bool nextReceiver(qpid::messaging::Receiver& receiver, qpid::messaging::Duration timeout);
+    qpid::messaging::Receiver nextReceiver(qpid::messaging::Duration timeout);
 
     qpid::messaging::Connection getConnection() const;
 
-    bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::sys::Duration timeout);    
+    bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout);    
 
     void receiverCancelled(const std::string& name);
     void senderCancelled(const std::string& name);
@@ -114,7 +115,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     const bool transactional;
 
     bool accept(ReceiverImpl*, qpid::messaging::Message*, IncomingMessages::MessageTransfer&);
-    bool getIncoming(IncomingMessages::Handler& handler, qpid::sys::Duration timeout);
+    bool getIncoming(IncomingMessages::Handler& handler, qpid::messaging::Duration timeout);
     bool getNextReceiver(qpid::messaging::Receiver* receiver, IncomingMessages::MessageTransfer& transfer);
     void reconnect();
 
