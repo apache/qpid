@@ -525,9 +525,9 @@ QPID_AUTO_TEST_CASE(testBrowse)
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
     send(sender, 10);
-    Receiver browser1 = fix.session.createReceiver(fix.queue + "; {browse:true}");
+    Receiver browser1 = fix.session.createReceiver(fix.queue + "; {mode:browse}");
     receive(browser1, 10);
-    Receiver browser2 = fix.session.createReceiver(fix.queue + "; {browse:true}");
+    Receiver browser2 = fix.session.createReceiver(fix.queue + "; {mode:browse}");
     receive(browser2, 10);
     Receiver consumer = fix.session.createReceiver(fix.queue);
     receive(consumer, 10);
