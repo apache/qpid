@@ -65,7 +65,9 @@ const std::string EMPTY_STRING;
 
 //option names
 const std::string BROWSE("browse");
+const std::string CONSUME("consume");
 const std::string EXCLUSIVE("exclusive");
+const std::string MODE("mode");
 const std::string NO_LOCAL("no-local");
 const std::string FILTER("filter");
 const std::string RELIABILITY("reliability");
@@ -347,10 +349,21 @@ const Variant& getNestedOption(const Variant::Map& options, const std::vector<st
     }
 }
 
+bool isBrowse(const Address& address)
+{
+    const Variant& mode = address.getOption(MODE);
+    if (!mode.isVoid()) {
+        std::string value = mode.asString();
+        if (value == BROWSE) return true;
+        else if (value != CONSUME) throw InvalidAddress("Invalid mode");
+    }
+    return false;
+}
+
 QueueSource::QueueSource(const Address& address) :
     Queue(address),
     acceptMode(AddressResolution::is_unreliable(address) ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT),
-    acquireMode(address.getOption(BROWSE).asBool() ? ACQUIRE_MODE_NOT_ACQUIRED : ACQUIRE_MODE_PRE_ACQUIRED),
+    acquireMode(isBrowse(address) ? ACQUIRE_MODE_NOT_ACQUIRED : ACQUIRE_MODE_PRE_ACQUIRED),
     exclusive(false)
 {
     //extract subscription arguments from address options
