@@ -7,7 +7,7 @@
 *.lo
 *.vglog
 .dirstamp
-Makefile*
+Makefile.in
 config\.*
 configure
 .deps
@@ -22,7 +22,6 @@ qpidc.spec
 qpid/cpp/src/gen/
 *gen.mk
 *.timestamp
-rgen.timestamp
 *.pcl
 qpid/cpp/managementgen/management-types.xml
 
