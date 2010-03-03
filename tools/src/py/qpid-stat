@@ -505,6 +505,7 @@ except KeyboardInterrupt:
     print
 except Exception,e:
     print "Failed: %s - %s" % (e.__class__.__name__, e)
+    raise                               # FIXME aconway 2010-03-03: 
     sys.exit(1)
 
 bm.Disconnect()
