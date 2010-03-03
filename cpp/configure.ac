@@ -525,6 +525,7 @@ AC_CONFIG_FILES([
   src/Makefile
   src/tests/Makefile
   src/tests/test_env.sh
+  src/tests/testagent/Makefile
   docs/man/Makefile
   docs/api/Makefile
   docs/api/user.doxygen
