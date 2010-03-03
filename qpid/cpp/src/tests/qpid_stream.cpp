@@ -32,7 +32,6 @@
 #include <string>
 
 using namespace qpid::messaging;
-using namespace qpid::sys;
 
 namespace qpid {
 namespace tests {
@@ -58,13 +57,13 @@ Args opts;
 
 const std::string TIMESTAMP = "ts";
 
-uint64_t timestamp(const AbsTime& time)
+uint64_t timestamp(const qpid::sys::AbsTime& time)
 {
-    Duration t(time);
+    qpid::sys::Duration t(time);
     return t;
 }
 
-struct Client : Runnable
+struct Client : qpid::sys::Runnable
 {
     virtual ~Client() {}
     virtual void doWork(Session&) = 0;
@@ -83,9 +82,9 @@ struct Client : Runnable
         }
     }
 
-    Thread thread;
+    qpid::sys::Thread thread;
 
-    void start() { thread = Thread(this); }
+    void start() { thread = qpid::sys::Thread(this); }
     void join() { thread.join(); }
 };
 
@@ -95,20 +94,20 @@ struct Publish : Client
     {
         Sender sender = session.createSender(opts.address);
         Message msg;
-        uint64_t interval = TIME_SEC / opts.rate;
+        uint64_t interval = qpid::sys::TIME_SEC / opts.rate;
         uint64_t sent = 0, missedRate = 0;
-        AbsTime start = now();
+        qpid::sys::AbsTime start = qpid::sys::now();
         while (true) {
-            AbsTime sentAt = now();
+            qpid::sys::AbsTime sentAt = qpid::sys::now();
             msg.getHeaders()[TIMESTAMP] = timestamp(sentAt);
             sender.send(msg);
             ++sent;
-            AbsTime waitTill(start, sent*interval);
-            Duration delay(sentAt, waitTill);
+            qpid::sys::AbsTime waitTill(start, sent*interval);
+            qpid::sys::Duration delay(sentAt, waitTill);
             if (delay < 0) {
                 ++missedRate;
             } else {
-                qpid::sys::usleep(delay / TIME_USEC);
+                qpid::sys::usleep(delay / qpid::sys::TIME_USEC);
             }
         }
     }
@@ -128,9 +127,9 @@ struct Consume : Client
             session.acknowledge();//TODO: add batching option
             ++received;
             //calculate latency
-            uint64_t receivedAt = timestamp(now());
+            uint64_t receivedAt = timestamp(qpid::sys::now());
             uint64_t sentAt = msg.getHeaders()[TIMESTAMP].asUint64();
-            double latency = ((double) (receivedAt - sentAt)) / TIME_MSEC;
+            double latency = ((double) (receivedAt - sentAt)) / qpid::sys::TIME_MSEC;
 
             //update avg, min & max
             minLatency = std::min(minLatency, latency);

@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/Exception.h"
+#include "qpid/messaging/Duration.h"
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Handle.h"
 #include "qpid/sys/Time.h"
@@ -100,7 +101,7 @@ class Session : public qpid::client::Handle<SessionImpl>
      * which case the passed in receiver reference will be set to the
      * receiver for that message or fals if no message was available.
      */
-    QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, Duration timeout=INFINITE_DURATION);
     /**
      * Returns the receiver for the next available message. If there
      * are no available messages at present the call will block for up
@@ -108,7 +109,7 @@ class Session : public qpid::client::Handle<SessionImpl>
      * Receiver::NoMessageAvailable if no message became available in
      * time.
      */
-    QPID_CLIENT_EXTERN Receiver nextReceiver(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN Receiver nextReceiver(Duration timeout=INFINITE_DURATION);
     
     /**
      * Create a new sender through which messages can be sent to the

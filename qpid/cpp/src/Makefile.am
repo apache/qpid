@@ -812,6 +812,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/Address.h 		\
   ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Codec.h 	        \
+  ../include/qpid/messaging/Duration.h 	        \
   ../include/qpid/messaging/ListContent.h 	\
   ../include/qpid/messaging/ListView.h 		\
   ../include/qpid/messaging/MapContent.h 	\

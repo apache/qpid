@@ -27,7 +27,7 @@
 #include "qpid/messaging/Variant.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/amqp0_10/SessionImpl.h"
-#include "qpid/sys/Time.h"
+#include "qpid/messaging/Duration.h"
 #include <memory>
 
 namespace qpid {
@@ -50,10 +50,10 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
                  const qpid::messaging::Address& address);
 
     void init(qpid::client::AsyncSession session, AddressResolution& resolver);
-    bool get(qpid::messaging::Message& message, qpid::sys::Duration timeout);
-    qpid::messaging::Message get(qpid::sys::Duration timeout);
-    bool fetch(qpid::messaging::Message& message, qpid::sys::Duration timeout);
-    qpid::messaging::Message fetch(qpid::sys::Duration timeout);
+    bool get(qpid::messaging::Message& message, qpid::messaging::Duration timeout);
+    qpid::messaging::Message get(qpid::messaging::Duration timeout);
+    bool fetch(qpid::messaging::Message& message, qpid::messaging::Duration timeout);
+    qpid::messaging::Message fetch(qpid::messaging::Duration timeout);
     void close();
     void start();
     void stop();
@@ -79,8 +79,8 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
 
     void startFlow();
     //implementation of public facing methods
-    bool fetchImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
-    bool getImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
+    bool fetchImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout);
+    bool getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout);
     void closeImpl();
     void setCapacityImpl(uint32_t);
 
@@ -96,10 +96,10 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     struct Get : Command
     {
         qpid::messaging::Message& message;
-        qpid::sys::Duration timeout;
+        qpid::messaging::Duration timeout;
         bool result;
 
-        Get(ReceiverImpl& i, qpid::messaging::Message& m, qpid::sys::Duration t) : 
+        Get(ReceiverImpl& i, qpid::messaging::Message& m, qpid::messaging::Duration t) : 
             Command(i), message(m), timeout(t), result(false) {}
         void operator()() { result = impl.getImpl(message, timeout); }
     };
@@ -107,10 +107,10 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     struct Fetch : Command
     {
         qpid::messaging::Message& message;
-        qpid::sys::Duration timeout;
+        qpid::messaging::Duration timeout;
         bool result;
 
-        Fetch(ReceiverImpl& i, qpid::messaging::Message& m, qpid::sys::Duration t) : 
+        Fetch(ReceiverImpl& i, qpid::messaging::Message& m, qpid::messaging::Duration t) : 
             Command(i), message(m), timeout(t), result(false) {}
         void operator()() { result = impl.fetchImpl(message, timeout); }
     };

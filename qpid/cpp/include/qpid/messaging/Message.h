@@ -23,6 +23,7 @@
  */
 
 #include <string>
+#include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Variant.h"
 #include "qpid/client/ClientImportExport.h"
 
@@ -67,8 +68,14 @@ class Message
     QPID_CLIENT_EXTERN void setCorrelationId(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getCorrelationId() const;
 
-    QPID_CLIENT_EXTERN void setTtl(uint64_t ttl);
-    QPID_CLIENT_EXTERN uint64_t getTtl() const;
+    /**
+     * Set the time to live for this message in milliseconds.
+     */
+    QPID_CLIENT_EXTERN void setTtl(Duration ttl);
+    /**
+     *Get the time to live for this message in milliseconds.
+     */
+    QPID_CLIENT_EXTERN Duration getTtl() const;
 
     QPID_CLIENT_EXTERN void setDurable(bool durable);
     QPID_CLIENT_EXTERN bool getDurable() const;

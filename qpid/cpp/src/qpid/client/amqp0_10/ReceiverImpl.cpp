@@ -40,28 +40,28 @@ void ReceiverImpl::received(qpid::messaging::Message&)
     }
 }
     
-qpid::messaging::Message ReceiverImpl::get(qpid::sys::Duration timeout) 
+qpid::messaging::Message ReceiverImpl::get(qpid::messaging::Duration timeout) 
 {
     qpid::messaging::Message result;
     if (!get(result, timeout)) throw Receiver::NoMessageAvailable();
     return result;
 }
     
-qpid::messaging::Message ReceiverImpl::fetch(qpid::sys::Duration timeout) 
+qpid::messaging::Message ReceiverImpl::fetch(qpid::messaging::Duration timeout) 
 {
     qpid::messaging::Message result;
     if (!fetch(result, timeout)) throw Receiver::NoMessageAvailable();
     return result;
 }
 
-bool ReceiverImpl::get(qpid::messaging::Message& message, qpid::sys::Duration timeout)
+bool ReceiverImpl::get(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     Get f(*this, message, timeout);
     while (!parent.execute(f)) {}
     return f.result;
 }
 
-bool ReceiverImpl::fetch(qpid::messaging::Message& message, qpid::sys::Duration timeout)
+bool ReceiverImpl::fetch(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     Fetch f(*this, message, timeout);
     while (!parent.execute(f)) {}
@@ -143,12 +143,12 @@ ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name,
     parent(p), destination(name), address(a), byteCredit(0xFFFFFFFF), 
     state(UNRESOLVED), capacity(0), window(0) {}
 
-bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout)
+bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     return parent.get(*this, message, timeout);
 }
 
-bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout)
+bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     if (state == CANCELLED) return false;//TODO: or should this be an error?
 

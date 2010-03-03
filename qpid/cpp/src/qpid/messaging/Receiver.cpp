@@ -39,10 +39,10 @@ Receiver::Receiver(ReceiverImpl* impl) { PI::ctor(*this, impl); }
 Receiver::Receiver(const Receiver& s) : qpid::client::Handle<ReceiverImpl>() { PI::copy(*this, s); }
 Receiver::~Receiver() { PI::dtor(*this); }
 Receiver& Receiver::operator=(const Receiver& s) { return PI::assign(*this, s); }
-bool Receiver::get(Message& message, qpid::sys::Duration timeout) { return impl->get(message, timeout); }
-Message Receiver::get(qpid::sys::Duration timeout) { return impl->get(timeout); }
-bool Receiver::fetch(Message& message, qpid::sys::Duration timeout) { return impl->fetch(message, timeout); }
-Message Receiver::fetch(qpid::sys::Duration timeout) { return impl->fetch(timeout); }
+bool Receiver::get(Message& message, Duration timeout) { return impl->get(message, timeout); }
+Message Receiver::get(Duration timeout) { return impl->get(timeout); }
+bool Receiver::fetch(Message& message, Duration timeout) { return impl->fetch(message, timeout); }
+Message Receiver::fetch(Duration timeout) { return impl->fetch(timeout); }
 void Receiver::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Receiver::getCapacity() { return impl->getCapacity(); }
 uint32_t Receiver::available() { return impl->available(); }
