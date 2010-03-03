@@ -188,12 +188,7 @@ class Popen(popen2.Popen3):
             except:
                 self.unexpected("expected running, exit code %d" % self.wait())
         else:
-            # Give the process some time to exit.
-            # FIXME aconway 2010-03-02: use retry
-            delay = 0.1
-            while (self.poll() is None and delay < 1):
-                time.sleep(delay)
-                delay *= 2
+            retry(self.poll)
             if self.returncode is None: # Still haven't stopped
                 self.kill()
                 self.unexpected("still running")
@@ -229,7 +224,6 @@ class Popen(popen2.Popen3):
         return self.returncode
 
     def send_signal(self, sig):
-        log.debug("kill -%s %s"%(sig, self.pname))
         self.was_shutdown = True
         os.kill(self.pid,sig)
         self.wait()
