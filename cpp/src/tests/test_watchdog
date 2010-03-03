@@ -23,10 +23,10 @@
 
 source ./test_env.sh
 # Start a broker with  watchdog, freeze it with kill -STOP, verify that it is killed.
-PORT=`$QPIDD_EXEC -dp0 --no-data-dir --auth=no --no-module-dir --load-module $WATCHDOG_LIB --log-to-file=qpidd_watchdog.log --watchdog-interval 1` || exit 1
+PORT=`$QPIDD_EXEC -dp0 --no-data-dir --auth=no --no-module-dir --load-module $WATCHDOG_LIB --log-to-file=qpidd_watchdog.log --watchdog-interval 2` || exit 1
 PID=`$QPIDD_EXEC --no-module-dir -cp $PORT` || exit 1
 kill -STOP $PID
-sleep 2
+sleep 3
 
 if kill -0 $PID 2>/dev/null; then
     echo "Hung process did not die."
