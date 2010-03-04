@@ -77,7 +77,10 @@ class MessageEchoTests(Base):
     assert msg.correlation_id == echo.correlation_id
     assert msg.durable == echo.durable
     assert msg.priority == echo.priority
-    assert msg.ttl == echo.ttl
+    if msg.ttl is None:
+      assert echo.ttl is None
+    else:
+      assert msg.ttl >= echo.ttl
     assert msg.properties == echo.properties
     assert msg.content_type == echo.content_type
     assert msg.content == echo.content, "%s, %s" % (msg, echo)
