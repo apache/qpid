@@ -430,6 +430,16 @@ class HeadersExchangeTests(TestHelper):
         self.myBasicPublish({"irrelevant":0})
         self.assertEmpty(self.q)
 
+    def testMatchVoidValue(self):
+        self.session.exchange_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'any', "name":None})
+        self.myAssertPublishGet({"name":"fred"})
+        self.myAssertPublishGet({"name":"bob"})
+
+        # Wont match
+        self.myBasicPublish({})
+        self.myBasicPublish({"irrelevant":0})
+        self.assertEmpty(self.q)
+
 
 class MiscellaneousErrorsTests(TestHelper):
     """
