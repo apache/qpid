@@ -917,8 +917,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public Long getMsgTxnDequeues()
         {
-            // TODO
-            return 0l;
+            return _obj.getMsgTxnDequeues();
         }
 
         public Long getMsgPersistEnqueues()
@@ -958,8 +957,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public Long getByteTxnDequeues()
         {
-            // TODO
-            return 0l;
+            return _obj.getByteTxnDequeues();
         }
 
         public Long getBytePersistEnqueues()

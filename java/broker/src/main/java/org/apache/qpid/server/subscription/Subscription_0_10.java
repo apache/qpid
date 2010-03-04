@@ -848,4 +848,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         //TODO
         return Collections.EMPTY_MAP;
     }
+
+    public boolean isSessionTransactional()
+    {
+        return _session.isTransactional();
+    }
 }

@@ -293,7 +293,7 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void dequeue(QueueEntry entry)
+    public void dequeue(QueueEntry entry, Subscription sub)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -559,6 +559,16 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public long getMsgTxnEnqueues()
+    {
+        return 0;
+    }
+
+    public long getByteTxnDequeues()
+    {
+        return 0;
+    }
+
+    public long getMsgTxnDequeues()
     {
         return 0;
     }

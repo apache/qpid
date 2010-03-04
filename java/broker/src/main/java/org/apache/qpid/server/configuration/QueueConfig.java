@@ -62,7 +62,11 @@ public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConf
     
     long getByteTxnEnqueues();
 
+    long getByteTxnDequeues();
+
     long getMsgTxnEnqueues();
+    
+    long getMsgTxnDequeues();
 
     long getPersistentByteEnqueues();
 
