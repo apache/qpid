@@ -89,7 +89,7 @@ def error_line(filename):
     except: return ""
     return result
 
-def retry(function, timeout=1, delay=.001):
+def retry(function, timeout=5, delay=.01):
     """Call function until it returns True or timeout expires.
     Double the delay for each retry. Return True if function
     returns true, False if timeout expires."""
@@ -188,7 +188,7 @@ class Popen(popen2.Popen3):
             except:
                 self.unexpected("expected running, exit code %d" % self.wait())
         else:
-            retry(self.poll)
+            retry(lambda: self.poll() is not None)
             if self.returncode is None: # Still haven't stopped
                 self.kill()
                 self.unexpected("still running")
@@ -357,7 +357,7 @@ class Broker(Popen):
     def ready(self):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
-        if not retry(lambda: self.log_ready()):
+        if not retry(self.log_ready):
             raise Exception("Timed out waiting for broker %s" % self.name)
         # Make a connection, this will wait for extended cluster init to finish.
         try: self.connect().close()
