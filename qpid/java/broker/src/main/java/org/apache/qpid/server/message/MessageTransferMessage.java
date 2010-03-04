@@ -21,9 +21,10 @@
 package org.apache.qpid.server.message;
 
 import org.apache.qpid.transport.*;
+import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.transport.ServerSession;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.nio.ByteBuffer;
 import java.lang.ref.WeakReference;
 
@@ -37,13 +38,11 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
 
     private WeakReference<Session> _sessionRef;
 
-
     public MessageTransferMessage(StoredMessage<MessageMetaData_0_10> storeMessage, WeakReference<Session> sessionRef)
     {
 
         _storeMessage = storeMessage;
         _sessionRef = sessionRef;
-
     }
 
     private MessageMetaData_0_10 getMetaData()
@@ -142,5 +141,9 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
         return _sessionRef == null ? null : _sessionRef.get();
     }
 
+    public SessionConfig getSessionConfig()
+    {
+        return _sessionRef == null ? null : (ServerSession) _sessionRef.get();
+    }
     
 }

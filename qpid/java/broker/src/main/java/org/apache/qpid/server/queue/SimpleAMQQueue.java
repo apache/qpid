@@ -12,6 +12,7 @@ import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.QueueConfigType;
 import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -122,6 +123,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicLong _persistentMessageEnqueueCount = new AtomicLong();
     private final AtomicLong _persistentMessageDequeueCount = new AtomicLong();
     private final AtomicInteger _counsumerCountHigh = new AtomicInteger(0);
+    private final AtomicLong _msgTxnEnqueues = new AtomicLong(0);
+    private final AtomicLong _byteTxnEnqueues = new AtomicLong(0);
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
@@ -516,7 +519,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
     {
-
+        incrementTxnEnqueueStats(message);
         incrementQueueCount();
         incrementQueueSize(message);
         _totalMessagesReceived.incrementAndGet();
@@ -665,6 +668,17 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private void incrementQueueCount()
     {
         getAtomicQueueCount().incrementAndGet();
+    }
+    
+    private void incrementTxnEnqueueStats(final ServerMessage message)
+    {
+        SessionConfig session = message.getSessionConfig();
+        
+        if(session !=null && session.isTransactional())
+        {
+            _msgTxnEnqueues.incrementAndGet();
+            _byteTxnEnqueues.addAndGet(message.getSize());
+        }
     }
 
     private void deliverMessage(final Subscription sub, final QueueEntry entry)
@@ -2063,6 +2077,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public long getTotalDequeueSize()
     {
         return _dequeueSize.get();
+    }
+    
+    public long getByteTxnEnqueues()
+    {
+        return _byteTxnEnqueues.get();
+    }
+    
+    public long getMsgTxnEnqueues()
+    {
+        return _msgTxnEnqueues.get();
     }
 
     public long getPersistentByteEnqueues()

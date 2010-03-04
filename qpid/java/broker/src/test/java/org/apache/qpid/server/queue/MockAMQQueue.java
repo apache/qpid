@@ -552,4 +552,14 @@ public class MockAMQQueue implements AMQQueue
     {
         return 0;
     }
+
+    public long getByteTxnEnqueues()
+    {
+        return 0;
+    }
+
+    public long getMsgTxnEnqueues()
+    {
+        return 0;
+    }
 }
