@@ -47,3 +47,4 @@ noinst_PROGRAMS=testagent
 testagent_SOURCES=testagent.cpp $(GEN_SRC)
 testagent_LDADD=$(top_builddir)/src/libqmf.la
 
+EXTRA_DIST=schema.xml
