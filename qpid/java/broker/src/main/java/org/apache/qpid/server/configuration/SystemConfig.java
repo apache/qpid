@@ -39,6 +39,4 @@ public interface SystemConfig extends ConfiguredObject<SystemConfigType,SystemCo
     void addBroker(BrokerConfig broker);
 
     void removeBroker(BrokerConfig broker);
-
-    long getCreateTime();
 }

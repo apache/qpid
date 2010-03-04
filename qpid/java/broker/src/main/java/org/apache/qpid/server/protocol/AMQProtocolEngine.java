@@ -152,6 +152,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private final AtomicBoolean _closing = new AtomicBoolean(false);
     private final UUID _id;
     private final ConfigStore _configStore;
+    private long _createTime = System.currentTimeMillis();
 
     public ManagedObject getManagedObject()
     {
@@ -1131,6 +1132,11 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public String getAddress()
     {
         return String.valueOf(getRemoteAddress());
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 
 }

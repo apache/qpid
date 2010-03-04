@@ -77,6 +77,4 @@ public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConf
     long getPersistentMsgDequeues();
 
     void purge(long request);
-
-    long getCreateTime();
 }

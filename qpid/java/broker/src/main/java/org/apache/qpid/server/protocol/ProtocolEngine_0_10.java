@@ -43,6 +43,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
     private ServerConnection _connection;
     private final UUID _id;
     private final IApplicationRegistry _appRegistry;
+    private long _createTime = System.currentTimeMillis();
 
     public ProtocolEngine_0_10(ServerConnection conn,
                                NetworkDriver networkDriver,
@@ -176,5 +177,10 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
     {
         super.closed();
         getConfigStore().removeConfiguredObject(this);
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 }

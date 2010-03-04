@@ -94,6 +94,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private LogSubject _logSubject;
     private LogActor _logActor;
     private UUID _id;
+    private long _createTime = System.currentTimeMillis();
 
 
     static final class BrowserSubscription extends SubscriptionImpl
@@ -769,5 +770,10 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public boolean isSessionTransactional()
     {
         return _channel.isTransactional();
+    }
+    
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 }

@@ -1227,8 +1227,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public long getCreateTime()
         {
-            // TODO
-            return 0;
+            return _obj.getCreateTime();
         }
 
         @Override
@@ -1351,8 +1350,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public long getCreateTime()
         {
-            // TODO
-            return 0;  //To change body of implemented methods use File | Settings | File Templates.
+            return _obj.getCreateTime();
         }
     }
 
@@ -1419,8 +1417,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public long getCreateTime()
         {
-            // TODO
-            return 0;  //To change body of implemented methods use File | Settings | File Templates.
+            return _obj.getCreateTime();
         }
     }
 

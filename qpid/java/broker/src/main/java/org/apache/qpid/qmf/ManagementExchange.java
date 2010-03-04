@@ -80,7 +80,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
     private final CopyOnWriteArrayList<BindingListener> _listeners = new CopyOnWriteArrayList<Exchange.BindingListener>();
 
-    // TODO
+    //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
 
 

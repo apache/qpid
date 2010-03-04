@@ -46,8 +46,6 @@ public interface BrokerConfig  extends ConfiguredObject<BrokerConfigType,BrokerC
 
     void addVirtualHost(VirtualHostConfig virtualHost);
 
-    long getCreateTime();
-
     void createBrokerConnection(String transport,
                                 String host,
                                 int port,

@@ -45,6 +45,4 @@ public interface BridgeConfig extends ConfiguredObject<BridgeConfigType, BridgeC
     Integer getChannelId();
 
     int getAckBatching();
-
-    long getCreateTime();
 }
