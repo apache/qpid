@@ -24,11 +24,14 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.queue.AMQQueue;
 
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
 /**
@@ -63,8 +66,15 @@ public class AMQMessage implements ServerMessage
 
     private final StoredMessage<MessageMetaData> _handle;
 
+    WeakReference<AMQChannel> _channelRef;
+
 
     public AMQMessage(StoredMessage<MessageMetaData> handle)
+    {
+        this(handle, null);
+    }
+    
+    public AMQMessage(StoredMessage<MessageMetaData> handle, WeakReference<AMQChannel> channelRef)
     {
         _handle = handle;
         final MessageMetaData metaData = handle.getMetaData();
@@ -75,6 +85,8 @@ public class AMQMessage implements ServerMessage
         {
             _flags |= IMMEDIATE;
         }
+        
+        _channelRef = channelRef;
     }
 
 
@@ -326,4 +338,9 @@ public class AMQMessage implements ServerMessage
     {
         return _handle;
     }
+
+    public SessionConfig getSessionConfig()
+    {
+        return _channelRef == null ? null : ((SessionConfig) _channelRef.get());
+   }
 }

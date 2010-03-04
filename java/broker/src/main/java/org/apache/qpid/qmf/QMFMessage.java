@@ -21,6 +21,7 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.message.*;
 import org.apache.qpid.transport.codec.BBEncoder;
 
@@ -200,6 +201,11 @@ public class QMFMessage implements ServerMessage, InboundMessage, AMQMessageHead
         {
 
         }
+    }
+
+    public SessionConfig getSessionConfig()
+    {
+        return null;
     }
 
 }

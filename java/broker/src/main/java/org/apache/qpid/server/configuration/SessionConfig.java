@@ -46,4 +46,6 @@ public interface SessionConfig extends ConfiguredObject<SessionConfigType, Sessi
     Long getTxnRejects();
 
     Long getTxnCount();
+    
+    boolean isTransactional();
 }

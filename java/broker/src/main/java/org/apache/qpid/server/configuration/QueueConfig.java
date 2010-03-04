@@ -49,6 +49,8 @@ public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConf
     int getConsumerCountHigh();
 
     int getBindingCount();
+    
+    int getBindingCountHigh();
 
     ConfigStore getConfigStore();
 
@@ -57,8 +59,10 @@ public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConf
     long getTotalEnqueueSize();
 
     long getTotalDequeueSize();
+    
+    long getByteTxnEnqueues();
 
-    int getBindingCountHigh();
+    long getMsgTxnEnqueues();
 
     long getPersistentByteEnqueues();
 

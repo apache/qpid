@@ -312,13 +312,13 @@ public class AMQChannel implements SessionConfig
                         }
                         else
                         {
-                            _logger.warn("MESSAGE DISCARDED: No routes for message - " + createAMQMessage(_currentMessage));
+                            _logger.warn("MESSAGE DISCARDED: No routes for message - " + createAMQMessage(_currentMessage,isTransactional()));
                         }
 
                     }
                     else
                     {
-                        _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues));
+                        _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues, isTransactional()));
                         incrementOutstandingTxnsIfNecessary();
                     }
                 }
@@ -1030,7 +1030,7 @@ public class AMQChannel implements SessionConfig
     }
 
 
-    private AMQMessage createAMQMessage(IncomingMessage incomingMessage)
+    private AMQMessage createAMQMessage(IncomingMessage incomingMessage, boolean transactional)
             throws AMQException
     {
 
@@ -1054,12 +1054,15 @@ public class AMQChannel implements SessionConfig
 
     private class MessageDeliveryAction implements ServerTransaction.Action
     {
+        private boolean _transactional;
         private IncomingMessage _incommingMessage;
         private ArrayList<? extends BaseQueue> _destinationQueues;
 
         public MessageDeliveryAction(IncomingMessage currentMessage,
-                                     ArrayList<? extends BaseQueue> destinationQueues)
+                                     ArrayList<? extends BaseQueue> destinationQueues,
+                                     boolean transactional)
         {
+            _transactional = transactional;
             _incommingMessage = currentMessage;
             _destinationQueues = destinationQueues;
         }
@@ -1070,7 +1073,7 @@ public class AMQChannel implements SessionConfig
             {
                 final boolean immediate = _incommingMessage.isImmediate();
 
-                final AMQMessage amqMessage = createAMQMessage(_incommingMessage);
+                final AMQMessage amqMessage = createAMQMessage(_incommingMessage, _transactional);
                 MessageReference ref = amqMessage.newReference();
 
                 for(final BaseQueue queue : _destinationQueues)
