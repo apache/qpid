@@ -125,6 +125,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicInteger _counsumerCountHigh = new AtomicInteger(0);
     private final AtomicLong _msgTxnEnqueues = new AtomicLong(0);
     private final AtomicLong _byteTxnEnqueues = new AtomicLong(0);
+    private final AtomicLong _msgTxnDequeues = new AtomicLong(0);
+    private final AtomicLong _byteTxnDequeues = new AtomicLong(0);
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
@@ -680,6 +682,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             _byteTxnEnqueues.addAndGet(message.getSize());
         }
     }
+    
+    private void incrementTxnDequeueStats(QueueEntry entry)
+    {      
+        _msgTxnDequeues.incrementAndGet();
+        _byteTxnDequeues.addAndGet(entry.getSize());
+    }
 
     private void deliverMessage(final Subscription sub, final QueueEntry entry)
             throws AMQException
@@ -764,13 +772,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         deliverAsync();
     }
 
-    public void dequeue(QueueEntry entry)
+    public void dequeue(QueueEntry entry, Subscription sub)
     {
         decrementQueueCount();
         decrementQueueSize(entry);
         if (entry.acquiredBySubscription())
         {
             _deliveredMessages.decrementAndGet();
+        }
+        
+        if(sub != null && sub.isSessionTransactional())
+        {
+            incrementTxnDequeueStats(entry);
         }
 
         checkCapacity();
@@ -2084,9 +2097,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return _byteTxnEnqueues.get();
     }
     
+    public long getByteTxnDequeues()
+    {
+        return _byteTxnDequeues.get();
+    }
+    
     public long getMsgTxnEnqueues()
     {
         return _msgTxnEnqueues.get();
+    }
+    
+    public long getMsgTxnDequeues()
+    {
+        return _msgTxnDequeues.get();
     }
 
     public long getPersistentByteEnqueues()

@@ -366,13 +366,14 @@ public class QueueEntryImpl implements QueueEntry
 
         if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, DEQUEUED_STATE))
         {
+            Subscription s = null;
             if (state instanceof SubscriptionAcquiredState)
             {
-                Subscription s = ((SubscriptionAcquiredState) state).getSubscription();
+                s = ((SubscriptionAcquiredState) state).getSubscription();
                 s.onDequeue(this);
             }
 
-            getQueue().dequeue(this);
+            getQueue().dequeue(this,s);
             if(_stateChangeListeners != null)
             {
                 notifyStateChange(state.getState() , QueueEntry.State.DEQUEUED);
