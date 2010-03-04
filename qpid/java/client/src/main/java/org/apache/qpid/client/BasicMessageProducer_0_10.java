@@ -21,13 +21,14 @@ import static org.apache.qpid.transport.Option.NONE;
 import static org.apache.qpid.transport.Option.SYNC;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
-import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -166,6 +167,17 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         {
             deliveryProp.setRoutingKey(routingKey);
         }
+        
+        if (destination.getSubject() != null && !destination.getSubject().equals(""))
+        {
+            Map<String,Object> appProps = messageProps.getApplicationHeaders();
+            if (appProps == null)
+            {
+                appProps = new HashMap<String,Object>();
+            }
+            appProps.put("qpid.subject",destination.getSubject());
+            messageProps.setApplicationHeaders(appProps);
+        }        
 
         messageProps.setContentLength(message.getContentLength());
 
@@ -201,7 +213,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         catch (RuntimeException rte)
         {
             JMSException ex = new JMSException("Exception when sending message");
-            ex.setLinkedException(rte);
+            ex.initCause(rte);
             throw ex;
         }
     }
