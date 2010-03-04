@@ -55,7 +55,7 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
 }
 
 namespace {
-const std::string SUBJECT("subject");
+const std::string SUBJECT("qpid.subject");
 }
 
 void OutgoingMessage::setSubject(const std::string& subject)
