@@ -1128,7 +1128,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         else
         {
-            throw new AMQException("The name supplied in the address doesn't resolve to an exchange or a queue");
+            throw new AMQException(
+                    "The name '" + dest.getName() +
+                    "' supplied in the address doesn't resolve to an exchange or a queue");
         }
     }
     

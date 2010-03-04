@@ -193,7 +193,8 @@ public class AddressHelper
     {
         List<Binding> bindings = new ArrayList<Binding>();
         if (address.getOptions() != null &&
-            address.getOptions().get(NODE_PROPS) != null)
+            address.getOptions().get(NODE_PROPS) != null &&
+            ((Map)address.getOptions().get(NODE_PROPS)).get(X_PROPS) != null)
         {
             Map node_props = (Map)address.getOptions().get(NODE_PROPS);
             List<String> bindingList = 
