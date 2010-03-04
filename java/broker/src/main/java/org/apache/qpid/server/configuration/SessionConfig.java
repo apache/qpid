@@ -38,4 +38,12 @@ public interface SessionConfig extends ConfiguredObject<SessionConfigType, Sessi
     Long getExpiryTime();
 
     Long getMaxClientRate();
+    
+    Long getTxnStarts();
+
+    Long getTxnCommits();
+
+    Long getTxnRejects();
+
+    Long getTxnCount();
 }

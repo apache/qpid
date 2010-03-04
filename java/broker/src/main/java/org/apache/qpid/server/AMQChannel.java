@@ -84,6 +84,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQChannel implements SessionConfig
 {
@@ -132,6 +133,11 @@ public class AMQChannel implements SessionConfig
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
 
     private ServerTransaction _transaction;
+    
+    private final AtomicLong _txnStarts = new AtomicLong(0);
+    private final AtomicLong _txnCommits = new AtomicLong(0);
+    private final AtomicLong _txnRejects = new AtomicLong(0);
+    private final AtomicLong _txnCount = new AtomicLong(0);
 
     // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
@@ -180,6 +186,7 @@ public class AMQChannel implements SessionConfig
     public void setLocalTransactional()
     {
         _transaction = new LocalTransaction(_messageStore);
+        _txnStarts.incrementAndGet();
     }
 
     public boolean isTransactional()
@@ -188,6 +195,40 @@ public class AMQChannel implements SessionConfig
         // transactional context, while there could be several transactional ones in
         // theory
         return !(_transaction instanceof AutoCommitTransaction);
+    }
+    
+    private void incrementOutstandingTxnsIfNecessary()
+    {
+        //There can currently only be at most one outstanding transaction
+        //due to only having LocalTransaction support. Set value to 1 if 0.
+        _txnCount.compareAndSet(0,1);
+    }
+    
+    private void decrementOutstandingTxnsIfNecessary()
+    {
+        //There can currently only be at most one outstanding transaction
+        //due to only having LocalTransaction support. Set value to 0 if 1.
+        _txnCount.compareAndSet(1,0);
+    }
+
+    public Long getTxnStarts()
+    {
+        return _txnStarts.get();
+    }
+
+    public Long getTxnCommits()
+    {
+        return _txnCommits.get();
+    }
+
+    public Long getTxnRejects()
+    {
+        return _txnRejects.get();
+    }
+
+    public Long getTxnCount()
+    {
+        return _txnCount.get();
     }
 
     public int getChannelId()
@@ -278,7 +319,7 @@ public class AMQChannel implements SessionConfig
                     else
                     {
                         _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues));
-
+                        incrementOutstandingTxnsIfNecessary();
                     }
                 }
             }
@@ -845,6 +886,9 @@ public class AMQChannel implements SessionConfig
 
         _transaction.commit();
 
+        _txnCommits.incrementAndGet();
+        _txnStarts.incrementAndGet();
+        decrementOutstandingTxnsIfNecessary();
     }
 
     public void rollback() throws AMQException
@@ -877,6 +921,10 @@ public class AMQChannel implements SessionConfig
         finally
         {
             _rollingBack = false;
+            
+            _txnRejects.incrementAndGet();
+            _txnStarts.incrementAndGet();
+            decrementOutstandingTxnsIfNecessary();
         }
 
         postRollbackTask.run();
