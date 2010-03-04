@@ -437,7 +437,7 @@ public class SimpleAMQQueueTest extends TestCase
         AMQMessage amqmsg = new AMQMessage(handle);
 
         entry.setMessage(amqmsg);
-        _queue.dequeue(entry);
+        _queue.dequeue(entry,null);
 
         // Check that it is dequeued
         data = _store.getMessages().get(1L);

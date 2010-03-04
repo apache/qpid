@@ -766,4 +766,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return null;
     }
 
+    public boolean isSessionTransactional()
+    {
+        return _channel.isTransactional();
+    }
 }

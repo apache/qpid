@@ -286,4 +286,9 @@ public class SubscriptionTestHelper implements Subscription
     {
         return key.toString();
     }
+    
+    public boolean isSessionTransactional()
+    {
+        return false;
+    }
 }

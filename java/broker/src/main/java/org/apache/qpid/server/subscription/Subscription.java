@@ -105,4 +105,5 @@ public interface Subscription
 
     public Object get(String key);
 
+    boolean isSessionTransactional();
 }

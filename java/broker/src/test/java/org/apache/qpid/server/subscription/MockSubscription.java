@@ -235,4 +235,9 @@ public class MockSubscription implements Subscription
     {
         return messages;
     }
+
+    public boolean isSessionTransactional()
+    {
+        return false;
+    }
 }

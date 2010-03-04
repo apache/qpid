@@ -109,7 +109,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void requeue(QueueEntryImpl storeContext, Subscription subscription);
 
-    void dequeue(QueueEntry entry);
+    void dequeue(QueueEntry entry, Subscription sub);
 
 
 
