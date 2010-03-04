@@ -21,4 +21,4 @@
 . $QPID_TEST_HOME/bin/setenv.sh
 
 echo "$@"
-$JAVA_HOME/bin/java -cp $CLASSPATH $@ org.apache.qpid.testkit.perf.PerfProducer
+$JAVA_HOME/bin/java -cp $CLASSPATH $@ org.apache.qpid.tools.PerfProducer
