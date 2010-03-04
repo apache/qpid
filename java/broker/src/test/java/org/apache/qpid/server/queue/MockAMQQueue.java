@@ -547,4 +547,9 @@ public class MockAMQQueue implements AMQQueue
     {
         return false;
     }
+
+    public int getConsumerCountHigh()
+    {
+        return 0;
+    }
 }
