@@ -1230,11 +1230,9 @@ public class QMFService implements ConfigStore.ConfigEventListener
             return _obj.getCreateTime();
         }
 
-        @Override
         public Boolean getShadow()
         {
-            // TODO Auto-generated method stub
-            return false;
+            return _obj.isShadow();
         }
     }
 
