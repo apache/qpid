@@ -100,6 +100,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private UUID _id;
     private String _traceExclude;
     private String _trace;
+    private long _createTime = System.currentTimeMillis();
 
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
@@ -852,5 +853,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public boolean isSessionTransactional()
     {
         return _session.isTransactional();
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 }

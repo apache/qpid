@@ -52,6 +52,4 @@ public interface ExchangeConfig extends ConfiguredObject<ExchangeConfigType, Exc
     long getByteReceives();
 
     long getByteRoutes();
-
-    long getCreateTime();
 }

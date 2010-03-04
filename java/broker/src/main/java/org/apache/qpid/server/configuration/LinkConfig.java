@@ -47,8 +47,6 @@ public interface LinkConfig extends ConfiguredObject<LinkConfigType, LinkConfig>
 
     void close();
 
-    long getCreateTime();
-
     void createBridge(boolean durable,
                       boolean dynamic,
                       boolean srcIsQueue,

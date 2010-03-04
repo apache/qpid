@@ -69,6 +69,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
 
     private final UUID _id;
     private ConnectionConfig _connectionConfig;
+    private long _createTime = System.currentTimeMillis();
 
     public static interface MessageDispositionChangeListener
     {
@@ -533,5 +534,10 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     public String getSessionName()
     {
         return getName().toString();
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 }

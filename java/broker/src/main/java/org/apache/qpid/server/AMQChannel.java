@@ -157,6 +157,7 @@ public class AMQChannel implements SessionConfig
     private static final
     AMQShortString IMMEDIATE_DELIVERY_REPLY_TEXT = new AMQShortString("Immediate delivery is not possible.");
     private final UUID _id;
+    private long _createTime = System.currentTimeMillis();
 
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
@@ -1366,5 +1367,10 @@ public class AMQChannel implements SessionConfig
     public String getSessionName()
     {
         return getConnectionConfig().getAddress() + "/" + getChannelId();
+    }
+
+    public long getCreateTime()
+    {
+        return _createTime;
     }
 }

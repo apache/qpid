@@ -33,4 +33,5 @@ public interface ConfiguredObject<T extends ConfigObjectType<T,C>, C extends Con
 
     public boolean isDurable();
 
+    long getCreateTime();
 }

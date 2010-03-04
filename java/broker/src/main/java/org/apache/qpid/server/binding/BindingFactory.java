@@ -78,7 +78,7 @@ public class BindingFactory
     private final class BindingImpl extends Binding implements AMQQueue.Task, Exchange.Task, BindingConfig
     {
         private final BindingLogSubject _logSubject;
-        //TODO
+        //TODO : persist creation time
         private long _createTime = System.currentTimeMillis();
 
         private BindingImpl(String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)

@@ -37,7 +37,5 @@ public interface BindingConfig extends ConfiguredObject<BindingConfigType, Bindi
 
     String getOrigin();
 
-    long getCreateTime();
-
     long getMatches();
 }
