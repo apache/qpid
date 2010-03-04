@@ -93,7 +93,7 @@ public class BrokerConfigAdapter implements BrokerConfig
 
     public Integer getManagementPublishInterval()
     {
-        return 10;
+        return 10000;
     }
 
     public String getVersion()
