@@ -90,7 +90,8 @@ class Message:
 
   def __init__(self, content=None, content_type=UNSPECIFIED, id=None,
                subject=None, to=None, user_id=None, reply_to=None,
-               correlation_id=None, durable=None, properties=None):
+               correlation_id=None, durable=None, priority=None, ttl=None,
+               properties=None):
     """
     Construct a new message with the supplied content. The
     content-type of the message will be automatically inferred from
@@ -109,6 +110,8 @@ class Message:
     self.reply_to = reply_to
     self.correlation_id = correlation_id
     self.durable = durable
+    self.priority = priority
+    self.ttl = ttl
     self.redelivered = False
     if properties is None:
       self.properties = {}
@@ -123,7 +126,7 @@ class Message:
   def __repr__(self):
     args = []
     for name in ["id", "subject", "to", "user_id", "reply_to",
-                 "correlation_id"]:
+                 "correlation_id", "priority", "ttl"]:
       value = self.__dict__[name]
       if value is not None: args.append("%s=%r" % (name, value))
     for name in ["durable", "properties"]:
