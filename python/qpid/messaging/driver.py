@@ -1057,6 +1057,10 @@ class Engine:
       mp.application_headers[TO] = msg.to
     if msg.durable:
       dp.delivery_mode = delivery_mode.persistent
+    if msg.priority is not None:
+      dp.priority = msg.priority
+    if msg.ttl is not None:
+      dp.ttl = msg.ttl
     enc, dec = get_codec(msg.content_type)
     body = enc(msg.content)
     def msg_acked():
@@ -1106,6 +1110,8 @@ class Engine:
       msg.reply_to = reply_to2addr(mp.reply_to)
     msg.correlation_id = mp.correlation_id
     msg.durable = dp.delivery_mode == delivery_mode.persistent
+    msg.priority = dp.priority
+    msg.ttl = dp.ttl
     msg.redelivered = dp.redelivered
     msg.properties = mp.application_headers
     msg.content_type = mp.content_type
