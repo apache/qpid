@@ -180,7 +180,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private UUID _id;
     private final Map<String, Object> _arguments;
 
-    //TODO
+    //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
 
 

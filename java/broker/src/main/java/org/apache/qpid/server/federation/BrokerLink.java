@@ -106,7 +106,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
 
     private class ConnectionConfigAdapter implements ConnectionConfig
     {
-
+        private long _adapterCreateTime = System.currentTimeMillis();
         private UUID _id = BrokerLink.this.getConfigStore().createId();
 
         public VirtualHost getVirtualHost()
@@ -177,6 +177,11 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         public boolean isDurable()
         {
             return false;
+        }
+        
+        public long getCreateTime()
+        {
+            return _adapterCreateTime;
         }
     }
 

@@ -100,7 +100,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 >>>>>>> .r902547
 */
 
-    // TODO
+    //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
 
     public AbstractExchange(final ExchangeType<? extends Exchange> type)

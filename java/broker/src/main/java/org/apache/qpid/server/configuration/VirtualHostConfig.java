@@ -31,6 +31,4 @@ public interface VirtualHostConfig extends ConfiguredObject<VirtualHostConfigTyp
 
     void setBroker(BrokerConfig brokerConfig);
 
-    long getCreateTime();
-
 }
