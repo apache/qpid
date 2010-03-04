@@ -119,8 +119,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicLong _enqueueSize = new AtomicLong();
     private final AtomicLong _persistentMessageEnqueueSize = new AtomicLong();
     private final AtomicLong _persistentMessageDequeueSize = new AtomicLong();
-    private final AtomicLong _persistentMessageEnqueueCount = new AtomicLong();;
+    private final AtomicLong _persistentMessageEnqueueCount = new AtomicLong();
     private final AtomicLong _persistentMessageDequeueCount = new AtomicLong();
+    private final AtomicInteger _counsumerCountHigh = new AtomicInteger(0);
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
@@ -406,6 +407,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 subscription.setNoLocal(_nolocal);
             }
             _subscriptionList.add(subscription);
+            
+            //Increment consumerCountHigh if necessary. (un)registerSubscription are both
+            //synchronized methods so we don't need additional synchronization here
+            if(_counsumerCountHigh.get() < getConsumerCount())
+            {
+                _counsumerCountHigh.incrementAndGet();
+            }
+            
             if (isDeleted())
             {
                 subscription.queueDeleted(this);
@@ -800,6 +809,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public int getConsumerCount()
     {
         return _subscriptionList.size();
+    }
+    
+    public int getConsumerCountHigh()
+    {
+        return _counsumerCountHigh.get();
     }
 
     public int getActiveConsumerCount()

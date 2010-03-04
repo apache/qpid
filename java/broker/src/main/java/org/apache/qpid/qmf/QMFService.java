@@ -981,8 +981,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public Long getConsumerCountHigh()
         {
-            // TODO
-            return 0l;
+            return (long) _obj.getConsumerCountHigh();
         }
 
         public Long getConsumerCountLow()
