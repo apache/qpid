@@ -61,6 +61,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ServerSession extends Session implements PrincipalHolder, SessionConfig
 {
@@ -92,6 +93,11 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
             new ConcurrentSkipListMap<Integer, MessageDispositionChangeListener>();
 
     private ServerTransaction _transaction;
+    
+    private final AtomicLong _txnStarts = new AtomicLong(0);
+    private final AtomicLong _txnCommits = new AtomicLong(0);
+    private final AtomicLong _txnRejects = new AtomicLong(0);
+    private final AtomicLong _txnCount = new AtomicLong(0);
 
     private Principal _principal;
 
@@ -160,7 +166,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
                 }
             });
 
-
+            incrementOutstandingTxnsIfNecessary();
     }
 
 
@@ -391,13 +397,56 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     public void commit()
     {
         _transaction.commit();
+        
+        _txnCommits.incrementAndGet();
+        _txnStarts.incrementAndGet();
+        decrementOutstandingTxnsIfNecessary();
     }
 
     public void rollback()
     {
         _transaction.rollback();
+        
+        _txnRejects.incrementAndGet();
+        _txnStarts.incrementAndGet();
+        decrementOutstandingTxnsIfNecessary();
     }
 
+    
+    private void incrementOutstandingTxnsIfNecessary()
+    {
+        //There can currently only be at most one outstanding transaction
+        //due to only having LocalTransaction support. Set value to 1 if 0.
+        _txnCount.compareAndSet(0,1);
+    }
+    
+    private void decrementOutstandingTxnsIfNecessary()
+    {
+        //There can currently only be at most one outstanding transaction
+        //due to only having LocalTransaction support. Set value to 0 if 1.
+        _txnCount.compareAndSet(1,0);
+    }
+
+    public Long getTxnStarts()
+    {
+        return _txnStarts.get();
+    }
+
+    public Long getTxnCommits()
+    {
+        return _txnCommits.get();
+    }
+
+    public Long getTxnRejects()
+    {
+        return _txnRejects.get();
+    }
+
+    public Long getTxnCount()
+    {
+        return _txnCount.get();
+    }
+    
     public Principal getPrincipal()
     {
         return _principal;

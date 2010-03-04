@@ -1300,26 +1300,22 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public Long getTxnStarts()
         {
-            // TODO
-            return 0l;
+            return _obj.getTxnStarts();
         }
 
         public Long getTxnCommits()
         {
-            // TODO
-            return 0l;
+            return _obj.getTxnCommits();
         }
 
         public Long getTxnRejects()
         {
-            // TODO
-            return 0l;
+            return _obj.getTxnRejects();
         }
 
         public Long getTxnCount()
         {
-            // TODO
-            return 0l;
+            return _obj.getTxnCount();
         }
 
         public Long getClientCredit()
