@@ -22,6 +22,8 @@ package org.apache.qpid.server.message;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpid.server.configuration.SessionConfig;
+
 public interface ServerMessage extends EnqueableMessage, MessageContentSource
 {
     String getRoutingKey();
@@ -44,4 +46,5 @@ public interface ServerMessage extends EnqueableMessage, MessageContentSource
 
     public int getContent(ByteBuffer buf, int offset);
 
+    SessionConfig getSessionConfig();
 }

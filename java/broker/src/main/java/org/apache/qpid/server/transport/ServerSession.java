@@ -388,6 +388,14 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
             sub.releaseSendLock();
         }
     }
+    
+    public boolean isTransactional()
+    {
+        // this does not look great but there should only be one "non-transactional"
+        // transactional context, while there could be several transactional ones in
+        // theory
+        return !(_transaction instanceof AutoCommitTransaction);
+    }
 
     public void selectTx()
     {
