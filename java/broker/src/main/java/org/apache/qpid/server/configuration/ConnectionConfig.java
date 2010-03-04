@@ -42,4 +42,6 @@ public interface ConnectionConfig extends ConfiguredObject<ConnectionConfigType,
     Integer getRemoteParentPID();
 
     ConfigStore getConfigStore();
+    
+    Boolean isShadow();
 }

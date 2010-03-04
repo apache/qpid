@@ -183,4 +183,9 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
     {
         return _createTime;
     }
+
+    public Boolean isShadow()
+    {
+        return false;
+    }
 }
