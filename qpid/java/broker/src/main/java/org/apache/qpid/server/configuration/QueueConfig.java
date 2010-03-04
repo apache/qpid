@@ -45,6 +45,8 @@ public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConf
     long getQueueDepth();
 
     int getConsumerCount();
+    
+    int getConsumerCountHigh();
 
     int getBindingCount();
 
