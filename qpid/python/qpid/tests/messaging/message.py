@@ -75,6 +75,9 @@ class MessageEchoTests(Base):
     assert msg.to == echo.to
     assert msg.reply_to == echo.reply_to
     assert msg.correlation_id == echo.correlation_id
+    assert msg.durable == echo.durable
+    assert msg.priority == echo.priority
+    assert msg.ttl == echo.ttl
     assert msg.properties == echo.properties
     assert msg.content_type == echo.content_type
     assert msg.content == echo.content, "%s, %s" % (msg, echo)
@@ -111,6 +114,9 @@ class MessageEchoTests(Base):
     msg.to = "to-address"
     msg.subject = "subject"
     msg.correlation_id = str(self.test_id)
+    msg.durable = True
+    msg.priority = 7
+    msg.ttl = 60
     msg.properties = MessageEchoTests.TEST_MAP
     msg.reply_to = "reply-address"
     self.check(msg)
