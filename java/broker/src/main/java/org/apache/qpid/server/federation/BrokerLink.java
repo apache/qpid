@@ -183,6 +183,11 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         {
             return _adapterCreateTime;
         }
+
+        public Boolean isShadow()
+        {
+            return false;
+        }
     }
 
     private class SessionFactory implements Connection.SessionFactory

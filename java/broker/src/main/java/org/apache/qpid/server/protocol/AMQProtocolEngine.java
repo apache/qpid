@@ -1139,4 +1139,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return _createTime;
     }
 
+    public Boolean isShadow()
+    {
+        return false;
+    }
+
 }
