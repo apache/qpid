@@ -101,7 +101,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
         if (agent != 0) {
             mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
             mgmtObject->set_shadow(shadow);
-            agent->addObject(mgmtObject, objectId, true);
+            agent->addObject(mgmtObject, objectId);
         }
         ConnectionState::setUrl(mgmtId);
     }
