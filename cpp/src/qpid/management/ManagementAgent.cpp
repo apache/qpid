@@ -295,7 +295,7 @@ void ManagementAgent::clusterUpdate() {
     // Set clientWasAdded so that on the next periodicProcessing we will do 
     // a full update on all cluster members.
     clientWasAdded = true;
-    debugSnapshot("update");
+    QPID_LOG(debug, "cluster update " << debugSnapshot());
 }
 
 void ManagementAgent::encodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
@@ -525,7 +525,7 @@ void ManagementAgent::periodicProcessing (void)
         sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         QPID_LOG(trace, "SEND HeartbeatInd to=" << routingKey);
     }
-    debugSnapshot("periodic");
+    QPID_LOG(debug, "periodic update " << debugSnapshot());
 }
 
 void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
@@ -1506,14 +1506,14 @@ void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
     }
 }
 
-void ManagementAgent::debugSnapshot(const char* type) {
+std::string ManagementAgent::debugSnapshot() {
     std::ostringstream msg;
-    msg << type << " snapshot, agents:";
+    msg << " management snapshot:";
     for (RemoteAgentMap::const_iterator i=remoteAgents.begin();
          i != remoteAgents.end(); ++i)
         msg << " " << i->second->routingKey;
     msg << " packages: " << packages.size();
     msg << " objects: " << managementObjects.size();
     msg << " new objects: " << newManagementObjects.size();
-    QPID_LOG(trace, msg.str());
+    return msg.str();
 }

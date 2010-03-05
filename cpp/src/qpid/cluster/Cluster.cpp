@@ -673,15 +673,13 @@ struct AppendQueue {
 
 // Log a snapshot of broker state, used for debugging inconsistency problems.
 // May only be called in deliver thread.
-void Cluster::debugSnapshot(const char* prefix, Connection* connection) {
+std::string Cluster::debugSnapshot() {
     assertClusterSafe();
     std::ostringstream msg;
-    msg << prefix;
-    if (connection) msg << " " << connection->getId();
-    msg << " snapshot " << map.getFrameSeq() << ":";
+    msg << "queue snapshot at " << map.getFrameSeq() << ":";
     AppendQueue append(msg);
     broker.getQueues().eachQueue(append);
-    QPID_LOG(trace, msg.str());
+    return msg.str();
 }
 
 // Called from Broker::~Broker when broker is shut down.  At this
@@ -767,8 +765,9 @@ void Cluster::updateOffer(const MemberId& updater, uint64_t updateeInt, Lock& l)
         deliverEventQueue.start(); // Not involved in update.
     }
     if (updatee != self && url) {
-        debugSnapshot("join");
+        QPID_LOG(debug, debugSnapshot());
         if (mAgent) mAgent->clusterUpdate();
+        // Updatee will call clusterUpdate when update completes
     }
 }
 
@@ -841,7 +840,7 @@ void Cluster::checkUpdateIn(Lock& l) {
         if (mAgent) mAgent->suppress(false); // Enable management output.
         discarding = false;     // ok to set, we're stalled for update.
         QPID_LOG(notice, *this << " update complete, starting catch-up.");
-        debugSnapshot("initial");
+        QPID_LOG(debug, debugSnapshot());
         if (mAgent) mAgent->clusterUpdate();
         deliverEventQueue.start();
     }
