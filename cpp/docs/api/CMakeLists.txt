@@ -26,7 +26,10 @@ if (GEN_DOXYGEN)
     set (srcdir ${CMAKE_CURRENT_SOURCE_DIR})
     configure_file (${CMAKE_CURRENT_SOURCE_DIR}/user.doxygen.in
                     ${CMAKE_CURRENT_BINARY_DIR}/user.doxygen)
-    add_custom_target (user-api-docs COMMAND ${DOXYGEN_EXECUTABLE} user.doxygen)
+    configure_file (${CMAKE_CURRENT_SOURCE_DIR}/developer.doxygen.in
+                    ${CMAKE_CURRENT_BINARY_DIR}/develeoper.doxygen)
+    add_custom_target (docs-user-api COMMAND ${DOXYGEN_EXECUTABLE} user.doxygen)
+    add_custom_target (docs-developer COMMAND ${DOXYGEN_EXECUTABLE} developer.doxygen)
 
     # HTML files are generated to ./html - put those in the install.
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/
