@@ -20,11 +20,11 @@
 # Quick and quiet topic test for make check.
 [string]$me = $myInvocation.InvocationName
 $srcdir = Split-Path $me
-& "$srcdir\topictest.ps1" -subscribers 2 -messages 2 -batches 1 > topictest.log 2>&1
+Invoke-Expression "$srcdir\topictest.ps1 -subscribers 2 -messages 2 -batches 1" > topictest.log 2>&1
 if (!$?) {
     "$me FAILED:"
     cat topictest.log
-    exit $LastExitCode
+    exit 1
 }
 Remove-Item topictest.log
 exit 0
