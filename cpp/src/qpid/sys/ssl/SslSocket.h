@@ -101,6 +101,7 @@ public:
     int getError() const;
 
     int getKeyLen() const;
+    std::string getClientAuthId() const;
 
 private:
     mutable std::string connectname;

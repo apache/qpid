@@ -34,11 +34,10 @@ class SecureConnectionFactory : public sys::ConnectionCodec::Factory
 
     sys::ConnectionCodec*
     create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id,
-           unsigned int conn_ssf);
+           const qpid::sys::SecuritySettings&);
 
     sys::ConnectionCodec*
-    create(sys::OutputControl&, const std::string& id,
-           unsigned int conn_ssf);
+    create(sys::OutputControl&, const std::string& id, const qpid::sys::SecuritySettings&);
 
   private:
     Broker& broker;

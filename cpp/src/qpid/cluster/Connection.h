@@ -34,6 +34,7 @@
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/FrameDecoder.h"
 
@@ -66,10 +67,10 @@ class Connection :
     
     /** Local connection. */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& mgmtId, MemberId, bool catchUp, bool isLink,
-               unsigned int ssf);
+               const qpid::sys::SecuritySettings& external);
     /** Shadow connection. */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& mgmtId, const ConnectionId& id,
-               unsigned int ssf);
+               const qpid::sys::SecuritySettings& external);
     ~Connection();
     
     ConnectionId getId() const { return self; }
@@ -163,7 +164,7 @@ class Connection :
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
-    void announce(const std::string& mgmtId, uint32_t ssf);
+    void announce(const std::string& mgmtId, uint32_t ssf, const std::string& authid, bool nodict);
     void abort();
     void deliverClose();
 
@@ -174,7 +175,7 @@ class Connection :
     void managementAgents(const std::string& data);
     void managementSetupState(uint64_t objectNum, uint16_t bootSequence);
 
-    uint32_t getSsf() const { return connectionCtor.ssf; }
+    //uint32_t getSsf() const { return connectionCtor.external.ssf; }
 
   private:
     struct NullFrameHandler : public framing::FrameHandler {
@@ -186,7 +187,7 @@ class Connection :
         sys::ConnectionOutputHandler* out;
         broker::Broker& broker;
         std::string mgmtId;
-        unsigned int ssf;
+        qpid::sys::SecuritySettings external;
         bool isLink;
         uint64_t objectId;
         bool shadow;
@@ -195,17 +196,17 @@ class Connection :
             sys::ConnectionOutputHandler* out_,
             broker::Broker& broker_,
             const std::string& mgmtId_,
-            unsigned int ssf_,
+            const qpid::sys::SecuritySettings& external_,
             bool isLink_=false,
             uint64_t objectId_=0,
             bool shadow_=false
-        ) : out(out_), broker(broker_), mgmtId(mgmtId_), ssf(ssf_),
+        ) : out(out_), broker(broker_), mgmtId(mgmtId_), external(external_),
             isLink(isLink_), objectId(objectId_), shadow(shadow_)
         {}
 
         std::auto_ptr<broker::Connection> construct() {
             return std::auto_ptr<broker::Connection>(
-                new broker::Connection(out, broker, mgmtId, ssf, isLink, objectId, shadow));
+                new broker::Connection(out, broker, mgmtId, external, isLink, objectId, shadow));
         }
     };
 

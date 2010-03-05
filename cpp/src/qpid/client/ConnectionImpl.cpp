@@ -165,7 +165,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
                                   CLOSE_CODE_NORMAL, std::string());
     //only set error handler once  open
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
-    handler.getSSF = boost::bind(&Connector::getSSF, boost::ref(connector));
+    handler.getSecuritySettings = boost::bind(&Connector::getSecuritySettings, boost::ref(connector));
 }
 
 const uint16_t ConnectionImpl::NEXT_CHANNEL = std::numeric_limits<uint16_t>::max();

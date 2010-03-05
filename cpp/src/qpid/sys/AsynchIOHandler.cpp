@@ -22,6 +22,7 @@
 #include "qpid/sys/AsynchIOHandler.h"
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/log/Statement.h"
@@ -144,7 +145,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
             decoded = in.getPosition();
             QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
             try {
-                codec = factory->create(protocolInit.getVersion(), *this, identifier, 0);
+                codec = factory->create(protocolInit.getVersion(), *this, identifier, SecuritySettings());
                 if (!codec) {
                     //TODO: may still want to revise this...
                     //send valid version header & close connection.
@@ -200,7 +201,7 @@ void AsynchIOHandler::nobuffs(AsynchIO&) {
 
 void AsynchIOHandler::idle(AsynchIO&){
     if (isClient && codec == 0) {
-        codec = factory->create(*this, identifier, 0);
+        codec = factory->create(*this, identifier, SecuritySettings());
         write(framing::ProtocolInitiation(codec->getVersion()));
         return;
     }

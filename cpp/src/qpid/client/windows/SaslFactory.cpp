@@ -25,6 +25,7 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/sys/SecurityLayer.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/log/Statement.h"
 
 #include "boost/tokenizer.hpp"
@@ -33,6 +34,7 @@ namespace qpid {
 namespace client {
 
 using qpid::sys::SecurityLayer;
+using qpid::sys::SecuritySettings;
 using qpid::framing::InternalErrorException;
 
 class WindowsSasl : public Sasl
@@ -40,7 +42,7 @@ class WindowsSasl : public Sasl
   public:
     WindowsSasl(const ConnectionSettings&);
     ~WindowsSasl();
-    std::string start(const std::string& mechanisms, unsigned int ssf);
+    std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
     std::string getMechanism();
     std::string getUserId();
@@ -91,7 +93,7 @@ WindowsSasl::~WindowsSasl()
 }
 
 std::string WindowsSasl::start(const std::string& mechanisms,
-                               unsigned int /*ssf*/)
+                               const SecuritySettings* /*externalSettings*/)
 {
     QPID_LOG(debug, "WindowsSasl::start(" << mechanisms << ")");
 

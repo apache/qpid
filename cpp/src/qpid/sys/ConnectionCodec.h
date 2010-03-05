@@ -30,6 +30,7 @@ namespace sys {
 
 class InputHandlerFactory;
 class OutputControl;
+struct SecuritySettings;
 
 /**
  * Interface of coder/decoder for a connection of a specific protocol
@@ -49,27 +50,15 @@ class ConnectionCodec : public Codec {
     struct Factory {
         virtual ~Factory() {}
 
-        /** Security Strength Factor - indicates the level of security provided
-         * by the underlying transport.  If zero, the transport provides no
-         * security (e.g. TCP). If non-zero, the transport provides some level
-         * of security (e.g. SSL).  The values for SSF can be interpreted as:
-         *
-         * 0 = No protection.
-         * 1 = Integrity checking only.
-         * >1 = Supports authentication, integrity and confidentiality.
-         *      The number represents the encryption key length.
-         */
-
         /** Return 0 if version unknown */
         virtual ConnectionCodec* create(
             framing::ProtocolVersion, OutputControl&, const std::string& id,
-            unsigned int conn_ssf
+            const SecuritySettings&
         ) = 0;
 
         /** Return "preferred" codec for outbound connections. */
         virtual ConnectionCodec* create(
-            OutputControl&, const std::string& id,
-            unsigned int conn_ssf
+            OutputControl&, const std::string& id, const SecuritySettings&
         ) = 0;
     };
 };

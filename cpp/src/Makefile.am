@@ -463,6 +463,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Runnable.cpp				\
   qpid/sys/ScopedIncrement.h			\
   qpid/sys/SecurityLayer.h			\
+  qpid/sys/SecuritySettings.h			\
   qpid/sys/Semaphore.h				\
   qpid/sys/Shlib.cpp				\
   qpid/sys/Shlib.h				\

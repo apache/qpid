@@ -61,6 +61,7 @@ std::auto_ptr<SaslFactory> SaslFactory::instance;
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/sys/SecurityLayer.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/cyrus/CyrusSecurityLayer.h"
 #include "qpid/log/Statement.h"
 #include <sasl/sasl.h>
@@ -70,6 +71,7 @@ namespace qpid {
 namespace client {
 
 using qpid::sys::SecurityLayer;
+using qpid::sys::SecuritySettings;
 using qpid::sys::cyrus::CyrusSecurityLayer;
 using qpid::framing::InternalErrorException;
 
@@ -80,7 +82,7 @@ class CyrusSasl : public Sasl
   public:
     CyrusSasl(const ConnectionSettings&);
     ~CyrusSasl();
-    std::string start(const std::string& mechanisms, unsigned int ssf);
+    std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
     std::string getMechanism();
     std::string getUserId();
@@ -176,7 +178,7 @@ namespace {
     const std::string SSL("ssl");
 }
 
-std::string CyrusSasl::start(const std::string& mechanisms, unsigned int ssf)
+std::string CyrusSasl::start(const std::string& mechanisms, const SecuritySettings* externalSettings)
 {
     QPID_LOG(debug, "CyrusSasl::start(" << mechanisms << ")");
     int result = sasl_client_new(settings.service.c_str(),
@@ -190,14 +192,22 @@ std::string CyrusSasl::start(const std::string& mechanisms, unsigned int ssf)
 
     sasl_security_properties_t secprops;
 
-    if (ssf) {
-        sasl_ssf_t external_ssf = (sasl_ssf_t) ssf;
+    if (externalSettings) {
+        sasl_ssf_t external_ssf = (sasl_ssf_t) externalSettings->ssf;
         if (external_ssf) {
             int result = sasl_setprop(conn, SASL_SSF_EXTERNAL, &external_ssf);
             if (result != SASL_OK) {
                 throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external SSF: " << result));
             }
-            QPID_LOG(debug, "external SSF detected and set to " << ssf);
+            QPID_LOG(debug, "external SSF detected and set to " << external_ssf);
+        }
+        if (externalSettings->authid.size()) {
+            const char* external_authid = externalSettings->authid.c_str();
+            result = sasl_setprop(conn, SASL_AUTH_EXTERNAL, external_authid);
+            if (result != SASL_OK) {
+                throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external auth: " << result));
+            }
+            QPID_LOG(debug, "external auth detected and set to " << external_authid);
         }
     }
 
@@ -215,7 +225,6 @@ std::string CyrusSasl::start(const std::string& mechanisms, unsigned int ssf)
     if (result != SASL_OK) {
         throw framing::InternalErrorException(QPID_MSG("SASL error: " << sasl_errdetail(conn)));
     }
-
 
     sasl_interact_t* client_interact = 0;
     const char *out = 0;

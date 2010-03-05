@@ -35,6 +35,7 @@ namespace sys {
 class ShutdownHandler;
 class SecurityLayer;
 class Poller;
+struct SecuritySettings;
 }
 
 namespace framing {
@@ -74,7 +75,7 @@ class Connector : public framing::OutputHandler
 
     virtual void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
 
-    virtual unsigned int getSSF() = 0;
+    virtual const qpid::sys::SecuritySettings* getSecuritySettings() = 0;
 };
 
 }}

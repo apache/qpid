@@ -45,6 +45,7 @@
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/Mutex.h"
@@ -78,7 +79,8 @@ class Connection : public sys::ConnectionInputHandler,
         virtual void connectionError(const std::string&) = 0;
     };
 
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, unsigned int ssf,
+    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId,
+               const qpid::sys::SecuritySettings&,
                bool isLink = false, uint64_t objectId = 0, bool shadow=false);
     ~Connection ();
 
@@ -136,14 +138,17 @@ class Connection : public sys::ConnectionInputHandler,
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }
 
-    unsigned int getSSF() { return ssf; }
+    const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
+    { 
+        return securitySettings;
+    }
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     ChannelMap channels;
-    unsigned int ssf;
+    qpid::sys::SecuritySettings securitySettings;
     ConnectionHandler adapter;
     const bool isLink;
     bool mgmtClosing;

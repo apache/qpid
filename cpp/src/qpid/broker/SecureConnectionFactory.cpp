@@ -23,12 +23,14 @@
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/SecureConnection.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
 
 using framing::ProtocolVersion;
+using qpid::sys::SecuritySettings;
 typedef std::auto_ptr<amqp_0_10::Connection> CodecPtr;
 typedef std::auto_ptr<SecureConnection> SecureConnectionPtr;
 typedef std::auto_ptr<Connection> ConnectionPtr;
@@ -38,7 +40,7 @@ SecureConnectionFactory::SecureConnectionFactory(Broker& b) : broker(b) {}
 
 sys::ConnectionCodec*
 SecureConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id,
-                                unsigned int conn_ssf ) {
+                                const SecuritySettings& external) {
     if (broker.getConnectionCounter().allowConnection())
     {
         QPID_LOG(error, "Client max connection count limit exceeded: " << broker.getOptions().maxConnections << " connection refused");
@@ -47,7 +49,7 @@ SecureConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, cons
     if (v == ProtocolVersion(0, 10)) {
         SecureConnectionPtr sc(new SecureConnection());
         CodecPtr c(new amqp_0_10::Connection(out, id, false));
-        ConnectionPtr i(new broker::Connection(c.get(), broker, id, conn_ssf, false));
+        ConnectionPtr i(new broker::Connection(c.get(), broker, id, external, false));
         i->setSecureConnection(sc.get());
         c->setInputHandler(InputPtr(i.release()));
         sc->setCodec(std::auto_ptr<sys::ConnectionCodec>(c));
@@ -58,11 +60,11 @@ SecureConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, cons
 
 sys::ConnectionCodec*
 SecureConnectionFactory::create(sys::OutputControl& out, const std::string& id,
-                                unsigned int conn_ssf) {
+                                const SecuritySettings& external) {
     // used to create connections from one broker to another
     SecureConnectionPtr sc(new SecureConnection());
     CodecPtr c(new amqp_0_10::Connection(out, id, true));
-    ConnectionPtr i(new broker::Connection(c.get(), broker, id, conn_ssf, true ));
+    ConnectionPtr i(new broker::Connection(c.get(), broker, id, external, true ));
     i->setSecureConnection(sc.get());
     c->setInputHandler(InputPtr(i.release()));
     sc->setCodec(std::auto_ptr<sys::ConnectionCodec>(c));

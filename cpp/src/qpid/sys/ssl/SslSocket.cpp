@@ -102,6 +102,34 @@ std::string getService(int fd, bool local)
     return servName;
 }
 
+const std::string DOMAIN_SEPARATOR("@");
+const std::string DC_SEPARATOR(".");
+const std::string DC("DC");
+const std::string DN_DELIMS(" ,=");
+
+std::string getDomainFromSubject(std::string subject)
+{
+    std::string::size_type last = subject.find_first_not_of(DN_DELIMS, 0);
+    std::string::size_type i = subject.find_first_of(DN_DELIMS, last);
+
+    std::string domain;
+    bool nextTokenIsDC = false;
+    while (std::string::npos != i || std::string::npos != last)
+    {
+        std::string token = subject.substr(last, i - last);
+        if (nextTokenIsDC) {
+            if (domain.size()) domain += DC_SEPARATOR;
+            domain += token;
+            nextTokenIsDC = false;
+        } else if (token == DC) {
+            nextTokenIsDC = true;
+        }
+        last = subject.find_first_not_of(DN_DELIMS, i);
+        i = subject.find_first_of(DN_DELIMS, last);
+    }
+    return domain;
+}
+
 }
 
 SslSocket::SslSocket() : IOHandle(new IOHandlePrivate()), socket(0), prototype(0) 
@@ -292,6 +320,27 @@ int SslSocket::getKeyLen() const
         return keySize;
     }
     return 0;
+}
+
+std::string SslSocket::getClientAuthId() const
+{
+    std::string authId;
+    CERTCertificate* cert = SSL_PeerCertificate(socket);
+    if (cert) {
+        authId = CERT_GetCommonName(&(cert->subject));
+        /*
+         * The NSS function CERT_GetDomainComponentName only returns
+         * the last component of the domain name, so we have to parse
+         * the subject manually to extract the full domain.
+         */
+        std::string domain = getDomainFromSubject(cert->subjectName);
+        if (!domain.empty()) {
+            authId += DOMAIN_SEPARATOR;
+            authId += domain;
+        }
+        CERT_DestroyCertificate(cert);
+    }
+    return authId;
 }
 
 }}} // namespace qpid::sys::ssl
