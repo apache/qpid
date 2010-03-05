@@ -306,7 +306,7 @@ private:
     size_t validateTableSchema(framing::Buffer&);
     size_t validateEventSchema(framing::Buffer&);
     ManagementObjectMap::iterator numericFind(const ObjectId& oid);
-    void debugSnapshot(const char*);
+    std::string debugSnapshot();
 };
 
 }}

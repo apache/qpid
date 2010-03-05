@@ -120,8 +120,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     bool isElder() const;
 
-    // For debugging only. Can only be called in deliver thread.
-    void debugSnapshot(const char*, Connection* =0);
+    // Generates a log message for debugging purposes.
+    std::string debugSnapshot();
 
   private:
     typedef sys::Monitor::ScopedLock Lock;
