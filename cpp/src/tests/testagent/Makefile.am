@@ -39,7 +39,7 @@ gen.timestamp: schema.xml
 	$(QMF_GEN) -o gen/qmf $(srcdir)/schema.xml
 	touch gen.timestamp
 
-CLEANFILES=$(GEN_SRC)
+CLEANFILES=$(GEN_SRC) gen.timestamp
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -Igen
 
