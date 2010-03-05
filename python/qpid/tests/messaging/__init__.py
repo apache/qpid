@@ -71,15 +71,45 @@ class Base(Test):
     assert msg.content == content, "expected %r, got %r" % (content, msg.content)
 
   def drain(self, rcv, limit=None, timeout=0, expected=None):
-    contents = []
+    messages = []
     try:
-      while limit is None or len(contents) < limit:
-        contents.append(rcv.fetch(timeout=timeout).content)
+      while limit is None or len(messages) < limit:
+        messages.append(rcv.fetch(timeout=timeout))
     except Empty:
       pass
     if expected is not None:
-      assert expected == contents, "expected %s, got %s" % (expected, contents)
-    return contents
+      self.assertEchos(expected, messages)
+    return messages
+
+  def diff(self, m1, m2):
+    result = {}
+    for attr in ("id", "subject", "user_id", "to", "reply_to",
+                 "correlation_id", "durable", "priority", "ttl",
+                 "properties", "content_type", "content"):
+      a1 = getattr(m1, attr)
+      a2 = getattr(m2, attr)
+      if a1 != a2:
+        result[attr] = (a1, a2)
+    return result
+
+  def assertEcho(self, msg, echo):
+    if not isinstance(msg, Message) or not isinstance(echo, Message):
+      if isinstance(msg, Message):
+        msg = msg.content
+      if isinstance(echo, Message):
+        echo = echo.content
+        assert msg == echo, "expected %s, got %s" % (msg, echo)
+    else:
+      delta = self.diff(msg, echo)
+      mttl, ettl = delta.pop("ttl", (0, 0))
+      assert mttl is not None and ettl is not None, "%s, %s" % (mttl, ettl)
+      assert mttl >= ettl, "%s, %s" % (mttl, ettl)
+      assert not delta, "expected %s, got %s, delta %s" % (msg, echo, delta)
+
+  def assertEchos(self, msgs, echoes):
+    assert len(msgs) == len(echoes), "%s, %s" % (msgs, echoes)
+    for m, e in zip(msgs, echoes):
+      self.assertEcho(m, e)
 
   def assertEmpty(self, rcv):
     contents = self.drain(rcv)
