@@ -87,8 +87,7 @@ public:
                                              uint8_t*    md5Sum,
                                              ManagementObject::writeSchemaCall_t schemaCall);
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
-                                             uint64_t          persistId = 0,
-                                             bool              publishNow = false);
+                                             uint64_t          persistId = 0);
     QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
@@ -231,8 +230,14 @@ private:
     ManagementObjectVector       newDeletedManagementObjects;
 
     framing::Uuid                uuid;
-    sys::Mutex                   addLock;
-    sys::Mutex                   userLock;
+
+    //
+    // Lock hierarchy:  If a thread needs to take both addLock and userLock,
+    // it MUST take userLock first, then addLock.
+    //
+    sys::Mutex userLock;
+    sys::Mutex addLock;
+
     qpid::broker::Exchange::shared_ptr mExchange;
     qpid::broker::Exchange::shared_ptr dExchange;
     std::string                  dataDir;

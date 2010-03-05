@@ -185,11 +185,8 @@ void ManagementAgent::registerEvent (const string&  packageName,
     addClassLH(ManagementItem::CLASS_KIND_EVENT, pIter, eventName, md5Sum, schemaCall);
 }
 
-ObjectId ManagementAgent::addObject(ManagementObject* object,
-                                    uint64_t          persistId,
-                                    bool              publishNow)
+ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId)
 {
-    Mutex::ScopedLock lock (addLock);
     uint16_t sequence;
     uint64_t objectNum;
 
@@ -203,34 +200,22 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
 
     ObjectId objId(0 /*flags*/ , sequence, brokerBank, 0, objectNum);
     objId.setV2Key(*object);
-
     object->setObjectId(objId);
-    ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
-    if (destIter != newManagementObjects.end()) {
-        if (destIter->second->isDeleted()) {
-            newDeletedManagementObjects.push_back(destIter->second);
-            newManagementObjects.erase(destIter);
-        } else {
-            QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
-                     " key=" << objId.getV2Key());
-            return objId;
+
+    {
+        Mutex::ScopedLock lock (addLock);
+        ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
+        if (destIter != newManagementObjects.end()) {
+            if (destIter->second->isDeleted()) {
+                newDeletedManagementObjects.push_back(destIter->second);
+                newManagementObjects.erase(destIter);
+            } else {
+                QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
+                         " key=" << objId.getV2Key());
+                return objId;
+            }
         }
-    }
-    newManagementObjects[objId] = object;
-
-    if (publishNow) {
-#define IMM_BUFSIZE 65536
-        char rawBuf[IMM_BUFSIZE];
-        Buffer msgBuffer(rawBuf, IMM_BUFSIZE);
-
-        encodeHeader(msgBuffer, 'c');
-        object->writeProperties(msgBuffer);
-        uint32_t contentSize = msgBuffer.getPosition();
-        stringstream key;
-        key << "console.obj.1.0." << object->getPackageName() << "." << object->getClassName();
-        msgBuffer.reset();
-        sendBuffer(msgBuffer, contentSize, mExchange, key.str());
-        QPID_LOG(trace, "SEND Immediate ContentInd to=" << key.str());
+        newManagementObjects[objId] = object;
     }
 
     return objId;
@@ -990,7 +975,7 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
     agent->mgmtObject->set_systemId     (systemId);
     agent->mgmtObject->set_brokerBank   (brokerBank);
     agent->mgmtObject->set_agentBank    (assignedBank);
-    addObject (agent->mgmtObject, 0, true);
+    addObject (agent->mgmtObject, 0);
     remoteAgents[connectionRef] = agent;
 
     QPID_LOG(trace, "Remote Agent registered bank=[" << brokerBank << "." << assignedBank << "] replyTo=" << replyToKey);
@@ -1368,13 +1353,13 @@ ManagementObjectMap::iterator ManagementAgent::numericFind(const ObjectId& oid)
 
 void ManagementAgent::setAllocator(std::auto_ptr<IdAllocator> a)
 {
-    Mutex::ScopedLock lock (addLock);
+    Mutex::ScopedLock lock (userLock);
     allocator = a;
 }
 
 uint64_t ManagementAgent::allocateId(Manageable* object)
 {
-    Mutex::ScopedLock lock (addLock);
+    Mutex::ScopedLock lock (userLock);
     if (allocator.get()) return allocator->getIdFor(object);
     return 0;
 }
@@ -1467,7 +1452,7 @@ void ManagementAgent::RemoteAgent::decode(qpid::framing::Buffer& inBuf) {
     connectionRef.decode(inBuf);
     mgmtObject = new _qmf::Agent(&agent, this);
     mgmtObject->readProperties(inBuf);
-    agent.addObject(mgmtObject, 0, true);
+    agent.addObject(mgmtObject, 0);
 }
 
 uint32_t ManagementAgent::RemoteAgent::encodedSize() const {
@@ -1501,7 +1486,7 @@ void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
         id.decode(inBuf);
         std::auto_ptr<RemoteAgent> agent(new RemoteAgent(*this));
         agent->decode(inBuf);
-        addObject (agent->mgmtObject, 0, false);
+        addObject (agent->mgmtObject, 0);
         remoteAgents[agent->connectionRef] = agent.release();
     }
 }
