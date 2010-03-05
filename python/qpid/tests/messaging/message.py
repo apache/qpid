@@ -68,23 +68,7 @@ class MessageEchoTests(Base):
   def check(self, msg):
     self.snd.send(msg)
     echo = self.rcv.fetch(0)
-
-    assert msg.id == echo.id
-    assert msg.subject == echo.subject
-    assert msg.user_id == echo.user_id
-    assert msg.to == echo.to
-    assert msg.reply_to == echo.reply_to
-    assert msg.correlation_id == echo.correlation_id
-    assert msg.durable == echo.durable
-    assert msg.priority == echo.priority
-    if msg.ttl is None:
-      assert echo.ttl is None
-    else:
-      assert msg.ttl >= echo.ttl
-    assert msg.properties == echo.properties
-    assert msg.content_type == echo.content_type
-    assert msg.content == echo.content, "%s, %s" % (msg, echo)
-
+    self.assertEcho(msg, echo)
     self.ssn.acknowledge(echo)
 
   def testStringContent(self):
