@@ -48,8 +48,13 @@ public class XAResourceImpl implements XAResource
      */
     private Xid _xid;
 
+    /**
+     * The time for this resource
+     */
+    private int _timeout;
+    
     //--- constructor
-
+   
     /**
      * Create an XAResource associated with a XASession
      *
@@ -89,6 +94,10 @@ public class XAResourceImpl implements XAResource
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             convertExecutionErrorToXAErr(e.getException().getErrorCode());
+        }
+        finally
+        {
+            _xid = null;
         }
         checkStatus(result.getStatus());
     }
@@ -171,6 +180,10 @@ public class XAResourceImpl implements XAResource
             _xaSession.createSession();
             convertExecutionErrorToXAErr(e.getException().getErrorCode());
         }
+        finally
+        {
+            _xid = null;
+        }
     }
 
 
@@ -178,30 +191,13 @@ public class XAResourceImpl implements XAResource
      * Obtains the current transaction timeout value set for this XAResource instance.
      * If XAResource.setTransactionTimeout was not used prior to invoking this method,
      * the return value is the default timeout i.e. 0;
-     * otherwise, the value used in the previous setTransactionTimeout call is returned.
      *
      * @return The transaction timeout value in seconds.
      * @throws XAException An error has occurred. Possible exception values are XAER_RMERR, XAER_RMFAIL.
      */
     public int getTransactionTimeout() throws XAException
     {
-        int result = 0;
-        if (_xid != null)
-        {
-            Future<GetTimeoutResult> future =
-                    _xaSession.getQpidSession().dtxGetTimeout(convertXid(_xid));
-            try
-            {
-                result = (int) future.get().getTimeout();
-            }
-            catch (SessionException e)
-            {
-                // we need to restore the qpid session that has been closed
-                _xaSession.createSession();
-                convertExecutionErrorToXAErr(e.getException().getErrorCode());
-            }
-        }
-        return result;
+        return _timeout;
     }
 
     /**
@@ -325,6 +321,10 @@ public class XAResourceImpl implements XAResource
             _xaSession.createSession();
             convertExecutionErrorToXAErr( e.getException().getErrorCode());
         }
+        finally
+        {
+            _xid = null;
+        }
         checkStatus(result.getStatus());
     }
 
@@ -340,25 +340,29 @@ public class XAResourceImpl implements XAResource
      */
     public boolean setTransactionTimeout(int timeout) throws XAException
     {
-        boolean result = false;
-        if (_xid != null)
-        {
-            try
-            {
-                _xaSession.getQpidSession()
-                        .dtxSetTimeout(XidImpl.convert(_xid), timeout);
-            }
-            catch (QpidException e)
-            {
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("Cannot convert Xid into String format ", e);
-                }
-                throw new XAException(XAException.XAER_PROTO);
-            }
-            result = true;
+        _timeout = timeout;
+        if (timeout != _timeout && _xid != null)
+        {            
+            setDtxTimeout(_timeout);
         }
-        return result;
+        return true;
+    }
+    
+    private void setDtxTimeout(int timeout) throws XAException
+    {
+        try
+        {
+            _xaSession.getQpidSession()
+                    .dtxSetTimeout(XidImpl.convert(_xid), timeout);
+        }
+        catch (QpidException e)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Cannot convert Xid into String format ", e);
+            }
+            throw new XAException(XAException.XAER_PROTO);
+        }
     }
 
     /**
@@ -413,6 +417,10 @@ public class XAResourceImpl implements XAResource
         }
         checkStatus(result.getStatus());
         _xid = xid;
+        if (_timeout > 0)
+        {
+            setDtxTimeout(_timeout);
+        }
     }
 
     //------------------------------------------------------------------------
@@ -477,7 +485,15 @@ public class XAResourceImpl implements XAResource
                 throw new XAException(XAException.XAER_DUPID);
             case NOT_FOUND:
                 // The XID is not valid.
-                throw new XAException(XAException.XAER_NOTA);
+                try
+                {
+                   throw new XAException(XAException.XAER_NOTA);
+                }
+                catch (XAException e)
+                {
+                    e.printStackTrace();
+                    throw e;
+                }
             case ILLEGAL_STATE:
                 // Routine was invoked in an inproper context.
                 throw new XAException(XAException.XAER_PROTO);
