@@ -12,18 +12,18 @@ This table list the various SASL mechanisms that each component supports. The ve
 functionality was added to the product. 
 
 || Component   || ANONYMOUS || CRAM-MD5 || DIGEST-MD5 || EXTERNAL || GSSAPI/Kerberos || PLAIN ||
-| C++ Broker    |M3\[[#1]\] |M3\[[#1],[#2]\]|         |           |M3\[[#1],[#2]\]   |   M1   |
-| C++ Client    |M3\[[#1]\] |           |             |           |                  |   M1   |
+| C++ Broker    |M3         |M3         |  M3         |0.8\[[#1]\]|M3                |   M1   |
+| C++ Client    |M3         |0.5        |  0.5        |0.8\[[#1]\]|                  |   M1   |
 | Java Broker   |           |    M1     |             |           |                  |   M1   |
-| Java Client   |           |    M1     |             |           |                  |   M1   |
+| Java Client   |           |    M1     |             |   M1      |                  |   M1   |
 | .Net Client   |    M2     |    M2     |     M2      |   M2      |                  |   M2   |
-| Python Client |           |           |             |           |                  |   ?    |
-| Ruby Client   |           |           |             |           |                  |   ?    |
+| Python Client |0.6\[[#2]\]|0.6\[[#2]\]|0.6\[[#2]\]  |0.6\[[#2]\]|0.6\[[#2]\]       |   M4   |
+| Ruby Client   |0.6\[[#2]\]|0.6\[[#2]\]|0.6\[[#2]\]  |0.6\[[#2]\]|0.6\[[#2]\]       |   M4   |
 
 {anchor:1}
-1: Support for these will be in M3 (currently available on trunk).
+1: Only enabled for client authenticated SSL connections.
 {anchor:2}
-2: C++ Broker uses [Cyrus Sasl|http://freshmeat.net/projects/cyrussasl/] which supports CRAM-MD5 and GSSAPI but these have not been tested yet
+2: On linux only via cyrus-sasl integration.
 
 h4. Custom Mechanisms
 
