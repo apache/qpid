@@ -191,12 +191,11 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
 
     void initialStatus(uint32_t version, bool active, const Uuid& clusterId,
                        uint8_t storeState, const Uuid& shutdownId,
-                       const framing::SequenceNumber& configSeq,
                        const std::string& firstConfig)
     {
         cluster.initialStatus(
             member, version, active, clusterId,
-            framing::cluster::StoreState(storeState), shutdownId, configSeq,
+            framing::cluster::StoreState(storeState), shutdownId, 
             firstConfig, l);
     }
     void ready(const std::string& url) { cluster.ready(member, url, l); }
@@ -631,7 +630,7 @@ void Cluster::configChange(const MemberId&, const std::string& configStr, Lock& 
         mcast.mcastControl(
             ClusterInitialStatusBody(
                 ProtocolVersion(), CLUSTER_VERSION, state > INIT, clusterId, 
-                store.getState(), store.getShutdownId(), store.getConfigSeq(),
+                store.getState(), store.getShutdownId(), 
                 initMap.getFirstConfigStr()
             ),
             self);
@@ -705,7 +704,6 @@ void Cluster::initialStatus(const MemberId& member, uint32_t version, bool activ
                             const framing::Uuid& id, 
                             framing::cluster::StoreState store,
                             const framing::Uuid& shutdownId,
-                            const framing::SequenceNumber& configSeq,
                             const std::string& firstConfig,
                             Lock& l)
 {
@@ -718,7 +716,7 @@ void Cluster::initialStatus(const MemberId& member, uint32_t version, bool activ
     initMap.received(
         member,
         ClusterInitialStatusBody(ProtocolVersion(), version, active, id,
-                                 store, shutdownId, configSeq, firstConfig)
+                                 store, shutdownId, firstConfig)
     );
     if (initMap.transitionToComplete()) initMapCompleted(l);
 }

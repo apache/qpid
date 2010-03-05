@@ -160,7 +160,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
                        const framing::Uuid& clusterId,
                        framing::cluster::StoreState,
                        const framing::Uuid& shutdownId,
-                       const framing::SequenceNumber& configSeq,
                        const std::string& firstConfig,
                        Lock&);
     void ready(const MemberId&, const std::string&, Lock&);

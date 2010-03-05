@@ -37,19 +37,19 @@ QPID_AUTO_TEST_SUITE(InitialStatusMapTestSuite)
 typedef InitialStatusMap::Status Status;
 
 Status activeStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet()) {
-    return Status(ProtocolVersion(), 0, true, id, STORE_STATE_NO_STORE, Uuid(), 0,
+    return Status(ProtocolVersion(), 0, true, id, STORE_STATE_NO_STORE, Uuid(),
                   encodeMemberSet(ms));
 }
 
 Status newcomerStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet()) {
-    return Status(ProtocolVersion(), 0, false, id, STORE_STATE_NO_STORE, Uuid(), 0,
+    return Status(ProtocolVersion(), 0, false, id, STORE_STATE_NO_STORE, Uuid(),
                   encodeMemberSet(ms));
 }
 
 Status storeStatus(bool active, StoreState state, Uuid start=Uuid(), Uuid stop=Uuid(),
                    const MemberSet& ms=MemberSet())
 {
-    return Status(ProtocolVersion(), 0, active, start, state, stop, 0, 
+    return Status(ProtocolVersion(), 0, active, start, state, stop, 
                   encodeMemberSet(ms));
 }
 
