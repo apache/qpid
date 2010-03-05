@@ -255,10 +255,10 @@ class SessionTests(Base):
     if commit:
       txssn.commit()
       self.assertEmpty(rcv)
-      assert contents == self.drain(copy_rcv)
+      self.drain(copy_rcv, expected=contents)
     else:
       txssn.rollback()
-      assert contents == self.drain(rcv)
+      self.drain(rcv, expected=contents)
       self.assertEmpty(copy_rcv)
     self.ssn.acknowledge()
 
@@ -277,7 +277,7 @@ class SessionTests(Base):
 
     if commit:
       txssn.commit()
-      assert contents == self.drain(rcv)
+      self.drain(rcv, expected=contents)
       self.ssn.acknowledge()
     else:
       txssn.rollback()
@@ -298,17 +298,16 @@ class SessionTests(Base):
     txrcv = txssn.receiver(TX_ACK_QC)
     self.assertEmpty(txrcv)
     contents = self.send(self.ssn, TX_ACK_QC, "txTestAck", 3)
-    assert contents == self.drain(txrcv)
+    self.drain(txrcv, expected=contents)
 
     if commit:
       txssn.acknowledge()
     else:
       txssn.rollback()
-      drained = self.drain(txrcv)
-      assert contents == drained, "expected %s, got %s" % (contents, drained)
+      self.drain(txrcv, expected=contents)
       txssn.acknowledge()
       txssn.rollback()
-      assert contents == self.drain(txrcv)
+      self.drain(txrcv, expected=contents)
       txssn.commit() # commit without ack
       self.assertEmpty(txrcv)
 
@@ -316,7 +315,7 @@ class SessionTests(Base):
 
     txssn = self.conn.session(transactional=True)
     txrcv = txssn.receiver(TX_ACK_QC)
-    assert contents == self.drain(txrcv)
+    self.drain(txrcv, expected=contents)
     txssn.acknowledge()
     txssn.commit()
     rcv = self.ssn.receiver(TX_ACK_QD)
@@ -838,8 +837,7 @@ class SenderTests(Base):
     msgs = [self.content("asyncTest", i) for i in range(15)]
     for m in msgs:
       self.snd.send(m, sync=False)
-    drained = self.drain(self.rcv, timeout=self.delay())
-    assert msgs == drained, "expected %s, got %s" % (msgs, drained)
+    self.drain(self.rcv, timeout=self.delay(), expected=msgs)
     self.ssn.acknowledge()
 
   def testSendAsyncCapacity0(self):
