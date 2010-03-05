@@ -34,6 +34,7 @@
 #include "qpid/sys/ssl/SslSocket.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Poller.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/Msg.h"
 
 #include <iostream>
@@ -86,6 +87,7 @@ class SslConnector : public Connector
     const uint16_t maxFrameSize;
     framing::ProtocolVersion version;
     bool initiated;
+    SecuritySettings securitySettings;
 
     sys::Mutex closedLock;
     bool closed;
@@ -125,7 +127,7 @@ class SslConnector : public Connector
     sys::ShutdownHandler* getShutdownHandler() const;
     framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
-    unsigned int getSSF() { return socket.getKeyLen(); }
+    const SecuritySettings* getSecuritySettings();
 
 public:
     SslConnector(Poller::shared_ptr p, framing::ProtocolVersion pVersion,
@@ -364,6 +366,13 @@ void SslConnector::writeDataBlock(const AMQDataBlock& data) {
 
 void SslConnector::eof(SslIO&) {
     handleClosed();
+}
+
+const SecuritySettings* SslConnector::getSecuritySettings()
+{
+    securitySettings.ssf = socket.getKeyLen();
+    securitySettings.authid = "dummy";//set to non-empty string to enable external authentication
+    return &securitySettings; 
 }
 
 }} // namespace qpid::client

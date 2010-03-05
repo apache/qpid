@@ -40,6 +40,11 @@
 #include <memory>
 
 namespace qpid {
+
+namespace sys {
+struct SecuritySettings;
+}
+
 namespace client {
 
 class ConnectionHandler : private StateManager,
@@ -95,7 +100,7 @@ public:
     using InputHandler::handle;
     typedef boost::function<void()> CloseListener;    
     typedef boost::function<void(uint16_t, const std::string&)> ErrorListener;
-    typedef boost::function<unsigned int()> GetConnSSF;
+    typedef boost::function<const qpid::sys::SecuritySettings*()> GetSecuritySettings;
 
     ConnectionHandler(const ConnectionSettings&, framing::ProtocolVersion&);
 
@@ -123,7 +128,7 @@ public:
 
     static framing::connection::CloseCode convert(uint16_t replyCode);
     const std::string& getUserId() const { return operUserId; }
-    GetConnSSF  getSSF;     /** query the connection for its security strength factor */
+    GetSecuritySettings  getSecuritySettings;     /** query the transport for its security details */
 };
 
 }}

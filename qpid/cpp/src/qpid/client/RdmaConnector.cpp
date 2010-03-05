@@ -109,7 +109,7 @@ class RdmaConnector : public Connector, public sys::Codec
     framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
     void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
-    unsigned int getSSF() { return 0; }
+    const qpid::sys::SecuritySettings* getSecuritySettings() { return 0; }
 
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);

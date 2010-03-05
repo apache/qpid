@@ -41,14 +41,18 @@ struct SslServerOptions : ssl::SslOptions
 {
     uint16_t port;
     bool clientAuth;
+    bool nodict;
 
     SslServerOptions() : port(5671),
-                         clientAuth(false)
+                         clientAuth(false),
+                         nodict(false)
     {
         addOptions()
             ("ssl-port", optValue(port, "PORT"), "Port on which to listen for SSL connections")
             ("ssl-require-client-authentication", optValue(clientAuth), 
-             "Forces clients to authenticate in order to establish an SSL connection");
+             "Forces clients to authenticate in order to establish an SSL connection")
+            ("ssl-sasl-no-dict", optValue(nodict), 
+             "Disables SASL mechanisms that are vulnerable to passive dictionary-based password attacks");
     }
 };
 
@@ -57,6 +61,7 @@ class SslProtocolFactory : public ProtocolFactory {
     qpid::sys::ssl::SslSocket listener;
     const uint16_t listeningPort;
     std::auto_ptr<qpid::sys::ssl::SslAcceptor> acceptor;
+    bool nodict;
 
   public:
     SslProtocolFactory(const SslServerOptions&, int backlog, bool nodelay);
@@ -97,7 +102,8 @@ static struct SslPlugin : public Plugin {
                     
                     const broker::Broker::Options& opts = broker->getOptions();
                     ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
-                                                                                opts.connectionBacklog, opts.tcpNoDelay));
+                                                                                opts.connectionBacklog,
+                                                                                opts.tcpNoDelay));
                     QPID_LOG(notice, "Listening for SSL connections on TCP port " << protocol->getPort());
                     broker->registerProtocolFactory("ssl", protocol);
                 } catch (const std::exception& e) {
@@ -109,12 +115,13 @@ static struct SslPlugin : public Plugin {
 } sslPlugin;
 
 SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options, int backlog, bool nodelay) :
-    tcpNoDelay(nodelay), listeningPort(listener.listen(options.port, backlog, options.certName, options.clientAuth))
+    tcpNoDelay(nodelay), listeningPort(listener.listen(options.port, backlog, options.certName, options.clientAuth)),
+    nodict(options.nodict)
 {}
 
 void SslProtocolFactory::established(Poller::shared_ptr poller, const qpid::sys::ssl::SslSocket& s,
                                           ConnectionCodec::Factory* f, bool isClient) {
-    qpid::sys::ssl::SslHandler* async = new qpid::sys::ssl::SslHandler(s.getPeerAddress(), f);
+    qpid::sys::ssl::SslHandler* async = new qpid::sys::ssl::SslHandler(s.getPeerAddress(), f, nodict);
 
     if (tcpNoDelay) {
         s.setTcpNoDelay(tcpNoDelay);

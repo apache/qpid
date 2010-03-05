@@ -42,13 +42,14 @@ struct Buff : public SslIO::BufferBase {
     { delete [] bytes;}
 };
 
-SslHandler::SslHandler(std::string id, ConnectionCodec::Factory* f) :
+SslHandler::SslHandler(std::string id, ConnectionCodec::Factory* f, bool _nodict) :
     identifier(id),
     aio(0),
     factory(f),
     codec(0),
     readError(false),
-    isClient(false)
+    isClient(false),
+    nodict(_nodict)
 {}
 
 SslHandler::~SslHandler() {
@@ -111,7 +112,7 @@ void SslHandler::readbuff(SslIO& , SslIO::BufferBase* buff) {
             decoded = in.getPosition();
             QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
             try {
-                codec = factory->create(protocolInit.getVersion(), *this, identifier, aio->getKeyLen());
+                codec = factory->create(protocolInit.getVersion(), *this, identifier, getSecuritySettings(aio));
                 if (!codec) {
                     //TODO: may still want to revise this...
                     //send valid version header & close connection.
@@ -166,7 +167,7 @@ void SslHandler::nobuffs(SslIO&) {
 
 void SslHandler::idle(SslIO&){
     if (isClient && codec == 0) {
-        codec = factory->create(*this, identifier, aio->getKeyLen());
+        codec = factory->create(*this, identifier, getSecuritySettings(aio));
         write(framing::ProtocolInitiation(codec->getVersion()));
         return;
     }
@@ -181,6 +182,13 @@ void SslHandler::idle(SslIO&){
     }
     if (codec->isClosed())
         aio->queueWriteClose();
+}
+
+SecuritySettings SslHandler::getSecuritySettings(SslIO* aio)
+{
+    SecuritySettings settings = aio->getSecuritySettings();
+    settings.nodict = nodict;
+    return settings;
 }
 
 
