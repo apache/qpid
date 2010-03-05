@@ -64,7 +64,6 @@
       <field name="cluster-id" type="uuid"/>>
       <field name="store-state" type="store-state"/>
       <field name="shutdown-id" type="uuid"/>
-      <field name="config-seq" type="sequence-no"/>
       <field name="first-config" type="str16"/>
     </control>
 
