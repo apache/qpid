@@ -510,8 +510,13 @@ ConnectionPtr Cluster::getConnection(const EventFrame& e, Lock&) {
             assert(cp);
         }
         else {              // New remote connection, create a shadow.
-            unsigned int ssf = (announce && announce->hasSsf()) ? announce->getSsf() : 0;
-            cp = new Connection(*this, shadowOut, announce->getManagementId(), id, ssf);
+            qpid::sys::SecuritySettings secSettings;
+            if (announce) {
+                secSettings.ssf = announce->getSsf();
+                secSettings.authid = announce->getAuthid();
+                secSettings.nodict = announce->getNodict();
+            }
+            cp = new Connection(*this, shadowOut, announce->getManagementId(), id, secSettings);
         }
         connections.insert(ConnectionMap::value_type(id, cp));
     }

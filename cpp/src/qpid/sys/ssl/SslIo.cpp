@@ -436,4 +436,9 @@ void SslIO::close(DispatchHandle& h) {
     }
 }
 
-int SslIO::getKeyLen() {return socket.getKeyLen();}
+SecuritySettings SslIO::getSecuritySettings() {
+    SecuritySettings settings;
+    settings.ssf = socket.getKeyLen();
+    settings.authid = socket.getClientAuthId();
+    return settings;
+}

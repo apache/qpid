@@ -26,6 +26,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/sys/SecuritySettings.h"
 #include <boost/format.hpp>
 
 #if HAVE_SASL
@@ -36,6 +37,7 @@ using qpid::sys::cyrus::CyrusSecurityLayer;
 
 using namespace qpid::framing;
 using qpid::sys::SecurityLayer;
+using qpid::sys::SecuritySettings;
 using boost::format;
 using boost::str;
 
@@ -152,7 +154,8 @@ void NullAuthenticator::start(const string& mechanism, const string& response)
 #if HAVE_SASL
         // encryption required - check to see if we are running over an
         // encrypted SSL connection.
-        sasl_ssf_t external_ssf = (sasl_ssf_t) connection.getSSF();
+        SecuritySettings external = connection.getExternalSecuritySettings();
+        sasl_ssf_t external_ssf = (sasl_ssf_t) external.ssf;
         if (external_ssf < 1)    // < 1 == unencrypted
 #endif
         {
@@ -244,7 +247,9 @@ void CyrusAuthenticator::init()
 
     // If the transport provides encryption, notify the SASL library of
     // the key length and set the ssf range to prevent double encryption.
-    sasl_ssf_t external_ssf = (sasl_ssf_t) connection.getSSF();
+    SecuritySettings external = connection.getExternalSecuritySettings();
+    QPID_LOG(debug, "External ssf=" << external.ssf << " and auth=" << external.authid);
+    sasl_ssf_t external_ssf = (sasl_ssf_t) external.ssf;
     if (external_ssf) {
         int result = sasl_setprop(sasl_conn, SASL_SSF_EXTERNAL, &external_ssf);
         if (result != SASL_OK) {
@@ -258,16 +263,25 @@ void CyrusAuthenticator::init()
              ", max_ssf: " << secprops.max_ssf <<
              ", external_ssf: " << external_ssf );
 
+    if (!external.authid.empty()) {
+        const char* external_authid = external.authid.c_str();
+        int result = sasl_setprop(sasl_conn, SASL_AUTH_EXTERNAL, external_authid);
+        if (result != SASL_OK) {
+            throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external auth: " << result));
+        }
+
+        QPID_LOG(debug, "external auth detected and set to " << external_authid);
+    }
+
     secprops.maxbufsize = 65535;
     secprops.property_names = 0;
     secprops.property_values = 0;
     secprops.security_flags = 0; /* or SASL_SEC_NOANONYMOUS etc as appropriate */
-    
+    if (external.nodict) secprops.security_flags |= SASL_SEC_NODICTIONARY;    
     int result = sasl_setprop(sasl_conn, SASL_SEC_PROPS, &secprops);
     if (result != SASL_OK) {
         throw framing::InternalErrorException(QPID_MSG("SASL error: " << result));
     }
-
 }
 
 CyrusAuthenticator::~CyrusAuthenticator()
