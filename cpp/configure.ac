@@ -346,6 +346,8 @@ esac
 
 test $want_xml = no && use_xml=no
 
+
+
 # If the user doesn't say not to use XML, see if it's available.
 if test $use_xml != no; then
   # Then see if XQilla is available
@@ -364,6 +366,13 @@ if test $use_xml != no; then
   # Else XQilla is available - use it to build
   test $use_xml = yes &&
     AC_DEFINE([HAVE_XML], [1], [Compile-in XML Exchange support.])
+
+  # Check to see if we need to use legacy calls for effective boolean value
+  xqilla_has_ebv=yes
+  AC_CHECK_HEADER([xqilla/ast/XQEffectiveBooleanValue.hpp], , [xqilla_has_ebv=no])
+  test $xqilla_has_ebv = no &&
+    AC_DEFINE([XQILLA_2_1_3], [1], [Use the old XQilla 2.1.3 API to get effective boolean value.])
+
 fi
 
 AM_CONDITIONAL([HAVE_XML], [test $use_xml = yes])
