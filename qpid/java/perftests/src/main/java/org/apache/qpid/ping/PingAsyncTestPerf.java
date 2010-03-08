@@ -154,15 +154,25 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
 
         // Initialize the count and timing controller for the new correlation id.
+        // This perCorrelationId is only used for controlling the test.
+        // The PingClient itself uses its own perCorrelationId see in PingPongProducer
         PerCorrelationId perCorrelationId = new PerCorrelationId();
         TimingController tc = getTimingController().getControllerForCurrentThread();
         perCorrelationId._tc = tc;
         perCorrelationId._expectedCount = pingClient.getExpectedNumPings(numPings + preFill);
         perCorrelationIds.put(perThreadSetup._correlationId, perCorrelationId);
 
-        // Start the client that will have been paused due to preFill requirement.
-        // or if we have not yet started client because messages are sitting on broker. 
-        if (preFill > 0 || testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME))
+        // Must be called before pingAndWaitForReply to setup the CorrelationID.
+        // This is required because pingClient.start() will start all client threads
+        // This means that the CorrelationID must be registered before hand.
+        pingClient.setupCorrelationID(perThreadSetup._correlationId, perCorrelationId._expectedCount);
+
+        // Start the client connection if:
+        // 1) we are not in a SEND_ONLY test.
+        // 2) if we have not yet started client because messages are sitting on broker.
+        // This is either due to a preFill or a consume only test.
+        if (!testParameters.getPropertyAsBoolean(PingPongProducer.SEND_ONLY_PROPNAME) &&
+            (preFill > 0 || testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME)))
         {
             pingClient.start();
         }
@@ -285,7 +295,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                     {
                         // Record the total latency for the batch.
                         // if batchSize=1 then this will just be the message latency
-                        tc.completeTest(true, receivedInBatch, null, _batchLatency);
+                        tc.completeTest(true, receivedInBatch, null, _batchSize == 1 ? latency : _batchLatency);
                         // Reset latency
                         _batchLatency = 0;
                     }

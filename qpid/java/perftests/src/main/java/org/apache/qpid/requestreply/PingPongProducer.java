@@ -342,6 +342,11 @@ public class PingPongProducer implements Runnable, ExceptionListener
     /** Defines the default value of the consumeOnly flag to use when publishing messages is not desired. */
     public static final boolean CONSUME_ONLY_DEFAULT = false;
 
+    /** Holds the name of the property to get when no messasges should be sent. */
+    public static final String SEND_ONLY_PROPNAME = "sendOnly";
+
+    /** Defines the default value of the consumeOnly flag to use when publishing messages is not desired. */
+    public static final boolean SEND_ONLY_DEFAULT = false;
 
     /** Holds the default configuration properties. */
     public static ParsedProperties defaults = new ParsedProperties();
@@ -381,7 +386,8 @@ public class PingPongProducer implements Runnable, ExceptionListener
         defaults.setPropertyIfNull(MAX_PENDING_PROPNAME, MAX_PENDING_DEFAULT);
         defaults.setPropertyIfNull(PREFILL_PROPNAME, PREFILL_DEFAULT);
         defaults.setPropertyIfNull(DELAY_BEFORE_CONSUME_PROPNAME, DELAY_BEFORE_CONSUME);
-        defaults.setPropertyIfNull(CONSUME_ONLY_PROPNAME, CONSUME_ONLY_DEFAULT);        
+        defaults.setPropertyIfNull(CONSUME_ONLY_PROPNAME, CONSUME_ONLY_DEFAULT);
+        defaults.setPropertyIfNull(SEND_ONLY_PROPNAME, SEND_ONLY_DEFAULT);
     }
 
     /** Allows setting of client ID on the connection, rather than through the connection URL. */
@@ -490,9 +496,14 @@ public class PingPongProducer implements Runnable, ExceptionListener
     /**
      * Holds a boolean value of wither this test should just consume, i.e. skips
      * sending messages, but still expects to receive the specified number.
-     * Use in conjuction with numConsumers=0 to fill the broker.
      */
     private boolean _consumeOnly;
+
+    /**
+     * Holds a boolean value of wither this test should just send, i.e. skips
+     * consuming messages, but still creates clients just doesn't start them.
+     */
+    private boolean _sendOnly;
 
 
     /** A source for providing sequential unique correlation ids. These will be unique within the same JVM. */
@@ -631,6 +642,7 @@ public class PingPongProducer implements Runnable, ExceptionListener
         _preFill = properties.getPropertyAsInteger(PREFILL_PROPNAME);
         _delayBeforeConsume = properties.getPropertyAsLong(DELAY_BEFORE_CONSUME_PROPNAME);
         _consumeOnly = properties.getPropertyAsBoolean(CONSUME_ONLY_PROPNAME);
+        _sendOnly = properties.getPropertyAsBoolean(SEND_ONLY_PROPNAME);
 
         // Check that one or more destinations were specified.
         if (_noOfDestinations < 1)
@@ -1072,8 +1084,8 @@ public class PingPongProducer implements Runnable, ExceptionListener
                 }
                 else
                 {
-                    log.warn("Got unexpected message with correlationId: " + correlationID);
-                    log.warn("Map contains:" + perCorrelationIds.entrySet());
+                    log.warn(consumerNo + " Got unexpected message with correlationId: " + correlationID);
+                    log.warn(consumerNo + " Map contains:" + perCorrelationIds.entrySet());
                 }
             }
             else
@@ -1091,6 +1103,21 @@ public class PingPongProducer implements Runnable, ExceptionListener
             // NDC.clear();
         }
     }
+
+    public void setupCorrelationID(String correlationId, int expectedCount)
+    {
+        PerCorrelationId perCorrelationId = new PerCorrelationId();
+
+        // Create a count down latch to count the number of replies with. This is created before the messages are
+        // sent so that the replies cannot be received before the count down is created.
+        // One is added to this, so that the last reply becomes a special case. The special case is that the
+        // chained message listener must be called before this sender can be unblocked, but that decrementing the
+        // countdown needs to be done before the chained listener can be called.
+        perCorrelationId.trafficLight = new CountDownLatch(expectedCount + 1);
+
+        perCorrelationIds.put(correlationId, perCorrelationId);
+    }
+
 
     /**
      * Sends the specified number of ping message and then waits for all correlating replies. If the wait times out
@@ -1122,33 +1149,24 @@ public class PingPongProducer implements Runnable, ExceptionListener
     public int pingAndWaitForReply(Message message, int numPings, int preFill, long timeout, String messageCorrelationId)
         throws JMSException, InterruptedException
     {
-
-        // If we are runnning a consumeOnly test then don't send any messages
-
-
         /*log.debug("public int pingAndWaitForReply(Message message, int numPings = " + numPings + ", long timeout = "
             + timeout + ", String messageCorrelationId = " + messageCorrelationId + "): called");*/
+
+        int totalPingsRequested = numPings + preFill;
 
         // Generate a unique correlation id to put on the messages before sending them, if one was not specified.
         if (messageCorrelationId == null)
         {
             messageCorrelationId = Long.toString(_correlationIdGenerator.incrementAndGet());
+
+            setupCorrelationID(messageCorrelationId, getExpectedNumPings(totalPingsRequested));
         }
 
         try
         {
             // NDC.push("prod");
 
-            // Create a count down latch to count the number of replies with. This is created before the messages are
-            // sent so that the replies cannot be received before the count down is created.
-            // One is added to this, so that the last reply becomes a special case. The special case is that the
-            // chained message listener must be called before this sender can be unblocked, but that decrementing the
-            // countdown needs to be done before the chained listener can be called.
-            PerCorrelationId perCorrelationId = new PerCorrelationId();
-
-            int totalPingsRequested = numPings + preFill;
-            perCorrelationId.trafficLight = new CountDownLatch(getExpectedNumPings(totalPingsRequested) + 1);
-            perCorrelationIds.put(messageCorrelationId, perCorrelationId);
+            PerCorrelationId perCorrelationId = perCorrelationIds.get(messageCorrelationId);
 
             // Set up the current time as the start time for pinging on the correlation id. This is used to determine
             // timeouts.
@@ -1167,9 +1185,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
             //
             // Return the number of requested messages, this will let the test
             // report a pass.
-            if (_noOfConsumers == 0)
+            if (_noOfConsumers == 0 || _sendOnly)
             {
-                return totalPingsRequested;
+                return getExpectedNumPings(totalPingsRequested);
             }
 
             do

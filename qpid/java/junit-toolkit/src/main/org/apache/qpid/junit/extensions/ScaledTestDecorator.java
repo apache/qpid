@@ -323,6 +323,22 @@ public class ScaledTestDecorator extends WrappedSuiteTestDecorator implements Sh
                 // Wait until all test threads have completed their setups.
                 barrier.await();
 
+
+                // Call setup on all underlying tests in the suite that are thread aware.
+                for (Test childTest : test.getAllUnderlyingTests())
+                {
+                    // Check that the test is concurrency aware, so provides a setup method to call.
+                    if (childTest instanceof TestThreadAware)
+                    {
+                        // Call the tests post thread setup.
+                        TestThreadAware setupTest = (TestThreadAware) childTest;
+                        setupTest.postThreadSetUp();
+                    }
+                }
+
+                // Wait until all test threads have completed their prefill.
+                barrier.await();
+
                 // Start timing the test batch, only after thread setups have completed.
                 if (testResult instanceof TKTestResult)
                 {
