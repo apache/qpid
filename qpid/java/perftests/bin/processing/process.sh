@@ -32,7 +32,7 @@ processCMSGCFile()
 
  calculateStats "MEM_PRE" HEAP_PRE_GC.log
  calculateStats "MEM_POST" HEAP_POST_GC.log
- calculateStatsBC "GC_FREQ" GC_FREQ.log
+ calculateStatsBC "GC_FREQ" GC_TIME.log
  
      
  # Calculate ParNew GC Cumulative total 
