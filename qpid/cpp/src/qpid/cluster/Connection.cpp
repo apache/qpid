@@ -542,7 +542,7 @@ void Connection::addQueueListener(const std::string& q, uint32_t listener) {
 void Connection::managementSchema(const std::string& data) {
     management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
     if (!agent)
-        throw Exception(QPID_MSG("Management schema update but no management agent."));
+        throw Exception(QPID_MSG("Management schema update but management not enabled."));
     framing::Buffer buf(const_cast<char*>(data.data()), data.size());
     agent->importSchemas(buf);
     QPID_LOG(debug, cluster << " updated management schemas");
@@ -557,7 +557,7 @@ void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
 	     << objectNum << " seq " << bootSequence);
     management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
     if (!agent)
-        throw Exception(QPID_MSG("Management schema update but no management agent."));
+        throw Exception(QPID_MSG("Management schema update but management not enabled."));
     agent->setNextObjectId(objectNum);
     agent->setBootSequence(bootSequence);
 }
@@ -565,7 +565,7 @@ void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
 void Connection::managementAgents(const std::string& data) {
     management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
     if (!agent)
-        throw Exception(QPID_MSG("Management agents update but no management agent."));
+        throw Exception(QPID_MSG("Management agent update but management not enabled."));
     framing::Buffer buf(const_cast<char*>(data.data()), data.size());
     agent->importAgents(buf);
     QPID_LOG(debug, cluster << " updated management agents");

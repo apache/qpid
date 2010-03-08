@@ -43,7 +43,10 @@ CLEANFILES=$(GEN_SRC) gen.timestamp
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -Igen
 
-noinst_PROGRAMS=testagent
+qpidexecdir = $(libexecdir)/qpid
+qpidtestdir = $(qpidexecdir)/tests
+
+qpidtest_PROGRAMS=testagent
 testagent_SOURCES=testagent.cpp $(GEN_SRC)
 testagent_LDADD=$(top_builddir)/src/libqmf.la
 
