@@ -35,7 +35,8 @@
 #include "qmf/org/apache/qpid/broker/Package.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQueueMoveMessages.h"
-#include "qpid/management/ManagementExchange.h"
+#include "qpid/management/ManagementDirectExchange.h"
+#include "qpid/management/ManagementTopicExchange.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -234,11 +235,22 @@ Broker::Broker(const Broker::Options& conf) :
     declareStandardExchange(amq_match, HeadersExchange::typeName);
 
     if(conf.enableMgmt) {
-        exchanges.declare(qpid_management, ManagementExchange::typeName);
-        Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
-        Exchange::shared_ptr dExchange = exchanges.get (amq_direct);
+        exchanges.declare(qpid_management, ManagementTopicExchange::typeName);
+        Exchange::shared_ptr mExchange = exchanges.get(qpid_management);
+        Exchange::shared_ptr dExchange = exchanges.get(amq_direct);
         managementAgent->setExchange(mExchange, dExchange);
-        boost::dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent(managementAgent.get());
+        boost::dynamic_pointer_cast<ManagementTopicExchange>(mExchange)->setManagmentAgent(managementAgent.get(), 1);
+
+        std::string qmfTopic("qmf.default.topic");
+        std::string qmfDirect("qmf.default.direct");
+
+        std::pair<Exchange::shared_ptr, bool> topicPair(exchanges.declare(qmfTopic, ManagementTopicExchange::typeName));
+        std::pair<Exchange::shared_ptr, bool> directPair(exchanges.declare(qmfDirect, ManagementDirectExchange::typeName));
+
+        boost::dynamic_pointer_cast<ManagementDirectExchange>(directPair.first)->setManagmentAgent(managementAgent.get(), 2);
+        boost::dynamic_pointer_cast<ManagementTopicExchange>(topicPair.first)->setManagmentAgent(managementAgent.get(), 2);
+
+        managementAgent->setExchangeV2(topicPair.first, directPair.first);
     }
     else
         QPID_LOG(info, "Management not enabled");

@@ -74,9 +74,12 @@ public:
     /** Called by cluster to suppress management output during update. */
     void suppress(bool s) { suppressed = s; }
 
-    void setInterval     (uint16_t _interval) { interval = _interval; }
-    void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
-                          qpid::broker::Exchange::shared_ptr directExchange);
+    void setInterval(uint16_t _interval) { interval = _interval; }
+    void setExchange(qpid::broker::Exchange::shared_ptr mgmtExchange,
+                     qpid::broker::Exchange::shared_ptr directExchange);
+    void setExchangeV2(qpid::broker::Exchange::shared_ptr topicExchange,
+                       qpid::broker::Exchange::shared_ptr directExchange);
+
     int  getMaxThreads   () { return threadPoolSize; }
     QPID_BROKER_EXTERN void registerClass   (const std::string& packageName,
                                              const std::string& className,
@@ -240,6 +243,8 @@ private:
 
     qpid::broker::Exchange::shared_ptr mExchange;
     qpid::broker::Exchange::shared_ptr dExchange;
+    qpid::broker::Exchange::shared_ptr v2Topic;
+    qpid::broker::Exchange::shared_ptr v2Direct;
     std::string                  dataDir;
     uint16_t                     interval;
     qpid::broker::Broker*        broker;
