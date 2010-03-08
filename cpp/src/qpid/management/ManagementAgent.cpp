@@ -285,7 +285,7 @@ void ManagementAgent::clientAdded (const std::string& routingKey)
 }
 
 void ManagementAgent::clusterUpdate() {
-    // Called on all cluster memebesr when a new member joins a cluster.
+    // Called on all cluster memebers when a new member joins a cluster.
     // Set clientWasAdded so that on the next periodicProcessing we will do 
     // a full update on all cluster members.
     clientWasAdded = true;
@@ -1450,7 +1450,11 @@ void ManagementAgent::RemoteAgent::encode(qpid::framing::Buffer& outBuf) const {
     outBuf.putLong(brokerBank);
     outBuf.putLong(agentBank);
     outBuf.putShortString(routingKey);
-    connectionRef.encode(outBuf);
+    // TODO aconway 2010-03-04: we send the v2Key instead of the
+    // ObjectId because that has the same meaning on different
+    // brokers. ObjectId::encode doesn't currently encode the v2Key,
+    // this can be cleaned up when it does.
+    outBuf.putMediumString(connectionRef.getV2Key());
     mgmtObject->writeProperties(outBuf);
 }
 
@@ -1458,16 +1462,24 @@ void ManagementAgent::RemoteAgent::decode(qpid::framing::Buffer& inBuf) {
     brokerBank = inBuf.getLong();
     agentBank = inBuf.getLong();
     inBuf.getShortString(routingKey);
-    connectionRef.decode(inBuf);
+
+    // TODO aconway 2010-03-04: see comment in encode()
+    string connectionKey;
+    inBuf.getMediumString(connectionKey);
+    connectionRef = ObjectId(); // Clear out any existing value.
+    connectionRef.setV2Key(connectionKey);
+
     mgmtObject = new _qmf::Agent(&agent, this);
     mgmtObject->readProperties(inBuf);
-    agent.addObject(mgmtObject, 0);
+    // TODO aconway 2010-03-04: see comment in encode(), readProperties doesn't set v2key.
+    mgmtObject->set_connectionRef(connectionRef);
 }
 
 uint32_t ManagementAgent::RemoteAgent::encodedSize() const {
+    // TODO aconway 2010-03-04: see comment in encode()
     return sizeof(uint32_t) + sizeof(uint32_t) // 2 x Long
         + routingKey.size() + sizeof(uint8_t) // ShortString
-        + connectionRef.encodedSize()
+        + connectionRef.getV2Key().size() + sizeof(uint16_t) // medium string
         + mgmtObject->writePropertiesSize();
 }
 
@@ -1477,25 +1489,21 @@ void ManagementAgent::exportAgents(std::string& out) {
          i != remoteAgents.end();
          ++i)
     {
-        ObjectId id = i->first;
+        // TODO aconway 2010-03-04: see comment in ManagementAgent::RemoteAgent::encode
         RemoteAgent* agent = i->second;
-        size_t encodedSize = id.encodedSize() + agent->encodedSize();
+        size_t encodedSize = agent->encodedSize();
         size_t end = out.size();
         out.resize(end + encodedSize);
         framing::Buffer outBuf(&out[end], encodedSize);
-        id.encode(outBuf);
         agent->encode(outBuf);
     }
 }
 
 void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
     while (inBuf.available()) {
-        ObjectId id;
-        inBuf.checkAvailable(id.encodedSize());
-        id.decode(inBuf);
         std::auto_ptr<RemoteAgent> agent(new RemoteAgent(*this));
         agent->decode(inBuf);
-        addObject (agent->mgmtObject, 0);
+        addObject(agent->mgmtObject, 0);
         remoteAgents[agent->connectionRef] = agent.release();
     }
 }

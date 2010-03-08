@@ -144,7 +144,7 @@ class LongTests(BrokerTest):
             i += 1
             b = cluster.start(expect=EXPECT_EXIT_FAIL)
             ErrorGenerator(b)
-            time.sleep(1)
+            time.sleep(min(5,self.duration()/2))
         sender.stop()
         receiver.stop(sender.sent)
         for i in range(i, len(cluster)): cluster[i].kill()
@@ -152,7 +152,7 @@ class LongTests(BrokerTest):
     def test_management(self):
         """Run management clients and other clients concurrently."""
 
-        # FIXME aconway 2010-03-03: move to framework
+        # TODO aconway 2010-03-03: move to brokertest framework
         class ClientLoop(StoppableThread):
             """Run a client executable in a loop."""
             def __init__(self, broker, cmd):
@@ -173,14 +173,21 @@ class LongTests(BrokerTest):
                                 self.cmd, expect=EXPECT_UNKNOWN)
                         finally: self.lock.release()
                         try: exit = self.process.wait()
-                        except: exit = 1
+                        except OSError, e:
+                            # Seems to be a race in wait(), it throws
+                            # "no such process" during test shutdown.
+                            # Doesn't indicate a test error, ignore.
+                            return
+                        except Exception, e:
+                            self.process.unexpected(
+                                "client of %s: %s"%(self.broker.name, e))
                         self.lock.acquire()
                         try:
                             # Quit and ignore errors if stopped or expecting failure.
                             if self.stopped: break
                             if exit != 0:
-                                self.process.unexpected("client of %s exit status %s" %
-                                                        (self.broker.name, exit))
+                                self.process.unexpected(
+                                    "client of %s exit code %s"%(self.broker.name, exit))
                         finally: self.lock.release()
                 except Exception, e:
                     self.error = RethrownException("Error in ClientLoop.run")
@@ -218,9 +225,7 @@ class LongTests(BrokerTest):
                 ["perftest", "--count", 1000,
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
-                [os.path.join(self.rootdir, "testagent/testagent"), "localhost",
-                 str(broker.port())]
-                ]:
+                ["testagent", "localhost", str(broker.port())] ]:
                 batch.append(ClientLoop(broker, cmd))
             clients.append(batch)
 
@@ -238,7 +243,7 @@ class LongTests(BrokerTest):
             start_mclients(b)
 
         while time.time() < endtime:
-            time.sleep(min(5,self.duration()))
+            time.sleep(min(5,self.duration()/2))
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker. Ignore errors on its clients and all the mclients
             for c in clients[alive] + mclients: c.expect_fail()
@@ -252,7 +257,6 @@ class LongTests(BrokerTest):
             b = cluster.start()
             start_clients(b)
             for b in cluster[alive:]: start_mclients(b)
-
         for c in chain(mclients, *clients):
             c.stop()
 
