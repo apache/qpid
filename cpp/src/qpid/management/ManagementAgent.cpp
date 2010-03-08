@@ -71,11 +71,13 @@ ManagementAgent::~ManagementAgent ()
         Mutex::ScopedLock lock (userLock);
 
         // Reset the shared pointers to exchanges.  If this is not done now, the exchanges
-        // will stick around until dExchange and mExchange are implicitely destroyed (long
+        // will stick around until dExchange and mExchange are implicitly destroyed (long
         // after this destructor completes).  Those exchanges hold references to management
         // objects that will be invalid.
         dExchange.reset();
         mExchange.reset();
+        v2Topic.reset();
+        v2Direct.reset();
 
         moveNewObjectsLH();
         for (ManagementObjectMap::iterator iter = managementObjects.begin ();
@@ -158,11 +160,18 @@ void ManagementAgent::writeData ()
     }
 }
 
-void ManagementAgent::setExchange (qpid::broker::Exchange::shared_ptr _mexchange,
-                                   qpid::broker::Exchange::shared_ptr _dexchange)
+void ManagementAgent::setExchange(qpid::broker::Exchange::shared_ptr _mexchange,
+                                  qpid::broker::Exchange::shared_ptr _dexchange)
 {
     mExchange = _mexchange;
     dExchange = _dexchange;
+}
+
+void ManagementAgent::setExchangeV2(qpid::broker::Exchange::shared_ptr _texchange,
+                                    qpid::broker::Exchange::shared_ptr _dexchange)
+{
+    v2Topic = _texchange;
+    v2Direct = _dexchange;
 }
 
 void ManagementAgent::registerClass (const string&  packageName,
