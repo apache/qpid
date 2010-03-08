@@ -636,8 +636,10 @@ libqpidbroker_la_SOURCES = \
   qpid/management/IdAllocator.h \
   qpid/management/ManagementAgent.cpp \
   qpid/management/ManagementAgent.h \
-  qpid/management/ManagementExchange.cpp \
-  qpid/management/ManagementExchange.h \
+  qpid/management/ManagementDirectExchange.cpp \
+  qpid/management/ManagementDirectExchange.h \
+  qpid/management/ManagementTopicExchange.cpp \
+  qpid/management/ManagementTopicExchange.h \
   qpid/sys/TCPIOPlugin.cpp
 
 

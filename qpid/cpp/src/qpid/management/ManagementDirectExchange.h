@@ -18,41 +18,38 @@
  * under the License.
  *
  */
-#ifndef _ManagementExchange_
-#define _ManagementExchange_
+#ifndef _ManagementDirectExchange_
+#define _ManagementDirectExchange_
 
-#include "qpid/broker/TopicExchange.h"
+#include "qpid/broker/DirectExchange.h"
 #include "qpid/management/ManagementAgent.h"
 
 namespace qpid {
 namespace broker {
 
-class ManagementExchange : public virtual TopicExchange
+class ManagementDirectExchange : public virtual DirectExchange
 {
   private:
     management::ManagementAgent* managementAgent;
+    int qmfVersion;
  
   public:
     static const std::string typeName;
 
-    ManagementExchange (const string& name, Manageable* _parent = 0, Broker* broker = 0);
-    ManagementExchange (const string& _name, bool _durable, 
-                        const qpid::framing::FieldTable& _args,
-                        Manageable* _parent = 0, Broker* broker = 0);
+    ManagementDirectExchange(const string& name, Manageable* _parent = 0, Broker* broker = 0);
+    ManagementDirectExchange(const string& _name, bool _durable, 
+                             const qpid::framing::FieldTable& _args,
+                             Manageable* _parent = 0, Broker* broker = 0);
 
     virtual std::string getType() const { return typeName; }
 
-    virtual void route (Deliverable& msg,
-                        const string& routingKey,
-                        const qpid::framing::FieldTable* args);
-
-    virtual bool bind (Queue::shared_ptr queue,
+    virtual void route(Deliverable& msg,
                        const string& routingKey,
                        const qpid::framing::FieldTable* args);
 
-    void setManagmentAgent (management::ManagementAgent* agent);
+    void setManagmentAgent(management::ManagementAgent* agent, int qmfVersion);
 
-    virtual ~ManagementExchange();
+    virtual ~ManagementDirectExchange();
 };
 
 
