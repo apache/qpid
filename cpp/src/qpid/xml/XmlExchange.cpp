@@ -184,7 +184,7 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
       }
 
       Result result = query->execute(context.get());
-#ifndef XQILLA_BEFORE_2_2_3
+#ifndef XQILLA_2_1_3
       Item::Ptr first_ = result->next(context.get());
       Item::Ptr second_ = result->next(context.get());
       return XQEffectiveBooleanValue::get(first_, second_, context.get(), 0);
