@@ -38,11 +38,10 @@ EXPECT_EXIT_FAIL=2         # Expect to exit with non-0 status before end of test
 EXPECT_RUNNING=3           # Expect to still be running at end of test
 EXPECT_UNKNOWN=4            # No expectation, don't check exit status.
 
-def is_exe(fpath):
-    return os.path.exists(fpath) and os.access(fpath, os.X_OK)
-
 def find_exe(program):
     """Find an executable in the system PATH"""
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
     dir, name = os.path.split(program)
     if dir:
         if is_exe(program): return program
@@ -144,13 +143,13 @@ class Popen(popen2.Popen3):
         expect - if set verify expectation at end of test.
         drain  - if true (default) drain stdout/stderr to files.
         """
-        assert find_exe(cmd[0])
+        assert find_exe(cmd[0]), "executable not found: "+cmd[0]
         if type(cmd) is type(""): cmd = [cmd] # Make it a list.
         self.cmd  = [ str(x) for x in cmd ]
         popen2.Popen3.__init__(self, self.cmd, True)
         self.expect = expect
         self.was_shutdown = False # Set if we deliberately kill/terminate the process
-        self.pname = "%s-%d" % (os.path.split(self.cmd[0])[-1], self.pid)
+        self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
         msg = "Process %s" % self.pname
         self.stdin = ExceptionWrapper(self.tochild, msg)
         self.stdout = Popen.OutStream(self.fromchild, self.outfile("out"), msg)
@@ -353,7 +352,6 @@ class Broker(Popen):
             return False
         finally: f.close()
 
-    # FIXME aconway 2010-03-02: rename to wait_ready
     def ready(self):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
@@ -361,7 +359,7 @@ class Broker(Popen):
             raise Exception("Timed out waiting for broker %s" % self.name)
         # Make a connection, this will wait for extended cluster init to finish.
         try: self.connect().close()
-        except: raise RethrownException("Broker %s failed ready test %s"%self.name)
+        except: raise RethrownException("Broker %s failed ready test"%self.name)
 
 class Cluster:
     """A cluster of brokers in a test."""
@@ -427,6 +425,7 @@ class BrokerTest(TestCase):
         for p in self.stopem:
             try: p.stop()
             except Exception, e: err.append(str(e))
+
         if err: raise Exception("Unexpected process status:\n    "+"\n    ".join(err))
 
     def cleanup_stop(self, stopable):

@@ -31,6 +31,11 @@ namespace cluster {
 
 /**
  * Track status of cluster members during initialization.
+ *
+ * When a new member joins the CPG cluster, all members send an initial-status
+ * control. This map tracks those controls and provides data to make descisions
+ * about joining the cluster.
+ *
  */
 class InitialStatusMap
 {
@@ -38,7 +43,7 @@ class InitialStatusMap
     typedef framing::ClusterInitialStatusBody Status;
 
     InitialStatusMap(const MemberId& self, size_t size);
-    /** Process a config change. @return true if we need to re-send our status */
+    /** Process a config change. May make isResendNeeded() true. */
     void configChange(const MemberSet& newConfig);
     /** @return true if we need to re-send status */
     bool isResendNeeded();
@@ -52,7 +57,7 @@ class InitialStatusMap
     bool transitionToComplete();
     /**@pre isComplete(). @return this node's elders */
     MemberSet getElders() const;
-    /**@pre isComplete(). @return True if we need an update. */
+    /**@pre isComplete(). @return True if we need to request an update. */
     bool isUpdateNeeded();
     /**@pre isComplete(). @return Cluster-wide cluster ID. */
     framing::Uuid getClusterId();

@@ -198,8 +198,12 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
             framing::cluster::StoreState(storeState), shutdownId, 
             firstConfig, l);
     }
-    void ready(const std::string& url) { cluster.ready(member, url, l); }
-    void configChange(const std::string& current) { cluster.configChange(member, current, l); }
+    void ready(const std::string& url) {
+        cluster.ready(member, url, l);
+    }
+    void configChange(const std::string& current) {
+        cluster.configChange(member, current, l);
+    }
     void updateOffer(uint64_t updatee) {
         cluster.updateOffer(member, updatee, l);
     }
