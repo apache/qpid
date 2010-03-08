@@ -77,7 +77,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains("The name supplied in the address " +
+            assertTrue(e.getMessage().contains("The name 'testQueue1' supplied in the address " +
                     "doesn't resolve to an exchange or a queue"));
         }
         
@@ -140,7 +140,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains("The name supplied in the address " +
+            assertTrue(e.getMessage().contains("The name 'testQueue3' supplied in the address " +
                     "doesn't resolve to an exchange or a queue"));
         }
         
@@ -150,7 +150,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains("The name supplied in the address " +
+            assertTrue(e.getMessage().contains("The name 'testQueue3' supplied in the address " +
                     "doesn't resolve to an exchange or a queue"));
         }
             
@@ -167,7 +167,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains("The name supplied in the address " +
+            assertTrue(e.getMessage().contains("The name 'testQueue3' supplied in the address " +
                     "doesn't resolve to an exchange or a queue"));
         }
         assertFalse("Queue should not be created",(
