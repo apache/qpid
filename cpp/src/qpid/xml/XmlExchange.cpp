@@ -34,7 +34,7 @@
 
 #include <xercesc/framework/MemBufInputSource.hpp>
 
-#ifndef XQILLA_2_1_3
+#ifdef XQ_EFFECTIVE_BOOLEAN_VALUE_HPP
 #include <xqilla/ast/XQEffectiveBooleanValue.hpp>
 #endif
 
@@ -184,11 +184,11 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
       }
 
       Result result = query->execute(context.get());
-#ifndef XQILLA_2_1_3
+#ifdef XQ_EFFECTIVE_BOOLEAN_VALUE_HPP
       Item::Ptr first_ = result->next(context.get());
       Item::Ptr second_ = result->next(context.get());
       return XQEffectiveBooleanValue::get(first_, second_, context.get(), 0);
-#else
+#else 
       return result->getEffectiveBooleanValue(context.get(), 0);
 #endif
   }
