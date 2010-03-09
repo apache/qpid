@@ -784,7 +784,8 @@ set (qpidbroker_SOURCES
      qpid/broker/TxPublish.cpp
      qpid/broker/Vhost.cpp
      qpid/management/ManagementAgent.cpp
-     qpid/management/ManagementExchange.cpp
+     qpid/management/ManagementDirectExchange.cpp
+     qpid/management/ManagementTopicExchange.cpp
      qpid/sys/TCPIOPlugin.cpp
 )
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
