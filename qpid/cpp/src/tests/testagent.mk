@@ -42,6 +42,7 @@ testagent_gen.timestamp: testagent.xml
 
 CLEANFILES+=$(TESTAGENT_GEN_SRC) testagent_gen.timestamp
 
+testagent-testagent.$(OBJEXT): $(TESTAGENT_GEN_SRC)
 qpidtest_PROGRAMS+=testagent
 testagent_CXXFLAGS=$(CXXFLAGS) -Itestagent_gen
 testagent_SOURCES=testagent.cpp $(TESTAGENT_GEN_SRC)
