@@ -17,8 +17,6 @@
 # under the License.
 #
 
-SUBDIRS = . testagent
-
 AM_CXXFLAGS = $(WARNING_CFLAGS) -DBOOST_TEST_DYN_LINK
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
 PUBLIC_INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include # Use public API only
@@ -381,3 +379,5 @@ python_prep:
 		--prefix=$(PYTHON_BLD_DIR) --install-lib=$(PYTHON_BLD_DIR) \
 		--install-scripts=$(PYTHON_BLD_DIR)/commands; \
 	else echo "WARNING: python client not built, missing $(PYTHON_SRC_DIR)"; fi
+
+include testagent.mk
