@@ -101,6 +101,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private String _traceExclude;
     private String _trace;
     private long _createTime = System.currentTimeMillis();
+    private final AtomicLong _deliveredCount = new AtomicLong(0);
 
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
@@ -256,6 +257,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public ConfigStore getConfigStore()
     {
         return getQueue().getConfigStore();
+    }
+    
+    public Long getDelivered()
+    {
+        return _deliveredCount.get();
     }
 
     public void creditStateChanged(boolean hasCredit)
@@ -558,7 +564,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             }
 
             _session.sendMessage(xfr, _postIdSettingAction);
-
+            _deliveredCount.incrementAndGet();
             if(_acceptMode == MessageAcceptMode.NONE && _acquireMode == MessageAcquireMode.PRE_ACQUIRED)
             {
                 forceDequeue(entry, false);
