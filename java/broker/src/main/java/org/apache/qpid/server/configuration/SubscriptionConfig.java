@@ -43,5 +43,5 @@ public interface SubscriptionConfig extends ConfiguredObject<SubscriptionConfigT
 
     boolean isExplicitAcknowledge();
 
-
+    Long getDelivered();
 }

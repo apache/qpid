@@ -1404,8 +1404,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public Long getDelivered()
         {
-            // TODO
-            return 0l;
+            return _obj.getDelivered();
         }
 
         public UUID getId()
