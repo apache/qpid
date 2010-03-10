@@ -531,7 +531,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
         if(!excludeDueToFederation)
         {
-            if(_acceptMode == MessageAcceptMode.NONE)
+            if(_acceptMode == MessageAcceptMode.NONE && _acquireMode != MessageAcquireMode.PRE_ACQUIRED)
             {
                 xfr.setCompletionListener(new MessageAcceptCompletionListener(this, _session, entry, _flowMode == MessageFlowMode.WINDOW));
             }
