@@ -401,6 +401,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     public void selectTx()
     {
         _transaction = new LocalTransaction(this.getMessageStore());
+        _txnStarts.incrementAndGet();
     }
 
     public void commit()
@@ -424,16 +425,22 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     
     private void incrementOutstandingTxnsIfNecessary()
     {
-        //There can currently only be at most one outstanding transaction
-        //due to only having LocalTransaction support. Set value to 1 if 0.
-        _txnCount.compareAndSet(0,1);
+        if(isTransactional())
+        {
+            //There can currently only be at most one outstanding transaction
+            //due to only having LocalTransaction support. Set value to 1 if 0.
+            _txnCount.compareAndSet(0,1);
+        }
     }
     
     private void decrementOutstandingTxnsIfNecessary()
     {
-        //There can currently only be at most one outstanding transaction
-        //due to only having LocalTransaction support. Set value to 0 if 1.
-        _txnCount.compareAndSet(1,0);
+        if(isTransactional())
+        {
+            //There can currently only be at most one outstanding transaction
+            //due to only having LocalTransaction support. Set value to 0 if 1.
+            _txnCount.compareAndSet(1,0);
+        }
     }
 
     public Long getTxnStarts()
