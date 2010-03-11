@@ -431,7 +431,7 @@ void SessionImpl::senderCancelled(const std::string& name)
 
 void SessionImpl::reconnect()
 {
-    connection.reconnect();    
+    connection.connect();    
 }
 
 qpid::messaging::Connection SessionImpl::getConnection() const

@@ -31,6 +31,7 @@ namespace client {
 namespace messaging {
 
 class Session;
+class Variant;
 
 class ConnectionImpl : public virtual qpid::RefCounted
 {
@@ -40,6 +41,7 @@ class ConnectionImpl : public virtual qpid::RefCounted
     virtual void close() = 0;
     virtual Session newSession(bool transactional, const std::string& name) = 0;
     virtual Session getSession(const std::string& name) const = 0;
+    virtual void setOption(const std::string& name, const Variant& value) = 0;
   private:
 };
 }} // namespace qpid::messaging

@@ -25,7 +25,6 @@
 #include "qpid/messaging/Variant.h"
 #include "qpid/Url.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/FailoverListener.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Semaphore.h"
@@ -46,7 +45,8 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     qpid::messaging::Session newSession(bool transactional, const std::string& name);
     qpid::messaging::Session getSession(const std::string& name) const;
     void closed(SessionImpl&);
-    void reconnect();
+    void connect();
+    void setOption(const std::string& name, const qpid::messaging::Variant& value);
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
 
@@ -54,18 +54,19 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     qpid::sys::Semaphore semaphore;//used to coordinate reconnection
     Sessions sessions;
     qpid::client::Connection connection;
-    std::auto_ptr<FailoverListener> failoverListener;
-    qpid::Url url;
+    std::vector<std::string> urls;
     qpid::client::ConnectionSettings settings;
-    bool reconnectionEnabled;
-    int timeout;
-    int minRetryInterval;
-    int maxRetryInterval;
+    bool reconnect;
+    int64_t timeout;
+    int32_t limit;
+    int64_t minReconnectInterval;
+    int64_t maxReconnectInterval;
+    int32_t retries;
 
+    void setOptions(const qpid::messaging::Variant::Map& options);
     void connect(const qpid::sys::AbsTime& started);
     bool tryConnect();
-    bool tryConnect(const std::vector<Url>& urls);
-    bool tryConnect(const Url&);
+    bool tryConnect(const std::vector<std::string>& urls);
     bool resetSessions();
 };
 }}} // namespace qpid::client::amqp0_10
