@@ -729,6 +729,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/amqp0_10/CodecsInternal.h		\
   qpid/client/amqp0_10/ConnectionImpl.h	        \
   qpid/client/amqp0_10/ConnectionImpl.cpp	\
+  qpid/client/amqp0_10/FailoverUpdates.cpp	\
   qpid/client/amqp0_10/IncomingMessages.h	\
   qpid/client/amqp0_10/IncomingMessages.cpp	\
   qpid/client/amqp0_10/MessageSink.h		\
@@ -740,7 +741,9 @@ libqpidclient_la_SOURCES =			\
   qpid/client/amqp0_10/SessionImpl.h		\
   qpid/client/amqp0_10/SessionImpl.cpp		\
   qpid/client/amqp0_10/SenderImpl.h		\
-  qpid/client/amqp0_10/SenderImpl.cpp
+  qpid/client/amqp0_10/SenderImpl.cpp           \
+  qpid/client/amqp0_10/SimpleUrlParser.h	\
+  qpid/client/amqp0_10/SimpleUrlParser.cpp
 
 # NOTE: only public header files (which should be in ../include)
 # should go in this list. Private headers should go in the SOURCES
@@ -826,7 +829,8 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/Session.h 		\
   ../include/qpid/messaging/Uuid.h 		\
   ../include/qpid/messaging/Variant.h 		\
-  ../include/qpid/client/amqp0_10/Codecs.h
+  ../include/qpid/client/amqp0_10/Codecs.h	\
+  ../include/qpid/client/amqp0_10/FailoverUpdates.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

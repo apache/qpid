@@ -198,6 +198,7 @@ bool AddressParser::readSimpleValue(Variant& value)
     std::string s;
     if (readWord(s)) {
         value = s;
+        try { value = value.asInt32(); return true; } catch (const InvalidConversion&) {}
         try { value = value.asInt64(); return true; } catch (const InvalidConversion&) {}
         try { value = value.asDouble(); return true; } catch (const InvalidConversion&) {}
         return true;
