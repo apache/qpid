@@ -17,11 +17,16 @@
 # under the License.
 #
 
+__SELF__ = object()
+
 class Constant:
 
-  def __init__(self, name, value=None):
+  def __init__(self, name, value=__SELF__):
     self.name = name
-    self.value = value
+    if value is __SELF__:
+      self.value = self
+    else:
+      self.value = value
 
   def __repr__(self):
     return self.name
@@ -30,3 +35,6 @@ AMQP_PORT = 5672
 AMQPS_PORT = 5671
 
 UNLIMITED = Constant("UNLIMITED", 0xFFFFFFFFL)
+
+REJECTED = Constant("REJECTED")
+RELEASED = Constant("RELEASED")

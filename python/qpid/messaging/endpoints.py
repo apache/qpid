@@ -508,7 +508,7 @@ class Session:
       raise Empty
 
   @synchronized
-  def acknowledge(self, message=None, sync=True):
+  def acknowledge(self, message=None, disposition=None, sync=True):
     """
     Acknowledge the given L{Message}. If message is None, then all
     unacknowledged messages on the session are acknowledged.
@@ -530,6 +530,7 @@ class Session:
           raise InsufficientCapacity("ack_capacity = %s" % self.ack_capacity)
         self._wakeup()
         self._ewait(lambda: len(self.acked) < self.ack_capacity)
+      m._disposition = disposition
       self.unacked.remove(m)
       self.acked.append(m)
 
