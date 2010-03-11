@@ -59,6 +59,9 @@ class Base(Test):
     else:
       return "%s[%s, %s]" % (base, count, self.test_id)
 
+  def message(self, base, count = None):
+    return Message(self.content(base, count))
+
   def ping(self, ssn):
     PING_Q = 'ping-queue; {create: always, delete: always}'
     # send a message
@@ -70,7 +73,7 @@ class Base(Test):
     ssn.acknowledge()
     assert msg.content == content, "expected %r, got %r" % (content, msg.content)
 
-  def drain(self, rcv, limit=None, timeout=0, expected=None):
+  def drain(self, rcv, limit=None, timeout=0, expected=None, redelivered=False):
     messages = []
     try:
       while limit is None or len(messages) < limit:
@@ -78,21 +81,22 @@ class Base(Test):
     except Empty:
       pass
     if expected is not None:
-      self.assertEchos(expected, messages)
+      self.assertEchos(expected, messages, redelivered)
     return messages
 
   def diff(self, m1, m2):
     result = {}
     for attr in ("id", "subject", "user_id", "to", "reply_to",
                  "correlation_id", "durable", "priority", "ttl",
-                 "properties", "content_type", "content"):
+                 "redelivered", "properties", "content_type",
+                 "content"):
       a1 = getattr(m1, attr)
       a2 = getattr(m2, attr)
       if a1 != a2:
         result[attr] = (a1, a2)
     return result
 
-  def assertEcho(self, msg, echo):
+  def assertEcho(self, msg, echo, redelivered=False):
     if not isinstance(msg, Message) or not isinstance(echo, Message):
       if isinstance(msg, Message):
         msg = msg.content
@@ -102,14 +106,19 @@ class Base(Test):
     else:
       delta = self.diff(msg, echo)
       mttl, ettl = delta.pop("ttl", (0, 0))
+      if redelivered:
+        assert echo.redelivered, \
+            "expected %s to be redelivered: %s" % (msg, echo)
+        if delta.has_key("redelivered"):
+          del delta["redelivered"]
       assert mttl is not None and ettl is not None, "%s, %s" % (mttl, ettl)
       assert mttl >= ettl, "%s, %s" % (mttl, ettl)
       assert not delta, "expected %s, got %s, delta %s" % (msg, echo, delta)
 
-  def assertEchos(self, msgs, echoes):
+  def assertEchos(self, msgs, echoes, redelivered=False):
     assert len(msgs) == len(echoes), "%s, %s" % (msgs, echoes)
     for m, e in zip(msgs, echoes):
-      self.assertEcho(m, e)
+      self.assertEcho(m, e, redelivered)
 
   def assertEmpty(self, rcv):
     contents = self.drain(rcv)
