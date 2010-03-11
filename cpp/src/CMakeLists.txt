@@ -667,6 +667,7 @@ set (qpidclient_SOURCES
      qpid/client/amqp0_10/CodecsInternal.h
      qpid/client/amqp0_10/ConnectionImpl.h
      qpid/client/amqp0_10/ConnectionImpl.cpp
+     qpid/client/amqp0_10/FailoverUpdates.cpp
      qpid/client/amqp0_10/IncomingMessages.h
      qpid/client/amqp0_10/IncomingMessages.cpp
      qpid/client/amqp0_10/MessageSink.h
@@ -679,6 +680,8 @@ set (qpidclient_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
+     qpid/client/amqp0_10/SimpleUrlParser.h
+     qpid/client/amqp0_10/SimpleUrlParser.cpp
 )
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
