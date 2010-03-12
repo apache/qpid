@@ -832,7 +832,7 @@ set (qmf_SOURCES
     qpid/agent/ManagementAgentImpl.h
     )
 add_library (qmf SHARED ${qmf_SOURCES})
-target_link_libraries (qmf qmfengine)
+target_link_libraries (qmf qpidclient)
 set_target_properties (qmf PROPERTIES
                        VERSION ${qmf_version})
 install (TARGETS qmf OPTIONAL
