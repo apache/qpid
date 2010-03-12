@@ -41,16 +41,18 @@ class Cpg;
 
 /**
  * Multicast to the cluster. Shared, thread safe object.
- *
- * Runs in two modes;
  * 
- * initializing: Hold connection mcast events. Multicast cluster
- * events directly in the calling thread. This mode is used before
- * joining the cluster where the poller may not yet be active and we
- * want to hold any connection traffic till we join.
+ * holding mode: Hold connection events for later multicast. Cluster
+ * events are never held.  Used during PRE_INIT/INIT state when we
+ * want to hold any connection traffic till we are read in the
+ * cluster.
  *
- * ready: normal operation. Queues all mcasts on a pollable queue,
- * multicasts connection and cluster events.
+ * bypass mode: Multicast cluster events directly in the calling
+ * thread. This mode is used by cluster in PRE_INIT state the poller
+ * is not yet be active.
+ *
+ * Multicaster is created in bypass+holding mode, they are disabled by
+ * start and setReady respectively.
  */
 class Multicaster
 {
@@ -65,7 +67,9 @@ class Multicaster
     void mcastBuffer(const char*, size_t, const ConnectionId&);
     void mcast(const Event& e);
 
-    /** Switch to ready mode. */
+    /** Start the pollable queue, turn off bypass mode. */
+    void start();
+    /** Switch to ready mode, release held messages. */
     void setReady();
 
   private:
@@ -81,6 +85,7 @@ class Multicaster
     bool ready;
     PlainEventQueue holdingQueue;
     std::vector<struct ::iovec> ioVector;
+    bool bypass;
 };
 }} // namespace qpid::cluster
 
