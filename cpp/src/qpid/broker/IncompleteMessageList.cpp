@@ -79,7 +79,7 @@ void IncompleteMessageList::each(const CompletionListener& listen) {
         sys::Mutex::ScopedLock l(lock);
         snapshot = incomplete;
     }
-    std::for_each(incomplete.begin(), incomplete.end(), listen); // FIXME aconway 2008-11-07: passed by ref or value?
+    std::for_each(incomplete.begin(), incomplete.end(), listen);
 }
 
 }}

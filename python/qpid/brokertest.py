@@ -268,6 +268,7 @@ class Broker(Popen):
         test.cleanup_stop(self)
         self._host = "localhost"
         log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
+        self._log_ready = False
 
     def host(self): return self._host
 
@@ -343,12 +344,14 @@ class Broker(Popen):
 
     def log_ready(self):
         """Return true if the log file exists and contains a broker ready message"""
+        if self._log_ready: return True
         if not os.path.exists(self.log): return False
-        ready_msg = re.compile("notice Broker running")
         f = file(self.log)
         try:
             for l in f:
-                if ready_msg.search(l): return True
+                if "notice Broker running" in l:
+                    self._log_ready = True
+                    return True
             return False
         finally: f.close()
 
@@ -445,7 +448,7 @@ class BrokerTest(TestCase):
         if (wait):
             try: b.ready()
             except Exception, e:
-                raise Exception("Failed to start broker %s: %s" % ( b.name, e))
+                raise Exception("Failed to start broker %s(%s): %s" % (b.name, b.log, e))
         return b
 
     def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait=True):

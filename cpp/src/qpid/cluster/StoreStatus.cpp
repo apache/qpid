@@ -21,6 +21,7 @@
 #include "StoreStatus.h"
 #include "qpid/Exception.h"
 #include "qpid/Msg.h"
+#include "qpid/log/Statement.h"
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -54,24 +55,39 @@ Uuid loadUuid(const fs::path& path) {
     Uuid ret;
     if (exists(path)) {
         fs::ifstream i(path);
-        throw_exceptions(i);
-        i >> ret;
+        try {
+            throw_exceptions(i);
+            i >> ret;
+        } catch (const std::exception& e) {
+            QPID_LOG(error, "Cant load UUID from " << path.string() << ": " << e.what());
+            throw;
+        }
     }
     return ret;
 }
 
 void saveUuid(const fs::path& path, const Uuid& uuid) {
     fs::ofstream o(path);
-    throw_exceptions(o);
-    o << uuid;
+    try {
+        throw_exceptions(o);
+        o << uuid;
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Cant save UUID to " << path.string() << ": " << e.what());
+        throw;
+    }
 }
 
 framing::SequenceNumber loadSeqNum(const fs::path& path) {
     uint32_t n = 0;
     if (exists(path)) {
         fs::ifstream i(path);
-        throw_exceptions(i);
-        i >> n;
+        try {
+            throw_exceptions(i);
+            i >> n;
+        } catch (const std::exception& e) {
+            QPID_LOG(error, "Cant load sequence number from " << path.string() << ": " << e.what());
+            throw;
+        }
     }
     return framing::SequenceNumber(n);
 }
@@ -105,9 +121,14 @@ void StoreStatus::save() {
         create_directory(dir);
         saveUuid(dir/CLUSTER_ID_FILE, clusterId);
         saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
-        fs::ofstream o(dir/CONFIG_SEQ_FILE);
-        throw_exceptions(o);
-        o << configSeq.getValue();
+        try {
+            fs::ofstream o(dir/CONFIG_SEQ_FILE);
+            throw_exceptions(o);
+            o << configSeq.getValue();
+        } catch (const std::exception& e) {
+            QPID_LOG(error, "Cant save sequence number to " << (dir/CONFIG_SEQ_FILE).string() << ": " << e.what());
+            throw;
+        }
     }
     catch (const std::exception&e) {
         throw Exception(QPID_MSG("Cannot save cluster store status: " << e.what()));
