@@ -21,6 +21,8 @@
  * under the License.
  *
  */
+#include "qpid/client/ClientImportExport.h"
+
 namespace qpid {
 
 namespace messaging {
@@ -39,8 +41,8 @@ struct FailoverUpdatesImpl;
 class FailoverUpdates
 {
   public:
-    FailoverUpdates(qpid::messaging::Connection& connection);
-    ~FailoverUpdates();
+    QPID_CLIENT_EXTERN FailoverUpdates(qpid::messaging::Connection& connection);
+    QPID_CLIENT_EXTERN ~FailoverUpdates();
   private:
     FailoverUpdatesImpl* impl;
 
