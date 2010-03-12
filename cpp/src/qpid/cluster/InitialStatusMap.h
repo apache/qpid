@@ -51,12 +51,18 @@ class InitialStatusMap
     /** Process received status */
     void received(const MemberId&, const Status& is);
 
-    /**@return true if the map is complete. */
+    /**@return true if the map has an entry for all current cluster members. */
     bool isComplete() const;
+
+    size_t getActualSize() const { return map.size(); }
+    size_t getRequiredSize() const { return size; }
+
     /**@return true if the map was completed by the last config change or received. */
     bool transitionToComplete();
     /**@pre isComplete(). @return this node's elders */
     MemberSet getElders() const;
+    /**@pre isComplete(). @return True if there are active members of the cluster. */
+    bool isActive();
     /**@pre isComplete(). @return True if we need to request an update. */
     bool isUpdateNeeded();
     /**@pre isComplete(). @return Cluster-wide cluster ID. */
@@ -71,8 +77,9 @@ class InitialStatusMap
   private:
     typedef std::map<MemberId, boost::optional<Status> > Map;
     static bool notInitialized(const Map::value_type&);
-    static bool isActive(const Map::value_type&);
+    static bool isActiveEntry(const Map::value_type&);
     static bool hasStore(const Map::value_type&);
+
     Map map;
     MemberSet firstConfig;
     MemberId self;

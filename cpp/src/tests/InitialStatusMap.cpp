@@ -173,20 +173,6 @@ QPID_AUTO_TEST_CASE(testInteveningConfig) {
     BOOST_CHECK_EQUAL(map.getClusterId(), id);
 }
 
-QPID_AUTO_TEST_CASE(testInitialSize) {
-    InitialStatusMap map(MemberId(0), 3);
-    map.configChange(list_of<MemberId>(0)(1));
-    map.received(MemberId(0), newcomerStatus());
-    map.received(MemberId(1), newcomerStatus());
-    BOOST_CHECK(!map.isComplete());
-
-    map.configChange(list_of<MemberId>(0)(1)(2));
-    map.received(MemberId(0), newcomerStatus());
-    map.received(MemberId(1), newcomerStatus());
-    map.received(MemberId(2), newcomerStatus());
-    BOOST_CHECK(map.isComplete());
-}
-
 QPID_AUTO_TEST_CASE(testAllCleanNoUpdate) {
     InitialStatusMap map(MemberId(0), 3);
     map.configChange(list_of<MemberId>(0)(1)(2));
@@ -243,8 +229,6 @@ QPID_AUTO_TEST_CASE(testEmptyAlone) {
     BOOST_CHECK(map.transitionToComplete());
     BOOST_CHECK(!map.isUpdateNeeded());
 }
-
-// FIXME aconway 2009-11-20: consistency tests for mixed stores,
 
 QPID_AUTO_TEST_SUITE_END()
 

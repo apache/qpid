@@ -180,6 +180,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
     void erase(const ConnectionId&, Lock&);       
+    void requestUpdate(Lock& );
     void initMapCompleted(Lock&);
     void becomeElder(Lock&);
 
@@ -251,7 +252,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     //    Local cluster state, cluster map
     enum {
-        INIT,    ///< Establishing inital cluster stattus.
+        PRE_INIT,///< Have not yet received complete initial status map.
+        INIT,    ///< Waiting to reach cluster-size.
         JOINER,  ///< Sent update request, waiting for update offer.
         UPDATEE, ///< Stalled receive queue at update offer, waiting for update to complete.
         CATCHUP, ///< Update complete, unstalled but has not yet seen own "ready" event.
