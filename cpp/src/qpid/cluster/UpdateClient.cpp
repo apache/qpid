@@ -158,6 +158,12 @@ void UpdateClient::update() {
     connection.close();
     QPID_LOG(debug,  updaterId << " update completed to " << updateeId
              << " at " << updateeUrl << ": " << membership);
+    // FIXME aconway 2010-03-15: This sleep avoids the race condition
+    // described in // https://bugzilla.redhat.com/show_bug.cgi?id=568831.
+    // It allows the connection to fully close before destroying the
+    // Connection object. Remove when the bug is fixed.
+    //
+    sys::usleep(10*1000);       // 100ms
 }
 
 namespace {

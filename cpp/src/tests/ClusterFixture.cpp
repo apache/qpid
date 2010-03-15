@@ -130,11 +130,11 @@ void ClusterFixture::kill(size_t n, int sig) {
         forkedBrokers[n]->kill(sig);
 }
 
-/** Kill a broker and suppressing errors from closing connection c. */
+/** Kill a broker and suppress errors from closing connection c. */
 void ClusterFixture::killWithSilencer(size_t n, client::Connection& c, int sig) {
     ScopedSuppressLogging sl;
-    kill(n,sig);
     try { c.close(); } catch(...) {}
+    kill(n,sig);
 }
 
 /**
