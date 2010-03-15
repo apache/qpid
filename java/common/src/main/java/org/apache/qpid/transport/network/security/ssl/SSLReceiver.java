@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network.ssl;
+package org.apache.qpid.transport.network.security.ssl;
 
 import java.nio.ByteBuffer;
 
