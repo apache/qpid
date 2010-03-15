@@ -1,4 +1,4 @@
-package org.apache.qpid.transport.network.ssl;
+package org.apache.qpid.transport.network.security.ssl;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
