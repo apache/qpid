@@ -22,6 +22,12 @@ package org.apache.qpid.transport;
 
 import java.util.Map;
 
+/**
+ * A ConnectionSettings object can only be associated with
+ * one Connection object. I have added an assertion that will
+ * throw an exception if it is used by more than on Connection
+ *
+ */
 public class ConnectionSettings
 {
     String protocol = "tcp";
@@ -29,18 +35,49 @@ public class ConnectionSettings
     String vhost;
     String username = "guest";
     String password = "guest";
-    String saslMechs = "PLAIN";
-    String saslProtocol = "AMQP";
-    String saslServerName = "localhost";
     int port = 5672;
+    boolean tcpNodelay;
     int maxChannelCount = 32767;
     int maxFrameSize = 65535;
     int heartbeatInterval;
+    
+    // SSL props
     boolean useSSL;
+    String keyStorePath;
+    String keyStorePassword;
+    String keyStoreCertType;
+    String trustStoreCertType;
+    String trustStorePath;
+    String trustStorePassword;
+    String certAlias;
+    boolean verifyHostname;
+    
+    // SASL props
+    String saslMechs = "PLAIN";
+    String saslProtocol = "AMQP";
+    String saslServerName = "localhost";
     boolean useSASLEncryption;
-    boolean tcpNodelay;
+    
+    private Connection owner;
+    
     private Map<String, Object> _clientProperties;
 
+    public Connection getConnection()
+    {
+        return owner;
+    }
+
+    public void setConnection(Connection owner)
+    {
+        if (this.owner != null)
+        {
+            throw new IllegalStateException(
+                    "A ConnectionSettings instance can be associated" +
+                    " with one and only one Connection instance");
+        }
+        this.owner = owner;
+    }
+    
     public boolean isTcpNodelay()
     {
         return tcpNodelay;
@@ -200,4 +237,85 @@ public class ConnectionSettings
     {
         return _clientProperties;
     }
+    
+    public String getKeyStorePath()
+    {
+        return keyStorePath;
+    }
+
+    public void setKeyStorePath(String keyStorePath)
+    {
+        this.keyStorePath = keyStorePath;
+    }
+
+    public String getKeyStorePassword()
+    {
+        return keyStorePassword;
+    }
+
+    public void setKeyStorePassword(String keyStorePassword)
+    {
+        this.keyStorePassword = keyStorePassword;
+    }
+
+    public String getTrustStorePath()
+    {
+        return trustStorePath;
+    }
+
+    public void setTrustStorePath(String trustStorePath)
+    {
+        this.trustStorePath = trustStorePath;
+    }
+
+    public String getTrustStorePassword()
+    {
+        return trustStorePassword;
+    }
+
+    public void setTrustStorePassword(String trustStorePassword)
+    {
+        this.trustStorePassword = trustStorePassword;
+    }
+
+    public String getCertAlias()
+    {
+        return certAlias;
+    }
+
+    public void setCertAlias(String certAlias)
+    {
+        this.certAlias = certAlias;
+    }
+
+    public boolean isVerifyHostname()
+    {
+        return verifyHostname;
+    }
+
+    public void setVerifyHostname(boolean verifyHostname)
+    {
+        this.verifyHostname = verifyHostname;
+    }
+    
+    public String getKeyStoreCertType()
+    {
+        return keyStoreCertType;
+    }
+
+    public void setKeyStoreCertType(String keyStoreCertType)
+    {
+        this.keyStoreCertType = keyStoreCertType;
+    }
+
+    public String getTrustStoreCertType()
+    {
+        return trustStoreCertType;
+    }
+
+    public void setTrustStoreCertType(String trustStoreCertType)
+    {
+        this.trustStoreCertType = trustStoreCertType;
+    }
+
 }
