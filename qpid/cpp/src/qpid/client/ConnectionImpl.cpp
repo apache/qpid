@@ -195,7 +195,8 @@ void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session, u
             throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attached to " << ss->getId()));
         } //else channel is busy, but we can keep looking for a free one
     }
-
+    // If we get here, we didn't find any available channel.
+    throw ResourceLimitExceededException("There are no channels available");
 }
 
 void ConnectionImpl::handle(framing::AMQFrame& frame)
