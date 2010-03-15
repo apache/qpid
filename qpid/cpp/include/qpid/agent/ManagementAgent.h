@@ -52,6 +52,20 @@ class ManagementAgent
         static ManagementAgent* agent;
     };
 
+    class Name {
+    public:
+        QMF_AGENT_EXTERN Name(std::string vendor,
+                              std::string product,
+                              std::string name);
+        QMF_AGENT_EXTERN Name();
+        QMF_AGENT_EXTERN operator std::string() const;
+
+    private:
+        std::string vendor;
+        std::string product;
+        std::string name;
+    };
+
     typedef enum {
     SEV_EMERG = 0,
     SEV_ALERT = 1,

@@ -129,7 +129,9 @@ libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduledir)\" 
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
-  libqpidcommon.la
+  libqpidcommon.la				\
+  libqpidclient.la
+
 
 posix_qpidd_src = posix/QpiddBroker.cpp
 
@@ -255,12 +257,12 @@ cmodule_LTLIBRARIES += \
 noinst_PROGRAMS = RdmaServer RdmaClient
 RdmaServer_SOURCES = qpid/sys/rdma/RdmaServer.cpp
 RdmaServer_LDADD = \
-  librdmawrap.la libqpidcommon.la
+  librdmawrap.la libqpidcommon.la libqpidclient.la
 RdmaClient_SOURCES = qpid/sys/rdma/RdmaClient.cpp
 RdmaClient_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 RdmaClient_LDADD = \
-  librdmawrap.la libqpidcommon.la
+  librdmawrap.la libqpidcommon.la libqpidclient.la
 
 endif
 

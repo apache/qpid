@@ -26,6 +26,8 @@
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/messaging/MapContent.h"
+#include "qpid/messaging/MapView.h"
 
 namespace qmf {
 /*MGEN:Event.OpenNamespaces*/
@@ -52,6 +54,7 @@ class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
     uint8_t* getMd5Sum() const { return md5Sum; }
     uint8_t getSeverity() const { return /*MGEN:Event.Severity*/; }
     void encode(::qpid::framing::Buffer& buffer) const;
+    void mapEncode(::qpid::messaging::MapContent& map) const;
 };
 
 }/*MGEN:Event.CloseNamespaces*/

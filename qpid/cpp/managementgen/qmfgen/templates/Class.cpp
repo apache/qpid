@@ -30,6 +30,7 @@
 
 using namespace qmf::/*MGEN:Class.Namespace*/;
 using namespace qpid::framing;
+using namespace qpid::messaging;
 using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
 using           qpid::management::ManagementObject;
@@ -38,7 +39,7 @@ using           std::string;
 
 string  /*MGEN:Class.NameCap*/::packageName  = string ("/*MGEN:Class.NamePackageLower*/");
 string  /*MGEN:Class.NameCap*/::className    = string ("/*MGEN:Class.NameLower*/");
-uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
+uint8_t /*MGEN:Class.NameCap*/::md5Sum[MD5_LEN]   =
     {/*MGEN:Class.SchemaMD5*/};
 
 /*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (ManagementAgent*, Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
@@ -105,14 +106,16 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 
     // Properties
 /*MGEN:Class.PropertySchema*/
+
     // Statistics
 /*MGEN:Class.StatisticSchema*/
+
     // Methods
 /*MGEN:Class.MethodSchema*/
 }
 
 /*MGEN:IF(Class.ExistPerThreadStats)*/
-void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* totals)
+void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* totals) const
 {
 /*MGEN:Class.InitializeTotalPerThreadStats*/
     for (int idx = 0; idx < maxThreads; idx++) {
@@ -124,9 +127,9 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 }
 /*MGEN:ENDIF*/
 
-uint32_t /*MGEN:Class.NameCap*/::writePropertiesSize() const
+uint32_t /*MGEN:Class.NameCap*/::writePropertiesBufSize() const
 {
-    uint32_t size = writeTimestampsSize();
+    uint32_t size = writeTimestampsBufSize();
 /*MGEN:IF(Class.ExistOptionals)*/
     size += /*MGEN:Class.PresenceMaskBytes*/;
 /*MGEN:ENDIF*/
@@ -209,3 +212,67 @@ std::string /*MGEN:Class.NameCap*/::getKey() const
     return key.str();
 }
 
+
+
+void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::messaging::VariantMap& _map,
+                                              bool includeProperties,
+                                              bool includeStatistics)
+{
+    using namespace ::qpid::messaging;
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+
+    if (includeProperties) {
+        configChanged = false;
+/*MGEN:Class.MapEncodeProperties*/
+    }
+
+    if (includeStatistics) {
+        instChanged = false;
+/*MGEN:IF(Class.ExistPerThreadAssign)*/
+        for (int idx = 0; idx < maxThreads; idx++) {
+            struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+            if (threadStats != 0) {
+/*MGEN:Class.PerThreadAssign*/
+            }
+        }
+/*MGEN:ENDIF*/
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+        struct PerThreadStats totals;
+        aggregatePerThreadStats(&totals);
+/*MGEN:ENDIF*/
+/*MGEN:Class.Assign*/
+
+/*MGEN:Class.MapEncodeStatistics*/
+
+    // Maintenance of hi-lo statistics
+/*MGEN:Class.HiLoStatResets*/
+/*MGEN:IF(Class.ExistPerThreadResets)*/
+        for (int idx = 0; idx < maxThreads; idx++) {
+            struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+            if (threadStats != 0) {
+/*MGEN:Class.PerThreadHiLoStatResets*/
+            }
+        }
+/*MGEN:ENDIF*/
+    }
+}
+
+void /*MGEN:Class.NameCap*/::mapDecodeValues (const ::qpid::messaging::VariantMap& _map)
+{
+    ::qpid::messaging::VariantMap::const_iterator _i;
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+/*MGEN:IF(Class.ExistOptionals)*/
+    bool _found;
+/*MGEN:ENDIF*/
+/*MGEN:Class.MapDecodeProperties*/
+}
+
+void /*MGEN:Class.NameCap*/::KAGdoMethod (/*MGEN:Class.DoMapMethodArgs*/)
+{
+    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+    std::string          text;
+
+/*MGEN:Class.MapMethodHandlers*/
+    outMap["_status_code"] = status;
+    outMap["_status_text"] = Manageable::StatusText(status, text);
+}

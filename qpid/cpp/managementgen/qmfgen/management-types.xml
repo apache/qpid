@@ -19,6 +19,10 @@
   under the License.
 -->
 
+<!-- "unmap": cast to convert from Variant to native type constructor,
+     "map":   cast to convert from native type to Variant constructor parameter
+-->
+
 <type name="objId"     base="REF"       cpp="::qpid::management::ObjectId"  encode="#.encode(@)" decode="#.decode(@)"  stream="#.getV2Key()" size="16" accessor="direct" init="::qpid::management::ObjectId()" byRef="y"/>
 <type name="uint8"     base="U8"        cpp="uint8_t"       encode="@.putOctet(#)"       decode="# = @.getOctet()"     stream="#" size="1" accessor="direct" init="0"/>
 <type name="uint16"    base="U16"       cpp="uint16_t"      encode="@.putShort(#)"       decode="# = @.getShort()"     stream="#" size="2" accessor="direct" init="0"/>
@@ -29,14 +33,14 @@
 <type name="int32"     base="S32"       cpp="int32_t"       encode="@.putInt32(#)"       decode="# = @.getInt32()"     stream="#" size="4" accessor="direct" init="0"/>
 <type name="int64"     base="S64"       cpp="int64_t"       encode="@.putInt64(#)"       decode="# = @.getInt64()"     stream="#" size="8" accessor="direct" init="0"/>
 <type name="bool"      base="BOOL"      cpp="uint8_t"       encode="@.putOctet(#?1:0)"   decode="# = @.getOctet()==1"  stream="#" size="1" accessor="direct" init="0"/>
-<type name="sstr"      base="SSTR"      cpp="std::string"   encode="@.putShortString(#)" decode="@.getShortString(#)"  stream="#" size="(1 + #.length())" accessor="direct" init='""' byRef="y"/>
-<type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putMediumString(#)" decode="@.getMediumString(#)" stream="#" size="(2 + #.length())" accessor="direct" init='""' byRef="y"/>
+<type name="sstr"      base="SSTR"      cpp="std::string"   encode="@.putShortString(#)" decode="@.getShortString(#)"  stream="#" size="(1 + #.length())" accessor="direct" init='""' byRef="y" unmap="(#).getString()"/>
+<type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putMediumString(#)" decode="@.getMediumString(#)" stream="#" size="(2 + #.length())" accessor="direct" init='""' byRef="y" unmap="(#).getString()"/>
 <type name="absTime"   base="ABSTIME"   cpp="int64_t"       encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" size="8" accessor="direct" init="0"/>
 <type name="deltaTime" base="DELTATIME" cpp="uint64_t"      encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" size="8" accessor="direct" init="0"/>
 <type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat(#)"       decode="# = @.getFloat()"     stream="#" size="4" accessor="direct" init="0."/>
 <type name="double"    base="DOUBLE"    cpp="double"        encode="@.putDouble(#)"      decode="# = @.getDouble()"    stream="#" size="8" accessor="direct" init="0."/>
-<type name="uuid"      base="UUID"      cpp="::qpid::framing::Uuid" encode="#.encode(@)"       decode="#.decode(@)"    stream="#" size="16" accessor="direct" init="::qpid::framing::Uuid()" byRef="y"/>
-<type name="map"       base="FTABLE"    cpp="::qpid::framing::FieldTable" encode="#.encode(@)" decode="#.decode(@)"    stream="#" size="#.encodedSize()" accessor="direct" init="::qpid::framing::FieldTable()" byRef="y"/>
+<type name="uuid"      base="UUID"      cpp="::qpid::framing::Uuid" encode="#.encode(@)"       decode="#.decode(@)"    stream="#" size="16" accessor="direct" init="::qpid::framing::Uuid()" byRef="y" unmap="(#).asUuid().data()" map="::qpid::messaging::Uuid((#).data())" />
+<type name="map"       base="FTABLE"    cpp="::qpid::framing::FieldTable" encode="#.encode(@)" decode="#.decode(@)"    stream="#" size="#.encodedSize()" accessor="direct" init="::qpid::framing::FieldTable()" byRef="y" unmap="::qpid::framing::FieldTable(); assert(false); /*TBD*/" map='(assert(false),"TBD: unsupported type")' />
 
 <type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    style="wm" stream="#" size="1" accessor="counter" init="0"/>
 <type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    style="wm" stream="#" size="2" accessor="counter" init="0"/>

@@ -1473,8 +1473,8 @@ void ManagementAgent::RemoteAgent::decode(qpid::framing::Buffer& inBuf) {
 uint32_t ManagementAgent::RemoteAgent::encodedSize() const {
     return sizeof(uint32_t) + sizeof(uint32_t) // 2 x Long
         + routingKey.size() + sizeof(uint8_t) // ShortString
-        + connectionRef.encodedSize()
-        + mgmtObject->writePropertiesSize();
+        + connectionRef.encodedBufSize()
+        + mgmtObject->writePropertiesBufSize();
 }
 
 void ManagementAgent::exportAgents(std::string& out) {
@@ -1485,7 +1485,7 @@ void ManagementAgent::exportAgents(std::string& out) {
     {
         ObjectId id = i->first;
         RemoteAgent* agent = i->second;
-        size_t encodedSize = id.encodedSize() + agent->encodedSize();
+        size_t encodedSize = id.encodedBufSize() + agent->encodedSize();
         size_t end = out.size();
         out.resize(end + encodedSize);
         framing::Buffer outBuf(&out[end], encodedSize);
@@ -1497,7 +1497,7 @@ void ManagementAgent::exportAgents(std::string& out) {
 void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
     while (inBuf.available()) {
         ObjectId id;
-        inBuf.checkAvailable(id.encodedSize());
+        inBuf.checkAvailable(id.encodedBufSize());
         id.decode(inBuf);
         std::auto_ptr<RemoteAgent> agent(new RemoteAgent(*this));
         agent->decode(inBuf);

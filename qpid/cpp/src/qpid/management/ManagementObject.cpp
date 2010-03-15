@@ -145,6 +145,39 @@ void ObjectId::setV2Key(const ManagementObject& object)
     v2Key = oname.str();
 }
 
+void ObjectId::mapEncode(messaging::VariantMap& map) const
+{
+    if (agent == 0)
+        map["_first"] = first;
+    else
+        map["_first"] = (first | agent->first);
+    map["_second"] = second;
+    map["_object_id"] = v2Key;
+}
+
+void ObjectId::mapDecode(const messaging::VariantMap& map)
+{
+    messaging::MapView::const_iterator i;
+
+    if ((i = map.find("_first")) != map.end())
+        first  = i->second.asUint64();
+
+    if ((i = map.find("_second")) != map.end())
+        second = i->second.asUint64();
+
+    if ((i = map.find("_object_id")) != map.end())
+        v2Key = i->second.asString();
+}
+
+
+ObjectId::operator messaging::VariantMap() const
+{
+    messaging::VariantMap m;
+    mapEncode(m);
+    return m;
+}
+
+
 
 namespace qpid {
 namespace management {
@@ -194,7 +227,7 @@ void ManagementObject::readTimestamps (framing::Buffer& buf)
     unusedObjectId.decode(buf);
 }
 
-uint32_t ManagementObject::writeTimestampsSize() const
+uint32_t ManagementObject::writeTimestampsBufSize() const
 {
     return 1 + getPackageName().length() +  // str8
         1 + getClassName().length() +       // str8
@@ -202,8 +235,39 @@ uint32_t ManagementObject::writeTimestampsSize() const
         8 +                                 // uint64
         8 +                                 // uint64
         8 +                                 // uint64
-        objectId.encodedSize();             // objectId
+        objectId.encodedBufSize();             // objectId
 }
+
+
+void ManagementObject::writeTimestamps (messaging::VariantMap& map) const
+{
+    messaging::VariantMap oid, sid;
+
+    sid["_package_name"] = getPackageName();
+    sid["_class_name"] = getClassName();
+    sid["_hash_str"] = std::string((const char *)getMd5Sum(), MD5_LEN);
+    map["_schema_id"] = sid;
+
+    objectId.mapEncode(oid);
+    map["_object_id"] = oid;
+
+    map["_update_ts"] = updateTime;
+    map["_create_ts"] = createTime;
+    map["_delete_ts"] = destroyTime;
+}
+
+void ManagementObject::readTimestamps (const ::qpid::messaging::VariantMap& map)
+{
+    messaging::MapView::const_iterator i;
+
+    if ((i = map.find("_update_ts")) != map.end())
+        updateTime = i->second.asUint64();
+    if ((i = map.find("_create_ts")) != map.end())
+        createTime = i->second.asUint64();
+    if ((i = map.find("_delete_ts")) != map.end())
+        destroyTime = i->second.asUint64();
+}
+
 
 void ManagementObject::setReference(ObjectId) {}
 
@@ -216,4 +280,27 @@ int ManagementObject::getThreadIndex() {
             nextThreadIndex++;
     }
     return thisIndex;
+}
+
+
+void ManagementObject::mapEncode(::qpid::messaging::VariantMap& map,
+                                 bool includeProperties,
+                                 bool includeStatistics)
+{
+    messaging::VariantMap values;
+
+    writeTimestamps(map);
+
+    mapEncodeValues(values, includeProperties, includeStatistics);
+    map["_values"] = values;
+}
+
+void ManagementObject::mapDecode(const ::qpid::messaging::VariantMap& map)
+{
+    ::qpid::messaging::MapView::const_iterator i;
+
+    readTimestamps(map);
+
+    if ((i = map.find("_values")) != map.end())
+        mapDecodeValues(i->second.asMap());
 }

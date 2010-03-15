@@ -76,3 +76,9 @@ void Event/*MGEN:Event.NameCap*/::encode(::qpid::framing::Buffer& buf) const
 {
 /*MGEN:Event.ArgEncodes*/
 }
+
+void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::messaging::MapContent& map) const
+{
+    using namespace ::qpid::messaging;
+/*MGEN:Event.ArgMap*/
+}

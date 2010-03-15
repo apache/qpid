@@ -269,15 +269,15 @@ txjob_LDADD=$(lib_client)
 
 check_PROGRAMS+=PollerTest
 PollerTest_SOURCES=PollerTest.cpp
-PollerTest_LDADD=$(lib_common) $(SOCKLIBS)
+PollerTest_LDADD=$(lib_common) $(lib_client) $(SOCKLIBS)
 
 check_PROGRAMS+=DispatcherTest
 DispatcherTest_SOURCES=DispatcherTest.cpp
-DispatcherTest_LDADD=$(lib_common) $(SOCKLIBS)
+DispatcherTest_LDADD=$(lib_common) $(lib_client) $(SOCKLIBS)
 
 check_PROGRAMS+=datagen
 datagen_SOURCES=datagen.cpp
-datagen_LDADD=$(lib_common)
+datagen_LDADD=$(lib_common) $(lib_client)
 
 check_PROGRAMS+=qrsh_server
 qrsh_server_SOURCES=qrsh_server.cpp
