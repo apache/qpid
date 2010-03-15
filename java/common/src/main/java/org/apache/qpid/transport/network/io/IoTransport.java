@@ -38,8 +38,8 @@ import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.ConnectionBinding;
-import org.apache.qpid.transport.network.ssl.SSLReceiver;
-import org.apache.qpid.transport.network.ssl.SSLSender;
+import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
+import org.apache.qpid.transport.network.security.ssl.SSLSender;
 import org.apache.qpid.transport.util.Logger;
 
 /**
