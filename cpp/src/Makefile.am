@@ -712,6 +712,7 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/Message.cpp			\
   qpid/messaging/MessageImpl.h			\
   qpid/messaging/MessageImpl.cpp		\
+  qpid/messaging/PrivateImplRef.h		\
   qpid/messaging/Sender.cpp			\
   qpid/messaging/Receiver.cpp			\
   qpid/messaging/Session.cpp			\
@@ -816,16 +817,18 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/Thread.h			\
   ../include/qpid/sys/Time.h			\
   ../include/qpid/messaging/Address.h 		\
-  ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Codec.h 	        \
+  ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Duration.h 	        \
+  ../include/qpid/messaging/Handle.h		\
+  ../include/qpid/messaging/ImportExport.h	\
   ../include/qpid/messaging/ListContent.h 	\
   ../include/qpid/messaging/ListView.h 		\
   ../include/qpid/messaging/MapContent.h 	\
   ../include/qpid/messaging/MapView.h 		\
   ../include/qpid/messaging/Message.h 		\
-  ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Receiver.h 	        \
+  ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Session.h 		\
   ../include/qpid/messaging/Uuid.h 		\
   ../include/qpid/messaging/Variant.h 		\
