@@ -24,9 +24,6 @@
 #include "qpid/RefCounted.h"
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
 
 class Message;

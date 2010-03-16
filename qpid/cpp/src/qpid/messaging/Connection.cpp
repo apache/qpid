@@ -23,23 +23,17 @@
 #include "qpid/messaging/ConnectionImpl.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/SessionImpl.h"
-#include "qpid/client/PrivateImplRef.h"
+#include "qpid/messaging/PrivateImplRef.h"
 #include "qpid/client/amqp0_10/ConnectionImpl.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
-namespace client {
+namespace messaging {
 
 typedef PrivateImplRef<qpid::messaging::Connection> PI;
 
-}
-
-namespace messaging {
-
-using qpid::client::PI;
-
 Connection::Connection(ConnectionImpl* impl) { PI::ctor(*this, impl); }
-Connection::Connection(const Connection& c) : qpid::client::Handle<ConnectionImpl>() { PI::copy(*this, c); }
+Connection::Connection(const Connection& c) : Handle<ConnectionImpl>() { PI::copy(*this, c); }
 Connection& Connection::operator=(const Connection& c) { return PI::assign(*this, c); }
 Connection::~Connection() { PI::dtor(*this); }
 
