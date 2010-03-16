@@ -21,27 +21,22 @@
  * under the License.
  *
  */
-#include "qpid/client/ClientImportExport.h"
-#include "qpid/client/Handle.h"
+#include "qpid/messaging/ImportExport.h"
+#include "qpid/messaging/Handle.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <string>
 
 namespace qpid {
-namespace client {
-
-template <class> class PrivateImplRef;
-
-}
-
 namespace messaging {
 
+template <class> class PrivateImplRef;
 class Message;
 class SenderImpl;
 class Session;
 /**
  * Interface through which messages are sent.
  */
-class Sender : public qpid::client::Handle<SenderImpl>
+class Sender : public qpid::messaging::Handle<SenderImpl>
 {
   public:
     QPID_CLIENT_EXTERN Sender(SenderImpl* impl = 0);
@@ -79,7 +74,7 @@ class Sender : public qpid::client::Handle<SenderImpl>
      */
     QPID_CLIENT_EXTERN Session getSession() const;
   private:
-  friend class qpid::client::PrivateImplRef<Sender>;
+  friend class qpid::messaging::PrivateImplRef<Sender>;
 };
 }} // namespace qpid::messaging
 

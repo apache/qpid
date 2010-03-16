@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/client/ClientImportExport.h"
+#include "qpid/messaging/ImportExport.h"
 #include "Variant.h"
 #include <map>
 #include <string>

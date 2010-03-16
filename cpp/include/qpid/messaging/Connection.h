@@ -22,19 +22,14 @@
  *
  */
 #include <string>
-#include "qpid/client/ClientImportExport.h"
-#include "qpid/client/Handle.h"
+#include "qpid/messaging/ImportExport.h"
+#include "qpid/messaging/Handle.h"
 #include "qpid/messaging/Variant.h"
 
 namespace qpid {
-namespace client {
-
-template <class> class PrivateImplRef;
-
-}
-
 namespace messaging {
 
+template <class> class PrivateImplRef;
 class ConnectionImpl;
 class Session;
 
@@ -43,7 +38,7 @@ struct InvalidOptionString : public qpid::Exception
     InvalidOptionString(const std::string& msg);
 };
 
-class Connection : public qpid::client::Handle<ConnectionImpl>
+class Connection : public qpid::messaging::Handle<ConnectionImpl>
 {
   public:
     QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl);
@@ -92,7 +87,7 @@ class Connection : public qpid::client::Handle<ConnectionImpl>
 
     QPID_CLIENT_EXTERN Session getSession(const std::string& name) const;
   private:
-  friend class qpid::client::PrivateImplRef<Connection>;
+  friend class qpid::messaging::PrivateImplRef<Connection>;
 
 };
 
