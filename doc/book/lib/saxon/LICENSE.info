@@ -1,0 +1,5 @@
+
+This module includes third-party resources:
+
+- Apache FOP and external libraries (see lib/ folder for details)
+- TrueType fonts from MikTeX distribution.

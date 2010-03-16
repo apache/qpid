@@ -1,0 +1,172 @@
+<!-- 
+     Build Apache Qpid documentation.
+
+     For documentation on using XSLT in ant, see http://ant.apache.org/manual/CoreTasks/style.html
+
+     For documentation on using Apache FOP in ant, see http://xmlgraphics.apache.org/fop/0.94/anttask.html
+
+     Note: Validation is currently off by default, too many dangling references. We will tighten this up as soon as we can.
+ -->
+
+<project 
+     name="generate"   
+     basedir="."
+     default="pdf"> 
+
+  <property name="Qpid" value="http://qpid.apache.org"/>
+
+
+<!--
+###########################################################################
+# 
+# Directories 
+#
+# Change the directory paths in  this section to the correct paths for
+# your machine.
+#
+###########################################################################
+-->
+
+  <property name="src.dir" location="src"/>
+  <property name="build.dir" location="build"/>
+  <property name="out.dir" location="out"/>
+
+  <!-- Docbook schemas and stylesheets -->
+  <property name="schema.dir" location="docbook"/>    
+  <property name="style.dir" location="docbook-xsl"/>    
+  <property name="fo.stylesheet" location="${style.dir}/fo/docbook.xsl" />
+  <property name="html.stylesheet" location="${style.dir}/html/docbook.xsl" />
+
+  <!-- ${lib.dir} has subdirectories for saxon and fop -->
+  <property name="lib.dir" location="lib"/>
+
+  <property name="xmllint" location="/usr/bin/xmllint"/>
+
+<!--
+###########################################################################
+#
+# Setting up tasks
+#
+# You shouldn't need to change anything in this section or following sections.
+#
+###########################################################################
+-->
+
+  <path id="saxon6.classpath">
+    <pathelement location="${lib.dir}/saxon/resolver.jar"/>
+    <pathelement location="${lib.dir}/saxon/xml-apis.jar"/>
+    <pathelement location="${lib.dir}/saxon/xercesImpl.jar"/>
+    <pathelement location="${lib.dir}/saxon/saxon.jar"/>
+  </path>
+
+<taskdef name="fop" 
+         classname="org.apache.fop.tools.anttasks.Fop">
+  <classpath>
+    <fileset dir="${lib.dir}/fop-0.95/lib">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="${lib.dir}/fop-0.95/build">
+      <include name="fop.jar"/>
+      <include name="fop-hyph.jar" />
+    </fileset>
+  </classpath>
+</taskdef>
+
+<!--
+###########################################################################
+#
+# Tasks
+#
+###########################################################################
+-->
+
+<!--
+    init
+-->
+
+<target name="init">
+  <mkdir dir="${build.dir}"/>
+</target>
+
+<!--
+    XInclude
+-->
+
+<target name="xinclude" depends="init">
+  <exec executable="${xmllint}">
+    <arg value="-o"/>
+    <arg value="${build.dir}/xinclude.xml"/>
+    <arg value="--xinclude"/>
+    <arg value="${src.dir}/Book.xml"/>
+  </exec>
+</target>
+
+
+
+<!--
+    FO
+-->
+
+ <target name="fo" depends="xinclude" description="Generates qpid-book.fo, which is needed to create a PDF">
+
+    <xslt in="${build.dir}/xinclude.xml" out="${build.dir}/qpid-book.fo"
+          style="${fo.stylesheet}" classpathref="saxon6.classpath">
+      <param name="specdoc" expression="${spec.code}"/>
+      <param name="uri" expression="${spec.uri}"/>
+    </xslt>
+  </target>
+
+
+<!--
+    PDF
+-->
+
+<target name="pdf" depends="fo" description="Generates qpid-book.pdf">
+   <fop format="application/pdf" 
+        fofile="${build.dir}/qpid-book.fo"
+        outfile="${out.dir}/qpid-book.pdf"/>
+</target>
+
+<!--
+    HTML
+-->
+
+ <target name="html" depends="xinclude" description="Generates qpid-book.html">
+    <xslt in="${build.dir}/xinclude.xml" out="${build.dir}/qpid-book.html"
+          style="${html.stylesheet}" classpathref="saxon6.classpath">
+    </xslt>
+ </target>
+
+<!--
+    Validate
+-->
+
+<target name="validate" depends="xinclude">
+  <xmlvalidate file="${build.dir}/xinclude.xml" warn="true">
+    <dtd publicId="-//OASIS//DTD DocBook V4.5//EN"
+	 location="docbook/docbook.dtd"/>
+  </xmlvalidate>
+</target>
+
+<!--
+    Clean
+-->
+
+<target name="clean">
+  <delete dir="${build.dir}"/>
+</target>
+
+<!-- 
+    Check
+-->
+
+<target name="check" depends="xinclude">
+  <xmlvalidate file="${build.dir}/xinclude.xml" warn="false">
+    <dtd publicId="-//OASIS//DTD DocBook V4.5//EN"
+	 location="docbook/docbook.dtd"/>
+  </xmlvalidate>
+</target>
+
+
+</project>
+
