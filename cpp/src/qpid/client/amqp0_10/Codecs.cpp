@@ -129,7 +129,7 @@ Variant toVariant(boost::shared_ptr<FieldValue> in)
       case 0x02: out = in->getIntegerValue<int8_t, 1>(); break;
       case 0x03: out = in->getIntegerValue<uint8_t, 1>(); break;
       case 0x04: break; //TODO: iso-8859-15 char
-      case 0x08: out = in->getIntegerValue<bool, 1>(); break;
+      case 0x08: out = static_cast<bool>(in->getIntegerValue<uint8_t, 1>()); break;
       case 0x10: out.setEncoding(amqp0_10_binary);
       case 0x11: out = in->getIntegerValue<int16_t, 2>(); break;
       case 0x12: out = in->getIntegerValue<uint16_t, 2>(); break;
