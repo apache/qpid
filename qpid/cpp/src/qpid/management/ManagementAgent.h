@@ -32,6 +32,7 @@
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Agent.h"
+#include "qpid/messaging/Variant.h"
 #include <qpid/framing/AMQFrame.h>
 #include <memory>
 #include <string>
@@ -125,6 +126,8 @@ public:
 
     uint16_t getBootSequence(void) { return bootSequence; }
     void setBootSequence(uint16_t b) { bootSequence = b; }
+
+    static messaging::Variant::Map toMap(const framing::FieldTable& from);
 
 private:
     struct Periodic : public qpid::sys::TimerTask

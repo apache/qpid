@@ -106,7 +106,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
             ManagementAgent* agent = getBroker().getManagementAgent();
             if (agent)
                 agent->raiseEvent(_qmf::EventExchangeDeclare(getConnection().getUrl(), getConnection().getUserId(), exchange, type,
-                                                             alternateExchange, durable, false, args,
+                                                             alternateExchange, durable, false, ManagementAgent::toMap(args),
                                                              response.second ? "created" : "existing"));
 
         }catch(UnknownExchangeTypeException& /*e*/){
@@ -194,7 +194,8 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
 
             ManagementAgent* agent = getBroker().getManagementAgent();
             if (agent)
-                agent->raiseEvent(_qmf::EventBind(getConnection().getUrl(), getConnection().getUserId(), exchangeName, queueName, exchangeRoutingKey, arguments));
+                agent->raiseEvent(_qmf::EventBind(getConnection().getUrl(), getConnection().getUserId(), exchangeName,
+                                                  queueName, exchangeRoutingKey, ManagementAgent::toMap(arguments)));
         }
     }else{
         throw NotFoundException("Bind failed. No such exchange: " + exchangeName);
@@ -389,7 +390,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
         ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent)
             agent->raiseEvent(_qmf::EventQueueDeclare(getConnection().getUrl(), getConnection().getUserId(),
-                                                      name, durable, exclusive, autoDelete, arguments,
+                                                      name, durable, exclusive, autoDelete, ManagementAgent::toMap(arguments),
                                                       queue_created.second ? "created" : "existing"));
     }
 
@@ -499,7 +500,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)
         agent->raiseEvent(_qmf::EventSubscribe(getConnection().getUrl(), getConnection().getUserId(),
-                                               queueName, destination, exclusive, arguments));
+                                               queueName, destination, exclusive, ManagementAgent::toMap(arguments)));
 }
 
 void

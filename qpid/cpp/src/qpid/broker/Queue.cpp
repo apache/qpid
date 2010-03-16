@@ -872,7 +872,7 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
     if (p && p->convertsTo<std::string>()) insertSequenceNumbers(p->get<std::string>());
 
     if (mgmtObject != 0)
-        mgmtObject->set_arguments (_settings);
+        mgmtObject->set_arguments(ManagementAgent::toMap(_settings));
 
     if ( isDurable() && ! getPersistenceId() && ! recovering )
       store->create(*this, _settings);

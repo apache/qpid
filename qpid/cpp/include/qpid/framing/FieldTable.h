@@ -51,6 +51,7 @@ class FieldTable
     typedef boost::shared_ptr<FieldValue> ValuePtr;
     typedef std::map<std::string, ValuePtr> ValueMap;
     typedef ValueMap::iterator iterator;
+    typedef ValueMap::const_iterator const_iterator;
     typedef ValueMap::const_reference const_reference;
     typedef ValueMap::reference reference;
     typedef ValueMap::value_type value_type;

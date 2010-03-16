@@ -22,6 +22,7 @@
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/SystemInfo.h"
+#include "qpid/messaging/Uuid.h"
 #include <iostream>
 #include <fstream>
 
@@ -64,7 +65,7 @@ System::System (string _dataDir, Broker* broker) : mgmtObject(0)
             }
         }
 
-        mgmtObject = new _qmf::System (agent, this, systemId);
+        mgmtObject = new _qmf::System(agent, this, messaging::Uuid(systemId.c_array()));
         std::string sysname, nodename, release, version, machine;
         qpid::sys::SystemInfo::getSystemId (sysname,
                                             nodename,

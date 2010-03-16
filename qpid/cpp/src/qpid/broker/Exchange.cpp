@@ -149,7 +149,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
             mgmtExchange = new _qmf::Exchange (agent, this, parent, _name);
             mgmtExchange->set_durable(durable);
             mgmtExchange->set_autoDelete(false);
-            mgmtExchange->set_arguments(args);
+            mgmtExchange->set_arguments(ManagementAgent::toMap(args));
             if (!durable) {
                 if (name.empty()) {
                     agent->addObject (mgmtExchange, 0x1000000000000004LL);  // Special default exchange ID
@@ -336,7 +336,7 @@ void Exchange::Binding::startManagement()
                         {
                             management::ObjectId queueId = mo->getObjectId();
                             mgmtBinding = new _qmf::Binding
-                                (agent, this, (Manageable*) parent, queueId, key, args);
+                                (agent, this, (Manageable*) parent, queueId, key, ManagementAgent::toMap(args));
                             if (!origin.empty())
                                 mgmtBinding->set_origin(origin);
                             agent->addObject (mgmtBinding, agent->allocateId(this));

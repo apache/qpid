@@ -29,13 +29,17 @@
 #include "qpid/sys/Time.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/messaging/Variant.h"
+#include "qpid/messaging/Uuid.h"
 #include <list>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <typeinfo>
 
 using boost::intrusive_ptr;
 using qpid::framing::Uuid;
+using qpid::messaging::Variant;
 using namespace qpid::framing;
 using namespace qpid::management;
 using namespace qpid::broker;
@@ -1517,3 +1521,50 @@ void ManagementAgent::debugSnapshot(const char* type) {
     msg << " new objects: " << newManagementObjects.size();
     QPID_LOG(trace, msg.str());
 }
+
+qpid::messaging::Variant::Map ManagementAgent::toMap(const FieldTable& from)
+{
+    qpid::messaging::Variant::Map map;
+
+    for (FieldTable::const_iterator iter = from.begin(); iter != from.end(); iter++) {
+        const string& key(iter->first);
+        const FieldTable::ValuePtr& val(iter->second);
+
+        if (typeid(val.get()) == typeid(Str8Value) || typeid(val.get()) == typeid(Str16Value)) {
+            map[key] = Variant(val->get<string>());
+        } else if (typeid(val.get()) == typeid(FloatValue)) {
+            map[key] = Variant(val->get<float>());
+        } else if (typeid(val.get()) == typeid(DoubleValue)) {
+            map[key] = Variant(val->get<double>());
+        } else if (typeid(val.get()) == typeid(IntegerValue)) {
+            map[key] = Variant(val->get<int>());
+        } else if (typeid(val.get()) == typeid(TimeValue)) {
+            map[key] = Variant(val->get<int64_t>());
+        } else if (typeid(val.get()) == typeid(Integer64Value)) {
+            map[key] = Variant(val->get<int64_t>());
+        } else if (typeid(val.get()) == typeid(Unsigned64Value)) {
+            map[key] = Variant(val->get<uint64_t>());
+        } else if (typeid(val.get()) == typeid(FieldTableValue)) {
+            map[key] = Variant(toMap(val->get<FieldTable>()));
+        } else if (typeid(val.get()) == typeid(VoidValue)) {
+            map[key] = Variant();
+        } else if (typeid(val.get()) == typeid(BoolValue)) {
+            map[key] = Variant(val->get<bool>());
+        } else if (typeid(val.get()) == typeid(Unsigned8Value)) {
+            map[key] = Variant(val->get<uint8_t>());
+        } else if (typeid(val.get()) == typeid(Unsigned16Value)) {
+            map[key] = Variant(val->get<uint16_t>());
+        } else if (typeid(val.get()) == typeid(Unsigned32Value)) {
+            map[key] = Variant(val->get<uint32_t>());
+        } else if (typeid(val.get()) == typeid(Integer8Value)) {
+            map[key] = Variant(val->get<int8_t>());
+        } else if (typeid(val.get()) == typeid(Integer16Value)) {
+            map[key] = Variant(val->get<int16_t>());
+        } else if (typeid(val.get()) == typeid(UuidValue)) {
+            map[key] = Variant(messaging::Uuid(val->get<framing::Uuid>().c_array()));
+        }
+    }
+
+    return map;
+}
+
