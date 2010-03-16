@@ -43,37 +43,6 @@ if (WIN32)
   set (CPACK_NSIS_URL_INFO_ABOUT "http://qpid.apache.org/")
   # Needs this to correctly set up Start menu links later.
   set (CPACK_PACKAGE_EXECUTABLES "")
-
-  # The WCF/C++ client is built separately (it doesn't build via CMake)
-  # but is installed with the C++ components on Windows.
-  install (PROGRAMS
-           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Release/Apache.Qpid.Channel.dll
-           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Release/Apache.Qpid.Interop.dll
-           DESTINATION ${QPID_INSTALL_LIBDIR}
-           COMPONENT ${QPID_COMPONENT_CLIENT})
-  install (DIRECTORY ${CMAKE_SOURCE_DIR}/../wcf/samples/Channel
-           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
-           COMPONENT ${QPID_COMPONENT_EXAMPLES}
-           PATTERN ".svn" EXCLUDE)
-
-  # Find where gacutil is; it's not usually on the default PATH. If it can't
-  # be located, the WCF assemblies can't be inserted in the GAC.
-  # The gacutil stuff is disabled for now; to re-enable it, one must be able
-  # to either find the gacutil somehow and specify the directory where
-  # gacutil lives, add it to PATH, or use the FUSE API in a program that
-  # inserts the DLLs programatically without gacutil. Or use WiX, which can
-  # supposedly do this in an easier way.
-  #
-  # See jira QPID-2310 for more info; update that if you change this.
-  #set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-  #   ExecWait 'gacutil -I \\\"$INSTDIR\\\\${QPID_INSTALL_LIBDIR}\\\\Apache.Qpid.Channel.dll\\\"'
-  #   ExecWait 'gacutil -I \\\"$INSTDIR\\\\${QPID_INSTALL_LIBDIR}\\\\Apache.Qpid.Interop.dll\\\"'
-  #  ")
-  #set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
-  #   ExecWait 'gacutil /u \\\"Apache.Qpid.Channel\\\"'
-  #   ExecWait 'gacutil /u \\\"Apache.Qpid.Interop\\\"'
-  #  ")
-
 endif (WIN32)
 
 set (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf CACHE STRING
