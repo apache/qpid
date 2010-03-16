@@ -22,21 +22,15 @@
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ReceiverImpl.h"
 #include "qpid/messaging/Session.h"
-#include "qpid/client/PrivateImplRef.h"
+#include "qpid/messaging/PrivateImplRef.h"
 
 namespace qpid {
-namespace client {
+namespace messaging {
 
 typedef PrivateImplRef<qpid::messaging::Receiver> PI;
 
-}
-
-namespace messaging {
-
-using qpid::client::PI;
-
 Receiver::Receiver(ReceiverImpl* impl) { PI::ctor(*this, impl); }
-Receiver::Receiver(const Receiver& s) : qpid::client::Handle<ReceiverImpl>() { PI::copy(*this, s); }
+Receiver::Receiver(const Receiver& s) : Handle<ReceiverImpl>() { PI::copy(*this, s); }
 Receiver::~Receiver() { PI::dtor(*this); }
 Receiver& Receiver::operator=(const Receiver& s) { return PI::assign(*this, s); }
 bool Receiver::get(Message& message, Duration timeout) { return impl->get(message, timeout); }

@@ -23,20 +23,15 @@
  */
 #include "qpid/Exception.h"
 #include "qpid/messaging/Duration.h"
-#include "qpid/client/ClientImportExport.h"
-#include "qpid/client/Handle.h"
+#include "qpid/messaging/ImportExport.h"
+#include "qpid/messaging/Handle.h"
 #include "qpid/sys/Time.h"
 #include <string>
 
 namespace qpid {
-namespace client {
-
-template <class> class PrivateImplRef;
-
-}
-
 namespace messaging {
 
+template <class> class PrivateImplRef;
 class Address;
 class Connection;
 class Message;
@@ -55,7 +50,7 @@ struct KeyError : qpid::Exception
  * A session represents a distinct 'conversation' which can involve
  * sending and receiving messages to and from different addresses.
  */
-class Session : public qpid::client::Handle<SessionImpl>
+class Session : public qpid::messaging::Handle<SessionImpl>
 {
   public:
     QPID_CLIENT_EXTERN Session(SessionImpl* impl = 0);
@@ -83,8 +78,8 @@ class Session : public qpid::client::Handle<SessionImpl>
     QPID_CLIENT_EXTERN void flush();
 
     /**
-     * Returns the number of messages received and waiting to be
-     * fetched.
+     * Returns the total number of messages received and waiting to be
+     * fetched by all Receivers belonging to this session.
      */
     QPID_CLIENT_EXTERN uint32_t available();
     /**
@@ -99,14 +94,15 @@ class Session : public qpid::client::Handle<SessionImpl>
      * to the specified timeout waiting for one to arrive. Returns
      * true if a message was available at the point of return, in
      * which case the passed in receiver reference will be set to the
-     * receiver for that message or fals if no message was available.
+     * receiver for that message or false if no message was available.
      */
     QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, Duration timeout=INFINITE_DURATION);
     /**
      * Returns the receiver for the next available message. If there
      * are no available messages at present the call will block for up
-     * to the specified timeout waiting for one to arrive. Will throw
-     * Receiver::NoMessageAvailable if no message became available in
+     * to the specified timeout waiting for one to arrive.
+     *
+     *@exception Receiver::NoMessageAvailable if no message became available in
      * time.
      */
     QPID_CLIENT_EXTERN Receiver nextReceiver(Duration timeout=INFINITE_DURATION);
@@ -126,13 +122,13 @@ class Session : public qpid::client::Handle<SessionImpl>
     QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address);
 
     /**
-     * Returns the sender with the specified name or throws KeyError
-     * if there is none for that name.
+     * Returns the sender with the specified name.
+     *@exception KeyError if there is none for that name.
      */
     QPID_CLIENT_EXTERN Sender getSender(const std::string& name) const;
     /**
-     * Returns the receiver with the specified name or throws KeyError
-     * if there is none for that name.
+     * Returns the receiver with the specified name.
+     *@exception KeyError if there is none for that name.
      */
     QPID_CLIENT_EXTERN Receiver getReceiver(const std::string& name) const;
     /**
@@ -142,7 +138,7 @@ class Session : public qpid::client::Handle<SessionImpl>
     QPID_CLIENT_EXTERN Connection getConnection() const;
 
   private:
-  friend class qpid::client::PrivateImplRef<Session>;
+  friend class qpid::messaging::PrivateImplRef<Session>;
 };
 }} // namespace qpid::messaging
 

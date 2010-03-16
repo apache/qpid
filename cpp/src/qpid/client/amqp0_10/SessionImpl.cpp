@@ -24,7 +24,7 @@
 #include "qpid/client/amqp0_10/SenderImpl.h"
 #include "qpid/client/amqp0_10/MessageSource.h"
 #include "qpid/client/amqp0_10/MessageSink.h"
-#include "qpid/client/PrivateImplRef.h"
+#include "qpid/messaging/PrivateImplRef.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
@@ -114,7 +114,7 @@ void SessionImpl::close()
 
 template <class T, class S> boost::intrusive_ptr<S> getImplPtr(T& t)
 {
-    return boost::dynamic_pointer_cast<S>(qpid::client::PrivateImplRef<T>::get(t));
+    return boost::dynamic_pointer_cast<S>(qpid::messaging::PrivateImplRef<T>::get(t));
 }
 
 template <class T> void getFreeKey(std::string& key, T& map)

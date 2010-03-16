@@ -25,12 +25,9 @@
 #include <string>
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Variant.h"
-#include "qpid/client/ClientImportExport.h"
+#include "qpid/messaging/ImportExport.h"
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
 
 class Address;
@@ -87,6 +84,7 @@ class Message
 
     QPID_CLIENT_EXTERN const std::string& getContent() const;
     QPID_CLIENT_EXTERN std::string& getContent();
+
     QPID_CLIENT_EXTERN void setContent(const std::string&);
     QPID_CLIENT_EXTERN void setContent(const char* chars, size_t count);
     QPID_CLIENT_EXTERN void getContent(std::pair<const char*, size_t>& content) const;

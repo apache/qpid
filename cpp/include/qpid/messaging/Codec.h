@@ -22,7 +22,7 @@
  *
  */
 #include <string>
-#include "qpid/client/ClientImportExport.h"
+#include "qpid/messaging/ImportExport.h"
 
 namespace qpid {
 namespace messaging {

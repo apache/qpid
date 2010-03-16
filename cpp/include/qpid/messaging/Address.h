@@ -24,7 +24,7 @@
 #include <string>
 #include "qpid/Exception.h"
 #include "qpid/messaging/Variant.h"
-#include "qpid/client/ClientImportExport.h"
+#include "qpid/messaging/ImportExport.h"
 #include <ostream>
 
 namespace qpid {

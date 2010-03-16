@@ -28,7 +28,7 @@
 #include "Uuid.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/IntegerTypes.h"
-#include "qpid/client/ClientImportExport.h"
+#include "qpid/messaging/ImportExport.h"
 
 namespace qpid {
 namespace messaging {

@@ -22,7 +22,7 @@
 #include "SessionImpl.h"
 #include "SimpleUrlParser.h"
 #include "qpid/messaging/Session.h"
-#include "qpid/client/PrivateImplRef.h"
+#include "qpid/messaging/PrivateImplRef.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include <boost/intrusive_ptr.hpp>
@@ -150,7 +150,7 @@ void ConnectionImpl::close()
 boost::intrusive_ptr<SessionImpl> getImplPtr(qpid::messaging::Session& session)
 {
     return boost::dynamic_pointer_cast<SessionImpl>(
-        qpid::client::PrivateImplRef<qpid::messaging::Session>::get(session)
+        qpid::messaging::PrivateImplRef<qpid::messaging::Session>::get(session)
     );
 }
 
