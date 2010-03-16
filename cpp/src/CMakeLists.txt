@@ -589,19 +589,6 @@ set_target_properties (qpidcommon PROPERTIES
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
-# When the client programming component is installed, Windows also needs
-# the debug variant of qpidcommon and qpidclient, and the PDBs for those
-# as well. It would be nice to figure out a way to put some sanity checking
-# here... as it is, success relies on the packager building the debug then
-# the release, then packaging the release build.
-if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_CLIENT})
-endif (WIN32)
 
 set (qpidclient_SOURCES
      ${rgen_client_srcs}
@@ -702,14 +689,6 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
            DESTINATION ${QPID_INSTALL_INCLUDEDIR}
            COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
-if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_CLIENT})
-endif (WIN32)
 
 if (WIN32)
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
@@ -926,15 +905,6 @@ set_target_properties (qmfconsole PROPERTIES
 install (TARGETS qmfconsole
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
-# On Windows, also grab the debug version of qmfconsole.
-if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_QMF})
-endif (WIN32)
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
