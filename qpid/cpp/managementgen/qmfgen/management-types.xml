@@ -39,8 +39,8 @@
 <type name="deltaTime" base="DELTATIME" cpp="uint64_t"      encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  stream="#" size="8" accessor="direct" init="0"/>
 <type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat(#)"       decode="# = @.getFloat()"     stream="#" size="4" accessor="direct" init="0."/>
 <type name="double"    base="DOUBLE"    cpp="double"        encode="@.putDouble(#)"      decode="# = @.getDouble()"    stream="#" size="8" accessor="direct" init="0."/>
-<type name="uuid"      base="UUID"      cpp="::qpid::framing::Uuid" encode="#.encode(@)"       decode="#.decode(@)"    stream="#" size="16" accessor="direct" init="::qpid::framing::Uuid()" byRef="y" unmap="(#).asUuid().data()" map="::qpid::messaging::Uuid((#).data())" />
-<type name="map"       base="FTABLE"    cpp="::qpid::framing::FieldTable" encode="#.encode(@)" decode="#.decode(@)"    stream="#" size="#.encodedSize()" accessor="direct" init="::qpid::framing::FieldTable()" byRef="y" unmap="::qpid::framing::FieldTable(); assert(false); /*TBD*/" map='(assert(false),"TBD: unsupported type")' />
+<type name="uuid"      base="UUID"      cpp="::qpid::messaging::Uuid" encode="#.encode(@)"       decode="#.decode(@)"    stream="#" size="16" accessor="direct" init="::qpid::messaging::Uuid()" byRef="y" unmap="(#).asUuid().data()" map="::qpid::messaging::Uuid((#).data())" />
+<type name="map"       base="FTABLE"    cpp="::qpid::messaging::VariantMap" encode="#.encode(@)" decode="#.decode(@)"    stream="#" size="#.encodedSize()" accessor="direct" init="::qpid::messaging::VariantMap()" byRef="y" unmap="::qpid::messaging::VariantMap(); assert(false); /*TBD*/" map='(assert(false),"TBD: unsupported type")' />
 
 <type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    style="wm" stream="#" size="1" accessor="counter" init="0"/>
 <type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    style="wm" stream="#" size="2" accessor="counter" init="0"/>

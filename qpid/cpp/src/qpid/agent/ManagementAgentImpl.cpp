@@ -22,6 +22,7 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/log/Statement.h"
 #include "qpid/agent/ManagementAgentImpl.h"
+#include "qpid/messaging/Message.h"
 #include <list>
 #include <string.h>
 #include <stdlib.h>
@@ -79,7 +80,7 @@ const string ManagementAgentImpl::storeMagicNumber("MA02");
 ManagementAgentImpl::ManagementAgentImpl() :
     interval(10), extThread(false), pipeHandle(0), notifyCallback(0), notifyContext(0),
     notifyable(0), inCallback(false),
-    initialized(false), connected(false), lastFailure("never connected"),
+    initialized(false), connected(false), useMapMsg(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
     connThreadBody(*this), connThread(connThreadBody),
@@ -204,16 +205,24 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t se
     key << "console.event." << assignedBrokerBank << "." << assignedAgentBank << "." <<
         event.getPackageName() << "." << event.getEventName();
 
-    encodeHeader(outBuffer, 'e');
-    outBuffer.putShortString(event.getPackageName());
-    outBuffer.putShortString(event.getEventName());
-    outBuffer.putBin128(event.getMd5Sum());
-    outBuffer.putLongLong(uint64_t(Duration(now())));
-    outBuffer.putOctet(sev);
-    event.encode(outBuffer);
-    outLen = MA_BUFFER_SIZE - outBuffer.available();
-    outBuffer.reset();
-    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", key.str());
+    ::qpid::messaging::Message msg;
+    ::qpid::messaging::MapContent content(msg);
+    ::qpid::messaging::VariantMap &map_ = content.asMap();
+    ::qpid::messaging::VariantMap schemaId;
+    ::qpid::messaging::VariantMap values;
+
+    mapEncodeHeader(map_, 'e');
+
+    map_["_schema_id"] = mapEncodeSchemaId(event.getPackageName(),
+                                           event.getEventName(),
+                                           event.getMd5Sum());
+    event.mapEncode(values);
+    map_["_values"] = values;
+    map_["_timestamp"] = uint64_t(Duration(now()));
+    map_["_severity"] = sev;
+
+    content.encode();
+    connThreadBody.sendBuffer(msg.getContent(), "qpid.management", key.str());
 }
 
 uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
@@ -494,18 +503,22 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
         ManagementObjectMap::iterator iter = managementObjects.find(selector);
         if (iter != managementObjects.end()) {
             ManagementObject* object = iter->second;
-            Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
-            uint32_t outLen;
+            ::qpid::messaging::Message m;
+            ::qpid::messaging::ListContent content(m);
+            ::qpid::messaging::Variant::List &list_ = content.asList();
+            ::qpid::messaging::Variant::Map  map_;
+            ::qpid::messaging::Variant::Map values;
 
             if (object->getConfigChanged() || object->getInstChanged())
                 object->setUpdateTime();
 
-            encodeHeader(outBuffer, 'g', sequence);
-            object->writeProperties(outBuffer);
-            object->writeStatistics(outBuffer, true);
-            outLen = MA_BUFFER_SIZE - outBuffer.available ();
-            outBuffer.reset ();
-            connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
+            mapEncodeHeader(map_, 'g', sequence);
+            object->mapEncodeValues(values, true, true); // write both stats and properties
+            map_["_values"] = values;
+            list.push_back(map_);
+
+            content.encode();
+            connThreadBody.sendBuffer(m.getContent(), "amq.direct", replyTo);
 
             QPID_LOG(trace, "SENT ObjectInd");
         }
@@ -520,18 +533,22 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
          iter++) {
         ManagementObject* object = iter->second;
         if (object->getClassName() == className) {
-            Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
-            uint32_t outLen;
+            ::qpid::messaging::Message m;
+            ::qpid::messaging::ListContent content(m);
+            ::qpid::messaging::Variant::List &list_ = content.asList();
+            ::qpid::messaging::Variant::Map  map_;
+            ::qpid::messaging::Variant::Map values;
 
             if (object->getConfigChanged() || object->getInstChanged())
                 object->setUpdateTime();
 
-            encodeHeader(outBuffer, 'g', sequence);
-            object->writeProperties(outBuffer);
-            object->writeStatistics(outBuffer, true);
-            outLen = MA_BUFFER_SIZE - outBuffer.available();
-            outBuffer.reset();
-            connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
+            mapEncodeHeader(map_, 'g', sequence);
+            object->mapEncodeValues(values, true, true); // write both stats and properties
+            map_["_values"] = values;
+            list.push_back(map_);
+
+            content.encode();
+            connThreadBody.sendBuffer(m.getContent(), "amq.direct", replyTo);
 
             QPID_LOG(trace, "SENT ObjectInd");
         }
@@ -596,6 +613,7 @@ void ManagementAgentImpl::received(Message& msg)
     }
 }
 
+
 void ManagementAgentImpl::encodeHeader(Buffer& buf, uint8_t opcode, uint32_t seq)
 {
     buf.putOctet('A');
@@ -604,6 +622,36 @@ void ManagementAgentImpl::encodeHeader(Buffer& buf, uint8_t opcode, uint32_t seq
     buf.putOctet(opcode);
     buf.putLong (seq);
 }
+
+void ManagementAgentImpl::mapEncodeHeader(::qpid::messaging::VariantMap &map_, uint8_t opcode, uint32_t seq)
+{
+    map_["_version"] = "AM2";
+    map_["_opcode"] = opcode;
+    map_["_sequence"] = seq;
+}
+
+
+void ManagementAgentImpl::mapEncodeHeader(::qpid::messaging::VariantMap &map_, uint8_t opcode, uint32_t seq)
+{
+    map_["_version"] = "AM2";
+    map_["_opcode"] = opcode;
+    map_["_sequence"] = seq;
+}
+
+
+qpid::messaging::Variant::Map ManagementAgentImpl::mapEncodeSchemaId(const std::string& pname,
+                                                                     const std::string& cname,
+                                                                     const uint8_t *md5Sum)
+{
+    qpid::messaging::Variant::Map map_;
+
+    map_["_package_name"] = pname;
+    map_["_class_name"] = cname;
+    map_["_hash_str"] = std::string((const char *)md5Sum,
+                                    qpid::managment::ManagmentObject::MD5_LEN);
+    return map_;
+}
+
 
 bool ManagementAgentImpl::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq)
 {
@@ -699,9 +747,7 @@ void ManagementAgentImpl::encodeClassIndication(Buffer&              buf,
 
 void ManagementAgentImpl::periodicProcessing()
 {
-#define BUFSIZE   65536
     Mutex::ScopedLock lock(agentLock);
-    char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     list<pair<ObjectId, ManagementObject*> > deleteList;
 
@@ -743,7 +789,10 @@ void ManagementAgentImpl::periodicProcessing()
              !baseObject->isDeleted()))
             continue;
 
-        Buffer msgBuffer(msgChars, BUFSIZE);
+        ::qpid::messaging::Message m;
+        ::qpid::messaging::ListContent content(m);
+        ::qpid::messaging::Variant::List &list_ = content.asList();
+
         for (ManagementObjectMap::iterator iter = baseIter;
              iter != managementObjects.end();
              iter++) {
@@ -754,31 +803,41 @@ void ManagementAgentImpl::periodicProcessing()
                     object->setUpdateTime();
 
                 if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted()) {
-                    encodeHeader(msgBuffer, 'c');
-                    object->writeProperties(msgBuffer);
+                    ::qpid::messaging::Variant::Map  map_;
+                    ::qpid::messaging::Variant::Map values;
+                    mapEncodeHeader(map_, 'c');
+
+                    object->getPackageName();
+                    object->getClassName();
+                    (object->getMd5Sum(), MD5_LEN);
+                    
+                    object->mapEncodeValues(values, true, false);  // encode properties only
+                    map_["_values"] = values;
+                    list.push_back(map_);
                 }
-        
+
                 if (object->hasInst() && (object->getInstChanged() || object->getForcePublish())) {
-                    encodeHeader(msgBuffer, 'i');
-                    object->writeStatistics(msgBuffer);
+                    ::qpid::messaging::Variant::Map  map_;
+                    ::qpid::messaging::Variant::Map values;
+                    mapEncodeHeader(map_, 'i');
+                    object->mapEncodeValues(values, false, true);  // encode statistics only
+                    map_["_values"] = values;
+                    list.push_back(map_);
                 }
 
                 if (object->isDeleted())
                     deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
                 object->setForcePublish(false);
-
-                if (msgBuffer.available() < (BUFSIZE / 2))
-                    break;
             }
         }
 
-        contentSize = BUFSIZE - msgBuffer.available();
-        if (contentSize > 0) {
-            msgBuffer.reset();
+        content.encode();
+        const std::string &str = m.getContent();
+        if (str.length()) {
             stringstream key;
             key << "console.obj." << assignedBrokerBank << "." << assignedAgentBank << "." <<
                 baseObject->getPackageName() << "." << baseObject->getClassName();
-            connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", key.str());
+            connThreadBody.sendBuffer(str, "qpid.management", key.str());
         }
     }
 
@@ -793,6 +852,8 @@ void ManagementAgentImpl::periodicProcessing()
     deleteList.clear();
 
     {
+#define BUFSIZE   65536
+        char msgChars[BUFSIZE];
         Buffer msgBuffer(msgChars, BUFSIZE);
         encodeHeader(msgBuffer, 'h');
         msgBuffer.putLongLong(uint64_t(Duration(now())));
@@ -890,6 +951,18 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
                                                        const string& exchange,
                                                        const string& routingKey)
 {
+    string  data;
+
+    buf.getRawData(data, length);
+    sendBuffer(data, exchange, routingKey);
+}
+
+
+
+void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
+                                                       const string& exchange,
+                                                       const string& routingKey)
+{
     ConnectionThread::shared_ptr s;
     {
         Mutex::ScopedLock _lock(connLock);
@@ -899,9 +972,7 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
     }
 
     Message msg;
-    string  data;
 
-    buf.getRawData(data, length);
     msg.getDeliveryProperties().setRoutingKey(routingKey);
     msg.getMessageProperties().setReplyTo(ReplyTo("amq.direct", queueName.str()));
     msg.setData(data);
@@ -914,6 +985,8 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
             s->stop();
     }
 }
+
+
 
 void ManagementAgentImpl::ConnectionThread::bindToBank(uint32_t brokerBank, uint32_t agentBank)
 {

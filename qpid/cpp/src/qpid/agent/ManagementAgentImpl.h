@@ -155,6 +155,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     client::ConnectionSettings connectionSettings;
     bool              initialized;
     bool              connected;
+    bool              useMapMsg;
     std::string       lastFailure;
 
     bool              clientWasAdded;
@@ -198,6 +199,9 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                         uint32_t               length,
                         const std::string&     exchange,
                         const std::string&     routingKey);
+        void sendBuffer(const std::string&     data,
+                        const std::string&     exchange,
+                        const std::string&     routingKey);
         void bindToBank(uint32_t brokerBank, uint32_t agentBank);
         void close();
         bool isSleeping() const;
@@ -237,6 +241,10 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                 PackageMap::iterator   pIter,
                                 ClassMap::iterator     cIter);
     void encodeHeader (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
+    void mapEncodeHeader (::qpid::messaging::VariantMap& map_, uint8_t  opcode, uint32_t  seq = 0);
+    qpid::messaging::Variant::Map mapEncodeSchemaId(const std::string& pname,
+                                                    const std::string& cname,
+                                                    const uint8_t *md5Sum);
     bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void sendCommandComplete  (std::string replyToKey, uint32_t sequence,
                                uint32_t code = 0, std::string text = std::string("OK"));

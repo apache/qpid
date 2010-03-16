@@ -24,8 +24,6 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/management/ManagementObject.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/framing/Uuid.h"
 #include "qpid/messaging/MapContent.h"
 #include "qpid/messaging/MapView.h"
 
@@ -76,19 +74,12 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     void aggregatePerThreadStats(struct PerThreadStats*) const;
 /*MGEN:ENDIF*/
   public:
-    static void writeSchema(::qpid::framing::Buffer& buf);
-    uint32_t writePropertiesBufSize() const;
-    void readProperties(::qpid::framing::Buffer& buf);
-    void writeProperties(::qpid::framing::Buffer& buf) const;
-    void writeStatistics(::qpid::framing::Buffer& buf, bool skipHeaders = false);
-    void doMethod(std::string& methodName,
-                  ::qpid::framing::Buffer& inBuf,
-                  ::qpid::framing::Buffer& outBuf);
+    static void writeSchema(::qpid::messaging::VariantMap& map);
     void mapEncodeValues(::qpid::messaging::VariantMap& map,
                          bool includeProperties=true,
                          bool includeStatistics=true);
     void mapDecodeValues(const ::qpid::messaging::VariantMap& map);
-    void KAGdoMethod(std::string&           methodName,
+    void doMethod(std::string&           methodName,
                   const ::qpid::messaging::VariantMap& inMap,
                   ::qpid::messaging::VariantMap& outMap);
     std::string getKey() const;

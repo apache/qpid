@@ -443,7 +443,7 @@ class SchemaProperty:
     stream.write ("    buf.put (ft);\n\n")
 
 
-  def genMapSchema(self, stream):
+  def genSchemaMap(self, stream):
     stream.write ("    {\n")
     stream.write ("        ::qpid::messaging::VariantMap _value;\n")
     stream.write ("        _value[TYPE] = TYPE_" + self.type.type.base +";\n")
@@ -602,7 +602,7 @@ class SchemaStatistic:
       stream.write ("    ft.setString (DESC,   \"" + desc   + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
 
-  def genMapSchemaText(self, stream, name, desc):
+  def genSchemaTextMap(self, stream, name, desc):
     stream.write ("    {\n")
     stream.write ("        ::qpid::messaging::VariantMap _value;\n")
     stream.write ("        _value[TYPE] = TYPE_" + self.type.type.base +";\n")
@@ -638,6 +638,32 @@ class SchemaStatistic:
       self.genSchemaText (stream, self.name + "Min",     descMin)
       self.genSchemaText (stream, self.name + "Max",     descMax)
       self.genSchemaText (stream, self.name + "Average", descAverage)
+
+  def genSchemaMap (self, stream):
+    if self.type.type.style != "mma":
+      self.genSchemaTextMap (stream, self.name, self.desc)
+    if self.type.type.style == "wm":
+      descHigh = self.desc
+      descLow  = self.desc
+      if self.desc != None:
+        descHigh = descHigh + " (High)"
+        descLow  = descLow  + " (Low)"
+      self.genSchemaTextMap (stream, self.name + "High", descHigh)
+      self.genSchemaTextMap (stream, self.name + "Low",  descLow)
+    if self.type.type.style == "mma":
+      descCount   = self.desc
+      descMin     = self.desc
+      descMax     = self.desc
+      descAverage = self.desc
+      if self.desc != None:
+        descCount   = descCount   + " (Samples)"
+        descMin     = descMin     + " (Min)"
+        descMax     = descMax     + " (Max)"
+        descAverage = descAverage + " (Average)"
+      self.genSchemaTextMap (stream, self.name + "Samples", descCount)
+      self.genSchemaTextMap (stream, self.name + "Min",     descMin)
+      self.genSchemaTextMap (stream, self.name + "Max",     descMax)
+      self.genSchemaTextMap (stream, self.name + "Average", descAverage)
 
   def genAssign (self, stream):
     if self.assign != None:
@@ -775,7 +801,7 @@ class SchemaArg:
       stream.write ("    ft.setString (DESC,    \"" + self.desc + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
 
-  def genMapSchema (self, stream, event=False):
+  def genSchemaMap (self, stream, event=False):
     stream.write ("        {\n")
     stream.write ("            ::qpid::messaging::VariantMap _avalue;\n")
     stream.write ("            _avalue[TYPE] = TYPE_" + self.type.type.base +";\n")
@@ -878,7 +904,7 @@ class SchemaMethod:
     for arg in self.args:
       arg.genSchema (stream)
 
-  def genMapSchema (self, stream, variables):
+  def genSchemaMap (self, stream, variables):
     stream.write ("    {\n")
     stream.write ("        ::qpid::messaging::VariantMap _value;\n")
     stream.write ("        ::qpid::messaging::VariantMap _args;\n")
@@ -887,9 +913,12 @@ class SchemaMethod:
       stream.write ("        _value[DESC] = \"" + self.desc + "\";\n")
 
     for arg in self.args:
-      arg.genSchema (stream)
+      arg.genSchemaMap (stream)
 
-    stream.write ("        _value[ARGS] = _args;\n")
+    stream.write ("        if (!_args.empty())\n")
+    stream.write ("            _value[ARGS] = _args;\n")
+
+
     stream.write ("        _methods[\"" + self.name + "\"] = _value;\n")
     stream.write ("    }\n\n")
 
@@ -1024,6 +1053,10 @@ class SchemaEvent:
   def genArgSchema(self, stream, variables):
     for arg in self.args:
       arg.genSchema(stream, True)
+
+  def genArgSchemaMap(self, stream, variables):
+    for arg in self.args:
+      arg.genSchemaMap(stream, True)
 
   def genSchemaMD5(self, stream, variables):
     sum = self.hash.getDigest()
@@ -1388,6 +1421,10 @@ class SchemaClass:
     for prop in self.properties:
       prop.genSchema (stream)
 
+  def genPropertySchemaMap (self, stream, variables):
+    for prop in self.properties:
+      prop.genSchemaMap(stream)
+
   def genSetGeneralReferenceDeclaration (self, stream, variables):
     for prop in self.properties:
       if prop.isGeneralRef:
@@ -1396,6 +1433,10 @@ class SchemaClass:
   def genStatisticSchema (self, stream, variables):
     for stat in self.statistics:
       stat.genSchema (stream)
+
+  def genStatisticSchemaMap (self, stream, variables):
+    for stat in self.statistics:
+      stat.genSchemaMap(stream)
 
   def genMethodIdDeclarations (self, stream, variables):
     number = 1
@@ -1407,6 +1448,10 @@ class SchemaClass:
   def genMethodSchema (self, stream, variables):
     for method in self.methods:
       method.genSchema (stream, variables)
+
+  def genMethodSchemaMap(self, stream, variables):
+    for method in self.methods:
+      method.genSchemaMap(stream, variables)
 
   def genNameCap (self, stream, variables):
     stream.write (capitalize(self.name))

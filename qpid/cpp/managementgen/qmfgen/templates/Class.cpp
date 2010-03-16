@@ -21,15 +21,13 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/log/Statement.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/management/Manageable.h" 
+#include "qpid/management/Manageable.h"
 #include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
 #include <iostream>
 
 using namespace qmf::/*MGEN:Class.Namespace*/;
-using namespace qpid::framing;
 using namespace qpid::messaging;
 using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
@@ -91,27 +89,37 @@ void /*MGEN:Class.NameCap*/::registerSelf(ManagementAgent* agent)
     agent->registerClass(packageName, className, md5Sum, writeSchema);
 }
 
-void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
+void /*MGEN:Class.NameCap*/::writeSchema (::qpid::messaging::VariantMap& map)
 {
-    FieldTable ft;
+    ::qpid::messaging::Variant::Map _sid;
+    ::qpid::messaging::Variant::Map _props;
+    ::qpid::messaging::Variant::Map _stats;
+    ::qpid::messaging::Variant::Map _methods;
 
-    // Schema class header:
-    buf.putOctet       (CLASS_KIND_TABLE);
-    buf.putShortString (packageName); // Package Name
-    buf.putShortString (className);   // Class Name
-    buf.putBin128      (md5Sum);      // Schema Hash
-    buf.putShort       (/*MGEN:Class.ConfigCount*/); // Config Element Count
-    buf.putShort       (/*MGEN:Class.InstCount*/); // Inst Element Count
-    buf.putShort       (/*MGEN:Class.MethodCount*/); // Method Count
+    _sid["_type"] = CLASS_KIND_TABLE;
+    _sid["_package_name"] = packageName;
+    _sid["_class_name"] = className;
+    _sid["_hash_str"] = std::string((const char *)md5Sum, sizeof(md5Sum));
+    map["_schema_id"] = _sid;
+
+    map["_config_ct"] = /*MGEN:Class.ConfigCount*/;
+    map["_inst_ct"] = /*MGEN:Class.InstCount*/;
+    map["_method_ct"] = /*MGEN:Class.MethodCount*/;
 
     // Properties
-/*MGEN:Class.PropertySchema*/
+/*MGEN:Class.PropertySchemaMap*/
+    if (!_props.empty())
+        map["_properties"] = _props;
 
     // Statistics
-/*MGEN:Class.StatisticSchema*/
+/*MGEN:Class.StatisticSchemaMap*/
+    if (!_stats.empty())
+        map["_statistics"] = _stats;
 
     // Methods
-/*MGEN:Class.MethodSchema*/
+/*MGEN:Class.MethodSchemaMap*/
+    if (!_methods.empty())
+        map["_methods"] = _methods;
 }
 
 /*MGEN:IF(Class.ExistPerThreadStats)*/
@@ -127,82 +135,6 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 }
 /*MGEN:ENDIF*/
 
-uint32_t /*MGEN:Class.NameCap*/::writePropertiesBufSize() const
-{
-    uint32_t size = writeTimestampsBufSize();
-/*MGEN:IF(Class.ExistOptionals)*/
-    size += /*MGEN:Class.PresenceMaskBytes*/;
-/*MGEN:ENDIF*/
-/*MGEN:Class.SizeProperties*/
-    return size;
-}
-
-void /*MGEN:Class.NameCap*/::readProperties (Buffer& buf)
-{
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
-    readTimestamps(buf);
-/*MGEN:IF(Class.ExistOptionals)*/
-    for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
-        presenceMask[idx] = buf.getOctet();
-/*MGEN:ENDIF*/
-/*MGEN:Class.ReadProperties*/
-}
-
-void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf) const
-{
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
-    configChanged = false;
-
-    writeTimestamps (buf);
-/*MGEN:IF(Class.ExistOptionals)*/
-    for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
-        buf.putOctet(presenceMask[idx]);
-/*MGEN:ENDIF*/
-/*MGEN:Class.WriteProperties*/
-}
-
-void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
-{
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
-    instChanged = false;
-/*MGEN:IF(Class.ExistPerThreadAssign)*/
-    for (int idx = 0; idx < maxThreads; idx++) {
-        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
-        if (threadStats != 0) {
-/*MGEN:Class.PerThreadAssign*/
-        }
-    }
-/*MGEN:ENDIF*/
-/*MGEN:IF(Class.ExistPerThreadStats)*/
-    struct PerThreadStats totals;
-    aggregatePerThreadStats(&totals);
-/*MGEN:ENDIF*/
-/*MGEN:Class.Assign*/
-    if (!skipHeaders)
-        writeTimestamps (buf);
-/*MGEN:Class.WriteStatistics*/
-
-    // Maintenance of hi-lo statistics
-/*MGEN:Class.HiLoStatResets*/
-/*MGEN:IF(Class.ExistPerThreadResets)*/
-    for (int idx = 0; idx < maxThreads; idx++) {
-        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
-        if (threadStats != 0) {
-/*MGEN:Class.PerThreadHiLoStatResets*/
-        }
-    }
-/*MGEN:ENDIF*/
-}
-
-void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
-{
-    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
-    std::string          text;
-
-/*MGEN:Class.MethodHandlers*/
-    outBuf.putLong(status);
-    outBuf.putShortString(Manageable::StatusText(status, text));
-}
 
 std::string /*MGEN:Class.NameCap*/::getKey() const
 {
@@ -267,7 +199,7 @@ void /*MGEN:Class.NameCap*/::mapDecodeValues (const ::qpid::messaging::VariantMa
 /*MGEN:Class.MapDecodeProperties*/
 }
 
-void /*MGEN:Class.NameCap*/::KAGdoMethod (/*MGEN:Class.DoMapMethodArgs*/)
+void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMapMethodArgs*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
     std::string          text;

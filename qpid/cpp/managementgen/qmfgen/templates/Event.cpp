@@ -21,13 +21,11 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/log/Statement.h"
-#include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h" 
 #include "qpid//*MGEN:Event.AgentHeaderLocation*//ManagementAgent.h"
 #include "Event/*MGEN:Event.NameCap*/.h"
 
 using namespace qmf::/*MGEN:Event.Namespace*/;
-using namespace qpid::framing;
 using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
 using           qpid::management::ManagementObject;
@@ -56,28 +54,27 @@ void Event/*MGEN:Event.NameCap*/::registerSelf(ManagementAgent* agent)
     agent->registerEvent(packageName, eventName, md5Sum, writeSchema);
 }
 
-void Event/*MGEN:Event.NameCap*/::writeSchema (Buffer& buf)
+void Event/*MGEN:Event.NameCap*/::writeSchema (::qpid::messaging::VariantMap& map)
 {
-    FieldTable ft;
+    ::qpid::messaging::Variant::Map _sid;
+    ::qpid::messaging::Variant::Map _args;
 
     // Schema class header:
-    buf.putOctet       (CLASS_KIND_EVENT);
-    buf.putShortString (packageName); // Package Name
-    buf.putShortString (eventName);   // Event Name
-    buf.putBin128      (md5Sum);      // Schema Hash
-    buf.putOctet       (0);           // No Superclass    
-    buf.putShort       (/*MGEN:Event.ArgCount*/); // Argument Count
+
+    _sid["_type"] = CLASS_KIND_EVENT;
+    _sid["_package_name"] = packageName;
+    _sid["_class_name"] = eventName;
+    _sid["_hash_str"] = std::string((const char *)md5Sum, sizeof(md5Sum));
+    map["_schema_id"] = _sid;
+
 
     // Arguments
-/*MGEN:Event.ArgSchema*/
+/*MGEN:Event.ArgSchemaMap*/
+    if (!_args.empty())
+        map["_arguments"] = _args;
 }
 
-void Event/*MGEN:Event.NameCap*/::encode(::qpid::framing::Buffer& buf) const
-{
-/*MGEN:Event.ArgEncodes*/
-}
-
-void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::messaging::MapContent& map) const
+void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::messaging::VariantMap& map) const
 {
     using namespace ::qpid::messaging;
 /*MGEN:Event.ArgMap*/
