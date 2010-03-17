@@ -8,8 +8,6 @@ dnl This program is distributed in the hope that it will be useful, but
 dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 dnl
-dnl When updating the name/version number here, also update it in
-dnl src/qpid/Version.h
 
 # Pick up the version from QPID_VERSION.txt in the qpid/cpp source tree.
 # NB. You need to re-run bootstrap if the global qpid/QPID_VERSION.txt changes.
@@ -537,7 +535,6 @@ AC_CONFIG_FILES([
   managementgen/Makefile
   etc/Makefile
   src/Makefile
-  src/qpid/Version.h
   src/tests/Makefile
   src/tests/test_env.sh
   docs/man/Makefile
