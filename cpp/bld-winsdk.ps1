@@ -20,11 +20,24 @@
 # This script requires cmake, and 7z to be already on the path devenv should be on the path as
 # a result of installing Visual Studio
 
+# Filter to extract the include file from c style #include lines
+# TODO: Not used yet
+filter extractIncludes {
+  Get-Content $_ |
+  foreach {
+    if ($_ -match '^\s*#include\s[<"]*(.*)[>"]\s*') {
+	  $matches[1]
+	}
+  } |
+  sort -unique
+}
+
 foreach ($arg in $args) {"Arg: $arg"}
 
-$qpid_cpp_src='..\qpid\cpp'
+$qpid_src='..\qpid'
+$qpid_cpp_src="$qpid_src\cpp"
 $install_dir='install_dir'
-$ver='0.7'
+$ver=Get-Content "$qpid_src/QPID_VERSION.txt"
 $zipfile="qpid-cpp-$ver.zip"
 
 # Clean out install directory
