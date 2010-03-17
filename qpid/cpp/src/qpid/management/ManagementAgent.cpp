@@ -33,6 +33,7 @@
 #include "qpid/messaging/Uuid.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ListContent.h"
+#include "qpid/messaging/ListView.h"
 #include <list>
 #include <iostream>
 #include <fstream>
@@ -956,9 +957,14 @@ void ManagementAgent::SchemaClass::appendSchema(Buffer& buf)
     // linked in via plug-in), call the schema handler directly.  If the package
     // is from a remote management agent, send the stored schema information.
 
-    if (writeSchemaCall != 0)
-        //writeSchemaCall(buf);
-        assert(false); // KAG TODO FIX
+    if (writeSchemaCall != 0) {
+        qpid::messaging::Message m;
+        qpid::messaging::MapContent content(m);
+
+        writeSchemaCall(content.asMap());
+        content.encode();
+        buf.putRawData(m.getContent());
+    }
     else
         buf.putRawData(reinterpret_cast<uint8_t*>(&data[0]), data.size());
 }
@@ -1557,42 +1563,51 @@ void ManagementAgent::disallow(const std::string& className, const std::string& 
     disallowed[std::make_pair(className, methodName)] = message;
 }
 
-void ManagementAgent::SchemaClassKey::encode(qpid::framing::Buffer& buffer) const {
-    buffer.checkAvailable(encodedSize());
-    buffer.putShortString(name);
-    buffer.putBin128(hash);
+void ManagementAgent::SchemaClassKey::mapEncode(qpid::messaging::Variant::Map& _map) const {
+    const std::string hash_str((const char *)hash, sizeof(hash));
+    _map["_cname"] = name;
+    _map["_hash"] = hash_str;
 }
 
-void ManagementAgent::SchemaClassKey::decode(qpid::framing::Buffer& buffer) {
-    buffer.checkAvailable(encodedSize());
-    buffer.getShortString(name);
-    buffer.getBin128(hash);
+void ManagementAgent::SchemaClassKey::mapDecode(const qpid::messaging::Variant::Map& _map) {
+    qpid::messaging::Variant::Map::const_iterator i;
+
+    if ((i = _map.find("_cname")) != _map.end()) {
+        name = i->second.asString();
+    }
+
+    if ((i = _map.find("_hash")) != _map.end()) {
+        const std::string s = i->second.asString();
+        memcpy(hash, s.data(), sizeof(hash));
+    }
 }
 
-uint32_t ManagementAgent::SchemaClassKey::encodedSize() const {
-    return 1 + name.size() + 16 /* bin128 */;
+void ManagementAgent::SchemaClass::mapEncode(qpid::messaging::Variant::Map& _map) const {
+    _map["_type"] = kind;
+    _map["_pending_sequence"] = pendingSequence;
+    _map["_data"] = data;
 }
 
-void ManagementAgent::SchemaClass::encode(qpid::framing::Buffer& outBuf) const {
-    outBuf.checkAvailable(encodedSize());
-    outBuf.putOctet(kind);
-    outBuf.putLong(pendingSequence);
-    outBuf.putLongString(data);
-}
+void ManagementAgent::SchemaClass::mapDecode(const qpid::messaging::Variant::Map& _map) {
+    qpid::messaging::Variant::Map::const_iterator i;
 
-void ManagementAgent::SchemaClass::decode(qpid::framing::Buffer& inBuf) {
-    inBuf.checkAvailable(encodedSize());
-    kind = inBuf.getOctet();
-    pendingSequence = inBuf.getLong();
-    inBuf.getLongString(data);
-}
-
-uint32_t ManagementAgent::SchemaClass::encodedSize() const {
-    return sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint32_t) + data.size();
+    if ((i = _map.find("_type")) != _map.end()) {
+        kind = i->second;
+    }
+    if ((i = _map.find("_pending_sequence")) != _map.end()) {
+        pendingSequence = i->second;
+    }
+    if ((i = _map.find("_data")) != _map.end()) {
+        data = i->second.asString();
+    }
 }
 
 void ManagementAgent::exportSchemas(std::string& out) {
-    out.clear();
+    ::qpid::messaging::Message m;
+    ::qpid::messaging::ListContent content(m);
+    ::qpid::messaging::Variant::List &list_ = content.asList();
+    ::qpid::messaging::Variant::Map map_, kmap, cmap;
+
     for (PackageMap::const_iterator i = packages.begin(); i != packages.end(); ++i) {
         string name = i->first;
         const ClassMap& classes = i ->second;
@@ -1601,82 +1616,149 @@ void ManagementAgent::exportSchemas(std::string& out) {
             const SchemaClass& klass = j->second;
             if (klass.writeSchemaCall == 0) { // Ignore built-in schemas.
                 // Encode name, schema-key, schema-class
-                size_t encodedSize = 1+name.size()+key.encodedSize()+klass.encodedSize();
-                size_t end = out.size();
-                out.resize(end + encodedSize);
-                framing::Buffer outBuf(&out[end], encodedSize);
-                outBuf.putShortString(name);
-                key.encode(outBuf);
-                klass.encode(outBuf);
+
+                map_.clear();
+                kmap.clear();
+                cmap.clear();
+
+                key.mapEncode(kmap);
+                klass.mapEncode(cmap);
+
+                map_["_pname"] = name;
+                map_["_key"] = kmap;
+                map_["_class"] = cmap;
+                list_.push_back(map_);
+            }
+        }
+    }
+
+    content.encode();
+    out = m.getContent();
+}
+
+void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
+
+    ::qpid::messaging::Message m(inBuf.getPointer(), inBuf.available());
+    ::qpid::messaging::ListView content(m);
+    ::qpid::messaging::ListView::const_iterator l;
+
+
+    for (l = content.begin(); l != content.end(); l++) {
+        string package;
+        SchemaClassKey key;
+        SchemaClass klass;
+        ::qpid::messaging::VariantMap map_, kmap, cmap;
+        qpid::messaging::MapView::const_iterator i;
+        
+        map_ = l->asMap();
+
+        if ((i = map_.find("_pname")) != map_.end()) {
+            package = i->second.asString();
+
+            if ((i = map_.find("_key")) != map_.end()) {
+                key.mapDecode(i->second.asMap());
+
+                if ((i = map_.find("_class")) != map_.end()) {
+                    klass.mapDecode(i->second.asMap());
+
+                    packages[package][key] = klass;
+                }
             }
         }
     }
 }
 
-void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
-    while (inBuf.available()) {
-        string package;
-        SchemaClassKey key;
-        SchemaClass klass;
-        inBuf.getShortString(package);
-        key.decode(inBuf);
-        klass.decode(inBuf);
-        packages[package][key] = klass;
+void ManagementAgent::RemoteAgent::mapEncode(qpid::messaging::Variant::Map& map_) const {
+    ::qpid::messaging::VariantMap _objId, _values;
+    
+    map_["_brokerBank"] = brokerBank;
+    map_["_agentBank"] = agentBank;
+    map_["_routingKey"] = routingKey;
+
+    connectionRef.mapEncode(_objId);
+    map_["_object_id"] = _objId;
+
+    mgmtObject->mapEncodeValues(_values, true, false);
+    map_["_values"] = _values;
+}
+
+void ManagementAgent::RemoteAgent::mapDecode(const qpid::messaging::Variant::Map& map_) {
+    qpid::messaging::MapView::const_iterator i;
+
+    if ((i = map_.find("_brokerBank")) != map_.end()) {
+        brokerBank = i->second;
     }
-}
 
-void ManagementAgent::RemoteAgent::encode(qpid::framing::Buffer& outBuf) const {
-    outBuf.checkAvailable(encodedSize());
-    outBuf.putLong(brokerBank);
-    outBuf.putLong(agentBank);
-    outBuf.putShortString(routingKey);
-    connectionRef.encode(outBuf);
-    mgmtObject->writeProperties(outBuf);
-}
+    if ((i = map_.find("_agentBank")) != map_.end()) {
+        agentBank = i->second;
+    }
 
-void ManagementAgent::RemoteAgent::decode(qpid::framing::Buffer& inBuf) {
-    brokerBank = inBuf.getLong();
-    agentBank = inBuf.getLong();
-    inBuf.getShortString(routingKey);
-    connectionRef.decode(inBuf);
+    if ((i = map_.find("_routingKey")) != map_.end()) {
+        routingKey = i->second.getString();
+    }
+
+    if ((i = map_.find("_object_id")) != map_.end()) {
+        connectionRef.mapDecode(i->second.asMap());
+    }
+
     mgmtObject = new _qmf::Agent(&agent, this);
-    mgmtObject->readProperties(inBuf);
+
+    if ((i = map_.find("_values")) != map_.end()) {
+        mgmtObject->mapDecodeValues(i->second.asMap());
+    }
+
     agent.addObject(mgmtObject, 0, true);
 }
 
-uint32_t ManagementAgent::RemoteAgent::encodedSize() const {
-    return sizeof(uint32_t) + sizeof(uint32_t) // 2 x Long
-        + routingKey.size() + sizeof(uint8_t) // ShortString
-        + connectionRef.encodedBufSize()
-        + mgmtObject->writePropertiesBufSize();
-}
 
 void ManagementAgent::exportAgents(std::string& out) {
-    out.clear();
+    ::qpid::messaging::Message m;
+    ::qpid::messaging::ListContent content(m);
+    ::qpid::messaging::Variant::List &list_ = content.asList();
+    ::qpid::messaging::VariantMap map_, omap, amap;
+
     for (RemoteAgentMap::const_iterator i = remoteAgents.begin();
          i != remoteAgents.end();
          ++i)
     {
         ObjectId id = i->first;
         RemoteAgent* agent = i->second;
-        size_t encodedSize = id.encodedBufSize() + agent->encodedSize();
-        size_t end = out.size();
-        out.resize(end + encodedSize);
-        framing::Buffer outBuf(&out[end], encodedSize);
-        id.encode(outBuf);
-        agent->encode(outBuf);
+
+        map_.clear();
+        omap.clear();
+        amap.clear();
+
+        id.mapEncode(omap);
+        map_["_object_id"] = omap;
+        agent->mapEncode(amap);
+        map_["_remote_agent"] = amap;
+        list_.push_back(map_);
     }
+
+    content.encode();
+    out = m.getContent();
 }
 
 void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
-    while (inBuf.available()) {
-        ObjectId id;
-        inBuf.checkAvailable(id.encodedBufSize());
-        id.decode(inBuf);
+
+    ::qpid::messaging::Message m(inBuf.getPointer(), inBuf.available());
+    ::qpid::messaging::ListView content(m);
+    ::qpid::messaging::ListView::const_iterator l;
+
+    for (l = content.begin(); l != content.end(); l++) {
         std::auto_ptr<RemoteAgent> agent(new RemoteAgent(*this));
-        agent->decode(inBuf);
-        addObject (agent->mgmtObject, 0, false);
-        remoteAgents[agent->connectionRef] = agent.release();
+        ::qpid::messaging::VariantMap map_;
+        qpid::messaging::MapView::const_iterator i;
+
+        map_ = l->asMap();
+
+        if ((i = map_.find("_remote_agent")) != map_.end()) {
+
+            agent->mapDecode(i->second.asMap());
+
+            addObject (agent->mgmtObject, 0, false);
+            remoteAgents[agent->connectionRef] = agent.release();
+        }
     }
 }
 

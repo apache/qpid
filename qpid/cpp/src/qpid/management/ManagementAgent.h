@@ -154,9 +154,8 @@ private:
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
 
         virtual ~RemoteAgent ();
-        void encode(framing::Buffer& buffer) const;
-        void decode(framing::Buffer& buffer);
-        uint32_t encodedSize() const;
+        void mapEncode(qpid::messaging::Variant::Map& _map) const;
+        void mapDecode(const qpid::messaging::Variant::Map& _map);
     };
 
     // TODO: Eventually replace string with entire reply-to structure.  reply-to
@@ -176,9 +175,8 @@ private:
         std::string name;
         uint8_t     hash[16];
 
-        void encode(framing::Buffer& buffer) const;
-        void decode(framing::Buffer& buffer);
-        uint32_t encodedSize() const;
+        void mapEncode(qpid::messaging::Variant::Map& _map) const;
+        void mapDecode(const qpid::messaging::Variant::Map& _map);
     };
 
     struct SchemaClassKeyComp
@@ -210,9 +208,8 @@ private:
         bool hasSchema () { return (writeSchemaCall != 0) || !data.empty(); }
         void appendSchema (framing::Buffer& buf);
 
-        void encode(framing::Buffer& buffer) const;
-        void decode(framing::Buffer& buffer);
-        uint32_t encodedSize() const;
+        void mapEncode(qpid::messaging::Variant::Map& _map) const;
+        void mapDecode(const qpid::messaging::Variant::Map& _map);
     };
 
     typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;

@@ -67,7 +67,7 @@ public:
     QPID_COMMON_EXTERN ObjectId(const std::string&);
     QPID_COMMON_EXTERN bool operator==(const ObjectId &other) const;
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
-    //QPID_COMMON_EXTERN uint32_t encodedSize() const { return 16; };
+    //QPID_COMMON_EXTERN uint32_t encodedSize() const;
     //QPID_COMMON_EXTERN void encode(framing::Buffer& buffer) const;
     //QPID_COMMON_EXTERN void decode(framing::Buffer& buffer);
     QPID_COMMON_EXTERN void mapEncode(messaging::VariantMap& map) const;
