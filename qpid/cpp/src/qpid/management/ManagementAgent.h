@@ -256,6 +256,7 @@ private:
     typedef std::pair<std::string,std::string> MethodName;
     typedef std::map<MethodName, std::string> DisallowedMethods;
     DisallowedMethods disallowed;
+    std::string agentName;  // KAG TODO FIX
 
 
 #   define MA_BUFFER_SIZE 65536
@@ -272,6 +273,11 @@ private:
                              uint32_t                     length,
                              qpid::broker::Exchange::shared_ptr exchange,
                              std::string                  routingKey);
+    void sendBuffer(const std::string&     data,
+                    const uint32_t sequence,
+                    const qpid::messaging::VariantMap headers,
+                    qpid::broker::Exchange::shared_ptr exchange,
+                    std::string routingKey);
     void moveNewObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);

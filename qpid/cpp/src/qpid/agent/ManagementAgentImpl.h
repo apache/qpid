@@ -64,6 +64,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
               uint16_t intervalSeconds = 10,
               bool useExternalThread = false,
               const std::string& storeFile = "");
+    const Name& getName();
     bool isConnected() { return connected; }
     std::string& getLastFailure() { return lastFailure; }
     void registerClass(const std::string& packageName,
@@ -200,8 +201,13 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                         const std::string&     exchange,
                         const std::string&     routingKey);
         void sendBuffer(const std::string&     data,
+                        const uint32_t sequence,
+                        const qpid::messaging::VariantMap headers,
                         const std::string&     exchange,
                         const std::string&     routingKey);
+        void sendMessage(qpid::client::Message msg,
+                         const std::string&     exchange,
+                         const std::string&     routingKey);
         void bindToBank(uint32_t brokerBank, uint32_t agentBank);
         void close();
         bool isSleeping() const;
@@ -225,6 +231,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     static const std::string storeMagicNumber;
 
+    Name agentName;
+
     void startProtocol();
     void storeData(bool requested=false);
     void retrieveData();
@@ -241,7 +249,6 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                 PackageMap::iterator   pIter,
                                 ClassMap::iterator     cIter);
     void encodeHeader (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
-    void mapEncodeHeader (::qpid::messaging::VariantMap& map_, uint8_t  opcode, uint32_t  seq = 0);
     qpid::messaging::Variant::Map mapEncodeSchemaId(const std::string& pname,
                                                     const std::string& cname,
                                                     const uint8_t *md5Sum);
