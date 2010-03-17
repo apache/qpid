@@ -16,12 +16,12 @@ On Linux:
   # ./declare_queues host1 9999
 
 On Windows:
-  C:\Program Files\qpidc-0.6\examples\direct> declare_queues host1 9999
+  C:\Program Files\qpidc-0.7\examples\direct> declare_queues host1 9999
 
 The qpid C++ broker executable is named qpidd on Linux and qpidd.exe
 on Windows. The default install locations are:
 - Linux: /usr/sbin
-- Windows: C:\Program Files\qpidc-0.6\bin
+- Windows: C:\Program Files\qpidc-0.7\bin
 
 In a C++ source distribution the broker is located in the src subdirectory
 (generally, from this examples directory, ../src).
@@ -52,9 +52,9 @@ On Linux:
   # ./listener
 
 On Windows:
-  C:\Program Files\qpidc-0.6\examples\direct> declare_queues
-  C:\Program Files\qpidc-0.6\examples\direct> direct_producer
-  C:\Program Files\qpidc-0.6\examples\direct> listener
+  C:\Program Files\qpidc-0.7\examples\direct> declare_queues
+  C:\Program Files\qpidc-0.7\examples\direct> direct_producer
+  C:\Program Files\qpidc-0.7\examples\direct> listener
 
 Note that there is no requirement for the listener to be running before the
 messages are published. The messages are stored in the queue until consumed
@@ -86,9 +86,9 @@ On Linux:
   # ./fanout_producer
 
 On Windows:
-  C:\Program Files\qpidc-0.6\examples\fanout> listener
+  C:\Program Files\qpidc-0.7\examples\fanout> listener
 
-  C:\Program Files\qpidc-0.6\examples\direct> fanout_producer
+  C:\Program Files\qpidc-0.7\examples\direct> fanout_producer
 
 == Publisher/Subscriber ==
 
@@ -122,9 +122,9 @@ On Linux:
   # ./topic_publisher
 
 On Windows:
-  C:\Program Files\qpidc-0.6\examples\pub-sub> topic_listener
+  C:\Program Files\qpidc-0.7\examples\pub-sub> topic_listener
 
-  C:\Program Files\qpidc-0.6\examples\pub-sub> topic_publisher
+  C:\Program Files\qpidc-0.7\examples\pub-sub> topic_publisher
 
 == Request/Response ==
 
@@ -147,8 +147,8 @@ On Linux:
   # ./client
 
 On Windows:
-  C:\Program Files\qpidc-0.6\examples\request-response> server
-  C:\Program Files\qpidc-0.6\examples\request-response> client
+  C:\Program Files\qpidc-0.7\examples\request-response> server
+  C:\Program Files\qpidc-0.7\examples\request-response> client
 
 == QMF Agent ==
 
