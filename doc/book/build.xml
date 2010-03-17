@@ -86,6 +86,7 @@
 
 <target name="init">
   <mkdir dir="${build.dir}"/>
+  <mkdir dir="${out.dir}"/>
 </target>
 
 <!--
@@ -125,8 +126,8 @@
    <fop format="application/pdf" 
         fofile="${build.dir}/qpid-book.fo"
         outfile="${out.dir}/qpid-book.pdf"/>
-</target>
-
+</target
+>
 <!--
     HTML
 -->
