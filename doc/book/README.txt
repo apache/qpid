@@ -1,30 +1,34 @@
 The documentation in this directory is written in DocBook 4.5. The
 original content was taken from the Apache Qpid Wiki. 
 
-1. Getting DocBook
+1. Building the Documentation
 
-Docbook is documented here: 
-http://docbook.org/tdg/
+To build the documentation, use ant:
 
-The Docbook DTDs and schemas are here:
-http://www.docbook.org/schemas/
+$ ant
 
-Stylesheets for creating PDF, HTML, and various other formats are here: 
-http://sourceforge.net/projects/docbook/files/
+You need both ant and ant-trax, and xmllint (or another XInclude
+processor - if you do not use xmllint, you must change build.xml). On
+Fedora, you can get them using yum:
 
-DocBook packages exist for some Linux systems. For instance, on my
-Fedora 11 system, I have installed these RPMs:
+$ sudo yum install ant ant-trax xmllint
 
-  docbook-dtds-0:1.0-47.fc11.noarch
-  docbook-simple-0:1.1-5.fc11.noarch
-  docbook-style-xsl-0:1.75.2-1.fc11.noarch
-  
+The other tools that you need are in subdirectories:
+
+qpid/doc/book/docbook      - Docbook 4.5 DTDs
+qpid/doc/book/docbook-xsl  - Docbook XSLT stylesheets
+qpid/doc/book/lib/saxon    - Saxon 6.5.3 XSLT processor
+qpid/doc/book/lib/fop-0.95 - Apache FOP
+
+You will see quite a few error messages. Many of these are due to
+unresolved links, and these should go away. Many are due to the
+verbosity of Apache FOP, which generates many warnings.
 
 2. Editing Tools
 
 For Emacs, I like nxml-mode, especially if you learn how to use tag
 completion, outlining, etc.  This is described in some detail in
-http://www.dpawson.co.uk/relaxng/nxml/info.html.
+http://www.dpawson.co.uk/relaxng/nxml/info.html. 
 
 For vi, the macros described in this Linux Journal article may be
 helpful: http://www.linuxjournal.com/article/7737.
@@ -37,18 +41,9 @@ Here's a page on authoring tools for DocBook:
 http://wiki.docbook.org/topic/DocBookAuthoringTools
 
 
-3. Building the Documentation
+3. File Structure
 
-I have checked in a shell script, build.sh, which builds a PDF. It
-will soon be replaced by an ANT file.
-
-In addition to DocBook, you need the following software:
-
-- An XInclude processor. The shell script uses xmllint.
-- An XSLT processor. The shell script uses xsltproc.
-- An XSL:FO processor. The shell script uses Apache FOP (fop-0.95-3.noarch on Fedora).
-  
-4. File Structure
+The source files are in qpid/doc/book/src.
 
 The following XInclude tree shows the organization of files in the
 document.
