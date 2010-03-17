@@ -1,0 +1,12 @@
+This directory contains documentation about the C++ source
+that is expressed in formats that does not fit comfortably
+within C++ source files.
+
+As with all documentation, including comments, it may become
+outmoded with respect to the code.  
+
+If you find external code doco useful in your work -- if it 
+helps you save some time -- please return some of that time 
+in the form of effort to keep the documentation updated.
+
+
