@@ -102,8 +102,12 @@ CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent
     mgmtObject->set_state("IDLE");
 
     Variant::Map args;
+    Variant::Map subMap;
     args["first"] = "String data";
     args["second"] = 34;
+    subMap["string-data"] = "Text";
+    subMap["numeric-data"] = 10000;
+    args["map-data"] = subMap;
     mgmtObject->set_args(args);
 }
 

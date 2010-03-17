@@ -675,8 +675,7 @@ qpid::messaging::Variant::Map ManagementAgentImpl::mapEncodeSchemaId(const std::
 
     map_["_package_name"] = pname;
     map_["_class_name"] = cname;
-    map_["_hash_str"] = std::string((const char *)md5Sum,
-                                    qpid::management::ManagementObject::MD5_LEN);
+    map_["_hash_str"] = messaging::Uuid((const char*) md5Sum);
     return map_;
 }
 
@@ -834,7 +833,7 @@ void ManagementAgentImpl::periodicProcessing()
                 send_stats = (object->hasInst() && (object->getInstChanged() || object->getForcePublish()));
 
                 if (send_stats || send_props) {
-                    ::qpid::messaging::Variant::Map  map_;
+                    ::qpid::messaging::Variant::Map map_;
                     ::qpid::messaging::Variant::Map values;
 
                     map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
@@ -863,7 +862,7 @@ void ManagementAgentImpl::periodicProcessing()
             headers["qmf.content"] = "_data";
             headers["qmf.agent"] = name_address;
 
-            connThreadBody.sendBuffer(str, 0, headers, "qpid.management", key.str());
+            connThreadBody.sendBuffer(str, 0, headers, "qpid.management", key.str(), "amqp/list");
             QPID_LOG(trace, "SENT DataIndication key=" << key.str());
         }
     }
@@ -980,7 +979,8 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
                                                        uint32_t sequence,
                                                        const qpid::messaging::VariantMap headers,
                                                        const string& exchange,
-                                                       const string& routingKey)
+                                                       const string& routingKey,
+                                                       const string& contentType)
 {
     Message msg;
     qpid::messaging::VariantMap::const_iterator i;
@@ -990,6 +990,8 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
         seqstr << sequence;
         msg.getMessageProperties().setCorrelationId(seqstr.str());
     }
+    if (!contentType.empty())
+        msg.getMessageProperties().setContentType(contentType);
     for (i = headers.begin(); i != headers.end(); ++i) {
         msg.getHeaders().setString(i->first, i->second.asString());
     }

@@ -208,7 +208,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                         const uint32_t sequence,
                         const qpid::messaging::VariantMap headers,
                         const std::string&     exchange,
-                        const std::string&     routingKey);
+                        const std::string&     routingKey,
+                        const std::string&     contentType="amqp/map");
         void sendMessage(qpid::client::Message msg,
                          const std::string&     exchange,
                          const std::string&     routingKey);
