@@ -950,9 +950,5 @@ add_definitions(-DHAVE_CONFIG_H)
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-# And create the Version.h file.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/qpid/Version.h.cmake
-               ${CMAKE_CURRENT_BINARY_DIR}/qpid/Version.h)
-
 add_subdirectory(qpid/store)
 add_subdirectory(tests)
