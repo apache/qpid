@@ -133,7 +133,7 @@
 -->
 
  <target name="html" depends="xinclude" description="Generates qpid-book.html">
-    <xslt in="${build.dir}/xinclude.xml" out="${build.dir}/qpid-book.html"
+    <xslt in="${build.dir}/xinclude.xml" out="${out.dir}/qpid-book.html"
           style="${html.stylesheet}" classpathref="saxon6.classpath">
     </xslt>
  </target>
