@@ -23,10 +23,11 @@
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
+#else
+#  error "config.h not generated"
 #endif
 
 namespace qpid {
-#ifdef HAVE_CONFIG_H
   const std::string product  = PACKAGE_NAME;
   const std::string version  = PACKAGE_VERSION;
 #  if HAVE_SASL
@@ -34,11 +35,6 @@ namespace qpid {
 #  else
   const std::string saslName = "qpidd-no-sasl";
 #  endif
-#else
-  const std::string product  = "qpidc";
-  const std::string version  = "@VERSION@";
-  const std::string saslName = "qpid-broker";
-#endif
 }
 
 #endif  /*!QPID_VERSION_H*/
