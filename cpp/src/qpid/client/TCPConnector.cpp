@@ -199,8 +199,19 @@ void TCPConnector::send(AMQFrame& frame) {
     } else {
         notifyWrite = (currentSize >= maxFrameSize);
     }
-    }
+    /*
+      NOTE: Moving the following line into this mutex block
+            is a workaround for BZ 570168, in which the test
+            testConcurrentSenders causes a hang about 1.5%
+            of the time.  ( To see the hang much more frequently
+            leave this line out of the mutex block, and put a 
+            small usleep just before it.)
+
+            TODO mgoulish - fix the underlying cause and then
+                            move this call back outside the mutex.
+    */
     if (notifyWrite && !closed) aio->notifyPendingWrite();
+    }
 }
 
 void TCPConnector::handleClosed() {
