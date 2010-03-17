@@ -177,6 +177,9 @@ private:
 
         void mapEncode(qpid::messaging::Variant::Map& _map) const;
         void mapDecode(const qpid::messaging::Variant::Map& _map);
+        void encode(framing::Buffer& buffer) const;
+        void decode(framing::Buffer& buffer);
+        uint32_t encodedBufSize() const;
     };
 
     struct SchemaClassKeyComp

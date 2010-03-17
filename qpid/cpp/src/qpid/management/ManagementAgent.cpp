@@ -754,6 +754,7 @@ bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
 void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey,
                                              uint32_t sequence, const ConnectionToken* connToken)
 {
+    // @todo KAG use new method req format
     string   methodName;
     string   packageName;
     string   className;
@@ -935,6 +936,7 @@ void ManagementAgent::handleClassIndLH (Buffer& inBuffer, string replyToKey, uin
         uint32_t outLen;
         uint32_t sequence = nextRequestSequence++;
 
+        // Schema Request
         encodeHeader (outBuffer, 'S', sequence);
         outBuffer.putShortString(packageName);
         key.encode(outBuffer);
@@ -971,6 +973,7 @@ void ManagementAgent::SchemaClass::appendSchema(Buffer& buf)
 
 void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, string replyToKey, uint32_t sequence)
 {
+    // @todo KAG: use new schema format
     string         packageName;
     SchemaClassKey key;
 
@@ -1012,6 +1015,7 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, string /*replyToK
     string         packageName;
     SchemaClassKey key;
 
+    // KAG: TODO - Handle new schema format
     inBuffer.record();
     inBuffer.getOctet();
     inBuffer.getShortString(packageName);
@@ -1254,6 +1258,8 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
 
 bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
 {
+    // KAG TODO: handle both old and new clients
+
     Buffer   inBuffer (inputBuffer, MA_BUFFER_SIZE);
     uint8_t  opcode;
     uint32_t sequence;
@@ -1580,6 +1586,22 @@ void ManagementAgent::SchemaClassKey::mapDecode(const qpid::messaging::Variant::
         const std::string s = i->second.asString();
         memcpy(hash, s.data(), sizeof(hash));
     }
+}
+
+void ManagementAgent::SchemaClassKey::encode(qpid::framing::Buffer& buffer) const {
+    buffer.checkAvailable(encodedBufSize());
+    buffer.putShortString(name);
+    buffer.putBin128(hash);
+}
+
+void ManagementAgent::SchemaClassKey::decode(qpid::framing::Buffer& buffer) {
+    buffer.checkAvailable(encodedBufSize());
+    buffer.getShortString(name);
+    buffer.getBin128(hash);
+}
+
+uint32_t ManagementAgent::SchemaClassKey::encodedBufSize() const {
+    return 1 + name.size() + 16 /* bin128 */;
 }
 
 void ManagementAgent::SchemaClass::mapEncode(qpid::messaging::Variant::Map& _map) const {
