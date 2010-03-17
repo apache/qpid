@@ -11,7 +11,12 @@ dnl
 dnl When updating the name/version number here, also update it in
 dnl src/qpid/Version.h
 
-AC_INIT([qpidc], [0.7], [dev@qpid.apache.org])
+# Pick up the version from QPID_VERSION.txt in the qpid/cpp source tree.
+# NB. You need to re-run bootstrap if the global qpid/QPID_VERSION.txt changes.
+AC_INIT([qpidc],
+	[m4_esyscmd([cat QPID_VERSION.txt | tr -d '\n'])],
+	[dev@qpid.apache.org])
+
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 
@@ -233,7 +238,7 @@ fi
 AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
 
 
-specdir=`pwd`/$srcdir/../specs  
+specdir=`pwd`/$top_srcdir/../specs
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
@@ -532,6 +537,7 @@ AC_CONFIG_FILES([
   managementgen/Makefile
   etc/Makefile
   src/Makefile
+  src/qpid/Version.h
   src/tests/Makefile
   src/tests/test_env.sh
   docs/man/Makefile

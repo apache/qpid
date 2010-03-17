@@ -24,7 +24,7 @@ foreach ($arg in $args) {"Arg: $arg"}
 
 $qpid_cpp_src='..\qpid\cpp'
 $install_dir='install_dir'
-$ver='0.6'
+$ver='0.7'
 $zipfile="qpid-cpp-$ver.zip"
 
 # Clean out install directory

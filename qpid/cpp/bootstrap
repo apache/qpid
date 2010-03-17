@@ -1,5 +1,8 @@
 #!/bin/sh
-set -e
+
+# Copy the global QPID_VERSION.txt file into the source tree.
+cp ../QPID_VERSION.txt .
+
 aclocal -I m4
 autoheader
 libtoolize --automake
@@ -15,10 +18,10 @@ cat > src/managementgen.mk <<EOF
 	\$(mgen_cmd)
 EOF
 
-
 automake
 autoconf
 
+# Optionally do the build as well.
 if [ "$1" = "-build" -o "$1" = "--build" ] ; then
     shift
     ./configure "$@"
