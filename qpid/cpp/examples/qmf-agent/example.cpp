@@ -178,6 +178,9 @@ int main_int(int argc, char** argv)
     // Register the Qmf_example schema with the agent
     _qmf::Package packageInit(agent);
 
+    // Name the agent.
+    agent->setName("apache.org", "qmf-example");
+
     // Start the agent.  It will attempt to make a connection to the
     // management broker
     agent->init(settings, 5, false, ".magentdata");

@@ -51,6 +51,9 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     // Methods from ManagementAgent
     //
     int getMaxThreads() { return 1; }
+    void setName(const std::string& vendor,
+                 const std::string& product,
+                 const std::string& instance="");
     void init(const std::string& brokerHost = "localhost",
               uint16_t brokerPort = 5672,
               uint16_t intervalSeconds = 10,
@@ -64,7 +67,6 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
               uint16_t intervalSeconds = 10,
               bool useExternalThread = false,
               const std::string& storeFile = "");
-    const Name& getName();
     bool isConnected() { return connected; }
     std::string& getLastFailure() { return lastFailure; }
     void registerClass(const std::string& packageName,
@@ -141,6 +143,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     void received (client::Message& msg);
 
+    qpid::messaging::Variant::Map attrMap;
+    std::string       name_address;
     uint16_t          interval;
     bool              extThread;
     sys::PipeHandle*  pipeHandle;
@@ -231,8 +235,6 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     static const std::string storeMagicNumber;
 
-    Name agentName;
-
     void startProtocol();
     void storeData(bool requested=false);
     void retrieveData();
@@ -253,6 +255,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                                     const std::string& cname,
                                                     const uint8_t *md5Sum);
     bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
+    void sendHeartbeat();
     void sendCommandComplete  (std::string replyToKey, uint32_t sequence,
                                uint32_t code = 0, std::string text = std::string("OK"));
     void handleAttachResponse (qpid::framing::Buffer& inBuffer);
