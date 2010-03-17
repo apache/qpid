@@ -864,6 +864,7 @@ void ManagementAgentImpl::periodicProcessing()
             headers["qmf.agent"] = name_address;
 
             connThreadBody.sendBuffer(str, 0, headers, "qpid.management", key.str());
+            QPID_LOG(trace, "SENT DataIndication key=" << key.str());
         }
     }
 

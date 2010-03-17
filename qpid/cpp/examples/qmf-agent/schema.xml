@@ -29,6 +29,7 @@
     This class represents a parent object
 
     <property name="name"      type="sstr" access="RC" index="y"/>
+    <property name="args"      type="map"  access="RO"/>
 
     <statistic name="state" type="sstr"                desc="Operational state of the link"/>
     <statistic name="count" type="count64" unit="tick" desc="Counter that increases monotonically"/>

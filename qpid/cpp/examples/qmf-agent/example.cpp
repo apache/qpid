@@ -24,6 +24,7 @@
 #include <qpid/agent/ManagementAgent.h>
 #include <qpid/sys/Mutex.h>
 #include <qpid/sys/Time.h>
+#include "qpid/messaging/Variant.h"
 #include "qmf/org/apache/qpid/agent/example/Parent.h"
 #include "qmf/org/apache/qpid/agent/example/Child.h"
 #include "qmf/org/apache/qpid/agent/example/ArgsParentCreate_child.h"
@@ -44,6 +45,7 @@ using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 using qpid::sys::Mutex;
+using qpid::messaging::Variant;
 namespace _qmf = qmf::org::apache::qpid::agent::example;
 
 class ChildClass;
@@ -98,6 +100,11 @@ CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent
 
     agent->addObject(mgmtObject, persistId++);
     mgmtObject->set_state("IDLE");
+
+    Variant::Map args;
+    args["first"] = "String data";
+    args["second"] = 34;
+    mgmtObject->set_args(args);
 }
 
 void CoreClass::doLoop()
