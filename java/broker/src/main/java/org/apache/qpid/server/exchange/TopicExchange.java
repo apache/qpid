@@ -31,6 +31,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.topic.*;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.message.InboundMessage;
@@ -83,7 +84,7 @@ public class TopicExchange extends AbstractExchange
     private final Map<AMQShortString, TopicExchangeResult> _topicExchangeResults =
             new ConcurrentHashMap<AMQShortString, TopicExchangeResult>();
 
-    private final Map<TopicBinding, FieldTable> _bindings = new HashMap<TopicBinding, FieldTable>();
+    private final Map<Binding, FieldTable> _bindings = new HashMap<Binding, FieldTable>();
 
     private final Map<String, WeakReference<JMSSelectorFilter>> _selectorCache = new WeakHashMap<String, WeakReference<JMSSelectorFilter>>();
 
@@ -92,20 +93,12 @@ public class TopicExchange extends AbstractExchange
         super(TYPE);
     }
 
-    public synchronized void registerQueue(String rKey, AMQQueue queue, Map<String,Object> args)
+    protected synchronized void registerQueue(final Binding binding) throws AMQInvalidArgumentException
     {
-        try
-        {
-            registerQueue(new AMQShortString(rKey), queue, FieldTable.convertToFieldTable(args));
-        }
-        catch (AMQInvalidArgumentException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public synchronized void registerQueue(AMQShortString rKey, AMQQueue queue, FieldTable args) throws AMQInvalidArgumentException
-    {
+        AMQShortString rKey = new AMQShortString(binding.getBindingKey()) ;
+        AMQQueue queue = binding.getQueue();
+        FieldTable args = FieldTable.convertToFieldTable(binding.getArguments());
+        
         assert queue != null;
         assert rKey != null;
 
@@ -113,8 +106,6 @@ public class TopicExchange extends AbstractExchange
 
 
         AMQShortString routingKey = TopicNormalizer.normalize(rKey);
-
-        TopicBinding binding = new TopicBinding(rKey, queue, args);
 
         if(_bindings.containsKey(binding))
         {
@@ -146,6 +137,8 @@ public class TopicExchange extends AbstractExchange
                     return;
                 }
             }
+            
+            result.addBinding(binding);
 
         }
         else
@@ -177,6 +170,8 @@ public class TopicExchange extends AbstractExchange
                     result.addUnfilteredQueue(queue);
                 }
             }
+            
+            result.addBinding(binding);
             _bindings.put(binding, args);
         }
 
@@ -210,11 +205,19 @@ public class TopicExchange extends AbstractExchange
                                           ? AMQShortString.EMPTY_STRING
                                           : new AMQShortString(payload.getRoutingKey());
 
+        _logger.info("Message routing key: " + routingKey );
+        
         // The copy here is unfortunate, but not too bad relevant to the amount of
         // things created and copied in getMatchedQueues
         ArrayList<BaseQueue> queues = new ArrayList<BaseQueue>();
         queues.addAll(getMatchedQueues(payload, routingKey));
 
+        for(BaseQueue q : queues)
+        {
+            _logger.info("Matched Queue: " + q.getNameShortString() );
+        }
+
+        
         if(queues == null || queues.isEmpty())
         {
             _logger.info("Message routing key: " + payload.getRoutingKey() + " No routes.");
@@ -226,7 +229,8 @@ public class TopicExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
     {
-        TopicBinding binding = new TopicBinding(routingKey, queue, arguments);
+        Binding binding = new Binding(null, routingKey.toString(), queue, this, FieldTable.convertToMap(arguments));
+        
         if (arguments == null)
         {
             return _bindings.containsKey(binding);
@@ -253,7 +257,7 @@ public class TopicExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey)
     {
-        for(TopicBinding b : _bindings.keySet())
+        for(Binding b : _bindings.keySet())
         {
             if(b.getBindingKey().equals(routingKey))
             {
@@ -266,7 +270,7 @@ public class TopicExchange extends AbstractExchange
 
     public boolean isBound(AMQQueue queue)
     {
-        for(TopicBinding b : _bindings.keySet())
+        for(Binding b : _bindings.keySet())
         {
             if(b.getQueue().equals(queue))
             {
@@ -282,19 +286,16 @@ public class TopicExchange extends AbstractExchange
         return !_bindings.isEmpty();
     }
 
-
-    public void deregisterQueue(String rKey, AMQQueue queue, Map<String, Object> args)
-    {
-        removeBinding(new TopicBinding(new AMQShortString(rKey), queue, FieldTable.convertToFieldTable(args)));
-    }
-
-    private boolean removeBinding(final TopicBinding binding)
+    private boolean deregisterQueue(final Binding binding)
     {
         if(_bindings.containsKey(binding))
         {
             FieldTable bindingArgs = _bindings.remove(binding);
-            AMQShortString bindingKey = TopicNormalizer.normalize(binding.getBindingKey());
+            AMQShortString bindingKey = TopicNormalizer.normalize(new AMQShortString(binding.getBindingKey()));
             TopicExchangeResult result = _topicExchangeResults.get(bindingKey);
+            
+            result.removeBinding(binding);
+            
             if(argumentsContainSelector(bindingArgs))
             {
                 try
@@ -341,8 +342,14 @@ public class TopicExchange extends AbstractExchange
             Collection<AMQQueue> queues = results.size() == 1 ? null : new HashSet<AMQQueue>();
             for(TopicMatcherResult result : results)
             {
+                TopicExchangeResult res = (TopicExchangeResult)result;
 
-                queues = ((TopicExchangeResult)result).processMessage(message, queues);
+                for(Binding b : res.getBindings())
+                {
+                    b.incrementMatches();
+                }
+                
+                queues = res.processMessage(message, queues);
             }
             return queues;
         }
@@ -350,14 +357,21 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-    protected void onBind(final org.apache.qpid.server.binding.Binding binding)
+    protected void onBind(final Binding binding)
     {
-        registerQueue(binding.getBindingKey(),binding.getQueue(),binding.getArguments());
+        try
+        {
+            registerQueue(binding);
+        }
+        catch (AMQInvalidArgumentException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected void onUnbind(final org.apache.qpid.server.binding.Binding binding)
+    protected void onUnbind(final Binding binding)
     {
-        deregisterQueue(binding.getBindingKey(),binding.getQueue(),binding.getArguments());
+        deregisterQueue(binding);
     }
 
 }

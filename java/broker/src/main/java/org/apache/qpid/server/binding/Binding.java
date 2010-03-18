@@ -89,29 +89,30 @@ public class Binding
     @Override
     public boolean equals(final Object o)
     {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+        {
+            return true;
+        }
+        
+        if (o == null || !(o instanceof Binding))
+        {
+            return false;
+        }
 
         final Binding binding = (Binding) o;
 
-        if (!_bindingKey.equals(binding._bindingKey)) return false;
-        if (!_exchange.equals(binding._exchange)) return false;
-        if (!_queue.equals(binding._queue)) return false;
-
-        return true;
+        return (_bindingKey == null ? binding.getBindingKey() == null : _bindingKey.equals(binding.getBindingKey()))
+            && (_exchange == null ? binding.getExchange() == null : _exchange.equals(binding.getExchange()))
+            && (_queue == null ? binding.getQueue() == null : _queue.equals(binding.getQueue()));
     }
 
     @Override
     public int hashCode()
     {
-        int result = _bindingKey.hashCode();
-        result = 31 * result + _queue.hashCode();
-        result = 31 * result + _exchange.hashCode();
+        int result = _bindingKey == null ? 1 : _bindingKey.hashCode();
+        result = 31 * result + (_queue == null ? 3 : _queue.hashCode());
+        result = 31 * result + (_exchange == null ? 5 : _exchange.hashCode());
         return result;
     }
-
-
-
-
 
 }
