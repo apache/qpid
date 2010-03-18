@@ -178,6 +178,21 @@ QPID_AUTO_TEST_CASE(testIsEqualTo)
     BOOST_CHECK_EQUAL(a, b);
 }
 
+QPID_AUTO_TEST_CASE(testEncoding)
+{
+    Variant a("abc");
+    a.setEncoding("utf8");
+    Variant b = a;
+    Variant map = Variant::Map();
+    map.asMap()["a"] = a;
+    map.asMap()["b"] = b;
+    BOOST_CHECK_EQUAL(a.getEncoding(), std::string("utf8"));
+    BOOST_CHECK_EQUAL(a.getEncoding(), b.getEncoding());
+    BOOST_CHECK_EQUAL(a.getEncoding(), map.asMap()["a"].getEncoding());
+    BOOST_CHECK_EQUAL(b.getEncoding(), map.asMap()["b"].getEncoding());
+    BOOST_CHECK_EQUAL(map.asMap()["a"].getEncoding(), map.asMap()["b"].getEncoding());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

@@ -335,6 +335,16 @@ class Str16Value : public FieldValue {
     QPID_COMMON_EXTERN Str16Value(const std::string& v);
 };
 
+class Var16Value : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN Var16Value(const std::string& v, uint8_t code);
+};
+
+class Var32Value : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN Var32Value(const std::string& v, uint8_t code);
+};
+
 class Struct32Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Struct32Value(const std::string& v);
