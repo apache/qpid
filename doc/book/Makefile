@@ -24,6 +24,9 @@ build/qpid-book.xml:
 
 out/html/index.html: build/qpid-book.xml
 	mkdir -p out/html
+	mkdir -p out/html/Common_Content
+	cd out/html; ln -s ../../src/images
+	cd  out/html/Common_Content; ln -s ../../../src/images
 	cd out/html; xsltproc ${DOCBOOKXSL}/html/chunk.xsl ../../build/qpid-book.xml
 
 pdf: out/pdf/qpid-book.pdf
