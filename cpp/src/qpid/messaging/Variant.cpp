@@ -20,6 +20,7 @@
  */
 #include "qpid/messaging/Variant.h"
 #include "qpid/Msg.h"
+#include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
@@ -50,7 +51,7 @@ class VariantImpl
     VariantImpl(int64_t);
     VariantImpl(float);
     VariantImpl(double);
-    VariantImpl(const std::string&);
+    VariantImpl(const std::string&, const std::string& encoding=std::string());
     VariantImpl(const Variant::Map&);
     VariantImpl(const Variant::List&);
     VariantImpl(const Uuid&);
@@ -130,7 +131,8 @@ VariantImpl::VariantImpl(int32_t i) : type(VAR_INT32) { value.i32 = i; }
 VariantImpl::VariantImpl(int64_t i) : type(VAR_INT64) { value.i64 = i; }
 VariantImpl::VariantImpl(float f) : type(VAR_FLOAT) { value.f = f; }
 VariantImpl::VariantImpl(double d) : type(VAR_DOUBLE) { value.d = d; }
-VariantImpl::VariantImpl(const std::string& s) : type(VAR_STRING) { value.v = new std::string(s); }
+VariantImpl::VariantImpl(const std::string& s, const std::string& e)
+    : type(VAR_STRING), encoding(e) { value.v = new std::string(s); }
 VariantImpl::VariantImpl(const Variant::Map& m) : type(VAR_MAP) { value.v = new Variant::Map(m); }
 VariantImpl::VariantImpl(const Variant::List& l) : type(VAR_LIST) { value.v = new Variant::List(l); }
 VariantImpl::VariantImpl(const Uuid& u) : type(VAR_UUID) { value.v = new Uuid(u); }
@@ -448,7 +450,7 @@ VariantImpl* VariantImpl::create(const Variant& v)
       case VAR_INT64: return new VariantImpl(v.asInt64());
       case VAR_FLOAT: return new VariantImpl(v.asFloat());
       case VAR_DOUBLE: return new VariantImpl(v.asDouble());
-      case VAR_STRING: return new VariantImpl(v.asString());
+      case VAR_STRING: return new VariantImpl(v.asString(), v.getEncoding());
       case VAR_MAP: return new VariantImpl(v.asMap());
       case VAR_LIST: return new VariantImpl(v.asList());
       case VAR_UUID: return new VariantImpl(v.asUuid());
