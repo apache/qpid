@@ -31,6 +31,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
@@ -53,8 +54,10 @@ import org.apache.qpid.server.subscription.Subscription;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -92,31 +95,31 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
     protected TestQueue bindDefault(String... bindings) throws AMQException
     {
-        return bind("Queue" + (++count), bindings);
+        String queueName = "Queue" + (++count);
+
+        return bind(queueName, queueName, getHeadersMap(bindings));
+    }
+    
+    protected void unbind(TestQueue queue, String... bindings) throws AMQException
+    {
+        String queueName = queue.getName();
+        //TODO - check this
+        exchange.onUnbind(new Binding(null,queueName, queue, exchange, getHeadersMap(bindings)));
+    }
+    
+    protected int getCount()
+    {
+        return count;
     }
 
-    protected TestQueue bind(String queueName, String... bindings) throws AMQException
+    private TestQueue bind(String key, String queueName, Map<String,Object> args) throws AMQException
     {
-        return bind(queueName, getHeaders(bindings));
-    }
-
-    protected TestQueue bind(String queue, FieldTable bindings) throws AMQException
-    {
-        return bind(new TestQueue(new AMQShortString(queue)), bindings);
-    }
-
-    protected TestQueue bind(TestQueue queue, String... bindings) throws AMQException
-    {
-        return bind(queue, getHeaders(bindings));
-    }
-
-    protected TestQueue bind(TestQueue queue, FieldTable bindings) throws AMQException
-    {
+        TestQueue queue = new TestQueue(new AMQShortString(queueName));
         queues.add(queue);
-        exchange.registerQueue(null, queue, bindings);
+        exchange.onBind(new Binding(null,key, queue, exchange, args));
         return queue;
     }
-
+    
 
     protected int route(Message m) throws AMQException
     {
@@ -170,6 +173,23 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                 assertEquals("Expected "+m+" to be returned due to manadatory flag, and lack of routing",0, queueCount);
             }
 
+    }
+    
+    static Map<String,Object> getHeadersMap(String... entries)
+    {
+        if(entries == null)
+        {
+            return null;
+        }
+        
+        Map<String,Object> headers = new HashMap<String,Object>();
+
+        for (String s : entries)
+        {
+            String[] parts = s.split("=", 2);
+            headers.put(parts[0], parts.length > 1 ? parts[1] : "");
+        }
+        return headers;
     }
 
     static FieldTable getHeaders(String... entries)
