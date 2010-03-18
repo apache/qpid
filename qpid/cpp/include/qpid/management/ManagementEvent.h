@@ -23,7 +23,6 @@
  */
 
 #include "qpid/management/ManagementObject.h"
-//#include <qpid/framing/Buffer.h>
 #include "qpid/messaging/MapContent.h"
 #include "qpid/messaging/MapView.h"
 #include <string>
@@ -37,7 +36,7 @@ class ManagementEvent : public ManagementItem {
  public:
     static const uint8_t MD5_LEN = 16;
     //typedef void (*writeSchemaCall_t)(qpid::framing::Buffer&);
-    typedef void (*writeSchemaCall_t)(qpid::messaging::VariantMap&);
+    typedef void (*writeSchemaCall_t)(std::string&);
     virtual ~ManagementEvent() {}
 
     virtual writeSchemaCall_t getWriteSchemaCall(void) = 0;

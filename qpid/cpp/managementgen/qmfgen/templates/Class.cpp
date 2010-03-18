@@ -22,6 +22,8 @@
 
 #include "qpid/log/Statement.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
@@ -89,37 +91,33 @@ void /*MGEN:Class.NameCap*/::registerSelf(ManagementAgent* agent)
     agent->registerClass(packageName, className, md5Sum, writeSchema);
 }
 
-void /*MGEN:Class.NameCap*/::writeSchema (::qpid::messaging::VariantMap& map)
+void /*MGEN:Class.NameCap*/::writeSchema (std::string& schema)
 {
-    ::qpid::messaging::Variant::Map _sid;
-    ::qpid::messaging::Variant::Map _props;
-    ::qpid::messaging::Variant::Map _stats;
-    ::qpid::messaging::Variant::Map _methods;
+#define BUFSIZE   65536
+    char _msgChars[BUFSIZE];
+    ::qpid::framing::Buffer buf(_msgChars, BUFSIZE);
+    ::qpid::framing::FieldTable ft;
 
-    _sid["_type"] = CLASS_KIND_TABLE;
-    _sid["_package_name"] = packageName;
-    _sid["_class_name"] = className;
-    _sid["_hash_str"] = std::string((const char *)md5Sum, sizeof(md5Sum));
-    map["_schema_id"] = _sid;
-
-    map["_config_ct"] = /*MGEN:Class.ConfigCount*/;
-    map["_inst_ct"] = /*MGEN:Class.InstCount*/;
-    map["_method_ct"] = /*MGEN:Class.MethodCount*/;
+    // Schema class header:
+    buf.putOctet       (CLASS_KIND_TABLE);
+    buf.putShortString (packageName); // Package Name
+    buf.putShortString (className);   // Class Name
+    buf.putBin128      (md5Sum);      // Schema Hash
+    buf.putShort       (/*MGEN:Class.ConfigCount*/); // Config Element Count
+    buf.putShort       (/*MGEN:Class.InstCount*/); // Inst Element Count
+    buf.putShort       (/*MGEN:Class.MethodCount*/); // Method Count
 
     // Properties
-/*MGEN:Class.PropertySchemaMap*/
-    if (!_props.empty())
-        map["_properties"] = _props;
-
+/*MGEN:Class.PropertySchema*/
     // Statistics
-/*MGEN:Class.StatisticSchemaMap*/
-    if (!_stats.empty())
-        map["_statistics"] = _stats;
-
+/*MGEN:Class.StatisticSchema*/
     // Methods
-/*MGEN:Class.MethodSchemaMap*/
-    if (!_methods.empty())
-        map["_methods"] = _methods;
+/*MGEN:Class.MethodSchema*/
+    {
+        uint32_t _len = buf.getPosition();
+        buf.reset();
+        buf.getRawData(schema, _len);
+    }
 }
 
 /*MGEN:IF(Class.ExistPerThreadStats)*/

@@ -74,7 +74,7 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     void aggregatePerThreadStats(struct PerThreadStats*) const;
 /*MGEN:ENDIF*/
   public:
-    static void writeSchema(::qpid::messaging::VariantMap& map);
+    static void writeSchema(std::string& schema);
     void mapEncodeValues(::qpid::messaging::VariantMap& map,
                          bool includeProperties=true,
                          bool includeStatistics=true);

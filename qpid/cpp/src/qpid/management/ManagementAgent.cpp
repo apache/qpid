@@ -960,14 +960,10 @@ void ManagementAgent::SchemaClass::appendSchema(Buffer& buf)
     // is from a remote management agent, send the stored schema information.
 
     if (writeSchemaCall != 0) {
-        qpid::messaging::Message m;
-        qpid::messaging::MapContent content(m);
-
-        writeSchemaCall(content.asMap());
-        content.encode();
-        buf.putRawData(m.getContent());
-    }
-    else
+        std::string schema;
+        writeSchemaCall(schema);
+        buf.putRawData(schema);
+    } else
         buf.putRawData(reinterpret_cast<uint8_t*>(&data[0]), data.size());
 }
 

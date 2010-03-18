@@ -33,7 +33,7 @@ namespace qmf {
 class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
 {
   private:
-    static void writeSchema (::qpid::messaging::VariantMap& map);
+    static void writeSchema (std::string& schema);
     static std::string packageName;
     static std::string eventName;
     static uint8_t md5Sum[MD5_LEN];

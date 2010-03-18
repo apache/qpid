@@ -151,7 +151,7 @@ protected:
     QPID_COMMON_EXTERN static const uint8_t MD5_LEN = 16;
     QPID_COMMON_EXTERN static int maxThreads;
     //typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
-    typedef void (*writeSchemaCall_t) (qpid::messaging::VariantMap&);
+    typedef void (*writeSchemaCall_t) (std::string&);
 
     ManagementObject(Manageable* _core) :
         createTime(uint64_t(qpid::sys::Duration(qpid::sys::now()))),

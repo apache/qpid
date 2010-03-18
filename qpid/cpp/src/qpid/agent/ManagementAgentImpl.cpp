@@ -446,19 +446,17 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
         ClassMap::iterator cIter = cMap.find(key);
         if (cIter != cMap.end()) {
             SchemaClass& schema = cIter->second;
-            ::qpid::messaging::Message m;
-            ::qpid::messaging::MapContent content(m);
+            Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
+            uint32_t outLen;
+            std::string body;
 
-            schema.writeSchemaCall(content.asMap());
-            
-            ::qpid::messaging::VariantMap headers;
-            headers["method"] = "response";
-            headers["qmf.opcode"] = "_query_response";
-            headers["qmf.content"] = "_schema_class";
-            headers["qmf.agent"] = name_address;
+            encodeHeader(outBuffer, 's', sequence);
+            schema.writeSchemaCall(body);
+            outBuffer.putRawData(body);
+            outLen = MA_BUFFER_SIZE - outBuffer.available();
+            outBuffer.reset();
+            connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "broker");
 
-            content.encode();
-            connThreadBody.sendBuffer(m.getContent(), sequence, headers, "qpid.management", "broker");
             QPID_LOG(trace, "SENT SchemaInd: package=" << packageName << " class=" << key.name);
         }
     }
