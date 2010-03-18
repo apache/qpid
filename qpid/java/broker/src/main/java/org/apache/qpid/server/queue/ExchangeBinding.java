@@ -25,6 +25,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
@@ -50,9 +51,13 @@ public class ExchangeBinding
 
 
 
-    void unbind(AMQQueue queue) throws AMQException
+    void unbind(AMQQueue queue, VirtualHost vhost) throws AMQException
     {
         _exchange.deregisterQueue(_routingKey, queue, _arguments);
+        if (queue.isDurable() && _exchange.isDurable())
+        {
+            vhost.getMessageStore().unbindQueue(_exchange, _routingKey, queue, _arguments);
+        }
 
         CurrentActor.get().message(_logSubject, BindingMessages.BND_DELETED());
     }

@@ -28,6 +28,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
  * When a queue is deleted, it should be deregistered from any
@@ -65,13 +66,13 @@ class ExchangeBindings
     /**
      * Deregisters this queue from any exchange it has been bound to
      */
-    void deregister() throws AMQException
+    void deregister(VirtualHost vhost) throws AMQException
     {
         //remove duplicates at this point
         HashSet<ExchangeBinding> copy = new HashSet<ExchangeBinding>(_bindings);
         for (ExchangeBinding b : copy)
         {
-            b.unbind(_queue);
+            b.unbind(_queue, vhost);
         }
     }
 

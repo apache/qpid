@@ -1123,7 +1123,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 }
             }
 
-            _bindings.deregister();
+            _bindings.deregister(_virtualHost);
             _virtualHost.getQueueRegistry().unregisterQueue(_name);
 
             _managedObject.unregister();
