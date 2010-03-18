@@ -3,22 +3,31 @@ original content was taken from the Apache Qpid Wiki.
 
 1. Building the Documentation
 
-To build the documentation, use ant:
+You need the following to build the documentation:
 
-$ ant
+- Apache FOP, version 0.95 or higher
+- Docbook 4.5
+- Docbook XSL stylesheets - I have tested with xsl-stylesheets-1.75.2
+- xsltproc
+- xmllint
 
-You need both ant and ant-trax, and xmllint (or another XInclude
-processor - if you do not use xmllint, you must change build.xml). On
-Fedora, you can get them using yum:
+On many Linux machines, these can usually be installed from standard
+repos. For instance, on Fedora they can be installed as follows:
 
-$ sudo yum install ant ant-trax xmllint
+$ sudo yum install fop docbook-dtds docbook-style-xsl libxslt libxml2
 
-The other tools that you need are in subdirectories:
+After installing, use make to build the documentation:
 
-qpid/doc/book/docbook      - Docbook 4.5 DTDs
-qpid/doc/book/docbook-xsl  - Docbook XSLT stylesheets
-qpid/doc/book/lib/saxon    - Saxon 6.5.3 XSLT processor
-qpid/doc/book/lib/fop-0.95 - Apache FOP
+$ make
+
+By default, the Makefile builds a PDF. It supports the following
+targets:
+
+pdf	Make the PDF
+html	Make HTML pages
+all	Make both PDF and HTML
+clean	Delete the build and output directories
+
 
 You will see quite a few error messages. Many of these are due to
 unresolved links, and these should go away. Many are due to the
