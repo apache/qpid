@@ -334,6 +334,7 @@ public class DurableSubscriptionTest extends QpidTestCase
         {
             _logger.info("Receive message on consumer 3 :expecting B");
             msg = consumer3.receive(POSITIVE_RECEIVE_TIMEOUT);
+            assertNotNull(msg);
             assertEquals("B", ((TextMessage) msg).getText());
         }
         
