@@ -336,6 +336,12 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     MapContent content(out);
     content["abc"] = "def";
     content["pi"] = 3.14f;
+    Variant utf8("A utf 8 string");
+    utf8.setEncoding("utf8");
+    content["utf8"] = utf8;
+    Variant utf16("\x00\x61\x00\x62\x00\x63");
+    utf16.setEncoding("utf16");
+    content["utf16"] = utf16;
     content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
@@ -343,6 +349,10 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     MapView view(in);
     BOOST_CHECK_EQUAL(view["abc"].asString(), "def");
     BOOST_CHECK_EQUAL(view["pi"].asFloat(), 3.14f);
+    BOOST_CHECK_EQUAL(view["utf8"].asString(), utf8.asString());
+    BOOST_CHECK_EQUAL(view["utf8"].getEncoding(), utf8.getEncoding());
+    BOOST_CHECK_EQUAL(view["utf16"].asString(), utf16.asString());
+    BOOST_CHECK_EQUAL(view["utf16"].getEncoding(), utf16.getEncoding());
     fix.session.acknowledge();
 }
 

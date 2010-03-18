@@ -130,6 +130,21 @@ Str16Value::Str16Value(const std::string& v) :
             reinterpret_cast<const uint8_t*>(v.data()+v.size())))
 {}
 
+Var16Value::Var16Value(const std::string& v, uint8_t code) :
+    FieldValue(
+        code,
+        new VariableWidthValue<2>(
+            reinterpret_cast<const uint8_t*>(v.data()),
+            reinterpret_cast<const uint8_t*>(v.data()+v.size())))
+{}
+Var32Value::Var32Value(const std::string& v, uint8_t code) :
+    FieldValue(
+        code,
+        new VariableWidthValue<4>(
+            reinterpret_cast<const uint8_t*>(v.data()),
+            reinterpret_cast<const uint8_t*>(v.data()+v.size())))
+{}
+
 Struct32Value::Struct32Value(const std::string& v) :
     FieldValue(
         0xAB,
