@@ -20,8 +20,12 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
@@ -29,10 +33,6 @@ import org.apache.qpid.qmf.ManagementExchange;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
@@ -60,6 +60,21 @@ public class DefaultExchangeFactory implements ExchangeFactory
     {
         return _exchangeClassMap.values();
     }
+    
+    public Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes()
+    {
+        Collection<ExchangeType<? extends Exchange>> publicTypes = 
+                                new ArrayList<ExchangeType<? extends Exchange>>();
+        publicTypes.addAll(_exchangeClassMap.values());
+        
+        //Remove the ManagementExchange type if present, as these 
+        //are private and cannot be created by external means
+        publicTypes.remove(ManagementExchange.TYPE);
+        
+        return publicTypes;
+    }
+    
+    
 
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
             throws AMQException
