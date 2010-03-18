@@ -24,8 +24,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -36,10 +34,11 @@ import org.apache.qpid.server.binding.Binding;
 
 import javax.management.JMException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * An exchange that binds queues based on a set of required headers and header values
@@ -72,7 +71,14 @@ public class HeadersExchange extends AbstractExchange
 {
 
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
+    
+    private final ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>> _bindingsByKey =
+                            new ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>>();
+    
+    private final CopyOnWriteArrayList<HeadersBinding> _bindingHeaderMatchers =
+                            new CopyOnWriteArrayList<HeadersBinding>();
 
+    
     public static final ExchangeType<HeadersExchange> TYPE = new ExchangeType<HeadersExchange>()
     {
 
@@ -102,34 +108,12 @@ public class HeadersExchange extends AbstractExchange
         }
     };
 
-
-    private final List<Registration> _bindings = new CopyOnWriteArrayList<Registration>();
-    private Map<AMQShortString, Registration> _bindingByKey = new ConcurrentHashMap<AMQShortString, Registration>();
-
-
     public HeadersExchange()
     {
         super(TYPE);
     }
+    
 
-    public void registerQueue(String routingKey, AMQQueue queue, Map<String,Object> args)
-    {
-        registerQueue(new AMQShortString(routingKey), queue, FieldTable.convertToFieldTable(args));
-    }
-
-    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args)
-    {
-        _logger.debug("Exchange " + getNameShortString() + ": Binding " + queue.getNameShortString() + " with " + args);
-
-        Registration registration = new Registration(new HeadersBinding(args), queue, routingKey);
-        _bindings.add(registration);
-
-    }
-
-    public void deregisterQueue(String routingKey, AMQQueue queue, Map<String,Object> args)
-    {
-        _bindings.remove(new Registration(args == null ? null : new HeadersBinding(FieldTable.convertToFieldTable(args)), queue, new AMQShortString(routingKey)));
-    }
 
     public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
@@ -138,24 +122,27 @@ public class HeadersExchange extends AbstractExchange
         {
             _logger.debug("Exchange " + getNameShortString() + ": routing message with headers " + header);
         }
-        boolean routed = false;
-        ArrayList<BaseQueue> queues = new ArrayList<BaseQueue>();
-        for (Registration e : _bindings)
+        
+        LinkedHashSet<BaseQueue> queues = new LinkedHashSet<BaseQueue>();
+        
+        for (HeadersBinding hb : _bindingHeaderMatchers)
         {
-
-            if (e.binding.matches(header))
+            if (hb.matches(header))
             {
+                Binding b = hb.getBinding();
+                
+                b.incrementMatches();
+                
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Exchange " + getNameShortString() + ": delivering message with headers " +
-                                  header + " to " + e.queue.getNameShortString());
+                                  header + " to " + b.getQueue().getNameShortString());
                 }
-                queues.add(e.queue);
-
-                routed = true;
+                queues.add(b.getQueue());
             }
         }
-        return queues;
+        
+        return new ArrayList<BaseQueue>(queues);
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
@@ -166,38 +153,49 @@ public class HeadersExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
-        return isBound(queue);
+        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+        
+        if(bindings != null)
+        {
+            for(Binding binding : bindings)
+            {
+                if(binding.getQueue().equals(queue))
+                {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
     public boolean isBound(AMQShortString routingKey)
     {
-        return hasBindings();
+        String bindingKey = (routingKey == null) ? "" : routingKey.toString();
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+        return bindings != null && !bindings.isEmpty();
     }
 
     public boolean isBound(AMQQueue queue)
     {
-        for (Registration r : _bindings)
+        for (CopyOnWriteArraySet<Binding> bindings : _bindingsByKey.values())
         {
-            if (r.queue.equals(queue))
+            for(Binding binding : bindings)
             {
-                return true;
+                if(binding.getQueue().equals(queue))
+                {
+                    return true;
+                }
             }
         }
+        
         return false;
     }
 
     public boolean hasBindings()
     {
-        return !_bindings.isEmpty();
-    }
-
-
-
-    protected FieldTable getHeaders(ContentHeaderBody contentHeaderFrame)
-    {
-        //what if the content type is not 'basic'? 'file' and 'stream' content classes also define headers,
-        //but these are not yet implemented.
-        return ((BasicContentHeaderProperties) contentHeaderFrame.properties).getHeaders();
+        return !getBindings().isEmpty();
     }
 
     protected AbstractExchangeMBean createMBean() throws JMException
@@ -210,59 +208,51 @@ public class HeadersExchange extends AbstractExchange
         return _logger;
     }
 
-
-    static class Registration
-    {
-        private final HeadersBinding binding;
-        private final AMQQueue queue;
-        private final AMQShortString routingKey;
-
-        Registration(HeadersBinding binding, AMQQueue queue, AMQShortString routingKey)
-        {
-            this.binding = binding;
-            this.queue = queue;
-            this.routingKey = routingKey;
-        }
-
-        public int hashCode()
-        {
-            int queueHash = queue.hashCode();
-            int routingHash = routingKey == null ? 0 : routingKey.hashCode();
-            return queueHash + routingHash;
-        }
-
-        public boolean equals(Object o)
-        {
-            return o instanceof Registration
-                   && ((Registration) o).queue.equals(queue)
-                   && (routingKey == null ? ((Registration)o).routingKey == null
-                                          : routingKey.equals(((Registration)o).routingKey));
-        }
-
-        public HeadersBinding getBinding()
-        {
-            return binding;
-        }
-
-        public AMQQueue getQueue()
-        {
-            return queue;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return routingKey;
-        }
-    }
-
     protected void onBind(final Binding binding)
     {
-        registerQueue(binding.getBindingKey(), binding.getQueue(), binding.getArguments());
+        String bindingKey = binding.getBindingKey();
+        AMQQueue queue = binding.getQueue();
+        AMQShortString routingKey = AMQShortString.valueOf(bindingKey);
+        Map<String,Object> args = binding.getArguments();
+
+        assert queue != null;
+        assert routingKey != null;
+
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+
+        if(bindings == null)
+        {
+            bindings = new CopyOnWriteArraySet<Binding>();
+            CopyOnWriteArraySet<Binding> newBindings;
+            if((newBindings = _bindingsByKey.putIfAbsent(bindingKey, bindings)) != null)
+            {
+                bindings = newBindings;
+            }
+        }
+        
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Exchange " + getNameShortString() + ": Binding " + queue.getNameShortString() +
+                          " with binding key '" +bindingKey + "' and args: " + args);
+        }
+
+        _bindingHeaderMatchers.add(new HeadersBinding(binding));
+        bindings.add(binding);
+
     }
 
     protected void onUnbind(final Binding binding)
     {
-        deregisterQueue(binding.getBindingKey(), binding.getQueue(), binding.getArguments());
+        assert binding != null;
+
+        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(binding.getBindingKey());
+        if(bindings != null)
+        {
+            bindings.remove(binding);
+        }
+        
+        _logger.debug("===============");
+        _logger.debug("Removing Binding: " + _bindingHeaderMatchers.remove(new HeadersBinding(binding)));
     }
 
 }

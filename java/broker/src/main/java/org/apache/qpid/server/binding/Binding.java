@@ -37,7 +37,7 @@ public class Binding
     private final UUID _id;
     private final AtomicLong _matches = new AtomicLong();
 
-    Binding(UUID id, final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
+    public Binding(UUID id, final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
     {
         _id = id;
         _bindingKey = bindingKey;
