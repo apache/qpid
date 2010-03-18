@@ -28,6 +28,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.AMQException;
@@ -64,7 +65,7 @@ public class TopicExchangeTest extends TestCase
     public void testNoRoute() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.*.#.b", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.b");
@@ -76,7 +77,7 @@ public class TopicExchangeTest extends TestCase
     public void testDirectMatch() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("ab"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.b", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.b");
@@ -103,7 +104,7 @@ public class TopicExchangeTest extends TestCase
     public void testStarMatch() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.*"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.*", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.b");
@@ -142,7 +143,7 @@ public class TopicExchangeTest extends TestCase
     public void testHashMatch() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.#"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.#", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.b.c");
@@ -205,7 +206,7 @@ public class TopicExchangeTest extends TestCase
     public void testMidHash() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.*.#.b", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.c.d.b");
@@ -235,7 +236,7 @@ public class TopicExchangeTest extends TestCase
     public void testMatchafterHash() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.*.#.b.c"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.*.#.b.c", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.c.b.b");
@@ -281,7 +282,7 @@ public class TopicExchangeTest extends TestCase
     public void testHashAfterHash() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.*.#.b.c.#.d"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.*.#.b.c.#.d", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.c.b.b.c");
@@ -308,7 +309,7 @@ public class TopicExchangeTest extends TestCase
     public void testHashHash() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.#.*.#.d"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.#.*.#.d", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.c.b.b.c");
@@ -334,7 +335,7 @@ public class TopicExchangeTest extends TestCase
     public void testSubMatchFails() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.b.c.d"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.b.c.d", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.b.c");
@@ -364,7 +365,7 @@ public class TopicExchangeTest extends TestCase
     public void testMoreRouting() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.b", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a.b.c");
@@ -379,7 +380,7 @@ public class TopicExchangeTest extends TestCase
     public void testMoreQueue() throws AMQException
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
-        _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
+        _exchange.registerQueue(new Binding(null,"a.b", queue,_exchange, null));
 
 
         IncomingMessage message = createMessage("a");
