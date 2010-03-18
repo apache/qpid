@@ -31,7 +31,6 @@ import org.apache.qpid.server.configuration.ExchangeConfigType;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.exchange.ExchangeType;
-import org.apache.qpid.server.exchange.topic.TopicBinding;
 import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.exchange.topic.TopicNormalizer;
@@ -47,7 +46,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +53,7 @@ import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ManagementExchange implements Exchange, QMFService.Listener
@@ -69,8 +68,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
     private final Map<AMQShortString, TopicExchangeResult> _topicExchangeResults =
             new ConcurrentHashMap<AMQShortString, TopicExchangeResult>();
 
-    private final Map<TopicBinding, FieldTable> _topicBindings = new HashMap<TopicBinding, FieldTable>();
-    private final Set<Binding> _bindingSet = new HashSet<Binding>();
+    private final Set<Binding> _bindingSet = new CopyOnWriteArraySet<Binding>();
     private UUID _id;
     private static final String AGENT_BANK = "0";
 
@@ -254,21 +252,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
     public synchronized void addBinding(final Binding b)
     {
 
-        _bindingSet.add(b);
-
-        for(BindingListener listener : _listeners)
-        {
-            listener.bindingAdded(this, b);
-        }
-
-        if(_bindingSet.size() > _bindingCountHigh)
-        {
-            _bindingCountHigh = _bindingSet.size();
-        }
-
-        TopicBinding binding = new TopicBinding(new AMQShortString(b.getBindingKey()), b.getQueue(), null);
-
-        if(!_topicBindings.containsKey(binding))
+        if(_bindingSet.add(b))
         {
             AMQShortString routingKey = TopicNormalizer.normalize(new AMQShortString(b.getBindingKey()));
 
@@ -284,10 +268,20 @@ public class ManagementExchange implements Exchange, QMFService.Listener
             {
                 result.addUnfilteredQueue(b.getQueue());
             }
-            _topicBindings.put(binding, null);
 
-
+            result.addBinding(b);
         }
+        
+        for(BindingListener listener : _listeners)
+        {
+            listener.bindingAdded(this, b);
+        }
+
+        if(_bindingSet.size() > _bindingCountHigh)
+        {
+            _bindingCountHigh = _bindingSet.size();
+        }
+        
         String bindingKey = b.getBindingKey();
 
         if(bindingKey.startsWith("schema.") || bindingKey.startsWith("*.") || bindingKey.startsWith("#."))
@@ -355,6 +349,13 @@ public class ManagementExchange implements Exchange, QMFService.Listener
             HashSet<AMQQueue> queues = new HashSet<AMQQueue>();
             for(TopicMatcherResult result : results)
             {
+                TopicExchangeResult res = (TopicExchangeResult)result;
+
+                for(Binding b : res.getBindings())
+                {
+                    b.incrementMatches();
+                }
+                
                 queues.addAll(((TopicExchangeResult)result).getUnfilteredQueues());
             }
             for(AMQQueue queue : queues)
@@ -378,14 +379,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
     public synchronized void removeBinding(final Binding binding)
     {
-        _bindingSet.remove(binding);
-
-        TopicBinding topicBinding = new TopicBinding(new AMQShortString(binding.getBindingKey()), binding.getQueue(), null);
-
-        if(_topicBindings.containsKey(topicBinding))
+        if(_bindingSet.remove(binding))
         {
-            AMQShortString bindingKey = TopicNormalizer.normalize(topicBinding.getBindingKey());
+            AMQShortString bindingKey = TopicNormalizer.normalize(new AMQShortString(binding.getBindingKey()));
             TopicExchangeResult result = _topicExchangeResults.get(bindingKey);
+            result.removeBinding(binding);
             result.removeUnfilteredQueue(binding.getQueue());
         }
 
