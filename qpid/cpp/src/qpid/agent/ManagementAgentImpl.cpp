@@ -472,60 +472,56 @@ void ManagementAgentImpl::handleConsoleAddedIndication()
 
 void ManagementAgentImpl::invokeMethodRequest(const std::string& body, uint32_t sequence, string replyTo)
 {
-#if 1
-    (void)body;
-    (void)sequence;
-    (void)replyTo;
-#else
     string   methodName;
-    string   packageName;
-    string   className;
-    uint8_t  hash[16];
-    Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
-    uint32_t outLen;
     qpid::messaging::Message inMsg(body);
     qpid::messaging::MapView inMap(inMsg);
-    qpid::messaging::MapView::const_iterator i;
+    qpid::messaging::MapView::const_iterator oid, mid;
 
-    if ((i = inMap.find("_object_id")) == _map.end()) {
-        // KAG TODO: TBD!!
-    }
-    //ObjectId objId(inBuffer);
-    ObjectId objId(std::string("foobag?"));
+    qpid::messaging::Message outMsg;
+    qpid::messaging::MapContent outMap(outMsg);
 
-    inBuffer.getShortString(packageName);
-    inBuffer.getShortString(className);
-    inBuffer.getBin128(hash);
-    inBuffer.getShortString(methodName);
-
-    encodeHeader(outBuffer, 'm', sequence);
-
-    ManagementObjectMap::iterator iter = managementObjects.find(objId);
-    if (iter == managementObjects.end() || iter->second->isDeleted()) {
-        outBuffer.putLong        (Manageable::STATUS_UNKNOWN_OBJECT);
-        outBuffer.putMediumString(Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT));
+    if ((oid = inMap.find("_object_id")) == inMap.end() ||
+        (mid = inMap.find("_method_name")) == inMap.end()) {
+        ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
+        ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
     } else {
-        if ((iter->second->getPackageName() != packageName) ||
-            (iter->second->getClassName()   != className)) {
-            outBuffer.putLong        (Manageable::STATUS_PARAMETER_INVALID);
-            outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_PARAMETER_INVALID));
-        }
-        else
-            try {
-                outBuffer.record();
-                //iter->second->doMethod(methodName, inBuffer, outBuffer);
-                assert(false); // TODO: fix above
-            } catch(exception& e) {
-                outBuffer.restore();
-                outBuffer.putLong(Manageable::STATUS_EXCEPTION);
-                outBuffer.putMediumString(e.what());
+        std::string methodName;
+        ObjectId objId;
+        qpid::messaging::Variant::Map inArgs;
+
+        try {
+            // coversions will throw if input is invalid.
+            objId = ObjectId(oid->second.asMap());
+            methodName = mid->second.getString();
+
+            mid = inMap.find("_arguments");
+            if (mid != inMap.end()) {
+                inArgs = (mid->second).asMap();
             }
+
+            ManagementObjectMap::iterator iter = managementObjects.find(objId);
+            if (iter == managementObjects.end() || iter->second->isDeleted()) {
+                ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
+                ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
+            } else {
+
+                iter->second->doMethod(methodName, inArgs, outMap.asMap());
+            }
+
+        } catch(exception& e) {
+            ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
+            ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = e.what();
+        }
     }
 
-    outLen = MA_BUFFER_SIZE - outBuffer.available();
-    outBuffer.reset();
-    connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
-#endif    
+    qpid::messaging::Variant::Map headers;
+    headers["method"] = "response";
+    headers["qmf.opcode"] = "_method_response";
+    headers["qmf.content"] = "_data";
+    headers["qmf.agent"] = name_address;
+
+    outMap.encode();
+    connThreadBody.sendBuffer(outMsg.getContent(), sequence, headers, "qmf.default.direct", replyTo);
 }
 
 void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, string replyTo)
