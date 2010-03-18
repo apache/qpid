@@ -205,19 +205,11 @@ public class TopicExchange extends AbstractExchange
                                           ? AMQShortString.EMPTY_STRING
                                           : new AMQShortString(payload.getRoutingKey());
 
-        _logger.info("Message routing key: " + routingKey );
-        
         // The copy here is unfortunate, but not too bad relevant to the amount of
         // things created and copied in getMatchedQueues
         ArrayList<BaseQueue> queues = new ArrayList<BaseQueue>();
         queues.addAll(getMatchedQueues(payload, routingKey));
 
-        for(BaseQueue q : queues)
-        {
-            _logger.info("Matched Queue: " + q.getNameShortString() );
-        }
-
-        
         if(queues == null || queues.isEmpty())
         {
             _logger.info("Message routing key: " + payload.getRoutingKey() + " No routes.");
