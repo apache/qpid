@@ -242,7 +242,7 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t se
     headers["qmf.agent"] = name_address;
 
     content.encode();
-    connThreadBody.sendBuffer(msg.getContent(), 0,
+    connThreadBody.sendBuffer(msg.getContent(), "",
                               headers,
                               "qmf.default.topic", key.str());
 }
@@ -264,7 +264,7 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
         methodQueue.pop_front();
         {
             Mutex::ScopedUnlock unlock(agentLock);
-            invokeMethodRequest(item->body, item->sequence, item->replyTo);
+            invokeMethodRequest(item->body, item->cid, item->replyTo);
             delete item;
         }
     }
@@ -353,8 +353,10 @@ void ManagementAgentImpl::sendHeartbeat()
     headers["qmf.agent"] = name_address;
 
     map["_values"] = attrMap;
+    map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
+    map["_values"].asMap()["heartbeat_interval"] = interval;
     content.encode();
-    connThreadBody.sendBuffer(msg.getContent(), 0, headers, addr_exchange, addr_key);
+    connThreadBody.sendBuffer(msg.getContent(), "", headers, addr_exchange, addr_key);
 
     QPID_LOG(trace, "SENT AgentHeartbeat name=" << name_address);
 }
@@ -470,7 +472,7 @@ void ManagementAgentImpl::handleConsoleAddedIndication()
     QPID_LOG(trace, "RCVD ConsoleAddedInd");
 }
 
-void ManagementAgentImpl::invokeMethodRequest(const std::string& body, uint32_t sequence, string replyTo)
+void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& cid, const string& replyTo)
 {
     string   methodName;
     qpid::messaging::Message inMsg(body);
@@ -521,10 +523,10 @@ void ManagementAgentImpl::invokeMethodRequest(const std::string& body, uint32_t 
     headers["qmf.agent"] = name_address;
 
     outMap.encode();
-    connThreadBody.sendBuffer(outMsg.getContent(), sequence, headers, "qmf.default.direct", replyTo);
+    connThreadBody.sendBuffer(outMsg.getContent(), cid, headers, "qmf.default.direct", replyTo);
 }
 
-void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, string replyTo)
+void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, const string& cid, const string& replyTo)
 {
     FieldTable           ft;
     FieldTable::ValuePtr value;
@@ -565,11 +567,11 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
             headers["qmf.agent"] = name_address;
 
             content.encode();
-            connThreadBody.sendBuffer(m.getContent(), sequence, headers, "qmf.default.direct", replyTo);
+            connThreadBody.sendBuffer(m.getContent(), cid, headers, "qmf.default.direct", replyTo);
 
             QPID_LOG(trace, "SENT ObjectInd");
         }
-        sendCommandComplete(replyTo, sequence);
+        //sendCommandComplete(replyTo, sequence);
         return;
     }
 
@@ -600,21 +602,44 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
             headers["qmf.agent"] = name_address;
 
             content.encode();
-            connThreadBody.sendBuffer(m.getContent(), sequence, headers, "qmf.default.direct", replyTo);
+            connThreadBody.sendBuffer(m.getContent(), cid, headers, "qmf.default.direct", replyTo);
 
             QPID_LOG(trace, "SENT ObjectInd");
         }
     }
 
-    sendCommandComplete(replyTo, sequence);
+    //sendCommandComplete(replyTo, sequence);
 }
 
-void ManagementAgentImpl::handleMethodRequest(const std::string& body, uint32_t sequence, string replyTo)
+void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, const string& replyTo)
+{
+    QPID_LOG(trace, "RCVD AgentLocateRequest");
+    static const string addr_exchange("qmf.default.direct");
+
+    messaging::Message msg;
+    messaging::MapContent content(msg);
+    messaging::Variant::Map& map(content.asMap());
+    messaging::Variant::Map headers;
+
+    headers["method"] = "indication";
+    headers["qmf.opcode"] = "_agent_locate_response";
+    headers["qmf.agent"] = name_address;
+
+    map["_values"] = attrMap;
+    map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
+    map["_values"].asMap()["heartbeat_interval"] = interval;
+    content.encode();
+    connThreadBody.sendBuffer(msg.getContent(), cid, headers, addr_exchange, replyTo);
+
+    QPID_LOG(trace, "SENT AgentLocateResponse replyTo=" << replyTo);
+}
+
+void ManagementAgentImpl::handleMethodRequest(const string& body, const string& cid, const string& replyTo)
 {
     if (extThread) {
         Mutex::ScopedLock lock(agentLock);
 
-        methodQueue.push_back(new QueuedMethod(sequence, replyTo, body));
+        methodQueue.push_back(new QueuedMethod(cid, replyTo, body));
         if (pipeHandle != 0) {
             pipeHandle->write("X", 1);
         } else if (notifyable != 0) {
@@ -633,7 +658,7 @@ void ManagementAgentImpl::handleMethodRequest(const std::string& body, uint32_t 
             inCallback = false;
         }
     } else {
-        invokeMethodRequest(body, sequence, replyTo);
+        invokeMethodRequest(body, cid, replyTo);
     }
 
     QPID_LOG(trace, "RCVD MethodRequest");
@@ -642,32 +667,22 @@ void ManagementAgentImpl::handleMethodRequest(const std::string& body, uint32_t 
 void ManagementAgentImpl::received(Message& msg)
 {
     string   replyToKey;
-    framing::MessageProperties p = msg.getMessageProperties();
-    if (p.hasReplyTo()) {
-        const framing::ReplyTo& rt = p.getReplyTo();
+    framing::MessageProperties mp = msg.getMessageProperties();
+    if (mp.hasReplyTo()) {
+        const framing::ReplyTo& rt = mp.getReplyTo();
         replyToKey = rt.getRoutingKey();
     }
 
-    if (msg.getHeaders().getAsString("app_id") == "qmf2")
+    if (mp.hasAppId() && mp.getAppId() == "qmf2")
     {
-        uint32_t sequence = 0;
-        std::string opcode = msg.getHeaders().getAsString("qmf.opcode");
-        std::string cid = msg.getMessageProperties().getCorrelationId();
-        if (!cid.empty()) {
-            try {
-                sequence = boost::lexical_cast<uint32_t>(cid);
-            } catch(const boost::bad_lexical_cast&) {
-                QPID_LOG(warning, "Bad correlation Id for received QMF request.");
-                return;
-            }
-        }
+        string opcode = mp.getApplicationHeaders().getAsString("qmf.opcode");
+        string cid = msg.getMessageProperties().getCorrelationId();
 
-        if (opcode == "_method_request") {
-            handleMethodRequest(msg.getData(), sequence, replyToKey);
-            return;
+        if      (opcode == "_agent_locate_request") handleLocateRequest(msg.getData(), cid, replyToKey);
+        else if (opcode == "_method_request")       handleMethodRequest(msg.getData(), cid, replyToKey);
+        else {
+            QPID_LOG(trace, "Support for QMF Opcode [" << opcode << "] TBD!!!");
         }
-
-        QPID_LOG(warning, "Support for QMF Opcode [" << opcode << "] TBD!!!");
         return;
     }
 
@@ -684,7 +699,6 @@ void ManagementAgentImpl::received(Message& msg)
         if      (opcode == 'a') handleAttachResponse(inBuffer);
         else if (opcode == 'S') handleSchemaRequest(inBuffer, sequence);
         else if (opcode == 'x') handleConsoleAddedIndication();
-        else if (opcode == 'G') handleGetQuery(inBuffer, sequence, replyToKey);
         else if (opcode == 'M')
             QPID_LOG(warning, "Ignoring old-format QMF Method Request!!!");
     }
@@ -886,17 +900,14 @@ void ManagementAgentImpl::periodicProcessing()
         content.encode();
         const std::string &str = m.getContent();
         if (str.length()) {
-            stringstream key;
             ::qpid::messaging::Variant::Map  headers;
-            key << "console.obj." << assignedBrokerBank << "." << assignedAgentBank << "." <<
-                baseObject->getPackageName() << "." << baseObject->getClassName();
             headers["method"] = "indication";
             headers["qmf.opcode"] = "_data_indication";
             headers["qmf.content"] = "_data";
             headers["qmf.agent"] = name_address;
 
-            connThreadBody.sendBuffer(str, 0, headers, "qmf.default.topic", key.str(), "amqp/list");
-            QPID_LOG(trace, "SENT DataIndication key=" << key.str());
+            connThreadBody.sendBuffer(str, "", headers, "qmf.default.topic", "agent.ind.data", "amqp/list");
+            QPID_LOG(trace, "SENT DataIndication");
         }
     }
 
@@ -936,6 +947,10 @@ void ManagementAgentImpl::ConnectionThread::run()
                                      arg::exclusive=true);
                 session.exchangeBind(arg::exchange="amq.direct", arg::queue=queueName.str(),
                                      arg::bindingKey=queueName.str());
+                session.exchangeBind(arg::exchange="qmf.default.direct", arg::queue=queueName.str(),
+                                     arg::bindingKey=agent.name_address);
+                session.exchangeBind(arg::exchange="qmf.default.topic", arg::queue=queueName.str(),
+                                     arg::bindingKey="console.#");
 
                 subscriptions->subscribe(agent, queueName.str(), dest);
                 QPID_LOG(info, "Connection established with broker");
@@ -1009,7 +1024,7 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
 
 
 void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
-                                                       uint32_t sequence,
+                                                       const string& cid,
                                                        const qpid::messaging::VariantMap headers,
                                                        const string& exchange,
                                                        const string& routingKey,
@@ -1018,11 +1033,9 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
     Message msg;
     qpid::messaging::VariantMap::const_iterator i;
 
-    if (sequence) {
-        std::stringstream seqstr;
-        seqstr << sequence;
-        msg.getMessageProperties().setCorrelationId(seqstr.str());
-    }
+    if (!cid.empty())
+        msg.getMessageProperties().setCorrelationId(cid);
+
     if (!contentType.empty())
         msg.getMessageProperties().setContentType(contentType);
     for (i = headers.begin(); i != headers.end(); ++i) {

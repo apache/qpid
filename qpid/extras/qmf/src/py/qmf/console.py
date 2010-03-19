@@ -352,7 +352,6 @@ class Object(object):
     raise Exception("Invalid Method (software defect) [%s]" % name)
 
   def _encodeUnmanaged(self, codec):
-
     codec.write_uint8(20) 
     codec.write_str8(self._schema.getKey().getPackageName())
     codec.write_str8(self._schema.getKey().getClassName())
@@ -482,7 +481,7 @@ class Session:
 
     self.brokers.append(broker)
     if not self.manageConnections:
-      self.getObjects(broker=broker, _class="agent")
+      self.getObjects(broker=broker, _class="agent", _agent=broker.getAgent(1,0))
     return broker
 
   def delBroker(self, broker):
@@ -873,6 +872,7 @@ class Session:
     timestamp = codec.read_uint64()
     if self.console != None and agent != None:
       self.console.heartbeat(agent, timestamp)
+    broker._ageAgents()
 
   def _handleEventInd(self, broker, codec, seq):
     if self.console != None:
@@ -926,6 +926,39 @@ class Session:
         self.console.objectProps(broker, object)
       if stat:
         self.console.objectStats(broker, object)
+
+  def _v2HandleHeartbeatInd(self, broker, mp, ah, content):
+    brokerBank = 1
+    agentName = ah["qmf.agent"]
+    values = content["_values"]
+    timestamp = values["timestamp"]
+    interval = values["heartbeat_interval"]
+    if agentName == None:
+      return
+    agent = broker.getAgent(brokerBank, agentName)
+    if agent == None:
+      agent = Agent(broker, agentName, "QMFv2 Agent", True, interval)
+      broker._addAgent(agentName, agent)
+    else:
+      agent.touch()
+    if self.console and agent:
+      self.console.heartbeat(agent, timestamp)
+    broker._ageAgents()
+
+  def _v2HandleAgentLocateRsp(self, broker, mp, ah, content):
+    self._v2HandleHeartbeatInd(broker, mp, ah, content)
+
+  def _v2HandleDataInd(self, broker, mp, ah, content):
+    pass
+
+  def _v2HandleQueryRsp(self, broker, mp, ah, content):
+    pass
+
+  def _v2HandleMethodRsp(self, broker, mp, ah, content):
+    pass
+
+  def _v2HandleException(self, broker, mp, ah, content):
+    pass
 
   def _handleError(self, error):
     try:
@@ -1557,6 +1590,7 @@ class Broker:
     self.authUser = authUser
     self.authPass = authPass
     self.cv = Condition()
+    self.agentLock = Lock()
     self.error = None
     self.brokerId = None
     self.connected = False
@@ -1590,8 +1624,12 @@ class Broker:
   def getAgent(self, brokerBank, agentBank):
     """ Return the agent object associated with a particular broker and agent bank value."""
     bankKey = (brokerBank, agentBank)
-    if bankKey in self.agents:
-      return self.agents[bankKey]
+    try:
+      self.agentLock.acquire()
+      if bankKey in self.agents:
+        return self.agents[bankKey]
+    finally:
+      self.agentLock.release()
     return None
 
   def getSessionId(self):
@@ -1600,7 +1638,11 @@ class Broker:
 
   def getAgents(self):
     """ Get the list of agents reachable via this broker """
-    return self.agents.values()
+    try:
+      self.agentLock.acquire()
+      return self.agents.values()
+    finally:
+      self.agentLock.release()
 
   def getAmqpSession(self):
     """ Get the AMQP session object for this connected broker. """
@@ -1629,8 +1671,13 @@ class Broker:
 
   def _tryToConnect(self):
     try:
-      self.agents = {}
-      self.agents[(1,0)] = Agent(self, 0, "BrokerAgent")
+      try:
+        self.agentLock.acquire()
+        self.agents = {}
+        self.agents[(1,0)] = Agent(self, 0, "BrokerAgent")
+      finally:
+        self.agentLock.release()
+
       self.topicBound = False
       self.syncInFlight = False
       self.syncRequest = 0
@@ -1679,6 +1726,24 @@ class Broker:
       self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFFL)
       self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFFL)
 
+      ##
+      ## Set up connectivity for QMFv2
+      ##
+      self.v2_queue_name = "qmfc-v2-%s" % self.amqpSessionId
+      self.amqpSession.queue_declare(queue=self.v2_queue_name, exclusive=True, auto_delete=True)
+      self.amqpSession.exchange_bind(exchange="qmf.default.direct",
+                                     queue=self.v2_queue_name, binding_key=self.v2_queue_name)
+      self.amqpSession.exchange_bind(exchange="qmf.default.topic",
+                                     queue=self.v2_queue_name, binding_key="agent.#")
+      ## Other bindings here...
+      self.amqpSession.message_subscribe(queue=self.v2_queue_name, destination="v2dest",
+                                         accept_mode=self.amqpSession.accept_mode.none,
+                                         acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
+      self.amqpSession.incoming("v2dest").listen(self._v2Cb, self._exceptionCb)
+      self.amqpSession.message_set_flow_mode(destination="v2dest", flow_mode=1)
+      self.amqpSession.message_flow(destination="v2dest", unit=0, value=0xFFFFFFFFL)
+      self.amqpSession.message_flow(destination="v2dest", unit=1, value=0xFFFFFFFFL)
+
       self.connected = True
       self.session._handleBrokerConnect(self)
 
@@ -1686,6 +1751,7 @@ class Broker:
       self._setHeader(codec, 'B')
       msg = self._message(codec.encoded)
       self._send(msg)
+      self._v2SendAgentLocate()
 
     except socket.error, e:
       self.error = "Socket Error %s - %s" % (e.__class__.__name__, e)
@@ -1699,16 +1765,64 @@ class Broker:
 
   def _updateAgent(self, obj):
     bankKey = (obj.brokerBank, obj.agentBank)
+    agent = None
     if obj._deleteTime == 0:
-      if bankKey not in self.agents:
-        agent = Agent(self, obj.agentBank, obj.label)
-        self.agents[bankKey] = agent
-        if self.session.console != None:
-          self.session.console.newAgent(agent)
+      try:
+        self.agentLock.acquire()
+        if bankKey not in self.agents:
+          agent = Agent(self, obj.agentBank, obj.label)
+          self.agents[bankKey] = agent
+      finally:
+        self.agentLock.release()
+      if agent and self.session.console:
+        self.session.console.newAgent(agent)
     else:
-      agent = self.agents.pop(bankKey, None)
-      if agent != None and self.session.console != None:
+      try:
+        self.agentLock.acquire()
+        agent = self.agents.pop(bankKey, None)
+      finally:
+        self.agentLock.release()
+      if agent and self.session.console:
         self.session.console.delAgent(agent)
+
+  def _addAgent(self, name, agent):
+    try:
+      self.agentLock.acquire()
+      self.agents[(1, name)] = agent
+    finally:
+      self.agentLock.release()
+    if self.session.console:
+      self.session.console.newAgent(agent)
+
+  def _ageAgents(self):
+    try:
+      self.agentLock.acquire()
+      to_delete = []
+      to_notify = []
+      for key in self.agents:
+        if self.agents[key].isOld():
+          to_delete.append(key)
+      for key in to_delete:
+        to_notify.append(self.agents.pop(key, None))
+    finally:
+      self.agentLock.release()
+    if self.session.console:
+      for agent in to_notify:
+        self.session.console.delAgent(agent)
+
+  def _v2SendAgentLocate(self, predicate={}):
+    dp = self.amqpSession.delivery_properties()
+    dp.routing_key = "console.request.agent_locate"
+    mp = self.amqpSession.message_properties()
+    mp.content_type = "amqp/map"
+    mp.user_id = self.authUser
+    mp.app_id = "qmf2"
+    mp.reply_to = self.amqpSession.reply_to("qmf.default.direct", self.v2_queue_name)
+    mp.application_headers = {'qmf.opcode':'_agent_locate_request'}
+    sendCodec = Codec()
+    sendCodec.write_map(predicate)
+    msg = Message(dp, mp, sendCodec.encoded)
+    self._send(msg, "qmf.default.topic")
 
   def _setHeader(self, codec, opcode, seq=0):
     """ Compose the header of a management message. """
@@ -1819,6 +1933,28 @@ class Broker:
     self.session.receiver._completed.add(msg.id)
     self.session.channel.session_completed(self.session.receiver._completed)
 
+  def _v2Cb(self, msg):
+    dp = msg.get("delivery_properties")
+    mp = msg.get("message_properties")
+    ah = mp["application_headers"]
+    opcode = ah["qmf.opcode"]
+    codec = Codec(msg.body)
+
+    if mp.content_type == "amqp/list":
+      content = codec.read_list()
+    elif mp.content_type == "amqp/map":
+      content = codec.read_map()
+    else:
+      return
+
+    if   opcode == None: return
+    elif opcode == '_agent_heartbeat_indication': self.session._v2HandleHeartbeatInd(self, mp, ah, content)
+    elif opcode == '_agent_locate_response':      self.session._v2HandleAgentLocateRsp(self, mp, ah, content)
+    elif opcode == '_data_indication':            self.session._v2HandleDataInd(self, mp, ah, content)
+    elif opcode == '_query_response':             self.session._v2HandleQueryRsp(self, mp, ah, content)
+    elif opcode == '_method_response':            self.session._v2HandleMethodRsp(self, mp, ah, content)
+    elif opcode == '_exception':                  self.session._v2HandleException(self, mp, ah, content)
+
   def _exceptionCb(self, data):
     self.connected = False
     self.error = data
@@ -1835,14 +1971,31 @@ class Broker:
 
 class Agent:
   """ """
-  def __init__(self, broker, agentBank, label):
+  def __init__(self, broker, agentBank, label, isV2=False, interval=0):
     self.broker = broker
     self.brokerBank = broker.getBrokerBank()
     self.agentBank = agentBank
     self.label = label
+    self.isV2 = isV2
+    self.heartbeatInterval = interval
+    self.lastSeenTime = time()
+
+  def touch(self):
+    self.lastSeenTime = time()
+
+  def isOld(self):
+    if self.heartbeatInterval == 0:
+      return None
+    if time() - self.lastSeenTime > (2.0 * self.heartbeatInterval):
+      return True
+    return None
 
   def __repr__(self):
-    return "Agent at bank %d.%d (%s)" % (self.brokerBank, self.agentBank, self.label)
+    if self.isV2:
+      ver = "v2"
+    else:
+      ver = "v1"
+    return "Agent(%s) at bank %d.%s (%s)" % (ver, self.brokerBank, self.agentBank, self.label)
 
   def getBroker(self):
     return self.broker
