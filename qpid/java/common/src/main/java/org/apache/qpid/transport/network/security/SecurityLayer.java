@@ -156,7 +156,7 @@ public class SecurityLayer
         
         public String getUserID()
         {
-            return null;
+            return SSLUtil.retriveIdentity(engine);
         }
         
     }

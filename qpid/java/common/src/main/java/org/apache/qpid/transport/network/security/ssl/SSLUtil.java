@@ -38,7 +38,7 @@ public class SSLUtil
               log.debug("Host Name obtained from DN : " + hostname);
           }
           
-          if (hostname != null && hostname.equalsIgnoreCase(hostnameExpected))
+          if (hostname != null && !hostname.equalsIgnoreCase(hostnameExpected))
           {
               throw new TransportException("SSL hostname verification failed." +
                                            " Expected : " + hostnameExpected +
@@ -50,7 +50,7 @@ public class SSLUtil
         {
             log.warn("Exception received while trying to verify hostname",e);
             // For some reason the SSL engine sets the handshake status to FINISH twice
-            // in succession. For some reason the first time the peer certificate 
+            // in succession. The first time the peer certificate 
             // info is not available. The second time it works !
             // Therefore have no choice but to ignore the exception here.
         }
