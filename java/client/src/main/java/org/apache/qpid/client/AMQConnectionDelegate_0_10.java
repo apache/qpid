@@ -157,45 +157,9 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                         + _conn.getPassword());
             }
 
-            String saslMechs = brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS) != null ? 
-                               brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS):
-                               System.getProperty("qpid.sasl_mechs", "PLAIN");
-
-            // Sun SASL Kerberos client uses the
-            // protocol + servername as the service key.
-            String protocol = brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME) != null ? 
-                              brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME):
-                              System.getProperty("qpid.sasl_protocol", "AMQP");
-
-            String saslServerName = brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME) != null ? 
-                                brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME):
-                                System.getProperty("qpid.sasl_server_name", "localhost");
-
-            boolean useSSL = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL);
-                             
-            boolean useSASLEncryption = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION)?
-                                        brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION):
-                                        Boolean.getBoolean("qpid.sasl_encryption");
-                             
-            boolean useTcpNodelay = brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY)?
-                                    brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY):
-                                    Boolean.getBoolean("amqj.tcp_nodelay");
-                             
-                    
             ConnectionSettings conSettings = new ConnectionSettings();
-            conSettings.setHost(brokerDetail.getHost());
-            conSettings.setPort(brokerDetail.getPort());
-            conSettings.setVhost(_conn.getVirtualHost());
-            conSettings.setUsername(_conn.getUsername());
-            conSettings.setPassword(_conn.getPassword());
-            conSettings.setUseSASLEncryption(useSASLEncryption);
-            conSettings.setUseSSL(useSSL);
-            conSettings.setSaslMechs(saslMechs);
-            conSettings.setTcpNodelay(useTcpNodelay);
-            conSettings.setSaslProtocol(protocol);
-            conSettings.setSaslServerName(saslServerName);
-            conSettings.setHeartbeatInterval(getHeartbeatInterval(brokerDetail));
-
+            retriveConnectionSettings(conSettings,brokerDetail);
+            
             _qpidConnection.connect(conSettings);
 
             _conn._connected = true;
@@ -326,6 +290,87 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     public ProtocolVersion getProtocolVersion()
     {
         return ProtocolVersion.v0_10;
+    }
+    
+    private void retriveConnectionSettings(ConnectionSettings conSettings, BrokerDetails brokerDetail)
+    {
+
+        conSettings.setHost(brokerDetail.getHost());
+        conSettings.setPort(brokerDetail.getPort());
+        conSettings.setVhost(_conn.getVirtualHost());
+        conSettings.setUsername(_conn.getUsername());
+        conSettings.setPassword(_conn.getPassword());
+        
+        // ------------ sasl options ---------------
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS) != null)
+        {
+            conSettings.setSaslMechs(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS));
+        }
+
+        // Sun SASL Kerberos client uses the
+        // protocol + servername as the service key.
+        
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME) != null)
+        {
+            conSettings.setSaslProtocol(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME));
+        }
+        
+        
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME) != null)
+        {
+            conSettings.setSaslServerName(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME));
+        }
+                        
+        conSettings.setUseSASLEncryption(
+                brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION));
+
+        // ------------- ssl options ---------------------
+        conSettings.setUseSSL(brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL));
+        
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE) != null)
+        {
+            conSettings.setTrustStorePath(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE));
+        }
+
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE_PASSWORD) != null)
+        {
+            conSettings.setTrustStorePassword(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE_PASSWORD));
+        }
+        
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE) != null)
+        {
+            conSettings.setKeyStorePath(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE));
+        }
+        
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE_PASSWORD) != null)
+        {
+            conSettings.setKeyStorePassword(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE_PASSWORD));
+        }
+
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SSL_CERT_ALIAS) != null)
+        {
+            conSettings.setCertAlias(
+                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SSL_CERT_ALIAS));
+        }
+        // ----------------------------
+        
+        conSettings.setVerifyHostname(brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
+        
+        
+        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY) != null)
+        {
+            conSettings.setTcpNodelay(
+                    brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY));
+        }
+        
+        conSettings.setHeartbeatInterval(getHeartbeatInterval(brokerDetail));
     }
     
     // The idle_timeout prop is in milisecs while
