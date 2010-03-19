@@ -87,8 +87,8 @@ struct Client : qpid::sys::Runnable
 
     void run()
     {
+        Connection connection;
         try {
-            Connection connection;
             connection.open(opts.url);
             Session session = connection.newSession();
             doWork(session);
@@ -96,6 +96,7 @@ struct Client : qpid::sys::Runnable
             connection.close();
         } catch(const std::exception& error) {
             std::cout << error.what() << std::endl;
+            connection.close();
         }
     }
 
