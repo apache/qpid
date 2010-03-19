@@ -43,7 +43,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     // we can test other cases as well
     private final static int START = Integer.MAX_VALUE - 10;
 
-    private final IoTransport transport;
+    private final IoContext ioCtx;
     private final long timeout;
     private final Socket socket;
     private final OutputStream out;
@@ -60,10 +60,10 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     private volatile Throwable exception = null;
 
 
-    public IoSender(IoTransport transport, int bufferSize, long timeout)
+    public IoSender(IoContext ioCtx, int bufferSize, long timeout)
     {
-        this.transport = transport;
-        this.socket = transport.getSocket();
+        this.ioCtx = ioCtx;
+        this.socket = ioCtx.getSocket();
         this.buffer = new byte[pof2(bufferSize)]; // buffer size must be a power of 2
         this.timeout = timeout;
 
@@ -207,7 +207,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
                         throw new SenderException("join timed out");
                     }
                 }
-                transport.getReceiver().close(false);
+                ioCtx.getReceiver().close(false);
             }
             catch (InterruptedException e)
             {

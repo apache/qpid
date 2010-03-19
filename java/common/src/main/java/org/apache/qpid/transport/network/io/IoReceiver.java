@@ -42,7 +42,7 @@ final class IoReceiver implements Runnable
 
     private static final Logger log = Logger.get(IoReceiver.class);
 
-    private final IoTransport transport;
+    private final IoContext ioCtx;
     private final Receiver<ByteBuffer> receiver;
     private final int bufferSize;
     private final Socket socket;
@@ -52,13 +52,13 @@ final class IoReceiver implements Runnable
     private final boolean shutdownBroken =
         ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
 
-    public IoReceiver(IoTransport transport, Receiver<ByteBuffer> receiver,
+    public IoReceiver(IoContext ioCtx, Receiver<ByteBuffer> receiver,
                       int bufferSize, long timeout)
     {
-        this.transport = transport;
+        this.ioCtx = ioCtx;
         this.receiver = receiver;
         this.bufferSize = bufferSize;
-        this.socket = transport.getSocket();
+        this.socket = ioCtx.getSocket();
         this.timeout = timeout;
 
         try
