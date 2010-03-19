@@ -549,7 +549,7 @@ public class DurableSubscriptionTest extends QpidTestCase
         
         //verify no messages are now present as changing selector should have issued
         //an unsubscribe and thus deleted the previous backing queue for the subscription.
-        rMsg = subA.receive(NEGATIVE_RECEIVE_TIMEOUT);
+        rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertNull("Should not have received message as the queue underlying the " +
         		"subscription should have been cleared/deleted when the selector was changed", rMsg);
         
