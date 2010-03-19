@@ -49,7 +49,7 @@ namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
-SessionImpl::SessionImpl(ConnectionImpl& c, bool t) : connection(c), transactional(t) {}
+SessionImpl::SessionImpl(ConnectionImpl& c, bool t) : connection(&c), transactional(t) {}
 
 
 void SessionImpl::sync()
@@ -108,7 +108,7 @@ void SessionImpl::close()
     for (std::vector<std::string>::const_iterator i = r.begin(); i != r.end(); ++i) getReceiver(*i).close();
     
 
-    connection.closed(*this);
+    connection->closed(*this);
     session.close();
 }
 
@@ -431,12 +431,12 @@ void SessionImpl::senderCancelled(const std::string& name)
 
 void SessionImpl::reconnect()
 {
-    connection.connect();    
+    connection->connect();    
 }
 
 qpid::messaging::Connection SessionImpl::getConnection() const
 {
-    return qpid::messaging::Connection(&connection);
+    return qpid::messaging::Connection(connection.get());
 }
 
 }}} // namespace qpid::client::amqp0_10

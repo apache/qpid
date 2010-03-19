@@ -80,6 +80,11 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
     QPID_CLIENT_EXTERN void setOption(const std::string& name, const Variant& value);
     QPID_CLIENT_EXTERN void open(const std::string& url);
+    /**
+     * Closes a connection and all sessions associated with it. An
+     * opened connection must be closed before the last handle is
+     * allowed to go out of scope.
+     */
     QPID_CLIENT_EXTERN void close();
     QPID_CLIENT_EXTERN Session newSession(bool transactional, const std::string& name = std::string());
     QPID_CLIENT_EXTERN Session newSession(const std::string& name = std::string());

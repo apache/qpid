@@ -28,6 +28,7 @@
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/amqp0_10/SessionImpl.h"
 #include "qpid/messaging/Duration.h"
+#include <boost/intrusive_ptr.hpp>
 #include <memory>
 
 namespace qpid {
@@ -65,7 +66,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     void received(qpid::messaging::Message& message);
     qpid::messaging::Session getSession() const;
   private:
-    SessionImpl& parent;
+    boost::intrusive_ptr<SessionImpl> parent;
     const std::string destination;
     const qpid::messaging::Address address;
     const uint32_t byteCredit;
@@ -133,13 +134,13 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     template <class F> void execute()
     {
         F f(*this);
-        parent.execute(f);
+        parent->execute(f);
     }
     
     template <class F, class P> void execute1(P p)
     {
         F f(*this, p);
-        parent.execute(f);
+        parent->execute(f);
     }
 };
 
