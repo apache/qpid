@@ -36,6 +36,8 @@ void AgentAttachment::setBanks(uint32_t broker, uint32_t bank)
         ((uint64_t) (bank   & 0x0fffffff));
 }
 
+#if 0
+// Deprecated
 ObjectId::ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, uint64_t object)
     : agent(0)
 {
@@ -46,15 +48,25 @@ ObjectId::ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, 
         ((uint64_t) (bank   & 0x0fffffff));
     second = object;
 }
+#endif
 
-ObjectId::ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_t object)
+ObjectId::ObjectId(uint8_t flags, uint16_t seq, uint32_t broker)
+    : agent(0)
+{
+    first =
+        ((uint64_t) (flags  &       0x0f)) << 60 |
+        ((uint64_t) (seq    &     0x0fff)) << 48 |
+        ((uint64_t) (broker & 0x000fffff)) << 28;
+}
+
+ObjectId::ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq)
     : agent(_agent)
 {
     first =
         ((uint64_t) (flags &   0x0f)) << 60 |
         ((uint64_t) (seq   & 0x0fff)) << 48;
-    second = object;
 }
+
 
 ObjectId::ObjectId(std::istream& in) : agent(0)
 {
@@ -70,40 +82,43 @@ ObjectId::ObjectId(const std::string& text) : agent(0)
 
 void ObjectId::fromString(const std::string& text)
 {
-#define FIELDS 5
+#define NUMERIC_FIELDS 4
 #if defined (_WIN32) && !defined (atoll)
 #  define atoll(X) _atoi64(X)
 #endif
 
     std::string copy(text.c_str());
     char* cText;
-    char* field[FIELDS];
+    char* field[NUMERIC_FIELDS];
     bool  atFieldStart = true;
     int   idx = 0;
+    char  *cursor;
 
     cText = const_cast<char*>(copy.c_str());
-    for (char* cursor = cText; *cursor; cursor++) {
+    for (cursor = cText; *cursor; cursor++) {
         if (atFieldStart) {
-            if (idx >= FIELDS)
-                throw Exception("Invalid ObjectId format");
             field[idx++] = cursor;
             atFieldStart = false;
         } else {
             if (*cursor == '-') {
                 *cursor = '\0';
                 atFieldStart = true;
+                if (idx == NUMERIC_FIELDS) {
+                    cursor++;
+                    break;
+                }
             }
         }
     }
 
-    if (idx != FIELDS)
+    if (idx != NUMERIC_FIELDS || !atFieldStart || !(*cursor))
         throw Exception("Invalid ObjectId format");
 
     first = (atoll(field[0]) << 60) +
         (atoll(field[1]) << 48) +
         (atoll(field[2]) << 28) +
         atoll(field[3]);
-    second = atoll(field[4]);
+    v2Key = std::string(cursor);
 }
 
 
@@ -117,11 +132,13 @@ bool ObjectId::operator<(const ObjectId &other) const
     return v2Key < other.v2Key;
 }
 
+#if 0
 bool ObjectId::equalV1(const ObjectId &other) const
 {
     uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
     return first == otherFirst && second == other.second;
 }
+#endif
 
 // void ObjectId::encode(framing::Buffer& buffer) const
 // {
@@ -151,8 +168,7 @@ void ObjectId::mapEncode(messaging::VariantMap& map) const
         map["_first"] = first;
     else
         map["_first"] = (first | agent->first);
-    map["_second"] = second;
-    map["_object_id"] = v2Key;
+    map["_object_name"] = v2Key;
 }
 
 void ObjectId::mapDecode(const messaging::VariantMap& map)
@@ -162,10 +178,7 @@ void ObjectId::mapDecode(const messaging::VariantMap& map)
     if ((i = map.find("_first")) != map.end())
         first  = i->second.asUint64();
 
-    if ((i = map.find("_second")) != map.end())
-        second = i->second.asUint64();
-
-    if ((i = map.find("_object_id")) != map.end())
+    if ((i = map.find("_object_name")) != map.end())
         v2Key = i->second.asString();
 }
 
@@ -192,7 +205,7 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
         "-" << ((virtFirst & 0x0FFF000000000000LL) >> 48) <<
         "-" << ((virtFirst & 0x0000FFFFF0000000LL) >> 28) <<
         "-" <<  (virtFirst & 0x000000000FFFFFFFLL) <<
-        "-" << i.second;
+        "-" << i.v2Key;
     return out;
 }
 

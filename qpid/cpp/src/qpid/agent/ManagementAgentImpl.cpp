@@ -196,20 +196,38 @@ void ManagementAgentImpl::registerEvent(const string& packageName,
     addClassLocal(ManagementItem::CLASS_KIND_EVENT, pIter, eventName, md5Sum, schemaCall);
 }
 
+// old-style add object: 64bit id - deprecated
 ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
                                         uint64_t          persistId)
 {
+    std::string key;
+    if (persistId) {
+        key = boost::lexical_cast<std::string>(persistId);
+    }
+    return addObject(object, key, persistId != 0);
+}
+
+
+// new style add object - use this approach!
+ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
+                                        const std::string& key,
+                                        bool persistent)
+{
     Mutex::ScopedLock lock(addLock);
-    uint16_t sequence  = persistId ? 0 : bootSequence;
-    uint64_t objectNum = persistId ? persistId : nextObjectId++;
 
-    ObjectId objectId(&attachment, 0, sequence, objectNum);
+    uint16_t sequence  = persistent ? 0 : bootSequence;
 
-    // TODO: fix object-id handling
+    ObjectId objectId(&attachment, 0, sequence);
+    if (key.empty())
+        objectId.setV2Key(*object);  // let object generate the key
+    else
+        objectId.setV2Key(key);
+
     object->setObjectId(objectId);
     newManagementObjects[objectId] = object;
     return objectId;
 }
+
 
 void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t severity)
 {

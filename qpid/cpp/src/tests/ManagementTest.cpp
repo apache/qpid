@@ -56,32 +56,32 @@ QPID_AUTO_TEST_CASE(testObjectIdSerializeString) {
 }
 
 QPID_AUTO_TEST_CASE(testObjectIdEncode) {
-    char buffer[100];
-    Buffer msgBuf(buffer, 100);
-    msgBuf.putLongLong(0x1002000030000004LL);
-    msgBuf.putLongLong(0x0000000000000005LL);
-    msgBuf.reset();
+    qpid::messaging::Variant::Map oidMap;
 
-    ObjectId oid(msgBuf);
+    ObjectId oid(1, 2, 3);
+    oid.setV2Key("testkey");
 
     std::stringstream out1;
     out1 << oid;
 
-    BOOST_CHECK_EQUAL(out1.str(), "1-2-3-4-5");
+    BOOST_CHECK_EQUAL(out1.str(), "1-2-3-0-testkey");
 }
 
 QPID_AUTO_TEST_CASE(testObjectIdAttach) {
     AgentAttachment   agent;
-    ObjectId          oid(&agent, 10, 20, 50);
+    ObjectId          oid(&agent, 10, 20);
+    oid.setV2Key("GabbaGabbaHey");
 
     std::stringstream out1;
     out1 << oid;
-    BOOST_CHECK_EQUAL(out1.str(), "10-20-0-0-50");
+
+    BOOST_CHECK_EQUAL(out1.str(), "10-20-0-0-GabbaGabbaHey");
 
     agent.setBanks(30, 40);
     std::stringstream out2;
     out2 << oid;
-    BOOST_CHECK_EQUAL(out2.str(), "10-20-30-40-50");
+
+    BOOST_CHECK_EQUAL(out2.str(), "10-20-30-40-GabbaGabbaHey");
 }
 
 QPID_AUTO_TEST_CASE(testConsoleObjectId) {

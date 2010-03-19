@@ -210,24 +210,32 @@ void ManagementAgent::registerEvent (const string&  packageName,
     addClassLH(ManagementItem::CLASS_KIND_EVENT, pIter, eventName, md5Sum, schemaCall);
 }
 
+
+// Deprecated:
+ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId, bool publishNow)
+{
+    // always force object to generate key string
+    return addObject(object, std::string(), persistId != 0, publishNow);
+}
+
+
+
 ObjectId ManagementAgent::addObject(ManagementObject* object,
-                                    uint64_t          persistId,
-                                    bool              publishNow)
+                                    const std::string& key,
+                                    bool persistent,
+                                    bool publishNow)
 {
     Mutex::ScopedLock lock (addLock);
     uint16_t sequence;
-    uint64_t objectNum;
 
-    if (persistId == 0) {
-        sequence  = bootSequence;
-        objectNum = nextObjectId++;
+    sequence = persistent ? 0 : bootSequence;
+
+    ObjectId objId(0 /*flags*/, sequence, brokerBank);
+    if (key.empty()) {
+        objId.setV2Key(*object);   // let object generate the key
     } else {
-        sequence  = 0;
-        objectNum = persistId;
+        objId.setV2Key(key);
     }
-
-    ObjectId objId(0 /*flags*/ , sequence, brokerBank, 0, objectNum);
-    objId.setV2Key(*object);
 
     object->setObjectId(objId);
     ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
@@ -815,7 +823,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
         }
     }
 
-    ManagementObjectMap::iterator iter = numericFind(objId);
+    ManagementObjectMap::iterator iter = managementObjects.find(objId);
     if (iter == managementObjects.end() || iter->second->isDeleted()) {
         outBuffer.putLong        (Manageable::STATUS_UNKNOWN_OBJECT);
         outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_UNKNOWN_OBJECT));
@@ -1300,7 +1308,7 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
             return;
 
         ObjectId selector(value->get<string>());
-        ManagementObjectMap::iterator iter = numericFind(selector);
+        ManagementObjectMap::iterator iter = managementObjects.find(selector);
         if (iter != managementObjects.end()) {
             ManagementObject* object = iter->second;
             ::qpid::messaging::Message m;
@@ -1781,18 +1789,6 @@ size_t ManagementAgent::validateEventSchema(Buffer& inBuffer)
     inBuffer.restore(); // restore original position
     return end - start;
 }
-
-ManagementObjectMap::iterator ManagementAgent::numericFind(const ObjectId& oid)
-{
-    ManagementObjectMap::iterator iter = managementObjects.begin();
-    for (; iter != managementObjects.end(); iter++) {
-        if (oid.equalV1(iter->first))
-            break;
-    }
-
-    return iter;
-}
-
 
 void ManagementAgent::setAllocator(std::auto_ptr<IdAllocator> a)
 {

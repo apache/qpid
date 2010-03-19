@@ -24,7 +24,6 @@
 
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Mutex.h"
-//#include <qpid/framing/Buffer.h>
 #include "qpid/CommonImportExport.h"
 #include "qpid/messaging/MapContent.h"
 #include "qpid/messaging/MapView.h"
@@ -54,28 +53,22 @@ class ObjectId {
 protected:
     const AgentAttachment* agent;
     uint64_t first;
-    uint64_t second;
     std::string v2Key;
     void fromString(const std::string&);
 public:
-    QPID_COMMON_EXTERN ObjectId() : agent(0), first(0), second(0) {}
-    //QPID_COMMON_EXTERN ObjectId(framing::Buffer& buf) : agent(0) { decode(buf); }
+    QPID_COMMON_EXTERN ObjectId() : agent(0), first(0) {}
     QPID_COMMON_EXTERN ObjectId(const messaging::Variant& map) : agent(0) { mapDecode(map.asMap()); }
-    QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, uint64_t object);
-    QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_t object);
+    QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker);
+    QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq);
     QPID_COMMON_EXTERN ObjectId(std::istream&);
     QPID_COMMON_EXTERN ObjectId(const std::string&);
     QPID_COMMON_EXTERN bool operator==(const ObjectId &other) const;
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
-    //QPID_COMMON_EXTERN uint32_t encodedSize() const;
-    //QPID_COMMON_EXTERN void encode(framing::Buffer& buffer) const;
-    //QPID_COMMON_EXTERN void decode(framing::Buffer& buffer);
     QPID_COMMON_EXTERN void mapEncode(messaging::VariantMap& map) const;
     QPID_COMMON_EXTERN void mapDecode(const messaging::VariantMap& map);
     QPID_COMMON_EXTERN operator messaging::VariantMap() const;
     QPID_COMMON_EXTERN void setV2Key(const std::string& _key) { v2Key = _key; }
     QPID_COMMON_EXTERN void setV2Key(const ManagementObject& object);
-    QPID_COMMON_EXTERN bool equalV1(const ObjectId &other) const;
     QPID_COMMON_EXTERN const std::string& getV2Key() const { return v2Key; }
     friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const ObjectId&);
 };

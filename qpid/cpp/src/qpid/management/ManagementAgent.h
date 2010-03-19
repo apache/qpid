@@ -90,6 +90,10 @@ public:
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
                                              uint64_t          persistId = 0,
                                              bool              publishNow = false);
+    QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject*  object,
+                                             const std::string& key,
+                                             bool               persistent = true,
+                                             bool               publishNow = false);
     QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
@@ -315,7 +319,6 @@ private:
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);
     size_t validateEventSchema(framing::Buffer&);
-    ManagementObjectMap::iterator numericFind(const ObjectId& oid);
     void debugSnapshot(const char*);
 };
 

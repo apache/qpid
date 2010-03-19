@@ -78,6 +78,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                        uint8_t*     md5Sum,
                        management::ManagementObject::writeSchemaCall_t schemaCall);
     ObjectId addObject(management::ManagementObject* objectPtr, uint64_t persistId = 0);
+    ObjectId addObject(management::ManagementObject* objectPtr, const std::string& key,
+                       bool persistent);
     void raiseEvent(const management::ManagementEvent& event, severity_t severity = SEV_DEFAULT);
     uint32_t pollCallbacks(uint32_t callLimit = 0);
     int getSignalFd();

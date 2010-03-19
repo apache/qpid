@@ -145,6 +145,9 @@ class ManagementAgent
     // in an orderly way.
     //
     virtual ObjectId addObject(ManagementObject* objectPtr, uint64_t persistId = 0) = 0;
+    virtual ObjectId addObject(ManagementObject* objectPtr,
+                               const std::string& key,
+                               bool persistent = true) = 0;
 
     //
     //
