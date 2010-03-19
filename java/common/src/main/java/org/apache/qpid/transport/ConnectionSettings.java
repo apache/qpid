@@ -36,47 +36,32 @@ public class ConnectionSettings
     String username = "guest";
     String password = "guest";
     int port = 5672;
-    boolean tcpNodelay;
+    boolean tcpNodelay = Boolean.getBoolean("amqj.tcp_nodelay");
     int maxChannelCount = 32767;
     int maxFrameSize = 65535;
     int heartbeatInterval;
+    int readBufferSize = 65535;
+    int writeBufferSize = 65535;
+    long transportTimeout = 60000;
     
     // SSL props
     boolean useSSL;
-    String keyStorePath;
-    String keyStorePassword;
-    String keyStoreCertType;
-    String trustStoreCertType;
-    String trustStorePath;
-    String trustStorePassword;
+    String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+    String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+    String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");;
+    String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");;
+    String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
+    String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
     String certAlias;
     boolean verifyHostname;
     
     // SASL props
-    String saslMechs = "PLAIN";
-    String saslProtocol = "AMQP";
-    String saslServerName = "localhost";
+    String saslMechs = System.getProperty("qpid.sasl_mechs", "PLAIN");
+    String saslProtocol = System.getProperty("qpid.sasl_protocol", "AMQP");
+    String saslServerName = System.getProperty("qpid.sasl_server_name", "localhost");
     boolean useSASLEncryption;
-    
-    private Connection owner;
-    
+   
     private Map<String, Object> _clientProperties;
-
-    public Connection getConnection()
-    {
-        return owner;
-    }
-
-    public void setConnection(Connection owner)
-    {
-        if (this.owner != null)
-        {
-            throw new IllegalStateException(
-                    "A ConnectionSettings instance can be associated" +
-                    " with one and only one Connection instance");
-        }
-        this.owner = owner;
-    }
     
     public boolean isTcpNodelay()
     {
@@ -316,6 +301,36 @@ public class ConnectionSettings
     public void setTrustStoreCertType(String trustStoreCertType)
     {
         this.trustStoreCertType = trustStoreCertType;
+    }
+
+    public int getReadBufferSize()
+    {
+        return readBufferSize;
+    }
+
+    public void setReadBufferSize(int readBufferSize)
+    {
+        this.readBufferSize = readBufferSize;
+    }
+
+    public int getWriteBufferSize()
+    {
+        return writeBufferSize;
+    }
+
+    public void setWriteBufferSize(int writeBufferSize)
+    {
+        this.writeBufferSize = writeBufferSize;
+    }
+    
+    public long getTransportTimeout()
+    {
+        return transportTimeout;
+    }
+
+    public void setTransportTimeout(long transportTimeout)
+    {
+        this.transportTimeout = transportTimeout;
     }
 
 }

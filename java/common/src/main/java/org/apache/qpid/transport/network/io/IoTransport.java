@@ -51,7 +51,7 @@ import org.apache.qpid.transport.util.Logger;
  * SO_RCVBUF    - amqj.receiveBufferSize
  * SO_SNDBUF    - amqj.sendBufferSize
  */
-public final class IoTransport<E>
+public final class IoTransport<E> implements IoContext
 {
 
     static
@@ -119,17 +119,17 @@ public final class IoTransport<E>
         }
     }
 
-    Sender<ByteBuffer> getSender()
+    public Sender<ByteBuffer> getSender()
     {
         return sender;
     }
 
-    IoReceiver getReceiver()
+    public IoReceiver getReceiver()
     {
         return receiver;
     }
 
-    Socket getSocket()
+    public Socket getSocket()
     {
         return socket;
     }
