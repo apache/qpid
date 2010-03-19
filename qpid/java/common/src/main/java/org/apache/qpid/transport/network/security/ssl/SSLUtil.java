@@ -28,7 +28,8 @@ public class SSLUtil
           
           if (dn.contains("CN="))
           {
-              hostname = dn.substring(3, dn.indexOf(","));
+              hostname = dn.substring(3,
+                      dn.indexOf(",") == -1? dn.length(): dn.indexOf(","));
           }   
           
           if (log.isDebugEnabled())
@@ -38,7 +39,8 @@ public class SSLUtil
               log.debug("Host Name obtained from DN : " + hostname);
           }
           
-          if (hostname != null && !hostname.equalsIgnoreCase(hostnameExpected))
+          if (hostname != null && !(hostname.equalsIgnoreCase(hostnameExpected) ||
+                  hostname.equalsIgnoreCase(hostnameExpected + ".localdomain")))
           {
               throw new TransportException("SSL hostname verification failed." +
                                            " Expected : " + hostnameExpected +
