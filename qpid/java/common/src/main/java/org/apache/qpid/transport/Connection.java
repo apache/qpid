@@ -25,20 +25,21 @@ import static org.apache.qpid.transport.Connection.State.CLOSING;
 import static org.apache.qpid.transport.Connection.State.NEW;
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.OPENING;
-import org.apache.qpid.transport.network.ConnectionBinding;
-import org.apache.qpid.transport.network.io.IoTransport;
-import org.apache.qpid.transport.util.Logger;
-import org.apache.qpid.transport.util.Waiter;
-import org.apache.qpid.util.Strings;
 
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslServer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslServer;
+
+import org.apache.qpid.transport.network.security.SecurityLayer;
+import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.util.Waiter;
+import org.apache.qpid.util.Strings;
 
 
 /**
@@ -109,7 +110,8 @@ public class Connection extends ConnectionInvoker
     private Map<String,Object> _serverProperties;
     private String userID;
     private ConnectionSettings conSettings;
-
+    private SecurityLayer securityLayer;
+    
     // want to make this final
     private int _connectionId;
 
@@ -215,10 +217,17 @@ public class Connection extends ConnectionInvoker
             userID = settings.getUsername();
             delegate = new ClientDelegate(settings);
 
-            IoTransport.connect(settings.getHost(),
+            /*IoTransport.connect(settings.getHost(),
                                 settings.getPort(),
                                 ConnectionBinding.get(this),
-                                settings.isUseSSL());
+                                settings.isUseSSL());*/
+            
+            TransportBuilder transport = new TransportBuilder();
+            transport.init(this);
+            this.sender = transport.buildSenderPipe();
+            transport.buildReceiverPipe(this);
+            this.securityLayer = transport.getSecurityLayer();
+            
             send(new ProtocolHeader(1, 0, 10));
 
             Waiter w = new Waiter(lock, timeout);
@@ -632,6 +641,11 @@ public class Connection extends ConnectionInvoker
     public ConnectionSettings getConnectionSettings()
     {
         return conSettings;
+    }
+    
+    public SecurityLayer getSecurityLayer()
+    {
+        return securityLayer;
     }
 
 }
