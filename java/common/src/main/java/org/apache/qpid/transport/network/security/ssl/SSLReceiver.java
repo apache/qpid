@@ -28,6 +28,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
@@ -42,7 +43,8 @@ public class SSLReceiver implements Receiver<ByteBuffer>
     private ByteBuffer localBuffer;
     private boolean dataCached = false;
     private final Object notificationToken;
-
+    private ConnectionSettings settings;
+    
     private static final Logger log = Logger.get(SSLReceiver.class);
 
     public SSLReceiver(SSLEngine engine, Receiver<ByteBuffer> delegate,SSLSender sender)
@@ -56,6 +58,11 @@ public class SSLReceiver implements Receiver<ByteBuffer>
         notificationToken = sender.getNotificationToken();
     }
 
+    public void setConnectionSettings(ConnectionSettings settings)
+    {
+        this.settings = settings;
+    }
+    
     public void closed()
     {
        delegate.closed();
@@ -159,8 +166,13 @@ public class SSLReceiver implements Receiver<ByteBuffer>
                         sender.doTasks();
                         handshakeStatus = engine.getHandshakeStatus();
 
-                    case NEED_WRAP:
                     case FINISHED:
+                        if (this.settings != null && this.settings.isVerifyHostname() )
+                        {
+                            SSLUtil.verifyHostname(engine, this.settings.getHost());
+                        }
+                            
+                    case NEED_WRAP:                        
                     case NOT_HANDSHAKING:
                         synchronized(notificationToken)
                         {
