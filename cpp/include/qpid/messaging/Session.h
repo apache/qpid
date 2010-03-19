@@ -58,6 +58,12 @@ class Session : public qpid::messaging::Handle<SessionImpl>
     QPID_CLIENT_EXTERN ~Session();
     QPID_CLIENT_EXTERN Session& operator=(const Session&);
 
+    /**
+     * Closes a session and all associated senders and receivers. An
+     * opened session should be closed before the last handle to it
+     * goes out of scope. All a connections sessions can be closed by
+     * a call to Connection::close().
+     */
     QPID_CLIENT_EXTERN void close();
 
     QPID_CLIENT_EXTERN void commit();

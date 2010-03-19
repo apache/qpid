@@ -181,8 +181,8 @@ int main(int argc, char ** argv)
 {
     Options opts;
     if (opts.parse(argc, argv)) {
+        Connection connection(opts.connectionOptions);
         try {
-            Connection connection(opts.connectionOptions);
             connection.open(opts.url);
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = connection.newSession(opts.tx > 0);
@@ -230,6 +230,7 @@ int main(int argc, char ** argv)
             return 0;
         } catch(const std::exception& error) {
             std::cout << "Failed: " << error.what() << std::endl;
+            connection.close();
         }
     }
     return 1;

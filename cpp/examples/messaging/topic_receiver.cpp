@@ -34,8 +34,8 @@ int main(int argc, char** argv) {
     const std::string url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
     const std::string pattern = argc>2 ? argv[2] : "#.#";
 
+    Connection connection;
     try {
-        Connection connection;
         connection.open(url);
         Session session = connection.newSession();
         Receiver receiver = session.createReceiver("news_service; {filter:[control, " + pattern + "]}");
@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
         return 0;
     } catch(const std::exception& error) {
         std::cout << error.what() << std::endl;
+        connection.close();
     }
     return 1;   
 }
