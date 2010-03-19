@@ -42,6 +42,14 @@ public interface BrokerDetails
     public static final String OPTIONS_TCP_NO_DELAY = "tcp_nodelay";
     public static final String OPTIONS_SASL_PROTOCOL_NAME = "sasl_protocol";
     public static final String OPTIONS_SASL_SERVER_NAME = "sasl_server";
+    
+    public static final String OPTIONS_TRUST_STORE = "trust_store";
+    public static final String OPTIONS_TRUST_STORE_PASSWORD = "trust_store_password";
+    public static final String OPTIONS_KEY_STORE = "key_store";
+    public static final String OPTIONS_KEY_STORE_PASSWORD = "key_store_password";
+    public static final String OPTIONS_SSL_VERIFY_HOSTNAME = "ssl_verify_hostname";
+    public static final String OPTIONS_SSL_CERT_ALIAS = "ssl_cert_alias";
+    
     public static final int DEFAULT_PORT = 5672;
 
     public static final String SOCKET = "socket";
