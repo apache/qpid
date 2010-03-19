@@ -16,19 +16,24 @@ public class SSLTest extends QpidTestCase
         {   
             String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:%s" +
             "?ssl='true'&ssl_verify_hostname='true'" + 
-            "&key_store='%s'&keystore_password='%s'" +
+            "&key_store='%s'&key_store_password='%s'" +
             "&trust_store='%s'&trust_store_password='%s'" +
             "'";
-            url = String.format(url,System.getProperty("test.port.ssl"),
-                    System.getProperty("javax.net.ssl.keyStore"),
-                    System.getProperty("javax.net.ssl.keyStorePassword"),
-                    System.getProperty("javax.net.ssl.trustStore"),
-                    System.getProperty("javax.net.ssl.trustStorePassword"));
             
-            // temporarily set the trust store jvm arg to something else
+            String keyStore = System.getProperty("javax.net.ssl.keyStore");
+            String keyStorePass = System.getProperty("javax.net.ssl.keyStorePassword");
+            String trustStore = System.getProperty("javax.net.ssl.trustStore");
+            String trustStorePass = System.getProperty("javax.net.ssl.trustStorePassword");
+            
+            url = String.format(url,System.getProperty("test.port.ssl"),
+                    keyStore,keyStorePass,trustStore,trustStorePass);
+            
+            // temporarily set the trust/key store jvm args to something else
             // to ensure we only read from the connection URL param.
-            String tmp = System.getProperty("javax.net.ssl.trustStore");
             System.setProperty("javax.net.ssl.trustStore","fessgsdgd");
+            System.setProperty("javax.net.ssl.trustStorePassword","fessgsdgd");
+            System.setProperty("javax.net.ssl.keyStore","fessgsdgd");
+            System.setProperty("javax.net.ssl.keyStorePassword","fessgsdgd");
             try
             {
                 AMQConnection con = new AMQConnection(url);
@@ -40,7 +45,10 @@ public class SSLTest extends QpidTestCase
             }
             finally
             {
-                System.setProperty("javax.net.ssl.trustStore",tmp);
+                System.setProperty("javax.net.ssl.trustStore",trustStore);
+                System.setProperty("javax.net.ssl.trustStorePassword",trustStorePass);
+                System.setProperty("javax.net.ssl.keyStore",keyStore);
+                System.setProperty("javax.net.ssl.keyStorePassword",keyStorePass);
             }
         }        
     }
