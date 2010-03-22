@@ -544,89 +544,102 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
     connThreadBody.sendBuffer(outMsg.getContent(), cid, headers, "qmf.default.direct", replyTo);
 }
 
-void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, const string& cid, const string& replyTo)
+void ManagementAgentImpl::handleGetQuery(const string& body, const string& contentType,
+                                         const string& cid, const string& replyTo)
 {
-    FieldTable           ft;
-    FieldTable::ValuePtr value;
-
     moveNewObjectsLH();
 
-    ft.decode(inBuffer);
-
-    QPID_LOG(trace, "RCVD GetQuery: map=" << ft);
-
-    value = ft.get("_class");
-    if (value.get() == 0 || !value->convertsTo<string>()) {
-        value = ft.get("_objectid");
-        if (value.get() == 0 || !value->convertsTo<string>())
-            return;
-
-        ObjectId selector(value->get<string>());
-        ManagementObjectMap::iterator iter = managementObjects.find(selector);
-        if (iter != managementObjects.end()) {
-            ManagementObject* object = iter->second;
-            ::qpid::messaging::Message m;
-            ::qpid::messaging::ListContent content(m);
-            ::qpid::messaging::Variant::List &list_ = content.asList();
-            ::qpid::messaging::Variant::Map  map_;
-            ::qpid::messaging::Variant::Map values;
-            ::qpid::messaging::Variant::Map headers;
-
-            if (object->getConfigChanged() || object->getInstChanged())
-                object->setUpdateTime();
-
-            object->mapEncodeValues(values, true, true); // write both stats and properties
-            map_["_values"] = values;
-            list_.push_back(map_);
-
-            headers["method"] = "response";
-            headers["qmf.opcode"] = "_query_response";
-            headers["qmf.content"] = "_data";
-            headers["qmf.agent"] = name_address;
-
-            content.encode();
-            connThreadBody.sendBuffer(m.getContent(), cid, headers, "qmf.default.direct", replyTo);
-
-            QPID_LOG(trace, "SENT ObjectInd");
-        }
-        //sendCommandComplete(replyTo, sequence);
+    if (contentType != "_query_v1") {
+        QPID_LOG(warning, "Support for QMF V2 Query format TBD!!!");
         return;
     }
 
-    string className(value->get<string>());
+    qpid::messaging::Message inMsg(body);
+    qpid::messaging::MapView inMap(inMsg);
+    qpid::messaging::MapView::const_iterator i;
+    ::qpid::messaging::Variant::Map headers;
 
-    for (ManagementObjectMap::iterator iter = managementObjects.begin();
-         iter != managementObjects.end();
-         iter++) {
-        ManagementObject* object = iter->second;
-        if (object->getClassName() == className) {
-            ::qpid::messaging::Message m;
-            ::qpid::messaging::ListContent content(m);
-            ::qpid::messaging::Variant::List &list_ = content.asList();
-            ::qpid::messaging::Variant::Map  map_;
-            ::qpid::messaging::Variant::Map values;
-            ::qpid::messaging::Variant::Map headers;
+    QPID_LOG(trace, "RCVD GetQuery: map=" << inMap << " cid=" << cid);
 
-            if (object->getConfigChanged() || object->getInstChanged())
-                object->setUpdateTime();
+    headers["method"] = "response";
+    headers["qmf.opcode"] = "_query_response";
+    headers["qmf.content"] = "_data";
+    headers["qmf.agent"] = name_address;
+    headers["partial"];
 
-            object->mapEncodeValues(values, true, true); // write both stats and properties
-            map_["_values"] = values;
-            list_.push_back(map_);
+    ::qpid::messaging::Message outMsg;
+    ::qpid::messaging::ListContent content(outMsg);
+    ::qpid::messaging::Variant::List &list_ = content.asList();
+    ::qpid::messaging::Variant::Map  map_;
+    ::qpid::messaging::Variant::Map values;
+    string className;
 
-            headers["method"] = "response";
-            headers["qmf.opcode"] = "_query_response";
-            headers["qmf.content"] = "_data";
-            headers["qmf.agent"] = name_address;
+    i = inMap.find("_class");
+    if (i != inMap.end())
+        try {
+            className = i->second.asString();
+        } catch(exception& e) {
+            className.clear();
+            QPID_LOG(trace, "RCVD GetQuery: invalid format - class target ignored.");
+        }
 
-            content.encode();
-            connThreadBody.sendBuffer(m.getContent(), cid, headers, "qmf.default.direct", replyTo);
+    if (className.empty()) {
+        ObjectId objId;
+        i = inMap.find("_object_id");
+        if (i != inMap.end()) {
 
-            QPID_LOG(trace, "SENT ObjectInd");
+            try {
+                objId = ObjectId(i->second.asMap());
+            } catch (exception &e) {
+                objId = ObjectId();   // empty object id - won't find a match (I hope).
+                QPID_LOG(trace, "RCVD GetQuery (invalid Object Id format) to=" << replyTo << " seq=" << cid);
+            }
+
+            ManagementObjectMap::iterator iter = managementObjects.find(objId);
+            if (iter != managementObjects.end()) {
+                ManagementObject* object = iter->second;
+
+                if (object->getConfigChanged() || object->getInstChanged())
+                    object->setUpdateTime();
+
+                object->mapEncodeValues(values, true, true); // write both stats and properties
+                map_["_values"] = values;
+                list_.push_back(map_);
+
+                content.encode();
+                connThreadBody.sendBuffer(outMsg.getContent(), cid, headers, "qmf.default.direct", replyTo);
+            }
+        }
+    } else {
+        for (ManagementObjectMap::iterator iter = managementObjects.begin();
+             iter != managementObjects.end();
+             iter++) {
+            ManagementObject* object = iter->second;
+            if (object->getClassName() == className) {
+
+                // @todo support multiple object reply per message
+                values.clear();
+                list_.clear();
+
+                if (object->getConfigChanged() || object->getInstChanged())
+                    object->setUpdateTime();
+
+                object->mapEncodeValues(values, true, true); // write both stats and properties
+                map_["_values"] = values;
+                list_.push_back(map_);
+
+                content.encode();
+                connThreadBody.sendBuffer(outMsg.getContent(), cid, headers, "qmf.default.direct", replyTo);
+            }
         }
     }
 
-    //sendCommandComplete(replyTo, sequence);
+    // end empty "non-partial" message to indicate CommandComplete
+    list_.clear();
+    headers.erase("partial");
+    content.encode();
+    connThreadBody.sendBuffer(outMsg.getContent(), cid, headers, "qmf.default.direct", replyTo);
+    QPID_LOG(trace, "SENT ObjectInd");
 }
 
 void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, const string& replyTo)
@@ -698,8 +711,11 @@ void ManagementAgentImpl::received(Message& msg)
 
         if      (opcode == "_agent_locate_request") handleLocateRequest(msg.getData(), cid, replyToKey);
         else if (opcode == "_method_request")       handleMethodRequest(msg.getData(), cid, replyToKey);
+        else if (opcode == "_query_request")        handleGetQuery(msg.getData(),
+                                                                   mp.getApplicationHeaders().getAsString("qmf.content"),
+                                                                   cid, replyToKey);
         else {
-            QPID_LOG(trace, "Support for QMF Opcode [" << opcode << "] TBD!!!");
+            QPID_LOG(warning, "Support for QMF V2 Opcode [" << opcode << "] TBD!!!");
         }
         return;
     }
@@ -717,8 +733,7 @@ void ManagementAgentImpl::received(Message& msg)
         if      (opcode == 'a') handleAttachResponse(inBuffer);
         else if (opcode == 'S') handleSchemaRequest(inBuffer, sequence);
         else if (opcode == 'x') handleConsoleAddedIndication();
-        else if (opcode == 'M')
-            QPID_LOG(warning, "Ignoring old-format QMF Method Request!!!");
+            QPID_LOG(warning, "Ignoring old-format QMF Request! opcode=" << char(opcode));
     }
 }
 

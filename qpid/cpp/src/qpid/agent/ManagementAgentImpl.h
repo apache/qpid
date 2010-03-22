@@ -267,7 +267,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence);
     void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& replyTo);
 
-    void handleGetQuery       (qpid::framing::Buffer& inBuffer, const std::string& cid, const std::string& replyTo);
+    void handleGetQuery       (const std::string& body, const std::string& content_type,
+                               const std::string& cid, const std::string& replyTo);
     void handleLocateRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
     void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
     void handleConsoleAddedIndication();

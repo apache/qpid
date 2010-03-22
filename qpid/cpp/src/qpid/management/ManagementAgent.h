@@ -278,8 +278,8 @@ private:
                              qpid::broker::Exchange::shared_ptr exchange,
                              std::string                  routingKey);
     void sendBuffer(const std::string&     data,
-                    const uint32_t sequence,
-                    const qpid::messaging::VariantMap headers,
+                    const std::string&     cid,
+                    const qpid::messaging::VariantMap& headers,
                     qpid::broker::Exchange::shared_ptr exchange,
                     std::string routingKey);
     void moveNewObjectsLH();
@@ -314,7 +314,8 @@ private:
     void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
-    void handleMethodRequestLH  (const std::string& body, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleGetQueryLH       (const std::string& body, std::string& replyToKey, const std::string& cid, const std::string& contentType);
+    void handleMethodRequestLH  (const std::string& body, std::string replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken);
 
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);

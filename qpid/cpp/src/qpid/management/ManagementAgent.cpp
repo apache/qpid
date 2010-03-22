@@ -422,8 +422,8 @@ void ManagementAgent::sendBuffer(Buffer&  buf,
 
 
 void ManagementAgent::sendBuffer(const std::string& data,
-                                 const uint32_t sequence,
-                                 const qpid::messaging::VariantMap headers,
+                                 const std::string& cid,
+                                 const qpid::messaging::VariantMap& headers,
                                  qpid::broker::Exchange::shared_ptr exchange,
                                  string   routingKey)
 {
@@ -451,8 +451,8 @@ void ManagementAgent::sendBuffer(const std::string& data,
     MessageProperties* props =
         msg->getFrames().getHeaders()->get<MessageProperties>(true);
     props->setContentLength(data.length());
-    if (sequence) {
-        props->setCorrelationId(boost::lexical_cast<std::string>(sequence));
+    if (!cid.empty()) {
+        props->setCorrelationId(cid);
     }
 
     for (i = headers.begin(); i != headers.end(); ++i) {
@@ -854,7 +854,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
 
 
 void ManagementAgent::handleMethodRequestLH (const std::string& body, string replyTo,
-                                             uint32_t sequence, const ConnectionToken* connToken)
+                                             const std::string& cid, const ConnectionToken* connToken)
 {
     string   methodName;
     qpid::messaging::Message inMsg(body);
@@ -876,8 +876,8 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
         ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
         outMap.encode();
-        sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyTo);
-        QPID_LOG(trace, "SEND MethodResponse (invalid param) to=" << replyTo << " seq=" << sequence);
+        sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+        QPID_LOG(trace, "SEND MethodResponse (invalid param) to=" << replyTo << " seq=" << cid);
         return;
     }
 
@@ -897,8 +897,8 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
         ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = e.what();
         outMap.encode();
-        sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyTo);
-        QPID_LOG(trace, "SEND MethodResponse (invalid format) to=" << replyTo << " seq=" << sequence);
+        sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+        QPID_LOG(trace, "SEND MethodResponse (invalid format) to=" << replyTo << " seq=" << cid);
         return;
     }
 
@@ -908,8 +908,8 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
         ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
         outMap.encode();
-        sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyTo);
-        QPID_LOG(trace, "SEND MethodResponse (unknown object) to=" << replyTo << " seq=" << sequence);
+        sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+        QPID_LOG(trace, "SEND MethodResponse (unknown object) to=" << replyTo << " seq=" << cid);
         return;
     }
 
@@ -922,8 +922,8 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
         ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = i->second;
         outMap.encode();
-        sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyTo);
-        QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN text=" << i->second << " seq=" << sequence);
+        sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+        QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN text=" << i->second << " seq=" << cid);
         return;
     }
 
@@ -937,8 +937,8 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
             ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
             ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
             outMap.encode();
-            sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyTo);
-            QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN" << " seq=" << sequence);
+            sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+            QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN" << " seq=" << cid);
             return;
         }
     }
@@ -951,14 +951,14 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
         ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = e.what();
         outMap.encode();
-        sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyTo);
-        QPID_LOG(trace, "SEND MethodResponse (exception) to=" << replyTo << " seq=" << sequence);
+        sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+        QPID_LOG(trace, "SEND MethodResponse (exception) to=" << replyTo << " seq=" << cid);
         return;
     }
 
     outMap.encode();
-    sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyTo);
-    QPID_LOG(trace, "SEND MethodResponse to=" << replyTo << " seq=" << sequence);
+    sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+    QPID_LOG(trace, "SEND MethodResponse to=" << replyTo << " seq=" << cid);
 }
 
 
@@ -1333,7 +1333,8 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
 
                 content.encode();
 
-                sendBuffer(m.getContent(), sequence, headers, dExchange, replyToKey);
+                sendBuffer(m.getContent(), boost::lexical_cast<std::string>(sequence),
+                           headers, dExchange, replyToKey);
                 QPID_LOG(trace, "SEND GetResponse to=" << replyToKey << " seq=" << sequence);
             }
         }
@@ -1370,13 +1371,118 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
 
                 content.encode();
 
-                sendBuffer(m.getContent(), sequence, headers, dExchange, replyToKey);
+                sendBuffer(m.getContent(), boost::lexical_cast<std::string>(sequence),
+                           headers, dExchange, replyToKey);
                 QPID_LOG(trace, "SEND GetResponse to=" << replyToKey << " seq=" << sequence);
             }
         }
     }
 
     sendCommandComplete(replyToKey, sequence);
+}
+
+
+void ManagementAgent::handleGetQueryLH(const std::string& body, std::string& replyTo, const std::string& cid, const std::string& contentType)
+{
+    FieldTable           ft;
+    FieldTable::ValuePtr value;
+
+    moveNewObjectsLH();
+
+    if (contentType != "_query_v1") {
+        QPID_LOG(warning, "Support for QMF V2 Query format TBD!!!");
+        return;
+    }
+
+    qpid::messaging::Message inMsg(body);
+    qpid::messaging::MapView inMap(inMsg);
+    qpid::messaging::MapView::const_iterator i;
+    ::qpid::messaging::Variant::Map headers;
+
+    QPID_LOG(trace, "RECV GetQuery: map=" << inMap << " seq=" << cid);
+
+    headers["method"] = "response";
+    headers["qmf.opcode"] = "_query_response";
+    headers["qmf.content"] = "_data";
+    headers["qmf.agent"] = std::string(agentName);
+    headers["partial"];
+
+    ::qpid::messaging::Message outMsg;
+    ::qpid::messaging::ListContent content(outMsg);
+    ::qpid::messaging::Variant::List &list_ = content.asList();
+    ::qpid::messaging::Variant::Map  map_;
+    ::qpid::messaging::Variant::Map values;
+    string className;
+
+    i = inMap.find("_class");
+    if (i != inMap.end())
+        try {
+            className = i->second.asString();
+        } catch(exception& e) {
+            className.clear();
+            QPID_LOG(trace, "RCVD GetQuery: invalid format - class target ignored.");
+        }
+
+    if (className.empty()) {
+        ObjectId objId;
+        i = inMap.find("_object_id");
+        if (i != inMap.end()) {
+
+            try {
+                objId = ObjectId(i->second.asMap());
+            } catch (exception &e) {
+                objId = ObjectId();   // empty object id - won't find a match (I hope).
+                QPID_LOG(trace, "RCVD GetQuery (invalid Object Id format) to=" << replyTo << " seq=" << cid);
+            }
+
+            ManagementObjectMap::iterator iter = managementObjects.find(objId);
+            if (iter != managementObjects.end()) {
+                ManagementObject* object = iter->second;
+
+                if (object->getConfigChanged() || object->getInstChanged())
+                    object->setUpdateTime();
+
+                if (!object->isDeleted()) {
+                    object->mapEncodeValues(values, true, true); // write both stats and properties
+                    map_["_values"] = values;
+                    list_.push_back(map_);
+
+                    content.encode();
+                    sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+                }
+            }
+        }
+    } else {
+        for (ManagementObjectMap::iterator iter = managementObjects.begin();
+             iter != managementObjects.end();
+             iter++) {
+            ManagementObject* object = iter->second;
+            if (object->getClassName () == className) {
+
+                // @todo: support multiple objects per message reply
+                values.clear();
+                list_.clear();
+                if (object->getConfigChanged() || object->getInstChanged())
+                    object->setUpdateTime();
+
+                if (!object->isDeleted()) {
+                    object->mapEncodeValues(values, true, true); // write both stats and properties
+                map_["_values"] = values;
+                list_.push_back(map_);
+
+                content.encode();
+                sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+                }
+            }
+        }
+    }
+
+    // end empty "non-partial" message to indicate CommandComplete
+    list_.clear();
+    headers.erase("partial");
+    content.encode();
+    sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
+    QPID_LOG(trace, "SEND GetResponse to=" << replyTo << " seq=" << cid);
 }
 
 bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
@@ -1521,7 +1627,8 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
                 ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
                 ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
                 outMap.encode();
-                sendBuffer(outMsg.getContent(), sequence, headers, dExchange, replyToKey);
+                sendBuffer(outMsg.getContent(), boost::lexical_cast<std::string>(sequence),
+                           headers, dExchange, replyToKey);
 
             } else {
 
@@ -1547,7 +1654,6 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
 
 void ManagementAgent::dispatchAgentCommandLH(Message& msg)
 {
-    uint32_t sequence;
     string   replyToKey;
 
     const framing::MessageProperties* p =
@@ -1577,26 +1683,20 @@ void ManagementAgent::dispatchAgentCommandLH(Message& msg)
     if (headers && headers->getAsString("app_id") == "qmf2")
     {
         std::string opcode = headers->getAsString("qmf.opcode");
+        std::string contentType = headers->getAsString("qmf.content");
+        std::string body;
+        std::string cid;
 
-        sequence = 0;
+        inBuffer.getRawData(body, bufferLen);
+
         if (p && p->hasCorrelationId()) {
-            std::string cid = p->getCorrelationId();
-            if (!cid.empty()) {
-                try {
-                    sequence = boost::lexical_cast<uint32_t>(cid);
-                } catch(const boost::bad_lexical_cast&) {
-                    QPID_LOG(warning, "Bad correlation Id for received QMF request.");
-                    return;
-                }
-            }
+            cid = p->getCorrelationId();
         }
 
-        if (opcode == "_method_request") {
-            std::string body;
-            inBuffer.getRawData(body, bufferLen);
-            handleMethodRequestLH(body, replyToKey, sequence, msg.getPublisher());
-            return;
-        }
+        if (opcode == "_method_request")
+            return handleMethodRequestLH(body, replyToKey, cid, msg.getPublisher());
+        else if (opcode == "_query_request")
+            return handleGetQueryLH(body, replyToKey, cid, contentType);
 
         QPID_LOG(warning, "Support for QMF Opcode [" << opcode << "] TBD!!!");
         return;
@@ -1606,6 +1706,7 @@ void ManagementAgent::dispatchAgentCommandLH(Message& msg)
 
 
     while (inBuffer.getPosition() < bufferLen) {
+        uint32_t sequence;
         if (!checkHeader(inBuffer, &opcode, &sequence))
             return;
 
