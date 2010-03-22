@@ -178,6 +178,7 @@ class Popen(popen2.Popen3):
     
     def stop(self):                  # Clean up at end of test.
         self.drain()
+        self.stdin.close()
         if self.expect == EXPECT_UNKNOWN:
             try: self.kill()            # Just make sure its dead
             except: pass
@@ -266,7 +267,7 @@ class Broker(Popen):
         cmd += ["--data-dir", self.datadir]
         Popen.__init__(self, cmd, expect, drain=False)
         test.cleanup_stop(self)
-        self._host = "localhost"
+        self._host = "127.0.0.1"
         log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
         self._log_ready = False
 
