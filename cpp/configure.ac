@@ -235,8 +235,7 @@ if test -n "$PYTHON" ; then
 fi
 AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
 
-
-specdir=`pwd`/$top_srcdir/../specs
+specdir=`pwd`/$srcdir/../specs
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
