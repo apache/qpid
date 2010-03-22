@@ -398,4 +398,9 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         } 
         return 0;
     }
+    
+    protected org.apache.qpid.transport.Connection getQpidConnection()
+    {
+        return _qpidConnection;
+    }
 }

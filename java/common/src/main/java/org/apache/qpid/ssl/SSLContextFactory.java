@@ -27,9 +27,12 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 /**
  * Factory used to create SSLContexts. SSL needs to be configured
@@ -68,7 +71,7 @@ public class SSLContextFactory {
      */
     private String _trustStoreCertType;
     
-	
+	private KeyManager customKeyManager;
     
     public SSLContextFactory(String trustStorePath, String trustStorePassword,
             String trustStoreCertType) 
@@ -90,7 +93,7 @@ public class SSLContextFactory {
 	    _trustStorePath = trustStorePath;
         _trustStorePassword = trustStorePassword;
                 
-        if (_trustStorePassword.equals("none"))
+        if (_trustStorePassword != null && _trustStorePassword.equals("none"))
         {
             _trustStorePassword = null;
         }
@@ -99,7 +102,7 @@ public class SSLContextFactory {
 	    _keyStorePath = keyStorePath;
 		_keyStorePassword = keyStorePassword;
 				
-		if (_keyStorePassword.equals("none"))
+		if (_keyStorePassword != null && _keyStorePassword.equals("none"))
 		{
 			_keyStorePassword = null;
 		}
@@ -113,29 +116,63 @@ public class SSLContextFactory {
 		}
 	}
 	
+	public SSLContextFactory(String trustStorePath, String trustStorePassword, String trustStoreCertType,
+	                         KeyManager customKeyManager) 
+    {
+
+        _trustStorePath = trustStorePath;
+        _trustStorePassword = trustStorePassword;
+                
+        if (_trustStorePassword != null && _trustStorePassword.equals("none"))
+        {
+            _trustStorePassword = null;
+        }
+        _trustStoreCertType = trustStoreCertType;
+        
+        if (_trustStorePath == null) {
+            throw new IllegalArgumentException("A TrustStore path or KeyStore path must be specified");
+        }
+        if (_trustStoreCertType == null) {
+            throw new IllegalArgumentException("Cert type must be specified");
+        }
+        
+        this.customKeyManager = customKeyManager;
+    }
+	
+	
 	/**
 	 * Builds a SSLContext appropriate for use with a server
 	 * @return SSLContext
 	 * @throws GeneralSecurityException
 	 * @throws IOException
 	 */
+
 	public SSLContext buildServerContext() throws GeneralSecurityException, IOException
 	{
-        // Create keystore
-		KeyStore ks = getInitializedKeyStore(_keyStorePath,_keyStorePassword);
-
-        // Set up key manager factory to use our key store
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(_keyStoreCertType);
-        kmf.init(ks, _keyStorePassword.toCharArray());
-
-        KeyStore ts = getInitializedKeyStore(_trustStorePath,_trustStorePassword);
+        KeyStore ts = SSLUtil.getInitializedKeyStore(_trustStorePath,_trustStorePassword);
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(_trustStoreCertType);
         tmf.init(ts);
         
         // Initialize the SSLContext to work with our key managers.
-        SSLContext sslContext = SSLContext.getInstance("TLS");        
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        
+        if (customKeyManager != null)
+        {
+            sslContext.init(new KeyManager[]{customKeyManager},
+                            tmf.getTrustManagers(), null);
+            
+        }
+        else
+        {
+            // Create keystore
+            KeyStore ks = SSLUtil.getInitializedKeyStore(_keyStorePath,_keyStorePassword);
+            // Set up key manager factory to use our key store
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(_keyStoreCertType);
+            kmf.init(ks, _keyStorePassword.toCharArray());
 
+            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);    
+        }
+        
         return sslContext;		
 	}
 	
@@ -147,7 +184,7 @@ public class SSLContextFactory {
 	 */
 	public SSLContext buildClientContext() throws GeneralSecurityException, IOException
 	{
-		KeyStore ks = getInitializedKeyStore(_trustStorePath,_trustStorePassword);
+		KeyStore ks = SSLUtil.getInitializedKeyStore(_trustStorePath,_trustStorePassword);
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(_trustStoreCertType);
         tmf.init(ks);
         SSLContext context = SSLContext.getInstance("TLS");
@@ -155,41 +192,4 @@ public class SSLContextFactory {
         return context;		
 	}
 	
-	private KeyStore getInitializedKeyStore(String storePath, String storePassword) throws GeneralSecurityException, IOException
-	{
-        KeyStore ks = KeyStore.getInstance("JKS");
-        InputStream in = null;
-        try
-        {
-        	File f = new File(storePath);
-        	if (f.exists())
-        	{
-        		in = new FileInputStream(f);
-        	}
-        	else 
-        	{
-        		in = Thread.currentThread().getContextClassLoader().getResourceAsStream(storePath);
-        	}
-            if (in == null)
-            {
-                throw new IOException("Unable to load keystore resource: " + storePath);
-            }
-            ks.load(in, storePassword.toCharArray());
-        }
-        finally
-        {
-            if (in != null)
-            {
-                //noinspection EmptyCatchBlock
-                try
-                {
-                    in.close();
-                }
-                catch (IOException ignored)
-                {
-                }
-            }
-        }
-        return ks;
-	}
 }
