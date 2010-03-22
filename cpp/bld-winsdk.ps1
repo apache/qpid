@@ -20,28 +20,76 @@
 # This script requires cmake, and 7z to be already on the path devenv should be on the path as
 # a result of installing Visual Studio
 
-# Filter to extract the include file from c style #include lines
+# Filter to extract the included files from c style #include lines
 # TODO: Not used yet
-filter extractIncludes {
-  Get-Content $_ |
-  foreach {
-    if ($_ -match '^\s*#include\s[<"]*(.*)[>"]\s*') {
-	  $matches[1]
+function extractIncludes {
+  param($includedir=".", $found=@{}, $notfound=@{})
+  process {
+    # Put original files in list if not already there
+	$file = $_.FullName
+	if (!($found.Contains($file))) {
+	  $found[$file] = $true;
 	}
-  } |
-  sort -unique
+    $content = Get-Content $_
+	$filebase = $_.PSParentPath
+    $content | foreach {
+      if ($_ -match '^\s*#include\s*([<"])([^">]*)([>"])\s*') {
+	    $included=$matches[2]
+		# Try to find the corresponding file in the same directory
+		# as the including file then try the include dir
+	    $testpathf=Join-Path $filebase $included
+		$testpathi=Join-Path $includedir $included
+		if (Test-Path $testpathf) {
+		  $includedfile = Get-Item $testpathf
+		} elseif (Test-Path $testpathi) {
+	      $includedfile = Get-Item $testpathi
+		} else {
+		  $notfound[$included] = $file
+		  continue;
+		}
+	    if (!($found.Contains($includedfile.FullName))) {
+		  $found[$includedfile.FullName] = $file
+          $includedfile
+		}
+	  }
+    }
+  }
 }
 
-foreach ($arg in $args) {"Arg: $arg"}
+function getIncludeFiles {
+  param($base, $findall=$false)
+  if ($findall) {
+    Get-ChildItem -recurse -include *.h $base
+  } else {
+    foreach ($path in $input) {
+	  $full=Join-Path $base $path
+      if (Test-Path $full) {
+	   Get-Item $full
+	   }
+    }
+  }
+}
 
-$qpid_src='..\qpid'
+if ($args.length -lt 1) {
+  Write-Host 'Need to specify location of qpid src tree'
+  exit
+}
+
+$qpid_src=$args[0]
+$ver=$args[1]
+if ($ver -eq $null) {
+  $qpid_version_file="$qpid_src\QPID_VERSION.txt"
+
+  if ( !(Test-Path $qpid_version_file)) {
+    Write-Host "Path doesn't seem to be a qpid src tree (no QPID_VERSION.txt)"
+    exit
+  }
+  $ver=Get-Content $qpid_version_file
+}
+
 $qpid_cpp_src="$qpid_src\cpp"
-$install_dir='install_dir'
-$ver=Get-Content "$qpid_src/QPID_VERSION.txt"
+$install_dir="install_$([System.IO.Path]::GetRandomFileName())"
 $zipfile="qpid-cpp-$ver.zip"
-
-# Clean out install directory
-Remove-Item -recurse $install_dir
 
 # This assumes Visual Studio 2008
 cmake -G "Visual Studio 9 2008" "-DCMAKE_INSTALL_PREFIX=$install_dir" $qpid_cpp_src
@@ -65,6 +113,9 @@ foreach ($pattern in $removable) {
 # It would be very good to cut down on the shipped boost include files too, ideally by
 # starting with the qpid files and recursively noting all boost headers actually needed
 
-# Createza new zip
-Remove-Item $zipfile
+# Create a new zip
+if (Test-Path $zipfile) {Remove-Item $zipfile}
 &'7z' a $zipfile ".\$install_dir\*"
+
+# Remove temporary install area
+# Remove-Item -recurse $install_dir
