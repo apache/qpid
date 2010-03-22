@@ -114,6 +114,8 @@ The optional clustering packages changed name in Fedora 10. On Fedora 9 or earli
  # yum install openais-devel cman-devel
 On Fedora 10 or later
  # yum install corosync-devel cmanlib-devel
+On Fedora 12 they changed again:
+ # yum install corosynclib-devel clusterlib-devel
 
 For SASL and SSL, include
  # yum install cyrus-sasl-devel
