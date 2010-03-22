@@ -6,10 +6,27 @@ import java.io.PrintStream;
 import javax.jms.Session;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.Connection;
 
 public class SSLTest extends QpidTestCase
 {      
+    
+    @Override
+    protected void setUp() throws Exception
+    {
+        System.setProperty("javax.net.debug", "ssl");
+        super.setUp();
+    }
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        System.setProperty("javax.net.debug", "");
+        super.tearDown();
+    }
+        
     public void testCreateSSLContextFromConnectionURLParams()
     {
         if (Boolean.getBoolean("profile.use_ssl"))
@@ -50,6 +67,32 @@ public class SSLTest extends QpidTestCase
                 System.setProperty("javax.net.ssl.keyStore",keyStore);
                 System.setProperty("javax.net.ssl.keyStorePassword",keyStorePass);
             }
+        }        
+    }
+
+    public void testMultipleCertsInSingleStore() throws Exception
+    {
+        if (Boolean.getBoolean("profile.use_ssl"))
+        {
+            String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:" + 
+            System.getProperty("test.port.ssl") + 
+            "?ssl='true'&ssl_cert_alias='app1''";
+            
+            AMQTestConnection_0_10 con = new AMQTestConnection_0_10(url);      
+            Connection transportCon = con.getConnection();
+            String userID = transportCon.getSecurityLayer().getUserID();
+            assertEquals("The correct certificate was not choosen","app1@acme.org",userID);
+            con.close();
+            
+            url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:" + 
+            System.getProperty("test.port.ssl") + 
+            "?ssl='true'&ssl_cert_alias='app2''";
+            
+            con = new AMQTestConnection_0_10(url);      
+            transportCon = con.getConnection();
+            userID = transportCon.getSecurityLayer().getUserID();
+            assertEquals("The correct certificate was not choosen","app2@acme.org",userID);
+            con.close();
         }        
     }
     
