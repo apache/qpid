@@ -1,5 +1,11 @@
 package org.apache.qpid.transport.network.security.ssl;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -63,7 +69,7 @@ public class SSLUtil
         StringBuffer id = new StringBuffer(); 
         try
         {
-          Certificate cert = engine.getSession().getPeerCertificates()[0];
+          Certificate cert = engine.getSession().getLocalCertificates()[0];
           Principal p = ((X509Certificate)cert).getSubjectDN();
           String dn = p.getName();
                     
@@ -101,15 +107,71 @@ public class SSLUtil
     
     public static SSLContext createSSLContext(ConnectionSettings settings) throws Exception
     {
+        SSLContextFactory sslContextFactory;
         
-        SSLContextFactory sslContextFactory = new SSLContextFactory(settings.getTrustStorePath(),
-                                                                    settings.getTrustStorePassword(),
-                                                                    settings.getTrustStoreCertType(),
-                                                                    settings.getKeyStorePath(),
-                                                                    settings.getKeyStorePassword(),
-                                                                    settings.getKeyStoreCertType());
-        
+        if (settings.getCertAlias() == null)
+        {
+            sslContextFactory = 
+                new SSLContextFactory(settings.getTrustStorePath(),
+                                      settings.getTrustStorePassword(),
+                                      settings.getTrustStoreCertType(),
+                                      settings.getKeyStorePath(),
+                                      settings.getKeyStorePassword(),
+                                      settings.getKeyStoreCertType());
+
+        } else
+        {
+            sslContextFactory = 
+                new SSLContextFactory(settings.getTrustStorePath(),
+                                      settings.getTrustStorePassword(),
+                                      settings.getTrustStoreCertType(),
+                    new QpidClientX509KeyManager(settings.getCertAlias(),
+                                                     settings.getKeyStorePath(),
+                                                     settings.getKeyStorePassword(),
+                                                     settings.getKeyStoreCertType()));
+            
+            log.debug("Using custom key manager");
+        }
+
         return sslContextFactory.buildServerContext();
         
+    }
+    
+    public static KeyStore getInitializedKeyStore(String storePath, String storePassword) throws GeneralSecurityException, IOException
+    {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        InputStream in = null;
+        try
+        {
+            File f = new File(storePath);
+            if (f.exists())
+            {
+                in = new FileInputStream(f);
+            }
+            else 
+            {
+                in = Thread.currentThread().getContextClassLoader().getResourceAsStream(storePath);
+            }
+            if (in == null)
+            {
+                throw new IOException("Unable to load keystore resource: " + storePath);
+            }
+            ks.load(in, storePassword.toCharArray());
+        }
+        finally
+        {
+            if (in != null)
+            {
+                //noinspection EmptyCatchBlock
+                try
+                {
+                    in.close();
+                }
+                catch (IOException ignored)
+                {
+                }
+            }
+        }
+        return ks;
     }
 }
