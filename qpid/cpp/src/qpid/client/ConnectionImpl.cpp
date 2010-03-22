@@ -134,6 +134,15 @@ IOThread& theIO() {
     return io;
 }
 
+// Bring theIO into existence on library load rather than first use.
+// This avoids it being destroyed whilst something in the main program
+// still exists
+struct InitAtLoad {
+    InitAtLoad() {
+        (void) theIO();
+    }
+} init;
+
 class HeartbeatTask : public TimerTask {
     TimeoutHandler& timeout;
 
