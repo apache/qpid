@@ -97,6 +97,7 @@ public:
     static const uint8_t TYPE_S16       = 17;
     static const uint8_t TYPE_S32       = 18;
     static const uint8_t TYPE_S64       = 19;
+    static const uint8_t TYPE_LIST      = 21;
 
     static const uint8_t ACCESS_RC = 1;
     static const uint8_t ACCESS_RW = 2;

@@ -156,7 +156,7 @@ void ManagementAgentImpl::init(const string& brokerHost,
 void ManagementAgentImpl::init(const qpid::client::ConnectionSettings& settings,
                                uint16_t intervalSeconds,
                                bool useExternalThread,
-                               const std::string& _storeFile)
+                               const string& _storeFile)
 {
     interval     = intervalSeconds;
     extThread    = useExternalThread;
@@ -448,7 +448,7 @@ void ManagementAgentImpl::handleAttachResponse(Buffer& inBuffer)
     }
 }
 
-void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence)
+void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence, const string& replyTo)
 {
     Mutex::ScopedLock lock(agentLock);
     string packageName;
@@ -468,14 +468,14 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
             SchemaClass& schema = cIter->second;
             Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
-            std::string body;
+            string   body;
 
             encodeHeader(outBuffer, 's', sequence);
             schema.writeSchemaCall(body);
             outBuffer.putRawData(body);
             outLen = MA_BUFFER_SIZE - outBuffer.available();
             outBuffer.reset();
-            connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "broker");
+            connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
 
             QPID_LOG(trace, "SENT SchemaInd: package=" << packageName << " class=" << key.name);
         }
@@ -507,7 +507,7 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
         (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
         failed = true;
     } else {
-        std::string methodName;
+        string methodName;
         ObjectId objId;
         qpid::messaging::Variant::Map inArgs;
 
@@ -738,7 +738,7 @@ void ManagementAgentImpl::received(Message& msg)
     if (checkHeader(inBuffer, &opcode, &sequence))
     {
         if      (opcode == 'a') handleAttachResponse(inBuffer);
-        else if (opcode == 'S') handleSchemaRequest(inBuffer, sequence);
+        else if (opcode == 'S') handleSchemaRequest(inBuffer, sequence, replyToKey);
         else if (opcode == 'x') handleConsoleAddedIndication();
             QPID_LOG(warning, "Ignoring old-format QMF Request! opcode=" << char(opcode));
     }
@@ -754,15 +754,15 @@ void ManagementAgentImpl::encodeHeader(Buffer& buf, uint8_t opcode, uint32_t seq
     buf.putLong (seq);
 }
 
-qpid::messaging::Variant::Map ManagementAgentImpl::mapEncodeSchemaId(const std::string& pname,
-                                                                     const std::string& cname,
+qpid::messaging::Variant::Map ManagementAgentImpl::mapEncodeSchemaId(const string& pname,
+                                                                     const string& cname,
                                                                      const uint8_t *md5Sum)
 {
     qpid::messaging::Variant::Map map_;
 
     map_["_package_name"] = pname;
     map_["_class_name"] = cname;
-    map_["_hash_str"] = messaging::Uuid((const char*) md5Sum);
+    map_["_hash_str"] = messaging::Uuid(md5Sum);
     return map_;
 }
 
@@ -922,7 +922,10 @@ void ManagementAgentImpl::periodicProcessing()
                 if (send_stats || send_props) {
                     ::qpid::messaging::Variant::Map map_;
                     ::qpid::messaging::Variant::Map values;
+                    ::qpid::messaging::Variant::Map oid;
 
+                    object->getObjectId().mapEncode(oid);
+                    map_["_object_id"] = oid;
                     map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
                                                            object->getClassName(),
                                                            object->getMd5Sum());
@@ -938,7 +941,7 @@ void ManagementAgentImpl::periodicProcessing()
         }
 
         content.encode();
-        const std::string &str = m.getContent();
+        const string &str = m.getContent();
         if (str.length()) {
             ::qpid::messaging::Variant::Map  headers;
             headers["method"] = "indication";
@@ -1105,6 +1108,7 @@ void ManagementAgentImpl::ConnectionThread::sendMessage(Message msg,
 
     msg.getDeliveryProperties().setRoutingKey(routingKey);
     msg.getMessageProperties().setReplyTo(ReplyTo("amq.direct", queueName.str()));
+    msg.getMessageProperties().getApplicationHeaders().setString("qmf.agent", agent.name_address);
     try {
         session.messageTransfer(arg::content=msg, arg::destination=exchange);
     } catch(exception& e) {

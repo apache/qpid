@@ -264,7 +264,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void handleAttachResponse (qpid::framing::Buffer& inBuffer);
     void handlePackageRequest (qpid::framing::Buffer& inBuffer);
     void handleClassQuery     (qpid::framing::Buffer& inBuffer);
-    void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence);
+    void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, const std::string& replyTo);
     void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& replyTo);
 
     void handleGetQuery       (const std::string& body, const std::string& content_type,

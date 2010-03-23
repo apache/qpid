@@ -98,7 +98,7 @@ CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent
     static uint64_t persistId = 0x111222333444555LL;
     mgmtObject = new _qmf::Parent(agent, this, name);
 
-    agent->addObject(mgmtObject, persistId++);
+    agent->addObject(mgmtObject);
     mgmtObject->set_state("IDLE");
 
     Variant::Map args;
@@ -109,6 +109,11 @@ CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent
     subMap["numeric-data"] = 10000;
     args["map-data"] = subMap;
     mgmtObject->set_args(args);
+
+    Variant::List list;
+    list.push_back(20000);
+    list.push_back("string-item");
+    mgmtObject->set_list(list);
 }
 
 void CoreClass::doLoop()
@@ -190,7 +195,7 @@ int main_int(int argc, char** argv)
     _qmf::Package packageInit(agent);
 
     // Name the agent.
-    agent->setName("apache.org", "qmf-example");
+    agent->setName("apache.org", "qmf-example", "A");
 
     // Start the agent.  It will attempt to make a connection to the
     // management broker
