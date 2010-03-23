@@ -89,6 +89,8 @@ public:
     void add() {
         ScopedLock<Mutex> l(threadLock);
         ++connections;
+        if (!poller_)
+            poller_.reset(new Poller);
         if (ioThreads < maxIOThreads) {
             QPID_LOG(debug, "Created IO thread: " << ioThreads);
             ++ioThreads;
@@ -102,14 +104,14 @@ public:
     }
 
     Poller::shared_ptr poller() const {
+        assert(poller_);
         return poller_;
     }
 
     // Here is where the maximum number of threads is set
     IOThread(int c) :
         ioThreads(0),
-        connections(0),
-        poller_(new Poller)
+        connections(0)
     {
         IOThreadOptions options(c);
         options.parse(0, 0, QPIDC_CONF_FILE, true);
@@ -122,7 +124,8 @@ public:
     // and we can't do that before we're unloaded as we can't
     // restart the Poller after shutting it down
     ~IOThread() {
-        poller_->shutdown();
+        if (poller_)
+            poller_->shutdown();
         for (int i=0; i<ioThreads; ++i) {
             t[i].join();
         }
