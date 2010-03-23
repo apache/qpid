@@ -849,14 +849,14 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
 
     headers["method"] = "response";
     headers["qmf.opcode"] = "_method_response";
-    headers["qmf.content"] = "_data";
     headers["qmf.agent"] = std::string(agentName);
 
     if ((oid = inMap.find("_object_id")) == inMap.end() ||
         (mid = inMap.find("_method_name")) == inMap.end())
     {
-        ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
-        ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
+        headers["qmf.opcode"] = "_exception";
+        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
+        (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
         outMap.encode();
         sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
         QPID_LOG(trace, "SEND MethodResponse (invalid param) to=" << replyTo << " seq=" << cid);
@@ -876,8 +876,9 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
             inArgs = (mid->second).asMap();
         }
     } catch(exception& e) {
-        ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
-        ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = e.what();
+        headers["qmf.opcode"] = "_exception";
+        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
+        (outMap["_values"].asMap())["_status_text"] = e.what();
         outMap.encode();
         sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
         QPID_LOG(trace, "SEND MethodResponse (invalid format) to=" << replyTo << " seq=" << cid);
@@ -887,8 +888,9 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
     ManagementObjectMap::iterator iter = managementObjects.find(objId);
 
     if (iter == managementObjects.end() || iter->second->isDeleted()) {
-        ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
-        ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
+        headers["qmf.opcode"] = "_exception";
+        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
+        (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
         outMap.encode();
         sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
         QPID_LOG(trace, "SEND MethodResponse (unknown object) to=" << replyTo << " seq=" << cid);
@@ -901,8 +903,9 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
 
     i = disallowed.find(std::make_pair(iter->second->getClassName(), methodName));
     if (i != disallowed.end()) {
-        ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
-        ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = i->second;
+        headers["qmf.opcode"] = "_exception";
+        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
+        (outMap["_values"].asMap())["_status_text"] = i->second;
         outMap.encode();
         sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
         QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN text=" << i->second << " seq=" << cid);
@@ -916,8 +919,9 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         params[acl::PROP_SCHEMACLASS]   = iter->second->getClassName();
 
         if (!acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_METHOD, methodName, &params)) {
-            ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
-            ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
+            headers["qmf.opcode"] = "_exception";
+            (outMap["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
+            (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
             outMap.encode();
             sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
             QPID_LOG(trace, "SEND MethodResponse status=FORBIDDEN" << " seq=" << cid);
@@ -930,8 +934,10 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
     try {
         iter->second->doMethod(methodName, inArgs, outMap.asMap());
     } catch(exception& e) {
-        ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
-        ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = e.what();
+        outMap.clear();
+        headers["qmf.opcode"] = "_exception";
+        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
+        (outMap["_values"].asMap())["_status_text"] = e.what();
         outMap.encode();
         sendBuffer(outMsg.getContent(), cid, headers, dExchange, replyTo);
         QPID_LOG(trace, "SEND MethodResponse (exception) to=" << replyTo << " seq=" << cid);
@@ -1603,7 +1609,6 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
 
                 headers["method"] = "response";
                 headers["qmf.opcode"] = "_method_response";
-                headers["qmf.content"] = "_data";
                 headers["qmf.agent"] = std::string(agentName);
 
                 ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;

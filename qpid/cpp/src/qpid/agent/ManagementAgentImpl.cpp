@@ -492,7 +492,8 @@ void ManagementAgentImpl::handleConsoleAddedIndication()
 
 void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& cid, const string& replyTo)
 {
-    string   methodName;
+    string  methodName;
+    bool    failed = false;
     qpid::messaging::Message inMsg(body);
     qpid::messaging::MapView inMap(inMsg);
     qpid::messaging::MapView::const_iterator oid, mid;
@@ -502,8 +503,9 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
     if ((oid = inMap.find("_object_id")) == inMap.end() ||
         (mid = inMap.find("_method_name")) == inMap.end()) {
-        ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
-        ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
+        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
+        (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
+        failed = true;
     } else {
         std::string methodName;
         ObjectId objId;
@@ -521,24 +523,29 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
             ManagementObjectMap::iterator iter = managementObjects.find(objId);
             if (iter == managementObjects.end() || iter->second->isDeleted()) {
-                ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
-                ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
+                (outMap["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
+                (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
+                failed = true;
             } else {
 
                 iter->second->doMethod(methodName, inArgs, outMap.asMap());
             }
 
         } catch(exception& e) {
-            ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
-            ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = e.what();
+            outMap.clear();
+            (outMap["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
+            (outMap["_values"].asMap())["_status_text"] = e.what();
+            failed = true;
         }
     }
 
     qpid::messaging::Variant::Map headers;
     headers["method"] = "response";
-    headers["qmf.opcode"] = "_method_response";
-    headers["qmf.content"] = "_data";
     headers["qmf.agent"] = name_address;
+    if (failed)
+        headers["qmf.opcode"] = "_exception";
+    else
+        headers["qmf.opcode"] = "_method_response";
 
     outMap.encode();
     connThreadBody.sendBuffer(outMsg.getContent(), cid, headers, "qmf.default.direct", replyTo);
