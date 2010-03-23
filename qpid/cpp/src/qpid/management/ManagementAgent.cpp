@@ -292,7 +292,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
 
     content.encode();
 
-    sendBuffer(msg.getContent(), 0, headers, mExchange,
+    sendBuffer(msg.getContent(), "", headers, mExchange,
                "console.event.1.0." + event.getPackageName() + "." + event.getEventName());
     QPID_LOG(trace, "SEND raiseEvent class=" << event.getPackageName() << "." << event.getEventName());
 }
@@ -574,8 +574,8 @@ void ManagementAgent::periodicProcessing (void)
         }
 
         content.encode();
-        const std::string &str = m.getContent();
-        if (str.length()) {
+        const std::string &body = m.getContent();
+        if (body.length()) {
             stringstream key;
             ::qpid::messaging::Variant::Map  headers;
             key << "console.obj.1.0." << baseObject->getPackageName() << "." << baseObject->getClassName();
@@ -585,7 +585,7 @@ void ManagementAgent::periodicProcessing (void)
             headers["qmf.content"] = "_data";
             headers["qmf.agent"] = std::string(agentName);
 
-            sendBuffer(str, 0, headers, mExchange, key.str());
+            sendBuffer(body, "", headers, mExchange, key.str());
             QPID_LOG(trace, "SEND Multicast ContentInd to=" << key.str() << " props=" << pcount << " stats=" << scount);
         }
     }
@@ -628,7 +628,7 @@ void ManagementAgent::periodicProcessing (void)
 
             stringstream key;
             key << "console.obj.1.0." << (*cdIter)->getPackageName() << "." << (*cdIter)->getClassName();
-            sendBuffer(m.getContent(), 0, headers, mExchange, key.str());
+            sendBuffer(m.getContent(), "", headers, mExchange, key.str());
             QPID_LOG(trace, "SEND ContentInd for deleted object to=" << key.str());
         }
     }
@@ -689,7 +689,7 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
     headers["qmf.content"] = "_data";
     headers["qmf.agent"] = std::string(agentName);
 
-    sendBuffer(m.getContent(), 0, headers, mExchange, key.str());
+    sendBuffer(m.getContent(), "", headers, mExchange, key.str());
     QPID_LOG(trace, "SEND Immediate(delete) ContentInd to=" << key.str());
 
     managementObjects.erase(oid);
