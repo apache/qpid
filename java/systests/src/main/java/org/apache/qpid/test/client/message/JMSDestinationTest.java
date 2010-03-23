@@ -21,9 +21,11 @@
 package org.apache.qpid.test.client.message;
 
 import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.CustomJMSXProperty;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -327,4 +329,45 @@ public class JMSDestinationTest extends QpidTestCase
 
     }
 
+    /**
+     * Send a message to a custom exchange and then verify
+     * the message received has the proper destination set
+     *
+     * @throws Exception
+     */
+    public void testGetDestinationWithCustomExchange() throws Exception
+    {
+
+        AMQDestination dest = new AMQAnyDestination(new AMQShortString("my-exchange"),
+                                                    new AMQShortString("direct"),
+                                                    new AMQShortString("test"),
+                                                    false,
+                                                    false,
+                                                    new AMQShortString("test"),
+                                                    false,
+                                                    new AMQShortString[]{new AMQShortString("test")});
+        
+        // to force the creation of my-exchange.
+        sendMessage(_session, dest, 1);
+        
+        MessageProducer prod = _session.createProducer(dest);
+        
+        MessageConsumer consumer = _session.createConsumer(dest);
+        
+        _connection.start();
+
+        sendMessage(_session, dest, 1);
+        
+        Message message = consumer.receive(10000);
+
+        assertNotNull("Message should not be null", message);
+
+        Destination destination = message.getJMSDestination();
+
+        assertNotNull("JMSDestination should not be null", destination);
+
+        assertEquals("Incorrect Destination name", "my-exchange", dest.getExchangeName().asString());
+        assertEquals("Incorrect Destination type", "direct", dest.getExchangeClass().asString());
+        assertEquals("Incorrect Routing Key", "test", dest.getRoutingKey().asString());
+    }
 }
