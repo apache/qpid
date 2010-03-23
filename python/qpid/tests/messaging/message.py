@@ -107,3 +107,7 @@ class MessageEchoTests(Base):
     msg.properties = MessageEchoTests.TEST_MAP
     msg.reply_to = "reply-address"
     self.check(msg)
+
+  def testContentTypeUnknown(self):
+    msg = Message(content_type = "this-content-type-does-not-exist")
+    self.check(msg)
