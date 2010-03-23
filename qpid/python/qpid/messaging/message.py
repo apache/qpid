@@ -47,20 +47,22 @@ TYPE_MAPPINGS={
   None.__class__: None
   }
 
+DEFAULT_CODEC = (lambda x: x, lambda x: x)
+
 TYPE_CODEC={
   "amqp/map": codec("map"),
   "amqp/list": codec("list"),
   "text/plain; charset=utf8": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
   "text/plain": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
-  "": (lambda x: x, lambda x: x),
-  None: (lambda x: x, lambda x: x)
+  "": DEFAULT_CODEC,
+  None: DEFAULT_CODEC
   }
 
 def get_type(content):
   return TYPE_MAPPINGS[content.__class__]
 
 def get_codec(content_type):
-  return TYPE_CODEC[content_type]
+  return TYPE_CODEC.get(content_type, DEFAULT_CODEC)
 
 UNSPECIFIED = object()
 
