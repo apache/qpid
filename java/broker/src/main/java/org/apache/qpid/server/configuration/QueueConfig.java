@@ -75,6 +75,10 @@ public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConf
     long getPersistentMsgEnqueues();
 
     long getPersistentMsgDequeues();
+    
+    long getUnackedMessageCount();
+    
+    long getUnackedMessageCountHigh();
 
     void purge(long request);
 }
