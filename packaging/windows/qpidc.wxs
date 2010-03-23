@@ -182,8 +182,8 @@
     </UI>
 
     <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
-    <WixVariable Id="WixUIBannerBmp" Value="qpid-asf-banner.bmp" />
-    <WixVariable Id="WixUIDialogBmp" Value="qpid-asf-bkgrd.bmp" />
+    <WixVariable Id="WixUIBannerBmp" Value="qpid-install-banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="qpid-install-background.bmp" />
 
     <!-- Launch the install notes optionally on finish -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
