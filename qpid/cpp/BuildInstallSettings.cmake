@@ -92,7 +92,7 @@ if (WIN32)
        "Directory to install read-only arch.-independent data root")
   set (QPID_INSTALL_EXAMPLESDIR examples CACHE STRING
        "Directory to install programming examples in")
-  set (QPID_INSTALL_HTMLDIR html CACHE STRING
+  set (QPID_INSTALL_HTMLDIR docs/api/html CACHE STRING
        "Directory to install HTML documentation")
   set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
        "Directory to install programming header files")
