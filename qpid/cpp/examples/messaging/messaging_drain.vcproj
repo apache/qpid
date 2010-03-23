@@ -22,11 +22,10 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="direct_declare_queues"
-	ProjectGUID="{18165D4D-FECA-1BAD-4346-8C4DF2536AA5}"
-	RootNamespace="direct_declare_queues"
+	Name="messaging_drain"
+	ProjectGUID="{D79791E5-C593-4F23-B545-0CE72D181F2A}"
+	RootNamespace="messaging_drain"
 	Keyword="Win32Proj"
-	SignManifests="true"
 	>
 	<Platforms>
 		<Platform
@@ -42,10 +41,9 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="."
-			IntermediateDirectory="Debug\direct_declare_queues\I386"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -61,18 +59,12 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				AdditionalOptions=""
-				AdditionalIncludeDirectories=""
-				TypeLibraryName="$(InputName).tlb"
-				HeaderFileName="$(InputName).h"
-				InterfaceIdentifierFileName="$(InputName)_i.c"
-				ProxyFileName="$(InputName)_p.c"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -80,16 +72,12 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -97,16 +85,19 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="qpidcommond.lib qpidclientd.lib"
-				OutputFile="$(OutDir)\declare_queues.exe"
+				OutputFile="$(OutDir)\drain.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin;..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -118,16 +109,18 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
-			IntermediateDirectory="Release\direct_declare_queues\I386"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -143,32 +136,22 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				AdditionalOptions=""
-				AdditionalIncludeDirectories=""
-				TypeLibraryName="$(InputName).tlb"
-				HeaderFileName="$(InputName).h"
-				InterfaceIdentifierFileName="$(InputName)_i.c"
-				ProxyFileName="$(InputName)_p.c"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -176,10 +159,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="qpidcommon.lib qpidclient.lib"
-				OutputFile="$(OutDir)\declare_queues.exe"
+				OutputFile="$(OutDir)\drain.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin;..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -190,6 +173,9 @@
 				Name="VCALinkTool"
 			/>
 			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
 				Name="VCXDCMakeTool"
 			/>
 			<Tool
@@ -199,13 +185,16 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="."
-			IntermediateDirectory="Debug\direct_declare_queues\AMD64"
+			IntermediateDirectory="Debug\messaging_drain\AMD64"
 			ConfigurationType="1"
 			CharacterSet="0"
 
@@ -235,7 +224,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -243,14 +232,13 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="_DEBUG;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
@@ -261,10 +249,10 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
 				AdditionalDependencies="qpidcommond.lib qpidclientd.lib"
-				OutputFile="$(OutDir)\declare_queues.exe"
+				OutputFile="$(OutDir)\drain.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin;..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="17"
@@ -288,7 +276,7 @@
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory="Release"
-			IntermediateDirectory="Release\direct_declare_queues\AMD64"
+			IntermediateDirectory="Release\messaging_drain\AMD64"
 			ConfigurationType="1"
 			CharacterSet="0"
 
@@ -318,19 +306,18 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="NDEBUG;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
@@ -341,10 +328,10 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
 				AdditionalDependencies="qpidcommon.lib qpidclient.lib"
-				OutputFile="$(OutDir)\declare_queues.exe"
+				OutputFile="$(OutDir)\drain.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin;..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -373,19 +360,12 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;cxx;cc;C;c">
+			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			>
 			<File
-				RelativePath="declare_queues.cpp">
-			</File>
-		</Filter>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hh">
-			<File
-				RelativePath="ConnectionOptions.h">
-			</File>
-			<File
-				RelativePath="TestOptions.h">
+				RelativePath="drain.cpp"
+				>
 			</File>
 		</Filter>
 	</Files>
