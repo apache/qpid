@@ -54,6 +54,20 @@ class Types:
     else:
       return "%s is not one of: %s" % (o, ", ".join([t.__name__ for t in self.types]))
 
+class List:
+
+  def __init__(self, condition):
+    self.condition = condition
+
+  def validate(self, o, ctx):
+    if not isinstance(o, list):
+      return "%s is not a list" % o
+
+    ctx.push(o)
+    for v in o:
+      err = self.condition.validate(v, ctx)
+      if err: return err
+
 class Map:
 
   def __init__(self, map, restricted=True):
