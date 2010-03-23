@@ -1004,14 +1004,12 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public Long getUnackedMessages()
         {
-            // TODO
-            return 0l;
+            return _obj.getUnackedMessageCount();
         }
 
         public Long getUnackedMessagesHigh()
         {
-            // TODO
-            return 0l;
+            return _obj.getUnackedMessageCountHigh();
         }
 
         public Long getUnackedMessagesLow()

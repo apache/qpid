@@ -226,22 +226,29 @@ public class QueueEntryImpl implements QueueEntry
 
     public void release()
     {
-        _stateUpdater.set(this,AVAILABLE_STATE);
-        if(!getQueue().isDeleted())
+        EntryState state = _state;
+        
+        if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, AVAILABLE_STATE))
         {
-            getQueue().requeue(this);
-            if(_stateChangeListeners != null)
+            if(state instanceof SubscriptionAcquiredState)
             {
-                notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+                getQueue().decrementUnackedMsgCount();
             }
+            
+            if(!getQueue().isDeleted())
+            {
+                getQueue().requeue(this);
+                if(_stateChangeListeners != null)
+                {
+                    notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+                }
 
+            }
+            else if(acquire())
+            {
+                routeToAlternate();
+            }
         }
-        else if(acquire())
-        {
-            routeToAlternate();
-        }
-
-
     }
 
     public boolean releaseButRetain()
@@ -369,6 +376,7 @@ public class QueueEntryImpl implements QueueEntry
             Subscription s = null;
             if (state instanceof SubscriptionAcquiredState)
             {
+                getQueue().decrementUnackedMsgCount();
                 s = ((SubscriptionAcquiredState) state).getSubscription();
                 s.onDequeue(this);
             }

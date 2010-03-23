@@ -572,4 +572,19 @@ public class MockAMQQueue implements AMQQueue
     {
         return 0;
     }
+
+    public void decrementUnackedMsgCount()
+    {
+
+    }
+
+    public long getUnackedMessageCount()
+    {
+        return 0;
+    }
+
+    public long getUnackedMessageCountHigh()
+    {
+        return 0;
+    }
 }

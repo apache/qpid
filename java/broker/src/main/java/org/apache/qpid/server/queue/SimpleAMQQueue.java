@@ -127,6 +127,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicLong _byteTxnEnqueues = new AtomicLong(0);
     private final AtomicLong _msgTxnDequeues = new AtomicLong(0);
     private final AtomicLong _byteTxnDequeues = new AtomicLong(0);
+    private final AtomicLong _unackedMsgCount = new AtomicLong(0);
+    private final AtomicLong _unackedMsgCountHigh = new AtomicLong(0);
 
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
@@ -693,6 +695,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             throws AMQException
     {
         _deliveredMessages.incrementAndGet();
+        incrementUnackedMsgCount();
+
         sub.send(entry);
 
         setLastSeenEntry(sub,entry);
@@ -2137,5 +2141,34 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public String toString()
     {
         return String.valueOf(getNameShortString());
+    }
+
+    public long getUnackedMessageCountHigh()
+    {
+        return _unackedMsgCountHigh.get();
+    }
+    
+    public long getUnackedMessageCount()
+    {
+        return _unackedMsgCount.get();
+    }
+    
+    public void decrementUnackedMsgCount()
+    {
+        _unackedMsgCount.decrementAndGet();
+    }
+    
+    private void incrementUnackedMsgCount()
+    {
+        long unackedMsgCount = _unackedMsgCount.incrementAndGet();
+        
+        long unackedMsgCountHigh;
+        while(unackedMsgCount > (unackedMsgCountHigh = _unackedMsgCountHigh.get()))
+        {
+            if(_unackedMsgCountHigh.compareAndSet(unackedMsgCountHigh, unackedMsgCount))
+            {
+                break;
+            }
+        }
     }
 }
