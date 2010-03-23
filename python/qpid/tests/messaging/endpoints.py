@@ -20,7 +20,7 @@
 # setup, usage, teardown, errors(sync), errors(async), stress, soak,
 # boundary-conditions, config
 
-import time
+import errno, os, time
 from qpid import compat
 from qpid.messaging import *
 from qpid.tests.messaging import Base
@@ -47,6 +47,29 @@ class SetupTests(Base):
     except ConnectError, e:
       # XXX: should verify that e includes appropriate diagnostic info
       pass
+
+  def use_fds(self):
+    fds = []
+    try:
+      while True:
+        fds.append(os.open("/dev/null", os.O_RDONLY))
+    except OSError, e:
+      if e.errno != errno.EMFILE:
+        raise e
+      else:
+        return fds
+
+  def testOpenCloseResourceLeaks(self):
+    fds = self.use_fds()
+    try:
+      for i in range(32):
+        if fds: os.close(fds.pop())
+      for i in xrange(64):
+        conn = Connection.open(self.broker.host, self.broker.port)
+        conn.close()
+    finally:
+      while fds:
+        os.close(fds.pop())
 
 class ConnectionTests(Base):
 
