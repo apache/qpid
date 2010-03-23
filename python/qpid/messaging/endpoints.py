@@ -295,14 +295,29 @@ class Session:
       create: <create-policy>,
       delete: <delete-policy>,
       assert: <assert-policy>,
-      node-properties: {
+      node: {
         type: <node-type>,
         durable: <node-durability>,
-        x-properties: {
-          bindings: ["<exchange>/<key>", ...],
-          <passthrough-key>: <passthrough-value>
-        }
+        x-declare: { ... <queue-declare overrides> ... }
+        x-bindings: [<binding_1>, ... <binding_n>]
       }
+      link: {
+        name: <link-name>,
+        durable: <link-durability>,
+        reliability: <link-reliability>,
+        x-declare: { ... <queue-declare overrides> ... }
+        x-bindings: [<binding_1>, ... <binding_n>]
+        x-subscribe: { ... <message-subscribe overrides> ... }
+      }
+    }
+
+  Bindings are specified as a map with the following options::
+
+    {
+      exchange: <exchange>,
+      queue: <queue>,
+      key: <key>,
+      arguments: <arguments>
     }
 
   The create, delete, and assert policies specify who should perfom
@@ -316,14 +331,12 @@ class Session:
   The node-type is one of:
 
     - I{topic}: a topic node will default to the topic exchange,
-      x-properties may be used to specify other exchange types
+      x-declare may be used to specify other exchange types
     - I{queue}: this is the default node-type
 
-  The x-properties map permits arbitrary additional keys and values to
-  be specified. These keys and values are passed through when creating
-  a node or asserting facts about an existing node. Any passthrough
-  keys and values that do not match a standard field of the underlying
-  exchange or queue declare command will be sent in the arguments map.
+  The x-declare map permits protocol specific keys and values to be
+  specified. These keys and values are passed through when creating a
+  node or asserting facts about an existing node.
 
   Examples
   --------
@@ -353,18 +366,18 @@ class Session:
 
   You can customize the properties of the queue::
 
-    my-queue; {create: always, node-properties: {durable: True}}
+    my-queue; {create: always, node: {durable: True}}
 
   You can create a topic instead if you want::
 
-    my-queue; {create: always, node-properties: {type: topic}}
+    my-queue; {create: always, node: {type: topic}}
 
   You can assert that the address resolves to a node with particular
   properties::
 
     my-transient-topic; {
       assert: always,
-      node-properties: {
+      node: {
         type: topic,
         durable: False
       }
