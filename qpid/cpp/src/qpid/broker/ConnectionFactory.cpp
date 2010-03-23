@@ -22,12 +22,14 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/sys/SecuritySettings.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
 
 using framing::ProtocolVersion;
+using qpid::sys::SecuritySettings;
 typedef std::auto_ptr<amqp_0_10::Connection> ConnectionPtr;
 typedef std::auto_ptr<sys::ConnectionInputHandler> InputPtr;
 
@@ -37,7 +39,7 @@ ConnectionFactory::~ConnectionFactory() {}
 
 sys::ConnectionCodec*
 ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id,
-                          unsigned int ) {
+                          const SecuritySettings& external) {
     if (broker.getConnectionCounter().allowConnection())
     {
         QPID_LOG(error, "Client max connection count limit exceeded: " << broker.getOptions().maxConnections << " connection refused");
@@ -45,7 +47,7 @@ ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std:
     }
     if (v == ProtocolVersion(0, 10)) {
         ConnectionPtr c(new amqp_0_10::Connection(out, id, false));
-        c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, false)));
+        c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, external, false)));
         return c.release();
     }
     return 0;
@@ -53,10 +55,10 @@ ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std:
 
 sys::ConnectionCodec*
 ConnectionFactory::create(sys::OutputControl& out, const std::string& id,
-                          unsigned int) {
+                          const SecuritySettings& external) {
     // used to create connections from one broker to another
     ConnectionPtr c(new amqp_0_10::Connection(out, id, true));
-    c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, true)));
+    c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, external, true)));
     return c.release();
 }
 

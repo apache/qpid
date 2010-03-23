@@ -86,8 +86,7 @@ bool InitialStatusMap::notInitialized(const Map::value_type& v) {
 }
 
 bool InitialStatusMap::isComplete() const {
-    return !map.empty() && find_if(map.begin(), map.end(), &notInitialized) == map.end()
-        && (map.size() >= size);
+    return !map.empty() && find_if(map.begin(), map.end(), &notInitialized) == map.end();
 }
 
 bool InitialStatusMap::transitionToComplete() {
@@ -100,7 +99,7 @@ bool InitialStatusMap::isResendNeeded() {
     return ret;
 }
 
-bool InitialStatusMap::isActive(const Map::value_type& v) {
+bool InitialStatusMap::isActiveEntry(const Map::value_type& v) {
     return v.second && v.second->getActive();
 }
 
@@ -110,10 +109,15 @@ bool InitialStatusMap::hasStore(const Map::value_type& v) {
          v.second->getStoreState() == STORE_STATE_DIRTY_STORE);
 }
 
+bool InitialStatusMap::isActive() {
+    assert(isComplete());
+    return (find_if(map.begin(), map.end(), &isActiveEntry) != map.end());
+}
+
 bool InitialStatusMap::isUpdateNeeded() {
     assert(isComplete());
     // We need an update if there are any active members.
-    if (find_if(map.begin(), map.end(), &isActive) != map.end()) return true;
+    if (isActive()) return true;
 
     // Otherwise it depends on store status, get my own status:
     Map::iterator me = map.find(self);
@@ -154,7 +158,7 @@ MemberSet InitialStatusMap::getElders() const {
 Uuid InitialStatusMap::getClusterId() {
     assert(isComplete());
     assert(!map.empty());
-    Map::iterator i = find_if(map.begin(), map.end(), &isActive);
+    Map::iterator i = find_if(map.begin(), map.end(), &isActiveEntry);
     if (i != map.end())
         return i->second->getClusterId(); // An active member
     else
@@ -178,6 +182,7 @@ void InitialStatusMap::checkConsistent() {
     Uuid clusterId;
     Uuid shutdownId;
 
+    bool initialCluster = !isActive();
     for (Map::iterator i = map.begin(); i != map.end(); ++i) {
         assert(i->second);
         if (i->second->getActive()) ++active;
@@ -193,8 +198,10 @@ void InitialStatusMap::checkConsistent() {
             ++clean;
             checkId(clusterId, i->second->getClusterId(),
                     "Cluster-ID mismatch. Stores belong to different clusters.");
-            checkId(shutdownId, i->second->getShutdownId(),
-                    "Shutdown-ID mismatch. Stores were not shut down together");
+            // Only need shutdownId to match if we are in an initially forming cluster.
+            if (initialCluster)
+                checkId(shutdownId, i->second->getShutdownId(),
+                        "Shutdown-ID mismatch. Stores were not shut down together");
             break;
         }
     }
@@ -202,10 +209,13 @@ void InitialStatusMap::checkConsistent() {
     if (none && (clean+dirty+empty))
         throw Exception("Mixing transient and persistent brokers in a cluster");
 
-    // If there are no active members and there are dirty stores there
-    // must be at least one clean store.
-    if (!active && dirty && !clean)
-        throw Exception("Cannot recover, no clean store.");
+    if (map.size() >= size) {
+        // All initial members are present. If there are no active
+        // members and there are dirty stores there must be at least
+        // one clean store.
+        if (!active && dirty && !clean)
+            throw Exception("Cannot recover, no clean store.");
+    }
 }
 
 std::string InitialStatusMap::getFirstConfigStr() const {

@@ -111,6 +111,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void dequeue(QueueEntry entry, Subscription sub);
 
+    void decrementUnackedMsgCount();
 
 
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;

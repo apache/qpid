@@ -22,18 +22,14 @@
  *
  */
 #include "qpid/Exception.h"
-#include "qpid/client/ClientImportExport.h"
-#include "qpid/client/Handle.h"
+#include "qpid/messaging/ImportExport.h"
+#include "qpid/messaging/Handle.h"
 #include "qpid/messaging/Duration.h"
 
 namespace qpid {
-namespace client {
+namespace messaging {
 
 template <class> class PrivateImplRef;
-
-}
-
-namespace messaging {
 
 class Message;
 class ReceiverImpl;
@@ -42,7 +38,7 @@ class Session;
 /**
  * Interface through which messages are received.
  */
-class Receiver : public qpid::client::Handle<ReceiverImpl>
+class Receiver : public qpid::messaging::Handle<ReceiverImpl>
 {
   public:
     struct NoMessageAvailable : qpid::Exception {};
@@ -60,14 +56,16 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
     QPID_CLIENT_EXTERN bool get(Message& message, Duration timeout=INFINITE_DURATION);
     /**
      * Retrieves a message from this receivers local queue, or waits
-     * for upto the specified timeout for a message to become
-     * available. Throws NoMessageAvailable if there is no
-     * message to give after waiting for the specified timeout.
+     * for up to the specified timeout for a message to become
+     * available.
+     *
+     *@exception NoMessageAvailable if there is no message to give
+     * after waiting for the specified timeout.
      */
     QPID_CLIENT_EXTERN Message get(Duration timeout=INFINITE_DURATION);
     /**
      * Retrieves a message for this receivers subscription or waits
-     * for upto the specified timeout for one to become
+     * for up to the specified timeout for one to become
      * available. Unlike get() this method will check with the server
      * that there is no message for the subscription this receiver is
      * serving before returning false.
@@ -79,6 +77,9 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * available. Unlike get() this method will check with the server
      * that there is no message for the subscription this receiver is
      * serving before throwing an exception.
+     *
+     *@exception NoMessageAvailable if there is no message to give
+     * after waiting for the specified timeout.
      */
     QPID_CLIENT_EXTERN Message fetch(Duration timeout=INFINITE_DURATION);
     /**
@@ -123,7 +124,7 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
     QPID_CLIENT_EXTERN Session getSession() const;
 
   private:
-  friend class qpid::client::PrivateImplRef<Receiver>;
+  friend class qpid::messaging::PrivateImplRef<Receiver>;
 };
 }} // namespace qpid::messaging
 

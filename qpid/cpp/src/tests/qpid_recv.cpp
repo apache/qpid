@@ -27,12 +27,14 @@
 #include <qpid/Options.h>
 #include <qpid/log/Logger.h>
 #include <qpid/log/Options.h>
+#include <qpid/client/amqp0_10/FailoverUpdates.h>
 #include "TestOptions.h"
 
 #include <iostream>
-
+#include <memory>
 
 using namespace qpid::messaging;
+using qpid::client::amqp0_10::FailoverUpdates;
 
 using namespace std;
 
@@ -54,6 +56,7 @@ struct Options : public qpid::Options
     uint tx;
     uint rollbackFrequency;
     bool printHeaders;
+    bool failoverUpdates;
     qpid::log::Options log;
 
     Options(const std::string& argv0=std::string())
@@ -69,6 +72,7 @@ struct Options : public qpid::Options
           tx(0),
           rollbackFrequency(0),
           printHeaders(false),
+          failoverUpdates(false),
           log(argv0)
     {
         addOptions()
@@ -84,6 +88,7 @@ struct Options : public qpid::Options
             ("tx", qpid::optValue(tx, "N"), "batch size for transactions (0 implies transaction are not used)")
             ("rollback-frequency", qpid::optValue(rollbackFrequency, "N"), "rollback frequency (0 implies no transaction will be rolledback)")
             ("print-headers", qpid::optValue(printHeaders), "If specified print out all message headers as well as content")
+            ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -143,9 +148,10 @@ int main(int argc, char ** argv)
 {
     Options opts;
     if (opts.parse(argc, argv)) {
+        Connection connection(opts.connectionOptions);
         try {
-            Connection connection(opts.connectionOptions);
             connection.open(opts.url);
+            std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = connection.newSession(opts.tx > 0);
             Receiver receiver = session.createReceiver(opts.address);
             receiver.setCapacity(opts.capacity);
@@ -201,6 +207,7 @@ int main(int argc, char ** argv)
             return 0;
         } catch(const std::exception& error) {
             std::cerr << "Failure: " << error.what() << std::endl;
+            connection.close();
         }
     }
     return 1;

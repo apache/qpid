@@ -48,7 +48,7 @@ if test -z "$exclude_regexp"; then
     run_examples=$all_examples
 else
     for f in $all_examples; do
-	{ cat $f | grep $exclude_regexp > /dev/null ; } || run_examples="$run_examples $f"
+	{ echo $f | grep $exclude_regexp > /dev/null ; } || run_examples="$run_examples $f"
     done
 fi
 $verify $topsrcdir $topbuilddir $run_examples

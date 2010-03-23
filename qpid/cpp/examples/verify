@@ -19,6 +19,7 @@
 # under the License.
 #
 
+export LC_ALL=C
 
 # Driver script to verify installed examples (also used for build tests.)
 #

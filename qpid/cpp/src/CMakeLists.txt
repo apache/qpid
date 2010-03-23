@@ -589,19 +589,6 @@ set_target_properties (qpidcommon PROPERTIES
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
-# When the client programming component is installed, Windows also needs
-# the debug variant of qpidcommon and qpidclient, and the PDBs for those
-# as well. It would be nice to figure out a way to put some sanity checking
-# here... as it is, success relies on the packager building the debug then
-# the release, then packaging the release build.
-if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_CLIENT})
-endif (WIN32)
 
 set (qpidclient_SOURCES
      ${rgen_client_srcs}
@@ -667,6 +654,7 @@ set (qpidclient_SOURCES
      qpid/client/amqp0_10/CodecsInternal.h
      qpid/client/amqp0_10/ConnectionImpl.h
      qpid/client/amqp0_10/ConnectionImpl.cpp
+     qpid/client/amqp0_10/FailoverUpdates.cpp
      qpid/client/amqp0_10/IncomingMessages.h
      qpid/client/amqp0_10/IncomingMessages.cpp
      qpid/client/amqp0_10/MessageSink.h
@@ -679,6 +667,8 @@ set (qpidclient_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
+     qpid/client/amqp0_10/SimpleUrlParser.h
+     qpid/client/amqp0_10/SimpleUrlParser.cpp
 )
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
@@ -699,14 +689,6 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
            DESTINATION ${QPID_INSTALL_INCLUDEDIR}
            COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
-if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_CLIENT})
-endif (WIN32)
 
 if (WIN32)
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
@@ -784,7 +766,8 @@ set (qpidbroker_SOURCES
      qpid/broker/TxPublish.cpp
      qpid/broker/Vhost.cpp
      qpid/management/ManagementAgent.cpp
-     qpid/management/ManagementExchange.cpp
+     qpid/management/ManagementDirectExchange.cpp
+     qpid/management/ManagementTopicExchange.cpp
      qpid/sys/TCPIOPlugin.cpp
 )
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
@@ -828,7 +811,7 @@ set (qmf_SOURCES
     qpid/agent/ManagementAgentImpl.h
     )
 add_library (qmf SHARED ${qmf_SOURCES})
-target_link_libraries (qmf qmfengine)
+target_link_libraries (qmf qpidclient)
 set_target_properties (qmf PROPERTIES
                        VERSION ${qmf_version})
 install (TARGETS qmf OPTIONAL
@@ -922,15 +905,6 @@ set_target_properties (qmfconsole PROPERTIES
 install (TARGETS qmfconsole
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
-# On Windows, also grab the debug version of qmfconsole.
-if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qmfconsoled.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_QMF})
-endif (WIN32)
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
@@ -976,6 +950,5 @@ add_definitions(-DHAVE_CONFIG_H)
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-
 add_subdirectory(qpid/store)
 add_subdirectory(tests)

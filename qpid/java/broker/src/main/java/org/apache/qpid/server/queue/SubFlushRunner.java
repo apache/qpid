@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 
 class SubFlushRunner implements ReadWriteRunnable
 {
-    private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
+    private static final Logger _logger = Logger.getLogger(SubFlushRunner.class);
 
 
     private final Subscription _sub;
@@ -46,29 +46,36 @@ class SubFlushRunner implements ReadWriteRunnable
     public void run()
     {
 
-       
-        Thread.currentThread().setName(_name);
-
-        boolean complete = false;
+        String originalName = Thread.currentThread().getName();
         try
         {
-            CurrentActor.set(_sub.getLogActor());
-            complete = getQueue().flushSubscription(_sub, ITERATIONS);
+            Thread.currentThread().setName(_name);
 
-        }
-        catch (AMQException e)
-        {
-            _logger.error(e);
+            boolean complete = false;
+            try
+            {
+                CurrentActor.set(_sub.getLogActor());
+                complete = getQueue().flushSubscription(_sub, ITERATIONS);
+
+            }
+            catch (AMQException e)
+            {
+                _logger.error(e);
+            }
+            finally
+            {
+                CurrentActor.remove();
+            }
+            if (!complete && !_sub.isSuspended())
+            {
+                getQueue().execute(this);
+            }
+
         }
         finally
         {
-            CurrentActor.remove();
+            Thread.currentThread().setName(originalName);
         }
-        if (!complete && !_sub.isSuspended())
-        {
-            getQueue().execute(this);
-        }
-
 
     }
 

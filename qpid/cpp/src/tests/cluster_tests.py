@@ -29,8 +29,18 @@ from itertools import chain
 
 log = getLogger("qpid.cluster_tests")
 
+# Note: brokers that shut themselves down due to critical error during
+# normal operation will still have an exit code of 0. Brokers that
+# shut down because of an error found during initialize will exit with
+# a non-0 code. Hence the apparently inconsistent use of EXPECT_EXIT_OK
+# and EXPECT_EXIT_FAIL in some of the tests below.
+
+# FIXME aconway 2010-03-11: resolve this - ideally any exit due to an error
+# should give non-0 exit status.
+
 # Import scripts as modules
 qpid_cluster=import_script(checkenv("QPID_CLUSTER_EXEC"))
+
 
 def readfile(filename):
     """Returns te content of file named filename as a string"""
@@ -144,7 +154,7 @@ class LongTests(BrokerTest):
             i += 1
             b = cluster.start(expect=EXPECT_EXIT_FAIL)
             ErrorGenerator(b)
-            time.sleep(1)
+            time.sleep(min(5,self.duration()/2))
         sender.stop()
         receiver.stop(sender.sent)
         for i in range(i, len(cluster)): cluster[i].kill()
@@ -152,7 +162,7 @@ class LongTests(BrokerTest):
     def test_management(self):
         """Run management clients and other clients concurrently."""
 
-        # FIXME aconway 2010-03-03: move to framework
+        # TODO aconway 2010-03-03: move to brokertest framework
         class ClientLoop(StoppableThread):
             """Run a client executable in a loop."""
             def __init__(self, broker, cmd):
@@ -173,14 +183,21 @@ class LongTests(BrokerTest):
                                 self.cmd, expect=EXPECT_UNKNOWN)
                         finally: self.lock.release()
                         try: exit = self.process.wait()
-                        except: exit = 1
+                        except OSError, e:
+                            # Seems to be a race in wait(), it throws
+                            # "no such process" during test shutdown.
+                            # Doesn't indicate a test error, ignore.
+                            return
+                        except Exception, e:
+                            self.process.unexpected(
+                                "client of %s: %s"%(self.broker.name, e))
                         self.lock.acquire()
                         try:
                             # Quit and ignore errors if stopped or expecting failure.
                             if self.stopped: break
                             if exit != 0:
-                                self.process.unexpected("client of %s exit status %s" %
-                                                        (self.broker.name, exit))
+                                self.process.unexpected(
+                                    "client of %s exit code %s"%(self.broker.name, exit))
                         finally: self.lock.release()
                 except Exception, e:
                     self.error = RethrownException("Error in ClientLoop.run")
@@ -218,9 +235,7 @@ class LongTests(BrokerTest):
                 ["perftest", "--count", 1000,
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
-                [os.path.join(self.rootdir, "testagent/testagent"), "localhost",
-                 str(broker.port())]
-                ]:
+                ["testagent", "localhost", str(broker.port())] ]:
                 batch.append(ClientLoop(broker, cmd))
             clients.append(batch)
 
@@ -238,7 +253,7 @@ class LongTests(BrokerTest):
             start_mclients(b)
 
         while time.time() < endtime:
-            time.sleep(min(5,self.duration()))
+            time.sleep(min(5,self.duration()/2))
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker. Ignore errors on its clients and all the mclients
             for c in clients[alive] + mclients: c.expect_fail()
@@ -252,7 +267,6 @@ class LongTests(BrokerTest):
             b = cluster.start()
             start_clients(b)
             for b in cluster[alive:]: start_mclients(b)
-
         for c in chain(mclients, *clients):
             c.stop()
 
@@ -283,6 +297,11 @@ class StoreTests(BrokerTest):
         m = cluster.start("restartme").get_message("q")
         self.assertEqual("x", m.content)
 
+    def stop_cluster(self,broker):
+        """Clean shut-down of a cluster"""
+        self.assertEqual(0, qpid_cluster.main(
+            ["qpid-cluster", "-kf", broker.host_port()]))
+
     def test_persistent_restart(self):
         """Verify persistent cluster shutdown/restart scenarios"""
         cluster = self.cluster(0, args=self.args() + ["--cluster-size=3"])
@@ -298,7 +317,7 @@ class StoreTests(BrokerTest):
         self.assertEqual(c.get_message("q").content, "2")
         # Shut down the entire cluster cleanly and bring it back up
         a.send_message("q", Message("3", durable=True))
-        self.assertEqual(0, qpid_cluster.main(["qpid-cluster", "-kf", a.host_port()]))
+        self.stop_cluster(a)
         a = cluster.start("a", wait=False)
         b = cluster.start("b", wait=False)
         c = cluster.start("c", wait=True)
@@ -316,7 +335,7 @@ class StoreTests(BrokerTest):
         b.kill()
         self.assertEqual(c.get_message("q").content, "4")
         c.send_message("q", Message("clean", durable=True))
-        self.assertEqual(0, qpid_cluster.main(["qpid-cluster", "-kf", c.host_port()]))
+        self.stop_cluster(c)
         a = cluster.start("a", wait=False)
         b = cluster.start("b", wait=False)
         c = cluster.start("c", wait=True)
@@ -329,7 +348,7 @@ class StoreTests(BrokerTest):
         a.terminate()
         cluster2 = self.cluster(1, args=self.args())
         try:
-            a = cluster2.start("a", expect=EXPECT_EXIT_OK)
+            a = cluster2.start("a", expect=EXPECT_EXIT_FAIL)
             a.ready()
             self.fail("Expected exception")
         except: pass
@@ -339,27 +358,29 @@ class StoreTests(BrokerTest):
         cluster = self.cluster(0, args=self.args()+["--cluster-size=2"])
         a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
         b = cluster.start("b", expect=EXPECT_EXIT_OK, wait=False)
-        self.assertEqual(0, qpid_cluster.main(["qpid_cluster", "-kf", a.host_port()]))
+        self.stop_cluster(a)
         self.assertEqual(a.wait(), 0)
         self.assertEqual(b.wait(), 0)
 
         # Restart with a different member and shut down.
         a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
         c = cluster.start("c", expect=EXPECT_EXIT_OK, wait=False)
-        self.assertEqual(0, qpid_cluster.main(["qpid_cluster", "-kf", a.host_port()]))
+        self.stop_cluster(a)
         self.assertEqual(a.wait(), 0)
         self.assertEqual(c.wait(), 0)
-
         # Mix members from both shutdown events, they should fail
-        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
-        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait=False)
+        # FIXME aconway 2010-03-11: can't predict the exit status of these
+        # as it depends on the order of delivery of initial-status messages.
+        # See comment at top of this file.
+        a = cluster.start("a", expect=EXPECT_UNKNOWN, wait=False)
+        b = cluster.start("b", expect=EXPECT_UNKNOWN, wait=False)
         self.assertRaises(Exception, lambda: a.ready())
         self.assertRaises(Exception, lambda: b.ready())
 
     def assert_dirty_store(self, broker):
-        self.assertRaises(Exception, lambda: broker.ready())
+        assert retry(lambda: os.path.exists(broker.log)), "Missing log file %s"%broker.log
         msg = re.compile("critical.*no clean store")
-        assert msg.search(readfile(broker.log))
+        assert retry(lambda: msg.search(readfile(broker.log))), "Expected dirty store message in %s"%broker.log
 
     def test_solo_store_clean(self):
         # A single node cluster should always leave a clean store.
@@ -371,7 +392,6 @@ class StoreTests(BrokerTest):
         self.assertEqual(a.get_message("q").content, "x")
 
     def test_last_store_clean(self):
-
         # Verify that only the last node in a cluster to shut down has
         # a clean store. Start with cluster of 3, reduce to 1 then
         # increase again to ensure that a node that was once alone but
@@ -390,13 +410,41 @@ class StoreTests(BrokerTest):
         time.sleep(0.1)   # pause for a to find out hes last.
         a.kill()          # really last
         # b & c should be dirty
-        b = cluster.start("b", wait=False, expect=EXPECT_EXIT_OK)
+        b = cluster.start("b", wait=False, expect=EXPECT_EXIT_FAIL)
         self.assert_dirty_store(b)
-        c = cluster.start("c", wait=False, expect=EXPECT_EXIT_OK)
+        c = cluster.start("c", wait=False, expect=EXPECT_EXIT_FAIL)
         self.assert_dirty_store(c)
         # a should be clean
         a = cluster.start("a")
         self.assertEqual(a.get_message("q").content, "x")
 
+    def test_restart_clean(self):
+        """Verify that we can re-start brokers one by one in a
+        persistent cluster after a clean oshutdown"""
+        cluster = self.cluster(0, self.args())
+        a = cluster.start("a", expect=EXPECT_EXIT_OK)
+        b = cluster.start("b", expect=EXPECT_EXIT_OK)
+        c = cluster.start("c", expect=EXPECT_EXIT_OK)
+        a.send_message("q", Message("x", durable=True))
+        self.stop_cluster(a)
+        a = cluster.start("a")
+        b = cluster.start("b")
+        c = cluster.start("c")
+        self.assertEqual(c.get_message("q").content, "x")
 
+    def test_join_sub_size(self):
+        """Verify that after starting a cluster with cluster-size=N,
+        we can join new members even if size < N-1"""
+        cluster = self.cluster(0, self.args())
+        a = cluster.start("a", wait=False, expect=EXPECT_EXIT_FAIL)
+        b = cluster.start("b", wait=False, expect=EXPECT_EXIT_FAIL)
+        c = cluster.start("c")
+        a.send_message("q", Message("x", durable=True))
+        a.send_message("q", Message("y", durable=True))
+        a.kill()
+        b.kill()
+        a = cluster.start("a")
+        self.assertEqual(c.get_message("q").content, "x")
+        b = cluster.start("b")
+        self.assertEqual(c.get_message("q").content, "y")
 

@@ -120,8 +120,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     bool isElder() const;
 
-    // For debugging only. Can only be called in deliver thread.
-    void debugSnapshot(const char*, Connection* =0);
+    // Generates a log message for debugging purposes.
+    std::string debugSnapshot();
 
   private:
     typedef sys::Monitor::ScopedLock Lock;
@@ -160,7 +160,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
                        const framing::Uuid& clusterId,
                        framing::cluster::StoreState,
                        const framing::Uuid& shutdownId,
-                       const framing::SequenceNumber& configSeq,
                        const std::string& firstConfig,
                        Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
@@ -181,6 +180,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
     void erase(const ConnectionId&, Lock&);       
+    void requestUpdate(Lock& );
     void initMapCompleted(Lock&);
     void becomeElder(Lock&);
 
@@ -252,7 +252,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     //    Local cluster state, cluster map
     enum {
-        INIT,    ///< Establishing inital cluster stattus.
+        PRE_INIT,///< Have not yet received complete initial status map.
+        INIT,    ///< Waiting to reach cluster-size.
         JOINER,  ///< Sent update request, waiting for update offer.
         UPDATEE, ///< Stalled receive queue at update offer, waiting for update to complete.
         CATCHUP, ///< Update complete, unstalled but has not yet seen own "ready" event.

@@ -29,6 +29,7 @@
 #include "qpid/client/amqp0_10/AddressResolution.h"
 #include "qpid/client/amqp0_10/IncomingMessages.h"
 #include "qpid/sys/Mutex.h"
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 
@@ -106,7 +107,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     typedef std::map<std::string, qpid::messaging::Sender> Senders;
 
     mutable qpid::sys::Mutex lock;
-    ConnectionImpl& connection;
+    boost::intrusive_ptr<ConnectionImpl> connection;
     qpid::client::Session session;
     AddressResolution resolver;
     IncomingMessages incoming;

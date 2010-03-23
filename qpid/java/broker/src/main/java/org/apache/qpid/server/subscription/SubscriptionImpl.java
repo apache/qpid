@@ -94,6 +94,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private LogSubject _logSubject;
     private LogActor _logActor;
     private UUID _id;
+    private final AtomicLong _deliveredCount = new AtomicLong(0);
     private long _createTime = System.currentTimeMillis();
 
 
@@ -340,7 +341,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return getQueue().getConfigStore();
     }
-
+    
+    public Long getDelivered()
+    {
+        return _deliveredCount.get();
+    }
 
     public synchronized void setQueue(AMQQueue queue, boolean exclusive)
     {
@@ -648,6 +653,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             throws AMQException
     {
         _deliveryMethod.deliverToClient(this,entry,deliveryTag);
+        _deliveredCount.incrementAndGet();
     }
 
 

@@ -23,23 +23,17 @@
 #include "qpid/messaging/ConnectionImpl.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/SessionImpl.h"
-#include "qpid/client/PrivateImplRef.h"
+#include "qpid/messaging/PrivateImplRef.h"
 #include "qpid/client/amqp0_10/ConnectionImpl.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
-namespace client {
+namespace messaging {
 
 typedef PrivateImplRef<qpid::messaging::Connection> PI;
 
-}
-
-namespace messaging {
-
-using qpid::client::PI;
-
 Connection::Connection(ConnectionImpl* impl) { PI::ctor(*this, impl); }
-Connection::Connection(const Connection& c) : qpid::client::Handle<ConnectionImpl>() { PI::copy(*this, c); }
+Connection::Connection(const Connection& c) : Handle<ConnectionImpl>() { PI::copy(*this, c); }
 Connection& Connection::operator=(const Connection& c) { return PI::assign(*this, c); }
 Connection::~Connection() { PI::dtor(*this); }
 
@@ -67,40 +61,11 @@ Session Connection::newSession(bool transactional, const std::string& name)
     return impl->newSession(transactional, name);
 }
 Session Connection::getSession(const std::string& name) const { return impl->getSession(name); }
+void Connection::setOption(const std::string& name, const Variant& value)
+{ 
+    impl->setOption(name, value);
+}
 
 InvalidOptionString::InvalidOptionString(const std::string& msg) : Exception(msg) {}
-
-void parseKeyValuePair(const std::string& in, Variant::Map& out)
-{
-    std::string::size_type i = in.find('=');
-    if (i == std::string::npos || i == in.size() || in.find('=', i+1) != std::string::npos) {
-        throw InvalidOptionString(QPID_MSG("Cannot parse name-value pair from " << in));
-    } else {
-        out[in.substr(0, i)] = in.substr(i+1);
-    }
-}
-
-void parseOptionString(const std::string& in, Variant::Map& out)
-{
-    std::string::size_type start = 0;
-    std::string::size_type i = in.find('&');
-    while (i != std::string::npos) {
-        parseKeyValuePair(in.substr(start, i-start), out);
-        if (i < in.size()) {
-            start = i+1;
-            i = in.find('&', start);
-        } else {
-            i = std::string::npos;
-        }
-    }
-    parseKeyValuePair(in.substr(start), out);
-}
-
-Variant::Map parseOptionString(const std::string& in)
-{
-    Variant::Map map;    
-    parseOptionString(in, map);
-    return map;
-}
 
 }} // namespace qpid::messaging

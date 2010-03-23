@@ -8,10 +8,13 @@ dnl This program is distributed in the hope that it will be useful, but
 dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 dnl
-dnl When updating the name/version number here, also update it in
-dnl src/qpid/Version.h
 
-AC_INIT([qpidc], [0.7], [dev@qpid.apache.org])
+# Pick up the version from QPID_VERSION.txt in the qpid/cpp source tree.
+# NB. You need to re-run bootstrap if the global qpid/QPID_VERSION.txt changes.
+AC_INIT([qpidc],
+	[m4_esyscmd([cat QPID_VERSION.txt | tr -d '\n'])],
+	[dev@qpid.apache.org])
+
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 
@@ -232,8 +235,7 @@ if test -n "$PYTHON" ; then
 fi
 AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
 
-
-specdir=`pwd`/$srcdir/../specs  
+specdir=`pwd`/$srcdir/../specs
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
@@ -346,6 +348,8 @@ esac
 
 test $want_xml = no && use_xml=no
 
+
+
 # If the user doesn't say not to use XML, see if it's available.
 if test $use_xml != no; then
   # Then see if XQilla is available
@@ -364,6 +368,13 @@ if test $use_xml != no; then
   # Else XQilla is available - use it to build
   test $use_xml = yes &&
     AC_DEFINE([HAVE_XML], [1], [Compile-in XML Exchange support.])
+
+  # Check to see if we need to use legacy calls for effective boolean value
+  xqilla_has_ebv=yes
+  AC_CHECK_HEADER([xqilla/ast/XQEffectiveBooleanValue.hpp], , [xqilla_has_ebv=no])
+  test $xqilla_has_ebv = yes &&
+    AC_DEFINE([XQ_EFFECTIVE_BOOLEAN_VALUE_HPP], [1], [XQilla version has xqilla/ast/XQEffectiveBooleanValue.hpp.])
+
 fi
 
 AM_CONDITIONAL([HAVE_XML], [test $use_xml = yes])
@@ -525,7 +536,6 @@ AC_CONFIG_FILES([
   src/Makefile
   src/tests/Makefile
   src/tests/test_env.sh
-  src/tests/testagent/Makefile
   docs/man/Makefile
   docs/api/Makefile
   docs/api/user.doxygen

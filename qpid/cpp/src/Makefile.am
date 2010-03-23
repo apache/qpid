@@ -465,6 +465,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Runnable.cpp				\
   qpid/sys/ScopedIncrement.h			\
   qpid/sys/SecurityLayer.h			\
+  qpid/sys/SecuritySettings.h			\
   qpid/sys/Semaphore.h				\
   qpid/sys/Shlib.cpp				\
   qpid/sys/Shlib.h				\
@@ -637,8 +638,10 @@ libqpidbroker_la_SOURCES = \
   qpid/management/IdAllocator.h \
   qpid/management/ManagementAgent.cpp \
   qpid/management/ManagementAgent.h \
-  qpid/management/ManagementExchange.cpp \
-  qpid/management/ManagementExchange.h \
+  qpid/management/ManagementDirectExchange.cpp \
+  qpid/management/ManagementDirectExchange.h \
+  qpid/management/ManagementTopicExchange.cpp \
+  qpid/management/ManagementTopicExchange.h \
   qpid/sys/TCPIOPlugin.cpp
 
 
@@ -711,6 +714,7 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/Message.cpp			\
   qpid/messaging/MessageImpl.h			\
   qpid/messaging/MessageImpl.cpp		\
+  qpid/messaging/PrivateImplRef.h		\
   qpid/messaging/Sender.cpp			\
   qpid/messaging/Receiver.cpp			\
   qpid/messaging/Session.cpp			\
@@ -728,6 +732,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/amqp0_10/CodecsInternal.h		\
   qpid/client/amqp0_10/ConnectionImpl.h	        \
   qpid/client/amqp0_10/ConnectionImpl.cpp	\
+  qpid/client/amqp0_10/FailoverUpdates.cpp	\
   qpid/client/amqp0_10/IncomingMessages.h	\
   qpid/client/amqp0_10/IncomingMessages.cpp	\
   qpid/client/amqp0_10/MessageSink.h		\
@@ -739,7 +744,9 @@ libqpidclient_la_SOURCES =			\
   qpid/client/amqp0_10/SessionImpl.h		\
   qpid/client/amqp0_10/SessionImpl.cpp		\
   qpid/client/amqp0_10/SenderImpl.h		\
-  qpid/client/amqp0_10/SenderImpl.cpp
+  qpid/client/amqp0_10/SenderImpl.cpp           \
+  qpid/client/amqp0_10/SimpleUrlParser.h	\
+  qpid/client/amqp0_10/SimpleUrlParser.cpp
 
 # NOTE: only public header files (which should be in ../include)
 # should go in this list. Private headers should go in the SOURCES
@@ -812,20 +819,23 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/Thread.h			\
   ../include/qpid/sys/Time.h			\
   ../include/qpid/messaging/Address.h 		\
-  ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Codec.h 	        \
+  ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Duration.h 	        \
+  ../include/qpid/messaging/Handle.h		\
+  ../include/qpid/messaging/ImportExport.h	\
   ../include/qpid/messaging/ListContent.h 	\
   ../include/qpid/messaging/ListView.h 		\
   ../include/qpid/messaging/MapContent.h 	\
   ../include/qpid/messaging/MapView.h 		\
   ../include/qpid/messaging/Message.h 		\
-  ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Receiver.h 	        \
+  ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Session.h 		\
   ../include/qpid/messaging/Uuid.h 		\
   ../include/qpid/messaging/Variant.h 		\
-  ../include/qpid/client/amqp0_10/Codecs.h
+  ../include/qpid/client/amqp0_10/Codecs.h	\
+  ../include/qpid/client/amqp0_10/FailoverUpdates.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

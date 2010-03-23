@@ -23,6 +23,7 @@
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/sys/SecuritySettings.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
@@ -72,9 +73,10 @@ struct ConnectionTimeoutTask : public sys::TimerTask {
     }
 };
 
-Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, unsigned int ssf, bool isLink_, uint64_t objectId, bool shadow_) :
+Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_,
+                       const qpid::sys::SecuritySettings& external, bool isLink_, uint64_t objectId, bool shadow_) :
     ConnectionState(out_, broker_),
-    ssf(ssf),
+    securitySettings(external),
     adapter(*this, isLink_),
     isLink(isLink_),
     mgmtClosing(false),
@@ -99,7 +101,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
         if (agent != 0) {
             mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
             mgmtObject->set_shadow(shadow);
-            agent->addObject(mgmtObject, objectId, true);
+            agent->addObject(mgmtObject, objectId);
         }
         ConnectionState::setUrl(mgmtId);
     }

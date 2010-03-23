@@ -31,17 +31,17 @@ namespace amqp0_10 {
 
 SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name, 
                        const qpid::messaging::Address& _address) : 
-    parent(_parent), name(_name), address(_address), state(UNRESOLVED),
+    parent(&_parent), name(_name), address(_address), state(UNRESOLVED),
     capacity(50), window(0), flushed(false), unreliable(AddressResolution::is_unreliable(address)) {}
 
 void SenderImpl::send(const qpid::messaging::Message& message) 
 {
     if (unreliable) {
         UnreliableSend f(*this, &message);
-        parent.execute(f);
+        parent->execute(f);
     } else {
         Send f(*this, &message);
-        while (f.repeat) parent.execute(f);
+        while (f.repeat) parent->execute(f);
     }
 }
 
@@ -60,7 +60,7 @@ uint32_t SenderImpl::getCapacity() { return capacity; }
 uint32_t SenderImpl::pending()
 {
     CheckPendingSends f(*this, false);
-    parent.execute(f);
+    parent->execute(f);
     return f.pending;
 } 
 
@@ -73,7 +73,7 @@ void SenderImpl::init(qpid::client::AsyncSession s, AddressResolution& resolver)
     }
     if (state == CANCELLED) {
         sink->cancel(session, name);
-        parent.senderCancelled(name);
+        parent->senderCancelled(name);
     } else {
         sink->declare(session, name);
         replay();
@@ -140,7 +140,7 @@ void SenderImpl::closeImpl()
 {
     state = CANCELLED;
     sink->cancel(session, name);
-    parent.senderCancelled(name);
+    parent->senderCancelled(name);
 }
 
 const std::string& SenderImpl::getName() const
@@ -150,7 +150,7 @@ const std::string& SenderImpl::getName() const
 
 qpid::messaging::Session SenderImpl::getSession() const
 {
-    return qpid::messaging::Session(&parent);
+    return qpid::messaging::Session(parent.get());
 }
 
 }}} // namespace qpid::client::amqp0_10

@@ -77,9 +77,9 @@ const std::string shadowPrefix("[shadow]");
 // Shadow connection
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId,
-                       const ConnectionId& id, unsigned int ssf)
+                       const ConnectionId& id, const qpid::sys::SecuritySettings& external)
     : cluster(c), self(id), catchUp(false), output(*this, out),
-      connectionCtor(&output, cluster.getBroker(), mgmtId, ssf, false, 0, true),
+      connectionCtor(&output, cluster.getBroker(), mgmtId, external, false, 0, true),
       expectProtocolHeader(false),
       mcastFrameHandler(cluster.getMulticast(), self),
       updateIn(c.getUpdateReceiver())
@@ -88,11 +88,11 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 // Local connection
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId, MemberId member,
-                       bool isCatchUp, bool isLink, unsigned int ssf
+                       bool isCatchUp, bool isLink, const qpid::sys::SecuritySettings& external
 ) : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), output(*this, out),
     connectionCtor(&output, cluster.getBroker(),
                    mgmtId,
-                   ssf,
+                   external,
                    isLink,
                    isCatchUp ? ++catchUpId : 0,
                    isCatchUp),  // isCatchUp => shadow
@@ -107,7 +107,10 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
         QPID_LOG(info, "new client connection " << *this);
         giveReadCredit(cluster.getSettings().readMax);
         cluster.getMulticast().mcastControl(
-            ClusterConnectionAnnounceBody(ProtocolVersion(), mgmtId, getSsf()), getId());
+            ClusterConnectionAnnounceBody(ProtocolVersion(), mgmtId,
+                                          connectionCtor.external.ssf,
+                                          connectionCtor.external.authid,
+                                          connectionCtor.external.nodict), getId());
     }
     else {
         // Catch-up shadow connections initialized using nextShadow id.
@@ -122,7 +125,7 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 void Connection::init() {
     connection = connectionCtor.construct();
     QPID_LOG(debug, cluster << " initialized connection: " << *this
-             << " ssf=" << connection->getSSF());
+             << " ssf=" << connection->getExternalSecuritySettings().ssf);
     if (isLocalClient()) {  
         // Actively send cluster-order frames from local node
         connection->setClusterOrderOutput(mcastFrameHandler);
@@ -142,9 +145,11 @@ void Connection::giveReadCredit(int credit) {
         output.giveReadCredit(credit);
 }
 
-void Connection::announce(const std::string& mgmtId, uint32_t ssf) {
+void Connection::announce(const std::string& mgmtId, uint32_t ssf, const std::string& authid, bool nodict) {
     QPID_ASSERT(mgmtId == connectionCtor.mgmtId);
-    QPID_ASSERT(ssf == connectionCtor.ssf);
+    QPID_ASSERT(ssf == connectionCtor.external.ssf);
+    QPID_ASSERT(authid == connectionCtor.external.authid);
+    QPID_ASSERT(nodict == connectionCtor.external.nodict);
     init();
 }
 
@@ -537,7 +542,7 @@ void Connection::addQueueListener(const std::string& q, uint32_t listener) {
 void Connection::managementSchema(const std::string& data) {
     management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
     if (!agent)
-        throw Exception(QPID_MSG("Management schema update but no management agent."));
+        throw Exception(QPID_MSG("Management schema update but management not enabled."));
     framing::Buffer buf(const_cast<char*>(data.data()), data.size());
     agent->importSchemas(buf);
     QPID_LOG(debug, cluster << " updated management schemas");
@@ -552,7 +557,7 @@ void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
 	     << objectNum << " seq " << bootSequence);
     management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
     if (!agent)
-        throw Exception(QPID_MSG("Management schema update but no management agent."));
+        throw Exception(QPID_MSG("Management schema update but management not enabled."));
     agent->setNextObjectId(objectNum);
     agent->setBootSequence(bootSequence);
 }
@@ -560,7 +565,7 @@ void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
 void Connection::managementAgents(const std::string& data) {
     management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
     if (!agent)
-        throw Exception(QPID_MSG("Management agents update but no management agent."));
+        throw Exception(QPID_MSG("Management agent update but management not enabled."));
     framing::Buffer buf(const_cast<char*>(data.data()), data.size());
     agent->importAgents(buf);
     QPID_LOG(debug, cluster << " updated management agents");

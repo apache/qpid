@@ -25,21 +25,15 @@
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/SessionImpl.h"
-#include "qpid/client/PrivateImplRef.h"
+#include "qpid/messaging/PrivateImplRef.h"
 
 namespace qpid {
-namespace client {
+namespace messaging {
 
 typedef PrivateImplRef<qpid::messaging::Session> PI;
 
-}
-
-namespace messaging {
-
-using qpid::client::PI;
-
 Session::Session(SessionImpl* impl) { PI::ctor(*this, impl); }
-Session::Session(const Session& s) : qpid::client::Handle<SessionImpl>() { PI::copy(*this, s); }
+Session::Session(const Session& s) : Handle<SessionImpl>() { PI::copy(*this, s); }
 Session::~Session() { PI::dtor(*this); }
 Session& Session::operator=(const Session& s) { return PI::assign(*this, s); }
 void Session::commit() { impl->commit(); }

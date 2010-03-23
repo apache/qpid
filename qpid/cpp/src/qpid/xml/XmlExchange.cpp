@@ -34,6 +34,10 @@
 
 #include <xercesc/framework/MemBufInputSource.hpp>
 
+#ifdef XQ_EFFECTIVE_BOOLEAN_VALUE_HPP
+#include <xqilla/ast/XQEffectiveBooleanValue.hpp>
+#endif
+
 #include <xqilla/ast/XQGlobalVariable.hpp>
 
 #include <xqilla/context/ItemFactory.hpp>
@@ -51,7 +55,7 @@ namespace qpid {
 namespace broker {
 
 
-    XmlExchange::XmlExchange(const string& _name, Manageable* _parent, Broker* b) : Exchange(_name, _parent, b)
+XmlExchange::XmlExchange(const string& _name, Manageable* _parent, Broker* b) : Exchange(_name, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
@@ -180,7 +184,13 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
       }
 
       Result result = query->execute(context.get());
+#ifdef XQ_EFFECTIVE_BOOLEAN_VALUE_HPP
+      Item::Ptr first_ = result->next(context.get());
+      Item::Ptr second_ = result->next(context.get());
+      return XQEffectiveBooleanValue::get(first_, second_, context.get(), 0);
+#else 
       return result->getEffectiveBooleanValue(context.get(), 0);
+#endif
   }
   catch (XQException& e) {
       QPID_LOG(warning, "Could not parse XML content (or message headers):" << msgContent);

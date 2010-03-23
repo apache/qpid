@@ -75,9 +75,12 @@ public:
     /** Called by cluster to suppress management output during update. */
     void suppress(bool s) { suppressed = s; }
 
-    void setInterval     (uint16_t _interval) { interval = _interval; }
-    void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
-                          qpid::broker::Exchange::shared_ptr directExchange);
+    void setInterval(uint16_t _interval) { interval = _interval; }
+    void setExchange(qpid::broker::Exchange::shared_ptr mgmtExchange,
+                     qpid::broker::Exchange::shared_ptr directExchange);
+    void setExchangeV2(qpid::broker::Exchange::shared_ptr topicExchange,
+                       qpid::broker::Exchange::shared_ptr directExchange);
+
     int  getMaxThreads   () { return threadPoolSize; }
     QPID_BROKER_EXTERN void registerClass   (const std::string& packageName,
                                              const std::string& className,
@@ -88,12 +91,10 @@ public:
                                              uint8_t*    md5Sum,
                                              ManagementObject::writeSchemaCall_t schemaCall);
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
-                                             uint64_t          persistId = 0,
-                                             bool              publishNow = false);
+                                             uint64_t          persistId = 0);
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject*  object,
                                              const std::string& key,
-                                             bool               persistent = true,
-                                             bool               publishNow = false);
+                                             bool               persistent = true);
     QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
@@ -238,10 +239,18 @@ private:
     ManagementObjectVector       newDeletedManagementObjects;
 
     framing::Uuid                uuid;
-    sys::Mutex                   addLock;
-    sys::Mutex                   userLock;
+
+    //
+    // Lock hierarchy:  If a thread needs to take both addLock and userLock,
+    // it MUST take userLock first, then addLock.
+    //
+    sys::Mutex userLock;
+    sys::Mutex addLock;
+
     qpid::broker::Exchange::shared_ptr mExchange;
     qpid::broker::Exchange::shared_ptr dExchange;
+    qpid::broker::Exchange::shared_ptr v2Topic;
+    qpid::broker::Exchange::shared_ptr v2Direct;
     std::string                  dataDir;
     uint16_t                     interval;
     qpid::broker::Broker*        broker;
@@ -320,7 +329,7 @@ private:
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);
     size_t validateEventSchema(framing::Buffer&);
-    void debugSnapshot(const char*);
+    std::string debugSnapshot();
 };
 
 }}

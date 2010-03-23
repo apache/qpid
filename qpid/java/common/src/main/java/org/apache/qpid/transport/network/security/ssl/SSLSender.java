@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network.ssl;
+package org.apache.qpid.transport.network.security.ssl;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,6 +28,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.util.Logger;
@@ -39,7 +40,8 @@ public class SSLSender implements Sender<ByteBuffer>
     private int sslBufSize;
     private ByteBuffer netData;
     private long timeout = 30000;
-
+    private ConnectionSettings settings;
+    
     private final Object engineState = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -52,6 +54,11 @@ public class SSLSender implements Sender<ByteBuffer>
         sslBufSize = engine.getSession().getPacketBufferSize();
         netData = ByteBuffer.allocate(sslBufSize);
         timeout = Long.getLong("qpid.ssl_timeout", 60000);
+    }
+    
+    public void setConnectionSettings(ConnectionSettings settings)
+    {
+        this.settings = settings;
     }
 
     public void close()
@@ -225,6 +232,11 @@ public class SSLSender implements Sender<ByteBuffer>
                     break;
 
                 case FINISHED:
+                    if (this.settings != null && this.settings.isVerifyHostname() )
+                    {
+                        SSLUtil.verifyHostname(engine, this.settings.getHost());
+                    }
+                    
                 case NOT_HANDSHAKING:
                     break; //do  nothing
 

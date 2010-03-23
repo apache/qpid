@@ -96,11 +96,13 @@ ManagementAgent::~ManagementAgent ()
         Mutex::ScopedLock lock (userLock);
 
         // Reset the shared pointers to exchanges.  If this is not done now, the exchanges
-        // will stick around until dExchange and mExchange are implicitely destroyed (long
+        // will stick around until dExchange and mExchange are implicitly destroyed (long
         // after this destructor completes).  Those exchanges hold references to management
         // objects that will be invalid.
         dExchange.reset();
         mExchange.reset();
+        v2Topic.reset();
+        v2Direct.reset();
 
         moveNewObjectsLH();
         for (ManagementObjectMap::iterator iter = managementObjects.begin ();
@@ -183,11 +185,18 @@ void ManagementAgent::writeData ()
     }
 }
 
-void ManagementAgent::setExchange (qpid::broker::Exchange::shared_ptr _mexchange,
-                                   qpid::broker::Exchange::shared_ptr _dexchange)
+void ManagementAgent::setExchange(qpid::broker::Exchange::shared_ptr _mexchange,
+                                  qpid::broker::Exchange::shared_ptr _dexchange)
 {
     mExchange = _mexchange;
     dExchange = _dexchange;
+}
+
+void ManagementAgent::setExchangeV2(qpid::broker::Exchange::shared_ptr _texchange,
+                                    qpid::broker::Exchange::shared_ptr _dexchange)
+{
+    v2Topic = _texchange;
+    v2Direct = _dexchange;
 }
 
 void ManagementAgent::registerClass (const string&  packageName,
@@ -210,22 +219,19 @@ void ManagementAgent::registerEvent (const string&  packageName,
     addClassLH(ManagementItem::CLASS_KIND_EVENT, pIter, eventName, md5Sum, schemaCall);
 }
 
-
 // Deprecated:
-ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId, bool publishNow)
+ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId)
 {
     // always force object to generate key string
-    return addObject(object, std::string(), persistId != 0, publishNow);
+    return addObject(object, std::string(), persistId != 0);
 }
 
 
 
 ObjectId ManagementAgent::addObject(ManagementObject* object,
                                     const std::string& key,
-                                    bool persistent,
-                                    bool publishNow)
+                                    bool persistent)
 {
-    Mutex::ScopedLock lock (addLock);
     uint16_t sequence;
 
     sequence = persistent ? 0 : bootSequence;
@@ -238,45 +244,21 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
     }
 
     object->setObjectId(objId);
-    ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
-    if (destIter != newManagementObjects.end()) {
-        if (destIter->second->isDeleted()) {
-            newDeletedManagementObjects.push_back(destIter->second);
-            newManagementObjects.erase(destIter);
-        } else {
-            QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
-                     " key=" << objId.getV2Key());
-            return objId;
+
+    {
+        Mutex::ScopedLock lock (addLock);
+        ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
+        if (destIter != newManagementObjects.end()) {
+            if (destIter->second->isDeleted()) {
+                newDeletedManagementObjects.push_back(destIter->second);
+                newManagementObjects.erase(destIter);
+            } else {
+                QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
+                         " key=" << objId.getV2Key());
+                return objId;
+            }
         }
-    }
-    newManagementObjects[objId] = object;
-
-    if (publishNow) {
-        ::qpid::messaging::Message m;
-        ::qpid::messaging::ListContent content(m);
-        ::qpid::messaging::Variant::List &list_ = content.asList();
-        ::qpid::messaging::Variant::Map  map_;
-        ::qpid::messaging::Variant::Map values;
-        ::qpid::messaging::Variant::Map  headers;
-
-        map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
-                                               object->getClassName(),
-                                               "_data",
-                                               object->getMd5Sum());
-        object->mapEncodeValues(values, true, false);  // send props only
-        map_["_values"] = values;
-        list_.push_back(map_);
-
-        headers["method"] = "indication";
-        headers["qmf.opcode"] = "_data_indication";
-        headers["qmf.content"] = "_data";
-        headers["qmf.agent"] = std::string(agentName);
-
-        content.encode();
-        stringstream key;
-        key << "console.obj.1.0." << object->getPackageName() << "." << object->getClassName();
-        sendBuffer(m.getContent(), 0, headers, mExchange, key.str());
-        QPID_LOG(trace, "SEND Immediate ContentInd to=" << key.str());
+        newManagementObjects[objId] = object;
     }
 
     return objId;
@@ -350,11 +332,11 @@ void ManagementAgent::clientAdded (const std::string& routingKey)
 }
 
 void ManagementAgent::clusterUpdate() {
-    // Called on all cluster memebesr when a new member joins a cluster.
+    // Called on all cluster memebers when a new member joins a cluster.
     // Set clientWasAdded so that on the next periodicProcessing we will do 
     // a full update on all cluster members.
     clientWasAdded = true;
-    debugSnapshot("update");
+    QPID_LOG(debug, "cluster update " << debugSnapshot());
 }
 
 void ManagementAgent::encodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
@@ -670,7 +652,7 @@ void ManagementAgent::periodicProcessing (void)
         sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         QPID_LOG(trace, "SEND HeartbeatInd to=" << routingKey);
     }
-    debugSnapshot("periodic");
+    QPID_LOG(debug, "periodic update " << debugSnapshot());
 }
 
 void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
@@ -1271,7 +1253,7 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
     agent->mgmtObject->set_systemId     ((const unsigned char*)systemId.data());
     agent->mgmtObject->set_brokerBank   (brokerBank);
     agent->mgmtObject->set_agentBank    (assignedBank);
-    addObject (agent->mgmtObject, 0, true);
+    addObject (agent->mgmtObject, 0);
     remoteAgents[connectionRef] = agent;
 
     QPID_LOG(trace, "Remote Agent registered bank=[" << brokerBank << "." << assignedBank << "] replyTo=" << replyToKey);
@@ -1893,13 +1875,13 @@ size_t ManagementAgent::validateEventSchema(Buffer& inBuffer)
 
 void ManagementAgent::setAllocator(std::auto_ptr<IdAllocator> a)
 {
-    Mutex::ScopedLock lock (addLock);
+    Mutex::ScopedLock lock (userLock);
     allocator = a;
 }
 
 uint64_t ManagementAgent::allocateId(Manageable* object)
 {
-    Mutex::ScopedLock lock (addLock);
+    Mutex::ScopedLock lock (userLock);
     if (allocator.get()) return allocator->getIdFor(object);
     return 0;
 }
@@ -2031,7 +2013,7 @@ void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
 
 void ManagementAgent::RemoteAgent::mapEncode(qpid::messaging::Variant::Map& map_) const {
     ::qpid::messaging::VariantMap _objId, _values;
-    
+
     map_["_brokerBank"] = brokerBank;
     map_["_agentBank"] = agentBank;
     map_["_routingKey"] = routingKey;
@@ -2068,9 +2050,9 @@ void ManagementAgent::RemoteAgent::mapDecode(const qpid::messaging::Variant::Map
         mgmtObject->mapDecodeValues(i->second.asMap());
     }
 
-    agent.addObject(mgmtObject, 0, true);
+    // TODO aconway 2010-03-04: see comment in encode(), readProperties doesn't set v2key.
+    mgmtObject->set_connectionRef(connectionRef);
 }
-
 
 void ManagementAgent::exportAgents(std::string& out) {
     ::qpid::messaging::Message m;
@@ -2082,15 +2064,12 @@ void ManagementAgent::exportAgents(std::string& out) {
          i != remoteAgents.end();
          ++i)
     {
-        ObjectId id = i->first;
+        // TODO aconway 2010-03-04: see comment in ManagementAgent::RemoteAgent::encode
         RemoteAgent* agent = i->second;
 
         map_.clear();
-        omap.clear();
         amap.clear();
 
-        id.mapEncode(omap);
-        map_["_object_id"] = omap;
         agent->mapEncode(amap);
         map_["_remote_agent"] = amap;
         list_.push_back(map_);
@@ -2123,16 +2102,16 @@ void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
     }
 }
 
-void ManagementAgent::debugSnapshot(const char* type) {
+std::string ManagementAgent::debugSnapshot() {
     std::ostringstream msg;
-    msg << type << " snapshot, agents:";
+    msg << " management snapshot:";
     for (RemoteAgentMap::const_iterator i=remoteAgents.begin();
          i != remoteAgents.end(); ++i)
         msg << " " << i->second->routingKey;
     msg << " packages: " << packages.size();
     msg << " objects: " << managementObjects.size();
     msg << " new objects: " << newManagementObjects.size();
-    QPID_LOG(trace, msg.str());
+    return msg.str();
 }
 
 qpid::messaging::Variant::Map ManagementAgent::toMap(const FieldTable& from)

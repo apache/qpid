@@ -339,7 +339,7 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
         }
-    }
+    }    
 
     /**
      * Strategy:
@@ -355,7 +355,7 @@ public class FaultTest extends AbstractXATestCase
         _xaResource.end(xid, XAResource.TMSUCCESS);
         xid = getNewXid();
         _xaResource.start(xid, XAResource.TMNOFLAGS);
-        assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);
+        assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 1000);
     }
 
     /**
@@ -380,6 +380,30 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XA_RBTIMEOUT, e.errorCode);
         }
+    }
+    
+    /**
+     * Strategy:
+     * Set the transaction timeout to 1000
+     */
+    public void testTransactionTimeoutAfterCommit() throws Exception
+    {
+        Xid xid = getNewXid();
+        
+        _xaResource.start(xid, XAResource.TMNOFLAGS);
+        _xaResource.setTransactionTimeout(1000);
+        assertEquals("Wrong timeout", 1000,_xaResource.getTransactionTimeout());
+        
+        //_xaResource.prepare(xid);
+        _xaResource.end(xid, XAResource.TMSUCCESS);
+        _xaResource.commit(xid, true);
+        
+        _xaResource.setTransactionTimeout(2000);
+        assertEquals("Wrong timeout", 2000,_xaResource.getTransactionTimeout());
+        
+        xid = getNewXid();
+        _xaResource.start(xid, XAResource.TMNOFLAGS);
+        assertEquals("Wrong timeout", 2000, _xaResource.getTransactionTimeout());
     }
 
 }

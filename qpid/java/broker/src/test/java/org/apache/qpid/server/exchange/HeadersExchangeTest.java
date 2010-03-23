@@ -106,6 +106,22 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         pb2.setMandatory(true);
         routeAndTest(m1,true);
     }
+    
+    public void testOnUnbind() throws AMQException
+    {
+        TestQueue q1 = bindDefault("F0000");
+        TestQueue q2 = bindDefault("F0000=Aardvark");
+        TestQueue q3 = bindDefault("F0001");
+        
+        routeAndTest(new Message(_protocolSession, "Message1", "F0000"), q1);
+        routeAndTest(new Message(_protocolSession, "Message2", "F0000=Aardvark"), q1, q2);
+        routeAndTest(new Message(_protocolSession, "Message3", "F0001"), q3);
+        
+        unbind(q1,"F0000");
+        routeAndTest(new Message(_protocolSession, "Message4", "F0000"));
+        routeAndTest(new Message(_protocolSession, "Message5", "F0000=Aardvark"), q2);
+    }
+    
 
     public static junit.framework.Test suite()
     {

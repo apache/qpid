@@ -21,14 +21,22 @@
 package org.apache.qpid.server.exchange.topic;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InboundMessage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class TopicExchangeResult implements TopicMatcherResult
 {
+    private final List<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
     private final Map<AMQQueue, Integer> _unfilteredQueues = new ConcurrentHashMap<AMQQueue, Integer>();
     private final ConcurrentHashMap<AMQQueue, Map<MessageFilter,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter, Integer>>();
 
@@ -64,6 +72,20 @@ public final class TopicExchangeResult implements TopicMatcherResult
         return _unfilteredQueues.keySet();
     }
 
+    public void addBinding(Binding binding)
+    {
+        _bindings.add(binding);
+    }
+    
+    public void removeBinding(Binding binding)
+    {
+        _bindings.remove(binding);
+    }
+    
+    public List<Binding> getBindings()
+    {
+        return new ArrayList<Binding>(_bindings);
+    }
 
     public void addFilteredQueue(AMQQueue queue, MessageFilter filter)
     {

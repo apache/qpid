@@ -22,19 +22,14 @@
  *
  */
 #include <string>
-#include "qpid/client/ClientImportExport.h"
-#include "qpid/client/Handle.h"
+#include "qpid/messaging/ImportExport.h"
+#include "qpid/messaging/Handle.h"
 #include "qpid/messaging/Variant.h"
 
 namespace qpid {
-namespace client {
-
-template <class> class PrivateImplRef;
-
-}
-
 namespace messaging {
 
+template <class> class PrivateImplRef;
 class ConnectionImpl;
 class Session;
 
@@ -43,7 +38,7 @@ struct InvalidOptionString : public qpid::Exception
     InvalidOptionString(const std::string& msg);
 };
 
-class Connection : public qpid::client::Handle<ConnectionImpl>
+class Connection : public qpid::messaging::Handle<ConnectionImpl>
 {
   public:
     QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl);
@@ -58,30 +53,38 @@ class Connection : public qpid::client::Handle<ConnectionImpl>
      *     sasl-mechanism
      *     sasl-min-ssf
      *     sasl-max-ssf
+     *     protocol
+     *     urls
      * 
-     * (note also bounds, locale, max-channels and max-framesize, but not sure whether those should be docuemented here)
+     * (note also bounds, locale, max-channels and max-framesize, but
+     * not sure whether those should be documented here)
      * 
-     * Retry behaviour can be controlled through the following options:
+     * Reconnect behaviour can be controlled through the following options:
+     * 
+     *     reconnect: true/false (enables/disables reconnect entirely)
+     *     reconnect-timeout: number of seconds (give up and report failure after specified time)
+     *     reconnect-limit: n (give up and report failure after specified number of attempts)
+     *     reconnect-interval-min: number of seconds (initial delay between failed reconnection attempts)
+     *     reconnect-interval-max: number of seconds (maximum delay between failed reconnection attempts)
+     *     reconnect-interval: shorthand for setting the same reconnect_interval_min/max
      *
-     *     reconnection-timeout - determines how long it will try to
-     *                            reconnect for -1 means forever, 0
-     *                            means don't try to reconnect
-     *     min-retry-interval
-     *     max-retry-interval
-     * 
-     *     The retry-interval is the time that the client waits for
-     *     after a failed attempt to reconnect before retrying. It
+     *     The reconnect-interval is the time that the client waits
+     *     for after a failed attempt to reconnect before retrying. It
      *     starts at the value of the min-retry-interval and is
      *     doubled every failure until the value of max-retry-interval
      *     is reached.
-     * 
-     *
      */
     QPID_CLIENT_EXTERN Connection(const Variant::Map& options = Variant::Map());
     QPID_CLIENT_EXTERN Connection(const std::string& options);
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
+    QPID_CLIENT_EXTERN void setOption(const std::string& name, const Variant& value);
     QPID_CLIENT_EXTERN void open(const std::string& url);
+    /**
+     * Closes a connection and all sessions associated with it. An
+     * opened connection must be closed before the last handle is
+     * allowed to go out of scope.
+     */
     QPID_CLIENT_EXTERN void close();
     QPID_CLIENT_EXTERN Session newSession(bool transactional, const std::string& name = std::string());
     QPID_CLIENT_EXTERN Session newSession(const std::string& name = std::string());
@@ -89,7 +92,7 @@ class Connection : public qpid::client::Handle<ConnectionImpl>
 
     QPID_CLIENT_EXTERN Session getSession(const std::string& name) const;
   private:
-  friend class qpid::client::PrivateImplRef<Connection>;
+  friend class qpid::messaging::PrivateImplRef<Connection>;
 
 };
 

@@ -30,6 +30,7 @@ namespace qpid {
 
 namespace sys {
 class SecurityLayer;
+struct SecuritySettings;
 }
 
 namespace client {
@@ -48,17 +49,10 @@ class Sasl
      *
      * @param mechanisms Comma-separated list of the SASL mechanism the
      *             client supports.
-     * @param ssf  Security Strength Factor (SSF). SSF is used to negotiate
-     *             a SASL security layer on top of the connection should both
-     *             parties require and support it. The value indicates the
-     *             required level of security for communication. Possible
-     *             values are:
-     *             @li 0  No security
-     *             @li 1  Integrity checking only
-     *             @li >1 Integrity and confidentiality with the number
-     *                    giving the encryption key length.
+     * @param externalSecuritySettings security related details from the underlying transport
      */
-    virtual std::string start(const std::string& mechanisms, unsigned int ssf) = 0;
+    virtual std::string start(const std::string& mechanisms,
+                              const qpid::sys::SecuritySettings* externalSecuritySettings = 0) = 0;
     virtual std::string step(const std::string& challenge) = 0;
     virtual std::string getMechanism() = 0;
     virtual std::string getUserId() = 0;

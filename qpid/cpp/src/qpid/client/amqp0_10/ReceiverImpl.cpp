@@ -57,14 +57,14 @@ qpid::messaging::Message ReceiverImpl::fetch(qpid::messaging::Duration timeout)
 bool ReceiverImpl::get(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     Get f(*this, message, timeout);
-    while (!parent.execute(f)) {}
+    while (!parent->execute(f)) {}
     return f.result;
 }
 
 bool ReceiverImpl::fetch(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
     Fetch f(*this, message, timeout);
-    while (!parent.execute(f)) {}
+    while (!parent->execute(f)) {}
     return f.result;
 }
 
@@ -112,7 +112,7 @@ void ReceiverImpl::init(qpid::client::AsyncSession s, AddressResolution& resolve
     }
     if (state == CANCELLED) {
         source->cancel(session, destination);
-        parent.receiverCancelled(destination);        
+        parent->receiverCancelled(destination);        
     } else {
         source->subscribe(session, destination);
         start();
@@ -129,23 +129,23 @@ uint32_t ReceiverImpl::getCapacity()
 
 uint32_t ReceiverImpl::available()
 {
-    return parent.available(destination);
+    return parent->available(destination);
 }
 
 uint32_t ReceiverImpl::pendingAck()
 {
-    return parent.pendingAck(destination);
+    return parent->pendingAck(destination);
 }
 
 ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name, 
                            const qpid::messaging::Address& a) : 
 
-    parent(p), destination(name), address(a), byteCredit(0xFFFFFFFF), 
+    parent(&p), destination(name), address(a), byteCredit(0xFFFFFFFF), 
     state(UNRESOLVED), capacity(0), window(0) {}
 
 bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
-    return parent.get(*this, message, timeout);
+    return parent->get(*this, message, timeout);
 }
 
 bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
@@ -172,7 +172,7 @@ void ReceiverImpl::closeImpl()
     if (state != CANCELLED) {
         state = CANCELLED;
         source->cancel(session, destination);
-        parent.receiverCancelled(destination);
+        parent->receiverCancelled(destination);
     }
 }
 
@@ -188,7 +188,7 @@ void ReceiverImpl::setCapacityImpl(uint32_t c)
 }
 qpid::messaging::Session ReceiverImpl::getSession() const
 {
-    return qpid::messaging::Session(&parent);
+    return qpid::messaging::Session(parent.get());
 }
 
 }}} // namespace qpid::client::amqp0_10

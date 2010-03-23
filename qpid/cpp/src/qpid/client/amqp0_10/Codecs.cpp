@@ -25,8 +25,10 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/List.h"
+#include "qpid/log/Statement.h"
 #include <algorithm>
 #include <functional>
+#include <limits>
 
 using namespace qpid::framing;
 using namespace qpid::messaging;
@@ -39,6 +41,7 @@ namespace {
 const std::string iso885915("iso-8859-15");
 const std::string utf8("utf8");
 const std::string utf16("utf16");
+const std::string binary("binary");
 const std::string amqp0_10_binary("amqp0-10:binary");
 const std::string amqp0_10_bit("amqp0-10:bit");
 const std::string amqp0_10_datetime("amqp0-10:datetime");
@@ -129,7 +132,7 @@ Variant toVariant(boost::shared_ptr<FieldValue> in)
       case 0x02: out = in->getIntegerValue<int8_t, 1>(); break;
       case 0x03: out = in->getIntegerValue<uint8_t, 1>(); break;
       case 0x04: break; //TODO: iso-8859-15 char
-      case 0x08: out = in->getIntegerValue<bool, 1>(); break;
+      case 0x08: out = static_cast<bool>(in->getIntegerValue<uint8_t, 1>()); break;
       case 0x10: out.setEncoding(amqp0_10_binary);
       case 0x11: out = in->getIntegerValue<int16_t, 2>(); break;
       case 0x12: out = in->getIntegerValue<uint16_t, 2>(); break;
@@ -163,8 +166,8 @@ Variant toVariant(boost::shared_ptr<FieldValue> in)
       case 0x96: 
       case 0xa0:
       case 0xab:
-        setEncodingFor(out, in->getType());
         out = in->get<std::string>();
+        setEncodingFor(out, in->getType());
         break;
 
       case 0xa8:
@@ -188,6 +191,28 @@ Variant toVariant(boost::shared_ptr<FieldValue> in)
     return out;
 }
 
+boost::shared_ptr<FieldValue> convertString(const std::string& value, const std::string& encoding)
+{
+    bool large = value.size() > std::numeric_limits<uint16_t>::max();
+    if (encoding.empty() || encoding == amqp0_10_binary || encoding == binary) {
+        if (large) {
+            return boost::shared_ptr<FieldValue>(new Var32Value(value, 0xa0));
+        } else {
+            return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x90));
+        }
+    } else if (encoding == utf8 && !large) {
+            return boost::shared_ptr<FieldValue>(new Str16Value(value));
+    } else if (encoding == utf16 && !large) {
+        return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x96));
+    } else if (encoding == iso885915 && !large) {
+        return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x94));
+    } else {
+        //either the string is too large for the encoding in amqp 0-10, or the encoding was not recognised
+        QPID_LOG(warning, "Could not encode " << value.size() << " byte value as " << encoding << ", encoding as vbin32.");
+        return boost::shared_ptr<FieldValue>(new Var32Value(value, 0xa0));
+    }
+}
+
 boost::shared_ptr<FieldValue> toFieldValue(const Variant& in)
 {
     boost::shared_ptr<FieldValue> out;
@@ -204,8 +229,7 @@ boost::shared_ptr<FieldValue> toFieldValue(const Variant& in)
       case VAR_INT64: out = boost::shared_ptr<FieldValue>(new Integer64Value(in.asInt64())); break;
       case VAR_FLOAT: out = boost::shared_ptr<FieldValue>(new FloatValue(in.asFloat())); break;
       case VAR_DOUBLE: out = boost::shared_ptr<FieldValue>(new DoubleValue(in.asDouble())); break;
-        //TODO: check encoding (and length?) when deciding what AMQP type to treat string as
-      case VAR_STRING: out = boost::shared_ptr<FieldValue>(new Str16Value(in.asString())); break;
+      case VAR_STRING: out = convertString(in.asString(), in.getEncoding()); break;
       case VAR_UUID: out = boost::shared_ptr<FieldValue>(new UuidValue(in.asUuid().data())); break;
       case VAR_MAP: 
         out = boost::shared_ptr<FieldValue>(toFieldTableValue(in.asMap()));

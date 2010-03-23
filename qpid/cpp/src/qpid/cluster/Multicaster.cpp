@@ -33,10 +33,8 @@ Multicaster::Multicaster(Cpg& cpg_,
                          boost::function<void()> onError_) :
     onError(onError_), cpg(cpg_), 
     queue(boost::bind(&Multicaster::sendMcast, this, _1), poller),
-    ready(false)
-{
-    queue.start();
-}
+    ready(false), bypass(true)
+{}
 
 void Multicaster::mcastControl(const framing::AMQBody& body, const ConnectionId& id) {
     mcast(Event::control(body, id));
@@ -61,9 +59,15 @@ void Multicaster::mcast(const Event& e) {
         }
     }
     QPID_LOG(trace, "MCAST " << e);
-    queue.push(e);
+    if (bypass) {               // direct, don't queue
+        iovec iov = e.toIovec();
+        // FIXME aconway 2010-03-10: should do limited retry.
+        while (!cpg.mcast(&iov, 1))
+            ;
+    }
+    else
+        queue.push(e);
 }
-
 
 Multicaster::PollableEventQueue::Batch::const_iterator Multicaster::sendMcast(const PollableEventQueue::Batch& values) {
     try {
@@ -84,6 +88,11 @@ Multicaster::PollableEventQueue::Batch::const_iterator Multicaster::sendMcast(co
         onError();
         return values.end();
     }
+}
+
+void Multicaster::start() {
+    queue.start();
+    bypass = false;
 }
 
 void Multicaster::setReady() {

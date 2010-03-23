@@ -22,21 +22,14 @@
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/SenderImpl.h"
 #include "qpid/messaging/Session.h"
-#include "qpid/client/PrivateImplRef.h"
+#include "qpid/messaging/PrivateImplRef.h"
 
 namespace qpid {
-namespace client {
-
+namespace messaging {
 typedef PrivateImplRef<qpid::messaging::Sender> PI;
 
-}
-
-namespace messaging {
-
-using qpid::client::PI;
-
 Sender::Sender(SenderImpl* impl) { PI::ctor(*this, impl); }
-Sender::Sender(const Sender& s) : qpid::client::Handle<SenderImpl>() { PI::copy(*this, s); }
+Sender::Sender(const Sender& s) : qpid::messaging::Handle<SenderImpl>() { PI::copy(*this, s); }
 Sender::~Sender() { PI::dtor(*this); }
 Sender& Sender::operator=(const Sender& s) { return PI::assign(*this, s); }
 void Sender::send(const Message& message) { impl->send(message); }

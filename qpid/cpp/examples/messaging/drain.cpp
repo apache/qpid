@@ -93,8 +93,8 @@ int main(int argc, char** argv)
 {
     Options options(argv[0]);
     if (options.parse(argc, argv)) {
+        Connection connection(options.connectionOptions);
         try {
-            Connection connection(options.connectionOptions);
             connection.open(options.url);
             Session session = connection.newSession();
             Receiver receiver = session.createReceiver(options.address);
@@ -116,6 +116,7 @@ int main(int argc, char** argv)
             return 0;
         } catch(const std::exception& error) {
             std::cout << error.what() << std::endl;
+            connection.close();
         }
     }
     return 1;   

@@ -64,7 +64,6 @@
       <field name="cluster-id" type="uuid"/>>
       <field name="store-state" type="store-state"/>
       <field name="shutdown-id" type="uuid"/>
-      <field name="config-seq" type="sequence-no"/>
       <field name="first-config" type="str16"/>
     </control>
 
@@ -122,6 +121,10 @@
       encryption (e.g. ssl), ssf is the bit length of the key.  Zero if no
       encryption provided. -->
       <field name="ssf" type="uint32"/>
+      <!-- external auth id (e.g. ssl client certificate id) -->
+      <field name="authid" type="str16"/>
+      <!-- exclude certain sasl mechs, used with ssl and sasl-external -->
+      <field name="nodict" type="bit"/>
     </control>
 
     <!-- Marks the cluster-wide point when a connection is considered closed. -->

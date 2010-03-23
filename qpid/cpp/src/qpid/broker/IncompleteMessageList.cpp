@@ -30,7 +30,8 @@ IncompleteMessageList::IncompleteMessageList() :
 
 IncompleteMessageList::~IncompleteMessageList() 
 {
-    sys::Mutex::ScopedLock l(lock);
+    //  No lock here. We are relying on Messsag::reset*CompleteCallback
+    //  to ensure no callbacks are in progress before they return.
     for (Messages::iterator i = incomplete.begin(); i != incomplete.end(); ++i) {
         (*i)->resetEnqueueCompleteCallback();
         (*i)->resetDequeueCompleteCallback();
@@ -78,7 +79,7 @@ void IncompleteMessageList::each(const CompletionListener& listen) {
         sys::Mutex::ScopedLock l(lock);
         snapshot = incomplete;
     }
-    std::for_each(incomplete.begin(), incomplete.end(), listen); // FIXME aconway 2008-11-07: passed by ref or value?
+    std::for_each(incomplete.begin(), incomplete.end(), listen);
 }
 
 }}

@@ -26,7 +26,7 @@
 #include "qpid/broker/PersistableMessage.h"
 #include "qpid/broker/MessageAdapter.h"
 #include "qpid/framing/amqp_types.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -189,9 +189,10 @@ public:
     mutable Replacement replacement;
     mutable boost::intrusive_ptr<Message> empty;
 
-    sys::Mutex callbackLock;
+    sys::Monitor callbackLock;
     MessageCallback* enqueueCallback;
     MessageCallback* dequeueCallback;
+    bool inCallback;
 
     uint32_t requiredCredit;
 };

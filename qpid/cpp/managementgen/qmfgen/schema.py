@@ -1315,13 +1315,14 @@ class SchemaClass:
   def genPrimaryKey (self, stream, variables):
     first = 1
     for prop in self.properties:
-      if prop.isIndex == 1:
-        if first:
-          first = None
-        else:
-          stream.write(" << \",\";\n")
-        var = prop.type.type.stream.replace("#", prop.getName())
-        stream.write("    key << %s" % var)
+      if prop.getName() != "vhostRef": # Limit how deep the v2Key strings get
+        if prop.isIndex == 1:
+          if first:
+            first = None
+          else:
+            stream.write(" << \",\";\n")
+          var = prop.type.type.stream.replace("#", prop.getName())
+          stream.write("    key << %s" % var)
     if not first:
       stream.write(";")
 

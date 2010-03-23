@@ -34,8 +34,8 @@ int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
     int count = argc>2 ? atoi(argv[2]) : 10;
 
+    Connection connection;
     try {
-        Connection connection;
         connection.open(url);
         Session session = connection.newSession();
         Sender sender = session.createSender("message_queue");
@@ -50,10 +50,10 @@ int main(int argc, char** argv) {
 	// And send a final message to indicate termination.    	
         sender.send(Message("That's all, folks!"));
         session.sync();
-        connection.close();
         return 0;
     } catch(const std::exception& error) {
         std::cout << error.what() << std::endl;
+        connection.close();
     }
     return 1;
 }

@@ -26,9 +26,6 @@
 #include "qpid/messaging/Duration.h"
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
 
 class Address;

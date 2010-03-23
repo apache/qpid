@@ -24,7 +24,7 @@
 #include <string>
 #include "qpid/Exception.h"
 #include "qpid/messaging/Variant.h"
-#include "qpid/client/ClientImportExport.h"
+#include "qpid/messaging/ImportExport.h"
 #include <ostream>
 
 namespace qpid {
@@ -79,6 +79,11 @@ class AddressImpl;
  * nide when a sender or receiver is cancelled. Can be one of <i>always</i>,
  * <i>never</i>, <i>sender</i> or <i>receiver</i>.</td></tr>
  *
+ * <tr valign=top><td>reliability</td><td>indicates the level of
+ * reliability expected. Can be one of unreliable, at-most-once,
+ * at-least-once or exactly-once (the latter is not yet correctly
+ * supported).</td></tr>
+ * 
  * <tr valign=top><td>node-properties</td><td>A nested map of properties of the addressed
  * entity or 'node'. These can be used when automatically creating it,
  * or to assert certain properties.
@@ -109,15 +114,13 @@ class AddressImpl;
  * receiver does not want to receiver messages published to the topic
  * that originate from a sender on the same connection</td></tr>
  *
- * <tr valign=top><td>browse</td><td>(only relevant for queues) specifies that the receiver
- * does not wish to consume the messages, but merely browse them</td></tr>
+ * <tr valign=top><td>mode</td><td>(only relevant for queues)
+ * indicates whether the subscribe should consume (the default) or
+ * merely browse the messages. Valid values are 'consume' and
+ * 'browse'</td></tr>
  * 
  * <tr valign=top><td>durable</td><td>(only relevant for topics at present) specifies that a
  * durable subscription is required</td></tr>
- * 
- * <tr valign=top><td>reliability</td><td>indicates the level of reliability that the receiver
- * expects. Can be one of unreliable, at-most-once, at-least-once or
- * exactly-once (the latter is not yet correctly supported).</td></tr>
  * 
  * <tr valign=top><td>filter</td><td>(only relevant for topics at present) allows bindings to
  * be created for the queue that match the given criteria (or list of
@@ -133,7 +136,7 @@ class AddressImpl;
  *     <li>exclusive, which requests an exclusive subscription and
  *     is only relevant for queues</li>
  *
- *     <li>x-queue-arguments, which ais only relevant for topics and
+ *     <li>x-queue-arguments, which is only relevant for topics and
  *     allows arguments to the queue-declare for the subscription
  *     queue to be specified</li>
  * </ul>

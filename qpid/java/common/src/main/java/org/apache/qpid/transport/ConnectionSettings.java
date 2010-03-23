@@ -22,6 +22,12 @@ package org.apache.qpid.transport;
 
 import java.util.Map;
 
+/**
+ * A ConnectionSettings object can only be associated with
+ * one Connection object. I have added an assertion that will
+ * throw an exception if it is used by more than on Connection
+ *
+ */
 public class ConnectionSettings
 {
     String protocol = "tcp";
@@ -29,18 +35,34 @@ public class ConnectionSettings
     String vhost;
     String username = "guest";
     String password = "guest";
-    String saslMechs = "PLAIN";
-    String saslProtocol = "AMQP";
-    String saslServerName = "localhost";
     int port = 5672;
+    boolean tcpNodelay = Boolean.getBoolean("amqj.tcp_nodelay");
     int maxChannelCount = 32767;
     int maxFrameSize = 65535;
     int heartbeatInterval;
+    int readBufferSize = 65535;
+    int writeBufferSize = 65535;
+    long transportTimeout = 60000;
+    
+    // SSL props
     boolean useSSL;
+    String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+    String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+    String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");;
+    String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");;
+    String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
+    String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
+    String certAlias;
+    boolean verifyHostname;
+    
+    // SASL props
+    String saslMechs = System.getProperty("qpid.sasl_mechs", "PLAIN");
+    String saslProtocol = System.getProperty("qpid.sasl_protocol", "AMQP");
+    String saslServerName = System.getProperty("qpid.sasl_server_name", "localhost");
     boolean useSASLEncryption;
-    boolean tcpNodelay;
+   
     private Map<String, Object> _clientProperties;
-
+    
     public boolean isTcpNodelay()
     {
         return tcpNodelay;
@@ -200,4 +222,115 @@ public class ConnectionSettings
     {
         return _clientProperties;
     }
+    
+    public String getKeyStorePath()
+    {
+        return keyStorePath;
+    }
+
+    public void setKeyStorePath(String keyStorePath)
+    {
+        this.keyStorePath = keyStorePath;
+    }
+
+    public String getKeyStorePassword()
+    {
+        return keyStorePassword;
+    }
+
+    public void setKeyStorePassword(String keyStorePassword)
+    {
+        this.keyStorePassword = keyStorePassword;
+    }
+
+    public String getTrustStorePath()
+    {
+        return trustStorePath;
+    }
+
+    public void setTrustStorePath(String trustStorePath)
+    {
+        this.trustStorePath = trustStorePath;
+    }
+
+    public String getTrustStorePassword()
+    {
+        return trustStorePassword;
+    }
+
+    public void setTrustStorePassword(String trustStorePassword)
+    {
+        this.trustStorePassword = trustStorePassword;
+    }
+
+    public String getCertAlias()
+    {
+        return certAlias;
+    }
+
+    public void setCertAlias(String certAlias)
+    {
+        this.certAlias = certAlias;
+    }
+
+    public boolean isVerifyHostname()
+    {
+        return verifyHostname;
+    }
+
+    public void setVerifyHostname(boolean verifyHostname)
+    {
+        this.verifyHostname = verifyHostname;
+    }
+    
+    public String getKeyStoreCertType()
+    {
+        return keyStoreCertType;
+    }
+
+    public void setKeyStoreCertType(String keyStoreCertType)
+    {
+        this.keyStoreCertType = keyStoreCertType;
+    }
+
+    public String getTrustStoreCertType()
+    {
+        return trustStoreCertType;
+    }
+
+    public void setTrustStoreCertType(String trustStoreCertType)
+    {
+        this.trustStoreCertType = trustStoreCertType;
+    }
+
+    public int getReadBufferSize()
+    {
+        return readBufferSize;
+    }
+
+    public void setReadBufferSize(int readBufferSize)
+    {
+        this.readBufferSize = readBufferSize;
+    }
+
+    public int getWriteBufferSize()
+    {
+        return writeBufferSize;
+    }
+
+    public void setWriteBufferSize(int writeBufferSize)
+    {
+        this.writeBufferSize = writeBufferSize;
+    }
+    
+    public long getTransportTimeout()
+    {
+        return transportTimeout;
+    }
+
+    public void setTransportTimeout(long transportTimeout)
+    {
+        this.transportTimeout = transportTimeout;
+    }
+
 }

@@ -25,16 +25,15 @@
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
+#include <qpid/client/amqp0_10/FailoverUpdates.h>
 #include "TestOptions.h"
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 using namespace qpid::messaging;
-using qpid::framing::Uuid;
-using qpid::sys::AbsTime;
-using qpid::sys::now;
-using qpid::sys::TIME_INFINITE;
+using qpid::client::amqp0_10::FailoverUpdates;
 
 typedef std::vector<std::string> string_vector;
 
@@ -49,7 +48,6 @@ struct Options : public qpid::Options
     std::string url;
     std::string connectionOptions;
     std::string address;
-    int64_t timeout;
     uint count;
     std::string id;
     std::string replyto;
@@ -64,13 +62,13 @@ struct Options : public qpid::Options
     uint tx;
     uint rollbackFrequency;
     uint capacity;
+    bool failoverUpdates;
     qpid::log::Options log;
 
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
           help(false),
           url("amqp:tcp:127.0.0.1"),
-          timeout(TIME_INFINITE),
           count(1),
           sendEos(0),
           durable(false),
@@ -78,13 +76,13 @@ struct Options : public qpid::Options
           tx(0),
           rollbackFrequency(0),
           capacity(0),
+          failoverUpdates(false),
           log(argv0)
     {
         addOptions()
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
             ("address,a", qpid::optValue(address, "ADDRESS"), "address to drain from")
             ("connection-options", qpid::optValue(connectionOptions, "OPTIONS"), "options for the connection")
-            ("timeout,t", qpid::optValue(timeout, "TIMEOUT"), "exit after the specified time")
             ("count,c", qpid::optValue(count, "COUNT"), "stop after count messages have been sent, zero disables")
             ("id,i", qpid::optValue(id, "ID"), "use the supplied id instead of generating one")
             ("reply-to", qpid::optValue(replyto, "REPLY-TO"), "specify reply-to address")
@@ -99,6 +97,7 @@ struct Options : public qpid::Options
             ("capacity", qpid::optValue(capacity, "N"), "size of the senders outgoing message queue")
             ("tx", qpid::optValue(tx, "N"), "batch size for transactions (0 implies transaction are not used)")
             ("rollback-frequency", qpid::optValue(rollbackFrequency, "N"), "rollback frequency (0 implies no transaction will be rolledback)")
+            ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -182,9 +181,10 @@ int main(int argc, char ** argv)
 {
     Options opts;
     if (opts.parse(argc, argv)) {
+        Connection connection(opts.connectionOptions);
         try {
-            Connection connection(opts.connectionOptions);
             connection.open(opts.url);
+            std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = connection.newSession(opts.tx > 0);
             Sender sender = session.createSender(opts.address);
             if (opts.capacity) sender.setCapacity(opts.capacity);
@@ -230,6 +230,7 @@ int main(int argc, char ** argv)
             return 0;
         } catch(const std::exception& error) {
             std::cout << "Failed: " << error.what() << std::endl;
+            connection.close();
         }
     }
     return 1;

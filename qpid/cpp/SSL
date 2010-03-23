@@ -13,16 +13,16 @@ providing the ssl.so module is loaded):
 
 SSL Settings:
   --ssl-use-export-policy              Use NSS export policy
-  --ssl-cert-password-file PATH        File containing password to use for
-                                       accessing certificate database
+  --ssl-cert-password-file PATH        File containing password to use for accessing
+                                       certificate database
   --ssl-cert-db PATH                   Path to directory containing certificate
                                        database
-  --ssl-cert-name NAME (thinkpad)      Name of the certificate to use
-  --ssl-port PORT (5671)               Port on which to listen for SSL
-                                       connections
-  --ssl-require-client-authentication  Forces clients to authenticate in order
+  --ssl-cert-name NAME (hostname)      Name of the certificate to use
+  --ssl-port PORT (5671)               Port on which to listen for SSL connections
+  --ssl-require-client-authentication  Forces clients to authenticate in order 
                                        to establish an SSL connection
-
+  --ssl-sasl-no-dict                   Disables SASL mechanisms that are vulner able to
+                                       passive dictionary-based password attacks
 
 The first four of these are also available as client options (where
 they must either be in the client config file or set as environment
@@ -66,6 +66,12 @@ and run e.g.
 ./src/tests/perftest --count 10000 -P ssl --port 5671 \
                      --broker myhost.mydomain
 
+When authentication is enabled, the EXTERNAL mechanism will be
+available on client authenticated SSL connections. This allows the
+clients authorisation id to be taken from the validated client
+certificate (it will be the CN with any DCs present appended as the
+domain, e.g. CN=bob,DC=acme,DC=com would result in an identity of
+bob@acme.com).
 
 [1] http://www.mozilla.org/projects/security/pki/nss/ref/ssl/gtstd.html
 [2] http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html

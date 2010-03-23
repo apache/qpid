@@ -5,6 +5,10 @@ Declaring queue: news
 Declaring queue: usa
 Declaring queue: weather
 Listening for messages ...
+Message: That's all, folks! from europe
+Message: That's all, folks! from news
+Message: That's all, folks! from usa
+Message: That's all, folks! from weather
 Message: europe.news 0 from europe
 Message: europe.news 0 from news
 Message: europe.news 1 from europe
@@ -25,10 +29,6 @@ Message: europe.weather 3 from europe
 Message: europe.weather 3 from weather
 Message: europe.weather 4 from europe
 Message: europe.weather 4 from weather
-Message: That's all, folks! from europe
-Message: That's all, folks! from news
-Message: That's all, folks! from usa
-Message: That's all, folks! from weather
 Message: usa.news 0 from news
 Message: usa.news 0 from usa
 Message: usa.news 1 from news

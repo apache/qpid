@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessageHeader;
 
 /**
@@ -38,69 +39,35 @@ class HeadersBinding
     private static final Logger _logger = Logger.getLogger(HeadersBinding.class);
 
     private final FieldTable _mappings;
+    private final Binding _binding;
     private final Set<String> required = new HashSet<String>();
     private final Map<String,Object> matches = new HashMap<String,Object>();
     private boolean matchAny;
 
-    private final class MatchesOrProcessor implements FieldTable.FieldTableElementProcessor
-    {
-        private Boolean _result = Boolean.FALSE;
-
-        public boolean processElement(String propertyName, AMQTypedValue value)
-        {
-            if((value != null) && (value.getValue() != null) && value.getValue().equals(matches.get(propertyName)))
-            {
-                _result = Boolean.TRUE;
-                return false;
-            }
-            return true;
-        }
-
-        public Object getResult()
-        {
-            return _result;
-        }
-    }
-
-    private final class RequiredOrProcessor implements FieldTable.FieldTableElementProcessor
-    {
-        Boolean _result = Boolean.FALSE;
-
-        public boolean processElement(String propertyName, AMQTypedValue value)
-        {
-            if(required.contains(propertyName))
-            {
-                _result = Boolean.TRUE;
-                return false;
-            }
-            return true;
-        }
-
-        public Object getResult()
-        {
-            return _result;
-        }
-    }
-
-
-
     /**
-     * Creates a binding for a set of mappings. Those mappings whose value is
+     * Creates a header binding for a set of mappings. Those mappings whose value is
      * null or the empty string are assumed only to be required headers, with
      * no constraint on the value. Those with a non-null value are assumed to
      * define a required match of value.
-     * @param mappings the defined mappings this binding should use
+     * 
+     * @param binding the binding to create a header binding using
      */
-
-    HeadersBinding(FieldTable mappings)
+    public HeadersBinding(Binding binding)
     {
-        _mappings = mappings;
-        initMappings();
+        _binding = binding;
+        if(_binding !=null)
+        {
+            _mappings = FieldTable.convertToFieldTable(_binding.getArguments());
+            initMappings();
+        }
+        else
+        {
+            _mappings = null;
+        }
     }
-
+    
     private void initMappings()
     {
-
         _mappings.processOverElements(new FieldTable.FieldTableElementProcessor()
         {
 
@@ -132,6 +99,11 @@ class HeadersBinding
     protected FieldTable getMappings()
     {
         return _mappings;
+    }
+    
+    public Binding getBinding()
+    {
+        return _binding;
     }
 
     /**
@@ -249,5 +221,40 @@ class HeadersBinding
     static boolean isSpecial(String key)
     {
         return key.startsWith("X-") || key.startsWith("x-");
+    }
+    
+    @Override
+    public boolean equals(final Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (o == null)
+        {
+            return false;
+        }
+
+        if (!(o instanceof HeadersBinding))
+        {
+            return false;
+        }
+
+        final HeadersBinding hb = (HeadersBinding) o;
+
+        if(_binding == null)
+        {
+            if(hb.getBinding() != null)
+            {
+                return false;
+            }
+        }
+        else if (!_binding.equals(hb.getBinding()))
+        {
+            return false;
+        }
+
+        return true;
     }
 }

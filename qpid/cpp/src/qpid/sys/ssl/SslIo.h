@@ -22,6 +22,7 @@
  */
 
 #include "qpid/sys/DispatchHandle.h"
+#include "qpid/sys/SecuritySettings.h"
 
 #include <boost/function.hpp>
 #include <deque>
@@ -156,7 +157,7 @@ public:
     bool writeQueueEmpty() { return writeQueue.empty(); }
     BufferBase* getQueuedBuffer();
 
-    int getKeyLen();
+    qpid::sys::SecuritySettings getSecuritySettings();
 
 private:
     ~SslIO();

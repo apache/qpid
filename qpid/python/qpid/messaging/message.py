@@ -129,7 +129,7 @@ class Message:
                  "correlation_id", "priority", "ttl"]:
       value = self.__dict__[name]
       if value is not None: args.append("%s=%r" % (name, value))
-    for name in ["durable", "properties"]:
+    for name in ["durable", "redelivered", "properties"]:
       value = self.__dict__[name]
       if value: args.append("%s=%r" % (name, value))
     if self.content_type != get_type(self.content):
@@ -141,4 +141,15 @@ class Message:
         args.append(repr(self.content))
     return "Message(%s)" % ", ".join(args)
 
-__all__ = ["Message"]
+class Disposition:
+
+  def __init__(self, type, **options):
+    self.type = type
+    self.options = options
+
+  def __repr__(self):
+    args = [str(self.type)] + \
+        ["%s=%r" % (k, v) for k, v in self.options.items()]
+    return "Disposition(%s)" % ", ".join(args)
+
+__all__ = ["Message", "Disposition"]

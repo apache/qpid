@@ -45,11 +45,13 @@ class SslHandler : public OutputControl {
     ConnectionCodec* codec;
     bool readError;
     bool isClient;
+    bool nodict;
 
     void write(const framing::ProtocolInitiation&);
+    qpid::sys::SecuritySettings getSecuritySettings(SslIO* aio);
 
   public:
-    SslHandler(std::string id, ConnectionCodec::Factory* f);
+    SslHandler(std::string id, ConnectionCodec::Factory* f, bool nodict);
     ~SslHandler();
     void init(SslIO* a, int numBuffs);
 

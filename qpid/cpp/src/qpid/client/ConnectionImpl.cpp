@@ -134,6 +134,15 @@ IOThread& theIO() {
     return io;
 }
 
+// Bring theIO into existence on library load rather than first use.
+// This avoids it being destroyed whilst something in the main program
+// still exists
+struct InitAtLoad {
+    InitAtLoad() {
+        (void) theIO();
+    }
+} init;
+
 class HeartbeatTask : public TimerTask {
     TimeoutHandler& timeout;
 
@@ -165,7 +174,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
                                   CLOSE_CODE_NORMAL, std::string());
     //only set error handler once  open
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
-    handler.getSSF = boost::bind(&Connector::getSSF, boost::ref(connector));
+    handler.getSecuritySettings = boost::bind(&Connector::getSecuritySettings, boost::ref(connector));
 }
 
 const uint16_t ConnectionImpl::NEXT_CHANNEL = std::numeric_limits<uint16_t>::max();
@@ -195,7 +204,8 @@ void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session, u
             throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attached to " << ss->getId()));
         } //else channel is busy, but we can keep looking for a free one
     }
-
+    // If we get here, we didn't find any available channel.
+    throw ResourceLimitExceededException("There are no channels available");
 }
 
 void ConnectionImpl::handle(framing::AMQFrame& frame)

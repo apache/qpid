@@ -110,7 +110,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     public String[] getExchangeTypes() throws IOException
     {
         ArrayList<String> exchangeTypes = new ArrayList<String>();
-        for(ExchangeType<? extends Exchange> ex : _exchangeFactory.getRegisteredTypes())
+        for(ExchangeType<? extends Exchange> ex : _exchangeFactory.getPublicCreatableTypes())
         {
             exchangeTypes.add(ex.getName().toString());
         }

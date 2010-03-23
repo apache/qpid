@@ -181,10 +181,25 @@ public class ClientDelegate extends ConnectionDelegate
     @Override public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
     {
         SaslClient sc = conn.getSaslClient();
-        if (sc != null && sc.getMechanismName().equals("GSSAPI") && getUserID() != null)
+        if (sc != null)
         {
-            conn.setUserID(getUserID());
+            if (sc.getMechanismName().equals("GSSAPI"))
+            {
+                String id = getKerberosUser();
+                if (id != null)
+                {
+                    conn.setUserID(id);
+                }
+            }
+            else if (sc.getMechanismName().equals("EXTERNAL"))
+            {
+                if (conn.getSecurityLayer() != null)
+                {
+                    conn.setUserID(conn.getSecurityLayer().getUserID());
+                }
+            }
         }
+        
         conn.setState(OPEN);
     }
 
@@ -245,7 +260,7 @@ public class ClientDelegate extends ConnectionDelegate
 
     }
 
-    private String getUserID()
+    private String getKerberosUser()
     {
         log.debug("Obtaining userID from kerberos");
         String service = conSettings.getSaslProtocol() + "@" + conSettings.getSaslServerName();

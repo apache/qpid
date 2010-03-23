@@ -37,26 +37,26 @@ using namespace framing;
 
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id,
-                                 unsigned int ssf) {
+                                 const qpid::sys::SecuritySettings& external) {
     if (v == ProtocolVersion(0, 10))
-        return new ConnectionCodec(v, out, id, cluster, false, false, ssf);
+        return new ConnectionCodec(v, out, id, cluster, false, false, external);
     else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10)) // Catch-up connection
-        return new ConnectionCodec(v, out, id, cluster, true, false, ssf); 
+        return new ConnectionCodec(v, out, id, cluster, true, false, external); 
     return 0;
 }
 
 // Used for outgoing Link connections
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& logId,
-                                 unsigned int ssf) {
-    return new ConnectionCodec(ProtocolVersion(0,10), out, logId, cluster, false, true, ssf);
+                                 const qpid::sys::SecuritySettings& external) {
+    return new ConnectionCodec(ProtocolVersion(0,10), out, logId, cluster, false, true, external);
 }
 
 ConnectionCodec::ConnectionCodec(
     const ProtocolVersion& v, sys::OutputControl& out,
-    const std::string& logId, Cluster& cluster, bool catchUp, bool isLink, unsigned int ssf
+    const std::string& logId, Cluster& cluster, bool catchUp, bool isLink, const qpid::sys::SecuritySettings& external
 ) : codec(out, logId, isLink),
-    interceptor(new Connection(cluster, codec, logId, cluster.getId(), catchUp, isLink, ssf))
+    interceptor(new Connection(cluster, codec, logId, cluster.getId(), catchUp, isLink, external))
 {
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);

@@ -252,7 +252,7 @@ namespace
 {
 
     bool match_values(const FieldValue& bind, const FieldValue& msg) {
-        return  bind.empty() || bind == msg;
+        return  bind.getType() == 0xf0 || bind == msg;
     }
 
 }
