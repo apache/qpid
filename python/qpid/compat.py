@@ -84,6 +84,16 @@ if sys.platform in ('win32', 'cygwin'):
     def fileno(self):
       return self.read_sock.fileno()
 
+    def close(self):
+      if self.write_sock is not None:
+        self.write_sock.close()
+        self.write_sock = None
+        self.read_sock.close()
+        self.read_sock = None
+
+    def __del__(self):
+      self.close()
+
   def __repr__(self):
     return "SockWaiter(%r, %r)" % (self.read_sock, self.write_sock)
 
@@ -102,9 +112,8 @@ else:
 
   class PipeWaiter(BaseWaiter):
 
-    def __init__(self, read_fd, write_fd):
-      self.read_fd = read_fd
-      self.write_fd = write_fd
+    def __init__(self):
+      self.read_fd, self.write_fd = os.pipe()
 
     def _do_write(self):
       os.write(self.write_fd, "\0")
@@ -115,8 +124,18 @@ else:
     def fileno(self):
       return self.read_fd
 
+    def close(self):
+      if self.write_fd is not None:
+        os.close(self.write_fd)
+        self.write_fd = None
+        os.close(self.read_fd)
+        self.read_fd = None
+
+    def __del__(self):
+      self.close()
+
     def __repr__(self):
       return "PipeWaiter(%r, %r)" % (self.read_fd, self.write_fd)
 
   def selectable_waiter():
-    return PipeWaiter(*os.pipe())
+    return PipeWaiter()
