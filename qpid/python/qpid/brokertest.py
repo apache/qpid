@@ -303,8 +303,8 @@ class Broker(Popen):
         c.close()
     
     def _prep_sender(self, queue, durable, xprops):
-        s = queue + "; {create:always, node-properties:{durable:" + str(durable)
-        if xprops != None: s += ", x-properties:{" + xprops + "}"
+        s = queue + "; {create:always, node:{durable:" + str(durable)
+        if xprops != None: s += ", x-declare:{" + xprops + "}"
         return s + "}}"
 
     def send_message(self, queue, message, durable=True, xprops=None, session=None):

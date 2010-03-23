@@ -59,8 +59,8 @@ class Base(Test):
     else:
       return "%s[%s, %s]" % (base, count, self.test_id)
 
-  def message(self, base, count = None):
-    return Message(self.content(base, count))
+  def message(self, base, count = None, **kwargs):
+    return Message(content=self.content(base, count), **kwargs)
 
   def ping(self, ssn):
     PING_Q = 'ping-queue; {create: always, delete: always}'
