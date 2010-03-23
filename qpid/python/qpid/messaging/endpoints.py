@@ -102,7 +102,6 @@ class Connection:
     self.error = None
     from driver import Driver
     self._driver = Driver(self)
-    self._driver.start()
 
   def _wait(self, predicate, timeout=None):
     return self._waiter.wait(predicate, timeout=timeout)
@@ -157,6 +156,7 @@ class Connection:
     Connect to the remote endpoint.
     """
     self._connected = True
+    self._driver.start()
     self._wakeup()
     self._ewait(lambda: self._transport_connected and not self._unlinked(),
                 exc=ConnectError)
@@ -175,6 +175,8 @@ class Connection:
     self._connected = False
     self._wakeup()
     self._ewait(lambda: not self._transport_connected)
+    self._driver.stop()
+    self._condition.gc()
 
   @synchronized
   def connected(self):
