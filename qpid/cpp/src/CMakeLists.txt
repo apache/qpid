@@ -248,14 +248,47 @@ if (MSVC)
                ${_boost_regex_debug} ${_boost_regex_release}
                ${_boost_system_debug} ${_boost_system_release}
                ${_boost_thread_debug} ${_boost_thread_release}
-               DESTINATION ${QPID_INSTALL_LIBDIR}
+               DESTINATION ${QPID_INSTALL_LIBDIR}/boost
                COMPONENT ${QPID_COMPONENT_COMMON})
    endif (QPID_LINK_BOOST_DYNAMIC)
 
-   # Need the boost headers regardless of which way the libs go.
+   # Need the boost headers regardless of which way the libs go. Try to
+   # weed out what we don't need, else it's giant and unnecessary.
    install (DIRECTORY ${Boost_INCLUDE_DIR}/boost
             DESTINATION ${QPID_INSTALL_INCLUDEDIR}
-            COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
+            COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
+   	    PATTERN "accumulators/*" EXCLUDE
+	    PATTERN "algorithm/*" EXCLUDE
+	    PATTERN "archive/*" EXCLUDE
+	    PATTERN "asio*" EXCLUDE
+	    PATTERN "bimap*" EXCLUDE
+	    PATTERN "circular_buffer*" EXCLUDE
+	    PATTERN "concept*" EXCLUDE
+	    PATTERN "dynamic_bitset*" EXCLUDE
+	    PATTERN "flyweight*" EXCLUDE
+	    PATTERN "fusion*" EXCLUDE
+	    PATTERN "gil*" EXCLUDE
+	    PATTERN "graph*" EXCLUDE
+	    PATTERN "interprocess*" EXCLUDE
+	    PATTERN "lambda/*" EXCLUDE
+	    PATTERN "logic*" EXCLUDE
+	    PATTERN "math*" EXCLUDE
+	    PATTERN "mpi*" EXCLUDE
+	    PATTERN "multi_*" EXCLUDE
+	    PATTERN "numeric*" EXCLUDE
+	    PATTERN "pending*" EXCLUDE
+	    PATTERN "pool*" EXCLUDE
+	    PATTERN "property_map*" EXCLUDE
+	    PATTERN "proto*" EXCLUDE
+	    PATTERN "random*" EXCLUDE
+	    PATTERN "range*" EXCLUDE
+	    PATTERN "signals*" EXCLUDE
+	    PATTERN "spirit*" EXCLUDE
+	    PATTERN "statechart*" EXCLUDE
+	    PATTERN "units*" EXCLUDE
+	    PATTERN "unordered*" EXCLUDE
+	    PATTERN "wave*" EXCLUDE
+	    PATTERN "xpressive*" EXCLUDE)
 
    set(Boost_DATE_TIME_LIBRARY "")
    set(Boost_THREAD_LIBRARY "")
@@ -585,18 +618,18 @@ set_target_properties (qpidcommon PROPERTIES
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
-# When the client programming component is installed, Windows also needs
-# the debug variant of qpidcommon and qpidclient, and the PDBs for those
-# as well. It would be nice to figure out a way to put some sanity checking
-# here... as it is, success relies on the packager building the debug then
-# the release, then packaging the release build.
+
 if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_CLIENT})
+    # Need the .pdb file, which isn't installed with the .dll/.lib
+    # Not built... if needed, add the build option then uncomment this.
+    #get_target_property(qpidcommon_dll qpidcommon LOCATION)
+    #string(REPLACE .dll .pdb qpidcommon_pdb ${qpidcommon_dll})
+    #string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} qpidcommon_pdb ${qpidcommon_pdb})
+    #message(STATUS "_pdb: ${qpidcommon_pdb}")
+    #install (PROGRAMS
+    #         ${qpidcommon_pdb}
+    #         DESTINATION ${QPID_INSTALL_LIBDIR}
+    #         COMPONENT ${QPID_COMPONENT_CLIENT})
 endif (WIN32)
 
 set (qpidclient_SOURCES
@@ -685,12 +718,15 @@ install (DIRECTORY ../include/qpid ${CMAKE_CURRENT_BINARY_DIR}/../include/qpid
          COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
          PATTERN ".svn" EXCLUDE)
 if (WIN32)
-    install (PROGRAMS
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.dll
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.lib
-             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.pdb
-             DESTINATION ${QPID_INSTALL_LIBDIR}
-             COMPONENT ${QPID_COMPONENT_CLIENT})
+    # Need the .pdb file, which isn't installed with the .dll/.lib
+    #get_target_property(qpidclient_dll qpidclient LOCATION)
+    #string(REPLACE .dll .pdb qpidclient_pdb ${qpidclient_dll})
+    #string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} qpidclient_pdb ${qpidclient_pdb})
+    #message(STATUS "_pdb: ${qpidclient_pdb}")
+    #install (PROGRAMS
+    #         ${qpidclient_pdb}
+    #         DESTINATION ${QPID_INSTALL_LIBDIR}
+    #         COMPONENT ${QPID_COMPONENT_CLIENT})
 endif (WIN32)
 
 if (WIN32)
@@ -899,6 +935,17 @@ set_target_properties (qmfconsole PROPERTIES
 install (TARGETS qmfconsole
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
+if (WIN32)
+    # Need the .pdb file, which isn't installed with the .dll/.lib
+    #get_target_property(qmfconsole_dll qmfconsole LOCATION)
+    #string(REPLACE .dll .pdb qmfconsole_pdb ${qmfconsole_dll})
+    #string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} qmfconsole_pdb ${qmfconsole_pdb})
+    #message(STATUS "_pdb: ${qmfconsole_pdb}")
+    #install (PROGRAMS
+    #         ${qmfconsole_pdb}
+    #         DESTINATION ${QPID_INSTALL_LIBDIR}
+    #         COMPONENT ${QPID_COMPONENT_QMF})
+endif (WIN32)
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
