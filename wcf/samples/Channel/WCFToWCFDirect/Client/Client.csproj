@@ -21,7 +21,7 @@ under the License.
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{0CCD5711-2072-47B8-B902-07EC12C04159}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -52,6 +52,7 @@ under the License.
     <Reference Include="Apache.Qpid.Channel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Apache.Qpid.Channel.dll</HintPath>
+      <HintPath>..\..\..\..\bin\Apache.Qpid.Channel.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
