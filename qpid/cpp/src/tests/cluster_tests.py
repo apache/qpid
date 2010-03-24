@@ -160,7 +160,7 @@ class LongTests(BrokerTest):
         for i in range(i, len(cluster)): cluster[i].kill()
 
     def test_management(self):
-        """Run management clients and other clients concurrently."""
+        """Stress test: Run management clients and other clients concurrently."""
 
         # TODO aconway 2010-03-03: move to brokertest framework
         class ClientLoop(StoppableThread):
@@ -171,6 +171,7 @@ class LongTests(BrokerTest):
                 self.cmd = cmd          # Client command.
                 self.lock = Lock()
                 self.process = None     # Client process.
+                self._expect_fail = False
                 self.start()
 
             def run(self):
@@ -195,7 +196,7 @@ class LongTests(BrokerTest):
                         try:
                             # Quit and ignore errors if stopped or expecting failure.
                             if self.stopped: break
-                            if exit != 0:
+                            if not self._expect_fail and exit != 0:
                                 self.process.unexpected(
                                     "client of %s exit code %s"%(self.broker.name, exit))
                         finally: self.lock.release()
@@ -205,12 +206,13 @@ class LongTests(BrokerTest):
             def expect_fail(self):
                 """Ignore exit status of the currently running client."""
                 self.lock.acquire()
-                stopped = True
+                self._expect_fail = True
                 self.lock.release()
                 
             def stop(self):
                 """Stop the running client and wait for it to exit"""
                 self.lock.acquire()
+                if self.stopped: return
                 try:
                     self.stopped = True
                     if self.process:
@@ -232,7 +234,7 @@ class LongTests(BrokerTest):
             """Start ordinary clients for a broker"""
             batch = []
             for cmd in [
-                ["perftest", "--count", 1000,
+                ["perftest", "--count", 50000,
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
                 ["testagent", "localhost", str(broker.port())] ]:
@@ -257,11 +259,12 @@ class LongTests(BrokerTest):
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker. Ignore errors on its clients and all the mclients
             for c in clients[alive] + mclients: c.expect_fail()
-            clients[alive] = []
-            mclients = []
             b = cluster[alive]
             b.expect = EXPECT_EXIT_FAIL
             b.kill()
+            for c in clients[alive] + mclients: c.stop()
+            clients[alive] = []
+            mclients = []
             # Start another broker and clients
             alive += 1
             b = cluster.start()
