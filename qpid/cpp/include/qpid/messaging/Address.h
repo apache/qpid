@@ -65,82 +65,57 @@ class AddressImpl;
  *
  * <table border=0> 
  * 
- * <tr valign=top><td>create</td><td>Indicate whether the address should be
- * automatically created or not. Can be one of <i>always</i>,
- * <i>never</i>, <i>sender</i> or <i>receiver</i>. The properties of
- * the node to be created can be specified via the node-properties
- * option (see below).</td></tr>
+ * <tr valign=top>
+ *   <td>create</td>
+ *   <td>Indicate whether the address should be automatically created
+ *       or not. Can be one of <i>always</i>, <i>never</i>,
+ *       <i>sender</i> or <i>receiver</i>. The properties of the node
+ *       to be created can be specified via the node options (see
+ *       below).
+ *   </td>
+ * </tr>
  * 
- * <tr valign=top><td>assert</td><td>Indicate whether or not to assert any specified
- * node-properties match the address. Can be one of <i>always</i>,
- * <i>never</i>, <i>sender</i> or <i>receiver</i>.</td></tr>
+ * <tr valign=top>
+ *   <td>assert</td>
+ *   <td>Indicate whether or not to assert any specified node
+ *       properties(see below) match the address. Can be one of
+ *       <i>always</i>, <i>never</i>, <i>sender</i> or
+ *       <i>receiver</i>.
+ *   </td>
+ * </tr>
  * 
- * <tr valign=top><td>delete</td><td>Indicate whether or not to delete the addressed
- * nide when a sender or receiver is cancelled. Can be one of <i>always</i>,
- * <i>never</i>, <i>sender</i> or <i>receiver</i>.</td></tr>
+ * <tr valign=top>
+ *   <td>delete</td>
+ *   <td>Indicate whether or not to delete the addressed node when a
+ *       sender or receiver is cancelled. Can be one of <i>always</i>,
+ *       <i>never</i>, <i>sender</i> or <i>receiver</i>.
+ *   </td>
+ * </tr>
  *
- * <tr valign=top><td>reliability</td><td>indicates the level of
- * reliability expected. Can be one of unreliable, at-most-once,
- * at-least-once or exactly-once (the latter is not yet correctly
- * supported).</td></tr>
+ * <tr valign=top>
+ *   <td>node</td>
+ *   <td>A nested map describing properties of the addressed
+ *       node. Current properties supported are type (topic or queue),
+ *       durable (boolean), x-declare and x-bindings.
+ *   </td>
+ * </tr>
+ *
+ * <tr valign=top>
+ *   <td>link</td>
+ *   <td>A nested map through which properties of the 'link' from
+ *       sender/receiver to node can be configured. Current propeties
+ *       are name, durable, realiability, x-declare, x-subscribe and
+ *       x-bindings.
+ *   </td>
+ * </tr>
  * 
- * <tr valign=top><td>node-properties</td><td>A nested map of properties of the addressed
- * entity or 'node'. These can be used when automatically creating it,
- * or to assert certain properties.
- * 
- * The valid node-properties are:
- * <ul>
- * <li>type - queue or topic</li>
- * 
- * <li>durable - true or false</li>
- * 
- * <li>x-properties - a nested map that can contain implementation or
- * protocol specifiec extedned properties. For the amqp 0-10 mapping,
- * the fields in queue- or exchange- declare can be specified in here;
- * a bindings entry may also be specified, whose value should be an
- * array of strings of the form exchange/key; anything else will be
- * passed through in the arguments field.
- * </li> 
- * </ul> 
- * </td></tr>
- * 
- * </table>
- * 
- * For receivers there are some further options of interest:
+ * For receivers there is one other option of interest:
  * 
  * <table border=0 valign=top>
- * 
- * <tr valign=top><td>no-local</td><td>(only relevant for topics at present) specifies that the
- * receiver does not want to receiver messages published to the topic
- * that originate from a sender on the same connection</td></tr>
- *
  * <tr valign=top><td>mode</td><td>(only relevant for queues)
  * indicates whether the subscribe should consume (the default) or
  * merely browse the messages. Valid values are 'consume' and
  * 'browse'</td></tr>
- * 
- * <tr valign=top><td>durable</td><td>(only relevant for topics at present) specifies that a
- * durable subscription is required</td></tr>
- * 
- * <tr valign=top><td>filter</td><td>(only relevant for topics at present) allows bindings to
- * be created for the queue that match the given criteria (or list of
- * criteria).</td></tr>
- * 
- * <tr valign=top><td>x-properties</td><td>allows protocol or implementation specific options
- * to be specified for a receiver; this is a nested map and currently
- * the implementation only recognises two specific nested properties
- * within it (all others are passed through in the arguments of the
- * message-subscribe command):
- * 
- * <ul>
- *     <li>exclusive, which requests an exclusive subscription and
- *     is only relevant for queues</li>
- *
- *     <li>x-queue-arguments, which is only relevant for topics and
- *     allows arguments to the queue-declare for the subscription
- *     queue to be specified</li>
- * </ul>
- * </td></tr>
  * </table>
  */
 class Address

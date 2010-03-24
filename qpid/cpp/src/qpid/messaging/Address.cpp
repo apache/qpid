@@ -114,7 +114,7 @@ void Address::setOptions(const Variant::Map& options) { impl->options = options;
 namespace{
 const Variant EMPTY_VARIANT;
 const std::string EMPTY_STRING;
-const std::string NODE_PROPERTIES="node-properties";
+const std::string NODE_PROPERTIES="node";
 }
 
 const Variant& find(const Variant::Map& map, const std::string& key)
