@@ -52,6 +52,7 @@ under the License.
     <Reference Include="Apache.Qpid.Channel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Apache.Qpid.Channel.dll</HintPath>
+      <HintPath>..\..\..\..\bin\Apache.Qpid.Channel.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
