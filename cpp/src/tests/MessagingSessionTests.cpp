@@ -564,13 +564,13 @@ struct QueueCreatePolicyFixture : public MessagingFixture
 
 QPID_AUTO_TEST_CASE(testCreatePolicyQueueAlways)
 {
-    QueueCreatePolicyFixture fix("#; {create:always, node-properties:{type:queue}}");
+    QueueCreatePolicyFixture fix("#; {create:always, node:{type:queue}}");
     fix.test();
 }
 
 QPID_AUTO_TEST_CASE(testCreatePolicyQueueReceiver)
 {
-    QueueCreatePolicyFixture fix("#; {create:receiver, node-properties:{type:queue}}");
+    QueueCreatePolicyFixture fix("#; {create:receiver, node:{type:queue}}");
     Receiver r = fix.session.createReceiver(fix.address);
     fix.test();
     r.close();
@@ -578,7 +578,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyQueueReceiver)
 
 QPID_AUTO_TEST_CASE(testCreatePolicyQueueSender)
 {
-    QueueCreatePolicyFixture fix("#; {create:sender, node-properties:{type:queue}}");
+    QueueCreatePolicyFixture fix("#; {create:sender, node:{type:queue}}");
     Sender s = fix.session.createSender(fix.address);
     fix.test();
     s.close();
@@ -608,14 +608,14 @@ struct ExchangeCreatePolicyFixture : public MessagingFixture
 
 QPID_AUTO_TEST_CASE(testCreatePolicyTopic)
 {
-    ExchangeCreatePolicyFixture fix("#; {create:always, node-properties:{type:topic}}",
+    ExchangeCreatePolicyFixture fix("#; {create:always, node:{type:topic}}",
                                   "topic");
     fix.test();
 }
 
 QPID_AUTO_TEST_CASE(testCreatePolicyTopicReceiverFanout)
 {
-    ExchangeCreatePolicyFixture fix("#/my-subject; {create:receiver, node-properties:{type:topic, x-properties:{type:fanout}}}", "fanout");
+    ExchangeCreatePolicyFixture fix("#/my-subject; {create:receiver, node:{type:topic, x-declare:{type:fanout}}}", "fanout");
     Receiver r = fix.session.createReceiver(fix.address);
     fix.test();
     r.close();
@@ -623,7 +623,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyTopicReceiverFanout)
 
 QPID_AUTO_TEST_CASE(testCreatePolicyTopicSenderDirect)
 {
-    ExchangeCreatePolicyFixture fix("#/my-subject; {create:sender, node-properties:{type:topic, x-properties:{type:direct}}}", "direct");
+    ExchangeCreatePolicyFixture fix("#/my-subject; {create:sender, node:{type:topic, x-declare:{type:direct}}}", "direct");
     Sender s = fix.session.createSender(fix.address);
     fix.test();
     s.close();
@@ -746,18 +746,18 @@ QPID_AUTO_TEST_CASE(testDeletePolicyExchange)
 QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
 {
     MessagingFixture fix;
-    std::string a1 = "q; {create:always, assert:always, node-properties:{type:queue, durable:false, x-properties:{qpid.max-count:100}}}";
+    std::string a1 = "q; {create:always, assert:always, node:{type:queue, durable:false, x-declare:{arguments:{qpid.max-count:100}}}}";
     Sender s1 = fix.session.createSender(a1);
     s1.close();
     Receiver r1 = fix.session.createReceiver(a1);
     r1.close();
     
-    std::string a2 = "q; {assert:receiver, node-properties:{durable:true, x-properties:{qpid.max-count:100}}}";
+    std::string a2 = "q; {assert:receiver, node:{durable:true, x-declare:{arguments:{qpid.max-count:100}}}}";
     Sender s2 = fix.session.createSender(a2);
     s2.close();
     BOOST_CHECK_THROW(fix.session.createReceiver(a2), qpid::messaging::InvalidAddress);
 
-    std::string a3 = "q; {assert:sender, node-properties:{x-properties:{qpid.max-count:99}}}";
+    std::string a3 = "q; {assert:sender, node:{x-declare:{arguments:{qpid.max-count:99}}}}";
     BOOST_CHECK_THROW(fix.session.createSender(a3), qpid::messaging::InvalidAddress);
     Receiver r3 = fix.session.createReceiver(a3);
     r3.close();
