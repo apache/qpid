@@ -92,6 +92,10 @@ class Timer : private Runnable {
   protected:
     QPID_COMMON_EXTERN virtual void fire(boost::intrusive_ptr<TimerTask> task);
     QPID_COMMON_EXTERN virtual void drop(boost::intrusive_ptr<TimerTask> task);
+    // Allow derived classes to change the late/overran thresholds.
+    Duration late;
+    Duration overran;
+    Duration lateCancel;
 };
 
 
