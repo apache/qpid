@@ -399,7 +399,10 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     SequenceNumber received = ss->receiverGetReceived().command;
     if (inProgress)  
         --received;
-             
+
+    // Sync the session to ensure all responses from broker have been processed.
+    shadowSession.sync();
+    
     // Reset command-sequence state.
     proxy.sessionState(
         ss->senderGetReplayPoint().command,
