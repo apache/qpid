@@ -230,46 +230,44 @@ class LongTests(BrokerTest):
         clients = [] # Ordinary clients that only connect to one broker.
         mclients = [] # Management clients that connect to every broker in the cluster.
 
-        def start_clients(broker):
-            """Start ordinary clients for a broker"""
-            batch = []
-            for cmd in [
+        def start_clients(broker, i):
+            """Start ordinary clients for a broker. Start one client per broker.
+            Round-robin on a colllection of different clients."""
+            cmds=[
                 ["perftest", "--count", 50000,
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
-                ["testagent", "localhost", str(broker.port())] ]:
-                batch.append(ClientLoop(broker, cmd))
-            clients.append(batch)
+                ["testagent", "localhost", str(broker.port())] ]
+            clients.append([ClientLoop(broker, cmds[i%len(cmds)])])
 
         def start_mclients(broker):
-            """Start management clients that make multiple connections"""
-            for cmd in [
-                ["qpid-stat", "-b", "localhost:%s" %(broker.port())]
-                ]:
-                mclients.append(ClientLoop(broker, cmd))
+            """Start management clients that make multiple connections."""
+            cmd = ["qpid-stat", "-b", "localhost:%s" %(broker.port())]
+            mclients.append(ClientLoop(broker, cmd))
 
         endtime = time.time() + self.duration()
         alive = 0                       # First live cluster member
-        for b in cluster:
-            start_clients(b)
-            start_mclients(b)
+        for i in range(len(cluster)):
+            start_clients(cluster[i], i)
+        start_mclients(cluster[alive])
 
         while time.time() < endtime:
             time.sleep(min(5,self.duration()/2))
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
-            # Kill the first broker. Ignore errors on its clients and all the mclients
+            # Kill the first broker, expect the clients to fail. 
             for c in clients[alive] + mclients: c.expect_fail()
             b = cluster[alive]
             b.expect = EXPECT_EXIT_FAIL
             b.kill()
+            # Stop the brokers clients and all the mclients.
             for c in clients[alive] + mclients: c.stop()
             clients[alive] = []
             mclients = []
             # Start another broker and clients
             alive += 1
-            b = cluster.start()
-            start_clients(b)
-            for b in cluster[alive:]: start_mclients(b)
+            cluster.start()
+            start_clients(cluster[-1], len(cluster)-1)
+            start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()
 

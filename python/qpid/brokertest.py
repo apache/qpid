@@ -605,6 +605,7 @@ class ErrorGenerator(StoppableThread):
                         queue="non-existent-queue")
                     assert(False)
                 except qpid.session.SessionException: pass
+                time.sleep(0.01)
         except: pass                    # Normal if broker is killed.
 
 def import_script(path):

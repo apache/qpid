@@ -60,6 +60,7 @@ EXTRA_DIST +=					\
 	cluster_tests.fail
 
 LONG_TESTS +=					\
+	run_long_cluster_tests                  \
 	start_cluster				\
 	cluster_python_tests			\
 	stop_cluster
