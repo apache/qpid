@@ -73,12 +73,12 @@ SessionImpl::~SessionImpl() {
     {
         Lock l(state);
         if (state != DETACHED && state != DETACHING) {
-            QPID_LOG(warning, "Session was not closed cleanly: " << id);
-            try {
+            if (autoDetach) {
+                QPID_LOG(warning, "Session was not closed cleanly: " << id);
                 // Inform broker but don't wait for detached as that deadlocks.
                 // The detached will be ignored as the channel will be invalid.
-                if (autoDetach) detach();
-            } catch (...) {}    // ignore errors.
+                try { detach(); } catch (...) {}    // ignore errors.
+            }
             setState(DETACHED);
             handleClosed();
             state.waitWaiters();
