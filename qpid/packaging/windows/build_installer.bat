@@ -41,6 +41,13 @@ goto run
 @set bits=64
 
 :run
+rem Two environment variables need to be set:
+rem    QPID_BUILD_ROOT: root of the build directory; $cwd\build unless the
+rem                     build_dir property is set in msbuild properties below.
+rem    BOOST_ROOT:      root of the Boost installation
+
+set QPID_BUILD_ROOT=%CD%\build
+
 rem If the local cmake needs help, add options to the cmake_options property.
 rem For example: cmake_options="-DBOOST_INCLUDE_DIR=C:/Boost/boost-1_40 
 rem -DBOOST_LIBRARYDIR=C:/Boost/boost-1_40/lib64"
