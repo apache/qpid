@@ -21,6 +21,7 @@
 -->
 
 <locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <uri resource="Java-JMS-Selector-Syntax.xml" typeId="DocBook"/>
  <uri resource="ACL.xml" typeId="DocBook"/>
  <uri resource="Add-New-Users.xml" typeId="DocBook"/>
  <uri resource="AMQP-C++-Messaging-Client.xml" typeId="DocBook"/>
