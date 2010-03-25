@@ -37,22 +37,24 @@
     <Media Id="1" Cabinet="qpidc.cab" EmbedCab="yes" />
 
     <!-- Allow 64-bit builds to pick ProgramFiles64Folder instead -->
-    <? Define ProgramFiles = "ProgramFilesFolder"?>
+    <?Define ProgramFiles = "ProgramFilesFolder"?>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="$(var.ProgramFiles)">
         <Directory Id="ApacheTop" Name="Apache">
           <Directory Id="INSTALLLOCATION" Name="qpidc-$(var.qpidc_version)">
             <Directory Id="QpidBin"      Name="bin"/>
-            <Directory Id="QpidInclude"  Name="include"/>
-	    <Directory Id="QpidExamples" Name="examples"/>
+            <Directory Id="QpidConf"     Name="conf"/>
             <Directory Id="QpidDoc"      Name="docs">
               <Directory Id="QpidDocAPI" Name="api"/>
             </Directory>
-<!-- Make this a link to the apache web site with the tarball -->
-            <!-- Directory Id="QpidSrcDist"  Name="srcdist"/ -->
+            <Directory Id="QpidExamples" Name="examples"/>
+            <Directory Id="QpidInclude"  Name="include"/>
+            <Directory Id="QpidPlugins"  Name="plugins">
+              <Directory Id="QpidBrPlugin" Name="broker"/>
           </Directory>
         </Directory>
+      </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
         <Directory Id="ApplicationProgramsFolder" Name="Apache Qpid"/>
@@ -63,6 +65,10 @@
     <DirectoryRef Id="INSTALLLOCATION">
       <Component Id="InstallNotes" Guid="{10A64ABE-B3F7-40c0-88F1-E0AD71467A3E}">
         <File Id="InstallNotesHTML" Source="INSTALL_NOTES.html"/>
+      </Component>
+      <Component Id="Legal" Guid="{D98B2A06-4A7E-488a-A7A9-BFB1B9D594A0}">
+        <File Id="LICENSE" Source="$(var.staging_dir)\LICENSE"/>
+        <File Id="NOTICE"  Source="$(var.staging_dir)\NOTICE"/>
       </Component>
     </DirectoryRef>
 
@@ -113,11 +119,21 @@
 
     </DirectoryRef>
 
-    <!-- DirectoryRef Id="QpidSrcDist">
-      <Component Id="DistroSrc" Guid="{0D2C11F3-B3B6-4d4b-9569-08097A4D0D1A}">
-        <File Id="DistroTAR" Source="..\qpid-cpp-0.5.tar.gz"/>
+    <DirectoryRef Id="QpidConf">
+      <Component Id="BrokerConf" Guid="{8893D4B8-F87B-4da7-914A-87ED61E46577}">
+        <File Id="BrokerConfFile" Source="$(var.staging_dir)\conf\qpidd.conf"/>
       </Component>
-    </DirectoryRef -->
+      <Component Id="ClientConf" Guid="{2ED5B20C-9D57-4961-B928-6FC1436309F7}">
+        <File Id="ClientConfFile" Source="$(var.staging_dir)\conf\qpidc.conf"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="QpidBrPlugin">
+      <Component Id="SQLPersistence" Guid="{DDF3AF70-C4E4-4745-BB7E-0E195FAF116B}">
+        <File Id="StorePlugin" Source="$(var.staging_dir)\plugins\broker\store.dll"/>
+        <File Id="SQLPlugin" Source="$(var.staging_dir)\plugins\broker\mssql_store.dll"/>
+      </Component>
+    </DirectoryRef>
 
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="APIDocShortcut" Guid="{B95A28E2-E2B5-4f31-93C3-24B010701F30}">
@@ -134,14 +150,18 @@
              Display="expand" ConfigurableDirectory="INSTALLLOCATION"
              TypicalDefault="install">
       <ComponentRef Id="InstallNotes"/>
+      <ComponentRef Id="Legal"/>
 
       <Feature Id="Broker" Title="Broker: Routes and queues messages" Level="1">
+        <ComponentRef Id="BrokerConf"/>
         <ComponentRef Id="Broker_Release"/>
         <ComponentRef Id="CommonLib_Release"/>
+        <ComponentRef Id="SQLPersistence"/>
 	<ComponentGroupRef Id="group_BoostDlls"/>
       </Feature>
 
       <Feature Id="ClientLib" Title="Client Libraries and Headers to develop and run programs" Level="1">
+        <ComponentRef Id="ClientConf"/>
         <ComponentRef Id="CommonLib_Debug"/>
         <ComponentRef Id="CommonLib_Release"/>
         <ComponentRef Id="ClientLib_Debug"/>

@@ -44,6 +44,7 @@
 	        <ProgramFiles>ProgramFiles64Folder</ProgramFiles>
 		<CmakeGenerator>%22Visual Studio 9 2008 Win64%22</CmakeGenerator>
 		<Architecture>x64</Architecture>
+		<CSProjArchitecture>x64</CSProjArchitecture>
 	    </PropertyGroup>
 	</When>
 	<Otherwise>
@@ -51,6 +52,7 @@
 	        <ProgramFiles>ProgramFilesFolder</ProgramFiles>
 		<CmakeGenerator>%22Visual Studio 9 2008%22</CmakeGenerator>
 		<Architecture>x86</Architecture>
+		<CSProjArchitecture>Win32</CSProjArchitecture>
     </PropertyGroup>
 	</Otherwise>
     </Choose>
@@ -77,7 +79,7 @@
 	<WcfProjects Include="$(source_root)\wcf\src\Apache\Qpid\**\*.csproj"/>
 	<WcfArtifacts Include="$(source_root)\wcf\src\Apache\Qpid\Channel\bin\Release\*.dll"/>
 	<WcfExamples Include="$(source_root)\wcf\samples\**\*"
-	             Exclude="$(source_root)\wcf\samples\**\.svn\*"/>
+	             Exclude="$(source_root)\wcf\samples\**\.svn\**"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -134,7 +136,7 @@
     <Target Name="BuildWcf" DependsOnTargets="BuildCpp">
         <MSBuild
 	    Projects="$(source_root)\wcf\QpidWcf.sln"
-	    Properties="Configuration=Release;Platform=$(Architecture)"
+	    Properties="Configuration=Release;Platform=$(CSProjArchitecture)"
 	    StopOnFirstFailure="false" />
     </Target>
 
@@ -192,7 +194,7 @@
 	<Exec
 	    Command="heat dir $(staging_dir)\docs\api  -var var.api_docs_dir -dr QpidDoc -gg -cg group_APIDocs -out api_docs.wxs" />
 	<Exec
-	    Command="candle -dqpidc_version=0.6 -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
+	    Command="candle -dqpidc_version=0.6 -dProgramFiles=$(ProgramFiles) -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
 	<Exec
 	    Command="light -ext WixUtilExtension -ext WixUIExtension -cultures:en-us -out qpidc-0.6-$(Architecture).msi qpidc.wixobj qpid_headers.wixobj boost_headers.wixobj boost_dlls.wixobj examples.wixobj api_docs.wixobj" />
     </Target>
