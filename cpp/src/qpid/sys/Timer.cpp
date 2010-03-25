@@ -76,7 +76,10 @@ void TimerTask::cancel() {
 }
 
 Timer::Timer() :
-    active(false) 
+    active(false),
+    late(50 * TIME_MSEC),
+    overran(2 * TIME_MSEC),
+    lateCancel(500 * TIME_MSEC)
 {
     start();
 }
@@ -105,7 +108,7 @@ void Timer::run()
             ScopedLock<Mutex> l(t->callbackLock);
             if (t->cancelled) {
                 drop(t);
-                if (delay > 500 * TIME_MSEC) {
+                if (delay > lateCancel) {
                     QPID_LOG(debug, "cancelled Timer woken up " << delay / TIME_MSEC
                              << "ms late");
                 }
@@ -116,20 +119,19 @@ void Timer::run()
                 // Warn on callback overrun
                 AbsTime end(AbsTime::now());
                 Duration overrun(tasks.top()->nextFireTime, end);
-                bool late = delay > 50 * TIME_MSEC;
-                bool overran = overrun > 2 * TIME_MSEC;
-                if (late)
-                if (overran) {
+                if (delay > late) {
+                    if (overrun > overran) {
+                        QPID_LOG(warning,
+                                 "Timer woken up " << delay / TIME_MSEC << "ms late, "
+                                 "overrunning by " << overrun / TIME_MSEC << "ms [taking "
+                                 << Duration(start, end) << "]");
+                    } else {
+                        QPID_LOG(warning, "Timer woken up " << delay / TIME_MSEC << "ms late");
+                    }
+                } else if (overrun > overran) {
                     QPID_LOG(warning,
-                        "Timer woken up " << delay / TIME_MSEC << "ms late, "
-                        "overrunning by " << overrun / TIME_MSEC << "ms [taking "
-                        << Duration(start, end) << "]");
-                } else {
-                    QPID_LOG(warning, "Timer woken up " << delay / TIME_MSEC << "ms late");
-                } else if (overran) {
-                    QPID_LOG(warning,
-                        "Timer callback overran by " << overrun / TIME_MSEC << "ms [taking "
-                        << Duration(start, end) << "]");
+                             "Timer callback overran by " << overrun / TIME_MSEC <<
+                             "ms [taking " << Duration(start, end) << "]");
                 }
                 continue;
             } else {

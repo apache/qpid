@@ -34,7 +34,11 @@ using sys::Timer;
 using sys::TimerTask;
 
 
-ClusterTimer::ClusterTimer(Cluster& c) : cluster(c) {}
+ClusterTimer::ClusterTimer(Cluster& c) : cluster(c) {
+    // Allow more generous overrun threshold with cluster as we
+    // have to do a CPG round trip before executing the task.
+    overran = 10*sys::TIME_MSEC;
+}
 
 ClusterTimer::~ClusterTimer() {}
 
