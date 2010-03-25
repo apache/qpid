@@ -55,16 +55,6 @@ if (WIN32)
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
            COMPONENT ${QPID_COMPONENT_EXAMPLES}
            PATTERN ".svn" EXCLUDE)
-
-set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-     ExecWait 'gacutil -I \\\"$INSTDIR\\\\${QPID_INSTALL_LIBDIR}\\\\Apache.Qpid.Channel.dll\\\"'
-     ExecWait 'gacutil -I \\\"$INSTDIR\\\\${QPID_INSTALL_LIBDIR}\\\\Apache.Qpid.Interop.dll\\\"'
-    ")
-set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
-     ExecWait 'gacutil /u \\\"Apache.Qpid.Channel\\\"'
-     ExecWait 'gacutil /u \\\"Apache.Qpid.Interop\\\"'
-    ")
-
 endif (WIN32)
 
 set (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf CACHE STRING
@@ -72,9 +62,8 @@ set (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf CACHE STRING
 set (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf CACHE STRING
      "Name of the Qpid broker configuration file")
 
-install(FILES  LICENSE NOTICE README SSL RELEASE_NOTES DESIGN
-               xml/cluster.xml INSTALL-WINDOWS
-        DESTINATION ${QPID_INSTALL_DATADIR})
+install(FILES  LICENSE NOTICE  DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES  xml/cluster.xml DESTINATION ${QPID_INSTALL_DATADIR})
 
 if (WIN32)
    set (CMAKE_DEBUG_POSTFIX "d")
