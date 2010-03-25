@@ -20,4 +20,5 @@
 #
 
 srcdir=`dirname $0`
-$srcdir/run_cluster_tests 'cluster_tests.LongTests.*' -DDURATION=5
+$srcdir/run_cluster_tests 'cluster_tests.LongTests.*' -DDURATION=2
+
