@@ -52,7 +52,7 @@ class SetupTests(Base):
     fds = []
     try:
       while True:
-        fds.append(os.open(os.devnull, os.O_RDONLY))
+        fds.append(os.open(getattr(os, "devnull", "/dev/null"), os.O_RDONLY))
     except OSError, e:
       if e.errno != errno.EMFILE:
         raise e
