@@ -24,7 +24,6 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/sys/Mutex.h"
 #include "qpid/client/ConnectionSettings.h"
 
 namespace qpid {
@@ -45,11 +44,6 @@ class ManagementAgent
         QMF_AGENT_EXTERN Singleton(bool disableManagement = false);
         QMF_AGENT_EXTERN ~Singleton();
         QMF_AGENT_EXTERN static ManagementAgent* getInstance();
-    private:
-        static sys::Mutex lock;
-        static bool disabled;
-        static int refCount;
-        static ManagementAgent* agent;
     };
 
     typedef enum {
