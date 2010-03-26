@@ -576,7 +576,7 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
      */
     i = inMap.find("_object_id");
     if (i != inMap.end() && i->second.getType() == qpid::messaging::VAR_MAP) {
-        ObjectId objId(i->second);
+        ObjectId objId(i->second.asMap());
 
         ManagementObjectMap::iterator iter = managementObjects.find(objId);
         if (iter != managementObjects.end()) {

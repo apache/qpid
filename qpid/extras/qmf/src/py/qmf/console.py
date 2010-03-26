@@ -1903,6 +1903,8 @@ class Broker:
       try:
         self.cv.acquire()
         agent = self.agents.pop(bankKey, None)
+        if agent:
+          agent.close()
       finally:
         self.cv.release()
       if agent and self.session.console:
@@ -1926,7 +1928,9 @@ class Broker:
         if self.agents[key].isOld():
           to_delete.append(key)
       for key in to_delete:
-        to_notify.append(self.agents.pop(key, None))
+        agent = self.agents.pop(key)
+        agent.close()
+        to_notify.append(agent)
     finally:
       self.cv.release()
     if self.session.console:
@@ -2159,6 +2163,12 @@ class Agent:
     self.contextMap = {}
     self.unsolicitedContext = RequestContext(self, self)
     self.lastSeenTime = time()
+    self.closed = None
+
+
+  def _checkClosed(self):
+    if self.closed:
+      raise Exception("Agent is disconnected")
 
 
   def __call__(self, **kwargs):
@@ -2185,6 +2195,10 @@ class Agent:
     return None
 
 
+  def close(self):
+    self.closed = True
+
+
   def __repr__(self):
     if self.isV2:
       ver = "v2"
@@ -2194,14 +2208,17 @@ class Agent:
 
 
   def getBroker(self):
+    self._checkClosed()
     return self.broker
 
 
   def getBrokerBank(self):
+    self._checkClosed()
     return self.brokerBank
 
 
   def getAgentBank(self):
+    self._checkClosed()
     return self.agentBank
 
 
@@ -2231,6 +2248,7 @@ class Agent:
     if the argument name="test" is supplied, only objects whose "name" property is "test"
     will be returned in the result.
     """
+    self._checkClosed()
     if notifiable:
       if not callable(notifiable):
         raise Exception("notifiable object must be callable")
@@ -2407,7 +2425,7 @@ class Agent:
     elif '_key' in kwargs:
       query['_schema_id'] = kwargs['_key'].asMap()
     elif '_objectId' in kwargs:
-      query['_object_id'] = kwargs['_objectId'].asMap
+      query['_object_id'] = kwargs['_objectId'].asMap()
 
     #
     # Construct and transmit the message

@@ -188,7 +188,7 @@ void ObjectId::mapDecode(const messaging::VariantMap& map)
         agentName = i->second.asString();
 
     if ((i = map.find("_agent_epoch")) != map.end())
-        agentEpoch = i->second.asUint64();
+        agentEpoch = i->second.asInt64();
 }
 
 
