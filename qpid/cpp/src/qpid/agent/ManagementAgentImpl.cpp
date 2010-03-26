@@ -22,6 +22,7 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/log/Statement.h"
 #include "qpid/agent/ManagementAgentImpl.h"
+#include "qpid/sys/Mutex.h"
 #include <list>
 #include <string.h>
 #include <stdlib.h>
@@ -42,10 +43,12 @@ using std::string;
 using std::cout;
 using std::endl;
 
-Mutex            ManagementAgent::Singleton::lock;
-bool             ManagementAgent::Singleton::disabled = false;
-ManagementAgent* ManagementAgent::Singleton::agent    = 0;
-int              ManagementAgent::Singleton::refCount = 0;
+namespace {
+    Mutex lock;
+    bool disabled = false;
+    ManagementAgent* agent = 0;
+    int refCount = 0;
+}
 
 ManagementAgent::Singleton::Singleton(bool disableManagement)
 {
