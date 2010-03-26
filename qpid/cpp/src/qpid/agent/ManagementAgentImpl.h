@@ -259,16 +259,14 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                                     const uint8_t *md5Sum);
     bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void sendHeartbeat();
-    void sendCommandComplete  (std::string replyToKey, uint32_t sequence,
-                               uint32_t code = 0, std::string text = std::string("OK"));
-    void handleAttachResponse (qpid::framing::Buffer& inBuffer);
+    void sendException(const std::string& replyToKey, const std::string& cid,
+                       const std::string& text, uint32_t code=1);
     void handlePackageRequest (qpid::framing::Buffer& inBuffer);
     void handleClassQuery     (qpid::framing::Buffer& inBuffer);
     void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, const std::string& replyTo);
     void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& replyTo);
 
-    void handleGetQuery       (const std::string& body, const std::string& content_type,
-                               const std::string& cid, const std::string& replyTo);
+    void handleGetQuery       (const std::string& body, const std::string& cid, const std::string& replyTo);
     void handleLocateRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
     void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
     void handleConsoleAddedIndication();

@@ -682,7 +682,7 @@ class SchemaStatistic:
 
   def genMap (self, stream):
     if self.type.type.perThread:
-      self.type.type.genMap(stream, "totals." + self.name)
+      self.type.type.genMap(stream, "totals." + self.name, key=self.name)
     else:
       self.type.type.genMap(stream, self.name)
 

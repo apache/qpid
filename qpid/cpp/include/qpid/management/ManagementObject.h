@@ -59,7 +59,8 @@ protected:
     void fromString(const std::string&);
 public:
     QPID_COMMON_EXTERN ObjectId() : agent(0), first(0) {}
-    QPID_COMMON_EXTERN ObjectId(const messaging::Variant& map) : agent(0) { mapDecode(map.asMap()); }
+    QPID_COMMON_EXTERN ObjectId(const messaging::Variant& map) :
+        agent(0), first(0), agentEpoch(0) { mapDecode(map.asMap()); }
     QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker);
     QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq);
     QPID_COMMON_EXTERN ObjectId(std::istream&);

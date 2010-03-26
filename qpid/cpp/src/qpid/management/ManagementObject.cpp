@@ -184,9 +184,6 @@ void ObjectId::mapDecode(const messaging::VariantMap& map)
     else
         throw Exception("Required _object_name field missing.");
 
-    if ((i = map.find("_first")) != map.end())
-        first  = i->second.asUint64();
-
     if ((i = map.find("_agent_name")) != map.end())
         agentName = i->second.asString();
 
@@ -270,7 +267,7 @@ void ManagementObject::writeTimestamps (messaging::VariantMap& map) const
 
     sid["_package_name"] = getPackageName();
     sid["_class_name"] = getClassName();
-    sid["_hash_str"] = std::string((const char *)getMd5Sum(), MD5_LEN);
+    sid["_hash"] = qpid::messaging::Uuid(getMd5Sum());
     map["_schema_id"] = sid;
 
     objectId.mapEncode(oid);

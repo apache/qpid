@@ -62,8 +62,7 @@ static qpid::messaging::Variant::Map mapEncodeSchemaId(const std::string& pname,
     map_["_package_name"] = pname;
     map_["_class_name"] = cname;
     map_["_type"] = type;
-    map_["_hash_str"] = std::string((const char *)md5Sum,
-                                    qpid::management::ManagementObject::MD5_LEN);
+    map_["_hash"] = qpid::messaging::Uuid(md5Sum);
     return map_;
 }
 
@@ -1896,9 +1895,8 @@ void ManagementAgent::disallow(const std::string& className, const std::string& 
 }
 
 void ManagementAgent::SchemaClassKey::mapEncode(qpid::messaging::Variant::Map& _map) const {
-    const std::string hash_str((const char *)hash, sizeof(hash));
     _map["_cname"] = name;
-    _map["_hash"] = hash_str;
+    _map["_hash"] = qpid::messaging::Uuid(hash);
 }
 
 void ManagementAgent::SchemaClassKey::mapDecode(const qpid::messaging::Variant::Map& _map) {
@@ -1909,8 +1907,8 @@ void ManagementAgent::SchemaClassKey::mapDecode(const qpid::messaging::Variant::
     }
 
     if ((i = _map.find("_hash")) != _map.end()) {
-        const std::string s = i->second.asString();
-        memcpy(hash, s.data(), sizeof(hash));
+        const qpid::messaging::Uuid& uuid = i->second.asUuid();
+        memcpy(hash, uuid.data(), uuid.size());
     }
 }
 
