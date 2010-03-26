@@ -34,6 +34,7 @@
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ListContent.h"
 #include "qpid/messaging/ListView.h"
+#include "qpid/framing/List.h"
 #include <list>
 #include <iostream>
 #include <fstream>
@@ -2220,18 +2221,18 @@ qpid::messaging::Variant::Map ManagementAgent::toMap(const FieldTable& from)
     return map;
 }
 
-// qpid::messaging::Variant::List ManagementAgent::toList(const qpid::framing::Array& from)
-// {
-//     qpid::messaging::Variant::List _list;
+qpid::messaging::Variant::List ManagementAgent::toList(const List& from)
+{
+    qpid::messaging::Variant::List _list;
 
-//     for (qpid::framing::Array::const_iterator iter = from.begin(); iter != from.end(); iter++) {
-//         const qpid::framing::Array::ValuePtr& val(*iter);
+    for (List::const_iterator iter = from.begin(); iter != from.end(); iter++) {
+        const List::ValuePtr& val(*iter);
 
-//         _list.push_back(toVariant(val));
-//     }
+        _list.push_back(toVariant(val));
+    }
 
-//     return _list;
-// }
+    return _list;
+}
 
 qpid::framing::FieldTable ManagementAgent::fromMap(const qpid::messaging::Variant::Map& from)
 {
@@ -2250,20 +2251,20 @@ qpid::framing::FieldTable ManagementAgent::fromMap(const qpid::messaging::Varian
 }
 
 
-// qpid::framing::Array ManagementAgent::fromList(const qpid::messaging::Variant::List& from)
-// {
-//     qpid::framing::Array fa;
+List ManagementAgent::fromList(const qpid::messaging::Variant::List& from)
+{
+    List fa;
 
-//     for (qpid::messaging::Variant::List::const_iterator iter = from.begin();
-//          iter != from.end();
-//          iter++) {
-//         const qpid::messaging::Variant& val(*iter);
+    for (qpid::messaging::Variant::List::const_iterator iter = from.begin();
+         iter != from.end();
+         iter++) {
+        const qpid::messaging::Variant& val(*iter);
 
-//         fa.push_back(toFieldValue(val));
-//     }
+        fa.push_back(toFieldValue(val));
+    }
 
-//     return fa;
-// }
+    return fa;
+}
 
 
 boost::shared_ptr<FieldValue> ManagementAgent::toFieldValue(const Variant& in)
@@ -2286,9 +2287,7 @@ boost::shared_ptr<FieldValue> ManagementAgent::toFieldValue(const Variant& in)
     case messaging::VAR_STRING: return boost::shared_ptr<FieldValue>(new Str16Value(in.asString()));
     case messaging::VAR_UUID:   return boost::shared_ptr<FieldValue>(new UuidValue(in.asUuid().data()));
     case messaging::VAR_MAP:    return boost::shared_ptr<FieldValue>(new FieldTableValue(ManagementAgent::fromMap(in.asMap())));
-    default:
-        break;
-        //case messaging::VAR_LIST:   return boost::shared_ptr<FieldValue>(new ArrayValue(ManagementAgent::fromList(in.asList())));
+    case messaging::VAR_LIST:   return boost::shared_ptr<FieldValue>(new ListValue(ManagementAgent::fromList(in.asList())));
     }
 
     QPID_LOG(error, "Unknown Variant type - not converted: [" << in.getType() << "]");
@@ -2385,10 +2384,9 @@ qpid::messaging::Variant ManagementAgent::toVariant(const boost::shared_ptr<Fiel
         out = ManagementAgent::toMap(in->get<FieldTable>());
         break;
 
-        //case 0xa9: // list of variant types
-        // out = Variant::List();
-        // translate<List>(in, out.asList(), &toVariant);
-        // break;
+    case 0xa9: // list of variant types
+        out = ManagementAgent::toList(in->get<List>());
+        break;
         //case 0xaa: //convert amqp0-10 array (uniform type) into variant list
         // out = Variant::List();
         // translate<Array>(in, out.asList(), &toVariant);

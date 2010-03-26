@@ -136,8 +136,8 @@ public:
     // TODO: remove these when Variant API moved into common library.
     static messaging::Variant::Map toMap(const framing::FieldTable& from);
     static framing::FieldTable fromMap(const messaging::Variant::Map& from);
-    //static messaging::Variant::List toList(const framing::Array& from);
-    //static framing::Array fromList(const messaging::Variant::List& from);
+    static messaging::Variant::List toList(const framing::List& from);
+    static framing::List fromList(const messaging::Variant::List& from);
     static boost::shared_ptr<framing::FieldValue> toFieldValue(const messaging::Variant& in);
     static messaging::Variant toVariant(const boost::shared_ptr<framing::FieldValue>& val);
 

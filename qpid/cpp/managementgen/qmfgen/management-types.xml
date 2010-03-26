@@ -51,9 +51,10 @@ stream="#.getV2Key()" size="16" accessor="direct" init="::qpid::management::Obje
  decode="{::qpid::framing::FieldTable _f; _f.decode(@); # = ManagementAgent::toMap(_f);}"
  size="::qpid::framing::FieldTable(ManagementAgent::fromMap(#)).encodedSize()"
 stream="#" accessor="direct" init="::qpid::messaging::VariantMap()" byRef="y" unmap="::qpid::messaging::VariantMap(); assert(false); /*TBD*/"/>
-<!-- not supported in V1
-<type name="list"      base="LIST"      cpp="::qpid::messaging::Variant::List" encode="#.encode(@)" decode="#.decode(@)"  stream="#" size="#.encodedSize()" accessor="direct" init="::qpid::messaging::Variant::List()" byRef="y" unmap="::qpid::messaging::Variant::List(); assert(false); /*TBD*/"/>
--->
+<type name="list"      base="LIST"      cpp="::qpid::messaging::Variant::List" 
+ encode="{::qpid::framing::List _l = ManagementAgent::fromList(#); _l.encode(@);}"
+ decode="{::qpid::framing::List _l; _l.decode(@); # = ManagementAgent::toList(_l);}"
+stream="#" size="#.encodedSize()" accessor="direct" init="::qpid::messaging::Variant::List()" byRef="y" unmap="::qpid::messaging::Variant::List(); assert(false); /*TBD*/"/>
 
 <type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    style="wm" stream="#" size="1" accessor="counter" init="0"/>
 <type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    style="wm" stream="#" size="2" accessor="counter" init="0"/>
