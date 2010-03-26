@@ -93,9 +93,9 @@ void /*MGEN:Class.NameCap*/::registerSelf(ManagementAgent* agent)
 
 void /*MGEN:Class.NameCap*/::writeSchema (std::string& schema)
 {
-#define BUFSIZE   65536
-    char _msgChars[BUFSIZE];
-    ::qpid::framing::Buffer buf(_msgChars, BUFSIZE);
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
     ::qpid::framing::FieldTable ft;
 
     // Schema class header:
@@ -133,6 +133,136 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 }
 /*MGEN:ENDIF*/
 
+
+uint32_t /*MGEN:Class.NameCap*/::writePropertiesSize() const
+{
+    uint32_t size = writeTimestampsSize();
+/*MGEN:IF(Class.ExistOptionals)*/
+    size += /*MGEN:Class.PresenceMaskBytes*/;
+/*MGEN:ENDIF*/
+/*MGEN:Class.SizeProperties*/
+    return size;
+}
+
+void /*MGEN:Class.NameCap*/::readProperties (const std::string& _sBuf)
+{
+    char *_tmpBuf = new char[_sBuf.length()];
+    memcpy(_tmpBuf, _sBuf.data(), _sBuf.length());
+    ::qpid::framing::Buffer buf(_tmpBuf, _sBuf.length());
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+
+    {
+        std::string _tbuf;
+        buf.getRawData(_tbuf, writeTimestampsSize());
+        readTimestamps(_tbuf);
+    }
+
+/*MGEN:IF(Class.ExistOptionals)*/
+    for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
+        presenceMask[idx] = buf.getOctet();
+/*MGEN:ENDIF*/
+/*MGEN:Class.ReadProperties*/
+
+    delete [] _tmpBuf;
+}
+
+void /*MGEN:Class.NameCap*/::writeProperties (std::string& _sBuf) const
+{
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    configChanged = false;
+
+    {
+        std::string _tbuf;
+        writeTimestamps(_tbuf);
+        buf.putRawData(_tbuf);
+    }
+
+
+/*MGEN:IF(Class.ExistOptionals)*/
+    for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
+        buf.putOctet(presenceMask[idx]);
+/*MGEN:ENDIF*/
+/*MGEN:Class.WriteProperties*/
+
+    uint32_t _bufLen = buf.getPosition();
+    buf.reset();
+
+    buf.getRawData(_sBuf, _bufLen);
+}
+
+void /*MGEN:Class.NameCap*/::writeStatistics (std::string& _sBuf, bool skipHeaders)
+{
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    instChanged = false;
+/*MGEN:IF(Class.ExistPerThreadAssign)*/
+    for (int idx = 0; idx < maxThreads; idx++) {
+        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+        if (threadStats != 0) {
+/*MGEN:Class.PerThreadAssign*/
+        }
+    }
+/*MGEN:ENDIF*/
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+    struct PerThreadStats totals;
+    aggregatePerThreadStats(&totals);
+/*MGEN:ENDIF*/
+/*MGEN:Class.Assign*/
+    if (!skipHeaders) {
+        std::string _tbuf;
+        writeTimestamps (_tbuf);
+        buf.putRawData(_tbuf);
+    }
+
+/*MGEN:Class.WriteStatistics*/
+
+    // Maintenance of hi-lo statistics
+/*MGEN:Class.HiLoStatResets*/
+/*MGEN:IF(Class.ExistPerThreadResets)*/
+    for (int idx = 0; idx < maxThreads; idx++) {
+        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+        if (threadStats != 0) {
+/*MGEN:Class.PerThreadHiLoStatResets*/
+        }
+    }
+/*MGEN:ENDIF*/
+
+    uint32_t _bufLen = buf.getPosition();
+    buf.reset();
+
+    buf.getRawData(_sBuf, _bufLen);
+}
+
+void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
+{
+    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+    std::string          text;
+
+    bool _matched = false;
+
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer outBuf(_msgChars, _bufSize);
+
+/*MGEN:Class.MethodHandlers*/
+
+    if (!_matched) {
+        outBuf.putLong(status);
+        outBuf.putShortString(Manageable::StatusText(status, text));
+    }
+
+    uint32_t _bufLen = outBuf.getPosition();
+    outBuf.reset();
+
+    outBuf.getRawData(outStr, _bufLen);
+}
 
 std::string /*MGEN:Class.NameCap*/::getKey() const
 {

@@ -21,7 +21,8 @@
  
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementObject.h"
-//#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/sys/Thread.h"
 
 #include <stdlib.h>
@@ -131,28 +132,40 @@ bool ObjectId::operator<(const ObjectId &other) const
     return v2Key < other.v2Key;
 }
 
-#if 0
 bool ObjectId::equalV1(const ObjectId &other) const
 {
     uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
     return first == otherFirst && second == other.second;
 }
-#endif
 
-// void ObjectId::encode(framing::Buffer& buffer) const
-// {
-//     if (agent == 0)
-//         buffer.putLongLong(first);
-//     else
-//         buffer.putLongLong(first | agent->first);
-//     buffer.putLongLong(second);
-// }
+void ObjectId::encode(std::string& buffer) const
+{
+    const uint32_t len = 16;
+    char _data[len];
+    qpid::framing::Buffer body(_data, len);
 
-// void ObjectId::decode(framing::Buffer& buffer)
-// {
-//     first  = buffer.getLongLong();
-//     second = buffer.getLongLong();
-// }
+    if (agent == 0)
+        body.putLongLong(first);
+    else
+        body.putLongLong(first | agent->first);
+    body.putLongLong(second);
+
+    body.reset();
+    body.getRawData(buffer, len);
+}
+
+void ObjectId::decode(const std::string& buffer)
+{
+    const uint32_t len = 16;
+    char _data[len];
+    qpid::framing::Buffer body(_data, len);
+
+    body.checkAvailable(buffer.length());
+    body.putRawData(buffer);
+    body.reset();
+    first  = body.getLongLong();
+    second = body.getLongLong();
+}
 
 void ObjectId::setV2Key(const ManagementObject& object)
 {
@@ -223,42 +236,56 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
 int ManagementObject::maxThreads = 1;
 int ManagementObject::nextThreadIndex = 0;
 
-// void ManagementObject::writeTimestamps (framing::Buffer& buf) const
-// {
-//     buf.putShortString (getPackageName ());
-//     buf.putShortString (getClassName ());
-//     buf.putBin128      (getMd5Sum ());
-//     buf.putLongLong    (updateTime);
-//     buf.putLongLong    (createTime);
-//     buf.putLongLong    (destroyTime);
-//     objectId.encode(buf);
-// }
+void ManagementObject::writeTimestamps (std::string& buf) const
+{
+    char _data[4000];
+    qpid::framing::Buffer body(_data, 4000);
 
-// void ManagementObject::readTimestamps (framing::Buffer& buf)
-// {
-//     std::string unused;
-//     uint8_t unusedUuid[16];
-//     ObjectId unusedObjectId;
+    body.putShortString (getPackageName ());
+    body.putShortString (getClassName ());
+    body.putBin128      (getMd5Sum ());
+    body.putLongLong    (updateTime);
+    body.putLongLong    (createTime);
+    body.putLongLong    (destroyTime);
 
-//     buf.getShortString(unused);
-//     buf.getShortString(unused);
-//     buf.getBin128(unusedUuid);
-//     updateTime = buf.getLongLong();
-//     createTime = buf.getLongLong();
-//     destroyTime = buf.getLongLong();
-//     unusedObjectId.decode(buf);
-// }
+    uint32_t len = body.getPosition();
+    body.reset();
+    body.getRawData(buf, len);
 
-// uint32_t ManagementObject::writeTimestampsSize() const
-// {
-//     return 1 + getPackageName().length() +  // str8
-//         1 + getClassName().length() +       // str8
-//         16 +                                // bin128
-//         8 +                                 // uint64
-//         8 +                                 // uint64
-//         8 +                                 // uint64
-//         objectId.encodedSize();             // objectId
-// }
+    std::string oid;
+    objectId.encode(oid);
+    buf += oid;
+}
+
+void ManagementObject::readTimestamps (const std::string& buf)
+{
+    char _data[4000];
+    qpid::framing::Buffer body(_data, 4000);
+    std::string unused;
+    uint8_t unusedUuid[16];
+
+    body.checkAvailable(buf.length());
+    body.putRawData(buf);
+    body.reset();
+
+    body.getShortString(unused);
+    body.getShortString(unused);
+    body.getBin128(unusedUuid);
+    updateTime = body.getLongLong();
+    createTime = body.getLongLong();
+    destroyTime = body.getLongLong();
+}
+
+uint32_t ManagementObject::writeTimestampsSize() const
+{
+    return 1 + getPackageName().length() +  // str8
+      1 + getClassName().length() +       // str8
+      16 +                                // bin128
+      8 +                                 // uint64
+      8 +                                 // uint64
+      8 +                                 // uint64
+      objectId.encodedSize();             // objectId
+}
 
 
 void ManagementObject::writeTimestamps (messaging::VariantMap& map) const

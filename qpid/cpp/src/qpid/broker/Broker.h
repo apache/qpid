@@ -113,6 +113,7 @@ public:
         std::string knownHosts;
         uint32_t maxSessionRate;
         bool asyncQueueEvents;
+        bool qmf2Support;
 
       private:
         std::string getHome();

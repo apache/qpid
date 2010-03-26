@@ -83,6 +83,14 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
                   const ::qpid::messaging::VariantMap& inMap,
                   ::qpid::messaging::VariantMap& outMap);
     std::string getKey() const;
+    uint32_t writePropertiesSize() const;
+    void readProperties(const std::string& buf);
+    void writeProperties(std::string& buf) const;
+    void writeStatistics(std::string& buf, bool skipHeaders = false);
+    void doMethod(std::string& methodName,
+                  const std::string& inBuf,
+                  std::string& outBuf);
+
     writeSchemaCall_t getWriteSchemaCall() { return writeSchema; }
 /*MGEN:IF(Class.NoStatistics)*/
     // Stub for getInstChanged.  There are no statistics in this class.

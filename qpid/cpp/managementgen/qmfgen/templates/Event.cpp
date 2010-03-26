@@ -58,9 +58,9 @@ void Event/*MGEN:Event.NameCap*/::registerSelf(ManagementAgent* agent)
 
 void Event/*MGEN:Event.NameCap*/::writeSchema (std::string& schema)
 {
-#define BUFSIZE   65536
-    char _msgChars[BUFSIZE];
-    ::qpid::framing::Buffer buf(_msgChars, BUFSIZE);
+    const int _bufSize = 65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
     ::qpid::framing::FieldTable ft;
 
     // Schema class header:
@@ -78,6 +78,20 @@ void Event/*MGEN:Event.NameCap*/::writeSchema (std::string& schema)
         buf.reset();
         buf.getRawData(schema, _len);
     }
+}
+
+void Event/*MGEN:Event.NameCap*/::encode(std::string& _sBuf) const
+{
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+
+/*MGEN:Event.ArgEncodes*/
+
+    uint32_t _bufLen = buf.getPosition();
+    buf.reset();
+
+    buf.getRawData(_sBuf, _bufLen);
 }
 
 void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::messaging::VariantMap& map) const

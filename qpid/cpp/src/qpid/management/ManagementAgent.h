@@ -34,6 +34,7 @@
 #include "qmf/org/apache/qpid/broker/Agent.h"
 #include "qpid/messaging/Variant.h"
 #include <qpid/framing/AMQFrame.h>
+#include <qpid/framing/FieldValue.h>
 #include <memory>
 #include <string>
 #include <map>
@@ -63,7 +64,7 @@ public:
     } severity_t;
 
 
-    ManagementAgent ();
+    ManagementAgent (const bool qmfV1, const bool qmfV2);
     virtual ~ManagementAgent ();
 
     /** Called before plugins are initialized */
@@ -132,7 +133,14 @@ public:
     uint16_t getBootSequence(void) { return bootSequence; }
     void setBootSequence(uint16_t b) { bootSequence = b; }
 
+    // TODO: remove these when Variant API moved into common library.
     static messaging::Variant::Map toMap(const framing::FieldTable& from);
+    static framing::FieldTable fromMap(const messaging::Variant::Map& from);
+    //static messaging::Variant::List toList(const framing::Array& from);
+    //static framing::Array fromList(const messaging::Variant::List& from);
+    static boost::shared_ptr<framing::FieldValue> toFieldValue(const messaging::Variant& in);
+    static messaging::Variant toVariant(const boost::shared_ptr<framing::FieldValue>& val);
+
 
 private:
     struct Periodic : public qpid::sys::TimerTask
@@ -270,6 +278,8 @@ private:
     typedef std::map<MethodName, std::string> DisallowedMethods;
     DisallowedMethods disallowed;
     std::string agentName;  // KAG TODO FIX
+    bool qmf1Support;
+    bool qmf2Support;
 
 
 #   define MA_BUFFER_SIZE 65536
@@ -329,6 +339,7 @@ private:
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);
     size_t validateEventSchema(framing::Buffer&);
+    ManagementObjectMap::iterator numericFind(const ObjectId& oid);
     std::string debugSnapshot();
 };
 

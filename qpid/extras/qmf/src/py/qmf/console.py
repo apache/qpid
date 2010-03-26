@@ -341,7 +341,7 @@ class Object(object):
           ttl = timeWait * 1000
         else:
           ttl = None
-        smsg = self._broker._message(sendCodec.encoded, "agent.%d.%d" %
+        smsg = self._broker._message(sendCodec.encoded, "agent.%d.%s" %
                                      (self._objectId.getBrokerBank(), self._objectId.getAgentBank()),
                                      ttl=ttl)
         if synchronous:

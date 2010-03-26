@@ -93,7 +93,8 @@ Broker::Options::Options(const std::string& name) :
     tcpNoDelay(false),
     requireEncrypted(false),
     maxSessionRate(0),
-    asyncQueueEvents(false)     // Must be false in a cluster.
+    asyncQueueEvents(false),     // Must be false in a cluster.
+    qmf2Support(false)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -114,6 +115,7 @@ Broker::Options::Options(const std::string& name) :
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
         ("staging-threshold", optValue(stagingThreshold, "N"), "Stages messages over N bytes to disk")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
+        ("mgmt-qmf2", optValue(qmf2Support,"yes|no"), "Use QMF v2 for Broker Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
         ("queue-purge-interval", optValue(queueCleanInterval, "SECONDS"),
          "Interval between attempts to purge any expired messages from queues")
@@ -138,7 +140,9 @@ const std::string knownHostsNone("none");
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
     config(conf),
-    managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
+    managementAgent(conf.enableMgmt ? new ManagementAgent(!conf.qmf2Support,
+                                                          conf.qmf2Support)
+                                    : 0),
     store(new NullMessageStore),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),

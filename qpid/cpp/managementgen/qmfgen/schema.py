@@ -1228,12 +1228,12 @@ class SchemaClass:
           inArgCount = inArgCount + 1
 
     if methodCount == 0:
-      stream.write ("string&, Buffer&, Buffer& outBuf")
+      stream.write ("string&, const string&, string& outStr")
     else:
       if inArgCount == 0:
-        stream.write ("string& methodName, Buffer&, Buffer& outBuf")
+        stream.write ("string& methodName, const string&, string& outStr")
       else:
-        stream.write ("string& methodName, Buffer& inBuf, Buffer& outBuf")
+        stream.write ("string& methodName, const string& inStr, string& outStr")
 
 
   def genDoMapMethodArgs (self, stream, variables):
@@ -1338,8 +1338,22 @@ class SchemaClass:
     stream.write ("%d" % len (self.methods))
 
   def genMethodHandlers (self, stream, variables):
+    inArgs = False
+    for method in self.methods:
+      for arg in method.args:
+        if arg.getDir () == "I" or arg.getDir () == "IO":
+            inArgs = True;
+            break
+
+    if inArgs:
+        stream.write("\n")
+        stream.write("    char *_tmpBuf = new char[inStr.length()];\n")
+        stream.write("    memcpy(_tmpBuf, inStr.data(), inStr.length());\n")
+        stream.write("    ::qpid::framing::Buffer inBuf(_tmpBuf, inStr.length());\n")
+
     for method in self.methods:
       stream.write ("\n    if (methodName == \"" + method.getName () + "\") {\n")
+      stream.write ("        _matched = true;\n")
       if method.getArgCount () == 0:
         stream.write ("        ::qpid::management::ArgsNone ioArgs;\n")
       else:
@@ -1360,8 +1374,11 @@ class SchemaClass:
           stream.write ("        " +\
                         arg.type.type.getWriteCode ("ioArgs." +\
                                                     arg.dir.lower () + "_" +\
-                                                    arg.name, "outBuf") + ";\n")
-      stream.write ("        return;\n    }\n")
+                                                        arg.name, "outBuf") + ";\n")
+      stream.write("    }\n")
+
+    if inArgs:
+        stream.write ("\n    delete [] _tmpBuf;\n")
 
 
 
