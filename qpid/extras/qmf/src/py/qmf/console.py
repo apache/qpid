@@ -2086,7 +2086,7 @@ class Broker:
         if len(items) >= 4:
           if items[0] == 'console' and items[3].isdigit():
             agent_addr = int(items[3]) # The QMFv1 Agent Bank
-    if agent_addr and agent_addr in self.agents:
+    if agent_addr != None and agent_addr in self.agents:
       agent = self.agents[agent_addr]
 
     codec = Codec(msg.body)
@@ -2394,13 +2394,11 @@ class Agent:
         self.console.methodResponse(broker, seq, result)
 
 
-  def _v1HandleEventInd(self, broker, codec, seq):
+  def _v1HandleEventInd(self, codec, seq):
     """
     Handle a QMFv1 event indication
     """
-    if self.console != None:
-      event = Event(self, broker, codec)
-      self.console.event(broker, event)
+    pass
 
 
   def _v1HandleContentInd(self, codec, sequence, prop=False, stat=False):
@@ -2416,6 +2414,7 @@ class Agent:
     if classKey.getPackageName() == "org.apache.qpid.broker" and classKey.getClassName() == "agent" and prop:
       self.broker._updateAgent(obj)
 
+    context = self.unsolicitedContext
     try:
       self.lock.acquire()
       if sequence in self.contextMap:
@@ -2423,8 +2422,6 @@ class Agent:
     finally:
       self.lock.release()
 
-    if not context:
-      context = self.unsolicitedContext
     context.addV1QueryResult(obj)
 
 
@@ -2596,7 +2593,7 @@ class RequestContext(object):
 
   def addV1QueryResult(self, data):
     if self.notifiable:
-      self.notifyable(qmf_object=data)
+      self.notifiable(qmf_object=data)
     else:
       self.queryResults.append(data)
 
