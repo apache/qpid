@@ -178,14 +178,17 @@ protected:
     virtual void doMethod(std::string&           methodName,
                           const messaging::VariantMap& inMap,
                           messaging::VariantMap& outMap) = 0;
-    virtual uint32_t writePropertiesSize() const = 0;
-    virtual void readProperties(const std::string& buf) = 0;
-    virtual void writeProperties(std::string& buf) const = 0;
-    virtual void writeStatistics(std::string& buf,
-                                 bool skipHeaders = false) = 0;
-    virtual void doMethod(std::string&           methodName,
-                          const std::string& inBuf,
-                          std::string& outBuf) = 0;
+
+    /**
+     * The following five methods are not pure-virtual because they will only
+     * be overridden in cases where QMFv1 is to be supported.
+     */
+    virtual uint32_t writePropertiesSize() const { return 0; }
+    virtual void readProperties(const std::string&) {}
+    virtual void writeProperties(std::string&) const {}
+    virtual void writeStatistics(std::string&, bool = false) {}
+    virtual void doMethod(std::string&, const std::string&, std::string&) {}
+
     QPID_COMMON_EXTERN virtual void setReference(ObjectId objectId);
 
     virtual std::string& getClassName() const = 0;

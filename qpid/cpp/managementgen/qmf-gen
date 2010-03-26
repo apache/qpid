@@ -62,8 +62,10 @@ if len(args) == 0:
 vargs = {}
 if opts.brokerplugin:
   vargs["agentHeaderDir"] = "management"
+  vargs["genQmfV1"]       = True
 else:
   vargs["agentHeaderDir"] = "agent"
+  vargs["genQmfV1"]       = None
 
 for schemafile in args:
   package = SchemaPackage(typefile, schemafile, opts)

@@ -133,7 +133,7 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 }
 /*MGEN:ENDIF*/
 
-
+/*MGEN:IF(Root.GenQMFv1)*/
 uint32_t /*MGEN:Class.NameCap*/::writePropertiesSize() const
 {
     uint32_t size = writeTimestampsSize();
@@ -263,7 +263,7 @@ void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
 
     outBuf.getRawData(outStr, _bufLen);
 }
-
+/*MGEN:ENDIF*/
 std::string /*MGEN:Class.NameCap*/::getKey() const
 {
     std::stringstream key;

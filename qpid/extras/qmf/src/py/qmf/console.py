@@ -162,18 +162,18 @@ class Object(object):
           if property.name in notPresent:
             self._properties.append((property, None))
           else:
-            self._properties.append((property, self._session._decodeValue(codec, property.type, broker)))
+            self._properties.append((property, self._session._decodeValue(codec, property.type, self._broker)))
       if stat:
         for statistic in schema.getStatistics():
-          self._statistics.append((statistic, self._session._decodeValue(codec, statistic.type, broker)))
+          self._statistics.append((statistic, self._session._decodeValue(codec, statistic.type, self._broker)))
     else:
       for property in schema.getProperties():
         if property.optional:
           self._properties.append((property, None))
         else:
-          self._properties.append((property, self._session._defaultValue(property, broker, kwargs)))
+          self._properties.append((property, self._session._defaultValue(property, self._broker, kwargs)))
       for statistic in schema.getStatistics():
-          self._statistics.append((statistic, self._session._defaultValue(statistic, broker, kwargs)))
+          self._statistics.append((statistic, self._session._defaultValue(statistic, self._broker, kwargs)))
 
   def v2Init(self, omap, agentName):
     if omap.__class__ != dict:
@@ -828,7 +828,7 @@ class Session:
     smsg = broker._message(sendCodec.encoded)
     broker._send(smsg)
 
-  def _handleCommandComplete(self, broker, codec, seq):
+  def _handleCommandComplete(self, broker, codec, seq, agent):
     code = codec.read_uint32()
     text = codec.read_str8()
     context = self.seqMgr._release(seq)
@@ -849,6 +849,10 @@ class Session:
           self.cv.notify()
       finally:
         self.cv.release()
+
+    if agent:
+      agent._handleV1Completion(seq, code, text)
+
 
   def _handleClassInd(self, broker, codec, seq):
     kind  = codec.read_uint8()
@@ -1714,6 +1718,7 @@ class Broker:
     self.authUser = authUser
     self.authPass = authPass
     self.cv = Condition()
+    self.seqToAgentMap = {}
     self.error = None
     self.brokerId = None
     self.connected = False
@@ -1791,6 +1796,20 @@ class Broker:
       return "Broker connected at: %s" % self.getUrl()
     else:
       return "Disconnected Broker"
+
+  def _setSequence(self, sequence, agent):
+    try:
+      self.cv.acquire()
+      self.seqToAgentMap[sequence] = agent
+    finally:
+      self.cv.release()
+
+  def _clearSequence(self, sequence):
+    try:
+      self.cv.acquire()
+      self.seqToAgentMap.pop(sequence)
+    finally:
+      self.cv.release()
 
   def _tryToConnect(self):
     try:
@@ -2071,17 +2090,28 @@ class Broker:
       agent = self.agents[agent_addr]
 
     codec = Codec(msg.body)
+    alreadyTried = None
     while True:
       opcode, seq = self._checkHeader(codec)
+
+      if not agent and not alreadyTried:
+        alreadyTried = True
+        try:
+          self.cv.acquire()
+          if seq in self.seqToAgentMap:
+            agent = self.seqToAgentMap[seq]
+        finally:
+          self.cv.release()
+
       if   opcode == None: return
       if   opcode == 'b': self.session._handleBrokerResp      (self, codec, seq)
       elif opcode == 'p': self.session._handlePackageInd      (self, codec, seq)
       elif opcode == 'q': self.session._handleClassInd        (self, codec, seq)
       elif opcode == 's': self.session._handleSchemaResp      (self, codec, seq, agent_addr)
       elif opcode == 'h': self.session._handleHeartbeatInd    (self, codec, seq, msg)
-      elif opcode == 'z': self.session._handleCommandComplete (self, codec, seq)
+      elif opcode == 'z': self.session._handleCommandComplete (self, codec, seq, agent)
       elif agent:
-        agent._handleQmfV1Message(opcode, mp, ah, codec)
+        agent._handleQmfV1Message(opcode, seq, mp, ah, codec)
 
     self.amqpSession.receiver._completed.add(msg.id)
     self.amqpSession.channel.session_completed(self.amqpSession.receiver._completed)
@@ -2261,6 +2291,7 @@ class Agent:
     try:
       self.lock.acquire()
       self.contextMap[sequence] = context
+      context.setSequence(sequence)
     finally:
       self.lock.release()
 
@@ -2271,6 +2302,7 @@ class Agent:
     if self.isV2:
       self._v2SendGetQuery(sequence, kwargs)
     else:
+      self.broker._setSequence(sequence, self)
       self._v1SendGetQuery(sequence, kwargs)
 
     #
@@ -2284,8 +2316,15 @@ class Agent:
       if context.exception:
         raise Exception(context.exception)
       result = context.queryResults
-      self.contextMap.pop(sequence)
       return result
+
+
+  def _clearContext(self, sequence):
+    try:
+      self.lock.acquire()
+      self.contextMap.pop(sequence)
+    finally:
+      self.lock.release()
 
 
   def _schemaInfoFromV2Agent(self):
@@ -2295,13 +2334,35 @@ class Agent:
     """
     try:
       self.lock.acquire()
-      copy_of_map = self.contextMap
+      copy_of_map = {}
+      for item in self.contextMap:
+        copy_of_map[item] = self.contextMap[item]
     finally:
       self.lock.release()
 
     self.unsolicitedContext.reprocess()
     for context in copy_of_map:
       copy_of_map[context].reprocess()
+
+
+  def _handleV1Completion(self, sequence, code, text):
+    """
+    Called if one of this agent's V1 commands completed
+    """
+    context = None
+    try:
+      self.lock.acquire()
+      if sequence in self.contextMap:
+        context = self.contextMap[sequence]
+    finally:
+      self.lock.release()
+
+    if context:
+      if code != 0:
+        ex = "Error %d: %s" % (code, text)
+        context.setException(ex)
+      context.signal()
+    self.broker._clearSequence(sequence)
 
 
   def _v1HandleMethodResp(self, codec, seq):
@@ -2342,7 +2403,7 @@ class Agent:
       self.console.event(broker, event)
 
 
-  def _v1HandleContentInd(self, broker, codec, seq, prop=False, stat=False):
+  def _v1HandleContentInd(self, codec, sequence, prop=False, stat=False):
     """
     Handle a QMFv1 content indication
     """
@@ -2351,24 +2412,20 @@ class Agent:
     if not schema:
       return
 
-    obj = Object(self, broker, schema, codec, prop, stat)
+    obj = Object(self, schema, codec, prop, stat)
     if classKey.getPackageName() == "org.apache.qpid.broker" and classKey.getClassName() == "agent" and prop:
-      broker._updateAgent(obj)
+      self.broker._updateAgent(obj)
 
     try:
       self.lock.acquire()
-      if seq in self.syncSequenceList:
-        if object.getTimestamps()[2] == 0 and self._selectMatch(object):
-          self.getResult.append(object)
-        return
+      if sequence in self.contextMap:
+        context = self.contextMap[sequence]
     finally:
       self.lock.release()
 
-    if self.console and self.rcvObjects:
-      if prop:
-        self.console.objectProps(broker, object)
-      if stat:
-        self.console.objectStats(broker, object)
+    if not context:
+      context = self.unsolicitedContext
+    context.addV1QueryResult(obj)
 
 
   def _v2HandleDataInd(self, mp, ah, content):
@@ -2376,10 +2433,14 @@ class Agent:
     Handle a QMFv2 data indication from the agent
     """
     if mp.correlation_id:
-      sequence = int(mp.correlation_id)
-      if sequence not in self.contextMap:
-        return
-      context = self.contextMap[sequence]
+      try:
+        self.lock.acquire()
+        sequence = int(mp.correlation_id)
+        if sequence not in self.contextMap:
+          return
+        context = self.contextMap[sequence]
+      finally:
+        self.lock.release()
     else:
       context = self.unsolicitedContext
 
@@ -2405,8 +2466,33 @@ class Agent:
     pass
 
 
-  def _v1SendGetQuery(self, kwargs):
-    pass
+  def _v1SendGetQuery(self, sequence, kwargs):
+    """
+    Send a get query to a QMFv1 agent.
+    """
+    #
+    # Build the query map
+    #
+    query = {}
+    if '_class' in kwargs:
+      query['_class'] = kwargs['_class']
+      if '_package' in kwargs:
+        query['_package'] = kwargs['_package']
+    elif '_key' in kwargs:
+      key = kwargs['_key']
+      query['_class'] = key.getClassName()
+      query['_package'] = key.getPackageName()
+    elif '_objectId' in kwargs:
+      query['_objectid'] = kwargs['_objectId'].__repr__()
+
+    #
+    # Construct and transmit the message
+    #
+    sendCodec = Codec()
+    self.broker._setHeader(sendCodec, 'G', sequence)
+    sendCodec.write_map(query)
+    smsg = self.broker._message(sendCodec.encoded, "agent.%d.%s" % (self.brokerBank, self.agentBank))
+    self.broker._send(smsg)
 
 
   def _v2SendGetQuery(self, sequence, kwargs):
@@ -2460,7 +2546,7 @@ class Agent:
     self.broker._send(smsg, "qmf.default.direct")
 
 
-  def _handleQmfV1Message(self, opcode, mp, ah, codec):
+  def _handleQmfV1Message(self, opcode, seq, mp, ah, codec):
     """
     Process QMFv1 messages arriving from an agent.
     """
@@ -2487,8 +2573,10 @@ class Agent:
 class RequestContext(object):
   """
   This class tracks an asynchronous request sent to an agent.
+  TODO: Add logic for client-side selection and filtering deleted objects from get-queries
   """
   def __init__(self, agent, notifiable):
+    self.sequence = None
     self.agent = agent
     self.schemaCache = self.agent.schemaCache
     self.notifiable = notifiable
@@ -2497,8 +2585,20 @@ class RequestContext(object):
     self.queryResults = []
     self.exception = None
     self.waitingForSchema = None
+    self.pendingSignal = None
     self.cv = Condition()
     self.blocked = notifiable == None
+
+
+  def setSequence(self, sequence):
+    self.sequence =  sequence
+
+
+  def addV1QueryResult(self, data):
+    if self.notifiable:
+      self.notifyable(qmf_object=data)
+    else:
+      self.queryResults.append(data)
 
 
   def addV2QueryResult(self, data):
@@ -2528,10 +2628,26 @@ class RequestContext(object):
   def signal(self):
     try:
       self.cv.acquire()
-      self.blocked = None
-      self.cv.notify()
+      if self.waitingForSchema:
+        self.pendingSignal = True
+        return
+      else:
+        self.blocked = None
+        self.cv.notify()
     finally:
       self.cv.release()
+    self._complete()
+
+
+  def _complete(self):
+    if self.notifiable:
+      if self.exception:
+        self.notifiable(qmf_exception=self.exception)
+      else:
+        self.notifiable(qmf_complete=True)
+
+    if self.sequence:
+      self.agent._clearContext(self.sequence)
 
 
   def processV2Data(self):
@@ -2567,6 +2683,19 @@ class RequestContext(object):
         self.notifiable(qmf_object=result)
       else:
         self.queryResults.append(result)
+
+    complete = None
+    try:
+      self.cv.acquire()
+      if not self.waitingForSchema and self.pendingSignal:
+        self.blocked = None
+        self.cv.notify()
+        complete = True
+    finally:
+      self.cv.release()
+
+    if complete:
+      self._complete()
 
 
   def reprocess(self):

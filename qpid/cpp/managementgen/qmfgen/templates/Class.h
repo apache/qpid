@@ -83,6 +83,7 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
                   const ::qpid::messaging::VariantMap& inMap,
                   ::qpid::messaging::VariantMap& outMap);
     std::string getKey() const;
+/*MGEN:IF(Root.GenQMFv1)*/
     uint32_t writePropertiesSize() const;
     void readProperties(const std::string& buf);
     void writeProperties(std::string& buf) const;
@@ -90,6 +91,7 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     void doMethod(std::string& methodName,
                   const std::string& inBuf,
                   std::string& outBuf);
+/*MGEN:ENDIF*/
 
     writeSchemaCall_t getWriteSchemaCall() { return writeSchema; }
 /*MGEN:IF(Class.NoStatistics)*/
