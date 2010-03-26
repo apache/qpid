@@ -39,22 +39,20 @@ void AgentAttachment::setBanks(uint32_t broker, uint32_t bank)
         ((uint64_t) (bank   & 0x0fffffff));
 }
 
-#if 0
 // Deprecated
-ObjectId::ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, uint64_t object)
-    : agent(0)
+ObjectId::ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint64_t object)
+    : agent(0), agentEpoch(seq)
 {
     first =
         ((uint64_t) (flags  &       0x0f)) << 60 |
         ((uint64_t) (seq    &     0x0fff)) << 48 |
-        ((uint64_t) (broker & 0x000fffff)) << 28 |
-        ((uint64_t) (bank   & 0x0fffffff));
+      ((uint64_t) (broker & 0x000fffff)) << 28;
     second = object;
 }
-#endif
+
 
 ObjectId::ObjectId(uint8_t flags, uint16_t seq, uint32_t broker)
-    : agent(0), agentEpoch(seq)
+    : agent(0), second(0), agentEpoch(seq)
 {
     first =
         ((uint64_t) (flags  &       0x0f)) << 60 |
@@ -63,7 +61,7 @@ ObjectId::ObjectId(uint8_t flags, uint16_t seq, uint32_t broker)
 }
 
 ObjectId::ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq)
-    : agent(_agent), agentEpoch(seq)
+    : agent(_agent), second(0), agentEpoch(seq)
 {
 
     first =
@@ -93,7 +91,7 @@ void ObjectId::fromString(const std::string& text)
 
     // format:
     // V1: <flags>-<sequence>-<broker-bank>-<agent-bank>-<uint64-app-id>
-    // V2: <flags>-<epoch>-<1>-<agent-name>-<str-app-id>
+    // V2: Not used
 
     std::string copy(text.c_str());
     char* cText;
@@ -126,7 +124,7 @@ void ObjectId::fromString(const std::string& text)
         (atoll(field[2]) << 28);
 
     agentName = std::string(field[3]);
-    v2Key = std::string(field[4]);
+    second = atoll(field[4]);
 }
 
 
@@ -143,13 +141,12 @@ bool ObjectId::operator<(const ObjectId &other) const
 bool ObjectId::equalV1(const ObjectId &other) const
 {
     uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
-    return first == otherFirst && v2Key == other.v2Key;
+    return first == otherFirst && second == other.second;
 }
 
 // encode as V1-format binary
 void ObjectId::encode(std::string& buffer) const
 {
-    uint64_t second;
     const uint32_t len = 16;
     char _data[len];
     qpid::framing::Buffer body(_data, len);
@@ -158,14 +155,6 @@ void ObjectId::encode(std::string& buffer) const
         body.putLongLong(first);
     else
         body.putLongLong(first | agent->first);
-
-    try {
-        second = boost::lexical_cast<uint64_t>(v2Key);
-    } catch(const boost::bad_lexical_cast&) {
-        second = 0;
-        QPID_LOG(error, "Badly formatted QMF Object Id v2Key:" << v2Key);
-    }
-
     body.putLongLong(second);
 
     body.reset();
@@ -175,7 +164,6 @@ void ObjectId::encode(std::string& buffer) const
 // decode as V1-format binary
 void ObjectId::decode(const std::string& buffer)
 {
-    uint64_t second;
     const uint32_t len = 16;
     char _data[len];
     qpid::framing::Buffer body(_data, len);
@@ -252,7 +240,7 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
         "-" << ((virtFirst & 0x0FFF000000000000LL) >> 48) <<
         "-" << ((virtFirst & 0x0000FFFFF0000000LL) >> 28) <<
         "-" << i.agentName <<
-        "-" << i.v2Key;
+        "-" << i.second;
     return out;
 }
 

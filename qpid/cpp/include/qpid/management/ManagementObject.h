@@ -53,18 +53,21 @@ class ObjectId {
 protected:
     const AgentAttachment* agent;
     uint64_t first;
+    uint64_t second;
     uint64_t agentEpoch;
     std::string v2Key;
     std::string agentName;
     void fromString(const std::string&);
 public:
-    QPID_COMMON_EXTERN ObjectId() : agent(0), first(0) {}
+    QPID_COMMON_EXTERN ObjectId() : agent(0), first(0), second(0), agentEpoch(0) {}
     QPID_COMMON_EXTERN ObjectId(const messaging::Variant& map) :
-    agent(0), first(0), agentEpoch(0) { mapDecode(map.asMap()); }
+    agent(0), first(0), second(0), agentEpoch(0) { mapDecode(map.asMap()); }
     QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker);
     QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq);
     QPID_COMMON_EXTERN ObjectId(std::istream&);
     QPID_COMMON_EXTERN ObjectId(const std::string&);
+    // Deprecated:
+    QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint64_t object);
     QPID_COMMON_EXTERN bool operator==(const ObjectId &other) const;
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
     QPID_COMMON_EXTERN void mapEncode(messaging::VariantMap& map) const;

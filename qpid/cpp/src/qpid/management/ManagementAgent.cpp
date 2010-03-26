@@ -221,11 +221,42 @@ void ManagementAgent::registerEvent (const string&  packageName,
     addClassLH(ManagementItem::CLASS_KIND_EVENT, pIter, eventName, md5Sum, schemaCall);
 }
 
-// Deprecated:
+// Deprecated:  V1 objects
 ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId)
 {
-    // always force object to generate key string
-    return addObject(object, std::string(), persistId != 0);
+    uint16_t sequence;
+    uint64_t objectNum;
+
+    if (persistId == 0) {
+        sequence  = bootSequence;
+        objectNum = nextObjectId++;
+    } else {
+        sequence  = 0;
+        objectNum = persistId;
+    }
+
+    ObjectId objId(0 /*flags*/, sequence, brokerBank, objectNum);
+    objId.setV2Key(*object);   // let object generate the v2 key
+
+    object->setObjectId(objId);
+
+    {
+        Mutex::ScopedLock lock (addLock);
+        ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
+        if (destIter != newManagementObjects.end()) {
+            if (destIter->second->isDeleted()) {
+                newDeletedManagementObjects.push_back(destIter->second);
+                newManagementObjects.erase(destIter);
+            } else {
+                QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
+                         " key=" << objId.getV2Key());
+                return objId;
+            }
+        }
+        newManagementObjects[objId] = object;
+    }
+
+    return objId;
 }
 
 
