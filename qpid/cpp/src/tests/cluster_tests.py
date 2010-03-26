@@ -156,7 +156,7 @@ class LongTests(BrokerTest):
             ErrorGenerator(b)
             time.sleep(min(5,self.duration()/2))
         sender.stop()
-        receiver.stop(sender.sent)
+        receiver.stop()
         for i in range(i, len(cluster)): cluster[i].kill()
 
     def test_management(self):
