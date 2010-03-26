@@ -24,6 +24,8 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/log/Statement.h"
+#include <boost/lexical_cast.hpp>
 
 #include <stdlib.h>
 
@@ -89,6 +91,10 @@ void ObjectId::fromString(const std::string& text)
 #  define atoll(X) _atoi64(X)
 #endif
 
+    // format:
+    // V1: <flags>-<sequence>-<broker-bank>-<agent-bank>-<uint64-app-id>
+    // V2: <flags>-<epoch>-<1>-<agent-name>-<str-app-id>
+
     std::string copy(text.c_str());
     char* cText;
     char* field[FIELDS];
@@ -113,6 +119,8 @@ void ObjectId::fromString(const std::string& text)
     if (idx != FIELDS)
         throw Exception("Invalid ObjectId format");
 
+    agentEpoch = atoll(field[1]);
+
     first = (atoll(field[0]) << 60) +
         (atoll(field[1]) << 48) +
         (atoll(field[2]) << 28);
@@ -135,11 +143,13 @@ bool ObjectId::operator<(const ObjectId &other) const
 bool ObjectId::equalV1(const ObjectId &other) const
 {
     uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
-    return first == otherFirst && second == other.second;
+    return first == otherFirst && v2Key == other.v2Key;
 }
 
+// encode as V1-format binary
 void ObjectId::encode(std::string& buffer) const
 {
+    uint64_t second;
     const uint32_t len = 16;
     char _data[len];
     qpid::framing::Buffer body(_data, len);
@@ -148,14 +158,24 @@ void ObjectId::encode(std::string& buffer) const
         body.putLongLong(first);
     else
         body.putLongLong(first | agent->first);
+
+    try {
+        second = boost::lexical_cast<uint64_t>(v2Key);
+    } catch(const boost::bad_lexical_cast&) {
+        second = 0;
+        QPID_LOG(error, "Badly formatted QMF Object Id v2Key:" << v2Key);
+    }
+
     body.putLongLong(second);
 
     body.reset();
     body.getRawData(buffer, len);
 }
 
+// decode as V1-format binary
 void ObjectId::decode(const std::string& buffer)
 {
+    uint64_t second;
     const uint32_t len = 16;
     char _data[len];
     qpid::framing::Buffer body(_data, len);
@@ -165,8 +185,11 @@ void ObjectId::decode(const std::string& buffer)
     body.reset();
     first  = body.getLongLong();
     second = body.getLongLong();
+    v2Key = boost::lexical_cast<std::string>(second);
 }
 
+// generate the V2 key from the index fields defined
+// in the schema.
 void ObjectId::setV2Key(const ManagementObject& object)
 {
     std::stringstream oname;
@@ -174,6 +197,7 @@ void ObjectId::setV2Key(const ManagementObject& object)
     v2Key = oname.str();
 }
 
+// encode as V2-format map
 void ObjectId::mapEncode(messaging::VariantMap& map) const
 {
     if (agent == 0)
@@ -188,6 +212,7 @@ void ObjectId::mapEncode(messaging::VariantMap& map) const
         map["_agent_epoch"] = agentEpoch;
 }
 
+// decode as v2-format map
 void ObjectId::mapDecode(const messaging::VariantMap& map)
 {
     messaging::MapView::const_iterator i;
