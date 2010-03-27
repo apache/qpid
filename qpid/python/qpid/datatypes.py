@@ -290,9 +290,11 @@ try:
   def random_uuid():
     return uuid.uuid4().get_bytes()
 except ImportError:
-  import random
+  import os, random, socket, time
+  rand = random.Random()
+  rand.seed((os.getpid(), time.time(), socket.gethostname()))
   def random_uuid():
-    bytes = [random.randint(0, 255) for i in xrange(16)]
+    bytes = [rand.randint(0, 255) for i in xrange(16)]
 
     # From RFC4122, the version bits are set to 0100
     bytes[7] &= 0x0F

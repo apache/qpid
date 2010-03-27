@@ -98,3 +98,9 @@ class Condition:
       self.lock._acquire_restore(st)
       self.waiting.remove(sw)
       self.waiters.append(sw)
+
+  def gc(self):
+    assert self.lock._is_owned()
+    while self.waiters:
+      sw = self.waiters.pop(0)
+      sw.close()

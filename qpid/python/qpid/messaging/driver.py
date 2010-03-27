@@ -342,6 +342,9 @@ class Driver:
   def start(self):
     self._selector.register(self)
 
+  def stop(self):
+    self._selector.unregister(self)
+
   def fileno(self):
     return self._socket.fileno()
 

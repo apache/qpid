@@ -96,7 +96,7 @@ of address (as there is no existing entity from which to infer that
 type and as we do not want the default type to be created, namely a
 queue):
 
-* run: ./drain -f --address 'my-new-topic; {create: always, node-properties:{type:topic}}'
+* run: ./drain -f --address 'my-new-topic; {create: always, node:{type:topic}}'
 * then run: ./spout --address my-new-queue
 
 The value to the create policy is one of always, sender, receiver or
@@ -128,18 +128,16 @@ qpid-config or even auto-create one):
 An example using xquery based filtering with the xml exchange:
 
 * First start a subscriber with an xquery filter specified:
-  ./drain -f --address 'xml/my-subject; {filter:{xquery:"declare variable $colour external; $colour = '\''red'\''"}}'
+  ./drain -f --address 'xml; {link:{x-bindings:[{arguments:{xquery:"declare variable $colour external; $colour = '\''red'\''"}}]}}'
 
 * Then test receipt of messages that match the xquery filter:
-  ./spout --address 'xml/my-subject' --property colour=red --content 'matched!'
+  ./spout --address 'xml' --property colour=red --content 'matched!'
     and
-  ./spout --address 'xml/my-subject' --property colour=blue --content 'not matched'
+  ./spout --address 'xml' --property colour=blue --content 'not matched'
 
 TODO:
 
 * auto-creating exchanges of different types
-
-* xml content in the xquery example
 
 * 'durable' and 'reliable' subscriptions
 

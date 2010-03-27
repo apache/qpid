@@ -502,6 +502,7 @@ void Queue::purgeExpired()
                 if (lastValueQueue) checkLvqReplace(*i);
                 if (i->payload->hasExpired()) {
                     expired.push_back(*i);
+                    clearLVQIndex(*i);
                     i = messages.erase(i);
                 } else {
                     ++i;

@@ -48,6 +48,7 @@ http://cwiki.apache.org/confluence/pages/createpage.action?spaceKey=qpid&title=J
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="System-Properties.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Connection-URL-Format.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Binding-URL-Format.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-JMS-Selector-Syntax.xml"/>
 
 <!--
             <listitem><para>How to Use JNDI to configure the AMQP Java JMS Client
@@ -66,15 +67,26 @@ http://cwiki.apache.org/confluence/pages/createpage.action?spaceKey=qpid&title=J
 
 	  <itemizedlist>
             <listitem><para>
-              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/"></ulink>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/">Examples Directory</ulink>
             </para></listitem>
 
             <listitem><para>
-              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/"></ulink>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/runSample.sh">Script for running examples</ulink>
             </para></listitem>
             <listitem><para>
-              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/"></ulink>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/org/apache/qpid/example/jmsexample/direct/">Direct Example</ulink>
             </para></listitem>
+            <listitem><para>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/org/apache/qpid/example/jmsexample/fanout/">Fanout Example</ulink>
+            </para></listitem>
+            <listitem><para>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/org/apache/qpid/example/jmsexample/pubsub">Pub-Sub Example</ulink>
+            </para></listitem>
+            <listitem><para>
+              <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/org/apache/qpid/example/jmsexample/requestResponse/">Request/Response Example</ulink>
+            </para></listitem>
+	    <listitem><para>
+	      <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/client/example/src/main/java/org/apache/qpid/example/jmsexample/transacted/">Transacted Example</ulink></para></listitem>
           </itemizedlist>
 
 <!--h3--></section>

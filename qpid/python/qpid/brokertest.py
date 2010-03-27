@@ -81,7 +81,7 @@ def error_line(filename):
     """Get the last line of filename for error messages"""
     result = ""
     try:
-        f = file(filename)
+        f = open(filename)
         try:
             for l in f: result = ": " + l
         finally: f.close()
@@ -118,7 +118,7 @@ class Popen(popen2.Popen3):
             try:
                 for line in self.infile:
                     if self.outfile is None:
-                        self.outfile = file(self.outname, "w")
+                        self.outfile = open(self.outname, "w")
                     self.outfile.write(line)
             finally:
                 self.infile.close()
@@ -146,57 +146,61 @@ class Popen(popen2.Popen3):
         assert find_exe(cmd[0]), "executable not found: "+cmd[0]
         if type(cmd) is type(""): cmd = [cmd] # Make it a list.
         self.cmd  = [ str(x) for x in cmd ]
+        self.returncode = None
         popen2.Popen3.__init__(self, self.cmd, True)
         self.expect = expect
-        self.was_shutdown = False # Set if we deliberately kill/terminate the process
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
         msg = "Process %s" % self.pname
         self.stdin = ExceptionWrapper(self.tochild, msg)
         self.stdout = Popen.OutStream(self.fromchild, self.outfile("out"), msg)
         self.stderr = Popen.OutStream(self.childerr, self.outfile("err"), msg)
-        f = file(self.outfile("cmd"), "w")
+        f = open(self.outfile("cmd"), "w")
         try: f.write(self.cmd_str())
         finally: f.close()
         log.debug("Started process %s: %s" % (self.pname, " ".join(self.cmd)))
         if drain: self.drain()
+        self._clean = False
 
     def drain(self):
         """Start threads to drain stdout/err"""
         self.stdout.drain()
         self.stderr.drain()
 
-    def drain_join(self):
-        """Join the drain threads"""
-        self.stdout.thread.join()
+    def _cleanup(self):
+        """Close pipes to sub-process"""
+        if self._clean: return
+        self._clean = True
+        self.stdin.close()
+        self.drain()                    # Drain output pipes.
+        self.stdout.thread.join()       # Drain thread closes pipe.
         self.stderr.thread.join()
 
     def unexpected(self,msg):
-        self.drain()
-        self.drain_join()
+        self._cleanup()
         err = error_line(self.outfile("err")) or error_line(self.outfile("out"))
         raise BadProcessStatus("%s %s%s" % (self.pname, msg, err))
     
     def stop(self):                  # Clean up at end of test.
-        self.drain()
-        self.stdin.close()
-        if self.expect == EXPECT_UNKNOWN:
-            try: self.kill()            # Just make sure its dead
-            except: pass
-        elif self.expect == EXPECT_RUNNING:
-            try:
-                self.kill()
-            except:
-                self.unexpected("expected running, exit code %d" % self.wait())
-        else:
-            retry(lambda: self.poll() is not None)
-            if self.returncode is None: # Still haven't stopped
-                self.kill()
-                self.unexpected("still running")
-            elif self.expect == EXPECT_EXIT_OK and self.returncode != 0:
-                self.unexpected("exit code %d" % self.returncode)
-            elif self.expect == EXPECT_EXIT_FAIL and self.returncode == 0:
-                self.unexpected("expected error")
-        self.stdin.close()
+        try:
+            if self.expect == EXPECT_UNKNOWN:
+                try: self.kill()            # Just make sure its dead
+                except: pass
+            elif self.expect == EXPECT_RUNNING:
+                try:
+                    self.kill()
+                except:
+                    self.unexpected("expected running, exit code %d" % self.wait())
+            else:
+                retry(lambda: self.poll() is not None)
+                if self.returncode is None: # Still haven't stopped
+                    self.kill()
+                    self.unexpected("still running")
+                elif self.expect == EXPECT_EXIT_OK and self.returncode != 0:
+                    self.unexpected("exit code %d" % self.returncode)
+                elif self.expect == EXPECT_EXIT_FAIL and self.returncode == 0:
+                    self.unexpected("expected error")
+        finally:
+            self._cleanup()
                
     def communicate(self, input=None):
         if input:
@@ -213,20 +217,24 @@ class Popen(popen2.Popen3):
         if not self.is_running(): unexpected("Exit code %d" % self.returncode)
 
     def poll(self):
+        if self.returncode is not None: return self.returncode
         self.returncode = popen2.Popen3.poll(self)
         if (self.returncode == -1): self.returncode = None
+        if self.returncode is not None: self._cleanup()
         return self.returncode
 
     def wait(self):
+        if self.returncode is not None: return self.returncode
         self.drain()
-        self.returncode = popen2.Popen3.wait(self)
-        self.drain_join()
+        try: self.returncode = popen2.Popen3.wait(self)
+        except OSError,e: raise OSError("Wait failed %s: %s"%(self.pname, e))
+        self._cleanup()
         return self.returncode
 
     def send_signal(self, sig):
-        self.was_shutdown = True
-        os.kill(self.pid,sig)
-        self.wait()
+        try: os.kill(self.pid,sig)
+        except OSError,e: raise OSError("Kill failed %s: %s"%(self.pname, e))
+        self._cleanup()
 
     def terminate(self): self.send_signal(signal.SIGTERM)
     def kill(self): self.send_signal(signal.SIGKILL)
@@ -347,7 +355,7 @@ class Broker(Popen):
         """Return true if the log file exists and contains a broker ready message"""
         if self._log_ready: return True
         if not os.path.exists(self.log): return False
-        f = file(self.log)
+        f = open(self.log)
         try:
             for l in f:
                 if "notice Broker running" in l:
@@ -489,7 +497,7 @@ class NumberedSender(Thread):
     def __init__(self, broker, max_depth=None):
         """
         max_depth: enable flow control, ensure sent - received <= max_depth.
-        Requires self.received(n) to be called each time messages are received.
+        Requires self.notify_received(n) to be called each time messages are received.
         """
         Thread.__init__(self)
         self.sender = broker.test.popen(
@@ -500,6 +508,10 @@ class NumberedSender(Thread):
         self.stopped = False
         self.error = None
 
+    def write_message(self, n):
+        self.sender.stdin.write(str(n)+"\n")
+        self.sender.stdin.flush()
+
     def run(self):
         try:
             self.sent = 0
@@ -509,8 +521,7 @@ class NumberedSender(Thread):
                     while not self.stopped and self.sent - self.received > self.max:
                         self.condition.wait()
                     self.condition.release()
-                self.sender.stdin.write(str(self.sent)+"\n")
-                self.sender.stdin.flush()
+                self.write_message(self.sent)
                 self.sent += 1
         except Exception: self.error = RethrownException(self.sender.pname)
 
@@ -523,10 +534,12 @@ class NumberedSender(Thread):
 
     def stop(self):
         self.condition.acquire()
-        self.stopped = True
-        self.condition.notify()
-        self.condition.release()
+        try:
+            self.stopped = True
+            self.condition.notify()
+        finally: self.condition.release()
         self.join()
+        self.write_message(-1)          # end-of-messages marker.
         if self.error: raise self.error
         
 class NumberedReceiver(Thread):
@@ -543,35 +556,29 @@ class NumberedReceiver(Thread):
         self.receiver = self.test.popen(
             [self.test.receiver_exec, "--port", broker.port()],
             expect=EXPECT_RUNNING, drain=False)
-        self.stopat = None
         self.lock = Lock()
         self.error = None
         self.sender = sender
 
-    def continue_test(self):
-        self.lock.acquire()
-        ret = self.stopat is None or self.received < self.stopat
-        self.lock.release()
-        return ret
+    def read_message(self):
+        return int(self.receiver.stdout.readline())
     
     def run(self):
         try:
             self.received = 0
-            while self.continue_test():
-                m = int(self.receiver.stdout.readline())
-                assert(m <= self.received) # Allow for duplicates
-                if (m == self.received):
+            m = self.read_message()
+            while m != -1:
+                assert(m <= self.received) # Check for missing messages
+                if (m == self.received): # Ignore duplicates
                     self.received += 1
                     if self.sender:
                         self.sender.notify_received(self.received)
+                m = self.read_message()
         except Exception:
             self.error = RethrownException(self.receiver.pname)
 
-    def stop(self, count):
-        """Returns when received >= count"""
-        self.lock.acquire()
-        self.stopat = count
-        self.lock.release()
+    def stop(self):
+        """Returns when termination message is received"""
         self.join()
         if self.error: raise self.error
 
@@ -597,6 +604,7 @@ class ErrorGenerator(StoppableThread):
                         queue="non-existent-queue")
                     assert(False)
                 except qpid.session.SessionException: pass
+                time.sleep(0.01)
         except: pass                    # Normal if broker is killed.
 
 def import_script(path):
@@ -604,7 +612,7 @@ def import_script(path):
     Import executable script at path as a module.
     Requires some trickery as scripts are not in standard module format
     """
-    f = file(path)
+    f = open(path)
     try:
         name=os.path.split(path)[1].replace("-","_")
         return imp.load_module(name, f, path, ("", "r", imp.PY_SOURCE))

@@ -46,10 +46,12 @@ using std::cout;
 using std::endl;
 using qpid::messaging::Variant;
 
-Mutex            ManagementAgent::Singleton::lock;
-bool             ManagementAgent::Singleton::disabled = false;
-ManagementAgent* ManagementAgent::Singleton::agent    = 0;
-int              ManagementAgent::Singleton::refCount = 0;
+namespace {
+    Mutex lock;
+    bool disabled = false;
+    ManagementAgent* agent = 0;
+    int refCount = 0;
+}
 
 ManagementAgent::Singleton::Singleton(bool disableManagement)
 {
