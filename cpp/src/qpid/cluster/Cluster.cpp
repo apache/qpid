@@ -668,7 +668,7 @@ void Cluster::configChange(const MemberId&, const std::string& configStr, Lock& 
     QPID_LOG(debug, "Config sequence " << map.getConfigSeq());
     store.setConfigSeq(map.getConfigSeq());
 
-    // Update initital status for new members joining.
+    // Update initital status for members joining or leaving.
     initMap.configChange(config);
     if (initMap.isResendNeeded()) {
         mcast.mcastControl(
@@ -757,6 +757,8 @@ void Cluster::initialStatus(const MemberId& member, uint32_t version, bool activ
         leave(l);
         return;
     }
+    QPID_LOG_IF(debug, state == PRE_INIT, *this
+                << " received initial status from " << member);
     initMap.received(
         member,
         ClusterInitialStatusBody(ProtocolVersion(), version, active, id,
