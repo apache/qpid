@@ -186,7 +186,7 @@
     <echo message="Targeting : ${java.target}" level="info"/>
 
     <javac source="${java.source}" target="${java.target}" 
-           destdir="${module.classes}" debug="on"
+           destdir="${module.classes}" debug="on" includeantruntime="false"
            deprecation="${javac.deprecation}">
       <compilerarg line="${javac.compiler.args}"/>
       <src refid="module.src.path"/>

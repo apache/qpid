@@ -105,7 +105,7 @@
   </macrodef>
 
   <mkdir dir="${tasks.classes}"/>
-  <javac source="${java.source}" target="${java.target}" srcdir="${tasks.src}" destdir="${tasks.classes}"  classpath="${java.class.path}">
+  <javac source="${java.source}" target="${java.target}" srcdir="${tasks.src}" destdir="${tasks.classes}"  classpath="${java.class.path}" includeantruntime="false">
     <compilerarg line="${javac.compiler.args}"/>
   </javac>
 
