@@ -102,7 +102,7 @@ int main(int argc, char** argv)
             Duration timeout = options.getTimeout();
             Message message;
             while (receiver.fetch(message, timeout)) {
-                std::cout << "Message(properties=" << message.getHeaders() << ", content='" ;
+                std::cout << "Message(properties=" << message.getProperties() << ", content='" ;
                 if (message.getContentType() == "amqp/map") {
                     std::cout << MapView(message);
                 } else {

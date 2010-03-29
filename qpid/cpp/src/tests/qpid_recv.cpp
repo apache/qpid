@@ -131,7 +131,7 @@ class SequenceTracker
 
     bool isDuplicate(Message& message)
     {
-        uint sn = message.getHeaders()["sn"];
+        uint sn = message.getProperties()["sn"];
         if (lastSn < sn) {
             lastSn = sn;
             return false;
@@ -175,8 +175,8 @@ int main(int argc, char ** argv)
                             if (msg.getUserId().size()) std::cout << "UserId: " << msg.getUserId() << std::endl;
                             if (msg.getTtl().getMilliseconds()) std::cout << "TTL: " << msg.getTtl().getMilliseconds() << std::endl;
                             if (msg.getDurable()) std::cout << "Durable: true" << std::endl;
-                            if (msg.isRedelivered()) std::cout << "Redelivered: true" << std::endl;
-                            std::cout << "Headers: " << msg.getHeaders() << std::endl;
+                            if (msg.getRedelivered()) std::cout << "Redelivered: true" << std::endl;
+                            std::cout << "Properties: " << msg.getProperties() << std::endl;
                             std::cout << std::endl;
                         }
                         std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages

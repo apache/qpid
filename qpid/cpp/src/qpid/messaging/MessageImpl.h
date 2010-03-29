@@ -36,6 +36,7 @@ struct MessageImpl
     std::string messageId;
     std::string userId;
     std::string correlationId;
+    uint8_t priority;
     uint64_t ttl;
     bool durable;
     bool redelivered;

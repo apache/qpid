@@ -145,9 +145,9 @@ struct Options : public qpid::Options
         std::string name;
         std::string value;
         if (nameval(property, name, value)) {
-            message.getHeaders()[name] = value;
+            message.getProperties()[name] = value;
         } else {
-            message.getHeaders()[name] = Variant();
+            message.getProperties()[name] = Variant();
         }    
     }
 
@@ -203,7 +203,7 @@ int main(int argc, char ** argv)
             uint txCount = 0;
             while (getline(std::cin, content)) {
                 msg.setContent(content);
-                msg.getHeaders()["sn"] = ++sent;
+                msg.getProperties()["sn"] = ++sent;
                 sender.send(msg);
                 if (opts.tx && (sent % opts.tx == 0)) {
                     if (opts.rollbackFrequency && (++txCount % opts.rollbackFrequency == 0)) {
@@ -214,7 +214,7 @@ int main(int argc, char ** argv)
                 }                
             }
             for (uint i = opts.sendEos; i > 0; --i) {
-                msg.getHeaders()["sn"] = ++sent;
+                msg.getProperties()["sn"] = ++sent;
                 msg.setContent(EOS);//TODO: add in ability to send digest or similar
                 sender.send(msg);
             }

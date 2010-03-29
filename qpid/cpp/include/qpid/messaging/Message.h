@@ -65,6 +65,9 @@ class Message
     QPID_CLIENT_EXTERN void setCorrelationId(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getCorrelationId() const;
 
+    QPID_CLIENT_EXTERN void setPriority(uint8_t);
+    QPID_CLIENT_EXTERN uint8_t getPriority() const;
+
     /**
      * Set the time to live for this message in milliseconds.
      */
@@ -77,10 +80,11 @@ class Message
     QPID_CLIENT_EXTERN void setDurable(bool durable);
     QPID_CLIENT_EXTERN bool getDurable() const;
 
-    QPID_CLIENT_EXTERN bool isRedelivered() const;
+    QPID_CLIENT_EXTERN bool getRedelivered() const;
+    QPID_CLIENT_EXTERN void setRedelivered(bool);
 
-    QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getHeaders() const;
-    QPID_CLIENT_EXTERN qpid::types::Variant::Map& getHeaders();
+    QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getProperties() const;
+    QPID_CLIENT_EXTERN qpid::types::Variant::Map& getProperties();
 
     QPID_CLIENT_EXTERN const std::string& getContent() const;
     QPID_CLIENT_EXTERN std::string& getContent();
