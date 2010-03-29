@@ -168,6 +168,7 @@ Broker::Broker(const Broker::Options& conf) :
         QPID_LOG(info, "Management enabled");
         managementAgent->configure(dataDir.isEnabled() ? dataDir.getPath() : string(),
                                    conf.mgmtPubInterval, this, conf.workerThreads + 3);
+        managementAgent->setName("apache.org", "qpidd");
         _qmf::Package packageInitializer(managementAgent.get());
 
         System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string(), this);

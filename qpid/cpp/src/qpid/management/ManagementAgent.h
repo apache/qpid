@@ -76,6 +76,9 @@ public:
     /** Called by cluster to suppress management output during update. */
     void suppress(bool s) { suppressed = s; }
 
+    void setName(const std::string& vendor,
+                 const std::string& product,
+                 const std::string& instance="");
     void setInterval(uint16_t _interval) { interval = _interval; }
     void setExchange(qpid::broker::Exchange::shared_ptr mgmtExchange,
                      qpid::broker::Exchange::shared_ptr directExchange);
@@ -277,7 +280,12 @@ private:
     typedef std::pair<std::string,std::string> MethodName;
     typedef std::map<MethodName, std::string> DisallowedMethods;
     DisallowedMethods disallowed;
-    std::string agentName;  // KAG TODO FIX
+
+    // Agent name and address
+    qpid::messaging::Variant::Map attrMap;
+    std::string       name_address;
+
+    // supported management protocol
     bool qmf1Support;
     bool qmf2Support;
 
@@ -300,7 +308,7 @@ private:
                     const std::string&     cid,
                     const qpid::messaging::VariantMap& headers,
                     qpid::broker::Exchange::shared_ptr exchange,
-                    std::string routingKey);
+                    const std::string& routingKey);
     void moveNewObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
@@ -333,8 +341,10 @@ private:
     void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
-    void handleGetQueryLH       (const std::string& body, std::string& replyToKey, const std::string& cid, const std::string& contentType);
+    void handleGetQueryLH       (const std::string& body, std::string replyToKey, const std::string& cid, const std::string& contentType);
     void handleMethodRequestLH  (const std::string& body, std::string replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken);
+    void handleLocateRequestLH  (const std::string& body, const std::string &replyToKey, const std::string& cid);
+
 
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);
