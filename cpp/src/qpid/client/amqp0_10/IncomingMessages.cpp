@@ -26,6 +26,7 @@
 #include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/types/Variant.h"
@@ -276,7 +277,7 @@ void populateHeaders(qpid::messaging::Message& message,
                      const MessageProperties* messageProperties)
 {
     if (deliveryProperties) {
-        message.setTtl(deliveryProperties->getTtl());
+        message.setTtl(qpid::messaging::Duration(deliveryProperties->getTtl()));
         message.setDurable(deliveryProperties->getDeliveryMode() == DELIVERY_MODE_PERSISTENT);
         MessageImplAccess::get(message).redelivered = deliveryProperties->getRedelivered();
     }

@@ -707,6 +707,7 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/AddressParser.h		\
   qpid/messaging/AddressParser.cpp		\
   qpid/messaging/Connection.cpp			\
+  qpid/messaging/Duration.cpp			\
   qpid/messaging/ListContent.cpp		\
   qpid/messaging/ListView.cpp			\
   qpid/messaging/MapContent.cpp			\

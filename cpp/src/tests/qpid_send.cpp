@@ -192,7 +192,7 @@ int main(int argc, char ** argv)
             Message msg;
             msg.setDurable(opts.durable);
             if (opts.ttl) {
-                msg.setTtl(opts.ttl);
+                msg.setTtl(Duration(opts.ttl));
             }
             if (!opts.replyto.empty()) msg.setReplyTo(Address(opts.replyto));
             if (!opts.userid.empty()) msg.setUserId(opts.userid);
