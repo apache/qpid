@@ -888,35 +888,68 @@ void ManagementAgent::sendCommandComplete (string replyToKey, uint32_t sequence,
 
 bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
                                        const string&     routingKey,
-                                       const FieldTable* /*args*/)
+                                       const FieldTable* /*args*/,
+                                       const bool topic)
 {
     Mutex::ScopedLock lock (userLock);
     Message&  msg = ((DeliverableMessage&) deliverable).getMessage ();
 
-    // Parse the routing key.  This management broker should act as though it
-    // is bound to the exchange to match the following keys:
-    //
-    //    agent.1.0.#
-    //    broker
-    //    schema.#
+    if (qmf1Support && topic) {
 
-    if (routingKey == "broker") {
-        dispatchAgentCommandLH(msg);
-        return false;
+        // qmf1 is bound only to the topic management exchange.
+        // Parse the routing key.  This management broker should act as though it
+        // is bound to the exchange to match the following keys:
+        //
+        //    agent.1.0.#
+        //    broker
+        //    schema.#
+
+        if (routingKey == "broker") {
+            dispatchAgentCommandLH(msg);
+            return false;
+        }
+
+        if (routingKey.length() > 6) {
+
+            if (routingKey.compare(0, 9, "agent.1.0") == 0) {
+                dispatchAgentCommandLH(msg);
+                return false;
+            }
+
+            if (routingKey.compare(0, 8, "agent.1.") == 0) {
+                return authorizeAgentMessageLH(msg);
+            }
+
+            if (routingKey.compare(0, 7, "schema.") == 0) {
+                dispatchAgentCommandLH(msg);
+                return true;
+            }
+        }
     }
 
-    else if (routingKey.compare(0, 9, "agent.1.0") == 0) {
-        dispatchAgentCommandLH(msg);
-        return false;
-    }
+    if (qmf2Support) {
 
-    else if (routingKey.compare(0, 8, "agent.1.") == 0) {
-        return authorizeAgentMessageLH(msg);
-    }
+        if (topic) {
 
-    else if (routingKey.compare(0, 7, "schema.") == 0) {
-        dispatchAgentCommandLH(msg);
-        return true;
+            // Intercept messages bound to:
+            //  "console.ind.locate.# - process these messages, and also allow them to be forwarded.
+
+            if (routingKey.compare(0, 18, "console.ind.locate") == 0) {
+                dispatchAgentCommandLH(msg);
+                return true;
+            }
+
+        } else { // direct exchange
+
+            // Intercept messages bound to:
+            //  "broker" - generic alias for the local broker
+            //  "<name_address>" - the broker agent's proper name
+            // and do not forward them futher
+            if (routingKey == "broker" || routingKey == name_address) {
+                dispatchAgentCommandLH(msg);
+                return false;
+            }
+        }
     }
 
     return true;

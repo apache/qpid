@@ -107,7 +107,8 @@ public:
 
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
-                          const framing::FieldTable* args);
+                          const framing::FieldTable* args,
+                          const bool topic);
 
     const framing::Uuid& getUuid() const { return uuid; }
 

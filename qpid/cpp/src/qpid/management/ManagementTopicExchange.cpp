@@ -28,13 +28,16 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 ManagementTopicExchange::ManagementTopicExchange(const string& _name, Manageable* _parent, Broker* b) :
-    Exchange (_name, _parent, b), TopicExchange(_name, _parent, b) {}
+    Exchange (_name, _parent, b),
+    TopicExchange(_name, _parent, b),
+    managementAgent(0) {}
 ManagementTopicExchange::ManagementTopicExchange(const std::string& _name,
                                                  bool               _durable,
                                                  const FieldTable&  _args,
                                                  Manageable*        _parent, Broker* b) :
     Exchange (_name, _durable, _args, _parent, b), 
-    TopicExchange(_name, _durable, _args, _parent, b) {}
+    TopicExchange(_name, _durable, _args, _parent, b),
+    managementAgent(0) {}
 
 void ManagementTopicExchange::route(Deliverable&      msg,
                                     const string&     routingKey,
@@ -43,12 +46,8 @@ void ManagementTopicExchange::route(Deliverable&      msg,
     bool routeIt = true;
 
     // Intercept management agent commands
-    if (qmfVersion == 1) {
-        if ((routingKey.length() > 6 &&
-             routingKey.substr(0, 6).compare("agent.") == 0) ||
-            (routingKey == "broker"))
-            routeIt = managementAgent->dispatchCommand(msg, routingKey, args);
-    }
+    if (managementAgent)
+        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, true /* topic */);
 
     if (routeIt)
         TopicExchange::route(msg, routingKey, args);
