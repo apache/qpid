@@ -24,6 +24,8 @@
 namespace qpid {
 namespace messaging {
 
+using namespace qpid::types;
+
 Message::Message(const std::string& bytes) : impl(new MessageImpl(bytes)) {}
 Message::Message(const char* bytes, size_t count) : impl(new MessageImpl(bytes, count)) {}
 

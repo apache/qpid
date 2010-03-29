@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/framing/FieldTable.h"
 
 namespace qpid {
@@ -33,8 +33,8 @@ namespace amqp0_10 {
  * Codecs.cpp but not exposed through API
  */
 
-void translate(const qpid::messaging::Variant::Map& from, qpid::framing::FieldTable& to);
-void translate(const qpid::framing::FieldTable& from, qpid::messaging::Variant::Map& to);
+void translate(const qpid::types::Variant::Map& from, qpid::framing::FieldTable& to);
+void translate(const qpid::framing::FieldTable& from, qpid::types::Variant::Map& to);
 
 }}} // namespace qpid::client::amqp0_10
 

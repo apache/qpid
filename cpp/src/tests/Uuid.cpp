@@ -18,7 +18,7 @@
 
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/Buffer.h"
-#include "qpid/messaging/Uuid.h"
+#include "qpid/types/Uuid.h"
 #include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
@@ -80,15 +80,15 @@ QPID_AUTO_TEST_CASE(testUuidEncodeDecode) {
                       string(decoded.begin(), decoded.end()));
 }
 
-QPID_AUTO_TEST_CASE(testMessagingUuid)
+QPID_AUTO_TEST_CASE(testTypesUuid)
 {
-    //tests for the Uuid class in the messaging namespace (introduced
+    //tests for the Uuid class in the types namespace (introduced
     //to avoid pulling in dependencies from framing)
-    messaging::Uuid a;
-    messaging::Uuid b(true);
-    messaging::Uuid c(true);
-    messaging::Uuid d(b);
-    messaging::Uuid e;
+    types::Uuid a;
+    types::Uuid b(true);
+    types::Uuid c(true);
+    types::Uuid d(b);
+    types::Uuid e;
     e = c;
 
     BOOST_CHECK(!a);

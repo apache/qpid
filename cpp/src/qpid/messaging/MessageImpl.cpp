@@ -28,6 +28,8 @@ namespace {
 const std::string EMPTY_STRING = "";
 }
 
+using namespace qpid::types;
+
 MessageImpl::MessageImpl(const std::string& c) : 
     ttl(0),
     durable(false),

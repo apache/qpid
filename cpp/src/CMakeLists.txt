@@ -567,6 +567,8 @@ set (qpidcommon_SOURCES
      qpid/SessionId.cpp
      qpid/StringUtils.cpp
      qpid/Url.cpp
+     qpid/types/Uuid.cpp
+     qpid/types/Variant.cpp
      qpid/amqp_0_10/SessionHandler.cpp
      qpid/framing/AccumulatedAck.cpp
      qpid/framing/AMQBody.cpp
@@ -690,8 +692,6 @@ set (qpidclient_SOURCES
      qpid/messaging/SessionImpl.h
      qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
-     qpid/messaging/Uuid.cpp
-     qpid/messaging/Variant.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h

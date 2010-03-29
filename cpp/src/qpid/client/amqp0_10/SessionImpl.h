@@ -23,7 +23,6 @@
  */
 #include "qpid/messaging/SessionImpl.h"
 #include "qpid/messaging/Duration.h"
-#include "qpid/messaging/Variant.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"

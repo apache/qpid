@@ -18,14 +18,14 @@
  * under the License.
  *
  */
-#include "qpid/messaging/Uuid.h"
+#include "qpid/types/Uuid.h"
 #include "qpid/sys/uuid.h"
 #include <sstream>
 #include <iostream>
 #include <string.h>
 
 namespace qpid {
-namespace messaging {
+namespace types {
 
 using namespace std;
 
@@ -137,4 +137,4 @@ std::string Uuid::str() const
     return os.str();
 }
 
-}} // namespace qpid::messaging
+}} // namespace qpid::types

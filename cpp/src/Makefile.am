@@ -425,6 +425,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/memory.h					\
   qpid/pointer_to_other.h			\
   qpid/ptr_map.h				\
+  qpid/types/Uuid.cpp				\
+  qpid/types/Variant.cpp			\
   qpid/sys/AggregateOutput.cpp			\
   qpid/sys/AggregateOutput.h			\
   qpid/sys/AsynchIO.h				\
@@ -716,8 +718,6 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/Sender.cpp			\
   qpid/messaging/Receiver.cpp			\
   qpid/messaging/Session.cpp			\
-  qpid/messaging/Uuid.cpp			\
-  qpid/messaging/Variant.cpp			\
   qpid/messaging/ConnectionImpl.h 		\
   qpid/messaging/SenderImpl.h			\
   qpid/messaging/ReceiverImpl.h			\
@@ -830,8 +830,8 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/Receiver.h 	        \
   ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Session.h 		\
-  ../include/qpid/messaging/Uuid.h 		\
-  ../include/qpid/messaging/Variant.h 		\
+  ../include/qpid/types/Uuid.h	 		\
+  ../include/qpid/types/Variant.h 		\
   ../include/qpid/client/amqp0_10/Codecs.h	\
   ../include/qpid/client/amqp0_10/FailoverUpdates.h
 

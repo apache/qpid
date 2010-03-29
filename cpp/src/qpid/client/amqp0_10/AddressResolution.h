@@ -21,7 +21,6 @@
  * under the License.
  *
  */
-#include "qpid/messaging/Variant.h"
 #include "qpid/client/Session.h"
 
 namespace qpid {

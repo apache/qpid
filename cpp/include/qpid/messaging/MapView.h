@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/messaging/ImportExport.h"
-#include "Variant.h"
+#include "qpid/types/Variant.h"
 #include <map>
 #include <string>
 
@@ -39,9 +39,9 @@ class MapView
 {
   public:
     typedef std::string key_type;
-    typedef std::pair<key_type, Variant> value_type;
-    typedef std::map<key_type, Variant>::const_iterator const_iterator;
-    typedef std::map<key_type, Variant>::const_reverse_iterator const_reverse_iterator;
+    typedef std::pair<key_type, qpid::types::Variant> value_type;
+    typedef std::map<key_type, qpid::types::Variant>::const_iterator const_iterator;
+    typedef std::map<key_type, qpid::types::Variant>::const_reverse_iterator const_reverse_iterator;
 
     QPID_CLIENT_EXTERN MapView(const Message&);
     QPID_CLIENT_EXTERN ~MapView();
@@ -56,9 +56,9 @@ class MapView
     QPID_CLIENT_EXTERN size_t size() const;
 
     QPID_CLIENT_EXTERN const_iterator find(const key_type&) const;
-    QPID_CLIENT_EXTERN const Variant& operator[](const key_type&) const;
+    QPID_CLIENT_EXTERN const qpid::types::Variant& operator[](const key_type&) const;
 
-    QPID_CLIENT_EXTERN const std::map<key_type, Variant>& asMap() const;
+    QPID_CLIENT_EXTERN const std::map<key_type, qpid::types::Variant>& asMap() const;
   private:
     MapViewImpl* impl;
 };

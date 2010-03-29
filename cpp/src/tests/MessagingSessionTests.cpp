@@ -48,6 +48,7 @@ namespace tests {
 QPID_AUTO_TEST_SUITE(MessagingSessionTests)
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 using namespace qpid;
 using qpid::broker::Broker;
 using qpid::framing::Uuid;

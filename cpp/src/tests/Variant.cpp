@@ -19,11 +19,11 @@
  *
  */
 #include <iostream>
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 
 #include "unit_test.h"
 
-using namespace qpid::messaging;
+using namespace qpid::types;
 
 namespace qpid {
 namespace tests {
