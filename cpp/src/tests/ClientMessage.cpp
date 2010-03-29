@@ -34,11 +34,11 @@ QPID_AUTO_TEST_CASE(testCopyConstructor)
 {
     Message m("my-data");
     m.setSubject("my-subject");
-    m.getHeaders()["a"] = "ABC";
+    m.getProperties()["a"] = "ABC";
     Message c(m);
     BOOST_CHECK_EQUAL(m.getContent(), c.getContent());
     BOOST_CHECK_EQUAL(m.getSubject(), c.getSubject());
-    BOOST_CHECK_EQUAL(m.getHeaders()["a"], c.getHeaders()["a"]);
+    BOOST_CHECK_EQUAL(m.getProperties()["a"], c.getProperties()["a"]);
 }
 
 QPID_AUTO_TEST_SUITE_END()

@@ -279,7 +279,8 @@ void populateHeaders(qpid::messaging::Message& message,
     if (deliveryProperties) {
         message.setTtl(qpid::messaging::Duration(deliveryProperties->getTtl()));
         message.setDurable(deliveryProperties->getDeliveryMode() == DELIVERY_MODE_PERSISTENT);
-        MessageImplAccess::get(message).redelivered = deliveryProperties->getRedelivered();
+        message.setPriority(deliveryProperties->getPriority());
+        message.setRedelivered(deliveryProperties->getRedelivered());
     }
     if (messageProperties) {
         message.setContentType(messageProperties->getContentType());
@@ -287,8 +288,8 @@ void populateHeaders(qpid::messaging::Message& message,
             message.setReplyTo(AddressResolution::convert(messageProperties->getReplyTo()));
         }
         message.setSubject(messageProperties->getApplicationHeaders().getAsString(SUBJECT));
-        message.getHeaders().clear();
-        translate(messageProperties->getApplicationHeaders(), message.getHeaders());
+        message.getProperties().clear();
+        translate(messageProperties->getApplicationHeaders(), message.getProperties());
         message.setCorrelationId(messageProperties->getCorrelationId());
         message.setUserId(messageProperties->getUserId());
     }

@@ -119,7 +119,7 @@ struct Publish : Client
         qpid::sys::AbsTime start = qpid::sys::now();
         while (true) {
             qpid::sys::AbsTime sentAt = qpid::sys::now();
-            msg.getHeaders()[TIMESTAMP] = timestamp(sentAt);
+            msg.getProperties()[TIMESTAMP] = timestamp(sentAt);
             sender.send(msg);
             ++sent;
             qpid::sys::AbsTime waitTill(start, sent*interval);
@@ -151,7 +151,7 @@ struct Consume : Client
             }
             //calculate latency
             uint64_t receivedAt = timestamp(qpid::sys::now());
-            uint64_t sentAt = msg.getHeaders()[TIMESTAMP].asUint64();
+            uint64_t sentAt = msg.getProperties()[TIMESTAMP].asUint64();
             double latency = ((double) (receivedAt - sentAt)) / qpid::sys::TIME_MSEC;
 
             //update avg, min & max
