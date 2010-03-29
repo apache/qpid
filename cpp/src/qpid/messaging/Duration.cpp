@@ -1,6 +1,3 @@
-#ifndef QPID_MESSAGING_DURATION_H
-#define QPID_MESSAGING_DURATION_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,30 +18,28 @@
  * under the License.
  *
  */
-#include "qpid/sys/IntegerTypes.h"
+#include "qpid/messaging/Duration.h"
+#include <limits>
 
 namespace qpid {
 namespace messaging {
 
-/**
- * A duration is a time in milliseconds.
- */
-class Duration
-{
-  public:
-    explicit Duration(uint64_t milliseconds);
-    uint64_t getMilliseconds() const;
-    static const Duration INFINITE;
-    static const Duration IMMEDIATE;
-    static const Duration SECOND;
-    static const Duration MINUTE;
-  private:
-    uint64_t milliseconds;
-};
+Duration::Duration(uint64_t ms) : milliseconds(ms) {}
+uint64_t Duration::getMilliseconds() const { return milliseconds; }
 
-Duration operator*(const Duration& duration, uint64_t multiplier);
-Duration operator*(uint64_t multiplier, const Duration& duration);
+Duration operator*(const Duration& duration, uint64_t multiplier)
+{
+    return Duration(duration.getMilliseconds() * multiplier);
+}
+
+Duration operator*(uint64_t multiplier, const Duration& duration)
+{
+    return Duration(duration.getMilliseconds() * multiplier);
+}
+
+const Duration Duration::INFINITE(std::numeric_limits<uint64_t>::max());
+const Duration Duration::IMMEDIATE(0);
+const Duration Duration::SECOND(1000);
+const Duration Duration::MINUTE(SECOND * 60);
 
 }} // namespace qpid::messaging
-
-#endif  /*!QPID_MESSAGING_DURATION_H*/

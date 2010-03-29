@@ -30,6 +30,7 @@ namespace client {
 namespace amqp0_10 {
 
 using qpid::messaging::Receiver;
+using qpid::messaging::Duration;
 
 void ReceiverImpl::received(qpid::messaging::Message&)
 {
@@ -163,7 +164,7 @@ bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging:
     } else {
         sync(session).messageFlush(destination);
         startFlow();//reallocate credit
-        return getImpl(message, 0);
+        return getImpl(message, Duration::IMMEDIATE);
     }
 }
 
