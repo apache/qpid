@@ -52,7 +52,7 @@
         <mkdir dir="${velocity.compile.dir}" />	
         <!-- Compile LogMessages Velocity Generator -->
         <javac source="${java.source}" target="${java.target}"
-               destdir="${velocity.compile.dir}" debug="on"
+               destdir="${velocity.compile.dir}" debug="on" includeantruntime="false"
                deprecation="${javac.deprecation}" 
                srcdir="src/velocity/java" >
           <classpath>
