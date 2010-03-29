@@ -43,7 +43,6 @@ using qpid::messaging::KeyError;
 using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Sender;
 using qpid::messaging::Receiver;
-using qpid::messaging::VariantMap;
 
 namespace qpid {
 namespace client {

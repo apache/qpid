@@ -25,9 +25,11 @@
 #include "qpid/messaging/ImportExport.h"
 
 namespace qpid {
+namespace types{
+class Variant;
+}
 namespace messaging {
 
-class Variant;
 /**
  *
  */
@@ -35,8 +37,8 @@ class Codec
 {
   public:
     QPID_CLIENT_EXTERN virtual ~Codec() {}
-    virtual void encode(const Variant&, std::string&) = 0;
-    virtual void decode(const std::string&, Variant&) = 0;
+    virtual void encode(const qpid::types::Variant&, std::string&) = 0;
+    virtual void decode(const std::string&, qpid::types::Variant&) = 0;
   private:
 };
 }} // namespace qpid::messaging

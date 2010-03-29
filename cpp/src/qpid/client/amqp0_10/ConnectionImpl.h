@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/messaging/ConnectionImpl.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/Url.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"
@@ -39,14 +39,14 @@ class SessionImpl;
 class ConnectionImpl : public qpid::messaging::ConnectionImpl
 {
   public:
-    ConnectionImpl(const qpid::messaging::Variant::Map& options);
+    ConnectionImpl(const qpid::types::Variant::Map& options);
     void open(const std::string& url);
     void close();
     qpid::messaging::Session newSession(bool transactional, const std::string& name);
     qpid::messaging::Session getSession(const std::string& name) const;
     void closed(SessionImpl&);
     void connect();
-    void setOption(const std::string& name, const qpid::messaging::Variant& value);
+    void setOption(const std::string& name, const qpid::types::Variant& value);
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
 
@@ -63,7 +63,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     int64_t maxReconnectInterval;
     int32_t retries;
 
-    void setOptions(const qpid::messaging::Variant::Map& options);
+    void setOptions(const qpid::types::Variant::Map& options);
     void connect(const qpid::sys::AbsTime& started);
     bool tryConnect();
     bool tryConnect(const std::vector<std::string>& urls);

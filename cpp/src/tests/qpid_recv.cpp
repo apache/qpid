@@ -34,6 +34,7 @@
 #include <memory>
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 using qpid::client::amqp0_10::FailoverUpdates;
 
 using namespace std;

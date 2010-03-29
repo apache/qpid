@@ -23,7 +23,7 @@
  */
 #include <string>
 #include "qpid/Exception.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/messaging/ImportExport.h"
 #include <ostream>
 
@@ -124,7 +124,7 @@ class Address
     QPID_CLIENT_EXTERN Address();
     QPID_CLIENT_EXTERN Address(const std::string& address);
     QPID_CLIENT_EXTERN Address(const std::string& name, const std::string& subject,
-                               const Variant::Map& options, const std::string& type = "");
+                               const qpid::types::Variant::Map& options, const std::string& type = "");
     QPID_CLIENT_EXTERN Address(const Address& address);
     QPID_CLIENT_EXTERN ~Address();
     QPID_CLIENT_EXTERN Address& operator=(const Address&);
@@ -133,14 +133,14 @@ class Address
     QPID_CLIENT_EXTERN const std::string& getSubject() const;
     QPID_CLIENT_EXTERN void setSubject(const std::string&);
     QPID_CLIENT_EXTERN bool hasSubject() const;
-    QPID_CLIENT_EXTERN const Variant::Map& getOptions() const;
-    QPID_CLIENT_EXTERN Variant::Map& getOptions();
-    QPID_CLIENT_EXTERN void setOptions(const Variant::Map&);
+    QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getOptions() const;
+    QPID_CLIENT_EXTERN qpid::types::Variant::Map& getOptions();
+    QPID_CLIENT_EXTERN void setOptions(const qpid::types::Variant::Map&);
 
     QPID_CLIENT_EXTERN std::string getType() const;
     QPID_CLIENT_EXTERN void setType(const std::string&);
 
-    QPID_CLIENT_EXTERN const Variant& getOption(const std::string& key) const;
+    QPID_CLIENT_EXTERN const qpid::types::Variant& getOption(const std::string& key) const;
 
     QPID_CLIENT_EXTERN std::string toStr() const;
     QPID_CLIENT_EXTERN operator bool() const;

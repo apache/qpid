@@ -32,6 +32,7 @@
 #include <string>
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 
 namespace qpid {
 namespace tests {

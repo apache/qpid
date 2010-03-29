@@ -28,7 +28,7 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageProperties.h"
@@ -44,7 +44,7 @@ using namespace qpid::framing::message;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::messaging::MessageImplAccess;
-using qpid::messaging::Variant;
+using qpid::types::Variant;
 
 namespace {
 const std::string EMPTY_STRING;

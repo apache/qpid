@@ -26,6 +26,8 @@
 namespace qpid {
 namespace messaging {
 
+using namespace qpid::types;
+
 namespace {
 const std::string SUBJECT_DIVIDER = "/";
 const std::string OPTIONS_DIVIDER = ";";
