@@ -23,7 +23,7 @@
  */
 
 #include "qpid/messaging/ImportExport.h"
-#include "Variant.h"
+#include "qpid/types/Variant.h"
 
 namespace qpid {
 namespace messaging {
@@ -37,8 +37,8 @@ class Message;
 class ListView
 {
   public:
-    typedef Variant::List::const_iterator const_iterator;
-    typedef Variant::List::const_reverse_iterator const_reverse_iterator;
+    typedef qpid::types::Variant::List::const_iterator const_iterator;
+    typedef qpid::types::Variant::List::const_reverse_iterator const_reverse_iterator;
 
     QPID_CLIENT_EXTERN ListView(const Message&);
     QPID_CLIENT_EXTERN ~ListView();
@@ -52,10 +52,10 @@ class ListView
     QPID_CLIENT_EXTERN bool empty() const;
     QPID_CLIENT_EXTERN size_t size() const;
 
-    QPID_CLIENT_EXTERN const Variant& front() const;
-    QPID_CLIENT_EXTERN const Variant& back() const;
+    QPID_CLIENT_EXTERN const qpid::types::Variant& front() const;
+    QPID_CLIENT_EXTERN const qpid::types::Variant& back() const;
     
-    QPID_CLIENT_EXTERN const Variant::List& asList() const;
+    QPID_CLIENT_EXTERN const qpid::types::Variant::List& asList() const;
   private:
     ListViewImpl* impl;
 };

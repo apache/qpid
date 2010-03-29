@@ -23,7 +23,6 @@
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
-#include <qpid/messaging/Variant.h>
 
 #include <cstdlib>
 #include <iostream>

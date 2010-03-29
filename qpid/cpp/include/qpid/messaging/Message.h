@@ -24,7 +24,7 @@
 
 #include <string>
 #include "qpid/messaging/Duration.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/messaging/ImportExport.h"
 
 namespace qpid {
@@ -79,8 +79,8 @@ class Message
 
     QPID_CLIENT_EXTERN bool isRedelivered() const;
 
-    QPID_CLIENT_EXTERN const Variant::Map& getHeaders() const;
-    QPID_CLIENT_EXTERN Variant::Map& getHeaders();
+    QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getHeaders() const;
+    QPID_CLIENT_EXTERN qpid::types::Variant::Map& getHeaders();
 
     QPID_CLIENT_EXTERN const std::string& getContent() const;
     QPID_CLIENT_EXTERN std::string& getContent();

@@ -24,7 +24,7 @@
 #include <string>
 #include "qpid/messaging/ImportExport.h"
 #include "qpid/messaging/Handle.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 
 namespace qpid {
 namespace messaging {
@@ -74,11 +74,11 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     doubled every failure until the value of max-retry-interval
      *     is reached.
      */
-    QPID_CLIENT_EXTERN Connection(const Variant::Map& options = Variant::Map());
+    QPID_CLIENT_EXTERN Connection(const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
     QPID_CLIENT_EXTERN Connection(const std::string& options);
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
-    QPID_CLIENT_EXTERN void setOption(const std::string& name, const Variant& value);
+    QPID_CLIENT_EXTERN void setOption(const std::string& name, const qpid::types::Variant& value);
     QPID_CLIENT_EXTERN void open(const std::string& url);
     /**
      * Closes a connection and all sessions associated with it. An

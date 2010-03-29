@@ -25,7 +25,6 @@
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
-#include <qpid/messaging/Variant.h>
 
 #include <algorithm>
 #include <cstdlib>

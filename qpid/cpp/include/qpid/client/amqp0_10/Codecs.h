@@ -35,8 +35,8 @@ namespace amqp0_10 {
 class MapCodec : public qpid::messaging::Codec
 {
   public:
-    void encode(const qpid::messaging::Variant&, std::string&);
-    void decode(const std::string&, qpid::messaging::Variant&);
+    void encode(const qpid::types::Variant&, std::string&);
+    void decode(const std::string&, qpid::types::Variant&);
 
     static const std::string contentType;
   private:
@@ -49,8 +49,8 @@ class MapCodec : public qpid::messaging::Codec
 class ListCodec : public qpid::messaging::Codec
 {
   public:
-    void encode(const qpid::messaging::Variant&, std::string&);
-    void decode(const std::string&, qpid::messaging::Variant&);
+    void encode(const qpid::types::Variant&, std::string&);
+    void decode(const std::string&, qpid::types::Variant&);
 
     static const std::string contentType;
   private:

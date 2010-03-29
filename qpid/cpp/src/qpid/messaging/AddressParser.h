@@ -31,8 +31,8 @@ class AddressParser
   public:
     AddressParser(const std::string&);
     bool parse(Address& address);
-    bool parseMap(Variant::Map& map);
-    bool parseList(Variant::List& list);
+    bool parseMap(qpid::types::Variant::Map& map);
+    bool parseList(qpid::types::Variant::List& list);
   private:
     const std::string& input;
     std::string::size_type current;
@@ -40,15 +40,15 @@ class AddressParser
 
     bool readChar(char c);
     bool readQuotedString(std::string& s);
-    bool readQuotedValue(Variant& value);
+    bool readQuotedValue(qpid::types::Variant& value);
     bool readString(std::string& value, char delimiter);
     bool readWord(std::string& word, const std::string& delims = RESERVED);
-    bool readSimpleValue(Variant& word);
+    bool readSimpleValue(qpid::types::Variant& word);
     bool readKey(std::string& key);
-    bool readValue(Variant& value);
-    bool readKeyValuePair(Variant::Map& map);
-    bool readMap(Variant& value);
-    bool readList(Variant& value);
+    bool readValue(qpid::types::Variant& value);
+    bool readKeyValuePair(qpid::types::Variant::Map& map);
+    bool readMap(qpid::types::Variant& value);
+    bool readList(qpid::types::Variant& value);
     bool readName(std::string& name);
     bool readSubject(std::string& subject);
     bool error(const std::string& message);
@@ -56,8 +56,8 @@ class AddressParser
     bool iswhitespace();
     bool in(const std::string& delims);
     bool isreserved();
-    void readListItems(Variant::List& list);
-    void readMapEntries(Variant::Map& map);
+    void readListItems(qpid::types::Variant::List& list);
+    void readMapEntries(qpid::types::Variant::Map& map);
 };
 
 }} // namespace qpid::messaging

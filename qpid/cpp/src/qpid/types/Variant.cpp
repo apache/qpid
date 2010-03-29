@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/Msg.h"
 #include "qpid/log/Statement.h"
 #include <boost/format.hpp>
@@ -27,7 +27,7 @@
 #include <sstream>
 
 namespace qpid {
-namespace messaging {
+namespace types {
 
 InvalidConversion::InvalidConversion(const std::string& msg) : Exception(msg) {}
 
@@ -687,4 +687,4 @@ bool Variant::isEqualTo(const Variant& other) const
     return impl->isEqualTo(*other.impl);
 }
 
-}} // namespace qpid::messaging
+}} // namespace qpid::types

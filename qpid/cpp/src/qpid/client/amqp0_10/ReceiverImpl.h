@@ -24,7 +24,6 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ReceiverImpl.h"
-#include "qpid/messaging/Variant.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/amqp0_10/SessionImpl.h"
 #include "qpid/messaging/Duration.h"

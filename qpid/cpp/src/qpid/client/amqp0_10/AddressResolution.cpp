@@ -26,7 +26,7 @@
 #include "qpid/client/amqp0_10/OutgoingMessage.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/enum.h"
@@ -47,13 +47,13 @@ namespace amqp0_10 {
 using qpid::Exception;
 using qpid::messaging::Address;
 using qpid::messaging::InvalidAddress;
-using qpid::messaging::Variant;
 using qpid::framing::ExchangeBoundResult;
 using qpid::framing::ExchangeQueryResult;
 using qpid::framing::FieldTable;
 using qpid::framing::QueueQueryResult;
 using qpid::framing::ReplyTo;
 using qpid::framing::Uuid;
+using namespace qpid::types;
 using namespace qpid::framing::message;
 using namespace boost::assign;
 
@@ -278,7 +278,7 @@ const Variant& getOption(const Variant::Map& options, const std::vector<std::str
     if (j == options.end()) {
         return EMPTY_VARIANT;
     } else if (++index < path.size()) {
-        if (j->second.getType() != qpid::messaging::VAR_MAP) 
+        if (j->second.getType() != VAR_MAP) 
             throw InvalidAddress((boost::format("Expected %1% to be a map") % j->first).str());
         return getOption(j->second.asMap(), path, index);
     } else {
@@ -326,7 +326,7 @@ Opt& Opt::operator/(const std::string& name)
             options = 0;
         } else {
             value = &(j->second);
-            if (value->getType() == qpid::messaging::VAR_MAP) options = &(value->asMap());
+            if (value->getType() == VAR_MAP) options = &(value->asMap());
             else options = 0;
         }
     }

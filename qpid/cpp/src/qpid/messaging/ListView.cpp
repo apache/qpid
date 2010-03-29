@@ -25,6 +25,8 @@
 namespace qpid {
 namespace messaging {
 
+using namespace qpid::types;
+
 class ListViewImpl : public Variant
 {
   public:

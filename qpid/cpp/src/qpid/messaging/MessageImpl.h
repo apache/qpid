@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/messaging/Address.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
@@ -39,7 +39,7 @@ struct MessageImpl
     uint64_t ttl;
     bool durable;
     bool redelivered;
-    Variant::Map headers;
+    qpid::types::Variant::Map headers;
 
     std::string bytes;
 
@@ -57,8 +57,8 @@ struct MessageImpl
     void setContentType(const std::string& s);
     const std::string& getContentType() const;
     
-    const Variant::Map& getHeaders() const;
-    Variant::Map& getHeaders();
+    const qpid::types::Variant::Map& getHeaders() const;
+    qpid::types::Variant::Map& getHeaders();
     
     void setBytes(const std::string& bytes);
     void setBytes(const char* chars, size_t count);

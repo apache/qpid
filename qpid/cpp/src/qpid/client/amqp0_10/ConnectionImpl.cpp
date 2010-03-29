@@ -32,7 +32,8 @@ namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
-using qpid::messaging::Variant;
+using qpid::types::Variant;
+using qpid::types::VAR_LIST;
 using qpid::framing::Uuid;
 
 void convert(const Variant::List& from, std::vector<std::string>& to)
@@ -62,7 +63,7 @@ bool setIfFound< std::vector<std::string> >(const Variant::Map& map,
 {
     Variant::Map::const_iterator i = map.find(key);
     if (i != map.end()) {
-        if (i->second.getType() == qpid::messaging::VAR_LIST) {
+        if (i->second.getType() == VAR_LIST) {
             convert(i->second.asList(), value);
         } else {
             value.push_back(i->second.asString());

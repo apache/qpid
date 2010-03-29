@@ -30,6 +30,8 @@
 namespace qpid {
 namespace messaging {
 
+using namespace qpid::types;
+
 typedef PrivateImplRef<qpid::messaging::Connection> PI;
 
 Connection::Connection(ConnectionImpl* impl) { PI::ctor(*this, impl); }

@@ -25,6 +25,8 @@
 namespace qpid {
 namespace messaging {
 
+using namespace qpid::types;
+
 class MapViewImpl : public Variant
 {
   public:

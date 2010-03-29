@@ -25,6 +25,8 @@
 namespace qpid {
 namespace messaging {
 
+using namespace qpid::types;
+
 AddressParser::AddressParser(const std::string& s) : input(s), current(0) {}
 
 bool AddressParser::error(const std::string& message)

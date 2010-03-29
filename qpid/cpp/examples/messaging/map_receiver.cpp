@@ -31,6 +31,7 @@
 #include <sstream>
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 
 using std::stringstream;
 using std::string;

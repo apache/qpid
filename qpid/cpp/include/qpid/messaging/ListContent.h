@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/messaging/ImportExport.h"
-#include "Variant.h"
+#include "qpid/types/Variant.h"
 
 namespace qpid {
 namespace messaging {
@@ -36,13 +36,13 @@ class Message;
 class ListContent
 {
   public:
-    typedef Variant::List::iterator iterator;
-    typedef Variant::List::reverse_iterator reverse_iterator;
-    typedef Variant::List::const_iterator const_iterator;
-    typedef Variant::List::const_reverse_iterator const_reverse_iterator;
+    typedef qpid::types::Variant::List::iterator iterator;
+    typedef qpid::types::Variant::List::reverse_iterator reverse_iterator;
+    typedef qpid::types::Variant::List::const_iterator const_iterator;
+    typedef qpid::types::Variant::List::const_reverse_iterator const_reverse_iterator;
 
     QPID_CLIENT_EXTERN ListContent(Message&);
-    QPID_CLIENT_EXTERN ListContent(Message&, const Variant::List&);
+    QPID_CLIENT_EXTERN ListContent(Message&, const qpid::types::Variant::List&);
     QPID_CLIENT_EXTERN ~ListContent();
 
     QPID_CLIENT_EXTERN const_iterator begin() const;
@@ -57,27 +57,27 @@ class ListContent
     QPID_CLIENT_EXTERN bool empty() const;
     QPID_CLIENT_EXTERN size_t size() const;
 
-    QPID_CLIENT_EXTERN const Variant& front() const;
-    QPID_CLIENT_EXTERN Variant& front();
-    QPID_CLIENT_EXTERN const Variant& back() const;
-    QPID_CLIENT_EXTERN Variant& back();
+    QPID_CLIENT_EXTERN const qpid::types::Variant& front() const;
+    QPID_CLIENT_EXTERN qpid::types::Variant& front();
+    QPID_CLIENT_EXTERN const qpid::types::Variant& back() const;
+    QPID_CLIENT_EXTERN qpid::types::Variant& back();
 
-    QPID_CLIENT_EXTERN void push_front(const Variant&);
-    QPID_CLIENT_EXTERN void push_back(const Variant&);
+    QPID_CLIENT_EXTERN void push_front(const qpid::types::Variant&);
+    QPID_CLIENT_EXTERN void push_back(const qpid::types::Variant&);
 
     QPID_CLIENT_EXTERN void pop_front();
     QPID_CLIENT_EXTERN void pop_back();
 
-    QPID_CLIENT_EXTERN iterator insert(iterator position, const Variant&);
-    QPID_CLIENT_EXTERN void insert(iterator position, size_t n, const Variant&);
+    QPID_CLIENT_EXTERN iterator insert(iterator position, const qpid::types::Variant&);
+    QPID_CLIENT_EXTERN void insert(iterator position, size_t n, const qpid::types::Variant&);
     QPID_CLIENT_EXTERN iterator erase(iterator position);
     QPID_CLIENT_EXTERN iterator erase(iterator first, iterator last);
     QPID_CLIENT_EXTERN void clear();
 
     QPID_CLIENT_EXTERN void encode();
     
-    QPID_CLIENT_EXTERN const Variant::List& asList() const;
-    QPID_CLIENT_EXTERN Variant::List& asList();
+    QPID_CLIENT_EXTERN const qpid::types::Variant::List& asList() const;
+    QPID_CLIENT_EXTERN qpid::types::Variant::List& asList();
   private:
     ListContentImpl* impl;
 

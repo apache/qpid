@@ -32,6 +32,7 @@
 #include <iostream>
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 
 struct Options : public qpid::Options
 {
