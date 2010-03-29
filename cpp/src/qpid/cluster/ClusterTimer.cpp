@@ -38,6 +38,7 @@ ClusterTimer::ClusterTimer(Cluster& c) : cluster(c) {
     // Allow more generous overrun threshold with cluster as we
     // have to do a CPG round trip before executing the task.
     overran = 10*sys::TIME_MSEC;
+    late = 100*sys::TIME_MSEC;
 }
 
 ClusterTimer::~ClusterTimer() {}
