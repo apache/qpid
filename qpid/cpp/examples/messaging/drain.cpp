@@ -64,8 +64,8 @@ struct Options : public qpid::Options
 
     Duration getTimeout()
     {
-        if (forever) return INFINITE_DURATION;
-        else return timeout*DURATION_SEC;
+        if (forever) return Duration::INFINITE;
+        else return timeout*Duration::SECOND;
 
     }
     bool parse(int argc, char** argv)

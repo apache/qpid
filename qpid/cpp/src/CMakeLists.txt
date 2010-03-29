@@ -679,6 +679,7 @@ set (qpidclient_SOURCES
      qpid/messaging/AddressParser.cpp
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
+     qpid/messaging/Duration.cpp
      qpid/messaging/ListContent.cpp
      qpid/messaging/ListView.cpp
      qpid/messaging/MapContent.cpp

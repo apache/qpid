@@ -52,8 +52,8 @@ const std::string& Message::getUserId() const { return impl->userId; }
 void Message::setCorrelationId(const std::string& id) { impl->correlationId = id; }
 const std::string& Message::getCorrelationId() const { return impl->correlationId; }
 
-void Message::setTtl(Duration ttl) { impl->ttl = ttl; }
-Duration Message::getTtl() const { return impl->ttl; }
+void Message::setTtl(Duration ttl) { impl->ttl = ttl.getMilliseconds(); }
+Duration Message::getTtl() const { return Duration(impl->ttl); }
 
 void Message::setDurable(bool durable) { impl->durable = durable; }
 bool Message::getDurable() const { return impl->durable; }
