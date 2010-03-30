@@ -45,6 +45,7 @@ class Model:
         self.parent_class.add_property(qmf.SchemaProperty("lstrval", qmf.TYPE_LSTR))
 
         self.parent_class.add_property(qmf.SchemaProperty("mapval", qmf.TYPE_MAP))
+        self.parent_class.add_property(qmf.SchemaProperty("listval", qmf.TYPE_LIST))
 
 
         self.parent_class.add_statistic(qmf.SchemaStatistic("queryCount", qmf.TYPE_UINT32, {"unit":"query", "desc":"Query count"}))
@@ -274,7 +275,7 @@ class App(qmf.AgentHandler):
 
         ## @todo how do we force a test failure?
         # verify the properties() and statistics() object methods:
-        assert len(self._parent.properties()) == 13
+        assert len(self._parent.properties()) == 14
         assert len(self._parent.statistics()) == 1
 
         self._parent.set_attr("name", "Parent One")
@@ -289,6 +290,11 @@ class App(qmf.AgentHandler):
         self._parent.set_attr("int32val", 0)
         self._parent.set_attr("int16val", 0)
         self._parent.set_attr("int8val",  0)
+
+        # a list containing a list that contains a map (so there!)
+        self._parent.set_attr("listval", ['a', 1, 'b', 2,
+                                          ['c', True, 3.1415,
+                                           {"hi": 10, "lo": 5}]])
 
         self._parent_oid = self._agent.alloc_object_id(1)
         self._parent.set_object_id(self._parent_oid)

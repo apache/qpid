@@ -33,6 +33,7 @@
 namespace qpid {
 namespace framing {
     class FieldTable;
+    class List;
 }
 }
 
@@ -138,13 +139,14 @@ namespace engine {
 
         bool isList() const { return typecode == TYPE_LIST; }
         uint32_t listItemCount() const { return vectorVal.size(); }
-        Value* listItem(uint32_t idx);
-        void appendToList(Value* val);
-        void deleteListItem(uint32_t idx);
+        Value* listItem(uint32_t idx) { return idx < listItemCount() ? &vectorVal[idx] : 0; }
+        const Value* listItem(uint32_t idx) const { return idx < listItemCount() ? &vectorVal[idx] : 0; }
+        void appendToList(Value* val) { vectorVal.push_back(*val); }
+        void deleteListItem(uint32_t idx) { if (idx < listItemCount()) vectorVal.erase(vectorVal.begin()+idx); }
 
         bool isArray() const { return typecode == TYPE_ARRAY; }
         Typecode arrayType() const { return arrayTypecode; }
-        uint32_t arrayItemCount() const { return vectorVal.size(); }
+        uint32_t arrayItemCount() const { return 0; }
         Value* arrayItem(uint32_t idx);
         void appendToArray(Value* val);
         void deleteArrayItem(uint32_t idx);
@@ -152,6 +154,9 @@ namespace engine {
     private:
         void mapToFieldTable(qpid::framing::FieldTable& ft) const;
         void initMap(const qpid::framing::FieldTable& ft);
+
+        void listToFramingList(qpid::framing::List& fl) const;
+        void initList(const qpid::framing::List& fl);
     };
 }
 }

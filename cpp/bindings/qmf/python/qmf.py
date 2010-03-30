@@ -58,10 +58,9 @@ def qmf_to_native(val):
     elif typecode == TYPE_INT32:  return val.asInt()
     elif typecode == TYPE_INT64:  return val.asInt64()
     elif typecode == TYPE_MAP: return value_to_dict(val)
+    elif typecode == TYPE_LIST: return value_to_list(val)
     else:
         # when TYPE_OBJECT
-        # when TYPE_LIST
-        # when TYPE_ARRAY
         logging.error( "Unsupported type for get_attr? '%s'" % str(val.getType()) )
         return None
 
@@ -98,11 +97,9 @@ def native_to_qmf(target, value):
     elif typecode == TYPE_INT32: val.setInt(value)
     elif typecode == TYPE_INT64: val.setInt64(value)
     elif typecode == TYPE_MAP: dict_to_value(val, value)
+    elif typecode == TYPE_LIST: list_to_value(val, value)
     else:
-        # when TYPE_MAP
         # when TYPE_OBJECT
-        # when TYPE_LIST
-        # when TYPE_ARRAY
         logging.error("Unsupported type for get_attr? '%s'" % str(val.getType()))
         return None
     return val
@@ -129,6 +126,7 @@ def pick_qmf_type(value):
     if value.__class__ == bool:  return TYPE_BOOL
     if value == None:            return TYPE_BOOL
     if value.__class__ == dict:  return TYPE_MAP
+    if value.__class__ == list:  return TYPE_LIST
 
     raise "QMF type not known for native type %s" % value.__class__
 
@@ -140,13 +138,33 @@ def value_to_dict(val):
         key = val.key(i)
         mymap[key] = qmf_to_native(val.byKey(key))
     return mymap
-    
+
 
 def dict_to_value(val, mymap):
     for key, value in mymap.items():
         if key.__class__ != str:  raise "QMF map key must be a string"
         typecode = pick_qmf_type(value)
         val.insert(key, native_to_qmf(typecode, value))
+
+
+def value_to_list(val):
+    mylist = []
+    if val.isList():
+        for i in range(val.listItemCount()):
+            mylist.append(qmf_to_native(val.listItem(i)))
+        return mylist
+    #if val.isArray():
+    #    for i in range(val.arrayItemCount()):
+    #        mylist.append(qmf_to_native(val.arrayItem(i)))
+    #    return mylist
+
+    raise "value_to_list must be given a list value"
+
+
+def list_to_value(val, mylist):
+    for item in mylist:
+        typecode = pick_qmf_type(item)
+        val.appendToList(native_to_qmf(typecode, item))
 
 
   ##==============================================================================

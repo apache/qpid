@@ -202,7 +202,26 @@ class QmfInteropTests(TestBase010):
         self.assertEqual(queue[3].arguments["strval"], "TEST")
         self.assertEqual(queue[4].arguments["uint32val"], 0)
         self.assertEqual(queue[4].arguments["strval"], "LONG_TEST")
-        
+
+
+    def test_G_basic_map_list_data(self):
+        self.startQmf();
+        qmf = self.qmf
+
+        parents = qmf.getObjects(_class="parent")
+        self.assertEqual(len(parents), 1)
+        parent = parents[0]
+
+        # see agent for structure of listval
+
+        self.assertTrue(isinstance(parent.listval, list))
+        self.assertEqual(len(parent.listval), 5)
+        self.assertTrue(isinstance(parent.listval[4], list))
+        self.assertEqual(len(parent.listval[4]), 4)
+        self.assertTrue(isinstance(parent.listval[4][3], dict))
+        self.assertEqual(parent.listval[4][3]["hi"], 10)
+        self.assertEqual(parent.listval[4][3]["lo"], 5)
+
 
     def getProperty(self, msg, name):
         for h in msg.headers:
