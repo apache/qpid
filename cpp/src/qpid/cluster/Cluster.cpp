@@ -599,6 +599,7 @@ void Cluster::initMapCompleted(Lock& l) {
         // We decide here whether we want to recover from our store.
         // We won't recover if we are joining an active cluster or our store is dirty.
         if (store.hasStore() &&
+            store.getState() != STORE_STATE_EMPTY_STORE &&
             (initMap.isActive() || store.getState() == STORE_STATE_DIRTY_STORE))
             broker.setRecovery(false); // Ditch my current store.
         state = INIT;
