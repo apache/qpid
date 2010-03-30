@@ -42,6 +42,8 @@ public class ServerConfigurationFileTest extends QpidTestCase
         }
 
         saveTestConfiguration();
+        saveTestVirtualhosts();
+        
         _serverConfig = new ServerConfiguration(_configFile);
     }
 

@@ -25,4 +25,6 @@
         <rule access="allow" network="127.0.0.1"/>
     </firewall>
     </security>
+    
+    <virtualhosts>${QPID_HOME}/etc/virtualhosts-systests-firewall.xml</virtualhosts>
 </broker>

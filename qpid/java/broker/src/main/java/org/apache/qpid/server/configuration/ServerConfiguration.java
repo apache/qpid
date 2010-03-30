@@ -24,14 +24,15 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationFactory;
+import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
@@ -50,18 +51,17 @@ public class ServerConfiguration implements SignalHandler
     private Configuration _config;
 
     // Default Configuration values
-    //todo make these all public, to make validation of configuration easier.
     public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
     public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
     public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
     public static final String DEFAULT_STATUS_UPDATES = "on";
     public static final String SECURITY_CONFIG_RELOADED = "SECURITY CONFIGURATION RELOADED";
     
-    private static final int DEFAULT_FRAME_SIZE = 65536;
-    private static final int DEFAULT_PORT = 5672;
-    private static final int DEFAUL_SSL_PORT = 8672;
-    private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
-    private static final int DEFAULT_JMXPORT = 8999;
+    public static final int DEFAULT_FRAME_SIZE = 65536;
+    public static final int DEFAULT_PORT = 5672;
+    public static final int DEFAULT_SSL_PORT = 8672;
+    public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
+    public static final int DEFAULT_JMXPORT = 8999;
 
     private static int _jmxPort = DEFAULT_JMXPORT;
 
@@ -69,6 +69,7 @@ public class ServerConfiguration implements SignalHandler
     private SecurityConfiguration _securityConfiguration = null;
 
     private File _configFile;
+    private File _vhostsFile;
 
     private Logger _log = LoggerFactory.getLogger(this.getClass());
 
@@ -132,8 +133,6 @@ public class ServerConfiguration implements SignalHandler
     {
         setConfig(conf);
 
-        substituteEnvironmentVariables();
-
         _jmxPort = getConfig().getInt("management.jmxport", 8999);
         _securityConfiguration = new SecurityConfiguration(conf.subset("security"));
 
@@ -141,61 +140,86 @@ public class ServerConfiguration implements SignalHandler
 
     }
 
-    private void setupVirtualHosts(Configuration conf) throws ConfigurationException
+    /*
+     * Modified to enforce virtualhosts configuration in external file or main file, but not
+     * both, as a fix for QPID-2360 and QPID-2361.
+     */
+    @SuppressWarnings("unchecked")
+	private void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
-        List vhosts = conf.getList("virtualhosts");
-        Iterator i = vhosts.iterator();
-        while (i.hasNext())
-        {
-            Object thing = i.next();
-            if (thing instanceof String)
-            {
-                //Open the Virtualhost.xml file and copy values in to main config
-                XMLConfiguration vhostConfiguration = new XMLConfiguration((String) thing);
-                Iterator keys = vhostConfiguration.getKeys();
-                while (keys.hasNext())
-                {
-                    String key = (String) keys.next();
-                    conf.setProperty("virtualhosts." + key, vhostConfiguration.getProperty(key));
-                }
-            }
-        }
+        List<String> vhostFiles = conf.getList("virtualhosts");
+        Configuration vhostConfig = conf.subset("virtualhosts");
 
-        List hosts = conf.getList("virtualhosts.virtualhost.name");
+    	// Only one configuration mechanism allowed
+        if (!vhostFiles.isEmpty() && !vhostConfig.subset("virtualhost").isEmpty())
+        {
+        	throw new ConfigurationException("Only one of external or embedded virtualhosts configuration allowed.");
+        } 
+        
+        // We can only have one vhosts XML file included
+    	if (vhostFiles.size() > 1)
+    	{
+    		throw new ConfigurationException("Only one external virtualhosts configuration file allowed, multiple filenames found.");
+    	}
+        
+        // Virtualhost configuration object
+        Configuration vhostConfiguration = new HierarchicalConfiguration();
+        
+    	// Load from embedded configuration if possible
+        if (!vhostConfig.subset("virtualhost").isEmpty())
+        {
+    		vhostConfiguration = vhostConfig;
+        }
+        else
+        {
+	    	// Load from the external configuration if possible
+	    	for (String fileName : vhostFiles)
+	        {
+	            // Open the vhosts XML file and copy values from it to our config
+	    	    _vhostsFile = new File(fileName);
+	    	    vhostConfiguration = parseConfig(_vhostsFile);
+	        }
+        }
+        
+        // Now extract the virtual host names from the configuration object
+    	List hosts = vhostConfiguration.getList("virtualhost.name");
         for (int j = 0; j < hosts.size(); j++)
         {
             String name = (String) hosts.get(j);
-            // Add the keys of the virtual host to the main config then bail out
-
-            VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, conf.subset("virtualhosts.virtualhost." + name));
-            _virtualHosts.put(vhostConfig.getName(), vhostConfig);
+            
+            // Add the virtual hosts to the server configuration
+            VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + name));
+            _virtualHosts.put(virtualhost.getName(), virtualhost);
         }
-
     }
 
-    private void substituteEnvironmentVariables()
+    private static void substituteEnvironmentVariables(Configuration conf)
     {
         for (Entry<String, String> var : envVarMap.entrySet())
         {
             String val = System.getenv(var.getKey());
             if (val != null)
             {
-                getConfig().setProperty(var.getValue(), val);
+                conf.setProperty(var.getValue(), val);
             }
         }
     }
 
-    private final static Configuration parseConfig(File file) throws ConfigurationException
+    private static Configuration parseConfig(File file) throws ConfigurationException
     {
         ConfigurationFactory factory = new ConfigurationFactory();
         factory.setConfigurationFileName(file.getAbsolutePath());
         Configuration conf = factory.getConfiguration();
-        Iterator keys = conf.getKeys();
+    	
+        Iterator<?> keys = conf.getKeys();
         if (!keys.hasNext())
         {
             keys = null;
             conf = flatConfig(file);
         }
+
+        substituteEnvironmentVariables(conf);
+        
         return conf;
     }
 
@@ -309,13 +333,25 @@ public class ServerConfiguration implements SignalHandler
         if (_configFile != null)
         {
             Configuration newConfig = parseConfig(_configFile);
+            
             _securityConfiguration = new SecurityConfiguration(newConfig.subset("security"));
+
+            // Reload virtualhosts from correct location
+            Configuration newVhosts;
+            if (_vhostsFile == null)
+            {
+                newVhosts = newConfig.subset("virtualhosts");
+            }
+            else
+            {
+                newVhosts = parseConfig(_vhostsFile);
+            }
 
             VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
             for (String hostname : _virtualHosts.keySet())
             {
                 VirtualHost vhost = vhostRegistry.getVirtualHost(hostname);
-                SecurityConfiguration hostSecurityConfig = new SecurityConfiguration(newConfig.subset("virtualhosts.virtualhost."+hostname+".security"));
+                SecurityConfiguration hostSecurityConfig = new SecurityConfiguration(newVhosts.subset("virtualhost."+hostname+".security"));
                 vhost.getAccessManager().configureGlobalPlugins(_securityConfiguration);
                 vhost.getAccessManager().configureHostPlugins(hostSecurityConfig);
             }
@@ -578,7 +614,7 @@ public class ServerConfiguration implements SignalHandler
 
     public int getSSLPort()
     {
-        return getConfig().getInt("connector.ssl.port", DEFAUL_SSL_PORT);
+        return getConfig().getInt("connector.ssl.port", DEFAULT_SSL_PORT);
     }
 
     public String getKeystorePath()

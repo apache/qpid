@@ -17,27 +17,21 @@
  */
 package org.apache.qpid.test.utils;
 
-import junit.framework.TestCase;
-import junit.framework.TestResult;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.store.DerbyMessageStore;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.util.LogMonitor;
-import org.apache.log4j.Level;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -49,22 +43,30 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Level;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.store.DerbyMessageStore;
+import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.util.LogMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -85,6 +87,7 @@ public class QpidTestCase extends TestCase
     private Map<org.apache.log4j.Logger, Level> _loggerLevelSetForTest = new HashMap<org.apache.log4j.Logger, Level>();
 
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
+    private XMLConfiguration _testVirtualhosts = new XMLConfiguration();
 
     protected static final String INDEX = "index";
 
@@ -175,9 +178,10 @@ public class QpidTestCase extends TestCase
 
     protected static final String QPID_HOME = "QPID_HOME";
 
-    protected static int DEFAULT_VM_PORT = 1;
-    protected static int DEFAULT_PORT = Integer.getInteger("test.port", 5672);
-    protected static int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", 8999);
+    public static final int DEFAULT_VM_PORT = 1;
+    public static final int DEFAULT_PORT = Integer.getInteger("test.port", ServerConfiguration.DEFAULT_PORT);
+    public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT);
+    public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.sslport", ServerConfiguration.DEFAULT_SSL_PORT);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected String _broker = System.getProperty(BROKER, VM);
@@ -200,6 +204,7 @@ public class QpidTestCase extends TestCase
     protected List<Connection> _connections = new ArrayList<Connection>();
     public static final String QUEUE = "queue";
     public static final String TOPIC = "topic";
+    
     /** Map to hold test defined environment properties */
     private Map<String, String> _env;
 
@@ -447,14 +452,16 @@ public class QpidTestCase extends TestCase
     {
         port = getPort(port);
 
-        // Save any configuratio changes that have been made
+        // Save any configuration changes that have been made
         saveTestConfiguration();
+        saveTestVirtualhosts();
 
         Process process = null;
         if (_broker.equals(VM))
         {
             setConfigurationProperty("management.jmxport", String.valueOf(getManagementPort(port)));
             saveTestConfiguration();
+            
             // create an in_VM broker
             ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(_configFile), port);
             TransportConnection.createVMBroker(port);
@@ -568,22 +575,41 @@ public class QpidTestCase extends TestCase
     public String getTestConfigFile()
     {
         String path = _output == null ? System.getProperty("java.io.tmpdir") : _output;
-        return path + "/" + getTestQueueName() + ".xml";
+        return path + "/" + getTestQueueName() + "-config.xml";
+    }
+
+    public String getTestVirtualhostsFile()
+    {
+        String path = _output == null ? System.getProperty("java.io.tmpdir") : _output;
+        return path + "/" + getTestQueueName() + "-virtualhosts.xml";
     }
 
     protected void saveTestConfiguration() throws ConfigurationException
     {
+        // Specifiy the test config file
         String testConfig = getTestConfigFile();
-        //Specifiy the test configuration
         setSystemProperty("test.config", testConfig);
 
-        // This is a work
+        // Create the file if configuration does not exist
         if (_testConfiguration.isEmpty())
         {
-            _testConfiguration.addProperty("test", getTestQueueName());
+            _testConfiguration.addProperty("__ignore", "true");
         }
+        _testConfiguration.save(testConfig);
+    }
 
-        _testConfiguration.save(getTestConfigFile());
+    protected void saveTestVirtualhosts() throws ConfigurationException
+    {
+        // Specifiy the test virtualhosts file
+        String testVirtualhosts = getTestVirtualhostsFile();
+        setSystemProperty("test.virtualhosts", testVirtualhosts);
+
+        // Create the file if configuration does not exist
+        if (_testVirtualhosts.isEmpty())
+        {
+            _testVirtualhosts.addProperty("__ignore", "true");
+        }
+        _testVirtualhosts.save(testVirtualhosts);
     }
 
     public void cleanBroker()
@@ -650,29 +676,23 @@ public class QpidTestCase extends TestCase
     protected void makeVirtualHostPersistent(String virtualhost)
             throws ConfigurationException, IOException
     {
-        Class storeClass = DerbyMessageStore.class;
-
-        Class bdb = null;
+        Class<?> storeClass = null;
         try
         {
-            bdb = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStore");
+            // Try and lookup the BDB class
+            storeClass = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStore");
         }
         catch (ClassNotFoundException e)
         {
             // No BDB store, we'll use Derby instead.
-        }
-
-        if (bdb != null)
-        {
-            storeClass = bdb;
+            storeClass = DerbyMessageStore.class;
         }
 
 
-        _testConfiguration.setProperty("virtualhosts.virtualhost." + virtualhost +
-                                  ".store.class", storeClass.getName());
-        _testConfiguration.setProperty("virtualhosts.virtualhost." + virtualhost +
-                                  ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
-                                  "${QPID_WORK}/" + virtualhost);
+        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store.class",
+                                    storeClass.getName());
+        setConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
+                                   "${QPID_WORK}/" + virtualhost);
     }
 
     /**
@@ -690,6 +710,7 @@ public class QpidTestCase extends TestCase
         // Call save Configuration to be sure we have saved the test specific
         // file. As the optional status
         saveTestConfiguration();
+        saveTestVirtualhosts();
 
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
         return configuration.getConfig().getString(property);
@@ -713,9 +734,15 @@ public class QpidTestCase extends TestCase
     protected void setConfigurationProperty(String property, String value)
             throws ConfigurationException, IOException
     {
-        //Write the value in to this configuration file which will override the
-        // defaults.
-        _testConfiguration.setProperty(property, value);
+        // Choose which file to write the property to based on prefix.
+        if (property.startsWith("virtualhosts"))
+        {
+            _testVirtualhosts.setProperty(StringUtils.substringAfter(property, "virtualhosts."), value);
+        }
+        else
+        {
+            _testConfiguration.setProperty(property, value);
+        }
     }
 
     /**
@@ -736,7 +763,6 @@ public class QpidTestCase extends TestCase
         {
             _propertiesSetForBroker.put(property, value);
         }
-
     }    
 
     /**

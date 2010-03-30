@@ -19,8 +19,11 @@
  - under the License.
  -
  -->
-<broker>
-    <virtualhosts>${QPID_HOME}/etc/virtualhosts-systests-derby.xml</virtualhosts>
-</broker>
-
-
+<configuration>
+    <system/>
+    <override>
+        <xml fileName="${test.virtualhosts}" optional="true"/>
+        <xml fileName="${QPID_HOME}/etc/virtualhosts-systests-acl-settings.xml"/>
+        <xml fileName="${QPID_HOME}/etc/virtualhosts.xml"/>
+    </override>
+</configuration>
