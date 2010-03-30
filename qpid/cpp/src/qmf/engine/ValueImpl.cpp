@@ -18,20 +18,23 @@
  */
 
 #include "qmf/engine/ValueImpl.h"
-#include <qpid/framing/FieldTable.h>
 #include <qpid/framing/FieldValue.h>
+#include <qpid/framing/FieldTable.h>
+#include <qpid/framing/List.h>
 
 using namespace std;
 using namespace qmf::engine;
-using qpid::framing::Buffer;
-using qpid::framing::FieldTable;
-using qpid::framing::FieldValue;
+//using qpid::framing::Buffer;
+//using qpid::framing::FieldTable;
+//using qpid::framing::FieldValue;
+using namespace qpid::framing;
 
 ValueImpl::ValueImpl(Typecode t, Buffer& buf) : typecode(t)
 {
     uint64_t first;
     uint64_t second;
     FieldTable ft;
+    List fl;
 
     switch (typecode) {
     case TYPE_UINT8     : value.u32 = (uint32_t) buf.getOctet();  break;
@@ -62,6 +65,10 @@ ValueImpl::ValueImpl(Typecode t, Buffer& buf) : typecode(t)
         break;
 
     case TYPE_LIST:
+        fl.decode(buf);
+        initList(fl);
+        break;
+
     case TYPE_ARRAY:
     case TYPE_OBJECT:
     default:
@@ -126,12 +133,20 @@ void ValueImpl::initMap(const FieldTable& ft)
             Value* subval(new Value(TYPE_DOUBLE));
             subval->setDouble(fvalue.get<double>());
             insert(name.c_str(), subval);
-        } else {
+        } else if (amqType == 0xa8) {
             FieldTable subFt;
             bool valid = qpid::framing::getEncodedValue<FieldTable>(iter->second, subFt);
             if (valid) {
                 Value* subval(new Value(TYPE_MAP));
                 subval->impl->initMap(subFt);
+                insert(name.c_str(), subval);
+            }
+        } else if (amqType == 0xa9) {
+            List subList;
+            bool valid = qpid::framing::getEncodedValue<List>(iter->second, subList);
+            if (valid) {
+                Value* subval(new Value(TYPE_LIST));
+                subval->impl->initList(subList);
                 insert(name.c_str(), subval);
             }
         }
@@ -185,6 +200,14 @@ void ValueImpl::mapToFieldTable(FieldTable& ft) const
             ft.setTable(name, subFt);
             break;
         case TYPE_LIST:
+            {
+                List subList;
+                subval.impl->listToFramingList(subList);
+                ft.set(name,
+                       ::qpid::framing::FieldTable::ValuePtr(
+                                                             new ListValue(
+                                                                           subList)));
+            } break;
         case TYPE_ARRAY:
         case TYPE_OBJECT:
         case TYPE_UUID:
@@ -195,9 +218,126 @@ void ValueImpl::mapToFieldTable(FieldTable& ft) const
     }
  }
 
+
+void ValueImpl::initList(const List& fl)
+{
+    for (List::const_iterator iter = fl.begin();
+         iter != fl.end(); iter++) {
+        const FieldValue& fvalue(*iter->get());
+        uint8_t amqType = fvalue.getType();
+
+        if (amqType == 0x32) {
+            Value* subval(new Value(TYPE_UINT64));
+            subval->setUint64(fvalue.get<int64_t>());
+            appendToList(subval);
+        } else if ((amqType & 0xCF) == 0x02) {
+            Value* subval(new Value(TYPE_UINT32));
+            switch (amqType) {
+            case 0x02 : subval->setUint(fvalue.get<int>()); break;
+            case 0x12 : subval->setUint(fvalue.get<int>()); break;
+            case 0x22 : subval->setUint(fvalue.get<int>()); break;
+            }
+            appendToList(subval);
+        } else if ((amqType & 0xCF) == 0x01) {
+            Value* subval(new Value(TYPE_INT64));
+            subval->setInt64(fvalue.get<int64_t>());
+            appendToList(subval);
+        } else if (amqType == 0x85 || amqType == 0x95) {
+            Value* subval(new Value(TYPE_LSTR));
+            subval->setString(fvalue.get<string>().c_str());
+            appendToList(subval);
+        } else if (amqType == 0x23 || amqType == 0x33) {
+            Value* subval(new Value(TYPE_DOUBLE));
+            subval->setDouble(fvalue.get<double>());
+            appendToList(subval);
+        } else if (amqType == 0xa8) {
+            FieldTable subFt;
+            bool valid = qpid::framing::getEncodedValue<FieldTable>(*iter, subFt);
+            if (valid) {
+                Value* subval(new Value(TYPE_MAP));
+                subval->impl->initMap(subFt);
+                appendToList(subval);
+            }
+        } else if (amqType == 0xa9) {
+            List subList;
+            bool valid = qpid::framing::getEncodedValue<List>(*iter, subList);
+            if (valid) {
+                Value *subVal(new Value(TYPE_LIST));
+                subVal->impl->initList(subList);
+                appendToList(subVal);
+            }
+        }
+    }
+}
+
+void ValueImpl::listToFramingList(List& fl) const
+{
+    for (vector<Value>::const_iterator iter = vectorVal.begin();
+         iter != vectorVal.end(); iter++) {
+        const Value& subval(*iter);
+
+        switch (subval.getType()) {
+        case TYPE_UINT8:
+        case TYPE_UINT16:
+        case TYPE_UINT32:
+            fl.push_back(List::ValuePtr(new Unsigned64Value((uint64_t) subval.asUint())));
+            break;
+        case TYPE_UINT64:
+        case TYPE_DELTATIME:
+            fl.push_back(List::ValuePtr(new Unsigned64Value(subval.asUint64())));
+            break;
+        case TYPE_SSTR:
+        case TYPE_LSTR:
+            fl.push_back(List::ValuePtr(new Str16Value(subval.asString())));
+            break;
+        case TYPE_INT64:
+        case TYPE_ABSTIME:
+            fl.push_back(List::ValuePtr(new Integer64Value(subval.asInt64())));
+            break;
+        case TYPE_BOOL:
+            fl.push_back(List::ValuePtr(new IntegerValue(subval.asBool() ? 1 : 0)));
+            break;
+        case TYPE_FLOAT:
+            fl.push_back(List::ValuePtr(new FloatValue(subval.asFloat())));
+            break;
+        case TYPE_DOUBLE:
+            fl.push_back(List::ValuePtr(new DoubleValue(subval.asDouble())));
+            break;
+        case TYPE_INT8:
+        case TYPE_INT16:
+        case TYPE_INT32:
+            fl.push_back(List::ValuePtr(new IntegerValue(subval.asInt())));
+            break;
+        case TYPE_MAP:
+            {
+                FieldTable subFt;
+                subval.impl->mapToFieldTable(subFt);
+                fl.push_back(List::ValuePtr(new FieldTableValue(subFt)));
+
+            } break;
+        case TYPE_LIST:
+            {
+                List subList;
+                subval.impl->listToFramingList(subList);
+                fl.push_back(List::ValuePtr(new ListValue(subList)));
+            } break;
+
+        case TYPE_ARRAY:
+        case TYPE_OBJECT:
+        case TYPE_UUID:
+        case TYPE_REF:
+        default:
+            break;
+        }
+    }
+ }
+
+
+
 void ValueImpl::encode(Buffer& buf) const
 {
     FieldTable ft;
+    List fl;
 
     switch (typecode) {
     case TYPE_UINT8     : buf.putOctet((uint8_t) value.u32);        break;
@@ -222,6 +362,10 @@ void ValueImpl::encode(Buffer& buf) const
         ft.encode(buf);
         break;
     case TYPE_LIST:
+        listToFramingList(fl);
+        fl.encode(buf);
+        break;
+
     case TYPE_ARRAY:
     case TYPE_OBJECT:
     default:
@@ -278,19 +422,6 @@ const char* ValueImpl::key(uint32_t idx) const
         return 0;
     else
         return iter->first.c_str();
-}
-
-Value* ValueImpl::listItem(uint32_t)
-{
-    return 0;
-}
-
-void ValueImpl::appendToList(Value*)
-{
-}
-
-void ValueImpl::deleteListItem(uint32_t)
-{
 }
 
 Value* ValueImpl::arrayItem(uint32_t)
