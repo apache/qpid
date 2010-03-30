@@ -337,7 +337,6 @@ startNewBroker ( brokerVector & brokers,
                  int verbosity,
                  int durable )
 {
-        // ("--log-enable=notice+")
     static int brokerId = 0;
     stringstream path, prefix;
     prefix << "soak-" << brokerId;
@@ -348,7 +347,8 @@ startNewBroker ( brokerVector & brokers,
         ("--mgmt-enable=no")
         ("--log-prefix")(prefix.str())
         ("--log-to-file")(prefix.str()+".log")
-        ("--log-enable=notice+")
+        ("--log-enable=info+")
+        ("--log-enable=debug+:cluster")
         ("TMP_DATA_DIR");
 
     if (endsWith(moduleOrDir, "cluster.so")) {
