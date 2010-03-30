@@ -102,7 +102,7 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * which case the passed in receiver reference will be set to the
      * receiver for that message or false if no message was available.
      */
-    QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, Duration timeout=Duration::INFINITE);
+    QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, Duration timeout=Duration::FOREVER);
     /**
      * Returns the receiver for the next available message. If there
      * are no available messages at present the call will block for up
@@ -111,7 +111,7 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      *@exception Receiver::NoMessageAvailable if no message became available in
      * time.
      */
-    QPID_CLIENT_EXTERN Receiver nextReceiver(Duration timeout=Duration::INFINITE);
+    QPID_CLIENT_EXTERN Receiver nextReceiver(Duration timeout=Duration::FOREVER);
     
     /**
      * Create a new sender through which messages can be sent to the
