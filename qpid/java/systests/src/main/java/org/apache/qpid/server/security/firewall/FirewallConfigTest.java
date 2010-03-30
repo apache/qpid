@@ -33,8 +33,8 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class FirewallConfigTest extends QpidTestCase 
 {
-
-    private File tmpFile = null;
+    private File _tmpConfig, _tmpVirtualhosts;
+    
     @Override
     protected void setUp() throws Exception
     {
@@ -46,21 +46,31 @@ public class FirewallConfigTest extends QpidTestCase
             fail("QPID_HOME not set");
         }
 
-        // Setup initial config.
+        // Setup initial config file.
         _configFile = new File(QPID_HOME, "etc/config-systests-firewall.xml");
-        tmpFile = File.createTempFile("config-systests-firewall", ".xml");
-        setSystemProperty("QPID_FIREWALL_SETTINGS", tmpFile.getAbsolutePath());
-        tmpFile.deleteOnExit();
+        
+        // Setup temporary config file
+        _tmpConfig = File.createTempFile("config-systests-firewall", ".xml");
+        setSystemProperty("QPID_FIREWALL_CONFIG_SETTINGS", _tmpConfig.getAbsolutePath());
+        _tmpConfig.deleteOnExit();
+
+        // Setup temporary virtualhosts file
+        _tmpVirtualhosts = File.createTempFile("virtualhosts-systests-firewall", ".xml");
+        setSystemProperty("QPID_FIREWALL_VIRTUALHOSTS_SETTINGS", _tmpVirtualhosts.getAbsolutePath());
+        _tmpVirtualhosts.deleteOnExit();
     }
 
     private void writeFirewallFile(boolean allow, boolean inVhost) throws IOException
     {
-        FileWriter out = new FileWriter(tmpFile);
+        FileWriter out = new FileWriter(inVhost ? _tmpVirtualhosts : _tmpConfig);
         String ipAddr = "127.0.0.1"; // FIXME: get this from InetAddress.getLocalHost().getAddress() ?
-        out.write("<broker>");
         if (inVhost) 
         {
             out.write("<virtualhosts><virtualhost><test>");
+        }
+        else
+        {
+            out.write("<broker>");
         }
         out.write("<security><firewall>");
         out.write("<rule access=\""+((allow) ? "allow" : "deny")+"\" network=\""+ipAddr +"\"/>");
@@ -69,7 +79,10 @@ public class FirewallConfigTest extends QpidTestCase
         {
             out.write("</test></virtualhost></virtualhosts>");
         }
-        out.write("</broker>");
+        else
+        {
+            out.write("</broker>");
+        }
         out.close();
     }
     
@@ -188,6 +201,23 @@ public class FirewallConfigTest extends QpidTestCase
         });
     }
     
+    public void testAllowOnReloadInVhost() throws Exception
+    {
+        testFirewall(false, true, new Runnable() {
+
+            public void run()
+            {
+                try
+                {
+                    reloadBroker();
+                } catch (Exception e)
+                {
+                    fail(e.getMessage());
+                }
+            }
+        });
+    }
+    
     public void testDenyOnReload() throws Exception
     {
         testDeny(false, new Runnable() {
@@ -224,18 +254,17 @@ public class FirewallConfigTest extends QpidTestCase
         );
        
     }
-    
+
     private void testDeny(boolean inVhost, Runnable restartOrReload) throws Exception
     {
-        if (_broker.equals(VM))
-        {
-            // No point running this test in a vm broker
-            return;
-        }
-        
-        writeFirewallFile(false, inVhost);        
-        super.setUp();
-        
+        testFirewall(true, inVhost, restartOrReload);
+    }
+    
+    /*
+     * Check we can get a connection
+     */
+    private boolean checkConnection() throws Exception
+    {
         Exception exception  = null;
         Connection conn = null;
         try 
@@ -246,22 +275,27 @@ public class FirewallConfigTest extends QpidTestCase
         {
             exception = e;
         }
-        assertNotNull(exception);
         
-        // Check we can get a connection
+        return conn != null;
+    }
+    
+    private void testFirewall(boolean initial, boolean inVhost, Runnable restartOrReload) throws Exception
+    {
+        if (_broker.equals(VM))
+        {
+            // No point running this test in a vm broker
+            return;
+        }
+        
+        writeFirewallFile(initial, inVhost);        
+        super.setUp();
 
-        writeFirewallFile(true, inVhost);
+        assertEquals("Initial connection check failed", initial, checkConnection());
+
+        // Reload changed firewall file after restart or reload
+        writeFirewallFile(!initial, inVhost);
         restartOrReload.run();
         
-        exception = null;
-        try 
-        {
-            conn = getConnection();
-        } 
-        catch (JMSException e)
-        {
-            exception = e;
-        }
-        assertNull(exception);
-    }    
+        assertEquals("Second connection check failed", !initial, checkConnection());
+    }
 }

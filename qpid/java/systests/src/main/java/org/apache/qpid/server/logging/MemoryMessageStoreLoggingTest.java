@@ -20,12 +20,12 @@
 */
 package org.apache.qpid.server.logging;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.util.LogMonitor;
-
-import java.util.List;
 
 /**
  * The MessageStore test suite validates that the follow log messages as
@@ -90,7 +90,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
-        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
+        List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
         //Validate each vhost logs a creation
         results = _monitor.waitAndFindMatches("MST-1001", DEFAULT_LOG_WAIT);
@@ -101,15 +101,12 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         {
             String result = getLog(results.get(index));
 
-            // getSlize will return extract the vhost from vh(/test) -> '/test'
+            // getSlice will return extract the vhost from vh(/test) -> '/test'
             // so remove the '/' to get the name
             String vhostName = AbstractTestLogSubject.getSlice("vh", result).substring(1);
 
-            // To get the store class used in the configuration we need to know
-            // the virtualhost name, found above. AND
-            // the index that the virtualhost is within the configuration.
-            // we can retrive that from the vhosts list previously extracted.
-            String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+            // Get the store class used in the configuration for the virtualhost.
+            String fullStoreName = configuration.getVirtualHostConfig(vhostName).getMessageStoreClass();
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
@@ -157,7 +154,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
-        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
+        List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
         //Validate each vhost logs a creation
         results = _monitor.waitAndFindMatches("MST-1003", DEFAULT_LOG_WAIT);
@@ -168,15 +165,12 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         {
             String result = getLog(results.get(index));
 
-            // getSlize will return extract the vhost from vh(/test) -> '/test'
+            // getSlice will return extract the vhost from vh(/test) -> '/test'
             // so remove the '/' to get the name
             String vhostName = AbstractTestLogSubject.getSlice("vh", result).substring(1);
 
-            // To get the store class used in the configuration we need to know
-            // the virtualhost name, found above. AND
-            // the index that the virtualhost is within the configuration.
-            // we can retrive that from the vhosts list previously extracted.
-            String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+            // Get the store class used in the configuration for the virtualhost.
+            String fullStoreName = configuration.getVirtualHostConfig(vhostName).getMessageStoreClass();
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);

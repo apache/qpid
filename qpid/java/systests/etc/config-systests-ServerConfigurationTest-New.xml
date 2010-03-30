@@ -18,9 +18,6 @@
  - specific language governing permissions and limitations
  - under the License.
  -
-
- This is an example config using the BDBMessageStore available from
- the Red Hat Messaging project at etp.108.redhat.com and distributed under GPL.
  -->
         
 <broker>
@@ -68,17 +65,8 @@
         </jmx>
     </security>
 
-    <virtualhosts>
-        <virtualhost>
-            <name>dev-only</name>
-            <dev-only>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                    <environment-path>${work}/bdbstore/dev-only-store</environment-path>
-                </store>
-            </dev-only>
-        </virtualhost>
-    </virtualhosts>
+    <virtualhosts>${conf}/virtualhosts-ServerConfigurationTest-New.xml</virtualhosts>
+    
     <heartbeat>
         <delay>0</delay>
         <timeoutFactor>2.0</timeoutFactor>
@@ -86,8 +74,6 @@
     <queue>
         <auto_register>true</auto_register>
     </queue>
-
-    <virtualhosts>${conf}/virtualhosts-ServerConfigurationTest-New.xml</virtualhosts>
 </broker>
 
 

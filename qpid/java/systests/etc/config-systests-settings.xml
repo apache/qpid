@@ -26,4 +26,5 @@
             <enabled>false</enabled>
         </ssl>
     </management>
+    <virtualhosts>${QPID_HOME}/etc/virtualhosts-systests.xml</virtualhosts>
 </broker>

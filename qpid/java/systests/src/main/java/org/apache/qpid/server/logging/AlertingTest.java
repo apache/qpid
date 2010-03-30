@@ -20,19 +20,16 @@
 */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.util.FileUtils;
-import org.apache.qpid.util.LogMonitor;
-
 import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
-import java.io.File;
+
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.util.FileUtils;
 
 public class AlertingTest extends AbstractTestLogging
 {
@@ -49,6 +46,7 @@ public class AlertingTest extends AbstractTestLogging
     {
         // Update the configuration to make our virtualhost Persistent.
         makeVirtualHostPersistent(VIRTUALHOST);
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.expiredMessageCheckPeriod", "5000");
 
         _numMessages = 50;
 
@@ -114,7 +112,7 @@ public class AlertingTest extends AbstractTestLogging
             message.append(FileUtils.readFileAsString(getTestConfigFile()));
 
             message.append("\nVirtualhost maxMessageCount:\n");                        
-            message.append((new ServerConfiguration(_configFile)).getConfig().getString("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount"));
+            message.append(new ServerConfiguration(_configFile).getVirtualHostConfig(VIRTUALHOST).getMaximumMessageCount());
 
             fail(message.toString());
         }
@@ -185,7 +183,7 @@ public class AlertingTest extends AbstractTestLogging
         setupConnection();
 
         // Validate the queue depth is as expected
-        long messageCount = ((AMQSession) _session).getQueueDepth((AMQDestination) _destination);
+        long messageCount = ((AMQSession<?, ?>) _session).getQueueDepth((AMQDestination) _destination);
         assertEquals("Broker has invalid message count for test", 2, messageCount);
 
         // Ensure the alert has not occured yet
@@ -198,5 +196,4 @@ public class AlertingTest extends AbstractTestLogging
         // Validate that the alert occured.
         wasAlertFired();
     }
-
 }
