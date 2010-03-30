@@ -42,6 +42,9 @@ class StoreStatus
     StoreStatus(const std::string& dir);
 
     framing::cluster::StoreState getState() const { return state; }
+    bool isClean() { return state == framing::cluster::STORE_STATE_CLEAN_STORE; }
+    bool isDirty() { return state == framing::cluster::STORE_STATE_DIRTY_STORE; }
+
     const Uuid& getClusterId() const { return clusterId; }
     const Uuid& getShutdownId() const { return shutdownId; }
     framing::SequenceNumber getConfigSeq() const { return configSeq; }

@@ -163,7 +163,11 @@ class Cluster : private Cpg::Handler, public management::Manageable {
                        const std::string& firstConfig,
                        Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
-    void configChange(const MemberId&, const std::string& current, Lock& l);
+    void configChange(const MemberId&,
+                      const std::string& members,
+                      const std::string& left,
+                      const std::string& joined,
+                      Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void errorCheck(const MemberId&, uint8_t type, SequenceNumber frameSeq, Lock&);
     void timerWakeup(const MemberId&, const std::string& name, Lock&);
