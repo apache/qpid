@@ -110,7 +110,7 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
         const ClusterConfigChangeBody* configChange =
             static_cast<const ClusterConfigChangeBody*>(method);
         if (configChange) {
-            MemberSet members(decodeMemberSet(configChange->getCurrent()));
+            MemberSet members(decodeMemberSet(configChange->getMembers()));
             QPID_LOG(debug, cluster << " apply config change to error "
                      << frameSeq << ": " << members);
             MemberSet intersect;
