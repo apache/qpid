@@ -74,10 +74,7 @@ template <class T> class PollableQueue : public sys::PollableQueue<T> {
         else sys::PollableQueue<T>::push(t);
     }
 
-    void start() {
-        bypass = false;
-        sys::PollableQueue<T>::start();
-    }
+    void bypassOff() { bypass = false; }
 
   private:
     Callback callback;
