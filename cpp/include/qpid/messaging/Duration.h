@@ -21,6 +21,8 @@
  * under the License.
  *
  */
+
+#include "qpid/client/ClientImportExport.h"
 #include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
@@ -32,18 +34,20 @@ namespace messaging {
 class Duration
 {
   public:
-    explicit Duration(uint64_t milliseconds);
-    uint64_t getMilliseconds() const;
-    static const Duration INFINITE;
-    static const Duration IMMEDIATE;
-    static const Duration SECOND;
-    static const Duration MINUTE;
+    QPID_CLIENT_EXTERN explicit Duration(uint64_t milliseconds);
+    QPID_CLIENT_EXTERN uint64_t getMilliseconds() const;
+    QPID_CLIENT_EXTERN static const Duration FOREVER;
+    QPID_CLIENT_EXTERN static const Duration IMMEDIATE;
+    QPID_CLIENT_EXTERN static const Duration SECOND;
+    QPID_CLIENT_EXTERN static const Duration MINUTE;
   private:
     uint64_t milliseconds;
 };
 
-Duration operator*(const Duration& duration, uint64_t multiplier);
-Duration operator*(uint64_t multiplier, const Duration& duration);
+QPID_CLIENT_EXTERN Duration operator*(const Duration& duration,
+                                      uint64_t multiplier);
+QPID_CLIENT_EXTERN Duration operator*(uint64_t multiplier,
+                                      const Duration& duration);
 
 }} // namespace qpid::messaging
 

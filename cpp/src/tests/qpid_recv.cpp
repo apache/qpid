@@ -96,7 +96,7 @@ struct Options : public qpid::Options
 
     Duration getTimeout()
     {
-        if (forever) return Duration::INFINITE;
+        if (forever) return Duration::FOREVER;
         else return Duration::SECOND*timeout;
 
     }
