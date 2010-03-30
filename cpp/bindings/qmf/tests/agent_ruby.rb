@@ -44,6 +44,7 @@ class Model
     @parent_class.add_property(Qmf::SchemaProperty.new("lstrval", Qmf::TYPE_LSTR))
 
     @parent_class.add_property(Qmf::SchemaProperty.new("mapval", Qmf::TYPE_MAP))
+    @parent_class.add_property(Qmf::SchemaProperty.new("listval", Qmf::TYPE_LIST))
 
     @parent_class.add_statistic(Qmf::SchemaStatistic.new("queryCount", Qmf::TYPE_UINT32, :unit => "query", :desc => "Query count"))
 
@@ -245,6 +246,11 @@ class App < Qmf::AgentHandler
     @parent.int32val = 0
     @parent.int16val = 0
     @parent.int8val  = 0
+
+    # a list containing a list that contains a map (so there!)
+    @parent.listval = ['a', 1, 'b', 2,
+                       ['c', true, 3.1415,
+                        {"hi" => 10, "lo" => 5}]]
 
     @parent_oid = @agent.alloc_object_id(1)
     @parent.set_object_id(@parent_oid)

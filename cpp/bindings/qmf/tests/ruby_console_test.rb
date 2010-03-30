@@ -266,6 +266,23 @@ class ConsoleTest < ConsoleTestBase
     end
   end
 
+
+
+  def test_G_basic_map_list_data
+    parent = @qmfc.object(:class => "parent")
+    assert(parent, "Number of 'parent' objects")
+
+    # see agent for structure of listval
+
+    assert(parent.listval.class == Array)
+    assert_equal(parent.listval.length, 5)
+    assert(parent.listval[4].class == Array)
+    assert_equal(parent.listval[4].length, 4)
+    assert(parent.listval[4][3].class == Hash)
+    assert_equal(parent.listval[4][3]["hi"], 10)
+    assert_equal(parent.listval[4][3]["lo"], 5)
+  end
+
 end
 
 app = ConsoleTest.new

@@ -48,8 +48,8 @@ module Qmf
       when TYPE_INT8, TYPE_INT16, TYPE_INT32    then val.asInt
       when TYPE_INT64                           then val.asInt64
       when TYPE_MAP                             then value_to_dict(val)
+      when TYPE_LIST                            then value_to_list(val)
       when TYPE_OBJECT
-      when TYPE_LIST
       when TYPE_ARRAY
       end
     end
@@ -77,8 +77,8 @@ module Qmf
       when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(value)
       when TYPE_INT64 then val.setInt64(value)
       when TYPE_MAP then dict_to_value(val, value)
+      when TYPE_LIST then list_to_value(val, value)
       when TYPE_OBJECT
-      when TYPE_LIST
       when TYPE_ARRAY
       end
       return val
@@ -112,6 +112,7 @@ module Qmf
       return TYPE_BOOL if value.class == NilClass
 
       return TYPE_MAP if value.class == Hash
+      return TYPE_LIST if value.class == Array
 
       raise ArgumentError, "QMF type not known for native type #{value.class}"
     end
@@ -132,6 +133,23 @@ module Qmf
         raise ArgumentError, "QMF map key must be a string" if key.class != String
         typecode = pick_qmf_type(value)
         val.insert(key, native_to_qmf(typecode, value))
+      end
+    end
+
+    def value_to_list(val)
+      # Assume val is of type Qmfengine::Value
+      raise ArgumentError, "value_to_dict must be given a map value" if !val.isList
+      list = []
+      for i in 0...val.listItemCount
+        list.push(qmf_to_native(val.listItem(i)))
+      end
+      return list
+    end
+
+    def list_to_value(val, list)
+      list.each do |value|
+        typecode = pick_qmf_type(value)
+        val.appendToList(native_to_qmf(typecode, value))
       end
     end
   end

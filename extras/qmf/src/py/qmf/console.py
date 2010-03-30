@@ -985,15 +985,7 @@ class Session:
           data = Object(self, broker, schema, codec, True, True, False)
       else:
           data = self._decodeValue(codec, inner_type_code, broker)
-    elif typecode == 21:                                # List
-        #taken from codec10.read_list
-        sc = Codec(codec.read_vbin32())
-        count = sc.read_uint32()
-        data = []
-        while count > 0:
-          type = sc.read_uint8()
-          data.append(self._decodeValue(sc,type,broker))
-          count -= 1
+    elif typecode == 21: data = codec.read_list()       # List
     elif typecode == 22:                                #Array
         #taken from codec10.read_array
         sc = Codec(codec.read_vbin32()) 
@@ -1028,14 +1020,7 @@ class Session:
     elif typecode == 19: codec.write_int64  (int(value))    # S64
     elif typecode == 20: value._encodeUnmanaged(codec)      # OBJECT
     elif typecode == 15: codec.write_map    (value)         # FTABLE
-    elif typecode == 21:                                    # List
-        sc = Codec()
-        self._encodeValue(sc, len(value), 3)
-        for o in value:
-          ltype=self.encoding(o)
-          self._encodeValue(sc,ltype,1)
-          self._encodeValue(sc, o, ltype)
-        codec.write_vbin32(sc.encoded)
+    elif typecode == 21: codec.write_list   (value)         # List
     elif typecode == 22:                                    # Array
         sc = Codec()
         self._encodeValue(sc, len(value), 3)
