@@ -319,7 +319,9 @@ void Cluster::initialize() {
     broker.getKnownBrokers = boost::bind(&Cluster::getUrls, this);
     broker.setExpiryPolicy(expiryPolicy);
     dispatcher.start();
+    deliverEventQueue.bypassOff();
     deliverEventQueue.start();
+    deliverFrameQueue.bypassOff();
     deliverFrameQueue.start();
     mcast.start();
 
