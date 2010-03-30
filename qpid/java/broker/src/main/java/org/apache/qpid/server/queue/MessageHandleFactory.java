@@ -36,7 +36,7 @@ public class MessageHandleFactory
         // just hardcoded for now
         if (persistent)
         {
-            return new WeakReferenceMessageHandle(messageId, store);
+            return new SoftReferenceMessageHandle(messageId, store);
         }
         else
         {
