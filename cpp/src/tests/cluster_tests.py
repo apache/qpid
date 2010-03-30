@@ -404,12 +404,17 @@ class StoreTests(BrokerTest):
         c = cluster.start("c", expect=EXPECT_EXIT_FAIL)
         a.send_message("q", Message("x", durable=True))
         a.kill()
+        # FIXME aconway 2010-03-29: this test has too many sleeps.
+        # Need to tighten up status persistence to be more atomic and less
+        # prone to interruption.
+        time.sleep(0.1)   # pause for b to update status.
         b.kill()          # c is last man
         time.sleep(0.1)   # pause for c to find out hes last.
         a = cluster.start("a", expect=EXPECT_EXIT_FAIL) # c no longer last man
+        time.sleep(0.1)   # pause for c to find out hes no longer last.
         c.kill()          # a is now last man
         time.sleep(0.1)   # pause for a to find out hes last.
-        a.kill()          # really last
+        a.kill()          # really last, should be clean.
         # b & c should be dirty
         b = cluster.start("b", wait=False, expect=EXPECT_EXIT_FAIL)
         self.assert_dirty_store(b)
