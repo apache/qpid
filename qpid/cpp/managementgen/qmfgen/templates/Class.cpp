@@ -333,6 +333,6 @@ void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMapMethodArgs*/)
     std::string          text;
 
 /*MGEN:Class.MapMethodHandlers*/
-    outMap["_status_code"] = status;
+    outMap["_status_code"] = (uint32_t) status;
     outMap["_status_text"] = Manageable::StatusText(status, text);
 }

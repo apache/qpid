@@ -1402,7 +1402,7 @@ class SchemaClass:
 
       stream.write ("        status = coreObject->ManagementMethod (METHOD_" +\
                     method.getName().upper() + ", ioArgs, text);\n")
-      stream.write ("        outMap[\"_status_code\"] = (status);\n")
+      stream.write ("        outMap[\"_status_code\"] = (uint32_t) status;\n")
       stream.write ("        outMap[\"_status_text\"] = ::qpid::management::Manageable::StatusText(status, text);\n")
       for arg in method.args:
         if arg.getDir () == "O" or arg.getDir () == "IO":

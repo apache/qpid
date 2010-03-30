@@ -188,11 +188,6 @@ void ObjectId::setV2Key(const ManagementObject& object)
 // encode as V2-format map
 void ObjectId::mapEncode(messaging::VariantMap& map) const
 {
-    if (agent == 0)
-        map["_first"] = first;
-    else
-        map["_first"] = (first | agent->first);
-
     map["_object_name"] = v2Key;
     if (!agentName.empty())
         map["_agent_name"] = agentName;

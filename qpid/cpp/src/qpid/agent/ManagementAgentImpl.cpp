@@ -459,19 +459,21 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
     qpid::messaging::Message outMsg;
     qpid::messaging::MapContent outMap(outMsg);
+    outMap["_values"] = Variant::Map();
 
     if ((oid = inMap.find("_object_id")) == inMap.end() ||
         (mid = inMap.find("_method_name")) == inMap.end()) {
-        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
+        (outMap["_values"].asMap())["_status_code"] = Manageable::STATUS_PARAMETER_INVALID;
         (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
         failed = true;
     } else {
         string methodName;
         ObjectId objId;
         Variant::Map inArgs;
+        Variant::Map callMap;
 
         try {
-            // coversions will throw if input is invalid.
+            // conversions will throw if input is invalid.
             objId = ObjectId(oid->second.asMap());
             methodName = mid->second.getString();
 
@@ -482,17 +484,29 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
             ManagementObjectMap::iterator iter = managementObjects.find(objId);
             if (iter == managementObjects.end() || iter->second->isDeleted()) {
-                (outMap["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
+                (outMap["_values"].asMap())["_status_code"] = Manageable::STATUS_UNKNOWN_OBJECT;
                 (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
                 failed = true;
             } else {
-
-                iter->second->doMethod(methodName, inArgs, outMap.asMap());
+                iter->second->doMethod(methodName, inArgs, callMap);
             }
 
-        } catch(exception& e) {
+            if (callMap["_status_code"].asUint32() == 0) {
+                outMap["_arguments"] = Variant::Map();
+                for (Variant::Map::const_iterator iter = callMap.begin();
+                     iter != callMap.end(); iter++)
+                    if (iter->first != "_status_code" && iter->first != "_status_text")
+                        outMap["_arguments"].asMap()[iter->first] = iter->second;
+            } else {
+                (outMap["_values"].asMap())["_status_code"] = callMap["_status_code"];
+                (outMap["_values"].asMap())["_status_text"] = callMap["_status_text"];
+                failed = true;
+            }
+
+        } catch(messaging::InvalidConversion& e) {
             outMap.clear();
-            (outMap["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
+            outMap["_values"] = Variant::Map();
+            (outMap["_values"].asMap())["_status_code"] = Manageable::STATUS_EXCEPTION;
             (outMap["_values"].asMap())["_status_text"] = e.what();
             failed = true;
         }
@@ -501,10 +515,13 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
     Variant::Map headers;
     headers["method"] = "response";
     headers["qmf.agent"] = name_address;
-    if (failed)
+    if (failed) {
         headers["qmf.opcode"] = "_exception";
-    else
+        QPID_LOG(trace, "SENT Exception map=" << outMap);
+    } else {
         headers["qmf.opcode"] = "_method_response";
+        QPID_LOG(trace, "SENT MethodResponse map=" << outMap);
+    }
 
     outMap.encode();
     connThreadBody.sendBuffer(outMsg.getContent(), cid, headers, "qmf.default.direct", replyTo);
