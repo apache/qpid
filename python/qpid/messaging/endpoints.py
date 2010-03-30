@@ -294,22 +294,23 @@ class Session:
   The options map permits the following parameters::
 
     <name> [ / <subject> ] ; {
-      create: <create-policy>,
-      delete: <delete-policy>,
-      assert: <assert-policy>,
+      create: always | sender | receiver | never,
+      delete: always | sender | receiver | never,
+      assert: always | sender | receiver | never,
+      mode: browse | consume,
       node: {
-        type: <node-type>,
-        durable: <node-durability>,
-        x-declare: { ... <queue-declare overrides> ... }
+        type: queue | topic,
+        durable: True | False,
+        x-declare: { ... <declare-overrides> ... },
         x-bindings: [<binding_1>, ... <binding_n>]
-      }
+      },
       link: {
         name: <link-name>,
-        durable: <link-durability>,
-        reliability: <link-reliability>,
-        x-declare: { ... <queue-declare overrides> ... }
-        x-bindings: [<binding_1>, ... <binding_n>]
-        x-subscribe: { ... <message-subscribe overrides> ... }
+        durable: True | False,
+        reliability: unreliable | at-most-once | at-least-once | exactly-once,
+        x-declare: { ... <declare-overrides> ... },
+        x-bindings: [<binding_1>, ... <binding_n>],
+        x-subscribe: { ... <subscribe-overrides> ... }
       }
     }
 
@@ -337,8 +338,9 @@ class Session:
     - I{queue}: this is the default node-type
 
   The x-declare map permits protocol specific keys and values to be
-  specified. These keys and values are passed through when creating a
-  node or asserting facts about an existing node.
+  specified when exchanges or queues are declared. These keys and
+  values are passed through when creating a node or asserting facts
+  about an existing node.
 
   Examples
   --------
