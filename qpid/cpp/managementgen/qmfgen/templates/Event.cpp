@@ -68,7 +68,6 @@ void Event/*MGEN:Event.NameCap*/::writeSchema (std::string& schema)
     buf.putShortString (packageName); // Package Name
     buf.putShortString (eventName);   // Event Name
     buf.putBin128      (md5Sum);      // Schema Hash
-    buf.putOctet       (0);           // No Superclass    
     buf.putShort       (/*MGEN:Event.ArgCount*/); // Argument Count
 
     // Arguments
@@ -94,8 +93,8 @@ void Event/*MGEN:Event.NameCap*/::encode(std::string& _sBuf) const
     buf.getRawData(_sBuf, _bufLen);
 }
 
-void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::messaging::VariantMap& map) const
+void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::types::VariantMap& map) const
 {
-    using namespace ::qpid::messaging;
+    using namespace ::qpid::types;
 /*MGEN:Event.ArgMap*/
 }

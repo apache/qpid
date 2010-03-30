@@ -25,7 +25,7 @@
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
-#include <qpid/messaging/Variant.h>
+#include <qpid/types/Variant.h>
 #include <qpid/Exception.h>
 #include <qpid/Options.h>
 #include <qpid/log/Logger.h>
@@ -38,6 +38,7 @@
 #include <boost/format.hpp>
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 using qpid::sys::AbsTime;
 using qpid::sys::now;
 using qpid::sys::TIME_INFINITE;
@@ -124,9 +125,9 @@ struct Options : public qpid::Options
         std::string name;
         std::string value;
         if (nameval(property, name, value)) {
-            message.getHeaders()[name] = value;
+            message.getProperties()[name] = value;
         } else {
-            message.getHeaders()[name] = Variant();
+            message.getProperties()[name] = Variant();
         }    
     }
 
@@ -176,7 +177,7 @@ int main(int argc, char** argv)
             for (uint count = 0; (count < options.count || options.count == 0) && end > now(); count++) {
                 if (!options.replyto.empty()) message.setReplyTo(Address(options.replyto));
                 std::string id = options.id.empty() ? Uuid(true).str() : options.id;
-                message.getHeaders()["spout-id"] = (boost::format("%1%:%2%") % id % count).str();
+                message.getProperties()["spout-id"] = (boost::format("%1%:%2%") % id % count).str();
                 sender.send(message);
             }
             connection.close();

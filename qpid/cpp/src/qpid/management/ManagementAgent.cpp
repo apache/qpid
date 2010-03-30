@@ -29,8 +29,8 @@
 #include "qpid/sys/Time.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/AclModule.h"
-#include "qpid/messaging/Variant.h"
-#include "qpid/messaging/Uuid.h"
+#include "qpid/types/Variant.h"
+#include "qpid/types/Uuid.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ListContent.h"
 #include "qpid/messaging/ListView.h"
@@ -43,7 +43,8 @@
 
 using boost::intrusive_ptr;
 using qpid::framing::Uuid;
-using qpid::messaging::Variant;
+using qpid::types::Variant;
+using qpid::types::VariantMap;
 using namespace qpid::framing;
 using namespace qpid::management;
 using namespace qpid::broker;
@@ -54,17 +55,17 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 
 
-static qpid::messaging::Variant::Map mapEncodeSchemaId(const std::string& pname,
-                                                       const std::string& cname,
-                                                       const std::string& type,
-                                                       const uint8_t *md5Sum)
+static Variant::Map mapEncodeSchemaId(const std::string& pname,
+                                      const std::string& cname,
+                                      const std::string& type,
+                                      const uint8_t *md5Sum)
 {
-    qpid::messaging::Variant::Map map_;
+    Variant::Map map_;
 
     map_["_package_name"] = pname;
     map_["_class_name"] = cname;
     map_["_type"] = type;
-    map_["_hash"] = qpid::messaging::Uuid(md5Sum);
+    map_["_hash"] = qpid::types::Uuid(md5Sum);
     return map_;
 }
 
@@ -346,10 +347,10 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
     if (qmf2Support) {
         ::qpid::messaging::Message msg;
         ::qpid::messaging::MapContent content(msg);
-        ::qpid::messaging::VariantMap &map_ = content.asMap();
-        ::qpid::messaging::VariantMap schemaId;
-        ::qpid::messaging::VariantMap values;
-        ::qpid::messaging::VariantMap headers;
+        VariantMap &map_ = content.asMap();
+        VariantMap schemaId;
+        VariantMap values;
+        VariantMap headers;
 
         map_["_schema_id"] = mapEncodeSchemaId(event.getPackageName(),
                                                event.getEventName(),
@@ -483,11 +484,11 @@ void ManagementAgent::sendBuffer(Buffer&  buf,
 
 void ManagementAgent::sendBuffer(const std::string& data,
                                  const std::string& cid,
-                                 const qpid::messaging::VariantMap& headers,
+                                 const VariantMap& headers,
                                  qpid::broker::Exchange::shared_ptr exchange,
                                  const std::string& routingKey)
 {
-    qpid::messaging::VariantMap::const_iterator i;
+    VariantMap::const_iterator i;
 
     if (suppressed) {
         QPID_LOG(trace, "Suppressed management message to " << routingKey);
@@ -620,7 +621,7 @@ void ManagementAgent::periodicProcessing (void)
         Buffer msgBuffer(msgChars, BUFSIZE);
         ::qpid::messaging::Message m;
         ::qpid::messaging::ListContent content(m);
-        ::qpid::messaging::Variant::List &list_ = content.asList();
+        Variant::List &list_ = content.asList();
 
         for (ManagementObjectMap::iterator iter = baseIter;
              iter != managementObjects.end();
@@ -650,8 +651,8 @@ void ManagementAgent::periodicProcessing (void)
                 }
 
                 if ((send_stats || send_props) && qmf2Support) {
-                    ::qpid::messaging::Variant::Map  map_;
-                    ::qpid::messaging::Variant::Map values;
+                    Variant::Map  map_;
+                    Variant::Map values;
 
                     map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
                                                            object->getClassName(),
@@ -692,7 +693,7 @@ void ManagementAgent::periodicProcessing (void)
                 const std::string &body = m.getContent();
                 if (body.length()) {
                     stringstream key;
-                    ::qpid::messaging::Variant::Map  headers;
+                    Variant::Map  headers;
                     key << "agent.ind.data." << baseObject->getPackageName() << "." << baseObject->getClassName();
                     // key << "console.obj.1.0." << baseObject->getPackageName() << "." << baseObject->getClassName();
                     headers["method"] = "indication";
@@ -738,10 +739,10 @@ void ManagementAgent::periodicProcessing (void)
             if (qmf2Support) {
                 ::qpid::messaging::Message m;
                 ::qpid::messaging::ListContent content(m);
-                ::qpid::messaging::Variant::List &list_ = content.asList();
-                ::qpid::messaging::Variant::Map  map_;
-                ::qpid::messaging::Variant::Map values;
-                ::qpid::messaging::Variant::Map  headers;
+                Variant::List &list_ = content.asList();
+                Variant::Map  map_;
+                Variant::Map values;
+                Variant::Map  headers;
 
                 map_["_schema_id"] = mapEncodeSchemaId((*cdIter)->getPackageName(),
                                                        (*cdIter)->getClassName(),
@@ -793,8 +794,8 @@ void ManagementAgent::periodicProcessing (void)
 
         messaging::Message msg;
         messaging::MapContent content(msg);
-        messaging::Variant::Map& map(content.asMap());
-        messaging::Variant::Map headers;
+        Variant::Map& map(content.asMap());
+        Variant::Map headers;
 
         headers["method"] = "indication";
         headers["qmf.opcode"] = "_agent_heartbeat_indication";
@@ -841,9 +842,9 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
     if (qmf2Support) {
         ::qpid::messaging::Message m;
         ::qpid::messaging::ListContent content(m);
-        ::qpid::messaging::Variant::List &list_ = content.asList();
-        ::qpid::messaging::Variant::Map  map_;
-        ::qpid::messaging::Variant::Map values;
+        Variant::List &list_ = content.asList();
+        Variant::Map  map_;
+        Variant::Map values;
 
         map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
                                                object->getClassName(),
@@ -856,7 +857,7 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
         stringstream key;
         key << "agent.ind.data." << object->getPackageName() << "." << object->getClassName();
 
-        ::qpid::messaging::Variant::Map  headers;
+        Variant::Map  headers;
         headers["method"] = "indication";
         headers["qmf.opcode"] = "_data_indication";
         headers["qmf.content"] = "_data";
@@ -1051,7 +1052,7 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
 
     qpid::messaging::Message outMsg;
     qpid::messaging::MapContent outMap(outMsg);
-    qpid::messaging::Variant::Map headers;
+    Variant::Map headers;
 
     headers["method"] = "response";
     headers["qmf.opcode"] = "_method_response";
@@ -1070,7 +1071,7 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
     }
 
     ObjectId objId;
-    qpid::messaging::Variant::Map inArgs;
+    Variant::Map inArgs;
 
     try {
         // coversions will throw if input is invalid.
@@ -1581,7 +1582,7 @@ void ManagementAgent::handleGetQueryLH(const std::string& body, std::string repl
     qpid::messaging::Message inMsg(body);
     qpid::messaging::MapView inMap(inMsg);
     qpid::messaging::MapView::const_iterator i;
-    ::qpid::messaging::Variant::Map headers;
+    Variant::Map headers;
 
     QPID_LOG(trace, "RECV GetQuery (v2): map=" << inMap << " seq=" << cid);
 
@@ -1593,9 +1594,9 @@ void ManagementAgent::handleGetQueryLH(const std::string& body, std::string repl
 
     ::qpid::messaging::Message outMsg;
     ::qpid::messaging::ListContent content(outMsg);
-    ::qpid::messaging::Variant::List &list_ = content.asList();
-    ::qpid::messaging::Variant::Map  map_;
-    ::qpid::messaging::Variant::Map values;
+    Variant::List &list_ = content.asList();
+    Variant::Map  map_;
+    Variant::Map values;
     string className;
 
     i = inMap.find("_class");
@@ -1677,8 +1678,8 @@ void ManagementAgent::handleLocateRequestLH(const string&, const string& replyTo
 
     messaging::Message msg;
     messaging::MapContent content(msg);
-    messaging::Variant::Map& map(content.asMap());
-    messaging::Variant::Map headers;
+    Variant::Map& map(content.asMap());
+    Variant::Map headers;
 
     headers["method"] = "indication";
     headers["qmf.opcode"] = "_agent_locate_response";
@@ -1818,7 +1819,7 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
 
                 qpid::messaging::Message outMsg;
                 qpid::messaging::MapContent outMap(outMsg);
-                qpid::messaging::Variant::Map headers;
+                Variant::Map headers;
 
                 headers["method"] = "response";
                 headers["qmf.opcode"] = "_method_response";
@@ -2119,20 +2120,20 @@ void ManagementAgent::disallow(const std::string& className, const std::string& 
     disallowed[std::make_pair(className, methodName)] = message;
 }
 
-void ManagementAgent::SchemaClassKey::mapEncode(qpid::messaging::Variant::Map& _map) const {
+void ManagementAgent::SchemaClassKey::mapEncode(Variant::Map& _map) const {
     _map["_cname"] = name;
-    _map["_hash"] = qpid::messaging::Uuid(hash);
+    _map["_hash"] = qpid::types::Uuid(hash);
 }
 
-void ManagementAgent::SchemaClassKey::mapDecode(const qpid::messaging::Variant::Map& _map) {
-    qpid::messaging::Variant::Map::const_iterator i;
+void ManagementAgent::SchemaClassKey::mapDecode(const Variant::Map& _map) {
+    Variant::Map::const_iterator i;
 
     if ((i = _map.find("_cname")) != _map.end()) {
         name = i->second.asString();
     }
 
     if ((i = _map.find("_hash")) != _map.end()) {
-        const qpid::messaging::Uuid& uuid = i->second.asUuid();
+        const qpid::types::Uuid& uuid = i->second.asUuid();
         memcpy(hash, uuid.data(), uuid.size());
     }
 }
@@ -2153,14 +2154,14 @@ uint32_t ManagementAgent::SchemaClassKey::encodedBufSize() const {
     return 1 + name.size() + 16 /* bin128 */;
 }
 
-void ManagementAgent::SchemaClass::mapEncode(qpid::messaging::Variant::Map& _map) const {
+void ManagementAgent::SchemaClass::mapEncode(Variant::Map& _map) const {
     _map["_type"] = kind;
     _map["_pending_sequence"] = pendingSequence;
     _map["_data"] = data;
 }
 
-void ManagementAgent::SchemaClass::mapDecode(const qpid::messaging::Variant::Map& _map) {
-    qpid::messaging::Variant::Map::const_iterator i;
+void ManagementAgent::SchemaClass::mapDecode(const Variant::Map& _map) {
+    Variant::Map::const_iterator i;
 
     if ((i = _map.find("_type")) != _map.end()) {
         kind = i->second;
@@ -2176,8 +2177,8 @@ void ManagementAgent::SchemaClass::mapDecode(const qpid::messaging::Variant::Map
 void ManagementAgent::exportSchemas(std::string& out) {
     ::qpid::messaging::Message m;
     ::qpid::messaging::ListContent content(m);
-    ::qpid::messaging::Variant::List &list_ = content.asList();
-    ::qpid::messaging::Variant::Map map_, kmap, cmap;
+    Variant::List &list_ = content.asList();
+    Variant::Map map_, kmap, cmap;
 
     for (PackageMap::const_iterator i = packages.begin(); i != packages.end(); ++i) {
         string name = i->first;
@@ -2218,7 +2219,7 @@ void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
         string package;
         SchemaClassKey key;
         SchemaClass klass;
-        ::qpid::messaging::VariantMap map_, kmap, cmap;
+        VariantMap map_, kmap, cmap;
         qpid::messaging::MapView::const_iterator i;
         
         map_ = l->asMap();
@@ -2239,8 +2240,8 @@ void ManagementAgent::importSchemas(qpid::framing::Buffer& inBuf) {
     }
 }
 
-void ManagementAgent::RemoteAgent::mapEncode(qpid::messaging::Variant::Map& map_) const {
-    ::qpid::messaging::VariantMap _objId, _values;
+void ManagementAgent::RemoteAgent::mapEncode(Variant::Map& map_) const {
+    VariantMap _objId, _values;
 
     map_["_brokerBank"] = brokerBank;
     map_["_agentBank"] = agentBank;
@@ -2253,7 +2254,7 @@ void ManagementAgent::RemoteAgent::mapEncode(qpid::messaging::Variant::Map& map_
     map_["_values"] = _values;
 }
 
-void ManagementAgent::RemoteAgent::mapDecode(const qpid::messaging::Variant::Map& map_) {
+void ManagementAgent::RemoteAgent::mapDecode(const Variant::Map& map_) {
     qpid::messaging::MapView::const_iterator i;
 
     if ((i = map_.find("_brokerBank")) != map_.end()) {
@@ -2285,8 +2286,8 @@ void ManagementAgent::RemoteAgent::mapDecode(const qpid::messaging::Variant::Map
 void ManagementAgent::exportAgents(std::string& out) {
     ::qpid::messaging::Message m;
     ::qpid::messaging::ListContent content(m);
-    ::qpid::messaging::Variant::List &list_ = content.asList();
-    ::qpid::messaging::VariantMap map_, omap, amap;
+    Variant::List &list_ = content.asList();
+    VariantMap map_, omap, amap;
 
     for (RemoteAgentMap::const_iterator i = remoteAgents.begin();
          i != remoteAgents.end();
@@ -2315,7 +2316,7 @@ void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
 
     for (l = content.begin(); l != content.end(); l++) {
         std::auto_ptr<RemoteAgent> agent(new RemoteAgent(*this));
-        ::qpid::messaging::VariantMap map_;
+        VariantMap map_;
         qpid::messaging::MapView::const_iterator i;
 
         map_ = l->asMap();
@@ -2342,9 +2343,9 @@ std::string ManagementAgent::debugSnapshot() {
     return msg.str();
 }
 
-qpid::messaging::Variant::Map ManagementAgent::toMap(const FieldTable& from)
+Variant::Map ManagementAgent::toMap(const FieldTable& from)
 {
-    qpid::messaging::Variant::Map map;
+    Variant::Map map;
 
     for (FieldTable::const_iterator iter = from.begin(); iter != from.end(); iter++) {
         const string& key(iter->first);
@@ -2356,9 +2357,9 @@ qpid::messaging::Variant::Map ManagementAgent::toMap(const FieldTable& from)
     return map;
 }
 
-qpid::messaging::Variant::List ManagementAgent::toList(const List& from)
+Variant::List ManagementAgent::toList(const List& from)
 {
-    qpid::messaging::Variant::List _list;
+    Variant::List _list;
 
     for (List::const_iterator iter = from.begin(); iter != from.end(); iter++) {
         const List::ValuePtr& val(*iter);
@@ -2369,15 +2370,15 @@ qpid::messaging::Variant::List ManagementAgent::toList(const List& from)
     return _list;
 }
 
-qpid::framing::FieldTable ManagementAgent::fromMap(const qpid::messaging::Variant::Map& from)
+qpid::framing::FieldTable ManagementAgent::fromMap(const Variant::Map& from)
 {
     qpid::framing::FieldTable ft;
 
-    for (qpid::messaging::Variant::Map::const_iterator iter = from.begin();
+    for (Variant::Map::const_iterator iter = from.begin();
          iter != from.end();
          iter++) {
         const string& key(iter->first);
-        const qpid::messaging::Variant& val(iter->second);
+        const Variant& val(iter->second);
 
         ft.set(key, toFieldValue(val));
     }
@@ -2386,14 +2387,14 @@ qpid::framing::FieldTable ManagementAgent::fromMap(const qpid::messaging::Varian
 }
 
 
-List ManagementAgent::fromList(const qpid::messaging::Variant::List& from)
+List ManagementAgent::fromList(const Variant::List& from)
 {
     List fa;
 
-    for (qpid::messaging::Variant::List::const_iterator iter = from.begin();
+    for (Variant::List::const_iterator iter = from.begin();
          iter != from.end();
          iter++) {
-        const qpid::messaging::Variant& val(*iter);
+        const Variant& val(*iter);
 
         fa.push_back(toFieldValue(val));
     }
@@ -2407,22 +2408,22 @@ boost::shared_ptr<FieldValue> ManagementAgent::toFieldValue(const Variant& in)
 
     switch(in.getType()) {
 
-    case messaging::VAR_VOID:   return boost::shared_ptr<FieldValue>(new VoidValue());
-    case messaging::VAR_BOOL:   return boost::shared_ptr<FieldValue>(new BoolValue(in.asBool()));
-    case messaging::VAR_UINT8:  return boost::shared_ptr<FieldValue>(new Unsigned8Value(in.asUint8()));
-    case messaging::VAR_UINT16: return boost::shared_ptr<FieldValue>(new Unsigned16Value(in.asUint16()));
-    case messaging::VAR_UINT32: return boost::shared_ptr<FieldValue>(new Unsigned32Value(in.asUint32()));
-    case messaging::VAR_UINT64: return boost::shared_ptr<FieldValue>(new Unsigned64Value(in.asUint64()));
-    case messaging::VAR_INT8:   return boost::shared_ptr<FieldValue>(new Integer8Value(in.asInt8()));
-    case messaging::VAR_INT16:  return boost::shared_ptr<FieldValue>(new Integer16Value(in.asInt16()));
-    case messaging::VAR_INT32:  return boost::shared_ptr<FieldValue>(new Integer32Value(in.asInt32()));
-    case messaging::VAR_INT64:  return boost::shared_ptr<FieldValue>(new Integer64Value(in.asInt64()));
-    case messaging::VAR_FLOAT:  return boost::shared_ptr<FieldValue>(new FloatValue(in.asFloat()));
-    case messaging::VAR_DOUBLE: return boost::shared_ptr<FieldValue>(new DoubleValue(in.asDouble()));
-    case messaging::VAR_STRING: return boost::shared_ptr<FieldValue>(new Str16Value(in.asString()));
-    case messaging::VAR_UUID:   return boost::shared_ptr<FieldValue>(new UuidValue(in.asUuid().data()));
-    case messaging::VAR_MAP:    return boost::shared_ptr<FieldValue>(new FieldTableValue(ManagementAgent::fromMap(in.asMap())));
-    case messaging::VAR_LIST:   return boost::shared_ptr<FieldValue>(new ListValue(ManagementAgent::fromList(in.asList())));
+    case types::VAR_VOID:   return boost::shared_ptr<FieldValue>(new VoidValue());
+    case types::VAR_BOOL:   return boost::shared_ptr<FieldValue>(new BoolValue(in.asBool()));
+    case types::VAR_UINT8:  return boost::shared_ptr<FieldValue>(new Unsigned8Value(in.asUint8()));
+    case types::VAR_UINT16: return boost::shared_ptr<FieldValue>(new Unsigned16Value(in.asUint16()));
+    case types::VAR_UINT32: return boost::shared_ptr<FieldValue>(new Unsigned32Value(in.asUint32()));
+    case types::VAR_UINT64: return boost::shared_ptr<FieldValue>(new Unsigned64Value(in.asUint64()));
+    case types::VAR_INT8:   return boost::shared_ptr<FieldValue>(new Integer8Value(in.asInt8()));
+    case types::VAR_INT16:  return boost::shared_ptr<FieldValue>(new Integer16Value(in.asInt16()));
+    case types::VAR_INT32:  return boost::shared_ptr<FieldValue>(new Integer32Value(in.asInt32()));
+    case types::VAR_INT64:  return boost::shared_ptr<FieldValue>(new Integer64Value(in.asInt64()));
+    case types::VAR_FLOAT:  return boost::shared_ptr<FieldValue>(new FloatValue(in.asFloat()));
+    case types::VAR_DOUBLE: return boost::shared_ptr<FieldValue>(new DoubleValue(in.asDouble()));
+    case types::VAR_STRING: return boost::shared_ptr<FieldValue>(new Str16Value(in.asString()));
+    case types::VAR_UUID:   return boost::shared_ptr<FieldValue>(new UuidValue(in.asUuid().data()));
+    case types::VAR_MAP:    return boost::shared_ptr<FieldValue>(new FieldTableValue(ManagementAgent::fromMap(in.asMap())));
+    case types::VAR_LIST:   return boost::shared_ptr<FieldValue>(new ListValue(ManagementAgent::fromList(in.asList())));
     }
 
     QPID_LOG(error, "Unknown Variant type - not converted: [" << in.getType() << "]");
@@ -2430,7 +2431,7 @@ boost::shared_ptr<FieldValue> ManagementAgent::toFieldValue(const Variant& in)
 }
 
 // stolen from qpid/client/amqp0_10/Codecs.cpp - TODO: make Codecs public, and remove this dup.
-qpid::messaging::Variant ManagementAgent::toVariant(const boost::shared_ptr<FieldValue>& in)
+Variant ManagementAgent::toVariant(const boost::shared_ptr<FieldValue>& in)
 {
     const std::string iso885915("iso-8859-15");
     const std::string utf8("utf8");
@@ -2475,7 +2476,7 @@ qpid::messaging::Variant ManagementAgent::toVariant(const boost::shared_ptr<Fiel
         {
             unsigned char data[16];
             in->getFixedWidthValue<16>(data);
-            out = qpid::messaging::Uuid(data);
+            out = qpid::types::Uuid(data);
         } break;
 
         //TODO: figure out whether and how to map values with codes 0x40-0xd8

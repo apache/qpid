@@ -988,15 +988,7 @@ class Session:
           data = Object(self, broker, schema, codec, True, True, False)
       else:
           data = self._decodeValue(codec, inner_type_code, broker)
-    elif typecode == 21:                                # List
-        #taken from codec10.read_list
-        sc = Codec(codec.read_vbin32())
-        count = sc.read_uint32()
-        data = []
-        while count > 0:
-          type = sc.read_uint8()
-          data.append(self._decodeValue(sc,type,broker))
-          count -= 1
+    elif typecode == 21: data = codec.read_list()       # List
     elif typecode == 22:                                #Array
         #taken from codec10.read_array
         sc = Codec(codec.read_vbin32()) 
@@ -1032,14 +1024,7 @@ class Session:
     elif typecode == 19: codec.write_int64  (int(value))    # S64
     elif typecode == 20: value._encodeUnmanaged(codec)      # OBJECT
     elif typecode == 15: codec.write_map    (value)         # FTABLE
-    elif typecode == 21:                                    # List
-        sc = Codec()
-        self._encodeValue(sc, len(value), 3)
-        for o in value:
-          ltype=self.encoding(o)
-          self._encodeValue(sc,ltype,1)
-          self._encodeValue(sc, o, ltype)
-        codec.write_vbin32(sc.encoded)
+    elif typecode == 21: codec.write_list   (value)         # List
     elif typecode == 22:                                    # Array
         sc = Codec()
         self._encodeValue(sc, len(value), 3)
@@ -1635,7 +1620,7 @@ class ObjectId:
       else:
         first  = constructor.read_uint64()
         second = constructor.read_uint64()
-      self.agentName = str((first & 0x000000000FFFFFFF) >> 28)
+      self.agentName = str(first & 0x000000000FFFFFFF)
       self.agentEpoch = (first & 0x0FFF000000000000) >> 48
       self.objectName = str(second)
 
@@ -2008,7 +1993,7 @@ class Broker:
       raise
 
   def _updateAgent(self, obj):
-    bankKey = obj.agentBank
+    bankKey = str(obj.agentBank)
     agent = None
     if obj._deleteTime == 0:
       try:
@@ -2166,6 +2151,12 @@ class Broker:
       self.cv.release()
 
   def _v1Cb(self, msg):
+    try:
+      self._v1CbProtected(msg)
+    except Exception, e:
+      print "EXCEPTION in Broker._v1Cb:", e
+
+  def _v1CbProtected(self, msg):
     """
     This is the general message handler for messages received via the QMFv1 exchanges.
     """
@@ -2187,7 +2178,7 @@ class Broker:
         items = rkey.split('.')
         if len(items) >= 4:
           if items[0] == 'console' and items[3].isdigit():
-            agent_addr = int(items[3]) # The QMFv1 Agent Bank
+            agent_addr = str(items[3])  # The QMFv1 Agent Bank
     if agent_addr != None and agent_addr in self.agents:
       agent = self.agents[agent_addr]
 
@@ -2286,7 +2277,7 @@ class Agent:
     self.session = broker.session
     self.schemaCache = self.session.schemaCache
     self.brokerBank = broker.getBrokerBank()
-    self.agentBank = agentBank
+    self.agentBank = str(agentBank)
     self.label = label
     self.isV2 = isV2
     self.heartbeatInterval = interval
@@ -2310,9 +2301,12 @@ class Agent:
     if 'qmf_object' in kwargs:
       if self.session.console:
         self.session.console.objectProps(self.broker, kwargs['qmf_object'])
-    if 'qmf_object_stats' in kwargs:
+    elif 'qmf_object_stats' in kwargs:
       if self.session.console:
         self.session.console.objectStats(self.broker, kwargs['qmf_object_stats'])
+    elif 'qmf_event' in kwargs:
+      if self.session.console:
+        self.session.console.event(self.broker, kwargs['qmf_event'])
 
 
   def touch(self):
@@ -2521,7 +2515,8 @@ class Agent:
     """
     Handle a QMFv1 event indication
     """
-    pass
+    event = Event(self, codec)
+    self.unsolicitedContext.doEvent(event)
 
 
   def _v1HandleContentInd(self, codec, sequence, prop=False, stat=False):
@@ -2808,6 +2803,11 @@ class RequestContext(object):
     self.rawQueryResults.append(data)
 
 
+  def doEvent(self, data):
+    if self.notifiable:
+      self.notifiable(qmf_event=data)
+
+
   def setException(self, ex):
     self.exception = ex
 
@@ -2942,18 +2942,19 @@ class RequestContext(object):
 #===================================================================================================
 class Event:
   """ """
-  def __init__(self, session, broker, codec):
-    self.session = session
-    self.broker  = broker
+  def __init__(self, agent, codec):
+    self.agent = agent
+    self.session = agent.session
+    self.broker  = agent.broker
     self.classKey = ClassKey(codec)
     self.timestamp = codec.read_int64()
     self.severity = codec.read_uint8()
-    self.schema = session.schemaCache.getSchema(self.classKey)
+    self.arguments = {}
+    self.schema = self.session.schemaCache.getSchema(self.classKey)
     if not self.schema:
       return
-    self.arguments = {}
     for arg in self.schema.arguments:
-      self.arguments[arg.name] = session._decodeValue(codec, arg.type, broker)
+      self.arguments[arg.name] = self.session._decodeValue(codec, arg.type, self.broker)
 
   def __repr__(self):
     if self.schema == None:

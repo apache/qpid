@@ -28,13 +28,17 @@ namespace {
 const std::string EMPTY_STRING = "";
 }
 
+using namespace qpid::types;
+
 MessageImpl::MessageImpl(const std::string& c) : 
+    priority(0),
     ttl(0),
     durable(false),
     redelivered(false),
     bytes(c),
     internalId(0) {}
 MessageImpl::MessageImpl(const char* chars, size_t count) : 
+    priority(0),
     ttl(0),
     durable (false),
     redelivered(false),

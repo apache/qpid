@@ -52,7 +52,7 @@ class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
     uint8_t* getMd5Sum() const { return md5Sum; }
     uint8_t getSeverity() const { return /*MGEN:Event.Severity*/; }
     void encode(std::string& buffer) const;
-    void mapEncode(::qpid::messaging::VariantMap& map) const;
+    void mapEncode(::qpid::types::VariantMap& map) const;
 };
 
 }/*MGEN:Event.CloseNamespaces*/

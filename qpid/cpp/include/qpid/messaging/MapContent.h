@@ -23,7 +23,7 @@
  */
 
 #include "qpid/messaging/ImportExport.h"
-#include "Variant.h"
+#include "qpid/types/Variant.h"
 #include <map>
 #include <string>
 
@@ -40,14 +40,14 @@ class MapContent
 {
   public:
     typedef std::string key_type;
-    typedef std::pair<std::string, Variant> value_type;
-    typedef std::map<key_type, Variant>::const_iterator const_iterator;
-    typedef std::map<key_type, Variant>::iterator iterator;
-    typedef std::map<key_type, Variant>::const_reverse_iterator const_reverse_iterator;
-    typedef std::map<key_type, Variant>::reverse_iterator reverse_iterator;
+    typedef std::pair<std::string, qpid::types::Variant> value_type;
+    typedef std::map<key_type, qpid::types::Variant>::const_iterator const_iterator;
+    typedef std::map<key_type, qpid::types::Variant>::iterator iterator;
+    typedef std::map<key_type, qpid::types::Variant>::const_reverse_iterator const_reverse_iterator;
+    typedef std::map<key_type, qpid::types::Variant>::reverse_iterator reverse_iterator;
 
     QPID_CLIENT_EXTERN MapContent(Message&);
-    QPID_CLIENT_EXTERN MapContent(Message&, const Variant::Map&);
+    QPID_CLIENT_EXTERN MapContent(Message&, const qpid::types::Variant::Map&);
     QPID_CLIENT_EXTERN ~MapContent();
 
     QPID_CLIENT_EXTERN const_iterator begin() const;
@@ -64,8 +64,8 @@ class MapContent
 
     QPID_CLIENT_EXTERN const_iterator find(const key_type&) const;
     QPID_CLIENT_EXTERN iterator find(const key_type&);
-    QPID_CLIENT_EXTERN const Variant& operator[](const key_type&) const;
-    QPID_CLIENT_EXTERN Variant& operator[](const key_type&);
+    QPID_CLIENT_EXTERN const qpid::types::Variant& operator[](const key_type&) const;
+    QPID_CLIENT_EXTERN qpid::types::Variant& operator[](const key_type&);
 
     QPID_CLIENT_EXTERN std::pair<iterator,bool> insert(const value_type&);
     QPID_CLIENT_EXTERN iterator insert(iterator position, const value_type&);
@@ -76,8 +76,8 @@ class MapContent
 
     QPID_CLIENT_EXTERN void encode();
 
-    QPID_CLIENT_EXTERN const std::map<key_type, Variant>& asMap() const;
-    QPID_CLIENT_EXTERN std::map<key_type, Variant>& asMap();
+    QPID_CLIENT_EXTERN const std::map<key_type, qpid::types::Variant>& asMap() const;
+    QPID_CLIENT_EXTERN std::map<key_type, qpid::types::Variant>& asMap();
   private:
     MapContentImpl* impl;
 

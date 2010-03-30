@@ -51,6 +51,10 @@
     <level value="WARN"/>
   </logger>
 
+  <logger name="apache.commons.configuration.ConfigurationFactory">
+    <level value="ERROR"/>
+  </logger>
+
   <root>
     <level value="${root.logging.level}"/>
     <appender-ref ref="console" />

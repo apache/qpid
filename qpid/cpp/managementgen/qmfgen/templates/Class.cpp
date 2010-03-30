@@ -30,7 +30,6 @@
 #include <iostream>
 
 using namespace qmf::/*MGEN:Class.Namespace*/;
-using namespace qpid::messaging;
 using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
 using           qpid::management::ManagementObject;
@@ -274,11 +273,11 @@ std::string /*MGEN:Class.NameCap*/::getKey() const
 
 
 
-void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::messaging::VariantMap& _map,
+void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::types::VariantMap& _map,
                                               bool includeProperties,
                                               bool includeStatistics)
 {
-    using namespace ::qpid::messaging;
+    using namespace ::qpid::types;
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
 
     if (includeProperties) {
@@ -317,9 +316,9 @@ void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::messaging::VariantMap& _ma
     }
 }
 
-void /*MGEN:Class.NameCap*/::mapDecodeValues (const ::qpid::messaging::VariantMap& _map)
+void /*MGEN:Class.NameCap*/::mapDecodeValues (const ::qpid::types::VariantMap& _map)
 {
-    ::qpid::messaging::VariantMap::const_iterator _i;
+    ::qpid::types::VariantMap::const_iterator _i;
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
 /*MGEN:IF(Class.ExistOptionals)*/
     bool _found;

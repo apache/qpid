@@ -56,7 +56,7 @@ struct FailoverUpdatesImpl : qpid::sys::Runnable
         try {
             Message message;
             while (!quit && receiver.fetch(message)) {
-                connection.setOption("urls", message.getHeaders()["amq.failover"]);
+                connection.setOption("urls", message.getProperties()["amq.failover"]);
                 session.acknowledge();
             }
         } catch (const qpid::TransportFailure& e) {

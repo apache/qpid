@@ -32,7 +32,7 @@
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Agent.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include <qpid/framing/AMQFrame.h>
 #include <qpid/framing/FieldValue.h>
 #include <memory>
@@ -138,12 +138,12 @@ public:
     void setBootSequence(uint16_t b) { bootSequence = b; }
 
     // TODO: remove these when Variant API moved into common library.
-    static messaging::Variant::Map toMap(const framing::FieldTable& from);
-    static framing::FieldTable fromMap(const messaging::Variant::Map& from);
-    static messaging::Variant::List toList(const framing::List& from);
-    static framing::List fromList(const messaging::Variant::List& from);
-    static boost::shared_ptr<framing::FieldValue> toFieldValue(const messaging::Variant& in);
-    static messaging::Variant toVariant(const boost::shared_ptr<framing::FieldValue>& val);
+    static types::Variant::Map toMap(const framing::FieldTable& from);
+    static framing::FieldTable fromMap(const types::Variant::Map& from);
+    static types::Variant::List toList(const framing::List& from);
+    static framing::List fromList(const types::Variant::List& from);
+    static boost::shared_ptr<framing::FieldValue> toFieldValue(const types::Variant& in);
+    static types::Variant toVariant(const boost::shared_ptr<framing::FieldValue>& val);
 
 
 private:
@@ -171,8 +171,8 @@ private:
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
 
         virtual ~RemoteAgent ();
-        void mapEncode(qpid::messaging::Variant::Map& _map) const;
-        void mapDecode(const qpid::messaging::Variant::Map& _map);
+        void mapEncode(qpid::types::Variant::Map& _map) const;
+        void mapDecode(const qpid::types::Variant::Map& _map);
     };
 
     // TODO: Eventually replace string with entire reply-to structure.  reply-to
@@ -192,8 +192,8 @@ private:
         std::string name;
         uint8_t     hash[16];
 
-        void mapEncode(qpid::messaging::Variant::Map& _map) const;
-        void mapDecode(const qpid::messaging::Variant::Map& _map);
+        void mapEncode(qpid::types::Variant::Map& _map) const;
+        void mapDecode(const qpid::types::Variant::Map& _map);
         void encode(framing::Buffer& buffer) const;
         void decode(framing::Buffer& buffer);
         uint32_t encodedBufSize() const;
@@ -228,8 +228,8 @@ private:
         bool hasSchema () { return (writeSchemaCall != 0) || !data.empty(); }
         void appendSchema (framing::Buffer& buf);
 
-        void mapEncode(qpid::messaging::Variant::Map& _map) const;
-        void mapDecode(const qpid::messaging::Variant::Map& _map);
+        void mapEncode(qpid::types::Variant::Map& _map) const;
+        void mapDecode(const qpid::types::Variant::Map& _map);
     };
 
     typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;
@@ -283,7 +283,7 @@ private:
     DisallowedMethods disallowed;
 
     // Agent name and address
-    qpid::messaging::Variant::Map attrMap;
+    qpid::types::Variant::Map attrMap;
     std::string       name_address;
 
     // supported management protocol
@@ -307,7 +307,7 @@ private:
                              std::string                  routingKey);
     void sendBuffer(const std::string&     data,
                     const std::string&     cid,
-                    const qpid::messaging::VariantMap& headers,
+                    const qpid::types::VariantMap& headers,
                     qpid::broker::Exchange::shared_ptr exchange,
                     const std::string& routingKey);
     void moveNewObjectsLH();

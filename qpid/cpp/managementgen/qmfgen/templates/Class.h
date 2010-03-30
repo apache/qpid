@@ -75,13 +75,13 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
 /*MGEN:ENDIF*/
   public:
     static void writeSchema(std::string& schema);
-    void mapEncodeValues(::qpid::messaging::VariantMap& map,
+    void mapEncodeValues(::qpid::types::VariantMap& map,
                          bool includeProperties=true,
                          bool includeStatistics=true);
-    void mapDecodeValues(const ::qpid::messaging::VariantMap& map);
+    void mapDecodeValues(const ::qpid::types::VariantMap& map);
     void doMethod(std::string&           methodName,
-                  const ::qpid::messaging::VariantMap& inMap,
-                  ::qpid::messaging::VariantMap& outMap);
+                  const ::qpid::types::VariantMap& inMap,
+                  ::qpid::types::VariantMap& outMap);
     std::string getKey() const;
 /*MGEN:IF(Root.GenQMFv1)*/
     uint32_t writePropertiesSize() const;

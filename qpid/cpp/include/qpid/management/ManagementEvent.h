@@ -46,7 +46,7 @@ class ManagementEvent : public ManagementItem {
     virtual uint8_t* getMd5Sum() const = 0;
     virtual uint8_t getSeverity() const = 0;
     virtual void encode(std::string&) const = 0;
-    virtual void mapEncode(qpid::messaging::VariantMap&) const = 0;
+    virtual void mapEncode(qpid::types::VariantMap&) const = 0;
 };
 
 }}

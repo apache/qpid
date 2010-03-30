@@ -24,6 +24,8 @@
 namespace qpid {
 namespace messaging {
 
+using namespace qpid::types;
+
 Message::Message(const std::string& bytes) : impl(new MessageImpl(bytes)) {}
 Message::Message(const char* bytes, size_t count) : impl(new MessageImpl(bytes, count)) {}
 
@@ -50,16 +52,20 @@ const std::string& Message::getUserId() const { return impl->userId; }
 void Message::setCorrelationId(const std::string& id) { impl->correlationId = id; }
 const std::string& Message::getCorrelationId() const { return impl->correlationId; }
 
-void Message::setTtl(Duration ttl) { impl->ttl = ttl; }
-Duration Message::getTtl() const { return impl->ttl; }
+uint8_t Message::getPriority() const { return impl->priority; }
+void Message::setPriority(uint8_t priority) { impl->priority = priority; }
+
+void Message::setTtl(Duration ttl) { impl->ttl = ttl.getMilliseconds(); }
+Duration Message::getTtl() const { return Duration(impl->ttl); }
 
 void Message::setDurable(bool durable) { impl->durable = durable; }
 bool Message::getDurable() const { return impl->durable; }
 
-bool Message::isRedelivered() const { return impl->redelivered; }
+bool Message::getRedelivered() const { return impl->redelivered; }
+void Message::setRedelivered(bool redelivered) { impl->redelivered = redelivered; }
 
-const VariantMap& Message::getHeaders() const { return impl->getHeaders(); }
-VariantMap& Message::getHeaders() { return impl->getHeaders(); }
+const VariantMap& Message::getProperties() const { return impl->getHeaders(); }
+VariantMap& Message::getProperties() { return impl->getHeaders(); }
 
 void Message::setContent(const std::string& c) { impl->setBytes(c); }
 void Message::setContent(const char* chars, size_t count) { impl->setBytes(chars, count); }

@@ -23,7 +23,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/log/Logger.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/acl/Package.h"
 #include "qmf/org/apache/qpid/acl/EventAllow.h"
 #include "qmf/org/apache/qpid/acl/EventDeny.h"
@@ -95,7 +95,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
                    " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );
           agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
                                              AclHelper::getObjectTypeStr(objType),
-                                             name, messaging::Variant::Map()));
+                                             name, types::Variant::Map()));
 	  case ALLOW:
 	      return true;
 	  case DENY:
@@ -107,7 +107,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
           QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
           agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
                                             AclHelper::getObjectTypeStr(objType),
-                                            name, messaging::Variant::Map()));
+                                            name, types::Variant::Map()));
           return false;
 	  }
       return false;

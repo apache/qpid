@@ -44,7 +44,7 @@ using std::ifstream;
 using std::string;
 using std::cout;
 using std::endl;
-using qpid::messaging::Variant;
+using qpid::types::Variant;
 
 namespace {
     Mutex lock;
@@ -127,7 +127,7 @@ void ManagementAgentImpl::setName(const string& vendor, const string& product, c
     attrMap["_product"] = product;
     string inst;
     if (instance.empty()) {
-        inst = qpid::messaging::Uuid(true).str();
+        inst = qpid::types::Uuid(true).str();
     } else
         inst = instance;
 
@@ -366,8 +366,8 @@ void ManagementAgentImpl::sendHeartbeat()
 
     messaging::Message msg;
     messaging::MapContent content(msg);
-    messaging::Variant::Map& map(content.asMap());
-    messaging::Variant::Map headers;
+    types::Variant::Map& map(content.asMap());
+    types::Variant::Map headers;
 
     headers["method"] = "indication";
     headers["qmf.opcode"] = "_agent_heartbeat_indication";
@@ -389,9 +389,9 @@ void ManagementAgentImpl::sendException(const string& replyToKey, const string& 
 
     messaging::Message msg;
     messaging::MapContent content(msg);
-    messaging::Variant::Map& map(content.asMap());
-    messaging::Variant::Map headers;
-    messaging::Variant::Map values;
+    types::Variant::Map& map(content.asMap());
+    types::Variant::Map headers;
+    types::Variant::Map values;
 
     headers["method"] = "indication";
     headers["qmf.opcode"] = "_exception";
@@ -503,7 +503,7 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
                 failed = true;
             }
 
-        } catch(messaging::InvalidConversion& e) {
+        } catch(types::InvalidConversion& e) {
             outMap.clear();
             outMap["_values"] = Variant::Map();
             (outMap["_values"].asMap())["_status_code"] = Manageable::STATUS_EXCEPTION;
@@ -560,7 +560,7 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
         return;
     }
 
-    if (i->second.getType() != qpid::messaging::VAR_STRING) {
+    if (i->second.getType() != qpid::types::VAR_STRING) {
         sendException(replyTo, cid, "_what element is not a string");
         return;
     }
@@ -577,15 +577,15 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
      * Handle the _schema_id element, if supplied.
      */
     i = inMap.find("_schema_id");
-    if (i != inMap.end() && i->second.getType() == qpid::messaging::VAR_MAP) {
+    if (i != inMap.end() && i->second.getType() == qpid::types::VAR_MAP) {
         const Variant::Map& schemaIdMap(i->second.asMap());
 
         Variant::Map::const_iterator s_iter = schemaIdMap.find("_class_name");
-        if (s_iter != schemaIdMap.end() && s_iter->second.getType() == qpid::messaging::VAR_STRING)
+        if (s_iter != schemaIdMap.end() && s_iter->second.getType() == qpid::types::VAR_STRING)
             className = s_iter->second.asString();
 
         s_iter = schemaIdMap.find("_package_name");
-        if (s_iter != schemaIdMap.end() && s_iter->second.getType() == qpid::messaging::VAR_STRING)
+        if (s_iter != schemaIdMap.end() && s_iter->second.getType() == qpid::types::VAR_STRING)
             packageName = s_iter->second.asString();
     }
 
@@ -594,7 +594,7 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
      * object and return it.  If it is not present, send a class-based result.
      */
     i = inMap.find("_object_id");
-    if (i != inMap.end() && i->second.getType() == qpid::messaging::VAR_MAP) {
+    if (i != inMap.end() && i->second.getType() == qpid::types::VAR_MAP) {
         ObjectId objId(i->second.asMap());
 
         ManagementObjectMap::iterator iter = managementObjects.find(objId);
@@ -666,8 +666,8 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
 
     messaging::Message msg;
     messaging::MapContent content(msg);
-    messaging::Variant::Map& map(content.asMap());
-    messaging::Variant::Map headers;
+    types::Variant::Map& map(content.asMap());
+    types::Variant::Map headers;
 
     headers["method"] = "indication";
     headers["qmf.opcode"] = "_agent_locate_response";
@@ -770,7 +770,7 @@ Variant::Map ManagementAgentImpl::mapEncodeSchemaId(const string& pname,
 
     map_["_package_name"] = pname;
     map_["_class_name"] = cname;
-    map_["_hash"] = messaging::Uuid(md5Sum);
+    map_["_hash"] = types::Uuid(md5Sum);
     return map_;
 }
 

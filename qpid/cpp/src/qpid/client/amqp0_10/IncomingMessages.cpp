@@ -26,9 +26,10 @@
 #include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageProperties.h"
@@ -44,7 +45,7 @@ using namespace qpid::framing::message;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::messaging::MessageImplAccess;
-using qpid::messaging::Variant;
+using qpid::types::Variant;
 
 namespace {
 const std::string EMPTY_STRING;
@@ -276,9 +277,10 @@ void populateHeaders(qpid::messaging::Message& message,
                      const MessageProperties* messageProperties)
 {
     if (deliveryProperties) {
-        message.setTtl(deliveryProperties->getTtl());
+        message.setTtl(qpid::messaging::Duration(deliveryProperties->getTtl()));
         message.setDurable(deliveryProperties->getDeliveryMode() == DELIVERY_MODE_PERSISTENT);
-        MessageImplAccess::get(message).redelivered = deliveryProperties->getRedelivered();
+        message.setPriority(deliveryProperties->getPriority());
+        message.setRedelivered(deliveryProperties->getRedelivered());
     }
     if (messageProperties) {
         message.setContentType(messageProperties->getContentType());
@@ -286,8 +288,8 @@ void populateHeaders(qpid::messaging::Message& message,
             message.setReplyTo(AddressResolution::convert(messageProperties->getReplyTo()));
         }
         message.setSubject(messageProperties->getApplicationHeaders().getAsString(SUBJECT));
-        message.getHeaders().clear();
-        translate(messageProperties->getApplicationHeaders(), message.getHeaders());
+        message.getProperties().clear();
+        translate(messageProperties->getApplicationHeaders(), message.getProperties());
         message.setCorrelationId(messageProperties->getCorrelationId());
         message.setUserId(messageProperties->getUserId());
     }

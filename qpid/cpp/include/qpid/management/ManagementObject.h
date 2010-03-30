@@ -25,6 +25,7 @@
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/CommonImportExport.h"
+#include "qpid/types/Variant.h"
 #include "qpid/messaging/MapContent.h"
 #include "qpid/messaging/MapView.h"
 #include <map>
@@ -60,7 +61,7 @@ protected:
     void fromString(const std::string&);
 public:
     QPID_COMMON_EXTERN ObjectId() : agent(0), first(0), second(0), agentEpoch(0) {}
-    QPID_COMMON_EXTERN ObjectId(const messaging::Variant& map) :
+    QPID_COMMON_EXTERN ObjectId(const types::Variant& map) :
     agent(0), first(0), second(0), agentEpoch(0) { mapDecode(map.asMap()); }
     QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker);
     QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq);
@@ -70,9 +71,9 @@ public:
     QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint64_t object);
     QPID_COMMON_EXTERN bool operator==(const ObjectId &other) const;
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
-    QPID_COMMON_EXTERN void mapEncode(messaging::VariantMap& map) const;
-    QPID_COMMON_EXTERN void mapDecode(const messaging::VariantMap& map);
-    QPID_COMMON_EXTERN operator messaging::VariantMap() const;
+    QPID_COMMON_EXTERN void mapEncode(types::VariantMap& map) const;
+    QPID_COMMON_EXTERN void mapDecode(const types::VariantMap& map);
+    QPID_COMMON_EXTERN operator types::VariantMap() const;
     QPID_COMMON_EXTERN uint32_t encodedSize() const { return 16; };
     QPID_COMMON_EXTERN void encode(std::string& buffer) const;
     QPID_COMMON_EXTERN void decode(const std::string& buffer);
@@ -148,9 +149,9 @@ protected:
 
     QPID_COMMON_EXTERN int  getThreadIndex();
     QPID_COMMON_EXTERN void writeTimestamps(std::string& buf) const;
-    QPID_COMMON_EXTERN void writeTimestamps(messaging::VariantMap& map) const;
+    QPID_COMMON_EXTERN void writeTimestamps(types::VariantMap& map) const;
     QPID_COMMON_EXTERN void readTimestamps(const std::string& buf);
-    QPID_COMMON_EXTERN void readTimestamps(const messaging::VariantMap& buf);
+    QPID_COMMON_EXTERN void readTimestamps(const types::VariantMap& buf);
     QPID_COMMON_EXTERN uint32_t writeTimestampsSize() const;
 
   public:
@@ -171,13 +172,13 @@ protected:
 
     // Encode & Decode the property and statistics values
     // for this object.
-    virtual void mapEncodeValues(messaging::VariantMap& map,
+    virtual void mapEncodeValues(types::VariantMap& map,
                                  bool includeProperties,
                                  bool includeStatistics) = 0;
-    virtual void mapDecodeValues(const messaging::VariantMap& map) = 0;
+    virtual void mapDecodeValues(const types::VariantMap& map) = 0;
     virtual void doMethod(std::string&           methodName,
-                          const messaging::VariantMap& inMap,
-                          messaging::VariantMap& outMap) = 0;
+                          const types::VariantMap& inMap,
+                          types::VariantMap& outMap) = 0;
 
     /**
      * The following five methods are not pure-virtual because they will only
@@ -224,11 +225,11 @@ protected:
     //QPID_COMMON_EXTERN uint32_t encodedSize() const { return writePropertiesSize(); }
 
     // Encode/Decode the entire object as a map
-    QPID_COMMON_EXTERN void mapEncode(messaging::VariantMap& map,
+    QPID_COMMON_EXTERN void mapEncode(types::VariantMap& map,
                                       bool includeProperties=true,
                                       bool includeStatistics=true);
 
-    QPID_COMMON_EXTERN void mapDecode(const messaging::VariantMap& map);
+    QPID_COMMON_EXTERN void mapDecode(const types::VariantMap& map);
 };
 
 typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;

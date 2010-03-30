@@ -21,11 +21,12 @@
 
 package org.apache.qpid.server.logging;
 
-import junit.framework.AssertionFailedError;
-import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-
+import java.util.Arrays;
 import java.util.List;
+
+import junit.framework.AssertionFailedError;
+
+import org.apache.qpid.server.configuration.ServerConfiguration;
 
 /**
  * Virtualhost Test Cases
@@ -60,28 +61,26 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
     public void testVirtualhostCreation() throws Exception
     {
         //Wait for the correct VHT message to arrive.                                 
-        _monitor.waitForMessage("VHT-1001",DEFAULT_LOG_WAIT);
-
-        List<String> results = _monitor.findMatches(VHT_PREFIX);
+        _monitor.waitForMessage(VHT_PREFIX + "1001", DEFAULT_LOG_WAIT);
+        
+        //Validate each vhost logs a creation
+        List<String> results = _monitor.findMatches(VHT_PREFIX + "1001");
+        
         try
         {
-            // Validation
+            // Load VirtualHost list from file. 
             ServerConfiguration configuration = new ServerConfiguration(_configFile);
-            List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
-
-            //Validate each vhost logs a creation
-            results = _monitor.findMatches("VHT-1001");
+            List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
             assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
             for (int index = 0; index < results.size(); index++)
             {
-                String result = getLog(results.get(index));
-
                 // Retrieve the vhostname from the log entry message 'Created : <vhostname>'
+                String result = getLog(results.get(index));
                 String vhostName = getMessageString(fromMessage(result)).split(" ")[2];
 
-                assertTrue("Virualhost named in log not found in config file:" + vhostName + ":" + vhosts, vhosts.contains(vhostName));
+                assertTrue("Virtualhost named in log not found in config file:" + vhostName + ":" + vhosts, vhosts.contains(vhostName));
             }
         }
         catch (AssertionFailedError afe)
@@ -114,21 +113,19 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
     {
         stopBroker();
 
-        //Wait for the correct VHT message to arrive.
-        _monitor.waitForMessage("VHT-1002",DEFAULT_LOG_WAIT);
-
-        List<String> results = _monitor.findMatches(VHT_PREFIX);
+        // Wait for the correct VHT message to arrive.                                 
+        _monitor.waitForMessage(VHT_PREFIX + "1002", DEFAULT_LOG_WAIT);
+        
+        // Validate each vhost logs a closure
+        List<String> results = _monitor.findMatches(VHT_PREFIX + "1002");
+        
         try
         {
-            // Validation
-
+            // Load VirtualHost list from file. 
             ServerConfiguration configuration = new ServerConfiguration(_configFile);
-            List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
+            List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
-            //Validate each vhost logs a creation
-            results = _monitor.findMatches("VHT-1002");
-
-            assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
+            assertEquals("Each vhost did not close their store.", vhosts.size(), results.size());
         }
         catch (AssertionFailedError afe)
         {

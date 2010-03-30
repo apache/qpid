@@ -48,6 +48,7 @@ namespace tests {
 QPID_AUTO_TEST_SUITE(MessagingSessionTests)
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 using namespace qpid;
 using qpid::broker::Broker;
 using qpid::framing::Uuid;
@@ -130,7 +131,7 @@ struct MessagingFixture : public BrokerFixture
         Message out(Uuid(true).str());
         s.send(out);
         Message in;
-        BOOST_CHECK(r.fetch(in, 5*DURATION_SEC));
+        BOOST_CHECK(r.fetch(in, 5*Duration::SECOND));
         BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
         r.close();
         s.close();
@@ -196,7 +197,7 @@ struct MultiQueueFixture : MessagingFixture
     }
 
 };
-std::vector<std::string> fetch(Receiver& receiver, int count, Duration timeout=DURATION_SEC*5)
+std::vector<std::string> fetch(Receiver& receiver, int count, Duration timeout=Duration::SECOND*5)
 {
     std::vector<std::string> data;
     Message message;
@@ -215,7 +216,7 @@ void send(Sender& sender, uint count = 1, uint start = 1, const std::string& bas
 }
 
 void receive(Receiver& receiver, uint count = 1, uint start = 1,
-             const std::string& base = "Message", Duration timeout=DURATION_SEC*5)
+             const std::string& base = "Message", Duration timeout=Duration::SECOND*5)
 {
     for (uint i = start; i < start + count; ++i) {
         BOOST_CHECK_EQUAL(receiver.fetch(timeout).getContent(), (boost::format("%1%_%2%") % base % i).str());
@@ -229,7 +230,7 @@ QPID_AUTO_TEST_CASE(testSimpleSendReceive)
     Message out("test-message");
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * DURATION_SEC);
+    Message in = receiver.fetch(Duration::SECOND * 5);
     fix.session.acknowledge();
     BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
 }
@@ -240,15 +241,15 @@ QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
     Sender sender = fix.session.createSender(fix.queue);
     Message out("test-message");
     for (uint i = 0; i < 10; ++i) {
-        out.getHeaders()["a"] = i;
+        out.getProperties()["a"] = i;
         sender.send(out);
     }
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in;
     for (uint i = 0; i < 10; ++i) {
-        BOOST_CHECK(receiver.fetch(in, 5 * DURATION_SEC));
+        BOOST_CHECK(receiver.fetch(in, Duration::SECOND * 5));
         BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
-        BOOST_CHECK_EQUAL(in.getHeaders()["a"].asUint32(), i);
+        BOOST_CHECK_EQUAL(in.getProperties()["a"].asUint32(), i);
         fix.session.acknowledge();
     }
 }
@@ -300,7 +301,7 @@ QPID_AUTO_TEST_CASE(testSimpleTopic)
     BOOST_CHECK_EQUAL(fetch(sub1, 4), boost::assign::list_of<std::string>("two")("three")("four")("five"));
     BOOST_CHECK_EQUAL(fetch(sub3, 2), boost::assign::list_of<std::string>("four")("five"));
     Message in;
-    BOOST_CHECK(!sub2.fetch(in, 0));//TODO: or should this raise an error?
+    BOOST_CHECK(!sub2.fetch(in, Duration::IMMEDIATE));//TODO: or should this raise an error?
 
 
     //TODO: check pending messages...
@@ -323,7 +324,7 @@ QPID_AUTO_TEST_CASE(testNextReceiver)
 
     for (uint i = 0; i < fix.queues.size(); i++) {
         Message msg;
-        BOOST_CHECK(fix.session.nextReceiver().fetch(msg, DURATION_SEC));
+        BOOST_CHECK(fix.session.nextReceiver().fetch(msg, Duration::SECOND));
         BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % (i+1)).str());
     }
 }
@@ -345,7 +346,7 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * DURATION_SEC);
+    Message in = receiver.fetch(5 * Duration::SECOND);
     MapView view(in);
     BOOST_CHECK_EQUAL(view["abc"].asString(), "def");
     BOOST_CHECK_EQUAL(view["pi"].asFloat(), 3.14f);
@@ -368,7 +369,7 @@ QPID_AUTO_TEST_CASE(testMapMessageWithInitial)
     content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * DURATION_SEC);
+    Message in = receiver.fetch(5 * Duration::SECOND);
     MapView view(in);
     BOOST_CHECK_EQUAL(view["abc"].asString(), "def");
     BOOST_CHECK_EQUAL(view["pi"].asFloat(), 3.14f);
@@ -388,7 +389,7 @@ QPID_AUTO_TEST_CASE(testListMessage)
     content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * DURATION_SEC);
+    Message in = receiver.fetch(5 * Duration::SECOND);
     ListView view(in);
     BOOST_CHECK_EQUAL(view.size(), content.size());
     BOOST_CHECK_EQUAL(view.front().asString(), "abc");
@@ -422,7 +423,7 @@ QPID_AUTO_TEST_CASE(testListMessageWithInitial)
     content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * DURATION_SEC);
+    Message in = receiver.fetch(5 * Duration::SECOND);
     ListView view(in);
     BOOST_CHECK_EQUAL(view.size(), content.size());
     BOOST_CHECK_EQUAL(view.front().asString(), "abc");
@@ -451,10 +452,10 @@ QPID_AUTO_TEST_CASE(testReject)
     Message m2("accept-me");
     sender.send(m2);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * DURATION_SEC);
+    Message in = receiver.fetch(5 * Duration::SECOND);
     BOOST_CHECK_EQUAL(in.getContent(), m1.getContent());
     fix.session.reject(in);
-    in = receiver.fetch(5 * DURATION_SEC);
+    in = receiver.fetch(5 * Duration::SECOND);
     BOOST_CHECK_EQUAL(in.getContent(), m2.getContent());
     fix.session.acknowledge();
 }
@@ -833,17 +834,17 @@ QPID_AUTO_TEST_CASE(testTx)
     send(sender2, 5, 1, "B");
     ssn2.commit();
     receive(receiver1, 5, 1, "B");//(only those from sender2 should be received)
-    BOOST_CHECK(!receiver1.fetch(in, 0));//check there are no more messages
+    BOOST_CHECK(!receiver1.fetch(in, Duration::IMMEDIATE));//check there are no more messages
     ssn1.rollback();
     receive(receiver2, 5, 1, "B");
-    BOOST_CHECK(!receiver2.fetch(in, 0));//check there are no more messages
+    BOOST_CHECK(!receiver2.fetch(in, Duration::IMMEDIATE));//check there are no more messages
     ssn2.rollback();
     receive(receiver1, 5, 1, "B");
-    BOOST_CHECK(!receiver1.fetch(in, 0));//check there are no more messages
+    BOOST_CHECK(!receiver1.fetch(in, Duration::IMMEDIATE));//check there are no more messages
     ssn1.commit();
     //check neither receiver gets any more messages:
-    BOOST_CHECK(!receiver1.fetch(in, 0));
-    BOOST_CHECK(!receiver2.fetch(in, 0));
+    BOOST_CHECK(!receiver1.fetch(in, Duration::IMMEDIATE));
+    BOOST_CHECK(!receiver2.fetch(in, Duration::IMMEDIATE));
 }
 
 QPID_AUTO_TEST_SUITE_END()

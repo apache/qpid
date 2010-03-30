@@ -56,7 +56,7 @@ QPID_AUTO_TEST_CASE(testObjectIdSerializeString) {
 }
 
 QPID_AUTO_TEST_CASE(testObjectIdEncode) {
-    qpid::messaging::Variant::Map oidMap;
+    qpid::types::Variant::Map oidMap;
 
     ObjectId oid(1, 2, 3, 9999);
     oid.setV2Key("testkey");

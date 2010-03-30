@@ -53,7 +53,7 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      * available. Returns false if there is no message to give after
      * waiting for the specified timeout.
      */
-    QPID_CLIENT_EXTERN bool get(Message& message, Duration timeout=INFINITE_DURATION);
+    QPID_CLIENT_EXTERN bool get(Message& message, Duration timeout=Duration::FOREVER);
     /**
      * Retrieves a message from this receivers local queue, or waits
      * for up to the specified timeout for a message to become
@@ -62,7 +62,7 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      *@exception NoMessageAvailable if there is no message to give
      * after waiting for the specified timeout.
      */
-    QPID_CLIENT_EXTERN Message get(Duration timeout=INFINITE_DURATION);
+    QPID_CLIENT_EXTERN Message get(Duration timeout=Duration::FOREVER);
     /**
      * Retrieves a message for this receivers subscription or waits
      * for up to the specified timeout for one to become
@@ -70,7 +70,7 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      * that there is no message for the subscription this receiver is
      * serving before returning false.
      */
-    QPID_CLIENT_EXTERN bool fetch(Message& message, Duration timeout=INFINITE_DURATION);
+    QPID_CLIENT_EXTERN bool fetch(Message& message, Duration timeout=Duration::FOREVER);
     /**
      * Retrieves a message for this receivers subscription or waits
      * for up to the specified timeout for one to become
@@ -81,7 +81,7 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      *@exception NoMessageAvailable if there is no message to give
      * after waiting for the specified timeout.
      */
-    QPID_CLIENT_EXTERN Message fetch(Duration timeout=INFINITE_DURATION);
+    QPID_CLIENT_EXTERN Message fetch(Duration timeout=Duration::FOREVER);
     /**
      * Sets the capacity for the receiver. The capacity determines how
      * many incoming messages can be held in the receiver before being

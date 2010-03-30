@@ -34,6 +34,7 @@
 #include <memory>
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 using qpid::client::amqp0_10::FailoverUpdates;
 
 using namespace std;
@@ -95,8 +96,8 @@ struct Options : public qpid::Options
 
     Duration getTimeout()
     {
-        if (forever) return INFINITE_DURATION;
-        else return timeout*DURATION_SEC;
+        if (forever) return Duration::FOREVER;
+        else return Duration::SECOND*timeout;
 
     }
     bool parse(int argc, char** argv)
@@ -130,7 +131,7 @@ class SequenceTracker
 
     bool isDuplicate(Message& message)
     {
-        uint sn = message.getHeaders()["sn"];
+        uint sn = message.getProperties()["sn"];
         if (lastSn < sn) {
             lastSn = sn;
             return false;
@@ -172,10 +173,10 @@ int main(int argc, char ** argv)
                             if (msg.getReplyTo()) std::cout << "ReplyTo: " << msg.getReplyTo() << std::endl;
                             if (msg.getCorrelationId().size()) std::cout << "CorrelationId: " << msg.getCorrelationId() << std::endl;
                             if (msg.getUserId().size()) std::cout << "UserId: " << msg.getUserId() << std::endl;
-                            if (msg.getTtl()) std::cout << "TTL: " << msg.getTtl() << std::endl;
+                            if (msg.getTtl().getMilliseconds()) std::cout << "TTL: " << msg.getTtl().getMilliseconds() << std::endl;
                             if (msg.getDurable()) std::cout << "Durable: true" << std::endl;
-                            if (msg.isRedelivered()) std::cout << "Redelivered: true" << std::endl;
-                            std::cout << "Headers: " << msg.getHeaders() << std::endl;
+                            if (msg.getRedelivered()) std::cout << "Redelivered: true" << std::endl;
+                            std::cout << "Properties: " << msg.getProperties() << std::endl;
                             std::cout << std::endl;
                         }
                         std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages

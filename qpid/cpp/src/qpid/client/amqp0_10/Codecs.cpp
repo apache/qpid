@@ -19,7 +19,7 @@
  *
  */
 #include "qpid/client/amqp0_10/Codecs.h"
-#include "qpid/messaging/Variant.h"
+#include "qpid/types/Variant.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FieldTable.h"
@@ -32,6 +32,7 @@
 
 using namespace qpid::framing;
 using namespace qpid::messaging;
+using namespace qpid::types;
 
 namespace qpid {
 namespace client {
@@ -115,11 +116,11 @@ void setEncodingFor(Variant& out, uint8_t code)
     }
 }
 
-qpid::messaging::Uuid getUuid(FieldValue& value)
+qpid::types::Uuid getUuid(FieldValue& value)
 {
     unsigned char data[16];
     value.getFixedWidthValue<16>(data);
-    return qpid::messaging::Uuid(data);
+    return qpid::types::Uuid(data);
 }
 
 Variant toVariant(boost::shared_ptr<FieldValue> in)

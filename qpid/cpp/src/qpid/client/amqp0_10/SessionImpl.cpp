@@ -43,7 +43,6 @@ using qpid::messaging::KeyError;
 using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Sender;
 using qpid::messaging::Receiver;
-using qpid::messaging::VariantMap;
 
 namespace qpid {
 namespace client {
@@ -268,8 +267,9 @@ bool SessionImpl::accept(ReceiverImpl* receiver,
 
 qpid::sys::Duration adjust(qpid::messaging::Duration timeout)
 {
-    if (timeout < (uint64_t) (qpid::sys::TIME_INFINITE/qpid::sys::TIME_MSEC)) {
-        return timeout * qpid::sys::TIME_MSEC;
+    uint64_t ms = timeout.getMilliseconds();
+    if (ms < (uint64_t) (qpid::sys::TIME_INFINITE/qpid::sys::TIME_MSEC)) {
+        return ms * qpid::sys::TIME_MSEC;
     } else {
         return qpid::sys::TIME_INFINITE;
     }

@@ -260,26 +260,26 @@ class SchemaType:
       key = varName
     if self.style != "mma":
         var_cast = self.map.replace("#", varName)
-        stream.write(indent + mapName + "[\"" + key + "\"] = Variant(" + var_cast + ");\n")
+        stream.write(indent + mapName + "[\"" + key + "\"] = ::qpid::types::Variant(" + var_cast + ");\n")
     if self.style == "wm":
         var_cast_hi = self.map.replace("#", varName + "High")
         var_cast_lo = self.map.replace("#", varName + "Low")
         stream.write(indent + mapName + "[\"" + key + "High\"] = " +
-                     "Variant(" + var_cast_hi + ");\n")
+                     "::qpid::types::Variant(" + var_cast_hi + ");\n")
         stream.write(indent + mapName + "[\"" + key + "Low\"] = " +
-                     "Variant(" + var_cast_lo + ");\n")
+                     "::qpid::types::Variant(" + var_cast_lo + ");\n")
     if self.style == "mma":
         var_cast = self.map.replace("#", varName + "Count")
-        stream.write(indent + mapName + "[\"" + key + "Count\"] = " + "Variant(" + var_cast + ");\n")
+        stream.write(indent + mapName + "[\"" + key + "Count\"] = " + "::qpid::types::Variant(" + var_cast + ");\n")
         var_cast = self.map.replace("#", varName + "Min")
         stream.write(indent + mapName + "[\"" + key + "Min\"] = " +
-                     "(" + varName + "Count ? Variant(" + var_cast + ") : Variant(0));\n")
+                     "(" + varName + "Count ? ::qpid::types::Variant(" + var_cast + ") : ::qpid::types::Variant(0));\n")
         var_cast = self.map.replace("#", varName + "Max")
-        stream.write(indent + mapName + "[\"" + key + "Max\"] = " + "Variant(" + var_cast + ");\n")
+        stream.write(indent + mapName + "[\"" + key + "Max\"] = " + "::qpid::types::Variant(" + var_cast + ");\n")
 
         var_cast = self.map.replace("#", "(" + varName + "Total / " + varName + "Count)")
         stream.write(indent + mapName + "[\"" + key + "Avg\"] = " +
-                     "(" + varName + "Count ? Variant(" + var_cast + ") : Variant(0));\n")
+                     "(" + varName + "Count ? ::qpid::types::Variant(" + var_cast + ") : ::qpid::types::Variant(0));\n")
 
   def getReadCode (self, varName, bufName):
     result = self.decode.replace ("@", bufName).replace ("#", varName)
@@ -445,7 +445,7 @@ class SchemaProperty:
 
   def genSchemaMap(self, stream):
     stream.write ("    {\n")
-    stream.write ("        ::qpid::messaging::VariantMap _value;\n")
+    stream.write ("        ::qpid::types::VariantMap _value;\n")
     stream.write ("        _value[TYPE] = TYPE_" + self.type.type.base +";\n")
     stream.write ("        _value[ACCESS] = ACCESS_" + self.access + ";\n")
     stream.write ("        _value[IS_INDEX] = " + str (self.isIndex) + ";\n")
@@ -604,7 +604,7 @@ class SchemaStatistic:
 
   def genSchemaTextMap(self, stream, name, desc):
     stream.write ("    {\n")
-    stream.write ("        ::qpid::messaging::VariantMap _value;\n")
+    stream.write ("        ::qpid::types::VariantMap _value;\n")
     stream.write ("        _value[TYPE] = TYPE_" + self.type.type.base +";\n")
     if self.unit != None:
       stream.write ("        _value[UNIT] = \"" + self.unit + "\";\n")
@@ -803,7 +803,7 @@ class SchemaArg:
 
   def genSchemaMap (self, stream, event=False):
     stream.write ("        {\n")
-    stream.write ("            ::qpid::messaging::VariantMap _avalue;\n")
+    stream.write ("            ::qpid::types::VariantMap _avalue;\n")
     stream.write ("            _avalue[TYPE] = TYPE_" + self.type.type.base +";\n")
     if (not event):
       stream.write ("            _avalue[DIR] = \"" + self.dir + "\";\n")
@@ -906,8 +906,8 @@ class SchemaMethod:
 
   def genSchemaMap (self, stream, variables):
     stream.write ("    {\n")
-    stream.write ("        ::qpid::messaging::VariantMap _value;\n")
-    stream.write ("        ::qpid::messaging::VariantMap _args;\n")
+    stream.write ("        ::qpid::types::VariantMap _value;\n")
+    stream.write ("        ::qpid::types::VariantMap _args;\n")
     stream.write ("        _value[ARGCOUNT] = " + str(len(self.args)) + ";\n")
     if self.desc != None:
       stream.write ("        _value[DESC] = \"" + self.desc + "\";\n")
@@ -1247,17 +1247,17 @@ class SchemaClass:
 
     if methodCount == 0:
       stream.write ("string&," +
-                    " const ::qpid::messaging::VariantMap&," +
-                    " ::qpid::messaging::VariantMap& outMap")
+                    " const ::qpid::types::VariantMap&," +
+                    " ::qpid::types::VariantMap& outMap")
     else:
       if inArgCount == 0:
         stream.write ("string& methodName," +
-                      " const ::qpid::messaging::VariantMap&," +
-                      " ::qpid::messaging::VariantMap& outMap")
+                      " const ::qpid::types::VariantMap&," +
+                      " ::qpid::types::VariantMap& outMap")
       else:
         stream.write ("string& methodName," +
-                      " const ::qpid::messaging::VariantMap& inMap," +
-                      " ::qpid::messaging::VariantMap& outMap")
+                      " const ::qpid::types::VariantMap& inMap," +
+                      " ::qpid::types::VariantMap& outMap")
 
   def genHiLoStatResets (self, stream, variables):
     for inst in self.statistics:
@@ -1389,7 +1389,7 @@ class SchemaClass:
         stream.write ("        ::qpid::management::ArgsNone ioArgs;\n")
       else:
         stream.write ("        Args" + method.getFullName () + " ioArgs;\n")
-        stream.write ("        ::qpid::messaging::VariantMap::const_iterator _i;\n")
+        stream.write ("        ::qpid::types::VariantMap::const_iterator _i;\n")
 
       # decode each input argument from the input map
       for arg in method.args:

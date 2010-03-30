@@ -32,6 +32,7 @@
 #include <iostream>
 
 using namespace qpid::messaging;
+using namespace qpid::types;
 
 struct Options : public qpid::Options
 {
@@ -63,8 +64,8 @@ struct Options : public qpid::Options
 
     Duration getTimeout()
     {
-        if (forever) return INFINITE_DURATION;
-        else return timeout*DURATION_SEC;
+        if (forever) return Duration::FOREVER;
+        else return timeout*Duration::SECOND;
 
     }
     bool parse(int argc, char** argv)
@@ -101,7 +102,7 @@ int main(int argc, char** argv)
             Duration timeout = options.getTimeout();
             Message message;
             while (receiver.fetch(message, timeout)) {
-                std::cout << "Message(properties=" << message.getHeaders() << ", content='" ;
+                std::cout << "Message(properties=" << message.getProperties() << ", content='" ;
                 if (message.getContentType() == "amqp/map") {
                     std::cout << MapView(message);
                 } else {

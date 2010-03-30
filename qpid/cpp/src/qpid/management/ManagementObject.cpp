@@ -186,7 +186,7 @@ void ObjectId::setV2Key(const ManagementObject& object)
 }
 
 // encode as V2-format map
-void ObjectId::mapEncode(messaging::VariantMap& map) const
+void ObjectId::mapEncode(types::VariantMap& map) const
 {
     map["_object_name"] = v2Key;
     if (!agentName.empty())
@@ -196,7 +196,7 @@ void ObjectId::mapEncode(messaging::VariantMap& map) const
 }
 
 // decode as v2-format map
-void ObjectId::mapDecode(const messaging::VariantMap& map)
+void ObjectId::mapDecode(const types::VariantMap& map)
 {
     messaging::MapView::const_iterator i;
 
@@ -213,9 +213,9 @@ void ObjectId::mapDecode(const messaging::VariantMap& map)
 }
 
 
-ObjectId::operator messaging::VariantMap() const
+ObjectId::operator types::VariantMap() const
 {
-    messaging::VariantMap m;
+    types::VariantMap m;
     mapEncode(m);
     return m;
 }
@@ -296,13 +296,13 @@ uint32_t ManagementObject::writeTimestampsSize() const
 }
 
 
-void ManagementObject::writeTimestamps (messaging::VariantMap& map) const
+void ManagementObject::writeTimestamps (types::VariantMap& map) const
 {
-    messaging::VariantMap oid, sid;
+    types::VariantMap oid, sid;
 
     sid["_package_name"] = getPackageName();
     sid["_class_name"] = getClassName();
-    sid["_hash"] = qpid::messaging::Uuid(getMd5Sum());
+    sid["_hash"] = qpid::types::Uuid(getMd5Sum());
     map["_schema_id"] = sid;
 
     objectId.mapEncode(oid);
@@ -313,7 +313,7 @@ void ManagementObject::writeTimestamps (messaging::VariantMap& map) const
     map["_delete_ts"] = destroyTime;
 }
 
-void ManagementObject::readTimestamps (const ::qpid::messaging::VariantMap& map)
+void ManagementObject::readTimestamps (const ::qpid::types::VariantMap& map)
 {
     messaging::MapView::const_iterator i;
 
@@ -340,11 +340,11 @@ int ManagementObject::getThreadIndex() {
 }
 
 
-void ManagementObject::mapEncode(::qpid::messaging::VariantMap& map,
+void ManagementObject::mapEncode(::qpid::types::VariantMap& map,
                                  bool includeProperties,
                                  bool includeStatistics)
 {
-    messaging::VariantMap values;
+    types::VariantMap values;
 
     writeTimestamps(map);
 
@@ -352,7 +352,7 @@ void ManagementObject::mapEncode(::qpid::messaging::VariantMap& map,
     map["_values"] = values;
 }
 
-void ManagementObject::mapDecode(const ::qpid::messaging::VariantMap& map)
+void ManagementObject::mapDecode(const ::qpid::types::VariantMap& map)
 {
     ::qpid::messaging::MapView::const_iterator i;
 

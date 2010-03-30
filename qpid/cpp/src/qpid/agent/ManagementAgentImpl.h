@@ -145,7 +145,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     void received (client::Message& msg);
 
-    qpid::messaging::Variant::Map attrMap;
+    qpid::types::Variant::Map attrMap;
     std::string       name_address;
     uint16_t          interval;
     bool              extThread;
@@ -208,7 +208,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                         const std::string&     routingKey);
         void sendBuffer(const std::string&     data,
                         const std::string&     cid,
-                        const qpid::messaging::VariantMap headers,
+                        const qpid::types::VariantMap headers,
                         const std::string&     exchange,
                         const std::string&     routingKey,
                         const std::string&     contentType="amqp/map");
@@ -254,9 +254,9 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                 PackageMap::iterator   pIter,
                                 ClassMap::iterator     cIter);
     void encodeHeader (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
-    qpid::messaging::Variant::Map mapEncodeSchemaId(const std::string& pname,
-                                                    const std::string& cname,
-                                                    const uint8_t *md5Sum);
+    qpid::types::Variant::Map mapEncodeSchemaId(const std::string& pname,
+                                                const std::string& cname,
+                                                const uint8_t *md5Sum);
     bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void sendHeartbeat();
     void sendException(const std::string& replyToKey, const std::string& cid,

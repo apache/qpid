@@ -16,6 +16,3 @@ org.apache.qpid.client.SessionCreateTest#*
 // QPID-2097 exclude it from the InVM test runs until InVM JMX Interface is reliable
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
 org.apache.qpid.server.queue.ModelTest#*
-
-//QPID-2422: Derby currently doesnt persist queue arguments and 0-91 support causes exclusivity mismatch after restart
-org.apache.qpid.test.unit.ct.DurableSubscriberTest#*

@@ -20,45 +20,7 @@
  -
  -->
 <broker>
-    <virtualhosts>
-        <directory>${conf}/virtualhosts</directory>
-
-        <virtualhost>
-            <name>localhost</name>
-            <localhost>
-                <store>
-                    <class>org.apache.qpid.server.store.DerbyMessageStore</class>
-                    <environment-path>${work}/derbyDB/localhost-store</environment-path>
-                </store>
-
-                <housekeeping>
-                    <expiredMessageCheckPeriod>20000</expiredMessageCheckPeriod>
-                </housekeeping>
-
-            </localhost>
-        </virtualhost>
-
-        <virtualhost>
-            <name>development</name>
-            <development>
-                <store>
-                    <class>org.apache.qpid.server.store.DerbyMessageStore</class>
-                    <environment-path>${work}/derbyDB/development-store</environment-path>                                        
-                </store>
-            </development>
-        </virtualhost>
-
-        <virtualhost>
-            <name>test</name>
-            <test>
-                <store>
-                    <class>org.apache.qpid.server.store.DerbyMessageStore</class>
-                    <environment-path>${work}/derbyDB/test-store</environment-path>
-                </store>
-            </test>
-        </virtualhost>
-
-    </virtualhosts>
+    <virtualhosts>${QPID_HOME}/etc/virtualhosts-systests-derby.xml</virtualhosts>
 </broker>
 
 
