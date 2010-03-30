@@ -126,7 +126,7 @@ template <class T> PollableQueue<T>::~PollableQueue() {
 
 template <class T> void PollableQueue<T>::push(const T& t) {
     ScopedLock l(lock);
-    if (queue.empty()) condition.set();
+    if (queue.empty() && !stopped) condition.set();
     queue.push_back(t);
 }
 
