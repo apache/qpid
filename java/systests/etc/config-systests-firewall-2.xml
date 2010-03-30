@@ -96,32 +96,8 @@
         </firewall>
     </security>
 
-    <virtualhosts>
-        <default>test</default>
-
-        <virtualhost>
-            <name>test</name>
-            <test>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore
-                    </class>
-                </store>
-                <security>
-                    <firewall default-action="allow"/>
-		</security>
-            </test>
-        </virtualhost>
- 
-        <virtualhost>
-            <name>test2</name>
-            <test2>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore
-                    </class>
-                </store>
-            </test2>
-        </virtualhost>
-    </virtualhosts>
+    <virtualhosts>${conf}/virtualhosts-systests-firewall-2.xml</virtualhosts>
+    
     <heartbeat>
         <delay>0</delay>
         <timeoutFactor>2.0</timeoutFactor>

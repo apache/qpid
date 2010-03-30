@@ -22,7 +22,7 @@
 <configuration>
     <system/>
     <override>
-        <xml fileName="${test.config}" config-optional="true"/>
+        <xml fileName="${test.config}" optional="true"/>
         <xml fileName="${QPID_HOME}/etc/config-systests-acl-settings.xml"/>
         <xml fileName="${QPID_HOME}/etc/config-systests-settings.xml"/>
         <xml fileName="${QPID_HOME}/etc/config.xml"/>
