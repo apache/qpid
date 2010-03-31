@@ -427,6 +427,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/ptr_map.h				\
   qpid/types/Uuid.cpp				\
   qpid/types/Variant.cpp			\
+  qpid/amqp_0_10/Codecs.cpp			\
   qpid/sys/AggregateOutput.cpp			\
   qpid/sys/AggregateOutput.h			\
   qpid/sys/AsynchIO.h				\
@@ -708,10 +709,6 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/AddressParser.cpp		\
   qpid/messaging/Connection.cpp			\
   qpid/messaging/Duration.cpp			\
-  qpid/messaging/ListContent.cpp		\
-  qpid/messaging/ListView.cpp			\
-  qpid/messaging/MapContent.cpp			\
-  qpid/messaging/MapView.cpp			\
   qpid/messaging/Message.cpp			\
   qpid/messaging/MessageImpl.h			\
   qpid/messaging/MessageImpl.cpp		\
@@ -727,8 +724,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/amqp0_10/AcceptTracker.cpp	\
   qpid/client/amqp0_10/AddressResolution.h	\
   qpid/client/amqp0_10/AddressResolution.cpp	\
-  qpid/client/amqp0_10/Codecs.cpp		\
-  qpid/client/amqp0_10/CodecsInternal.h		\
   qpid/client/amqp0_10/ConnectionImpl.h	        \
   qpid/client/amqp0_10/ConnectionImpl.cpp	\
   qpid/client/amqp0_10/FailoverUpdates.cpp	\
@@ -762,6 +757,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/RangeSet.h			\
   ../include/qpid/SessionId.h			\
   ../include/qpid/Url.h				\
+  ../include/qpid/amqp_0_10/Codecs.h		\
   ../include/qpid/client/AsyncSession.h		\
   ../include/qpid/client/ClientImportExport.h	\
   ../include/qpid/client/Completion.h		\
@@ -818,22 +814,16 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/Thread.h			\
   ../include/qpid/sys/Time.h			\
   ../include/qpid/messaging/Address.h 		\
-  ../include/qpid/messaging/Codec.h 	        \
   ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Duration.h 	        \
   ../include/qpid/messaging/Handle.h		\
   ../include/qpid/messaging/ImportExport.h	\
-  ../include/qpid/messaging/ListContent.h 	\
-  ../include/qpid/messaging/ListView.h 		\
-  ../include/qpid/messaging/MapContent.h 	\
-  ../include/qpid/messaging/MapView.h 		\
   ../include/qpid/messaging/Message.h 		\
   ../include/qpid/messaging/Receiver.h 	        \
   ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Session.h 		\
   ../include/qpid/types/Uuid.h	 		\
   ../include/qpid/types/Variant.h 		\
-  ../include/qpid/client/amqp0_10/Codecs.h	\
   ../include/qpid/client/amqp0_10/FailoverUpdates.h
 
 # Force build of qpidd during dist phase so help2man will work.

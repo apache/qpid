@@ -569,6 +569,7 @@ set (qpidcommon_SOURCES
      qpid/Url.cpp
      qpid/types/Uuid.cpp
      qpid/types/Variant.cpp
+     qpid/amqp_0_10/Codecs.cpp
      qpid/amqp_0_10/SessionHandler.cpp
      qpid/framing/AccumulatedAck.cpp
      qpid/framing/AMQBody.cpp
@@ -680,10 +681,6 @@ set (qpidclient_SOURCES
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/Duration.cpp
-     qpid/messaging/ListContent.cpp
-     qpid/messaging/ListView.cpp
-     qpid/messaging/MapContent.cpp
-     qpid/messaging/MapView.cpp
      qpid/messaging/Message.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
@@ -697,8 +694,6 @@ set (qpidclient_SOURCES
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h
      qpid/client/amqp0_10/AddressResolution.cpp
-     qpid/client/amqp0_10/Codecs.cpp
-     qpid/client/amqp0_10/CodecsInternal.h
      qpid/client/amqp0_10/ConnectionImpl.h
      qpid/client/amqp0_10/ConnectionImpl.cpp
      qpid/client/amqp0_10/FailoverUpdates.cpp

@@ -23,6 +23,7 @@
  */
 
 #include <string>
+#include "qpid/Exception.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/types/Variant.h"
 #include "qpid/messaging/ImportExport.h"
@@ -86,17 +87,69 @@ class Message
     QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getProperties() const;
     QPID_CLIENT_EXTERN qpid::types::Variant::Map& getProperties();
 
-    QPID_CLIENT_EXTERN const std::string& getContent() const;
-    QPID_CLIENT_EXTERN std::string& getContent();
-
     QPID_CLIENT_EXTERN void setContent(const std::string&);
+    /**
+     * Note that chars are copied.
+     */
     QPID_CLIENT_EXTERN void setContent(const char* chars, size_t count);
-    QPID_CLIENT_EXTERN void getContent(std::pair<const char*, size_t>& content) const;
 
+    /** Get the content as a std::string */
+    QPID_CLIENT_EXTERN std::string getContent() const;
+    /** Get a const pointer to the start of the content data. */
+    QPID_CLIENT_EXTERN const char* getContentPtr() const;
+    /** Get the size of content in bytes. */
+    QPID_CLIENT_EXTERN size_t getContentSize() const;
   private:
     MessageImpl* impl;
     friend struct MessageImplAccess;
 };
+
+struct EncodingException : qpid::Exception
+{
+    EncodingException(const std::string& msg);
+};
+
+/**
+ * Decodes message content into a Variant::Map.
+ * 
+ * @param message the message whose content should be decoded
+ * @param map the map into which the message contents will be decoded
+ * @param encoding if specified, the encoding to use - this overrides
+ * any encoding specified by the content-type of the message
+ * @exception EncodingException
+ */
+void decode(const Message& message, qpid::types::Variant::Map& map, const std::string& encoding = std::string());
+/**
+ * Decodes message content into a Variant::List.
+ * 
+ * @param message the message whose content should be decoded
+ * @param list the list into which the message contents will be decoded
+ * @param encoding if specified, the encoding to use - this overrides
+ * any encoding specified by the content-type of the message
+ * @exception EncodingException
+ */
+void decode(const Message& message, qpid::types::Variant::List& list, const std::string& encoding = std::string());
+/**
+ * Encodes a Variant::Map into a message.
+ * 
+ * @param map the map to be encoded
+ * @param message the message whose content should be set to the encoded map
+ * @param encoding if specified, the encoding to use - this overrides
+ * any encoding specified by the content-type of the message
+ * @exception EncodingException
+ */
+void encode(const qpid::types::Variant::Map& map, Message& message, const std::string& encoding = std::string());
+/**
+ * Encodes a Variant::List into a message.
+ * 
+ * @param list the list to be encoded
+ * @param message the message whose content should be set to the encoded list
+ * @param encoding if specified, the encoding to use - this overrides
+ * any encoding specified by the content-type of the message
+ * @exception EncodingException
+ */
+void encode(const qpid::types::Variant::List& list, Message& message, const std::string& encoding = std::string());
+
 }} // namespace qpid::messaging
 
 #endif  /*!QPID_MESSAGING_MESSAGE_H*/

@@ -59,7 +59,7 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      * for up to the specified timeout for a message to become
      * available.
      *
-     *@exception NoMessageAvailable if there is no message to give
+     * @exception NoMessageAvailable if there is no message to give
      * after waiting for the specified timeout.
      */
     QPID_CLIENT_EXTERN Message get(Duration timeout=Duration::FOREVER);
@@ -78,7 +78,7 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      * that there is no message for the subscription this receiver is
      * serving before throwing an exception.
      *
-     *@exception NoMessageAvailable if there is no message to give
+     * @exception NoMessageAvailable if there is no message to give
      * after waiting for the specified timeout.
      */
     QPID_CLIENT_EXTERN Message fetch(Duration timeout=Duration::FOREVER);
@@ -99,14 +99,14 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      * Returns the number of messages received and waiting to be
      * fetched.
      */
-    QPID_CLIENT_EXTERN uint32_t available();
+    QPID_CLIENT_EXTERN uint32_t getAvailable();
     /**
      * Returns a count of the number of messages received on this
      * receiver that have been acknowledged, but for which that
      * acknowledgement has not yet been confirmed as processed by the
      * server.
      */
-    QPID_CLIENT_EXTERN uint32_t pendingAck();
+    QPID_CLIENT_EXTERN uint32_t getPendingAck();
 
     /**
      * Cancels this receiver.

@@ -23,10 +23,6 @@
 #include "BrokerFixture.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Connection.h"
-#include "qpid/messaging/ListContent.h"
-#include "qpid/messaging/ListView.h"
-#include "qpid/messaging/MapContent.h"
-#include "qpid/messaging/MapView.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Sender.h"
@@ -112,7 +108,7 @@ struct MessagingFixture : public BrokerFixture
     MessagingFixture(Broker::Options opts = Broker::Options()) :
         BrokerFixture(opts),
         connection(open(broker->getPort(Broker::TCP_TRANSPORT))),
-        session(connection.newSession()),
+        session(connection.createSession()),
         admin(broker->getPort(Broker::TCP_TRANSPORT))
     {
     }
@@ -259,7 +255,7 @@ QPID_AUTO_TEST_CASE(testSenderError)
     MessagingFixture fix;
     ScopedSuppressLogging sl;
     BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress"), qpid::messaging::InvalidAddress);
-    fix.session = fix.connection.newSession();
+    fix.session = fix.connection.createSession();
     BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress; {create:receiver}"),
                       qpid::messaging::InvalidAddress);
 }
@@ -269,7 +265,7 @@ QPID_AUTO_TEST_CASE(testReceiverError)
     MessagingFixture fix;
     ScopedSuppressLogging sl;
     BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress"), qpid::messaging::InvalidAddress);
-    fix.session = fix.connection.newSession();
+    fix.session = fix.connection.createSession();
     BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress; {create:sender}"),
                       qpid::messaging::InvalidAddress);
 }
@@ -334,7 +330,7 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
     Message out;
-    MapContent content(out);
+    Variant::Map content;
     content["abc"] = "def";
     content["pi"] = 3.14f;
     Variant utf8("A utf 8 string");
@@ -343,11 +339,12 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     Variant utf16("\x00\x61\x00\x62\x00\x63");
     utf16.setEncoding("utf16");
     content["utf16"] = utf16;
-    content.encode();
+    encode(content, out);
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * Duration::SECOND);
-    MapView view(in);
+    Variant::Map view;
+    decode(in, view);
     BOOST_CHECK_EQUAL(view["abc"].asString(), "def");
     BOOST_CHECK_EQUAL(view["pi"].asFloat(), 3.14f);
     BOOST_CHECK_EQUAL(view["utf8"].asString(), utf8.asString());
@@ -365,12 +362,12 @@ QPID_AUTO_TEST_CASE(testMapMessageWithInitial)
     Variant::Map imap;
     imap["abc"] = "def";
     imap["pi"] = 3.14f;
-    MapContent content(out, imap);
-    content.encode();
+    encode(imap, out);
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * Duration::SECOND);
-    MapView view(in);
+    Variant::Map view;
+    decode(in, view);
     BOOST_CHECK_EQUAL(view["abc"].asString(), "def");
     BOOST_CHECK_EQUAL(view["pi"].asFloat(), 3.14f);
     fix.session.acknowledge();
@@ -381,21 +378,22 @@ QPID_AUTO_TEST_CASE(testListMessage)
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
     Message out;
-    ListContent content(out);
+    Variant::List content;
     content.push_back(Variant("abc"));
     content.push_back(Variant(1234));
     content.push_back(Variant("def"));
     content.push_back(Variant(56.789));
-    content.encode();
+    encode(content, out);
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * Duration::SECOND);
-    ListView view(in);
+    Variant::List view;
+    decode(in, view);
     BOOST_CHECK_EQUAL(view.size(), content.size());
     BOOST_CHECK_EQUAL(view.front().asString(), "abc");
     BOOST_CHECK_EQUAL(view.back().asDouble(), 56.789);
 
-    ListView::const_iterator i = view.begin();
+    Variant::List::const_iterator i = view.begin();
     BOOST_CHECK(i != view.end());
     BOOST_CHECK_EQUAL(i->asString(), "abc");
     BOOST_CHECK(++i != view.end());
@@ -419,17 +417,17 @@ QPID_AUTO_TEST_CASE(testListMessageWithInitial)
     ilist.push_back(Variant(1234));
     ilist.push_back(Variant("def"));
     ilist.push_back(Variant(56.789));
-    ListContent content(out, ilist);
-    content.encode();
+    encode(ilist, out);
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * Duration::SECOND);
-    ListView view(in);
-    BOOST_CHECK_EQUAL(view.size(), content.size());
+    Variant::List view;
+    decode(in, view);
+    BOOST_CHECK_EQUAL(view.size(), ilist.size());
     BOOST_CHECK_EQUAL(view.front().asString(), "abc");
     BOOST_CHECK_EQUAL(view.back().asDouble(), 56.789);
 
-    ListView::const_iterator i = view.begin();
+    Variant::List::const_iterator i = view.begin();
     BOOST_CHECK(i != view.end());
     BOOST_CHECK_EQUAL(i->asString(), "abc");
     BOOST_CHECK(++i != view.end());
@@ -481,16 +479,16 @@ QPID_AUTO_TEST_CASE(testAvailable)
     }
     qpid::sys::sleep(1);//is there any avoid an arbitrary sleep while waiting for messages to be dispatched?
     for (uint i = 0; i < 5; ++i) {
-        BOOST_CHECK_EQUAL(fix.session.available(), 15u - 2*i);
-        BOOST_CHECK_EQUAL(r1.available(), 10u - i);
+        BOOST_CHECK_EQUAL(fix.session.getAvailable(), 15u - 2*i);
+        BOOST_CHECK_EQUAL(r1.getAvailable(), 10u - i);
         BOOST_CHECK_EQUAL(r1.fetch().getContent(), (boost::format("A_%1%") % (i+1)).str());
-        BOOST_CHECK_EQUAL(r2.available(), 5u - i);
+        BOOST_CHECK_EQUAL(r2.getAvailable(), 5u - i);
         BOOST_CHECK_EQUAL(r2.fetch().getContent(), (boost::format("B_%1%") % (i+1)).str());
         fix.session.acknowledge();
     }
     for (uint i = 5; i < 10; ++i) {
-        BOOST_CHECK_EQUAL(fix.session.available(), 10u - i);
-        BOOST_CHECK_EQUAL(r1.available(), 10u - i);
+        BOOST_CHECK_EQUAL(fix.session.getAvailable(), 10u - i);
+        BOOST_CHECK_EQUAL(r1.getAvailable(), 10u - i);
         BOOST_CHECK_EQUAL(r1.fetch().getContent(), (boost::format("A_%1%") % (i+1)).str());
     }
 }
@@ -506,11 +504,11 @@ QPID_AUTO_TEST_CASE(testPendingAck)
     for (uint i = 0; i < 10; ++i) {
         BOOST_CHECK_EQUAL(receiver.fetch().getContent(), (boost::format("Message_%1%") % (i+1)).str());
     }
-    BOOST_CHECK_EQUAL(fix.session.pendingAck(), 0u);
+    BOOST_CHECK_EQUAL(fix.session.getPendingAck(), 0u);
     fix.session.acknowledge();
-    BOOST_CHECK_EQUAL(fix.session.pendingAck(), 10u);
+    BOOST_CHECK_EQUAL(fix.session.getPendingAck(), 10u);
     fix.session.sync();
-    BOOST_CHECK_EQUAL(fix.session.pendingAck(), 0u);
+    BOOST_CHECK_EQUAL(fix.session.getPendingAck(), 0u);
 }
 
 QPID_AUTO_TEST_CASE(testPendingSend)
@@ -522,9 +520,9 @@ QPID_AUTO_TEST_CASE(testPendingSend)
     //implementation and the fact that the simple test case makes it
     //possible to predict when completion information will be sent to
     //the client. TODO: is there a better way of testing this?
-    BOOST_CHECK_EQUAL(sender.pending(), 10u);
+    BOOST_CHECK_EQUAL(sender.getPending(), 10u);
     fix.session.sync();
-    BOOST_CHECK_EQUAL(sender.pending(), 0u);
+    BOOST_CHECK_EQUAL(sender.getPending(), 0u);
 
     Receiver receiver = fix.session.createReceiver(fix.queue);
     receive(receiver, 10);
@@ -797,7 +795,7 @@ QPID_AUTO_TEST_CASE(testGetReceiver)
 QPID_AUTO_TEST_CASE(testGetSessionFromConnection)
 {
     QueueFixture fix;
-    fix.connection.newSession("my-session");
+    fix.connection.createSession("my-session");
     Session session = fix.connection.getSession("my-session");
     Message out(Uuid(true).str());
     session.createSender(fix.queue).send(out);
@@ -814,7 +812,7 @@ QPID_AUTO_TEST_CASE(testGetConnectionFromSession)
     Sender sender = fix.session.createSender(fix.queue);
     sender.send(out);
     Message in;
-    sender.getSession().getConnection().newSession("incoming");
+    sender.getSession().getConnection().createSession("incoming");
     BOOST_CHECK(fix.connection.getSession("incoming").createReceiver(fix.queue).fetch(in));
     BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
 }
@@ -822,8 +820,8 @@ QPID_AUTO_TEST_CASE(testGetConnectionFromSession)
 QPID_AUTO_TEST_CASE(testTx)
 {
     QueueFixture fix;
-    Session ssn1 = fix.connection.newSession(true);
-    Session ssn2 = fix.connection.newSession(true);
+    Session ssn1 = fix.connection.createTransactionalSession();
+    Session ssn2 = fix.connection.createTransactionalSession();
     Sender sender1 = ssn1.createSender(fix.queue);
     Sender sender2 = ssn2.createSender(fix.queue);
     Receiver receiver1 = ssn1.createReceiver(fix.queue);

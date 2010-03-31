@@ -20,8 +20,7 @@
  */
 #include "qpid/client/amqp0_10/OutgoingMessage.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"
-#include "qpid/client/amqp0_10/Codecs.h"
-#include "qpid/client/amqp0_10/CodecsInternal.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
@@ -34,6 +33,7 @@ namespace amqp0_10 {
 using qpid::messaging::Address;
 using qpid::messaging::MessageImplAccess;
 using namespace qpid::framing::message;
+using namespace qpid::amqp_0_10;
 
 void OutgoingMessage::convert(const qpid::messaging::Message& from)
 {

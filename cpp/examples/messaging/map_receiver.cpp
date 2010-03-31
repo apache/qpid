@@ -20,7 +20,6 @@
  */
 
 #include <qpid/messaging/Connection.h>
-#include <qpid/messaging/MapView.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
@@ -42,10 +41,10 @@ int main(int argc, char** argv) {
     Connection connection;
     try {
         connection.open(url);
-        Session session = connection.newSession();
+        Session session = connection.createSession();
         Receiver receiver = session.createReceiver("message_queue");
-        Message message = receiver.fetch();
-        MapView content(message);
+        Variant::Map content;
+        decode(receiver.fetch(), content);
         std::cout << content << std::endl;
         session.acknowledge();
         receiver.close();
