@@ -36,7 +36,7 @@ namespace fs=boost::filesystem;
 using namespace std;
 
 StoreStatus::StoreStatus(const std::string& d)
-    : state(STORE_STATE_NO_STORE), dataDir(d), configSeq(0)
+    : state(STORE_STATE_NO_STORE), dataDir(d)
 {}
 
 namespace {
@@ -44,7 +44,6 @@ namespace {
 const char* SUBDIR="cluster";
 const char* CLUSTER_ID_FILE="cluster.uuid";
 const char* SHUTDOWN_ID_FILE="shutdown.uuid";
-const char* CONFIG_SEQ_FILE="config.seq";
 
 void throw_exceptions(ios& ios) {
     // Have stream throw an exception on error.
@@ -104,7 +103,6 @@ void StoreStatus::load() {
         create_directory(dir);
         clusterId = loadUuid(dir/CLUSTER_ID_FILE);
         shutdownId = loadUuid(dir/SHUTDOWN_ID_FILE);
-        configSeq = loadSeqNum(dir/CONFIG_SEQ_FILE);
         if (clusterId && shutdownId) state = STORE_STATE_CLEAN_STORE;
         else if (clusterId) state = STORE_STATE_DIRTY_STORE;
         else state = STORE_STATE_EMPTY_STORE;
@@ -121,14 +119,6 @@ void StoreStatus::save() {
         create_directory(dir);
         saveUuid(dir/CLUSTER_ID_FILE, clusterId);
         saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
-        try {
-            fs::ofstream o(dir/CONFIG_SEQ_FILE);
-            throw_exceptions(o);
-            o << configSeq.getValue();
-        } catch (const std::exception& e) {
-            QPID_LOG(error, "Cant save sequence number to " << (dir/CONFIG_SEQ_FILE).string() << ": " << e.what());
-            throw;
-        }
     }
     catch (const std::exception&e) {
         throw Exception(QPID_MSG("Cannot save cluster store status: " << e.what()));
@@ -156,11 +146,6 @@ void StoreStatus::clean(const Uuid& shutdownId_) {
     save();
 }
 
-void StoreStatus::setConfigSeq(framing::SequenceNumber seq) {
-    configSeq = seq;
-    save();
-}
-
 const char* stateName(StoreState s) {
     switch (s) {
       case STORE_STATE_NO_STORE: return "none";
@@ -177,8 +162,7 @@ ostream& operator<<(ostream& o, framing::cluster::StoreState s) { return o << st
 ostream& operator<<(ostream& o, const StoreStatus& s) {
     o << s.getState();
     if (s.getState() ==  STORE_STATE_DIRTY_STORE)
-        o << " cluster-id=" << s.getClusterId()
-          << " config-sequence=" << s.getConfigSeq();
+        o << " cluster-id=" << s.getClusterId();
     if (s.getState() == STORE_STATE_CLEAN_STORE) {
         o << " cluster-id=" << s.getClusterId()
           << " shutdown-id=" << s.getShutdownId();

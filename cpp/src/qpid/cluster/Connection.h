@@ -130,8 +130,7 @@ class Connection :
                      uint32_t sendMax);
 
     void membership(const framing::FieldTable&, const framing::FieldTable&,
-                    const framing::SequenceNumber& frameSeq,
-                    const framing::SequenceNumber& configSeq);
+                    const framing::SequenceNumber& frameSeq);
 
     void retractOffer();
 
