@@ -54,7 +54,7 @@ class MessageEchoTests(Base):
 
   def setup_connection(self):
     return Connection.open(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()

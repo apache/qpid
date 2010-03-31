@@ -93,7 +93,7 @@ else:
   content = text
 
 # XXX: should make URL default the port for us
-conn = Connection(url.host, url.port or AMQP_PORT,
+conn = Connection(url.host, url.port,
                   username=url.user,
                   password=url.password,
                   reconnect=opts.reconnect,

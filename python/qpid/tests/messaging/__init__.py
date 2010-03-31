@@ -143,4 +143,15 @@ class Base(Test):
   def reconnect(self):
     return self.get_bool("reconnect")
 
+
+  def transport(self):
+    if self.broker.scheme == self.broker.AMQPS:
+      return "tls"
+    else:
+      return "plain"
+
+  def connection_options(self):
+    return {"reconnect": self.reconnect(),
+            "transport": self.transport()}
+
 import address, endpoints, message
