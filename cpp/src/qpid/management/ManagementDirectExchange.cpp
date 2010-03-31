@@ -29,13 +29,16 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 ManagementDirectExchange::ManagementDirectExchange(const string& _name, Manageable* _parent, Broker* b) :
-    Exchange (_name, _parent, b), DirectExchange(_name, _parent, b) {}
+    Exchange (_name, _parent, b),
+    DirectExchange(_name, _parent, b),
+    managementAgent(0) {}
 ManagementDirectExchange::ManagementDirectExchange(const std::string& _name,
                                                    bool               _durable,
                                                    const FieldTable&  _args,
                                                    Manageable*        _parent, Broker* b) :
     Exchange (_name, _durable, _args, _parent, b), 
-    DirectExchange(_name, _durable, _args, _parent, b) {}
+    DirectExchange(_name, _durable, _args, _parent, b),
+    managementAgent(0) {}
 
 void ManagementDirectExchange::route(Deliverable&      msg,
                                      const string&     routingKey,
@@ -43,7 +46,8 @@ void ManagementDirectExchange::route(Deliverable&      msg,
 {
     bool routeIt = true;
 
-    // TODO: Intercept messages directed to the embedded agent and send them to the management agent.
+    if (managementAgent)
+        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, false /*direct*/);
 
     if (routeIt)
         DirectExchange::route(msg, routingKey, args);

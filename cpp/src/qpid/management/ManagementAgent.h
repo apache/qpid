@@ -32,7 +32,9 @@
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Agent.h"
+#include "qpid/types/Variant.h"
 #include <qpid/framing/AMQFrame.h>
+#include <qpid/framing/FieldValue.h>
 #include <memory>
 #include <string>
 #include <map>
@@ -62,7 +64,7 @@ public:
     } severity_t;
 
 
-    ManagementAgent ();
+    ManagementAgent (const bool qmfV1, const bool qmfV2);
     virtual ~ManagementAgent ();
 
     /** Called before plugins are initialized */
@@ -74,6 +76,9 @@ public:
     /** Called by cluster to suppress management output during update. */
     void suppress(bool s) { suppressed = s; }
 
+    void setName(const std::string& vendor,
+                 const std::string& product,
+                 const std::string& instance="");
     void setInterval(uint16_t _interval) { interval = _interval; }
     void setExchange(qpid::broker::Exchange::shared_ptr mgmtExchange,
                      qpid::broker::Exchange::shared_ptr directExchange);
@@ -91,6 +96,9 @@ public:
                                              ManagementObject::writeSchemaCall_t schemaCall);
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
                                              uint64_t          persistId = 0);
+    QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject*  object,
+                                             const std::string& key,
+                                             bool               persistent = true);
     QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
@@ -99,7 +107,8 @@ public:
 
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
-                          const framing::FieldTable* args);
+                          const framing::FieldTable* args,
+                          const bool topic);
 
     const framing::Uuid& getUuid() const { return uuid; }
 
@@ -128,6 +137,15 @@ public:
     uint16_t getBootSequence(void) { return bootSequence; }
     void setBootSequence(uint16_t b) { bootSequence = b; }
 
+    // TODO: remove these when Variant API moved into common library.
+    static types::Variant::Map toMap(const framing::FieldTable& from);
+    static framing::FieldTable fromMap(const types::Variant::Map& from);
+    static types::Variant::List toList(const framing::List& from);
+    static framing::List fromList(const types::Variant::List& from);
+    static boost::shared_ptr<framing::FieldValue> toFieldValue(const types::Variant& in);
+    static types::Variant toVariant(const boost::shared_ptr<framing::FieldValue>& val);
+
+
 private:
     struct Periodic : public qpid::sys::TimerTask
     {
@@ -153,9 +171,8 @@ private:
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
 
         virtual ~RemoteAgent ();
-        void encode(framing::Buffer& buffer) const;
-        void decode(framing::Buffer& buffer);
-        uint32_t encodedSize() const;
+        void mapEncode(qpid::types::Variant::Map& _map) const;
+        void mapDecode(const qpid::types::Variant::Map& _map);
     };
 
     // TODO: Eventually replace string with entire reply-to structure.  reply-to
@@ -175,9 +192,11 @@ private:
         std::string name;
         uint8_t     hash[16];
 
+        void mapEncode(qpid::types::Variant::Map& _map) const;
+        void mapDecode(const qpid::types::Variant::Map& _map);
         void encode(framing::Buffer& buffer) const;
         void decode(framing::Buffer& buffer);
-        uint32_t encodedSize() const;
+        uint32_t encodedBufSize() const;
     };
 
     struct SchemaClassKeyComp
@@ -209,9 +228,8 @@ private:
         bool hasSchema () { return (writeSchemaCall != 0) || !data.empty(); }
         void appendSchema (framing::Buffer& buf);
 
-        void encode(framing::Buffer& buffer) const;
-        void decode(framing::Buffer& buffer);
-        uint32_t encodedSize() const;
+        void mapEncode(qpid::types::Variant::Map& _map) const;
+        void mapDecode(const qpid::types::Variant::Map& _map);
     };
 
     typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;
@@ -264,6 +282,14 @@ private:
     typedef std::map<MethodName, std::string> DisallowedMethods;
     DisallowedMethods disallowed;
 
+    // Agent name and address
+    qpid::types::Variant::Map attrMap;
+    std::string       name_address;
+
+    // supported management protocol
+    bool qmf1Support;
+    bool qmf2Support;
+
 
 #   define MA_BUFFER_SIZE 65536
     char inputBuffer[MA_BUFFER_SIZE];
@@ -279,6 +305,11 @@ private:
                              uint32_t                     length,
                              qpid::broker::Exchange::shared_ptr exchange,
                              std::string                  routingKey);
+    void sendBuffer(const std::string&     data,
+                    const std::string&     cid,
+                    const qpid::types::Variant::Map& headers,
+                    qpid::broker::Exchange::shared_ptr exchange,
+                    const std::string& routingKey);
     void moveNewObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
@@ -311,6 +342,10 @@ private:
     void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleGetQueryLH       (const std::string& body, std::string replyToKey, const std::string& cid, const std::string& contentType);
+    void handleMethodRequestLH  (const std::string& body, std::string replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken);
+    void handleLocateRequestLH  (const std::string& body, const std::string &replyToKey, const std::string& cid);
+
 
     size_t validateSchema(framing::Buffer&, uint8_t kind);
     size_t validateTableSchema(framing::Buffer&);

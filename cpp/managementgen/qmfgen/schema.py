@@ -19,12 +19,18 @@
 
 from xml.dom.minidom import parse, parseString, Node
 from cStringIO       import StringIO
-import md5
+#import md5
+try:
+    import hashlib
+    _md5Obj = hashlib.md5
+except ImportError:
+    import md5
+    _md5Obj = md5.new
 
 class Hash:
   """ Manage the hash of an XML sub-tree """
   def __init__(self, node):
-    self.md5Sum = md5.new()
+    self.md5Sum = _md5Obj()
     self._compute(node)
 
   def addSubHash(self, hash):
@@ -64,6 +70,8 @@ class SchemaType:
     self.init      = "0"
     self.perThread = False
     self.byRef     = False
+    self.unmap     = "#"
+    self.map       = "#"
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -108,6 +116,12 @@ class SchemaType:
         if val != 'y':
           raise ValueError ("Expected 'y' in byRef attribute")
         self.byRef = True
+
+      elif key == 'unmap':
+        self.unmap = val
+
+      elif key == 'map':
+        self.map = val
 
       else:
         raise ValueError ("Unknown attribute in type '%s'" % key)
@@ -211,6 +225,17 @@ class SchemaType:
   def genRead (self, stream, varName, indent="    "):
     stream.write(indent + self.decode.replace("@", "buf").replace("#", varName) + ";\n")
 
+  def genUnmap (self, stream, varName, indent="    ", key=None, mapName="_map",
+                _optional=False):
+    if key is None:
+      key = varName
+    stream.write(indent + "if ((_i = " + mapName + ".find(\"" + key + "\")) != " + mapName + ".end()) {\n")
+    stream.write(indent + "    " + varName + " = " +
+                 self.unmap.replace("#", "_i->second") + ";\n")
+    if _optional:
+        stream.write(indent + "    _found = true;\n")
+    stream.write(indent + "}\n")
+
   def genWrite (self, stream, varName, indent="    "):
     if self.style != "mma":
       stream.write (indent + self.encode.replace ("@", "buf").replace ("#", varName) + ";\n")
@@ -230,6 +255,31 @@ class SchemaType:
                     .replace ("#", varName + "Count ? " + varName + "Total / " +
                               varName + "Count : 0") + ";\n")
 
+  def genMap (self, stream, varName, indent="    ", key=None, mapName="_map"):
+    if key is None:
+      key = varName
+    if self.style != "mma":
+        var_cast = self.map.replace("#", varName)
+        stream.write(indent + mapName + "[\"" + key + "\"] = ::qpid::types::Variant(" + var_cast + ");\n")
+    if self.style == "wm":
+        var_cast_hi = self.map.replace("#", varName + "High")
+        var_cast_lo = self.map.replace("#", varName + "Low")
+        stream.write(indent + mapName + "[\"" + key + "High\"] = " +
+                     "::qpid::types::Variant(" + var_cast_hi + ");\n")
+        stream.write(indent + mapName + "[\"" + key + "Low\"] = " +
+                     "::qpid::types::Variant(" + var_cast_lo + ");\n")
+    if self.style == "mma":
+        var_cast = self.map.replace("#", varName + "Count")
+        stream.write(indent + mapName + "[\"" + key + "Count\"] = " + "::qpid::types::Variant(" + var_cast + ");\n")
+        var_cast = self.map.replace("#", varName + "Min")
+        stream.write(indent + mapName + "[\"" + key + "Min\"] = " +
+                     "(" + varName + "Count ? ::qpid::types::Variant(" + var_cast + ") : ::qpid::types::Variant(0));\n")
+        var_cast = self.map.replace("#", varName + "Max")
+        stream.write(indent + mapName + "[\"" + key + "Max\"] = " + "::qpid::types::Variant(" + var_cast + ");\n")
+
+        var_cast = self.map.replace("#", "(" + varName + "Total / " + varName + "Count)")
+        stream.write(indent + mapName + "[\"" + key + "Avg\"] = " +
+                     "(" + varName + "Count ? ::qpid::types::Variant(" + var_cast + ") : ::qpid::types::Variant(0));\n")
 
   def getReadCode (self, varName, bufName):
     result = self.decode.replace ("@", bufName).replace ("#", varName)
@@ -392,6 +442,29 @@ class SchemaProperty:
       stream.write ("    ft.setString (DESC,   \"" + self.desc   + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
 
+
+  def genSchemaMap(self, stream):
+    stream.write ("    {\n")
+    stream.write ("        ::qpid::types::Variant::Map _value;\n")
+    stream.write ("        _value[TYPE] = TYPE_" + self.type.type.base +";\n")
+    stream.write ("        _value[ACCESS] = ACCESS_" + self.access + ";\n")
+    stream.write ("        _value[IS_INDEX] = " + str (self.isIndex) + ";\n")
+    stream.write ("        _value[IS_OPTIONAL] = " + str (self.isOptional) + ";\n")
+    if self.unit != None:
+      stream.write ("        _value[UNIT] = \"" + self.unit + "\";\n")
+    if self.min != None:
+      stream.write ("        _value[MIN] = " + self.min + ";\n")
+    if self.max != None:
+      stream.write ("        _value[MAX] = " + self.max + ";\n")
+    if self.maxLen != None:
+      stream.write ("        _value[MAXLEN] = " + self.maxLen + ";\n")
+    if self.desc != None:
+      stream.write ("        _value[DESC] = \"" + self.desc + "\";\n")
+    stream.write ("        _props[\"" + self.name + "\"] = _value;\n")
+    stream.write ("    }\n\n")
+
+
+
   def genSize (self, stream):
     indent = "    "
     if self.isOptional:
@@ -419,6 +492,43 @@ class SchemaProperty:
     if self.isOptional:
       stream.write("    }\n")
 
+  def genUnmap (self, stream):
+    indent = "    "
+    if self.isOptional:
+      stream.write("    _found = false;\n")
+    self.type.type.genUnmap (stream, self.name, indent, _optional=self.isOptional)
+    if self.isOptional:
+      stream.write("    if (_found) {\n")
+      stream.write("        presenceMask[presenceByte_%s] |= presenceMask_%s;\n" %
+                   (self.name, self.name))
+      stream.write("    }\n")
+
+  def genMap (self, stream):
+    indent = "    "
+    if self.isOptional:
+      stream.write("    if (presenceMask[presenceByte_%s] & presenceMask_%s) {\n" % (self.name, self.name))
+      indent = "        "
+    self.type.type.genMap (stream, self.name, indent)
+    if self.isOptional:
+      stream.write("    }\n")
+
+
+  def __repr__(self):
+    m = {}
+    m["name"] = self.name
+    m["type"] = self.type
+    m["ref"] = self.ref
+    m["access"] = self.access
+    m["isIndex"] = self.isIndex
+    m["isParentRef"] = self.isParentRef
+    m["isGeneralRef"] = self.isGeneralRef
+    m["isOptional"] = self.isOptional
+    m["unit"] = self.unit
+    m["min"] = self.min
+    m["max"] = self.max
+    m["maxLen"] = self.maxLen
+    m["desc"] = self.desc
+    return str(m)
 
 #=====================================================================================
 #
@@ -492,6 +602,17 @@ class SchemaStatistic:
       stream.write ("    ft.setString (DESC,   \"" + desc   + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
 
+  def genSchemaTextMap(self, stream, name, desc):
+    stream.write ("    {\n")
+    stream.write ("        ::qpid::types::Variant::Map _value;\n")
+    stream.write ("        _value[TYPE] = TYPE_" + self.type.type.base +";\n")
+    if self.unit != None:
+      stream.write ("        _value[UNIT] = \"" + self.unit + "\";\n")
+    if desc != None:
+      stream.write ("        _value[DESC] = \"" + desc + "\";\n")
+    stream.write ("        _stats[\"" + self.name + "\"] = _value;\n")
+    stream.write ("    }\n\n")
+
   def genSchema (self, stream):
     if self.type.type.style != "mma":
       self.genSchemaText (stream, self.name, self.desc)
@@ -518,6 +639,32 @@ class SchemaStatistic:
       self.genSchemaText (stream, self.name + "Max",     descMax)
       self.genSchemaText (stream, self.name + "Average", descAverage)
 
+  def genSchemaMap (self, stream):
+    if self.type.type.style != "mma":
+      self.genSchemaTextMap (stream, self.name, self.desc)
+    if self.type.type.style == "wm":
+      descHigh = self.desc
+      descLow  = self.desc
+      if self.desc != None:
+        descHigh = descHigh + " (High)"
+        descLow  = descLow  + " (Low)"
+      self.genSchemaTextMap (stream, self.name + "High", descHigh)
+      self.genSchemaTextMap (stream, self.name + "Low",  descLow)
+    if self.type.type.style == "mma":
+      descCount   = self.desc
+      descMin     = self.desc
+      descMax     = self.desc
+      descAverage = self.desc
+      if self.desc != None:
+        descCount   = descCount   + " (Samples)"
+        descMin     = descMin     + " (Min)"
+        descMax     = descMax     + " (Max)"
+        descAverage = descAverage + " (Average)"
+      self.genSchemaTextMap (stream, self.name + "Samples", descCount)
+      self.genSchemaTextMap (stream, self.name + "Min",     descMin)
+      self.genSchemaTextMap (stream, self.name + "Max",     descMax)
+      self.genSchemaTextMap (stream, self.name + "Average", descAverage)
+
   def genAssign (self, stream):
     if self.assign != None:
       if self.type.type.perThread:
@@ -532,6 +679,12 @@ class SchemaStatistic:
       self.type.type.genWrite (stream, "totals." + self.name)
     else:
       self.type.type.genWrite (stream, self.name)
+
+  def genMap (self, stream):
+    if self.type.type.perThread:
+      self.type.type.genMap(stream, "totals." + self.name, key=self.name)
+    else:
+      self.type.type.genMap(stream, self.name)
 
   def genInitialize (self, stream, prefix="", indent="    "):
     val = self.type.type.init
@@ -648,6 +801,30 @@ class SchemaArg:
       stream.write ("    ft.setString (DESC,    \"" + self.desc + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
 
+  def genSchemaMap (self, stream, event=False):
+    stream.write ("        {\n")
+    stream.write ("            ::qpid::types::Variant::Map _avalue;\n")
+    stream.write ("            _avalue[TYPE] = TYPE_" + self.type.type.base +";\n")
+    if (not event):
+      stream.write ("            _avalue[DIR] = \"" + self.dir + "\";\n")
+    if self.unit != None:
+      stream.write ("            _avalue[UNIT] = \"" + self.unit + "\";\n")
+    if not event:
+      if self.min != None:
+        stream.write ("            _avalue[MIN] = " + self.min + ";\n")
+      if self.max != None:
+        stream.write ("            _avalue[MAX] = " + self.max + ";\n")
+      if self.maxLen != None:
+        stream.write ("            _avalue[MAXLEN] = " + self.maxLen + ";\n")
+      if self.default != None:
+        stream.write ("            _avalue[DEFAULT] = \"" + self.default + "\";\n")
+    if self.desc != None:
+      stream.write ("            _avalue[DESC] = \"" + self.desc + "\";\n")
+    stream.write ("            _args[\"" + self.name + "\"] = _avalue;\n")
+    stream.write ("        }\n")
+
+
+
   def genFormalParam (self, stream, variables):
     stream.write ("%s _%s" % (self.type.type.asArg, self.name))
 
@@ -726,6 +903,24 @@ class SchemaMethod:
     stream.write ("    buf.put (ft);\n\n")
     for arg in self.args:
       arg.genSchema (stream)
+
+  def genSchemaMap (self, stream, variables):
+    stream.write ("    {\n")
+    stream.write ("        ::qpid::types::Variant::Map _value;\n")
+    stream.write ("        ::qpid::types::Variant::Map _args;\n")
+    stream.write ("        _value[ARGCOUNT] = " + str(len(self.args)) + ";\n")
+    if self.desc != None:
+      stream.write ("        _value[DESC] = \"" + self.desc + "\";\n")
+
+    for arg in self.args:
+      arg.genSchemaMap (stream)
+
+    stream.write ("        if (!_args.empty())\n")
+    stream.write ("            _value[ARGS] = _args;\n")
+
+
+    stream.write ("        _methods[\"" + self.name + "\"] = _value;\n")
+    stream.write ("    }\n\n")
 
 #=====================================================================================
 #
@@ -849,9 +1044,19 @@ class SchemaEvent:
     for arg in self.args:
       stream.write("    " + arg.type.type.encode.replace("@", "buf").replace("#", arg.name) + ";\n")
 
+  def genArgMap(self, stream, variables):
+      for arg in self.args:
+          arg.type.type.genMap(stream, arg.name, "    ", mapName="map")
+      #stream.write("    " + arg.type.type.encode.replace("@", "buf").replace("#", arg.name) + ";\n")
+
+
   def genArgSchema(self, stream, variables):
     for arg in self.args:
       arg.genSchema(stream, True)
+
+  def genArgSchemaMap(self, stream, variables):
+    for arg in self.args:
+      arg.genSchemaMap(stream, True)
 
   def genSchemaMD5(self, stream, variables):
     sum = self.hash.getDigest()
@@ -1023,12 +1228,36 @@ class SchemaClass:
           inArgCount = inArgCount + 1
 
     if methodCount == 0:
-      stream.write ("string&, Buffer&, Buffer& outBuf")
+      stream.write ("string&, const string&, string& outStr")
     else:
       if inArgCount == 0:
-        stream.write ("string& methodName, Buffer&, Buffer& outBuf")
+        stream.write ("string& methodName, const string&, string& outStr")
       else:
-        stream.write ("string& methodName, Buffer& inBuf, Buffer& outBuf")
+        stream.write ("string& methodName, const string& inStr, string& outStr")
+
+
+  def genDoMapMethodArgs (self, stream, variables):
+    methodCount = 0
+    inArgCount  = 0
+    for method in self.methods:
+      methodCount = methodCount + 1
+      for arg in method.args:
+        if arg.getDir () == "I" or arg.getDir () == "IO":
+          inArgCount = inArgCount + 1
+
+    if methodCount == 0:
+      stream.write ("string&," +
+                    " const ::qpid::types::Variant::Map&," +
+                    " ::qpid::types::Variant::Map& outMap")
+    else:
+      if inArgCount == 0:
+        stream.write ("string& methodName," +
+                      " const ::qpid::types::Variant::Map&," +
+                      " ::qpid::types::Variant::Map& outMap")
+      else:
+        stream.write ("string& methodName," +
+                      " const ::qpid::types::Variant::Map& inMap," +
+                      " ::qpid::types::Variant::Map& outMap")
 
   def genHiLoStatResets (self, stream, variables):
     for inst in self.statistics:
@@ -1109,8 +1338,22 @@ class SchemaClass:
     stream.write ("%d" % len (self.methods))
 
   def genMethodHandlers (self, stream, variables):
+    inArgs = False
+    for method in self.methods:
+      for arg in method.args:
+        if arg.getDir () == "I" or arg.getDir () == "IO":
+            inArgs = True;
+            break
+
+    if inArgs:
+        stream.write("\n")
+        stream.write("    char *_tmpBuf = new char[inStr.length()];\n")
+        stream.write("    memcpy(_tmpBuf, inStr.data(), inStr.length());\n")
+        stream.write("    ::qpid::framing::Buffer inBuf(_tmpBuf, inStr.length());\n")
+
     for method in self.methods:
       stream.write ("\n    if (methodName == \"" + method.getName () + "\") {\n")
+      stream.write ("        _matched = true;\n")
       if method.getArgCount () == 0:
         stream.write ("        ::qpid::management::ArgsNone ioArgs;\n")
       else:
@@ -1131,7 +1374,43 @@ class SchemaClass:
           stream.write ("        " +\
                         arg.type.type.getWriteCode ("ioArgs." +\
                                                     arg.dir.lower () + "_" +\
-                                                    arg.name, "outBuf") + ";\n")
+                                                        arg.name, "outBuf") + ";\n")
+      stream.write("    }\n")
+
+    if inArgs:
+        stream.write ("\n    delete [] _tmpBuf;\n")
+
+
+
+  def genMapMethodHandlers (self, stream, variables):
+    for method in self.methods:
+      stream.write ("\n    if (methodName == \"" + method.getName () + "\") {\n")
+      if method.getArgCount () == 0:
+        stream.write ("        ::qpid::management::ArgsNone ioArgs;\n")
+      else:
+        stream.write ("        Args" + method.getFullName () + " ioArgs;\n")
+        stream.write ("        ::qpid::types::Variant::Map::const_iterator _i;\n")
+
+      # decode each input argument from the input map
+      for arg in method.args:
+        if arg.getDir () == "I" or arg.getDir () == "IO":
+          arg.type.type.genUnmap(stream,
+                                 "ioArgs." + arg.dir.lower () + "_" + arg.name,
+                                 "        ",
+                                 arg.name,
+                                 "inMap")
+
+      stream.write ("        status = coreObject->ManagementMethod (METHOD_" +\
+                    method.getName().upper() + ", ioArgs, text);\n")
+      stream.write ("        outMap[\"_status_code\"] = (uint32_t) status;\n")
+      stream.write ("        outMap[\"_status_text\"] = ::qpid::management::Manageable::StatusText(status, text);\n")
+      for arg in method.args:
+        if arg.getDir () == "O" or arg.getDir () == "IO":
+          arg.type.type.genMap(stream,
+                                 "ioArgs." + arg.dir.lower () + "_" + arg.name,
+                                 "        ",
+                                 arg.name,
+                                 "outMap")
       stream.write ("        return;\n    }\n")
 
   def genOpenNamespaces (self, stream, variables):
@@ -1160,6 +1439,10 @@ class SchemaClass:
     for prop in self.properties:
       prop.genSchema (stream)
 
+  def genPropertySchemaMap (self, stream, variables):
+    for prop in self.properties:
+      prop.genSchemaMap(stream)
+
   def genSetGeneralReferenceDeclaration (self, stream, variables):
     for prop in self.properties:
       if prop.isGeneralRef:
@@ -1168,6 +1451,10 @@ class SchemaClass:
   def genStatisticSchema (self, stream, variables):
     for stat in self.statistics:
       stat.genSchema (stream)
+
+  def genStatisticSchemaMap (self, stream, variables):
+    for stat in self.statistics:
+      stat.genSchemaMap(stream)
 
   def genMethodIdDeclarations (self, stream, variables):
     number = 1
@@ -1179,6 +1466,10 @@ class SchemaClass:
   def genMethodSchema (self, stream, variables):
     for method in self.methods:
       method.genSchema (stream, variables)
+
+  def genMethodSchemaMap(self, stream, variables):
+    for method in self.methods:
+      method.genSchemaMap(stream, variables)
 
   def genNameCap (self, stream, variables):
     stream.write (capitalize(self.name))
@@ -1241,6 +1532,17 @@ class SchemaClass:
     for stat in self.statistics:
       stat.genWrite (stream)
 
+  def genMapEncodeProperties(self, stream, variables):
+      for prop in self.properties:
+          prop.genMap (stream)
+
+  def genMapEncodeStatistics (self, stream, variables):
+      for stat in self.statistics:
+          stat.genMap (stream)
+
+  def genMapDecodeProperties (self, stream, variables):
+      for prop in self.properties:
+          prop.genUnmap (stream)
 
 class SchemaEventArgs:
   def __init__(self, package, node, typespec, fragments, options):

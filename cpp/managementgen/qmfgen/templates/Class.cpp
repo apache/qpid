@@ -21,15 +21,15 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/log/Statement.h"
+#include "qpid/management/Manageable.h"
 #include "qpid/framing/FieldTable.h"
-#include "qpid/management/Manageable.h" 
+#include "qpid/framing/Buffer.h"
 #include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
 #include <iostream>
 
 using namespace qmf::/*MGEN:Class.Namespace*/;
-using namespace qpid::framing;
 using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
 using           qpid::management::ManagementObject;
@@ -38,7 +38,7 @@ using           std::string;
 
 string  /*MGEN:Class.NameCap*/::packageName  = string ("/*MGEN:Class.NamePackageLower*/");
 string  /*MGEN:Class.NameCap*/::className    = string ("/*MGEN:Class.NameLower*/");
-uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
+uint8_t /*MGEN:Class.NameCap*/::md5Sum[MD5_LEN]   =
     {/*MGEN:Class.SchemaMD5*/};
 
 /*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (ManagementAgent*, Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
@@ -90,9 +90,12 @@ void /*MGEN:Class.NameCap*/::registerSelf(ManagementAgent* agent)
     agent->registerClass(packageName, className, md5Sum, writeSchema);
 }
 
-void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
+void /*MGEN:Class.NameCap*/::writeSchema (std::string& schema)
 {
-    FieldTable ft;
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+    ::qpid::framing::FieldTable ft;
 
     // Schema class header:
     buf.putOctet       (CLASS_KIND_TABLE);
@@ -109,10 +112,15 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 /*MGEN:Class.StatisticSchema*/
     // Methods
 /*MGEN:Class.MethodSchema*/
+    {
+        uint32_t _len = buf.getPosition();
+        buf.reset();
+        buf.getRawData(schema, _len);
+    }
 }
 
 /*MGEN:IF(Class.ExistPerThreadStats)*/
-void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* totals)
+void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* totals) const
 {
 /*MGEN:Class.InitializeTotalPerThreadStats*/
     for (int idx = 0; idx < maxThreads; idx++) {
@@ -124,6 +132,7 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 }
 /*MGEN:ENDIF*/
 
+/*MGEN:IF(Root.GenQMFv1)*/
 uint32_t /*MGEN:Class.NameCap*/::writePropertiesSize() const
 {
     uint32_t size = writeTimestampsSize();
@@ -134,32 +143,62 @@ uint32_t /*MGEN:Class.NameCap*/::writePropertiesSize() const
     return size;
 }
 
-void /*MGEN:Class.NameCap*/::readProperties (Buffer& buf)
+void /*MGEN:Class.NameCap*/::readProperties (const std::string& _sBuf)
 {
+    char *_tmpBuf = new char[_sBuf.length()];
+    memcpy(_tmpBuf, _sBuf.data(), _sBuf.length());
+    ::qpid::framing::Buffer buf(_tmpBuf, _sBuf.length());
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
-    readTimestamps(buf);
+
+    {
+        std::string _tbuf;
+        buf.getRawData(_tbuf, writeTimestampsSize());
+        readTimestamps(_tbuf);
+    }
+
 /*MGEN:IF(Class.ExistOptionals)*/
     for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
         presenceMask[idx] = buf.getOctet();
 /*MGEN:ENDIF*/
 /*MGEN:Class.ReadProperties*/
+
+    delete [] _tmpBuf;
 }
 
-void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf) const
+void /*MGEN:Class.NameCap*/::writeProperties (std::string& _sBuf) const
 {
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
     configChanged = false;
 
-    writeTimestamps (buf);
+    {
+        std::string _tbuf;
+        writeTimestamps(_tbuf);
+        buf.putRawData(_tbuf);
+    }
+
+
 /*MGEN:IF(Class.ExistOptionals)*/
     for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
         buf.putOctet(presenceMask[idx]);
 /*MGEN:ENDIF*/
 /*MGEN:Class.WriteProperties*/
+
+    uint32_t _bufLen = buf.getPosition();
+    buf.reset();
+
+    buf.getRawData(_sBuf, _bufLen);
 }
 
-void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
+void /*MGEN:Class.NameCap*/::writeStatistics (std::string& _sBuf, bool skipHeaders)
 {
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
 /*MGEN:IF(Class.ExistPerThreadAssign)*/
@@ -175,8 +214,12 @@ void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
     aggregatePerThreadStats(&totals);
 /*MGEN:ENDIF*/
 /*MGEN:Class.Assign*/
-    if (!skipHeaders)
-        writeTimestamps (buf);
+    if (!skipHeaders) {
+        std::string _tbuf;
+        writeTimestamps (_tbuf);
+        buf.putRawData(_tbuf);
+    }
+
 /*MGEN:Class.WriteStatistics*/
 
     // Maintenance of hi-lo statistics
@@ -189,6 +232,11 @@ void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
         }
     }
 /*MGEN:ENDIF*/
+
+    uint32_t _bufLen = buf.getPosition();
+    buf.reset();
+
+    buf.getRawData(_sBuf, _bufLen);
 }
 
 void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
@@ -196,11 +244,25 @@ void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
     std::string          text;
 
-/*MGEN:Class.MethodHandlers*/
-    outBuf.putLong(status);
-    outBuf.putShortString(Manageable::StatusText(status, text));
-}
+    bool _matched = false;
 
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer outBuf(_msgChars, _bufSize);
+
+/*MGEN:Class.MethodHandlers*/
+
+    if (!_matched) {
+        outBuf.putLong(status);
+        outBuf.putShortString(Manageable::StatusText(status, text));
+    }
+
+    uint32_t _bufLen = outBuf.getPosition();
+    outBuf.reset();
+
+    outBuf.getRawData(outStr, _bufLen);
+}
+/*MGEN:ENDIF*/
 std::string /*MGEN:Class.NameCap*/::getKey() const
 {
     std::stringstream key;
@@ -209,3 +271,67 @@ std::string /*MGEN:Class.NameCap*/::getKey() const
     return key.str();
 }
 
+
+
+void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::types::Variant::Map& _map,
+                                              bool includeProperties,
+                                              bool includeStatistics)
+{
+    using namespace ::qpid::types;
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+
+    if (includeProperties) {
+        configChanged = false;
+/*MGEN:Class.MapEncodeProperties*/
+    }
+
+    if (includeStatistics) {
+        instChanged = false;
+/*MGEN:IF(Class.ExistPerThreadAssign)*/
+        for (int idx = 0; idx < maxThreads; idx++) {
+            struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+            if (threadStats != 0) {
+/*MGEN:Class.PerThreadAssign*/
+            }
+        }
+/*MGEN:ENDIF*/
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+        struct PerThreadStats totals;
+        aggregatePerThreadStats(&totals);
+/*MGEN:ENDIF*/
+/*MGEN:Class.Assign*/
+
+/*MGEN:Class.MapEncodeStatistics*/
+
+    // Maintenance of hi-lo statistics
+/*MGEN:Class.HiLoStatResets*/
+/*MGEN:IF(Class.ExistPerThreadResets)*/
+        for (int idx = 0; idx < maxThreads; idx++) {
+            struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+            if (threadStats != 0) {
+/*MGEN:Class.PerThreadHiLoStatResets*/
+            }
+        }
+/*MGEN:ENDIF*/
+    }
+}
+
+void /*MGEN:Class.NameCap*/::mapDecodeValues (const ::qpid::types::Variant::Map& _map)
+{
+    ::qpid::types::Variant::Map::const_iterator _i;
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+/*MGEN:IF(Class.ExistOptionals)*/
+    bool _found;
+/*MGEN:ENDIF*/
+/*MGEN:Class.MapDecodeProperties*/
+}
+
+void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMapMethodArgs*/)
+{
+    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+    std::string          text;
+
+/*MGEN:Class.MapMethodHandlers*/
+    outMap["_status_code"] = (uint32_t) status;
+    outMap["_status_text"] = Manageable::StatusText(status, text);
+}

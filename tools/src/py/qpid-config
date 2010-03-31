@@ -189,7 +189,7 @@ class BrokerManager:
         self.broker = self.qmf.addBroker(brokerUrl, _connTimeout)
         agents = self.qmf.getAgents()
         for a in agents:
-            if a.getAgentBank() == 0:
+            if a.getAgentBank() == '0':
                 self.brokerAgent = a
 
     def Disconnect(self):
