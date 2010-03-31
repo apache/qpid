@@ -40,7 +40,6 @@ using std::stringstream;
 using std::ofstream;
 using std::ifstream;
 using std::string;
-using std::cout;
 using std::endl;
 
 namespace {
