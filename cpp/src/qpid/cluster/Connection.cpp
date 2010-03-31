@@ -381,11 +381,10 @@ void Connection::shadowReady(
 }
 
 void Connection::membership(const FieldTable& joiners, const FieldTable& members,
-                            const framing::SequenceNumber& frameSeq,
-                            const framing::SequenceNumber& configSeq)
+                            const framing::SequenceNumber& frameSeq)
 {
     QPID_LOG(debug, cluster << " incoming update complete on connection " << *this);
-    cluster.updateInDone(ClusterMap(joiners, members, frameSeq, configSeq));
+    cluster.updateInDone(ClusterMap(joiners, members, frameSeq));
     updateIn.consumerNumbering.clear();
     self.second = 0;        // Mark this as completed update connection.
 }

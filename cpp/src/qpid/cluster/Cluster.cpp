@@ -638,8 +638,6 @@ void Cluster::initMapCompleted(Lock& l) {
         }
         else {                  // I can go ready.
             discarding = false;
-            map.resetConfigSeq(); // Start from config-seq = 0
-            store.setConfigSeq(map.getConfigSeq());
             setReady(l);
             memberUpdate(l);
             mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
@@ -658,8 +656,7 @@ void Cluster::configChange(const MemberId&,
     MemberSet members = decodeMemberSet(membersStr);
     MemberSet left = decodeMemberSet(leftStr);
     MemberSet joined = decodeMemberSet(joinedStr);
-    QPID_LOG(notice, *this << " Membership update " << map.getConfigSeq() << ": "
-             << members);
+    QPID_LOG(notice, *this << " Membership update: " << members);
     QPID_LOG_IF(notice, !left.empty(), *this << " Members left: " << left);
     QPID_LOG_IF(notice, !joined.empty(), *this << " Members joined: " << joined);
 
@@ -671,7 +668,6 @@ void Cluster::configChange(const MemberId&,
         return;
     }
     bool memberChange = map.configChange(members);
-    store.setConfigSeq(map.getConfigSeq());
 
     // Update initital status for members joining or leaving.
     initMap.configChange(members);

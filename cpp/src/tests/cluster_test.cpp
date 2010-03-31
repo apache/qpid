@@ -87,7 +87,7 @@ ClusterFixture::Args prepareArgs(const bool durableFlag = false) {
 }
 
 // Timeout for tests that wait for messages
-const sys::Duration TIMEOUT=sys::TIME_SEC/2;
+const sys::Duration TIMEOUT=2*sys::TIME_SEC;
 
 
 ostream& operator<<(ostream& o, const cpg_name* n) {
