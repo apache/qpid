@@ -26,13 +26,12 @@ from qpid.datatypes import RangedSet, Serial
 from qpid.exceptions import Timeout, VersionError
 from qpid.framing import OpEncoder, SegmentEncoder, FrameEncoder, \
     FrameDecoder, SegmentDecoder, OpDecoder
-from qpid.messaging import address
+from qpid.messaging import address, transports
 from qpid.messaging.constants import UNLIMITED, REJECTED, RELEASED
 from qpid.messaging.exceptions import ConnectError
 from qpid.messaging.message import get_codec, Disposition, Message
 from qpid.ops import *
 from qpid.selector import Selector
-from qpid.util import connect
 from qpid.validator import And, Context, List, Map, Types, Values
 from threading import Condition, Thread
 
@@ -328,7 +327,7 @@ class Driver:
         self.connection.backups
     self._host = 0
     self._retrying = False
-    self._socket = None
+    self._transport = None
 
     self._timeout = None
 
@@ -346,15 +345,17 @@ class Driver:
     self._selector.unregister(self)
 
   def fileno(self):
-    return self._socket.fileno()
+    return self._transport.fileno()
 
   @synchronized
   def reading(self):
-    return self._socket is not None
+    return self._transport is not None and \
+        self._transport.reading(True)
 
   @synchronized
   def writing(self):
-    return self._socket is not None and self.engine.pending()
+    return self._transport is not None and \
+        self._transport.writing(self.engine.pending())
 
   @synchronized
   def timing(self):
@@ -363,8 +364,10 @@ class Driver:
   @synchronized
   def readable(self):
     try:
-      data = self._socket.recv(64*1024)
-      if data:
+      data = self._transport.recv(64*1024)
+      if data is None:
+        return
+      elif data:
         rawlog.debug("READ[%s]: %r", self.log_id, data)
         self.engine.write(data)
       else:
@@ -404,8 +407,8 @@ class Driver:
   def st_closed(self):
     # XXX: this log statement seems to sometimes hit when the socket is not connected
     # XXX: rawlog.debug("CLOSE[%s]: %s", self.log_id, self._socket.getpeername())
-    self._socket.close()
-    self._socket = None
+    self._transport.close()
+    self._transport = None
     self.engine = None
     return True
 
@@ -416,7 +419,8 @@ class Driver:
   def writeable(self):
     notify = False
     try:
-      n = self._socket.send(self.engine.peek())
+      n = self._transport.send(self.engine.peek())
+      if n == 0: return
       sent = self.engine.read(n)
       rawlog.debug("SENT[%s]: %r", self.log_id, sent)
     except socket.error, e:
@@ -433,7 +437,7 @@ class Driver:
 
   def dispatch(self):
     try:
-      if self._socket is None:
+      if self._transport is None:
         if self.connection._connected:
           self.connect()
       else:
@@ -454,7 +458,11 @@ class Driver:
       self.engine = Engine(self.connection)
       self.engine.open()
       rawlog.debug("OPEN[%s]: %s:%s", self.log_id, host, port)
-      self._socket = connect(host, port)
+      trans = getattr(transports, self.connection.transport, None)
+      if trans:
+        self._transport = trans(host, port)
+      else:
+        raise ConnectError("no such transport: %s" % self.connection.transport)
       if self._retrying:
         log.warn("reconnect succeeded: %s:%s", host, port)
       self._timeout = None

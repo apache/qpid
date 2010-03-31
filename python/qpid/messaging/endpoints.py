@@ -79,7 +79,6 @@ class Connection:
     @return: a disconnected Connection
     """
     self.host = host
-    self.port = default(port, AMQP_PORT)
     self.username = username
     self.password = password
     self.mechanisms = options.get("mechanisms")
@@ -87,8 +86,14 @@ class Connection:
     self.reconnect = options.get("reconnect", False)
     self.reconnect_delay = options.get("reconnect_delay", 3)
     self.reconnect_limit = options.get("reconnect_limit")
+    self.transport = options.get("transport", "plain")
     self.backups = options.get("backups", [])
     self.options = options
+
+    if self.transport == "tls":
+      self.port = default(port, AMQPS_PORT)
+    else:
+      self.port = default(port, AMQP_PORT)
 
     self.id = str(uuid4())
     self.session_counter = 0

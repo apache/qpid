@@ -30,13 +30,13 @@ class SetupTests(Base):
   def testOpen(self):
     # XXX: need to flesh out URL support/syntax
     self.conn = Connection.open(self.broker.host, self.broker.port,
-                                reconnect=self.reconnect())
+                                **self.connection_options())
     self.ping(self.conn.session())
 
   def testConnect(self):
     # XXX: need to flesh out URL support/syntax
     self.conn = Connection(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
     self.conn.connect()
     self.ping(self.conn.session())
 
@@ -65,7 +65,8 @@ class SetupTests(Base):
       for i in range(32):
         if fds: os.close(fds.pop())
       for i in xrange(64):
-        conn = Connection.open(self.broker.host, self.broker.port)
+        conn = Connection.open(self.broker.host, self.broker.port,
+                               **self.connection_options())
         conn.close()
     finally:
       while fds:
@@ -75,7 +76,7 @@ class ConnectionTests(Base):
 
   def setup_connection(self):
     return Connection.open(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
 
   def testSessionAnon(self):
     ssn1 = self.conn.session()
@@ -118,7 +119,7 @@ class SessionTests(Base):
 
   def setup_connection(self):
     return Connection.open(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -405,7 +406,7 @@ class ReceiverTests(Base):
 
   def setup_connection(self):
     return Connection.open(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -575,7 +576,7 @@ class AddressTests(Base):
 
   def setup_connection(self):
     return Connection.open(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -846,7 +847,7 @@ class AddressErrorTests(Base):
 
   def setup_connection(self):
     return Connection.open(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -913,7 +914,7 @@ class SenderTests(Base):
 
   def setup_connection(self):
     return Connection.open(self.broker.host, self.broker.port,
-                           reconnect=self.reconnect())
+                           **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
