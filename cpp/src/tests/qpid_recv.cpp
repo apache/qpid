@@ -153,7 +153,7 @@ int main(int argc, char ** argv)
         try {
             connection.open(opts.url);
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
-            Session session = connection.newSession(opts.tx > 0);
+            Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
             Receiver receiver = session.createReceiver(opts.address);
             receiver.setCapacity(opts.capacity);
             Message msg;

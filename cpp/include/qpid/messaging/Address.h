@@ -30,11 +30,18 @@
 namespace qpid {
 namespace messaging {
 
+/**
+ * Thrown when a syntactically correct address cannot be resolved or
+ * used.
+ */
 struct InvalidAddress : public qpid::Exception 
 {
     InvalidAddress(const std::string& msg);
 };
 
+/**
+ * Thrown when an address string with inalid sytanx is used.
+ */
 struct MalformedAddress : public qpid::Exception 
 {
     MalformedAddress(const std::string& msg);
@@ -117,6 +124,8 @@ class AddressImpl;
  * merely browse the messages. Valid values are 'consume' and
  * 'browse'</td></tr>
  * </table>
+ * 
+ * An address has value semantics.
  */
 class Address
 {
@@ -132,17 +141,22 @@ class Address
     QPID_CLIENT_EXTERN void setName(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getSubject() const;
     QPID_CLIENT_EXTERN void setSubject(const std::string&);
-    QPID_CLIENT_EXTERN bool hasSubject() const;
     QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getOptions() const;
     QPID_CLIENT_EXTERN qpid::types::Variant::Map& getOptions();
     QPID_CLIENT_EXTERN void setOptions(const qpid::types::Variant::Map&);
 
     QPID_CLIENT_EXTERN std::string getType() const;
+    /**
+     * The type of and addressed node influences how receivers and
+     * senders are constructed for it. It also affects how a reply-to
+     * address is encoded. If the type is not specified in the address
+     * itself, it will be automatically determined by querying the
+     * broker. The type can be explicitly set to prevent this if
+     * needed.
+     */
     QPID_CLIENT_EXTERN void setType(const std::string&);
 
-    QPID_CLIENT_EXTERN const qpid::types::Variant& getOption(const std::string& key) const;
-
-    QPID_CLIENT_EXTERN std::string toStr() const;
+    QPID_CLIENT_EXTERN std::string str() const;
     QPID_CLIENT_EXTERN operator bool() const;
     QPID_CLIENT_EXTERN bool operator !() const;
   private:

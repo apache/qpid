@@ -46,7 +46,7 @@ struct FailoverUpdatesImpl : qpid::sys::Runnable
 
     FailoverUpdatesImpl(Connection& c) : connection(c), quit(false)
     {
-        session = connection.newSession("failover-updates");
+        session = connection.createSession("failover-updates");
         receiver = session.createReceiver("amq.failover");
         thread = qpid::sys::Thread(*this);
     }

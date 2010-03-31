@@ -92,7 +92,7 @@ Address::~Address() { delete impl; }
 Address& Address::operator=(const Address& a) { *impl = *a.impl; return *this; }
 
 
-std::string Address::toStr() const
+std::string Address::str() const
 {
     std::stringstream out;
     out << impl->name;
@@ -106,7 +106,6 @@ bool Address::operator !() const { return impl->name.empty(); }
 const std::string& Address::getName() const { return impl->name; }
 void Address::setName(const std::string& name) { impl->name = name; }
 const std::string& Address::getSubject() const { return impl->subject; }
-bool Address::hasSubject() const { return !(impl->subject.empty()); }
 void Address::setSubject(const std::string& subject) { impl->subject = subject; }
 const Variant::Map& Address::getOptions() const { return impl->options; }
 Variant::Map& Address::getOptions() { return impl->options; }
@@ -128,7 +127,7 @@ const Variant& find(const Variant::Map& map, const std::string& key)
 
 std::string Address::getType() const
 {
-    const Variant& props = getOption(NODE_PROPERTIES);
+    const Variant& props = find(impl->options, NODE_PROPERTIES);
     if (props.getType() == VAR_MAP) {
         const Variant& type = find(props.asMap(), TYPE);
         if (!type.isVoid()) return type.asString();
@@ -143,14 +142,9 @@ void Address::setType(const std::string& type)
     props.asMap()[TYPE] = type;
 }
 
-const Variant& Address::getOption(const std::string& key) const
-{
-    return find(impl->options, key);
-}
-
 std::ostream& operator<<(std::ostream& out, const Address& address)
 {
-    out << address.toStr();
+    out << address.str();
     return out;
 }
 

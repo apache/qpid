@@ -138,7 +138,7 @@ class Variant
     QPID_COMMON_EXTERN operator int64_t() const;
     QPID_COMMON_EXTERN operator float() const;
     QPID_COMMON_EXTERN operator double() const;
-    QPID_COMMON_EXTERN operator const char*() const;
+    QPID_COMMON_EXTERN operator std::string() const;
     QPID_COMMON_EXTERN operator Uuid() const;
 
     QPID_COMMON_EXTERN const Map& asMap() const;
@@ -166,9 +166,6 @@ QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const Variant& va
 QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::Map& map);
 QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::List& list);
 QPID_COMMON_EXTERN bool operator==(const Variant& a, const Variant& b);
-
-typedef Variant::Map VariantMap;
-
 }} // namespace qpid::types
 
 #endif  /*!QPID_TYPES_VARIANT_H*/

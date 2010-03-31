@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
     Connection connection;
     try {
         connection.open(url);
-        Session session = connection.newSession();
+        Session session = connection.createSession();
         Sender sender = session.createSender("news_service");
 
 	// Now send some messages to each topic...

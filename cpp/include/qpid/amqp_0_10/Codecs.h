@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_AMQP0_10_CODECS_H
-#define QPID_CLIENT_AMQP0_10_CODECS_H
+#ifndef QPID_AMQP_0_10_CODECS_H
+#define QPID_AMQP_0_10_CODECS_H
 
 /*
  *
@@ -21,23 +21,23 @@
  * under the License.
  *
  */
-#include "qpid/messaging/Codec.h"
+
+#include "qpid/types/Variant.h"
 
 namespace qpid {
-namespace client {
-namespace amqp0_10 {
-
-
+namespace framing {
+class FieldTable;
+}
+namespace amqp_0_10 {
 /**
  * Codec for encoding/decoding a map of Variants using the AMQP 0-10
  * map encoding.
  */
-class MapCodec : public qpid::messaging::Codec
+class MapCodec
 {
   public:
-    void encode(const qpid::types::Variant&, std::string&);
-    void decode(const std::string&, qpid::types::Variant&);
-
+    static void encode(const qpid::types::Variant::Map&, std::string&);
+    static void decode(const std::string&, qpid::types::Variant::Map&);
     static const std::string contentType;
   private:
 };
@@ -46,16 +46,25 @@ class MapCodec : public qpid::messaging::Codec
  * Codec for encoding/decoding a list of Variants using the AMQP 0-10
  * list encoding.
  */
-class ListCodec : public qpid::messaging::Codec
+class ListCodec
 {
   public:
-    void encode(const qpid::types::Variant&, std::string&);
-    void decode(const std::string&, qpid::types::Variant&);
-
+    static void encode(const qpid::types::Variant::List&, std::string&);
+    static void decode(const std::string&, qpid::types::Variant::List&);
     static const std::string contentType;
   private:
 };
 
-}}} // namespace qpid::client::amqp0_10
+/**
+ * @internal
+ *
+ * Conversion functions between qpid::types:Variant::Map and the
+ * deprecated qpid::framing::FieldTable.
+ *
+ */
+void translate(const qpid::types::Variant::Map& from, qpid::framing::FieldTable& to);
+void translate(const qpid::framing::FieldTable& from, qpid::types::Variant::Map& to);
 
-#endif  /*!QPID_CLIENT_AMQP0_10_CODECS_H*/
+}} // namespace qpid::amqp_0_10
+
+#endif  /*!QPID_AMQP_0_10_CODECS_H*/
