@@ -47,11 +47,9 @@ class StoreStatus
 
     const Uuid& getClusterId() const { return clusterId; }
     const Uuid& getShutdownId() const { return shutdownId; }
-    framing::SequenceNumber getConfigSeq() const { return configSeq; }
 
     void dirty(const Uuid& clusterId);  // Mark the store in use by clusterId.
     void clean(const Uuid& shutdownId); // Mark the store clean at shutdownId
-    void setConfigSeq(framing::SequenceNumber seq); // Update the config seq number.
 
     void load();
     void save();
@@ -62,7 +60,6 @@ class StoreStatus
     framing::cluster::StoreState state;
     Uuid clusterId, shutdownId;
     std::string dataDir;
-    framing::SequenceNumber configSeq;
 };
 
 const char* stateName(framing::cluster::StoreState);
