@@ -57,7 +57,7 @@ class OpCode(object):
     agent_locate_req = "_agent_locate_request"
     subscribe_req = "_subscribe_request"
     subscribe_cancel_ind = "_subscribe_cancel_indication"
-    subscribe_refresh_req = "_subscribe_refresh_indication"
+    subscribe_refresh_ind = "_subscribe_refresh_indication"
     query_req = "_query_request"
     method_req = "_method_request"
 
@@ -67,7 +67,6 @@ class OpCode(object):
     agent_heartbeat_ind = "_agent_heartbeat_indication"
     query_rsp = "_query_response"
     subscribe_rsp = "_subscribe_response"
-    subscribe_refresh_rsp = "_subscribe_refresh_response"
     data_ind = "_data_indication"
     method_rsp = "_method_response"
 

@@ -506,7 +506,7 @@ class BaseTest(unittest.TestCase):
 
                 if r_count == 3:
                     rp = self.console.refresh_subscription(sp.get_subscription_id())
-                    self.assertTrue(isinstance(rp, qmf2.console.SubscribeParams))
+                    self.assertTrue(rp)
 
                 wi = self.console.get_next_workitem(timeout=0)
 
@@ -695,7 +695,6 @@ class BaseTest(unittest.TestCase):
         r_count = 0
         i_count = 0
         sp = None
-        rp = None
         while self.notifier.wait_for_work(4):
             wi = self.console.get_next_workitem(timeout=0)
             while wi is not None:
@@ -706,12 +705,6 @@ class BaseTest(unittest.TestCase):
                     self.assertTrue(isinstance(sp, qmf2.console.SubscribeParams))
                     self.assertTrue(sp.succeeded())
                     self.assertTrue(sp.get_error() == None)
-                elif wi.get_type() == WorkItem.RESUBSCRIBE_RESPONSE:
-                    self.assertTrue(wi.get_handle() == "my-handle")
-                    rp = wi.get_params()
-                    self.assertTrue(isinstance(rp, qmf2.console.SubscribeParams))
-                    self.assertTrue(rp.succeeded())
-                    self.assertTrue(rp.get_error() == None)
                 else:
                     self.assertTrue(wi.get_type() ==
                                     WorkItem.SUBSCRIBE_INDICATION)
@@ -745,7 +738,7 @@ class BaseTest(unittest.TestCase):
                 wi = self.console.get_next_workitem(timeout=0)
 
         # expect 5 publish per subscription, more if refreshed
-        self.assertTrue(sp is not None and rp is not None)
+        self.assertTrue(sp is not None)
         self.assertTrue(i_count > 5)
 
         self.console.destroy(10)
@@ -785,7 +778,6 @@ class BaseTest(unittest.TestCase):
 
         r_count = 0
         sp = None
-        rp = None
         while self.notifier.wait_for_work(4):
             wi = self.console.get_next_workitem(timeout=0)
             while wi is not None:
