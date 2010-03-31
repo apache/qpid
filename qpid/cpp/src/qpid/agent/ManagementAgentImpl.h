@@ -51,6 +51,9 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     // Methods from ManagementAgent
     //
     int getMaxThreads() { return 1; }
+    void setName(const std::string& vendor,
+                 const std::string& product,
+                 const std::string& instance="");
     void init(const std::string& brokerHost = "localhost",
               uint16_t brokerPort = 5672,
               uint16_t intervalSeconds = 10,
@@ -75,6 +78,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                        uint8_t*     md5Sum,
                        management::ManagementObject::writeSchemaCall_t schemaCall);
     ObjectId addObject(management::ManagementObject* objectPtr, uint64_t persistId = 0);
+    ObjectId addObject(management::ManagementObject* objectPtr, const std::string& key,
+                       bool persistent);
     void raiseEvent(const management::ManagementEvent& event, severity_t severity = SEV_DEFAULT);
     uint32_t pollCallbacks(uint32_t callLimit = 0);
     int getSignalFd();
@@ -120,10 +125,10 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     };
 
     struct QueuedMethod {
-        QueuedMethod(uint32_t _seq, std::string _reply, std::string _body) :
-            sequence(_seq), replyTo(_reply), body(_body) {}
+    QueuedMethod(const std::string& _cid, const std::string& _reply, const std::string& _body) :
+        cid(_cid), replyTo(_reply), body(_body) {}
 
-        uint32_t    sequence;
+        std::string cid;
         std::string replyTo;
         std::string body;
     };
@@ -140,6 +145,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     void received (client::Message& msg);
 
+    qpid::types::Variant::Map attrMap;
+    std::string       name_address;
     uint16_t          interval;
     bool              extThread;
     sys::PipeHandle*  pipeHandle;
@@ -155,6 +162,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     client::ConnectionSettings connectionSettings;
     bool              initialized;
     bool              connected;
+    bool              useMapMsg;
     std::string       lastFailure;
 
     bool              clientWasAdded;
@@ -198,6 +206,15 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                         uint32_t               length,
                         const std::string&     exchange,
                         const std::string&     routingKey);
+        void sendBuffer(const std::string&     data,
+                        const std::string&     cid,
+                        const qpid::types::Variant::Map headers,
+                        const std::string&     exchange,
+                        const std::string&     routingKey,
+                        const std::string&     contentType="amqp/map");
+        void sendMessage(qpid::client::Message msg,
+                         const std::string&     exchange,
+                         const std::string&     routingKey);
         void bindToBank(uint32_t brokerBank, uint32_t agentBank);
         void close();
         bool isSleeping() const;
@@ -237,16 +254,21 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                 PackageMap::iterator   pIter,
                                 ClassMap::iterator     cIter);
     void encodeHeader (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
+    qpid::types::Variant::Map mapEncodeSchemaId(const std::string& pname,
+                                                const std::string& cname,
+                                                const uint8_t *md5Sum);
     bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
-    void sendCommandComplete  (std::string replyToKey, uint32_t sequence,
-                               uint32_t code = 0, std::string text = std::string("OK"));
-    void handleAttachResponse (qpid::framing::Buffer& inBuffer);
+    void sendHeartbeat();
+    void sendException(const std::string& replyToKey, const std::string& cid,
+                       const std::string& text, uint32_t code=1);
     void handlePackageRequest (qpid::framing::Buffer& inBuffer);
     void handleClassQuery     (qpid::framing::Buffer& inBuffer);
-    void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence);
-    void invokeMethodRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
-    void handleGetQuery       (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
-    void handleMethodRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
+    void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, const std::string& replyTo);
+    void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& replyTo);
+
+    void handleGetQuery       (const std::string& body, const std::string& cid, const std::string& replyTo);
+    void handleLocateRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
+    void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
     void handleConsoleAddedIndication();
 };
 

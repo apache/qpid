@@ -21,13 +21,13 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/log/Statement.h"
-#include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h" 
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid//*MGEN:Event.AgentHeaderLocation*//ManagementAgent.h"
 #include "Event/*MGEN:Event.NameCap*/.h"
 
 using namespace qmf::/*MGEN:Event.Namespace*/;
-using namespace qpid::framing;
 using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
 using           qpid::management::ManagementObject;
@@ -56,23 +56,45 @@ void Event/*MGEN:Event.NameCap*/::registerSelf(ManagementAgent* agent)
     agent->registerEvent(packageName, eventName, md5Sum, writeSchema);
 }
 
-void Event/*MGEN:Event.NameCap*/::writeSchema (Buffer& buf)
+void Event/*MGEN:Event.NameCap*/::writeSchema (std::string& schema)
 {
-    FieldTable ft;
+    const int _bufSize = 65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+    ::qpid::framing::FieldTable ft;
 
     // Schema class header:
     buf.putOctet       (CLASS_KIND_EVENT);
     buf.putShortString (packageName); // Package Name
     buf.putShortString (eventName);   // Event Name
     buf.putBin128      (md5Sum);      // Schema Hash
-    buf.putOctet       (0);           // No Superclass    
     buf.putShort       (/*MGEN:Event.ArgCount*/); // Argument Count
 
     // Arguments
 /*MGEN:Event.ArgSchema*/
+    {
+        uint32_t _len = buf.getPosition();
+        buf.reset();
+        buf.getRawData(schema, _len);
+    }
 }
 
-void Event/*MGEN:Event.NameCap*/::encode(::qpid::framing::Buffer& buf) const
+void Event/*MGEN:Event.NameCap*/::encode(std::string& _sBuf) const
 {
+    const int _bufSize=65536;
+    char _msgChars[_bufSize];
+    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+
 /*MGEN:Event.ArgEncodes*/
+
+    uint32_t _bufLen = buf.getPosition();
+    buf.reset();
+
+    buf.getRawData(_sBuf, _bufLen);
+}
+
+void Event/*MGEN:Event.NameCap*/::mapEncode(::qpid::types::Variant::Map& map) const
+{
+    using namespace ::qpid::types;
+/*MGEN:Event.ArgMap*/
 }

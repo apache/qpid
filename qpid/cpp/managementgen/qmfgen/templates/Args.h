@@ -24,8 +24,8 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/management/Args.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/framing/Uuid.h"
+//#include "qpid/framing/FieldTable.h"
+//#include "qpid/framing/Uuid.h"
 #include <string>
 
 namespace qmf { 

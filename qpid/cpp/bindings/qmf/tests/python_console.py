@@ -48,7 +48,7 @@ class QmfInteropTests(TestBase010):
         self.assertEqual(len(parents), 1)
         parent = parents[0]
         for seq in range(10):
-            result = parent.echo(seq)
+            result = parent.echo(seq, _timeout=5)
             self.assertEqual(result.status, 0)
             self.assertEqual(result.text, "OK")
             self.assertEqual(result.sequence, seq)

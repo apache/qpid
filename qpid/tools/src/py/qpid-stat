@@ -91,7 +91,7 @@ class Broker(object):
 
         agents = qmf.getAgents()
         for a in agents:
-            if a.getAgentBank() == 0:
+            if a.getAgentBank() == '0':
                 self.brokerAgent = a
 
         bobj = qmf.getObjects(_class="broker", _package="org.apache.qpid.broker", _agent=self.brokerAgent)[0]

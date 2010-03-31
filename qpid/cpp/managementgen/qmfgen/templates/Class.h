@@ -24,8 +24,6 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/management/ManagementObject.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/framing/Uuid.h"
 
 namespace qpid {
     namespace management {
@@ -42,7 +40,7 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
 
     static std::string packageName;
     static std::string className;
-    static uint8_t     md5Sum[16];
+    static uint8_t     md5Sum[MD5_LEN];
 /*MGEN:IF(Class.ExistOptionals)*/
     uint8_t presenceMask[/*MGEN:Class.PresenceMaskBytes*/];
 /*MGEN:Class.PresenceMaskConstants*/
@@ -71,18 +69,28 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
         return threadStats;
     }
 
-    void aggregatePerThreadStats(struct PerThreadStats*);
+    void aggregatePerThreadStats(struct PerThreadStats*) const;
 /*MGEN:ENDIF*/
   public:
-    static void writeSchema(::qpid::framing::Buffer& buf);
-    uint32_t writePropertiesSize() const;
-    void readProperties(::qpid::framing::Buffer& buf);
-    void writeProperties(::qpid::framing::Buffer& buf) const;
-    void writeStatistics(::qpid::framing::Buffer& buf, bool skipHeaders = false);
-    void doMethod(std::string& methodName,
-                  ::qpid::framing::Buffer& inBuf,
-                  ::qpid::framing::Buffer& outBuf);
+    static void writeSchema(std::string& schema);
+    void mapEncodeValues(::qpid::types::Variant::Map& map,
+                         bool includeProperties=true,
+                         bool includeStatistics=true);
+    void mapDecodeValues(const ::qpid::types::Variant::Map& map);
+    void doMethod(std::string&           methodName,
+                  const ::qpid::types::Variant::Map& inMap,
+                  ::qpid::types::Variant::Map& outMap);
     std::string getKey() const;
+/*MGEN:IF(Root.GenQMFv1)*/
+    uint32_t writePropertiesSize() const;
+    void readProperties(const std::string& buf);
+    void writeProperties(std::string& buf) const;
+    void writeStatistics(std::string& buf, bool skipHeaders = false);
+    void doMethod(std::string& methodName,
+                  const std::string& inBuf,
+                  std::string& outBuf);
+/*MGEN:ENDIF*/
+
     writeSchemaCall_t getWriteSchemaCall() { return writeSchema; }
 /*MGEN:IF(Class.NoStatistics)*/
     // Stub for getInstChanged.  There are no statistics in this class.

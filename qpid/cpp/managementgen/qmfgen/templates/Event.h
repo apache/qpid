@@ -24,8 +24,6 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/management/ManagementEvent.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/framing/Uuid.h"
 
 namespace qmf {
 /*MGEN:Event.OpenNamespaces*/
@@ -33,10 +31,10 @@ namespace qmf {
 class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
 {
   private:
-    static void writeSchema (::qpid::framing::Buffer& buf);
+    static void writeSchema (std::string& schema);
     static std::string packageName;
     static std::string eventName;
-    static uint8_t md5Sum[16];
+    static uint8_t md5Sum[MD5_LEN];
 
 /*MGEN:Event.ArgDeclarations*/
 
@@ -51,7 +49,8 @@ class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
     std::string& getEventName() const { return eventName; }
     uint8_t* getMd5Sum() const { return md5Sum; }
     uint8_t getSeverity() const { return /*MGEN:Event.Severity*/; }
-    void encode(::qpid::framing::Buffer& buffer) const;
+    void encode(std::string& buffer) const;
+    void mapEncode(::qpid::types::Variant::Map& map) const;
 };
 
 }/*MGEN:Event.CloseNamespaces*/

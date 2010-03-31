@@ -24,8 +24,8 @@
 
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Mutex.h"
-#include <qpid/framing/Buffer.h>
 #include "qpid/CommonImportExport.h"
+#include "qpid/types/Variant.h"
 #include <map>
 #include <vector>
 
@@ -53,23 +53,33 @@ protected:
     const AgentAttachment* agent;
     uint64_t first;
     uint64_t second;
+    uint64_t agentEpoch;
     std::string v2Key;
+    std::string agentName;
     void fromString(const std::string&);
 public:
-    QPID_COMMON_EXTERN ObjectId() : agent(0), first(0), second(0) {}
-    QPID_COMMON_EXTERN ObjectId(framing::Buffer& buf) : agent(0) { decode(buf); }
-    QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, uint64_t object);
-    QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_t object);
+    QPID_COMMON_EXTERN ObjectId() : agent(0), first(0), second(0), agentEpoch(0) {}
+    QPID_COMMON_EXTERN ObjectId(const types::Variant& map) :
+    agent(0), first(0), second(0), agentEpoch(0) { mapDecode(map.asMap()); }
+    QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker);
+    QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq);
     QPID_COMMON_EXTERN ObjectId(std::istream&);
     QPID_COMMON_EXTERN ObjectId(const std::string&);
+    // Deprecated:
+    QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint64_t object);
     QPID_COMMON_EXTERN bool operator==(const ObjectId &other) const;
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
+    QPID_COMMON_EXTERN void mapEncode(types::Variant::Map& map) const;
+    QPID_COMMON_EXTERN void mapDecode(const types::Variant::Map& map);
+    QPID_COMMON_EXTERN operator types::Variant::Map() const;
     QPID_COMMON_EXTERN uint32_t encodedSize() const { return 16; };
-    QPID_COMMON_EXTERN void encode(framing::Buffer& buffer) const;
-    QPID_COMMON_EXTERN void decode(framing::Buffer& buffer);
+    QPID_COMMON_EXTERN void encode(std::string& buffer) const;
+    QPID_COMMON_EXTERN void decode(const std::string& buffer);
+    QPID_COMMON_EXTERN bool equalV1(const ObjectId &other) const;
     QPID_COMMON_EXTERN void setV2Key(const std::string& _key) { v2Key = _key; }
     QPID_COMMON_EXTERN void setV2Key(const ManagementObject& object);
-    QPID_COMMON_EXTERN bool equalV1(const ObjectId &other) const;
+    QPID_COMMON_EXTERN void setAgentName(const std::string& _name) { agentName = _name; }
+    QPID_COMMON_EXTERN const std::string& getAgentName() const { return agentName; }
     QPID_COMMON_EXTERN const std::string& getV2Key() const { return v2Key; }
     friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const ObjectId&);
 };
@@ -94,6 +104,7 @@ public:
     static const uint8_t TYPE_S16       = 17;
     static const uint8_t TYPE_S32       = 18;
     static const uint8_t TYPE_S64       = 19;
+    static const uint8_t TYPE_LIST      = 21;
 
     static const uint8_t ACCESS_RC = 1;
     static const uint8_t ACCESS_RW = 2;
@@ -125,7 +136,7 @@ protected:
     uint64_t         updateTime;
     ObjectId         objectId;
     mutable bool     configChanged;
-    bool             instChanged;
+    mutable bool     instChanged;
     bool             deleted;
     Manageable*      coreObject;
     mutable sys::Mutex accessLock;
@@ -135,13 +146,17 @@ protected:
     bool             forcePublish;
 
     QPID_COMMON_EXTERN int  getThreadIndex();
-    QPID_COMMON_EXTERN void writeTimestamps(qpid::framing::Buffer& buf) const;
-    QPID_COMMON_EXTERN void readTimestamps(qpid::framing::Buffer& buf);
+    QPID_COMMON_EXTERN void writeTimestamps(std::string& buf) const;
+    QPID_COMMON_EXTERN void writeTimestamps(types::Variant::Map& map) const;
+    QPID_COMMON_EXTERN void readTimestamps(const std::string& buf);
+    QPID_COMMON_EXTERN void readTimestamps(const types::Variant::Map& buf);
     QPID_COMMON_EXTERN uint32_t writeTimestampsSize() const;
 
   public:
+    QPID_COMMON_EXTERN static const uint8_t MD5_LEN = 16;
     QPID_COMMON_EXTERN static int maxThreads;
-    typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
+    //typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
+    typedef void (*writeSchemaCall_t) (std::string&);
 
     ManagementObject(Manageable* _core) :
         createTime(uint64_t(qpid::sys::Duration(qpid::sys::now()))),
@@ -151,15 +166,28 @@ protected:
     virtual ~ManagementObject() {}
 
     virtual writeSchemaCall_t getWriteSchemaCall() = 0;
-    virtual void readProperties(qpid::framing::Buffer& buf) = 0;
-    virtual uint32_t writePropertiesSize() const = 0;
-    virtual void writeProperties(qpid::framing::Buffer& buf) const = 0;
-    virtual void writeStatistics(qpid::framing::Buffer& buf,
-                                 bool skipHeaders = false) = 0;
-    virtual void doMethod(std::string&           methodName,
-                          qpid::framing::Buffer& inBuf,
-                          qpid::framing::Buffer& outBuf) = 0;
     virtual std::string getKey() const = 0;
+
+    // Encode & Decode the property and statistics values
+    // for this object.
+    virtual void mapEncodeValues(types::Variant::Map& map,
+                                 bool includeProperties,
+                                 bool includeStatistics) = 0;
+    virtual void mapDecodeValues(const types::Variant::Map& map) = 0;
+    virtual void doMethod(std::string&           methodName,
+                          const types::Variant::Map& inMap,
+                          types::Variant::Map& outMap) = 0;
+
+    /**
+     * The following five methods are not pure-virtual because they will only
+     * be overridden in cases where QMFv1 is to be supported.
+     */
+    virtual uint32_t writePropertiesSize() const { return 0; }
+    virtual void readProperties(const std::string&) {}
+    virtual void writeProperties(std::string&) const {}
+    virtual void writeStatistics(std::string&, bool = false) {}
+    virtual void doMethod(std::string&, const std::string&, std::string&) {}
+
     QPID_COMMON_EXTERN virtual void setReference(ObjectId objectId);
 
     virtual std::string& getClassName() const = 0;
@@ -183,16 +211,23 @@ protected:
     inline void setFlags(uint32_t f) { flags = f; }
     inline uint32_t getFlags() { return flags; }
     bool isSameClass(ManagementObject& other) {
-        for (int idx = 0; idx < 16; idx++)
+        for (int idx = 0; idx < MD5_LEN; idx++)
             if (other.getMd5Sum()[idx] != getMd5Sum()[idx])
                 return false;
         return other.getClassName() == getClassName() &&
             other.getPackageName() == getPackageName();
     }
 
-    QPID_COMMON_EXTERN void encode(qpid::framing::Buffer& buf) const { writeProperties(buf); }
-    QPID_COMMON_EXTERN void decode(qpid::framing::Buffer& buf) { readProperties(buf); }
-    QPID_COMMON_EXTERN uint32_t encodedSize() const { return writePropertiesSize(); }
+    // QPID_COMMON_EXTERN void encode(qpid::framing::Buffer& buf) const { writeProperties(buf); }
+    // QPID_COMMON_EXTERN void decode(qpid::framing::Buffer& buf) { readProperties(buf); }
+    //QPID_COMMON_EXTERN uint32_t encodedSize() const { return writePropertiesSize(); }
+
+    // Encode/Decode the entire object as a map
+    QPID_COMMON_EXTERN void mapEncode(types::Variant::Map& map,
+                                      bool includeProperties=true,
+                                      bool includeStatistics=true);
+
+    QPID_COMMON_EXTERN void mapDecode(const types::Variant::Map& map);
 };
 
 typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;
