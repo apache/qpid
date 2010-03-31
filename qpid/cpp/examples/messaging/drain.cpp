@@ -20,7 +20,6 @@
  */
 
 #include <qpid/messaging/Connection.h>
-#include <qpid/messaging/MapView.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
@@ -97,14 +96,16 @@ int main(int argc, char** argv)
         Connection connection(options.connectionOptions);
         try {
             connection.open(options.url);
-            Session session = connection.newSession();
+            Session session = connection.createSession();
             Receiver receiver = session.createReceiver(options.address);
             Duration timeout = options.getTimeout();
             Message message;
             while (receiver.fetch(message, timeout)) {
                 std::cout << "Message(properties=" << message.getProperties() << ", content='" ;
                 if (message.getContentType() == "amqp/map") {
-                    std::cout << MapView(message);
+                    Variant::Map map;
+                    decode(message, map);
+                    std::cout << map;
                 } else {
                     std::cout << message.getContent();
                 }

@@ -21,7 +21,6 @@
 
 #include <qpid/messaging/Address.h>
 #include <qpid/messaging/Connection.h>
-#include <qpid/messaging/MapContent.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
@@ -138,7 +137,7 @@ struct Options : public qpid::Options
         }
     }
 
-    void setEntries(MapContent& content) const
+    void setEntries(Variant::Map& content) const
     {
         for (string_vector::const_iterator i = entries.begin(); i != entries.end(); ++i) {
             std::string name;
@@ -160,18 +159,18 @@ int main(int argc, char** argv)
         Connection connection(options.connectionOptions);
         try {
             connection.open(options.url);
-            Session session = connection.newSession();
+            Session session = connection.createSession();
             Sender sender = session.createSender(options.address);
 
             Message message;
             options.setProperties(message);
             if (options.entries.size()) {
-                MapContent content(message);
+                Variant::Map content;
                 options.setEntries(content);
-                content.encode();
+                encode(content, message);
             } else if (options.content.size()) {
                 message.setContent(options.content);
-                message.setContentType("text/plain; charset=utf8");
+                message.setContentType("text/plain");
             }
             AbsTime end(now(), options.timeout);
             for (uint count = 0; (count < options.count || options.count == 0) && end > now(); count++) {

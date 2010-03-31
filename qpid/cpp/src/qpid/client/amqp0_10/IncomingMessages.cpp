@@ -20,8 +20,7 @@
  */
 #include "qpid/client/amqp0_10/IncomingMessages.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"
-#include "qpid/client/amqp0_10/Codecs.h"
-#include "qpid/client/amqp0_10/CodecsInternal.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/client/SessionImpl.h"
 #include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/log/Statement.h"
@@ -42,6 +41,7 @@ namespace amqp0_10 {
 
 using namespace qpid::framing;
 using namespace qpid::framing::message;
+using namespace qpid::amqp_0_10;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::messaging::MessageImplAccess;
@@ -306,7 +306,7 @@ void populate(qpid::messaging::Message& message, FrameSet& command)
     //e.g. for rejecting.
     MessageImplAccess::get(message).setInternalId(command.getId());
         
-    command.getContent(message.getContent());
+    message.setContent(command.getContent());
 
     populateHeaders(message, command.getHeaders());
 }

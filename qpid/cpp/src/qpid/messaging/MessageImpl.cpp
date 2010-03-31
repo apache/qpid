@@ -54,8 +54,8 @@ const std::string& MessageImpl::getSubject() const { return subject; }
 void MessageImpl::setContentType(const std::string& s) { contentType = s; }
 const std::string& MessageImpl::getContentType() const { return contentType; }
 
-const VariantMap& MessageImpl::getHeaders() const { return headers; }
-VariantMap& MessageImpl::getHeaders() { return headers; }
+const Variant::Map& MessageImpl::getHeaders() const { return headers; }
+Variant::Map& MessageImpl::getHeaders() { return headers; }
 
 //should these methods be on MessageContent?
 void MessageImpl::setBytes(const std::string& c) { bytes = c; }

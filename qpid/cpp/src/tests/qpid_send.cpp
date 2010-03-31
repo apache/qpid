@@ -21,7 +21,6 @@
 
 #include <qpid/messaging/Address.h>
 #include <qpid/messaging/Connection.h>
-#include <qpid/messaging/MapContent.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
@@ -158,7 +157,7 @@ struct Options : public qpid::Options
         }
     }
 
-    void setEntries(MapContent& content) const
+    void setEntries(Variant::Map& content) const
     {
         for (string_vector::const_iterator i = entries.begin(); i != entries.end(); ++i) {
             std::string name;
@@ -186,7 +185,7 @@ int main(int argc, char ** argv)
         try {
             connection.open(opts.url);
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
-            Session session = connection.newSession(opts.tx > 0);
+            Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
             Sender sender = session.createSender(opts.address);
             if (opts.capacity) sender.setCapacity(opts.capacity);
             Message msg;

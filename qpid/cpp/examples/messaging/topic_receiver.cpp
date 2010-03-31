@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     Connection connection;
     try {
         connection.open(url);
-        Session session = connection.newSession();
+        Session session = connection.createSession();
         Receiver receiver = session.createReceiver("news_service; {filter:[control, " + pattern + "]}");
         while (true) {
             Message message = receiver.fetch();

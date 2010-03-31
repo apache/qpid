@@ -633,7 +633,7 @@ Variant::operator int32_t() const { return asInt32(); }
 Variant::operator int64_t() const { return asInt64(); }
 Variant::operator float() const { return asFloat(); }
 Variant::operator double() const { return asDouble(); }
-Variant::operator const char*() const { return asString().c_str(); }
+Variant::operator std::string() const { return asString(); }
 Variant::operator Uuid() const { return asUuid(); }
 
 std::ostream& operator<<(std::ostream& out, const Variant::Map& map)

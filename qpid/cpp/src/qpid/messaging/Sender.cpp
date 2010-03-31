@@ -36,7 +36,7 @@ void Sender::send(const Message& message) { impl->send(message); }
 void Sender::close() { impl->close(); }
 void Sender::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Sender::getCapacity() { return impl->getCapacity(); }
-uint32_t Sender::pending() { return impl->pending(); }
+uint32_t Sender::getPending() { return impl->pending(); }
 const std::string& Sender::getName() const { return impl->getName(); }
 Session Sender::getSession() const { return impl->getSession(); }
 

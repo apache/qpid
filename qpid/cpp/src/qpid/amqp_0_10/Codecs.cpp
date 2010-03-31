@@ -18,8 +18,7 @@
  * under the License.
  *
  */
-#include "qpid/client/amqp0_10/Codecs.h"
-#include "qpid/types/Variant.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FieldTable.h"
@@ -31,12 +30,10 @@
 #include <limits>
 
 using namespace qpid::framing;
-using namespace qpid::messaging;
 using namespace qpid::types;
 
 namespace qpid {
-namespace client {
-namespace amqp0_10 {
+namespace amqp_0_10 {
 
 namespace {
 const std::string iso885915("iso-8859-15");
@@ -294,26 +291,24 @@ template <class T, class U, class F> void _decode(const std::string& data, U& va
     convert(t, value, f);
 }
 
-void MapCodec::encode(const Variant& value, std::string& data)
+void MapCodec::encode(const Variant::Map& value, std::string& data)
 {
-    _encode<FieldTable>(value.asMap(), data, &toFieldTableEntry);
+    _encode<FieldTable>(value, data, &toFieldTableEntry);
 }
 
-void MapCodec::decode(const std::string& data, Variant& value)
+void MapCodec::decode(const std::string& data, Variant::Map& value)
 {
-    value = Variant::Map();
-    _decode<FieldTable>(data, value.asMap(), &toVariantMapEntry);
+    _decode<FieldTable>(data, value, &toVariantMapEntry);
 }
 
-void ListCodec::encode(const Variant& value, std::string& data)
+void ListCodec::encode(const Variant::List& value, std::string& data)
 {
-    _encode<List>(value.asList(), data, &toFieldValue);
+    _encode<List>(value, data, &toFieldValue);
 }
 
-void ListCodec::decode(const std::string& data, Variant& value)
+void ListCodec::decode(const std::string& data, Variant::List& value)
 {
-    value = Variant::List();
-    _decode<List>(data, value.asList(), &toVariant);
+    _decode<List>(data, value, &toVariant);
 }
 
 void translate(const Variant::Map& from, FieldTable& to)
@@ -329,4 +324,4 @@ void translate(const FieldTable& from, Variant::Map& to)
 const std::string ListCodec::contentType("amqp/list");
 const std::string MapCodec::contentType("amqp/map");
 
-}}} // namespace qpid::client::amqp0_10
+}} // namespace qpid::amqp_0_10

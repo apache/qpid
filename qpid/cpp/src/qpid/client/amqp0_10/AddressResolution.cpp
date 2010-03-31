@@ -19,8 +19,7 @@
  *
  */
 #include "qpid/client/amqp0_10/AddressResolution.h"
-#include "qpid/client/amqp0_10/Codecs.h"
-#include "qpid/client/amqp0_10/CodecsInternal.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/client/amqp0_10/MessageSource.h"
 #include "qpid/client/amqp0_10/MessageSink.h"
 #include "qpid/client/amqp0_10/OutgoingMessage.h"
@@ -55,6 +54,7 @@ using qpid::framing::ReplyTo;
 using qpid::framing::Uuid;
 using namespace qpid::types;
 using namespace qpid::framing::message;
+using namespace qpid::amqp_0_10;
 using namespace boost::assign;
 
 
@@ -262,35 +262,6 @@ bool in(const Variant& value, const std::vector<std::string>& choices)
     return false;
 }
 
-bool getReceiverPolicy(const Address& address, const std::string& key)
-{
-    return in(address.getOption(key), list_of<std::string>(ALWAYS)(RECEIVER));
-}
-
-bool getSenderPolicy(const Address& address, const std::string& key)
-{
-    return in(address.getOption(key), list_of<std::string>(ALWAYS)(SENDER));
-}
-
-const Variant& getOption(const Variant::Map& options, const std::vector<std::string>& path, size_t index=0)
-{
-    Variant::Map::const_iterator j = options.find(path[index]);
-    if (j == options.end()) {
-        return EMPTY_VARIANT;
-    } else if (++index < path.size()) {
-        if (j->second.getType() != VAR_MAP) 
-            throw InvalidAddress((boost::format("Expected %1% to be a map") % j->first).str());
-        return getOption(j->second.asMap(), path, index);
-    } else {
-        return j->second;
-    }
-}
-
-const Variant& getOption(const Address& address, const std::vector<std::string>& path)
-{
-    return getOption(address.getOptions(), path);
-}
-
 const Variant& getOption(const Variant::Map& options, const std::string& name)
 {
     Variant::Map::const_iterator j = options.find(name);
@@ -299,6 +270,21 @@ const Variant& getOption(const Variant::Map& options, const std::string& name)
     } else {
         return j->second;
     }
+}
+
+const Variant& getOption(const Address& address, const std::string& name)
+{
+    return getOption(address.getOptions(), name);
+}
+
+bool getReceiverPolicy(const Address& address, const std::string& key)
+{
+    return in(getOption(address, key), list_of<std::string>(ALWAYS)(RECEIVER));
+}
+
+bool getSenderPolicy(const Address& address, const std::string& key)
+{
+    return in(getOption(address, key), list_of<std::string>(ALWAYS)(SENDER));
 }
 
 struct Opt
@@ -360,13 +346,14 @@ void Opt::collect(qpid::framing::FieldTable& args) const
 
 bool AddressResolution::is_unreliable(const Address& address)
 {
-    return in(getOption(address, list_of<std::string>(LINK)(RELIABILITY)), 
+    
+    return in((Opt(address)/LINK/RELIABILITY).str(),
               list_of<std::string>(UNRELIABLE)(AT_MOST_ONCE));
 }
 
 bool AddressResolution::is_reliable(const Address& address)
 {
-    return in(getOption(address, list_of<std::string>(LINK)(RELIABILITY)), 
+    return in((Opt(address)/LINK/RELIABILITY).str(),
               list_of<std::string>(AT_LEAST_ONCE)(EXACTLY_ONCE));
 }
 
@@ -433,7 +420,7 @@ std::auto_ptr<MessageSink> AddressResolution::resolveSink(qpid::client::Session 
 
 bool isBrowse(const Address& address)
 {
-    const Variant& mode = address.getOption(MODE);
+    const Variant& mode = getOption(address, MODE);
     if (!mode.isVoid()) {
         std::string value = mode.asString();
         if (value == BROWSE) return true;
@@ -651,9 +638,9 @@ bool isTopic(qpid::client::Session session, const qpid::messaging::Address& addr
 }
 
 Node::Node(const Address& address) : name(address.getName()),
-                                     createPolicy(address.getOption(CREATE)),
-                                     assertPolicy(address.getOption(ASSERT)),
-                                     deletePolicy(address.getOption(DELETE))
+                                     createPolicy(getOption(address, CREATE)),
+                                     assertPolicy(getOption(address, ASSERT)),
+                                     deletePolicy(getOption(address, DELETE))
 {
     nodeBindings.add((Opt(address)/NODE/X_BINDINGS).asList());
     linkBindings.add((Opt(address)/LINK/X_BINDINGS).asList());
@@ -908,7 +895,7 @@ bool Node::enabled(const Variant& policy, CheckMode mode)
 
 bool Node::createEnabled(const Address& address, CheckMode mode)
 {
-    const Variant& policy = address.getOption(CREATE);
+    const Variant& policy = getOption(address, CREATE);
     return enabled(policy, mode);
 }
 

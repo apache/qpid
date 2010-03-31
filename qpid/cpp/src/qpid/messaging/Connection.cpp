@@ -56,11 +56,10 @@ Connection::Connection(const Variant::Map& options)
 
 void Connection::open(const std::string& url) { impl->open(url); }
 void Connection::close() { impl->close(); }
-Session Connection::newSession(const char* name) { return impl->newSession(false, name); }
-Session Connection::newSession(const std::string& name) { return impl->newSession(false, name); }
-Session Connection::newSession(bool transactional, const std::string& name)
+Session Connection::createSession(const std::string& name) { return impl->newSession(false, name); }
+Session Connection::createTransactionalSession(const std::string& name)
 { 
-    return impl->newSession(transactional, name);
+    return impl->newSession(true, name);
 }
 Session Connection::getSession(const std::string& name) const { return impl->getSession(name); }
 void Connection::setOption(const std::string& name, const Variant& value)

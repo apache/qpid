@@ -75,6 +75,12 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     is reached.
      */
     QPID_CLIENT_EXTERN Connection(const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
+    /**
+     * Creates a connection using an option string of the form
+     * {name=value,name2=value2...}, see above for options supported.
+     * 
+     * @exception InvalidOptionString if the string does not match the correct syntax
+     */
     QPID_CLIENT_EXTERN Connection(const std::string& options);
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
@@ -86,9 +92,8 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      * allowed to go out of scope.
      */
     QPID_CLIENT_EXTERN void close();
-    QPID_CLIENT_EXTERN Session newSession(bool transactional, const std::string& name = std::string());
-    QPID_CLIENT_EXTERN Session newSession(const std::string& name = std::string());
-    QPID_CLIENT_EXTERN Session newSession(const char* name);
+    QPID_CLIENT_EXTERN Session createTransactionalSession(const std::string& name = std::string());
+    QPID_CLIENT_EXTERN Session createSession(const std::string& name = std::string());
 
     QPID_CLIENT_EXTERN Session getSession(const std::string& name) const;
   private:

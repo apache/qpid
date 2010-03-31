@@ -44,6 +44,9 @@ class Sender : public qpid::messaging::Handle<SenderImpl>
     QPID_CLIENT_EXTERN ~Sender();
     QPID_CLIENT_EXTERN Sender& operator=(const Sender&);
 
+    /**
+     * Sends a message; will block if the pending == capacity
+     */
     QPID_CLIENT_EXTERN void send(const Message& message);
     QPID_CLIENT_EXTERN void close();
 
@@ -62,7 +65,7 @@ class Sender : public qpid::messaging::Handle<SenderImpl>
      * Returns the number of sent messages pending confirmation of
      * receipt by the broker. (These are the 'in-doubt' messages).
      */
-    QPID_CLIENT_EXTERN uint32_t pending();
+    QPID_CLIENT_EXTERN uint32_t getPending();
 
     /**
      * Returns the name of this sender.
