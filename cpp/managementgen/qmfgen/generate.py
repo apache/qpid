@@ -38,39 +38,43 @@ class Template:
     self.filename = filename
     self.handler  = handler
     self.handler.initExpansion ()
-    self.writing  = True
+    self.writing  = 0  # 0 => write output lines; >0 => recursive depth of conditional regions
 
   def expandLine (self, line, stream, object):
     cursor = 0
     while 1:
       sub = line.find ("/*MGEN:", cursor)
       if sub == -1:
-        if self.writing:
+        if self.writing == 0:
           stream.write (line[cursor:len (line)])
         return
 
       subend = line.find("*/", sub)
-      if self.writing:
+      if self.writing == 0:
         stream.write (line[cursor:sub])
       cursor = subend + 2
 
       tag = line[sub:subend]
 
       if tag[7:10] == "IF(":
-        close = tag.find(")")
-        if close == -1:
-          raise ValueError ("Missing ')' on condition")
-        cond = tag[10:close]
-        dotPos = cond.find (".")
-        if dotPos == -1:
-          raise ValueError ("Invalid condition tag: %s" % cond)
-        tagObject = cond[0:dotPos]
-        tagName   = cond[dotPos + 1 : len(cond)]
-        if not self.handler.testCondition(object, tagObject, tagName):
-          self.writing = False
+        if self.writing == 0:
+          close = tag.find(")")
+          if close == -1:
+            raise ValueError ("Missing ')' on condition")
+          cond = tag[10:close]
+          dotPos = cond.find (".")
+          if dotPos == -1:
+            raise ValueError ("Invalid condition tag: %s" % cond)
+          tagObject = cond[0:dotPos]
+          tagName   = cond[dotPos + 1 : len(cond)]
+          if not self.handler.testCondition(object, tagObject, tagName):
+            self.writing += 1
+        else:
+          self.writing += 1
 
       elif tag[7:12] == "ENDIF":
-        self.writing = True
+        if self.writing > 0:
+          self.writing -= 1
 
       else:
         equalPos = tag.find ("=")
@@ -80,12 +84,12 @@ class Template:
             raise ValueError ("Invalid tag: %s" % tag)
           tagObject = tag[7:dotPos]
           tagName   = tag[dotPos + 1:len (tag)]
-          if self.writing:
+          if self.writing == 0:
             self.handler.substHandler (object, stream, tagObject, tagName)
         else:
           tagKey = tag[7:equalPos]
           tagVal = tag[equalPos + 1:len (tag)]
-          if self.writing:
+          if self.writing == 0:
             self.handler.setVariable (tagKey, tagVal)
 
   def expand (self, object):
@@ -296,6 +300,9 @@ class Generator:
     path = "/".join(packageName.split("."))
     self.packagelist.append(path)
     self.packagePath = self.normalize(self.dest + path)
+
+  def testGenQMFv1 (self, variables):
+    return variables["genQmfV1"]
 
   def genDisclaimer (self, stream, variables):
     prefix = variables["commentPrefix"]

@@ -63,6 +63,17 @@ class ManagementAgent
 
     virtual int getMaxThreads() = 0;
 
+    // Set the name of the agent
+    //
+    //   vendor   - Vendor name or domain (i.e. "apache.org")
+    //   product  - Product name (i.e. "qpid")
+    //   instance - A unique identifier for this instance of the agent.
+    //              If empty, the agent will create a GUID for the instance.
+    //
+    virtual void setName(const std::string& vendor,
+                         const std::string& product,
+                         const std::string& instance="") = 0;
+
     // Connect to a management broker
     //
     //   brokerHost        - Hostname or IP address (dotted-quad) of broker.
@@ -128,6 +139,9 @@ class ManagementAgent
     // in an orderly way.
     //
     virtual ObjectId addObject(ManagementObject* objectPtr, uint64_t persistId = 0) = 0;
+    virtual ObjectId addObject(ManagementObject* objectPtr,
+                               const std::string& key,
+                               bool persistent = true) = 0;
 
     //
     //

@@ -24,6 +24,7 @@
 #include <qpid/agent/ManagementAgent.h>
 #include <qpid/sys/Mutex.h>
 #include <qpid/sys/Time.h>
+#include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/agent/example/Parent.h"
 #include "qmf/org/apache/qpid/agent/example/Child.h"
 #include "qmf/org/apache/qpid/agent/example/ArgsParentCreate_child.h"
@@ -44,6 +45,7 @@ using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 using qpid::sys::Mutex;
+using qpid::types::Variant;
 namespace _qmf = qmf::org::apache::qpid::agent::example;
 
 class ChildClass;
@@ -96,8 +98,22 @@ CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent
     static uint64_t persistId = 0x111222333444555LL;
     mgmtObject = new _qmf::Parent(agent, this, name);
 
-    agent->addObject(mgmtObject, persistId++);
+    agent->addObject(mgmtObject);
     mgmtObject->set_state("IDLE");
+
+    Variant::Map args;
+    Variant::Map subMap;
+    args["first"] = "String data";
+    args["second"] = 34;
+    subMap["string-data"] = "Text";
+    subMap["numeric-data"] = 10000;
+    args["map-data"] = subMap;
+    mgmtObject->set_args(args);
+
+    Variant::List list;
+    list.push_back(20000);
+    list.push_back("string-item");
+    mgmtObject->set_list(list);
 }
 
 void CoreClass::doLoop()
@@ -177,6 +193,9 @@ int main_int(int argc, char** argv)
 
     // Register the Qmf_example schema with the agent
     _qmf::Package packageInit(agent);
+
+    // Name the agent.
+    agent->setName("apache.org", "qmf-example");
 
     // Start the agent.  It will attempt to make a connection to the
     // management broker
