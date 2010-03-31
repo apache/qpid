@@ -193,9 +193,9 @@ class Agent(Thread):
         # for messages directly addressed to me
         self._direct_receiver = self._session.receiver(str(self._address) +
                                                        ";{create:always,"
-                                                       " node-properties:"
+                                                       " node:"
                                                        " {type:topic,"
-                                                       " x-properties:"
+                                                       " x-declare:"
                                                        " {type:direct}}}",
                                                        capacity=self._capacity)
         trace.debug("my direct addr=%s" % self._direct_receiver.source)
@@ -203,9 +203,9 @@ class Agent(Thread):
         # for sending directly addressed messages.
         self._direct_sender = self._session.sender(str(self._address.get_node()) +
                                                    ";{create:always,"
-                                                   " node-properties:"
+                                                   " node:"
                                                    " {type:topic,"
-                                                   " x-properties:"
+                                                   " x-declare:"
                                                    " {type:direct}}}")
         trace.debug("my default direct send addr=%s" % self._direct_sender.target)
 
@@ -214,7 +214,7 @@ class Agent(Thread):
                                         self._domain)
         self._topic_receiver = self._session.receiver(str(default_addr) +
                                                        ";{create:always,"
-                                                       " node-properties:"
+                                                       " node:"
                                                        " {type:topic}}",
                                                        capacity=self._capacity)
         trace.debug("console.ind addr=%s" % self._topic_receiver.source)
@@ -224,7 +224,7 @@ class Agent(Thread):
                                     self._domain)
         self._topic_sender = self._session.sender(str(ind_addr) +
                                                 ";{create:always,"
-                                                " node-properties:"
+                                                " node:"
                                                 " {type:topic}}")
         trace.debug("agent.ind addr=%s" % self._topic_sender.target)
 
@@ -635,7 +635,7 @@ class Agent(Thread):
             self._handleMethodReqMsg(msg, cmap, props, version, _direct)
         elif opcode == OpCode.subscribe_req:
             self._handleSubscribeReqMsg(msg, cmap, props, version, _direct)
-        elif opcode == OpCode.subscribe_refresh_req:
+        elif opcode == OpCode.subscribe_refresh_ind:
             self._handleResubscribeReqMsg(msg, cmap, props, version, _direct)
         elif opcode == OpCode.subscribe_cancel_ind:
             self._handleUnsubscribeReqMsg(msg, cmap, props, version, _direct)
@@ -905,7 +905,7 @@ class Agent(Thread):
                       "_duration": new_duration}
             m = Message(id=QMF_APP_ID,
                         properties={"method":"response",
-                                   "qmf.opcode":OpCode.subscribe_refresh_rsp},
+                                   "qmf.opcode":OpCode.subscribe_rsp},
                         correlation_id = msg.correlation_id,
                         content=sr_map)
             self._send_reply(m, msg.reply_to)
