@@ -333,6 +333,7 @@ class StoreTests(BrokerTest):
         c = cluster.start("c", expect=EXPECT_EXIT_OK, wait=True)
         a.send_message("q", Message("4", durable=True))
         a.kill()
+        time.sleep(0.1)   # pause for b to write status.        
         b.kill()
         self.assertEqual(c.get_message("q").content, "4")
         c.send_message("q", Message("clean", durable=True))
@@ -441,13 +442,14 @@ class StoreTests(BrokerTest):
     def test_join_sub_size(self):
         """Verify that after starting a cluster with cluster-size=N,
         we can join new members even if size < N-1"""
-        cluster = self.cluster(0, self.args())
+        cluster = self.cluster(0, self.args()+["--cluster-size=3"])
         a = cluster.start("a", wait=False, expect=EXPECT_EXIT_FAIL)
         b = cluster.start("b", wait=False, expect=EXPECT_EXIT_FAIL)
         c = cluster.start("c")
         a.send_message("q", Message("x", durable=True))
         a.send_message("q", Message("y", durable=True))
         a.kill()
+        time.sleep(0.1)   # pause for b to write status.
         b.kill()
         a = cluster.start("a")
         self.assertEqual(c.get_message("q").content, "x")
