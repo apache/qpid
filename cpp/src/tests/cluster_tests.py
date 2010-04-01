@@ -310,7 +310,6 @@ class StoreTests(BrokerTest):
         c = cluster.start("c", expect=EXPECT_EXIT_OK, wait=True)
         a.send_message("q", Message("4", durable=True))
         a.kill()
-        time.sleep(0.1)   # pause for b to write status.        
         b.kill()
         self.assertEqual(c.get_message("q").content, "4")
         c.send_message("q", Message("clean", durable=True))
@@ -356,11 +355,6 @@ class StoreTests(BrokerTest):
         self.assertRaises(Exception, lambda: a.ready())
         self.assertRaises(Exception, lambda: b.ready())
 
-    def assert_dirty_store(self, broker):
-        assert retry(lambda: os.path.exists(broker.log)), "Missing log file %s"%broker.log
-        msg = re.compile("critical.*no clean store")
-        assert retry(lambda: msg.search(readfile(broker.log))), "Expected dirty store message in %s"%broker.log
-
     def test_solo_store_clean(self):
         # A single node cluster should always leave a clean store.
         cluster = self.cluster(0, self.args())
@@ -378,29 +372,25 @@ class StoreTests(BrokerTest):
         # store.
         cluster = self.cluster(0, self.args())
         a = cluster.start("a", expect=EXPECT_EXIT_FAIL)
+        self.assertEqual(a.store_state(), "clean")
         b = cluster.start("b", expect=EXPECT_EXIT_FAIL)
         c = cluster.start("c", expect=EXPECT_EXIT_FAIL)
+        self.assertEqual(b.store_state(), "dirty")
+        self.assertEqual(c.store_state(), "dirty")
+        retry(lambda: a.store_state() == "dirty") 
+
         a.send_message("q", Message("x", durable=True))
         a.kill()
-        # FIXME aconway 2010-03-29: this test has too many sleeps.
-        # Need to tighten up status persistence to be more atomic and less
-        # prone to interruption.
-        time.sleep(0.1)   # pause for b to update status.
-        b.kill()          # c is last man
-        time.sleep(0.1)   # pause for c to find out hes last.
+        b.kill()                # c is last man, will mark store clean
+        retry(lambda: c.store_state() == "clean") 
         a = cluster.start("a", expect=EXPECT_EXIT_FAIL) # c no longer last man
-        time.sleep(0.1)   # pause for c to find out hes no longer last.
-        c.kill()          # a is now last man
-        time.sleep(0.1)   # pause for a to find out hes last.
-        a.kill()          # really last, should be clean.
-        # b & c should be dirty
-        b = cluster.start("b", wait=False, expect=EXPECT_EXIT_FAIL)
-        self.assert_dirty_store(b)
-        c = cluster.start("c", wait=False, expect=EXPECT_EXIT_FAIL)
-        self.assert_dirty_store(c)
-        # a should be clean
-        a = cluster.start("a")
-        self.assertEqual(a.get_message("q").content, "x")
+        retry(lambda: c.store_state() == "dirty") 
+        c.kill()                        # a is now last man
+        retry(lambda: a.store_state() == "clean") 
+        a.kill()
+        self.assertEqual(a.store_state(), "clean")
+        self.assertEqual(b.store_state(), "dirty")
+        self.assertEqual(c.store_state(), "dirty")
 
     def test_restart_clean(self):
         """Verify that we can re-start brokers one by one in a
@@ -426,7 +416,6 @@ class StoreTests(BrokerTest):
         a.send_message("q", Message("x", durable=True))
         a.send_message("q", Message("y", durable=True))
         a.kill()
-        time.sleep(0.1)   # pause for b to write status.
         b.kill()
         a = cluster.start("a")
         self.assertEqual(c.get_message("q").content, "x")

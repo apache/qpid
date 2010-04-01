@@ -297,8 +297,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     // Load my store status before we go into initialization
     if (! broker::NullMessageStore::isNullStore(&broker.getStore())) {
         store.load();
-        if (store.getClusterId())
-            clusterId = store.getClusterId(); // Use stored ID if there is one.
+        clusterId = store.getClusterId(); 
         QPID_LOG(notice, "Cluster store state: " << store)
     }
     cpg.join(name);
@@ -626,7 +625,6 @@ void Cluster::initMapCompleted(Lock& l) {
             QPID_LOG(info, *this << " not active for links.");
         }
         setClusterId(initMap.getClusterId(), l);
-        if (store.hasStore()) store.dirty(clusterId);
 
         if (initMap.isUpdateNeeded())  { // Joining established cluster.
             broker.setRecovery(false); // Ditch my current store.
@@ -919,7 +917,7 @@ void Cluster::updateOutError(const std::exception& e)  {
 
 void Cluster ::shutdown(const MemberId& , const Uuid& id, Lock& l) {
     QPID_LOG(notice, *this << " cluster shut down by administrator.");
-    if (store.hasStore()) store.clean(Uuid(id));
+    if (store.hasStore()) store.clean(id);
     leave(l);
 }
 
@@ -967,9 +965,16 @@ void Cluster::memberUpdate(Lock& l) {
     if (store.hasStore()) {
         // Mark store clean if I am the only broker, dirty otherwise.
         if (size == 1 ) {
-            if (!store.isClean()) store.clean(Uuid(true));
-        } else {
-            if (!store.isDirty()) store.dirty(clusterId);
+            if (store.getState() != STORE_STATE_CLEAN_STORE) {
+                QPID_LOG(notice, "Sole member of cluster, marking store clean.");
+                store.clean(Uuid(true));
+            }
+        }
+        else {
+            if (store.getState() != STORE_STATE_DIRTY_STORE) {
+                QPID_LOG(notice, "No longer sole cluster member, marking store dirty.");
+                store.dirty();
+            }
         }
     }
 
@@ -1034,6 +1039,7 @@ broker::Broker& Cluster::getBroker() const {
 
 void Cluster::setClusterId(const Uuid& uuid, Lock&) {
     clusterId = uuid;
+    if (store.hasStore()) store.setClusterId(uuid);
     if (mgmtObject) {
         stringstream stream;
         stream << self;

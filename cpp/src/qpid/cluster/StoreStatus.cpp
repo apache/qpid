@@ -25,7 +25,9 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/scoped_array.hpp>
 #include <fstream>
+#include <sstream>
 
 namespace qpid {
 namespace cluster {
@@ -42,53 +44,29 @@ StoreStatus::StoreStatus(const std::string& d)
 namespace {
 
 const char* SUBDIR="cluster";
-const char* CLUSTER_ID_FILE="cluster.uuid";
-const char* SHUTDOWN_ID_FILE="shutdown.uuid";
+const char* STORE_STATUS="store.status";
 
-void throw_exceptions(ios& ios) {
-    // Have stream throw an exception on error.
-    ios.exceptions(std::ios::badbit | std::ios::failbit);
+string readFile(const fs::path& path) {
+    fs::ifstream is;
+    is.exceptions(std::ios::badbit | std::ios::failbit);
+    is.open(path);
+    // get length of file:
+    is.seekg (0, ios::end);
+    size_t length = is.tellg();
+    is.seekg (0, ios::beg);
+    // load data
+    boost::scoped_array<char> buffer(new char[length]);
+    is.read(buffer.get(), length);
+    is.close();
+    return string(buffer.get(), length);
 }
 
-Uuid loadUuid(const fs::path& path) {
-    Uuid ret;
-    if (exists(path)) {
-        fs::ifstream i(path);
-        try {
-            throw_exceptions(i);
-            i >> ret;
-        } catch (const std::exception& e) {
-            QPID_LOG(error, "Cant load UUID from " << path.string() << ": " << e.what());
-            throw;
-        }
-    }
-    return ret;
-}
-
-void saveUuid(const fs::path& path, const Uuid& uuid) {
-    fs::ofstream o(path);
-    try {
-        throw_exceptions(o);
-        o << uuid;
-    } catch (const std::exception& e) {
-        QPID_LOG(error, "Cant save UUID to " << path.string() << ": " << e.what());
-        throw;
-    }
-}
-
-framing::SequenceNumber loadSeqNum(const fs::path& path) {
-    uint32_t n = 0;
-    if (exists(path)) {
-        fs::ifstream i(path);
-        try {
-            throw_exceptions(i);
-            i >> n;
-        } catch (const std::exception& e) {
-            QPID_LOG(error, "Cant load sequence number from " << path.string() << ": " << e.what());
-            throw;
-        }
-    }
-    return framing::SequenceNumber(n);
+void writeFile(const fs::path& path, const string& data) {
+    fs::ofstream os;
+    os.exceptions(std::ios::badbit | std::ios::failbit);
+    os.open(path);
+    os.write(data.data(), data.size());
+    os.close();
 }
 
 } // namespace
@@ -98,14 +76,25 @@ void StoreStatus::load() {
     if (dataDir.empty()) {
         throw Exception(QPID_MSG("No data-dir: When a store is loaded together with clustering, --data-dir must be specified."));
     }
-    fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
     try {
+        fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
         create_directory(dir);
-        clusterId = loadUuid(dir/CLUSTER_ID_FILE);
-        shutdownId = loadUuid(dir/SHUTDOWN_ID_FILE);
-        if (clusterId && shutdownId) state = STORE_STATE_CLEAN_STORE;
-        else if (clusterId) state = STORE_STATE_DIRTY_STORE;
-        else state = STORE_STATE_EMPTY_STORE;
+        fs::path file = dir/STORE_STATUS;
+        if (fs::exists(file)) {
+            string data = readFile(file);
+            istringstream is(data);
+            is.exceptions(std::ios::badbit | std::ios::failbit);
+            is >> ws >> clusterId >> ws >> shutdownId;
+            if (!clusterId)
+                throw Exception(QPID_MSG("Invalid cluster store state, no cluster-id"));
+            if (shutdownId) state = STORE_STATE_CLEAN_STORE;
+            else state = STORE_STATE_DIRTY_STORE;
+        }
+        else {                  // Starting from empty store
+            clusterId = Uuid(true);
+            save();
+            state = STORE_STATE_EMPTY_STORE;
+        }
     }
     catch (const std::exception&e) {
         throw Exception(QPID_MSG("Cannot load cluster store status: " << e.what()));
@@ -114,13 +103,13 @@ void StoreStatus::load() {
 
 void StoreStatus::save() {
     if (dataDir.empty()) return;
-    fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
     try {
-        create_directory(dir);
-        saveUuid(dir/CLUSTER_ID_FILE, clusterId);
-        saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
+        ostringstream os;
+        os << clusterId << endl << shutdownId << endl;
+        fs::path file = fs::path(dataDir, fs::native)/SUBDIR/STORE_STATUS;
+        writeFile(file, os.str());
     }
-    catch (const std::exception&e) {
+    catch (const std::exception& e) {
         throw Exception(QPID_MSG("Cannot save cluster store status: " << e.what()));
     }
 }
@@ -129,20 +118,27 @@ bool StoreStatus::hasStore() const {
     return state != framing::cluster::STORE_STATE_NO_STORE;
 }
 
-void StoreStatus::dirty(const Uuid& clusterId_) {
-    if (!hasStore()) return;
-    assert(clusterId_);
-    clusterId = clusterId_;
-    shutdownId = Uuid();
+void StoreStatus::dirty() {
+    assert(hasStore());
+    if (shutdownId) {
+        shutdownId = Uuid();
+        save();
+    }
     state = STORE_STATE_DIRTY_STORE;
-    save();
 }
 
 void StoreStatus::clean(const Uuid& shutdownId_) {
-    if (!hasStore()) return;
+    assert(hasStore());
     assert(shutdownId_);
+    if (shutdownId_ != shutdownId) {
+        shutdownId = shutdownId_;
+        save();
+    }
     state = STORE_STATE_CLEAN_STORE;
-    shutdownId = shutdownId_;
+}
+
+void StoreStatus::setClusterId(const Uuid& clusterId_) {
+    clusterId = clusterId_;
     save();
 }
 

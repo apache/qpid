@@ -42,21 +42,19 @@ class StoreStatus
     StoreStatus(const std::string& dir);
 
     framing::cluster::StoreState getState() const { return state; }
-    bool isClean() { return state == framing::cluster::STORE_STATE_CLEAN_STORE; }
-    bool isDirty() { return state == framing::cluster::STORE_STATE_DIRTY_STORE; }
 
     const Uuid& getClusterId() const { return clusterId; }
+    void setClusterId(const Uuid&);
     const Uuid& getShutdownId() const { return shutdownId; }
 
-    void dirty(const Uuid& clusterId);  // Mark the store in use by clusterId.
-    void clean(const Uuid& shutdownId); // Mark the store clean at shutdownId
-
     void load();
-    void save();
-
+    void dirty();               // Mark the store in use.
+    void clean(const Uuid& shutdownId); // Mark the store clean.
     bool hasStore() const;
 
   private:
+    void save();
+
     framing::cluster::StoreState state;
     Uuid clusterId, shutdownId;
     std::string dataDir;

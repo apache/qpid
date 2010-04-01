@@ -36,7 +36,7 @@ TESTAGENT_GEN_SRC=									\
 
 $(TESTAGENT_GEN_SRC): testagent_gen.timestamp
 
-testagent_gen.timestamp: testagent.xml
+testagent_gen.timestamp: testagent.xml $(mgen_generator)
 	$(QMF_GEN) -o testagent_gen/qmf $(srcdir)/testagent.xml
 	touch testagent_gen.timestamp
 
