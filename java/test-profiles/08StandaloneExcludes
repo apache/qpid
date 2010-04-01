@@ -4,3 +4,6 @@
 
 // This test requires a broker capable of 0-8/9 and 0-10
 org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
+
+// QPID-2478 test fails when run against broker using 0-8/9
+org.apache.qpid.test.client.message.JMSDestinationTest#testGetDestinationWithCustomExchange
