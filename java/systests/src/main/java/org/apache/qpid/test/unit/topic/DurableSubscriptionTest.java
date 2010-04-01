@@ -538,9 +538,6 @@ public class DurableSubscriptionTest extends QpidTestCase
         rMsg = subA.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertNull(rMsg);
         
-        // Send another 1 matching message and 1 non-matching message
-        sendMatchingAndNonMatchingMessage(session, producer);
-        
         // Disconnect subscriber
         subA.close();
         
@@ -548,15 +545,8 @@ public class DurableSubscriptionTest extends QpidTestCase
         TopicSubscriber subB = session.createDurableSubscriber(topic, 
                 "testResubscribeWithChangedSelector","Match = False", false);
         
-        //verify no messages are now present as changing selector should have issued
-        //an unsubscribe and thus deleted the previous backing queue for the subscription.
-        rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
-        assertNull("Should not have received message as the queue underlying the " +
-        		"subscription should have been cleared/deleted when the selector was changed", rMsg);
-        
-        // Check that new messages are received properly
+        // Check messages are recieved properly
         sendMatchingAndNonMatchingMessage(session, producer);
-        
         rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
