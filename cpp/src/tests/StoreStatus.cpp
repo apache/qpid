@@ -65,7 +65,8 @@ QPID_AUTO_TEST_CASE(testSaveLoadDirty) {
     Uuid clusterId = Uuid(true);
     StoreStatus ss(TEST_DIR);
     ss.load();
-    ss.dirty(clusterId);
+    ss.setClusterId(clusterId);
+    ss.dirty();
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_DIRTY_STORE);
 
     StoreStatus ss2(TEST_DIR);
@@ -81,7 +82,7 @@ QPID_AUTO_TEST_CASE(testSaveLoadClean) {
     Uuid shutdownId = Uuid(true);
     StoreStatus ss(TEST_DIR);
     ss.load();
-    ss.dirty(clusterId);
+    ss.setClusterId(clusterId);
     ss.clean(shutdownId);
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_CLEAN_STORE);
 
@@ -99,9 +100,10 @@ QPID_AUTO_TEST_CASE(testMarkDirty) {
     Uuid shutdownId = Uuid(true);
     StoreStatus ss(TEST_DIR);
     ss.load();
-    ss.dirty(clusterId);
+    ss.setClusterId(clusterId);
+    ss.dirty();
     ss.clean(shutdownId);
-    ss.dirty(clusterId);
+    ss.dirty();
     
     StoreStatus ss2(TEST_DIR);
     ss2.load();
