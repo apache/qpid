@@ -118,7 +118,9 @@ struct EncodingException : qpid::Exception
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-void decode(const Message& message, qpid::types::Variant::Map& map, const std::string& encoding = std::string());
+QPID_CLIENT_EXTERN void decode(const Message& message,
+                               qpid::types::Variant::Map& map,
+                               const std::string& encoding = std::string());
 /**
  * Decodes message content into a Variant::List.
  * 
@@ -128,7 +130,9 @@ void decode(const Message& message, qpid::types::Variant::Map& map, const std::s
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-void decode(const Message& message, qpid::types::Variant::List& list, const std::string& encoding = std::string());
+QPID_CLIENT_EXTERN void decode(const Message& message,
+                               qpid::types::Variant::List& list,
+                               const std::string& encoding = std::string());
 /**
  * Encodes a Variant::Map into a message.
  * 
@@ -138,7 +142,9 @@ void decode(const Message& message, qpid::types::Variant::List& list, const std:
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-void encode(const qpid::types::Variant::Map& map, Message& message, const std::string& encoding = std::string());
+QPID_CLIENT_EXTERN void encode(const qpid::types::Variant::Map& map,
+                               Message& message,
+                               const std::string& encoding = std::string());
 /**
  * Encodes a Variant::List into a message.
  * 
@@ -148,7 +154,9 @@ void encode(const qpid::types::Variant::Map& map, Message& message, const std::s
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-void encode(const qpid::types::Variant::List& list, Message& message, const std::string& encoding = std::string());
+QPID_CLIENT_EXTERN void encode(const qpid::types::Variant::List& list,
+                               Message& message,
+                               const std::string& encoding = std::string());
 
 }} // namespace qpid::messaging
 
