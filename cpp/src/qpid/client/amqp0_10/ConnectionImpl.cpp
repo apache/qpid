@@ -113,10 +113,10 @@ void ConnectionImpl::setOptions(const Variant::Map& options)
     if (setIfFound(options, "reconnect-interval", reconnectInterval)) {
         minReconnectInterval = maxReconnectInterval = reconnectInterval;
     } else {
-        setIfFound(options, "min-reconnect-interval", minReconnectInterval);
-        setIfFound(options, "max-reconnect-interval", maxReconnectInterval);
+        setIfFound(options, "reconnect-interval-min", minReconnectInterval);
+        setIfFound(options, "reconnect-interval-max", maxReconnectInterval);
     }
-    setIfFound(options, "urls", urls);    
+    setIfFound(options, "reconnect-urls", urls);    
 }
 
 void ConnectionImpl::setOption(const std::string& name, const Variant& value)
