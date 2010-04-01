@@ -26,31 +26,31 @@ from threading import Thread
 
 log = getLogger("qpid.messaging.util")
 
-def auto_update_backups(conn):
-  ssn = conn.session("auto-update-backups")
+def auto_fetch_reconnect_hosts(conn):
+  ssn = conn.session("auto-fetch-reconnect-hosts")
   rcv = ssn.receiver("amq.failover")
   rcv.capacity = 10
 
   def main():
     while True:
       msg = rcv.fetch()
-      update_backups(conn, msg)
+      set_reconnect_hosts(conn, msg)
       ssn.acknowledge(msg, sync=False)
 
-  thread = Thread(name="auto-update-backups", target=main)
+  thread = Thread(name="auto-fetch-reconnect-hosts", target=main)
   thread.setDaemon(True)
   thread.start()
 
 
-def update_backups(conn, msg):
-  backups = []
+def set_reconnect_hosts(conn, msg):
+  reconnect_hosts = []
   urls = msg.properties["amq.failover"]
   for u in urls:
     if u.startswith("amqp:tcp:"):
       parts = u.split(":")
       host, port = parts[2:4]
-      backups.append((host, port))
-  conn.backups = backups
-  log.warn("updated backups for conn %s: %s", conn, backups)
+      reconnect_hosts.append((host, port))
+  conn.reconnect_hosts = reconnect_hosts
+  log.warn("set reconnect_hosts for conn %s: %s", conn, reconnect_hosts)
 
-__all__ = ["auto_update_backups", "update_backups"]
+__all__ = ["auto_fetch_reconnect_hosts", "set_reconnect_hosts"]

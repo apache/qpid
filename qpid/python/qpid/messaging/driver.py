@@ -325,7 +325,8 @@ class Driver:
     self._attempts = 0
     self._delay = self.connection.reconnect_interval_min
     self._hosts = [(self.connection.host, self.connection.port)] + \
-        self.connection.backups
+        self.connection.reconnect_hosts
+    self._reconnect_log = self.connection.options.get("reconnect_log", True)
     self._host = 0
     self._retrying = False
     self._transport = None
@@ -395,9 +396,10 @@ class Driver:
         self._delay = min(2*self._delay,
                           self.connection.reconnect_interval_max)
       self._timeout = time.time() + delay
-      log.warn("recoverable error[attempt %s]: %s" % (self._attempts, e))
-      if delay > 0:
-        log.warn("sleeping %s seconds" % delay)
+      if self._reconnect_log:
+        log.warn("recoverable error[attempt %s]: %s" % (self._attempts, e))
+        if delay > 0:
+          log.warn("sleeping %s seconds" % delay)
       self._retrying = True
       self.engine.close()
     else:
@@ -456,7 +458,7 @@ class Driver:
       if self._host == 0:
         self._attempts += 1
       host, port = self._hosts[self._host]
-      if self._retrying:
+      if self._retrying and self._reconnect_log:
         log.warn("trying: %s:%s", host, port)
       self.engine = Engine(self.connection)
       self.engine.open()
@@ -466,7 +468,7 @@ class Driver:
         self._transport = trans(host, port)
       else:
         raise ConnectError("no such transport: %s" % self.connection.transport)
-      if self._retrying:
+      if self._retrying and self._reconnect_log:
         log.warn("reconnect succeeded: %s:%s", host, port)
       self._timeout = None
       self._attempts = 0
