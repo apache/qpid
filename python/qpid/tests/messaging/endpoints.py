@@ -76,8 +76,7 @@ class SetupTests(Base):
     options = self.connection_options()
     import socket
     from qpid.messaging import transports
-    transport = options.get("transport", "plain")
-    real = getattr(transports, transport)
+    real = transports.plain
 
     class flaky:
 
