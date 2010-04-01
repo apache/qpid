@@ -323,6 +323,7 @@ class Driver:
 
     self._selector = Selector.default()
     self._attempts = 0
+    self._delay = self.connection.reconnect_interval_min
     self._hosts = [(self.connection.host, self.connection.port)] + \
         self.connection.backups
     self._host = 0
@@ -390,7 +391,9 @@ class Driver:
       if self._host > 0:
         delay = 0
       else:
-        delay = self.connection.reconnect_delay
+        delay = self._delay
+        self._delay = min(2*self._delay,
+                          self.connection.reconnect_interval_max)
       self._timeout = time.time() + delay
       log.warn("recoverable error[attempt %s]: %s" % (self._attempts, e))
       if delay > 0:
@@ -951,6 +954,7 @@ class Engine:
           # XXX: we're ignoring acks that get lost when disconnected,
           # could we deal this via some message-id based purge?
           if m._transfer_id is None:
+            ssn.acked.remove(m)
             continue
           ids.add(m._transfer_id)
           disp = m._disposition or DEFAULT_DISPOSITION
