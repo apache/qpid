@@ -5,6 +5,6 @@ broker.ready=BRK-1004
 broker.stopped=Exception
 broker.config=${project.root}/build/etc/config-systests-derby.xml
 qpid.amqp.version=0-9
-profile.excludes=JavaStandaloneExcludes
+profile.excludes=JavaStandaloneExcludes 08StandaloneExcludes
 broker.clean.between.tests=true
 broker.persistent=true
