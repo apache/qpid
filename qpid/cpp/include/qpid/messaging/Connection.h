@@ -54,7 +54,6 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     sasl-min-ssf
      *     sasl-max-ssf
      *     protocol
-     *     urls
      * 
      * (note also bounds, locale, max-channels and max-framesize, but
      * not sure whether those should be documented here)
@@ -67,6 +66,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     reconnect-interval-min: number of seconds (initial delay between failed reconnection attempts)
      *     reconnect-interval-max: number of seconds (maximum delay between failed reconnection attempts)
      *     reconnect-interval: shorthand for setting the same reconnect_interval_min/max
+     *     reconnect-urls: list of alternate urls to try when connecting
      *
      *     The reconnect-interval is the time that the client waits
      *     for after a failed attempt to reconnect before retrying. It
