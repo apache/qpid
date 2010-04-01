@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/CommonImportExport.h"
 #include "qpid/types/Variant.h"
 
 namespace qpid {
@@ -33,7 +34,7 @@ namespace amqp_0_10 {
  * Codec for encoding/decoding a map of Variants using the AMQP 0-10
  * map encoding.
  */
-class MapCodec
+class QPID_COMMON_EXTERN MapCodec
 {
   public:
     static void encode(const qpid::types::Variant::Map&, std::string&);
@@ -46,7 +47,7 @@ class MapCodec
  * Codec for encoding/decoding a list of Variants using the AMQP 0-10
  * list encoding.
  */
-class ListCodec
+class QPID_COMMON_EXTERN ListCodec
 {
   public:
     static void encode(const qpid::types::Variant::List&, std::string&);
@@ -62,8 +63,10 @@ class ListCodec
  * deprecated qpid::framing::FieldTable.
  *
  */
-void translate(const qpid::types::Variant::Map& from, qpid::framing::FieldTable& to);
-void translate(const qpid::framing::FieldTable& from, qpid::types::Variant::Map& to);
+QPID_COMMON_EXTERN void translate(const qpid::types::Variant::Map& from,
+                                  qpid::framing::FieldTable& to);
+QPID_COMMON_EXTERN void translate(const qpid::framing::FieldTable& from,
+                                  qpid::types::Variant::Map& to);
 
 }} // namespace qpid::amqp_0_10
 
