@@ -17,49 +17,50 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
+import static org.apache.qpid.transport.Option.BATCH;
+import static org.apache.qpid.transport.Option.NONE;
+import static org.apache.qpid.transport.Option.SYNC;
+import static org.apache.qpid.transport.Option.UNRELIABLE;
+
+import java.lang.ref.WeakReference;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.FiledTableSupport;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.FiledTableSupport;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
-import org.apache.qpid.util.Serial;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.transport.ExchangeBoundResult;
 import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageCreditUnit;
 import org.apache.qpid.transport.MessageFlowMode;
 import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.ExchangeBoundResult;
-import org.apache.qpid.transport.Future;
 import org.apache.qpid.transport.Range;
+import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.SessionListener;
+import org.apache.qpid.util.Serial;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.qpid.transport.Option.*;
-
-import javax.jms.*;
-import javax.jms.IllegalStateException;
-
-import java.lang.ref.WeakReference;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.UUID;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * This is a 0.10 Session
@@ -797,72 +798,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         return send0_10QueueDeclare(amqd, protocolHandler, noLocal, nowait);
                     }
                 }, _connection).execute();
-    }
-
-    public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
-    {
-
-        checkNotClosed();
-        AMQTopic origTopic=checkValidTopic(topic, true);
-        AMQTopic dest=AMQTopic.createDurable010Topic(origTopic, name, _connection);
-
-        TopicSubscriberAdaptor<BasicMessageConsumer_0_10> subscriber=_subscriptions.get(name);
-        if (subscriber != null)
-        {
-            if (subscriber.getTopic().equals(topic))
-            {
-                throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange "
-                        + name);
-            }
-            else
-            {
-                unsubscribe(name);
-            }
-        }
-        else
-        {
-            AMQShortString topicName;
-            if (topic instanceof AMQTopic)
-            {
-                topicName=((AMQTopic) topic).getBindingKeys()[0];
-            }
-            else
-            {
-                topicName=new AMQShortString(topic.getTopicName());
-            }
-
-            if (_strictAMQP)
-            {
-                if (_strictAMQPFATAL)
-                {
-                    throw new UnsupportedOperationException("JMS Durable not currently supported by AMQP.");
-                }
-                else
-                {
-                    _logger.warn("Unable to determine if subscription already exists for '" + topicName + "' "
-                            + "for creation durableSubscriber. Requesting queue deletion regardless.");
-                }
-
-                deleteQueue(dest.getAMQQueueName());
-            }
-            else
-            {
-                // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
-                // says we must trash the subscription.
-                if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
-                        && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
-                {
-                    deleteQueue(dest.getAMQQueueName());
-                }
-            }
-        }
-
-        subscriber=new TopicSubscriberAdaptor(dest, createExclusiveConsumer(dest));
-
-        _subscriptions.put(name, subscriber);
-        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
-
-        return subscriber;
     }
 
     protected Long requestQueueDepth(AMQDestination amqd)

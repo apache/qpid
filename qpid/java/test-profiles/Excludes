@@ -28,5 +28,5 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testAutoAck
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testDupsOk
 
-// QPID-2418 : The queue backing the dur sub is not currently deleted at subscription change, so the test will fail.
+// QPID-2418 : Durable subscriptions do not yet clear down existing queue on selector change
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSelectorAndRestart
