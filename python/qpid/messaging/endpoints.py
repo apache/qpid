@@ -94,8 +94,8 @@ class Connection:
     else:
       self.reconnect_interval_max = options.get("reconnect_interval", 2*60)
     self.reconnect_limit = options.get("reconnect_limit")
+    self.reconnect_hosts = options.get("reconnect_hosts", [])
     self.transport = options.get("transport", "plain")
-    self.backups = options.get("backups", [])
     self.options = options
 
     if self.transport == "tls":
