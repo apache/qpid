@@ -84,7 +84,15 @@ class Connection:
     self.mechanisms = options.get("mechanisms")
     self.heartbeat = options.get("heartbeat")
     self.reconnect = options.get("reconnect", False)
-    self.reconnect_delay = options.get("reconnect_delay", 3)
+    self.reconnect_timeout = options.get("reconnect_timeout")
+    if "reconnect_interval_min" in options:
+      self.reconnect_interval_min = options["reconnect_interval_min"]
+    else:
+      self.reconnect_interval_min = options.get("reconnect_interval", 1)
+    if "reconnect_interval_max" in options:
+      self.reconnect_interval_max = options["reconnect_interval_max"]
+    else:
+      self.reconnect_interval_max = options.get("reconnect_interval", 2*60)
     self.reconnect_limit = options.get("reconnect_limit")
     self.transport = options.get("transport", "plain")
     self.backups = options.get("backups", [])
