@@ -116,6 +116,8 @@ class SetupTests(Base):
 
     options["reconnect"] = True
     options["reconnect_interval"] = 0
+    options["reconnect_limit"] = 100
+    options["reconnect_log"] = False
     options["transport"] = "flaky"
 
     self.conn = Connection.open(self.broker.host, self.broker.port, **options)
