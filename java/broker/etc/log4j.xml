@@ -38,10 +38,10 @@
              DEFAULT IF NOT CONFIGURED: 3 -->
         <param name="RollingStyle" value="1"/>
         <!-- Set the count direction:
-             Positive numbers mean backups are numbered <latest>, .0, .1, .2,..., .n
+             Negative numbers mean backups are numbered <latest>, .0, .1, .2,..., .n
              0 means backup is DatePattern stamped and followed with a Positive number
                  if the DatePattern stamp clashes with other existing backups.
-             Negative numbers mean backups are numbered 0, 1, 2, ..., n, <latest>
+             Positive numbers mean backups are numbered 0, 1, 2, ..., n, <latest>
 
              DEFAULT IF NOT CONFIGURED: -1 -->
         <param name="CountDirection" value="0"/>
