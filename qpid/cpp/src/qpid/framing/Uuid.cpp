@@ -81,8 +81,10 @@ ostream& operator<<(ostream& out, Uuid uuid) {
 istream& operator>>(istream& in, Uuid& uuid) {
     char unparsed[UNPARSED_SIZE + 1] = {0};
     in.get(unparsed, sizeof(unparsed));
-    if (uuid_parse(unparsed, uuid.c_array()) != 0) 
-        in.setstate(ios::failbit);
+    if (!in.fail()) {
+        if (uuid_parse(unparsed, uuid.c_array()) != 0) 
+            in.setstate(ios::failbit);
+    }
     return in;
 }
 

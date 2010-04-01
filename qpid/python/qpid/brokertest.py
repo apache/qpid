@@ -373,6 +373,13 @@ class Broker(Popen):
         try: self.connect().close()
         except: raise RethrownException("Broker %s failed ready test"%self.name)
 
+    def store_state(self):
+        uuids = open(os.path.join(self.datadir, "cluster", "store.status")).readlines()
+        null_uuid="00000000-0000-0000-0000-000000000000\n"
+        if uuids[0] == null_uuid: return "empty"
+        if uuids[1] == null_uuid: return "dirty"
+        return "clean"
+        
 class Cluster:
     """A cluster of brokers in a test."""
 
