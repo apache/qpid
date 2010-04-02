@@ -25,7 +25,6 @@
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/ImportExport.h"
 #include "qpid/messaging/Handle.h"
-#include "qpid/sys/Time.h"
 #include <string>
 
 namespace qpid {
