@@ -178,11 +178,16 @@ public class ServerConfiguration implements SignalHandler
 	            // Open the vhosts XML file and copy values from it to our config
 	    	    _vhostsFile = new File(fileName);
 	    	    vhostConfiguration = parseConfig(_vhostsFile);
+                
+	    	    // save the default virtualhost name
+                String defaultVirtualHost = vhostConfiguration.getString("default");
+                _config.setProperty("virtualhosts.default", defaultVirtualHost);
 	        }
         }
         
+        
         // Now extract the virtual host names from the configuration object
-    	List hosts = vhostConfiguration.getList("virtualhost.name");
+        List hosts = vhostConfiguration.getList("virtualhost.name");
         for (int j = 0; j < hosts.size(); j++)
         {
             String name = (String) hosts.get(j);

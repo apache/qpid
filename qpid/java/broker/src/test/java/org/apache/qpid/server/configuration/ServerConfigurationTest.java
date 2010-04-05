@@ -909,6 +909,7 @@ public class ServerConfigurationTest extends TestCase
         if (includeVhosts)
         {
 	        out.write("\t<virtualhosts>\n");
+	        out.write("\t\t<default>test</default>\n");
 	        out.write("\t\t<virtualhost>\n");
 	        out.write(String.format("\t\t\t<name>%s</name>\n", name));
 	        out.write(String.format("\t\t<%s> \n", name));
@@ -1212,9 +1213,11 @@ public class ServerConfigurationTest extends TestCase
 
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+        String defaultVirtualHost = reg.getConfiguration().getDefaultVirtualHost();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
         Exchange exchange = virtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.topic"));
 
+        assertEquals("Incorrect default host", "test", defaultVirtualHost);
         assertEquals("Incorrect virtualhost count", 1, virtualHostRegistry.getVirtualHosts().size());
         assertEquals("Incorrect virtualhost name", "test", virtualHost.getName());
         assertEquals("Incorrect exchange type", "topic", exchange.getType().toString());
@@ -1242,9 +1245,11 @@ public class ServerConfigurationTest extends TestCase
 
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+        String defaultVirtualHost = reg.getConfiguration().getDefaultVirtualHost();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
         Exchange exchange = virtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.topic"));
 
+        assertEquals("Incorrect default host", "test", defaultVirtualHost);
         assertEquals("Incorrect virtualhost count", 1, virtualHostRegistry.getVirtualHosts().size());
         assertEquals("Incorrect virtualhost name", "test", virtualHost.getName());
         assertEquals("Incorrect exchange type", "topic", exchange.getType().toString());
