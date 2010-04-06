@@ -857,6 +857,21 @@ QPID_AUTO_TEST_CASE(testTx)
     BOOST_CHECK(!receiver2.fetch(in, Duration::IMMEDIATE));
 }
 
+QPID_AUTO_TEST_CASE(testRelease)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out("test-message");
+    sender.send(out, true);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message m1 = receiver.fetch(Duration::IMMEDIATE);
+    fix.session.release(m1);
+    Message m2 = receiver.fetch(Duration::SECOND * 1);
+    BOOST_CHECK_EQUAL(m1.getContent(), out.getContent());
+    BOOST_CHECK_EQUAL(m1.getContent(), m2.getContent());
+    fix.session.acknowledge(true);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
