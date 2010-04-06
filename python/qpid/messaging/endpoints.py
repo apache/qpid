@@ -187,7 +187,7 @@ class Connection:
     """
     self._connected = False
     self._wakeup()
-    self._ewait(lambda: not self._transport_connected)
+    self._wait(lambda: not self._transport_connected)
     self._driver.stop()
     self._condition.gc()
 
@@ -203,9 +203,11 @@ class Connection:
     """
     Close the connection and all sessions.
     """
-    for ssn in self.sessions.values():
-      ssn.close()
-    self.disconnect()
+    try:
+      for ssn in self.sessions.values():
+        ssn.close()
+    finally:
+      self.disconnect()
 
 class Session:
 
