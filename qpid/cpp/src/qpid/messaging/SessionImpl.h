@@ -42,6 +42,7 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual void rollback() = 0;
     virtual void acknowledge(bool sync) = 0;
     virtual void reject(Message&) = 0;
+    virtual void release(Message&) = 0;
     virtual void close() = 0;
     virtual void sync() = 0;
     virtual void flush() = 0;

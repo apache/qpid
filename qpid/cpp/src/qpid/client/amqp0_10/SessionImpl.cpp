@@ -92,6 +92,11 @@ void SessionImpl::reject(qpid::messaging::Message& m)
     execute1<Reject>(m);
 }
 
+void SessionImpl::release(qpid::messaging::Message& m)
+{
+    execute1<Release>(m);
+}
+
 void SessionImpl::close()
 {
     //close all the senders and receivers (get copy of names and then
@@ -416,6 +421,13 @@ void SessionImpl::rejectImpl(qpid::messaging::Message& m)
     SequenceSet set;
     set.add(MessageImplAccess::get(m).getInternalId());
     session.messageReject(set);
+}
+
+void SessionImpl::releaseImpl(qpid::messaging::Message& m)
+{
+    SequenceSet set;
+    set.add(MessageImplAccess::get(m).getInternalId());
+    session.messageRelease(set);
 }
 
 void SessionImpl::receiverCancelled(const std::string& name)

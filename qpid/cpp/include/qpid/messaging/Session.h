@@ -78,9 +78,16 @@ class Session : public qpid::messaging::Handle<SessionImpl>
     QPID_CLIENT_EXTERN void acknowledge(bool sync=false);
     /**
      * Rejects the specified message. This will prevent the message
-     * being redelivered.
+     * being redelivered. This must be called before the message is
+     * acknowledged.
      */
     QPID_CLIENT_EXTERN void reject(Message&);
+    /**
+     * Releases the specified message. This will allow the broker to
+     * redeliver the message. This must be called before the message
+     * is acknowledged.
+     */
+    QPID_CLIENT_EXTERN void release(Message&);
 
     QPID_CLIENT_EXTERN void sync();
     QPID_CLIENT_EXTERN void flush();
