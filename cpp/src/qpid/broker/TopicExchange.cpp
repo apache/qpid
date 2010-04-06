@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/TopicExchange.h"
+#include "qpid/log/Statement.h"
 #include <algorithm>
 
 
@@ -214,6 +215,8 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
             }
+            QPID_LOG(debug, "Bound [" << routingPattern << "] to queue " << queue->getName()
+                     << " (origin=" << fedOrigin << ")");
         }
     } else if (fedOp == fedOpUnbind) {
         {
@@ -274,6 +277,7 @@ bool TopicExchange::unbind(Queue::shared_ptr queue, const string& constRoutingKe
     if (mgmtExchange != 0) {
         mgmtExchange->dec_bindingCount();
     }
+    QPID_LOG(debug, "Unbound [" << routingKey << "] from queue " << queue->getName());
 
     if (propagate)
         propagateFedOp(routingKey, string(), fedOpUnbind, string());
@@ -294,16 +298,19 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string& pattern)
 
 void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/)
 {
-    Binding::vector mb;
     BindingList b(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
     PreRoute pr(msg, this);
+    std::set<std::string> qSet;
     {
         RWlock::ScopedRlock l(lock);
         for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
             if (match(i->first, routingKey)) {
                 Binding::vector& qv(i->second.bindingVector);
                 for(Binding::vector::iterator j = qv.begin(); j != qv.end(); j++){
-                    b->push_back(*j);
+                    // do not duplicate queues on the binding list
+                    if (qSet.insert(j->get()->queue->getName()).second) {
+                        b->push_back(*j);
+                    }
                 }
             }
         }
