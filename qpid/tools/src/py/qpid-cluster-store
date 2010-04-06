@@ -19,7 +19,7 @@
 # under the License.
 #
 
-from  qpid.datatypes import uuid4, UUID
+from  qpid.datatypes import uuid4, UUID, parseUUID
 import optparse, os.path, sys
 
 op = optparse.OptionParser(
@@ -39,7 +39,7 @@ class ClusterStoreStatus:
 
     def read(self):
         f = open(self.file)
-        try: self.cluster_id, self.shutdown_id = [UUID.parse(s) for s in f.readlines()]
+        try: self.cluster_id, self.shutdown_id = [parseUUID(s) for s in f.readlines()]
         finally: f.close()
 
     def write(self):

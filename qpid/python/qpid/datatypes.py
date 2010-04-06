@@ -308,16 +308,14 @@ except ImportError:
 def uuid4():
   return UUID(random_uuid())
 
-class UUID:
+def parseUUID(str):
+  fields=str.split("-")
+  fields[4:5] = [fields[4][:4], fields[4][4:]]
+  return UUID(struct.pack("!LHHHHL", *[int(x,16) for x in fields]))
 
+class UUID:
   def __init__(self, bytes):
     self.bytes = bytes
-
-  @staticmethod
-  def parse(str):
-    fields=str.split("-")
-    fields[4:5] = [fields[4][:4], fields[4][4:]]
-    return UUID(struct.pack("!LHHHHL", *[int(x,16) for x in fields]))
 
   def __cmp__(self, other):
     if isinstance(other, UUID):
