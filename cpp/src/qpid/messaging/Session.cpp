@@ -40,6 +40,7 @@ void Session::commit() { impl->commit(); }
 void Session::rollback() { impl->rollback(); }
 void Session::acknowledge(bool sync) { impl->acknowledge(sync); }
 void Session::reject(Message& m) { impl->reject(m); }
+void Session::release(Message& m) { impl->release(m); }
 void Session::close() { impl->close(); }
 
 Sender Session::createSender(const Address& address)
