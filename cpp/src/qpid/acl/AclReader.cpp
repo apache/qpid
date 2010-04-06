@@ -84,137 +84,146 @@ std::string AclReader::aclRule::toString() {
 }
 
 void AclReader::loadDecisionData(boost::shared_ptr<AclData> d) {
-	d->clear();
-	QPID_LOG(debug, "ACL Load Rules");
-	int cnt = rules.size();
-	bool foundmode = false;
+    d->clear();
+    QPID_LOG(debug, "ACL Load Rules");
+    int cnt = rules.size();
+    bool foundmode = false;
 
-	for (rlCitr i = rules.end() - 1; cnt; i--, cnt--) {
-		QPID_LOG(debug, "ACL Processing " << std::setfill(' ') << std::setw(2)
-				<< cnt << " " << (*i)->toString());
+    for (rlCitr i = rules.end(); cnt; cnt--) {
+        i--;
+        QPID_LOG(debug, "ACL Processing " << std::setfill(' ') << std::setw(2)
+                        << cnt << " " << (*i)->toString());
 
-		if (!foundmode && (*i)->actionAll && (*i)->names.size() == 1
-				&& (*((*i)->names.begin())).compare("*") == 0) {
-			d->decisionMode = (*i)->res;
-			QPID_LOG(debug, "ACL FoundMode " << AclHelper::getAclResultStr(
-					d->decisionMode));
-			foundmode = true;
-		} else {
-			AclData::rule rule((*i)->props);
-			bool addrule = true;
+        if (!foundmode && (*i)->actionAll && (*i)->names.size() == 1
+            && (*((*i)->names.begin())).compare("*") == 0) {
+            d->decisionMode = (*i)->res;
+            QPID_LOG(debug, "ACL FoundMode "
+                     << AclHelper::getAclResultStr(d->decisionMode));
+            foundmode = true;
+        } else {
+            AclData::rule rule((*i)->props);
+            bool addrule = true;
 
-			switch ((*i)->res) {
-			case qpid::acl::ALLOWLOG:
-				rule.log = true;
-				if (d->decisionMode == qpid::acl::ALLOW || d->decisionMode
-						== qpid::acl::ALLOWLOG)
-					rule.logOnly = true;
-				break;
-			case qpid::acl::ALLOW:
-				if (d->decisionMode == qpid::acl::ALLOW || d->decisionMode
-						== qpid::acl::ALLOWLOG)
-					addrule = false;
-				break;
-			case qpid::acl::DENYLOG:
-				rule.log = true;
-				if (d->decisionMode == qpid::acl::DENY || d->decisionMode
-						== qpid::acl::DENYLOG)
-					rule.logOnly = true;
-				break;
-			case qpid::acl::DENY:
-				if (d->decisionMode == qpid::acl::DENY || d->decisionMode
-						== qpid::acl::DENYLOG)
-					addrule = false;
-				break;
-			default:
-				throw Exception("Invalid ACL Result loading rules.");
-			}
+            switch ((*i)->res) {
+            case qpid::acl::ALLOWLOG:
+                rule.log = true;
+                if (d->decisionMode == qpid::acl::ALLOW ||
+                    d->decisionMode == qpid::acl::ALLOWLOG)
+                    rule.logOnly = true;
+                break;
+            case qpid::acl::ALLOW:
+                if (d->decisionMode == qpid::acl::ALLOW ||
+                    d->decisionMode == qpid::acl::ALLOWLOG)
+                    addrule = false;
+                break;
+            case qpid::acl::DENYLOG:
+                rule.log = true;
+                if (d->decisionMode == qpid::acl::DENY ||
+                    d->decisionMode == qpid::acl::DENYLOG)
+                    rule.logOnly = true;
+                break;
+            case qpid::acl::DENY:
+                if (d->decisionMode == qpid::acl::DENY ||
+                    d->decisionMode == qpid::acl::DENYLOG)
+                    addrule = false;
+                break;
+            default:
+                throw Exception("Invalid ACL Result loading rules.");
+            }
 
-			// Action -> Object -> map<user -> set<Rule> >
-			if (addrule) {
-				std::ostringstream actionstr;
-				for (int acnt = ((*i)->actionAll ? 0 : (*i)->action); acnt
-						< acl::ACTIONSIZE; (*i)->actionAll ? acnt++ : acnt
-						= acl::ACTIONSIZE) {
+            // Action -> Object -> map<user -> set<Rule> >
+            if (addrule) {
+                std::ostringstream actionstr;
+                for (int acnt = ((*i)->actionAll ? 0 : (*i)->action);
+                     acnt < acl::ACTIONSIZE;
+                     (*i)->actionAll ? acnt++ : acnt = acl::ACTIONSIZE) {
 
-					if (acnt == acl::ACT_PUBLISH)
-						d->transferAcl = true; // we have transfer ACL
+                    if (acnt == acl::ACT_PUBLISH)
+                        d->transferAcl = true; // we have transfer ACL
 
-					actionstr << AclHelper::getActionStr((Action) acnt) << ",";
+                    actionstr << AclHelper::getActionStr((Action) acnt) << ",";
 
-					//find the Action, create if not exist
-					if (d->actionList[acnt] == NULL) {
-						d->actionList[acnt]
-								= new AclData::aclAction[qpid::acl::OBJECTSIZE];
-						for (int j = 0; j < qpid::acl::OBJECTSIZE; j++)
-							d->actionList[acnt][j] = NULL;
-					}
+                    //find the Action, create if not exist
+                    if (d->actionList[acnt] == NULL) {
+                        d->actionList[acnt] =
+                            new AclData::aclAction[qpid::acl::OBJECTSIZE];
+                        for (int j = 0; j < qpid::acl::OBJECTSIZE; j++)
+                            d->actionList[acnt][j] = NULL;
+                    }
 
-					// optimize this loop to limit to valid options only!!
-					for (int ocnt = ((*i)->objStatus != aclRule::VALUE ? 0
-							: (*i)->object); ocnt < acl::OBJECTSIZE; (*i)->objStatus
-							!= aclRule::VALUE ? ocnt++ : ocnt = acl::OBJECTSIZE) {
+                    // optimize this loop to limit to valid options only!!
+                    for (int ocnt = ((*i)->objStatus != aclRule::VALUE ? 0
+                                     : (*i)->object);
+                         ocnt < acl::OBJECTSIZE;
+                         (*i)->objStatus != aclRule::VALUE ? ocnt++ : ocnt = acl::OBJECTSIZE) {
 
-						//find the Object, create if not exist
-						if (d->actionList[acnt][ocnt] == NULL)
-							d->actionList[acnt][ocnt]
-									= new AclData::actionObject;
+                        //find the Object, create if not exist
+                        if (d->actionList[acnt][ocnt] == NULL)
+                            d->actionList[acnt][ocnt] =
+                                new AclData::actionObject;
 
-						// add users and Rule to object set
-						bool allNames = false;
-						// check to see if names.begin is '*'
-						if ((*(*i)->names.begin()).compare("*") == 0)
-							allNames = true;
+                        // add users and Rule to object set
+                        bool allNames = false;
+                        // check to see if names.begin is '*'
+                        if ((*(*i)->names.begin()).compare("*") == 0)
+                            allNames = true;
 
-						for (nsCitr itr = (allNames ? names.begin()
-								: (*i)->names.begin()); itr
-								!= (allNames ? names.end() : (*i)->names.end()); itr++) {
+                        for (nsCitr itr = (allNames ? names.begin()
+                                           : (*i)->names.begin());
+                             itr != (allNames ? names.end() : (*i)->names.end());
+                             itr++) {
 
-							AclData::actObjItr itrRule =
-									d->actionList[acnt][ocnt]->find(*itr);
+                            AclData::actObjItr itrRule =
+                              d->actionList[acnt][ocnt]->find(*itr);
 
-							if (itrRule == d->actionList[acnt][ocnt]->end()) {
-								AclData::ruleSet rSet;
-								rSet.push_back(rule);
-								d->actionList[acnt][ocnt]->insert(make_pair(
-										std::string(*itr), rSet));
-							} else {
+                            if (itrRule == d->actionList[acnt][ocnt]->end()) {
+                                AclData::ruleSet rSet;
+                                rSet.push_back(rule);
+                                d->actionList[acnt][ocnt]->insert
+                                    (make_pair(std::string(*itr), rSet));
+                            } else {
+                                // TODO add code to check for dead rules
+                                // allow peter create queue name=tmp <-- dead rule!!
+                                // allow peter create queue
 
-								// TODO add code to check for dead rules
-								// allow peter create queue name=tmp <-- dead rule!!
-								// allow peter create queue
+                                itrRule->second.push_back(rule);
+                            }
+                        }
 
-								itrRule->second.push_back(rule);
-							}
-						}
+                    }
+                }
 
-					}
-				}
+                std::ostringstream objstr;
+                for (int ocnt = ((*i)->objStatus != aclRule::VALUE ? 0 : (*i)->object);
+                     ocnt < acl::OBJECTSIZE;
+                     (*i)->objStatus != aclRule::VALUE ? ocnt++ : ocnt = acl::OBJECTSIZE) {
+                    objstr << AclHelper::getObjectTypeStr((ObjectType) ocnt) << ",";
+                }
 
-				std::ostringstream objstr;
-				for (int ocnt = ((*i)->objStatus != aclRule::VALUE ? 0 : (*i)->object); ocnt < acl::OBJECTSIZE;
-					 (*i)->objStatus != aclRule::VALUE ? ocnt++ : ocnt = acl::OBJECTSIZE) {
-										objstr << AclHelper::getObjectTypeStr((ObjectType) ocnt) << ",";
-				}
+                bool allNames = ((*(*i)->names.begin()).compare("*") == 0);
+                std::ostringstream userstr;
+                for (nsCitr itr = (allNames ? names.begin() : (*i)->names.begin());
+                     itr != (allNames ? names.end() : (*i)->names.end());
+                     itr++) {
+                    userstr << *itr << ",";
+                }
 
-				bool allNames = ((*(*i)->names.begin()).compare("*") == 0);
-				std::ostringstream userstr;
-				for (nsCitr itr = (allNames ? names.begin() : (*i)->names.begin());
-				     itr != (allNames ? names.end() : (*i)->names.end()); itr++) {
-											userstr << *itr << ",";
-				}
+                QPID_LOG(debug, "ACL: Adding actions {" <<
+                         actionstr.str().substr(0,actionstr.str().length()-1)
+                         << "} to objects {" <<
+                         objstr.str().substr(0,objstr.str().length()-1)
+                         << "} with props " <<
+                         AclHelper::propertyMapToString(&rule.props)
+                         << " for users {" <<
+                         userstr.str().substr(0,userstr.str().length()-1)
+                         << "}" );
+            } else {
+                QPID_LOG(debug, "ACL Skipping based on Mode:"
+                         << AclHelper::getAclResultStr(d->decisionMode));
+            }
+        }
 
-				QPID_LOG(debug,"ACL: Adding actions {" << actionstr.str().substr(0,actionstr.str().length()-1)
-						       << "} to objects {" << objstr.str().substr(0,objstr.str().length()-1)
-						       << "} with props " << AclHelper::propertyMapToString(&rule.props)
-						       << " for users {" << userstr.str().substr(0,userstr.str().length()-1) << "}" );
-			} else {
-				QPID_LOG(debug, "ACL Skipping based on Mode:"
-						<< AclHelper::getAclResultStr(d->decisionMode));
-			}
-		}
-
-	}
+    }
 
 }
 
