@@ -150,7 +150,11 @@ void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
             inFile >> bootSequence;
             inFile >> nextRemoteBank;
             inFile.close();
-            QPID_LOG (debug, "ManagementAgent restored broker ID: " << uuid);
+            if (uuid.isNull()) {
+                uuid.generate();
+                QPID_LOG (info, "No stored broker ID found - ManagementAgent generated broker ID: " << uuid);
+            } else
+                QPID_LOG (debug, "ManagementAgent restored broker ID: " << uuid);
 
             // if sequence goes beyond a 12-bit field, skip zero and wrap to 1.
             bootSequence++;
