@@ -71,8 +71,11 @@ class Session : public qpid::messaging::Handle<SessionImpl>
     /**
      * Acknowledges all outstanding messages that have been received
      * by the application on this session.
+     * 
+     * @param sync if true, blocks until the acknowledgement has been
+     * processed by the server
      */
-    QPID_CLIENT_EXTERN void acknowledge();
+    QPID_CLIENT_EXTERN void acknowledge(bool sync=false);
     /**
      * Rejects the specified message. This will prevent the message
      * being redelivered.

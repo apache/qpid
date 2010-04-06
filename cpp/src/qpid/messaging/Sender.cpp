@@ -32,7 +32,7 @@ Sender::Sender(SenderImpl* impl) { PI::ctor(*this, impl); }
 Sender::Sender(const Sender& s) : qpid::messaging::Handle<SenderImpl>() { PI::copy(*this, s); }
 Sender::~Sender() { PI::dtor(*this); }
 Sender& Sender::operator=(const Sender& s) { return PI::assign(*this, s); }
-void Sender::send(const Message& message) { impl->send(message); }
+void Sender::send(const Message& message, bool sync) { impl->send(message, sync); }
 void Sender::close() { impl->close(); }
 void Sender::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Sender::getCapacity() { return impl->getCapacity(); }

@@ -56,8 +56,7 @@ int main(int argc, char** argv) {
         content["uuid"] = Uuid(true);
         encode(content, message);
 	
-        sender.send(message);
-        session.sync();
+        sender.send(message, true);
 
         connection.close();
         return 0;

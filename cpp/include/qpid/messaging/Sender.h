@@ -45,9 +45,14 @@ class Sender : public qpid::messaging::Handle<SenderImpl>
     QPID_CLIENT_EXTERN Sender& operator=(const Sender&);
 
     /**
-     * Sends a message; will block if the pending == capacity
+     * Sends a message
+     * 
+     * @param message the message to send
+     * @param sync if true the call will block until the server
+     * confirms receipt of the messages; if false will only block for
+     * available capacity (i.e. pending == capacity)
      */
-    QPID_CLIENT_EXTERN void send(const Message& message);
+    QPID_CLIENT_EXTERN void send(const Message& message, bool sync=false);
     QPID_CLIENT_EXTERN void close();
 
     /**
