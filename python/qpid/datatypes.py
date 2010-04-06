@@ -313,6 +313,12 @@ class UUID:
   def __init__(self, bytes):
     self.bytes = bytes
 
+  @staticmethod
+  def parse(str):
+    fields=str.split("-")
+    fields[4:5] = [fields[4][:4], fields[4][4:]]
+    return UUID(struct.pack("!LHHHHL", *[int(x,16) for x in fields]))
+
   def __cmp__(self, other):
     if isinstance(other, UUID):
       return cmp(self.bytes, other.bytes)
