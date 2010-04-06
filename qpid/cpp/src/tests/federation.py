@@ -738,6 +738,57 @@ class FederationTests(TestBase010):
 
         self.verify_cleanup()
 
+    def test_dynamic_topic_nodup(self):
+        """Verify that a message whose routing key matches more than one
+        binding does not get duplicated to the same queue.
+        """
+        session = self.session
+        r_conn = self.connect(host=self.remote_host(), port=self.remote_port())
+        r_session = r_conn.session("test_dynamic_topic_nodup")
+
+        session.exchange_declare(exchange="fed.topic", type="topic")
+        r_session.exchange_declare(exchange="fed.topic", type="topic")
+
+        self.startQmf()
+        qmf = self.qmf
+        broker = qmf.getObjects(_class="broker")[0]
+        result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
+        self.assertEqual(result.status, 0)
+
+        link = qmf.getObjects(_class="link")[0]
+        result = link.bridge(False, "fed.topic", "fed.topic", "", "", "", False, False, True, 0)
+        self.assertEqual(result.status, 0)
+        bridge = qmf.getObjects(_class="bridge")[0]
+        sleep(5)
+
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="fed.topic", binding_key="red.*")
+        session.exchange_bind(queue="fed1", exchange="fed.topic", binding_key="*.herring")
+
+        self.subscribe(queue="fed1", destination="f1")
+        queue = session.incoming("f1")
+
+        for i in range(1, 11):
+            dp = r_session.delivery_properties(routing_key="red.herring")
+            r_session.message_transfer(destination="fed.topic", message=Message(dp, "Message %d" % i))
+
+        for i in range(1, 11):
+            msg = queue.get(timeout=5)
+            self.assertEqual("Message %d" % i, msg.body)
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in queue: " + extra.body)
+        except Empty: None
+
+        result = bridge.close()
+        self.assertEqual(result.status, 0)
+        result = link.close()
+        self.assertEqual(result.status, 0)
+
+        self.verify_cleanup()
+
+
+
     def getProperty(self, msg, name):
         for h in msg.headers:
             if hasattr(h, name): return getattr(h, name)
