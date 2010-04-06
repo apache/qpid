@@ -1134,6 +1134,7 @@ public class ServerConfigurationTest extends TestCase
     private void writeVirtualHostsFile(File vhostsFile, String name) throws IOException {
         FileWriter out = new FileWriter(vhostsFile);
         out.write("<virtualhosts>\n");
+        out.write(String.format("\t\t<default>%s</default>\n", name));
         out.write("\t<virtualhost>\n");
         out.write(String.format("\t\t<name>%s</name>\n", name));
         out.write(String.format("\t\t<%s>\n", name));
