@@ -22,6 +22,7 @@
 
 import errno, os, time
 from qpid import compat
+from qpid.compat import set
 from qpid.messaging import *
 from qpid.tests.messaging import Base
 
