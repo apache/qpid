@@ -48,7 +48,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
 
     SenderImpl(SessionImpl& parent, const std::string& name, 
                const qpid::messaging::Address& address);
-    void send(const qpid::messaging::Message&);
+    void send(const qpid::messaging::Message&, bool sync);
     void close();
     void setCapacity(uint32_t);
     uint32_t getCapacity();

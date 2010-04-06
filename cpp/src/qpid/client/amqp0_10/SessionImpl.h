@@ -58,7 +58,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     SessionImpl(ConnectionImpl&, bool transactional);
     void commit();
     void rollback();
-    void acknowledge();
+    void acknowledge(bool sync);
     void reject(qpid::messaging::Message&);
     void close();
     void sync();

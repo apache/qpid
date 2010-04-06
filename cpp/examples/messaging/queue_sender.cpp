@@ -48,8 +48,7 @@ int main(int argc, char** argv) {
 	}
 	
 	// And send a final message to indicate termination.    	
-        sender.send(Message("That's all, folks!"));
-        session.sync();
+        sender.send(Message("That's all, folks!"), true);
         return 0;
     } catch(const std::exception& error) {
         std::cout << error.what() << std::endl;

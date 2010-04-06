@@ -75,13 +75,14 @@ void SessionImpl::rollback()
     execute<Rollback>();
 }
 
-void SessionImpl::acknowledge()
+void SessionImpl::acknowledge(bool sync_)
 {
     //Should probably throw an exception on failure here, or indicate
     //it through a return type at least. Failure means that the
     //message may be redelivered; i.e. the application cannot delete
     //any state necessary for preventing reprocessing of the message
     execute<Acknowledge>();
+    if (sync_) sync();
 }
 
 void SessionImpl::reject(qpid::messaging::Message& m)

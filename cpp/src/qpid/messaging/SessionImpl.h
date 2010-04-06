@@ -40,7 +40,7 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual ~SessionImpl() {}
     virtual void commit() = 0;
     virtual void rollback() = 0;
-    virtual void acknowledge() = 0;
+    virtual void acknowledge(bool sync) = 0;
     virtual void reject(Message&) = 0;
     virtual void close() = 0;
     virtual void sync() = 0;
