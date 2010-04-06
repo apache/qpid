@@ -231,6 +231,18 @@ QPID_AUTO_TEST_CASE(testSimpleSendReceive)
     BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
 }
 
+QPID_AUTO_TEST_CASE(testSyncSendReceive)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out("test-message");
+    sender.send(out, true);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(Duration::IMMEDIATE);
+    fix.session.acknowledge(true);
+    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+}
+
 QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
 {
     QueueFixture fix;

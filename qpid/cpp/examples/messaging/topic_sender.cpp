@@ -66,8 +66,7 @@ int main(int argc, char** argv) {
 	// And send a final message to indicate termination.
         Message message("That's all, folks!");
         message.setSubject("control");
-        sender.send(message);
-        session.sync();
+        sender.send(message, true);
         connection.close();
         return 0;
     } catch(const std::exception& error) {

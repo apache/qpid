@@ -34,7 +34,7 @@ SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name,
     parent(&_parent), name(_name), address(_address), state(UNRESOLVED),
     capacity(50), window(0), flushed(false), unreliable(AddressResolution::is_unreliable(address)) {}
 
-void SenderImpl::send(const qpid::messaging::Message& message) 
+void SenderImpl::send(const qpid::messaging::Message& message, bool sync) 
 {
     if (unreliable) {
         UnreliableSend f(*this, &message);
@@ -43,6 +43,7 @@ void SenderImpl::send(const qpid::messaging::Message& message)
         Send f(*this, &message);
         while (f.repeat) parent->execute(f);
     }
+    if (sync) parent->sync();
 }
 
 void SenderImpl::close()

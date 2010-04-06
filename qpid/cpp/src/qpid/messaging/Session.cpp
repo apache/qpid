@@ -38,7 +38,7 @@ Session::~Session() { PI::dtor(*this); }
 Session& Session::operator=(const Session& s) { return PI::assign(*this, s); }
 void Session::commit() { impl->commit(); }
 void Session::rollback() { impl->rollback(); }
-void Session::acknowledge() { impl->acknowledge(); }
+void Session::acknowledge(bool sync) { impl->acknowledge(sync); }
 void Session::reject(Message& m) { impl->reject(m); }
 void Session::close() { impl->close(); }
 
