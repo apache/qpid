@@ -108,7 +108,7 @@ int main() {
     <title>A Message Sender</title>
   <para>The sender program creates a Sender object that sends messages
   to <varname>message_queue</varname>, which happens to be a queue on
-  on AMQP 0-10 messaging broker:</para>
+  on AMQP 0-10 messaging broker.</para>
 
 <programlisting><![CDATA[
         Sender sender = session.createSender("message_queue");
@@ -120,6 +120,10 @@ int main() {
 	}
 	sender.close();
 }]]></programlisting>
+
+    <para> The AMQP 0-10 mapping implements this by sending messages
+    to the default exchange, with <varname>message_queue</varname> as
+    the routing key.</para>
 
   </section>
   <section>
@@ -268,73 +272,330 @@ $ ./drain -a hello-world
 $
       </programlisting>
 
-      <para>In AMQP 0-10, exchanges discard messages if ####</para>
+      <para>However, in AMQP 0-10, exchanges discard messages if no
+      queue is bound to the exchange, unlike queues, which store
+      messages until they are retrieved.  Because of this, no messages
+      were output in the above screen. If <command>drain</command> is
+      called before <command>spout</command>, a Receiver is created
+      for the exchange, which also creates a subscription queue and a
+      binding. Run <command>drain</command> in one terminal window
+      using <literal>-t</literal> to specify a timeout in seconds, and
+      run <command>spout</command> in another window to send a message
+      for <command>drain</command> to receive.</para>
 
-<!--
+      <para>First window:</para>
 
-SH: qpid-config add queue hello-world
-     - once created, an address simply refers to them by name
-SH: spout -c 10 hello-world
-SH: drain hello-world
-SH: qpid-config
-   + this works the same for exchanges
-SH: qpid-config del queue hello-world
-SH: qpid-config add exchange topic hello-world
-SH: spout -c 10 hello-world
-SH: drain hello-world
-     - client code remains exactly the same, but routing behavior
-       changes
-     - exchanges drop messages if nobody is listening, so we need to
-       start drain first
-     - drain will exit immediately if the source is empty (note that
-       this is actually a semantic guarantee provided by the API, we
-       know for a fact that the source is empty when drain/fetch
-       reports it, no fudge factor timeout is required [this assumes
-       nobody is concurrently publishing of course])
-     - drain -f invokes blocking fetch (you could use a timeout here also)
-SH1: drain -f hello-world
-SH: spout -c 10 hello-world
-SH2: drain -f hello-world
-SH: spout -c 10 hello-world
-     - multiple drains will get all messages because this is an
-       exchange
-     - for a queue messages will be load balanced between drains
-SH: qpid-config add queue hello-queue
-SH1: drain -f hello-world
-SH2: drain -f hello-world
-SH: spout -c 10 hello-world
-   + an address is resolved to a node
-     - the API internals will adjust how they send/receive based on
-       the type of node
-     - in AMQP 0-10 exchanges and queues are the two standard
-       categories of nodes
-     - in JMS these are called topics and queues
-     - we use the topic terminology to be consistent with JMS (note
-       that when used in this sense topic refers to any exchange, not
-       just a topic exchange)
-     - we'll cover the precise details of the mapping later
--->
+      <programlisting>
+$ ./drain -a hello-word -t 30
+      </programlisting>
+
+      <para>Second window:</para>
+
+      <programlisting>
+$ ./spout -a hello-word
+      </programlisting>
+
+      <para>Once <command>spout</command> has sent a message, return
+      to the first window to see the output from
+      <command>drain</command>:</para>
+
+      <programlisting>
+Message(properties={spout-id:7da2d27d-93e6-4803-8a61-536d87b8d93f:0}, content='')
+      </programlisting>
+
+      <para>You can run <command>drain</command> in several separate
+      windows; each will create a subscription for the exchange, and
+      each will receive all messages sent to the exchange.</para>
+
     </example>
     </section>
     
     <section>
       <title>Subjects</title>
-      <para>
-  A simple name with a subject will also resolve to a node, but the
-  presence of the subject will cause a sender using this address to
-  set the subject on outgoing messages, and receivers to filter based
-  on the subject:
+      <para>Subjects are used to classify messages.</para>
 
-    my-queue-or-topic/my-subject
+      <para>A Sender's subject is assigned to each message that it
+      sends (this can be overridden by specifying a subject directly
+      on the message). In the AMQP 0-10 mapping, the message's subject
+      is used as the routing key for all messages sent to the
+      messaging broker. If a Sender is bound to an AMQP 0-10 exchange,
+      it sends messages to that exchange. If a Sender is bound to an
+      AMQP 0-10 queue, the message is sent to the default
+      exchange.</para>
 
-  A subject pattern can be used and will cause filtering if used by
-  the receiver. If used for a sender, the literal value gets set as
-  the subject::
-
-    my-queue-or-topic/my-*
-
+      <para>A Receiver's subject is used to filter messages; only
+      messages with a subject that matches the Receiver's subject will
+      be received. If a Receiver's name resolves to an AMQP 0-10
+      exchange, the subject is used as a binding key for the
+      corresponding AMQP 0-10 exchange type.
       </para>
+
+      <note>
+	<para>The C++ implementation of the Qpid messaging broker does
+	not currently support selectors, so a Receiver's subject does
+	not filter messages if the Receiver's address resolves to a
+	queue.</para>
+      </note>
+
+      <section>
+	  <title>Direct Exchanges</title>
+
+	  <para>In an AMQP 0-10 direct exchange, messages are routed
+	  to queues if the routing key exactly matches the binding
+	  key. In the High Level Client API, if a Sender and a
+	  Receiver are bound to the same exchange, the Receiver will
+	  receive messages if the Sender's subject matches the
+	  Receiver's subject.</para>
+
+	  <para>Let's create a direct exchange and listen for messages
+	  whose subject is <literal>sports</literal>:</para>
+
+	  <para>First window:</para>
+	  <programlisting>
+$ qpid-config add exchange direct direct-exchange
+$ ./drain -a direct-exchange/sports -t 30
+	  </programlisting>
+
+	  <para>In a second window, let's send messages to the
+	  exchange we created:</para>
+
+	  <para>Second window:</para>
+	  <programlisting>
+$ ./spout -a direct-exchange/sports
+$ ./spout -a direct-exchange/news
+	  </programlisting>
+
+	  <para>Now look at the first window, and you will see the
+	  message with the subject <literal>sports</literal> has been
+	  received, but not the message with the subject
+	  <literal>news</literal>:</para>
+
+	  <programlisting>
+Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea998291:0}, content='')
+	  </programlisting>
+
+	  <para>If you run <command>drain</command> in multiple
+	  windows using the same subject, all instances of
+	  <command>drain</command> receive the messages for that
+	  subject.</para>
+
+      </section>
+      <section>
+	  <title>Topic Exchanges</title>
+
+	  <para>An AMQP 0-10 topic exchange uses routing keys that
+	  contain multiple words separated by a <quote>.</quote>
+	  delimiter. For instance, in a news application, a Sender's
+	  subject might be <literal>usa.news</literal>,
+	  <literal>usa.weather</literal>,
+	  <literal>europe.news</literal>, or
+	  <literal>europe.weather</literal>. A Receiver's subject can
+	  include wildcard characters&mdash; <quote>#</quote> matches
+	  one or more words in the message's subject, <quote>*</quote>
+	  matches a single word. For instance, if the Receiver's
+	  subject is <literal>*.news</literal>, it matches messages
+	  with the subject <literal>europe.news</literal> or
+	  <literal>usa.news</literal>; if the Receiver's subject is
+	  <literal>europe.#</literal>, it matches messages with
+	  subjects like <literal>europe.news</literal> or
+	  <literal>europe.pseudo.news</literal>.</para>
+
+	  <para>Let's create a topic exchange and listen for messages
+	  whose subject is <literal>news</literal>:</para>
+
+	  <para>First window:</para>
+
+	  <programlisting>
+$ qpid-config add exchange topic topic-exchange
+$ ./drain -a topic-exchange/news -t 30
+          </programlisting>
+
+	  <para>In a second window, let's send messages to the
+	  exchange we created:</para>
+
+	  <para>Second window:</para>
+	  <programlisting>
+$ ./spout -a topic-exchange/news
+$ ./spout -a topic-exchange/sports
+	  </programlisting>
+
+
+	  <para>Now look at the first window, and you will see the
+	  message with the subject <literal>news</literal> has been
+	  received, but not the message with the subject
+	  <literal>sports</literal>:</para>
+
+	  <programlisting>
+Message(properties={qpid.subject:news, spout-id:bafefb74-c5be-4a8b-9e4b-45f7a855e250:0}, content='')
+	  </programlisting>
+
+
+	  <para>Now let's use the topic exchange with wildcards in the
+	  Receiver and multi-word keys in the Sender. This time, let's
+	  use two-word keys. The Receiver uses the subject
+	  <literal>*.news</literal> to listen for messages in which
+	  the second word of the key is
+	  <literal>news</literal>:</para>
+
+
+	  <para>First window:</para>
+
+	  <programlisting>
+$ ./drain -a topic-exchange/*.news -t 30
+	  </programlisting>
+
+	  <para>Now let's send messages using several different
+	  two-word keys:</para>
+
+	  <para>Second window:</para>
+
+	  <programlisting>
+$ ./spout -a topic-exchange/usa.news
+$ ./spout -a topic-exchange/usa.sports
+$ ./spout -a topic-exchange/europe.sports
+$ ./spout -a topic-exchange/europe.news
+$ 
+	  </programlisting>
+
+	  <para>Now look at the first window, and you will see the
+	  messages with <literal>news</literal> in the second word of
+	  the key have been received:</para>
+
+	  <programlisting>
+Message(properties={qpid.subject:usa.news, spout-id:73fc8058-5af6-407c-9166-b49a9076097a:0}, content='')
+Message(properties={qpid.subject:europe.news, spout-id:f72815aa-7be4-4944-99fd-c64c9747a876:0}, content='')
+	  </programlisting>
+
+	  <para>Finally, let's use the <literal>#</literal> wildcard
+	  in the Receiver to match any number of words in the key. The
+	  Receiver uses the key <literal>#.news</literal> to listen
+	  for messages in which the last word of the key is
+	  <literal>news</literal>, no matter how many words are in the
+	  key:</para>
+
+	  <para>First window:</para>
+
+	  <programlisting>
+$ ./drain -a topic-exchange/#.news -t 30
+	  </programlisting>
+
+	  <para>Now let's send messages using a variety of different
+	  multi-word keys:</para>
+
+	  <para>Second window:</para>
+
+	  <programlisting>
+$ ./spout -a topic-exchange/news
+$ ./spout -a topic-exchange/sports
+$ ./spout -a topic-exchange/usa.news
+$ ./spout -a topic-exchange/usa.sports
+$ ./spout -a topic-exchange/usa.faux.news
+$ ./spout -a topic-exchange/usa.faux.sports
+	  </programlisting>
+
+	  <para>Now look at the first window, and you will see the
+	  messages with <literal>news</literal> in the last word of
+	  the key have been received:</para>
+
+	  <programlisting>
+Message(properties={qpid.subject:news, spout-id:cbd42b0f-c87b-4088-8206-26d7627c9640:0}, content='')
+Message(properties={qpid.subject:usa.news, spout-id:234a78d7-daeb-4826-90e1-1c6540781eac:0}, content='')
+Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b-cbe4a81fca5f:0}, content='')
+	  </programlisting>
+
+	</section>
+
+	<section>
+	  <title>Fanout Exchanges</title>
+
+	  <para>A fanout exchange ignores the subject, and no
+	  filtering is done.</para>
+
+	  <para>Let's create a fanout exchange and listen for
+	  messages.  We will use the subject <literal>news</literal>
+	  in the Receiver to demonstrate that this subject is not
+	  actually used to filter messages:</para>
+
+
+	  <para>First window:</para>
+
+	  <programlisting>
+$ qpid-config add exchange fanout fanout-exchange
+$ ./drain -a fanout-exchange/news -t 30
+	  </programlisting>
+
+	  <para>Now let's send a message using a different
+	  subject:</para>
+
+	  <para>Second window:</para>
+
+	  <programlisting>
+$ ./spout -a fanout-exchange/sports
+	  </programlisting>
+
+	  <para>Returning to the first window, we see that the message
+	  was received even though the Receiver's subject was
+	  different from the Sender's subject:</para>
+
+	  <programlisting>
+Message(properties={qpid.subject:sports, spout-id:931399a1-27fc-471c-8dbe-3048260f9441:0}, content='')
+	  </programlisting>
+
+	  <para>This happens because of the routing semantics of the AMQP 0-10 fanout exchange.</para>
+
+	</section>
+
+	</section>
+	<section>
+	  <title>Queues</title>
+
+	  <para>If a Sender is bound to a queue, its messages are sent
+	  to the default exchange using the queue's name as the
+	  routing key. If a Receiver is bound to a queue, it receives
+	  messages from the queue.</para>
+
+	  <para>Let's create a queue and listen for messages on it.</para>
+
+	  <para>First window:</para>
+
+	  <programlisting>
+$ ./qpid-config add queue amqp010-queue
+$ ./drain -a amqp010-queue -t 30
+	  </programlisting>
+
+	  <para>Now let's send some messages. The subject is not used for routing purposes.</para>
+	  <programlisting>
+$ ./spout -a amqp010-queue/news
+$ ./spout -a amqp010-queue
+	  </programlisting>
+
+	  <para>Now look at the first window, and you will see that
+	  both messages have been received:</para>
+
+	  <programlisting>
+Message(properties={qpid.subject:news, spout-id:6c769437-60be-4bc0-9bf6-5a77cb6ba65f:0}, content='')
+Message(properties={spout-id:c8ab5013-a19e-4f54-967c-797c8ad6568b:0}, content='')
+	  </programlisting>
+
+	</section>
+
+
+	<!-- ### header exchange? -->
+	<section>
+	  <title>Custom Exchanges</title>
+	
+	<para>AMQP 0-10 also supports custom exchanges. The
+	Qpid messaging broker includes the XML Exchange, which uses an
+	XQuery to filter messages based on message properties and XML
+	message content.</para>
+
+<!-- ### Do drain / spout support the XML Exchange? -->
+
+	</section>
+
     </section>
+
+
     <section>
       <title>Options</title>
 
@@ -442,7 +703,6 @@ SH: spout small-world/news.local
 -->
 
 <para></para>
-  </section>
 
 
   </section>
@@ -512,28 +772,12 @@ SH: spout small-world/news.local
        </tgroup>
      </table>
 
-  </section>
-</chapter>
-
 <!--
-    * qpid.messaging.address
-    * qpid.messaging.constants
-    * qpid.messaging.driver
-    * qpid.messaging.endpoints: A candidate high level messaging API for python.
-    * qpid.messaging.exceptions
-    * qpid.messaging.message
-        * message hierarchy
-    * qpid.messaging.util: Add-on utilities for the qpid.messaging API.
-
+Examples - do client / server, pub-sub here...
 -->
 
-<!--
-
-  <section>
-    <title>Example Programs</title>
   </section>
 </chapter>
--->
 
 <!--
  - drain and spout are basically command line versions of the API
