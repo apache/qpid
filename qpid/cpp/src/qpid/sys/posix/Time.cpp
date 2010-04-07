@@ -51,6 +51,8 @@ AbsTime AbsTime::now() {
     return time_now;
 }
 
+AbsTime AbsTime::epoch() { return AbsTime(); }
+
 Duration::Duration(const AbsTime& time0) :
     nanosecs(time0.timepoint)
 {}

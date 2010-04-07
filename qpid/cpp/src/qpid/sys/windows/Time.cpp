@@ -53,6 +53,10 @@ AbsTime AbsTime::now() {
     return time_now;
 }
 
+AbsTime AbsTime::epoch() {
+    return AbsTime(boost::posix_time::from_time_t(0));
+}
+
 Duration::Duration(const AbsTime& time0) : nanosecs(0) {
     time_period p(ptime(min_date_time), time0.timepoint);
     nanosecs = p.length().total_nanoseconds();
