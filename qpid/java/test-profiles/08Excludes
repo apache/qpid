@@ -17,3 +17,5 @@ org.apache.qpid.client.SessionCreateTest#*
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
 org.apache.qpid.server.queue.ModelTest#*
 
+//Sporadically fails due to debug logging from timed out connection closures from previous tests
+org.apache.qpid.server.BrokerStartupTest#testInvalidLog4jConfigurationFile
