@@ -190,6 +190,7 @@ using namespace qpid::tests;
 
 class ContentGenerator {
   public:
+    virtual ~ContentGenerator() {}
     virtual bool getContent(std::string& content) = 0;
 };
 
