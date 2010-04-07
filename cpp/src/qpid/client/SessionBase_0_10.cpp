@@ -65,6 +65,13 @@ void SessionBase_0_10::sendCompletion()
     impl->sendCompletion();
 }
 
+void SessionBase_0_10::sendSyncRequest()
+{
+    ExecutionSyncBody b;
+    b.setSync(true);
+    impl->send(b);
+}
+
 uint16_t SessionBase_0_10::getChannel() const { return impl->getChannel(); }
 
 void SessionBase_0_10::suspend() { impl->suspend(); }

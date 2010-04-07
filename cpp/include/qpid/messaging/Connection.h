@@ -55,9 +55,6 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     sasl-max-ssf
      *     protocol
      * 
-     * (note also bounds, locale, max-channels and max-framesize, but
-     * not sure whether those should be documented here)
-     * 
      * Reconnect behaviour can be controlled through the following options:
      * 
      *     reconnect: true/false (enables/disables reconnect entirely)
