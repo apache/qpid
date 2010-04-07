@@ -166,14 +166,16 @@ qpidtest_PROGRAMS += qpid_recv
 qpid_recv_SOURCES = \
   qpid_recv.cpp \
   TestOptions.h \
-  ConnectionOptions.h
+  ConnectionOptions.h \
+  Statistics.cpp
 qpid_recv_LDADD = $(lib_client)
 
 qpidtest_PROGRAMS += qpid_send
 qpid_send_SOURCES = \
   qpid_send.cpp \
   TestOptions.h \
-  ConnectionOptions.h
+  ConnectionOptions.h \
+  Statistics.cpp
 qpid_send_LDADD = $(lib_client)
 
 qpidtest_PROGRAMS+=perftest
