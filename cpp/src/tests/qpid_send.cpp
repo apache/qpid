@@ -66,7 +66,7 @@ struct Options : public qpid::Options
     uint capacity;
     bool failoverUpdates;
     qpid::log::Options log;
-    bool report;
+    bool reportTotal;
     uint reportEvery;
     uint rate;
 
@@ -83,7 +83,7 @@ struct Options : public qpid::Options
           capacity(1000),
           failoverUpdates(false),
           log(argv0),
-          report(false),
+          reportTotal(false),
           reportEvery(0),
           rate(0)
     {
@@ -106,7 +106,7 @@ struct Options : public qpid::Options
             ("tx", qpid::optValue(tx, "N"), "batch size for transactions (0 implies transaction are not used)")
             ("rollback-frequency", qpid::optValue(rollbackFrequency, "N"), "rollback frequency (0 implies no transaction will be rolledback)")
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
-            ("report", qpid::optValue(report), "Report throughput statistics")
+            ("report-total", qpid::optValue(reportTotal), "Report total throughput statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput statistics every N messages")
             ("rate", qpid::optValue(rate,"N"), "Send at rate of N messages/second. 0 means send as fast as possible.")
             ("help", qpid::optValue(help), "print this usage statement");
@@ -269,7 +269,7 @@ int main(int argc, char ** argv)
                         qpid::sys::usleep(delay/qpid::sys::TIME_USEC);
                 }
             }
-            if (opts.report) reporter.report();
+            if (opts.reportTotal) reporter.report();
             for (uint i = opts.sendEos; i > 0; --i) {
                 msg.getProperties()["sn"] = ++sent;
                 msg.setContent(EOS);//TODO: add in ability to send digest or similar
