@@ -167,6 +167,7 @@ qpid_recv_SOURCES = \
   qpid_recv.cpp \
   TestOptions.h \
   ConnectionOptions.h \
+  Statistics.h \
   Statistics.cpp
 qpid_recv_LDADD = $(lib_client)
 
@@ -175,6 +176,7 @@ qpid_send_SOURCES = \
   qpid_send.cpp \
   TestOptions.h \
   ConnectionOptions.h \
+  Statistics.h \
   Statistics.cpp
 qpid_send_LDADD = $(lib_client)
 
