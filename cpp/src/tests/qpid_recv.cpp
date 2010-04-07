@@ -61,7 +61,7 @@ struct Options : public qpid::Options
     bool printHeaders;
     bool failoverUpdates;
     qpid::log::Options log;
-    bool report;
+    bool reportTotal;
     uint reportEvery;
 
     Options(const std::string& argv0=std::string())
@@ -72,7 +72,7 @@ struct Options : public qpid::Options
           forever(false),
           messages(0),
           ignoreDuplicates(false),
-          capacity(10000),
+          capacity(1000),
           ackFrequency(100),
           tx(0),
           rollbackFrequency(0),
@@ -80,7 +80,7 @@ struct Options : public qpid::Options
           printHeaders(false),
           failoverUpdates(false),
           log(argv0),
-          report(false),
+          reportTotal(false),
           reportEvery(0)
     {
         addOptions()
@@ -98,7 +98,7 @@ struct Options : public qpid::Options
             ("print-content", qpid::optValue(printContent, "yes|no"), "print out message content")
             ("print-headers", qpid::optValue(printHeaders, "yes|no"), "print out message headers")
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
-            ("report", qpid::optValue(report), "Report throughput statistics")
+            ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput and latency statistics every N messages.")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
@@ -207,7 +207,7 @@ int main(int argc, char ** argv)
                 }
                 //opts.rejectFrequency??
             }
-            if (opts.report) reporter.report();
+            if (opts.reportTotal) reporter.report();
             if (opts.tx) {
                 if (opts.rollbackFrequency && (++txCount % opts.rollbackFrequency == 0)) {
                     session.rollback();
