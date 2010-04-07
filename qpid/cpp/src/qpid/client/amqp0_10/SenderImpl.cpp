@@ -43,7 +43,7 @@ void SenderImpl::send(const qpid::messaging::Message& message, bool sync)
         Send f(*this, &message);
         while (f.repeat) parent->execute(f);
     }
-    if (sync) parent->sync();
+    if (sync) parent->sync(true);
 }
 
 void SenderImpl::close()

@@ -51,14 +51,10 @@ namespace amqp0_10 {
 SessionImpl::SessionImpl(ConnectionImpl& c, bool t) : connection(&c), transactional(t) {}
 
 
-void SessionImpl::sync()
+void SessionImpl::sync(bool block)
 {
-    retry<Sync>();
-}
-
-void SessionImpl::flush()
-{
-    retry<Flush>();
+    if (block) retry<Sync>();
+    else execute<NonBlockingSync>();
 }
 
 void SessionImpl::commit()
@@ -82,7 +78,7 @@ void SessionImpl::acknowledge(bool sync_)
     //message may be redelivered; i.e. the application cannot delete
     //any state necessary for preventing reprocessing of the message
     execute<Acknowledge>();
-    if (sync_) sync();
+    if (sync_) sync(true);
 }
 
 void SessionImpl::reject(qpid::messaging::Message& m)
@@ -378,16 +374,11 @@ uint32_t SessionImpl::pendingAckImpl(const std::string* destination)
     }
 }
 
-void SessionImpl::syncImpl()
+void SessionImpl::syncImpl(bool block)
 {
-    session.sync();
+    if (block) session.sync();
+    else session.sendSyncRequest();
 }
-
-void SessionImpl::flushImpl()
-{
-    session.flush();
-}
-
 
 void SessionImpl::commitImpl()
 {
