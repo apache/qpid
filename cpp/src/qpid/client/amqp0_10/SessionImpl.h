@@ -62,8 +62,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void reject(qpid::messaging::Message&);
     void release(qpid::messaging::Message&);
     void close();
-    void sync();
-    void flush();
+    void sync(bool block);
     qpid::messaging::Sender createSender(const qpid::messaging::Address& address);
     qpid::messaging::Receiver createReceiver(const qpid::messaging::Address& address);
 
@@ -126,8 +125,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void rejectImpl(qpid::messaging::Message&);
     void releaseImpl(qpid::messaging::Message&);
     void closeImpl();
-    void syncImpl();
-    void flushImpl();
+    void syncImpl(bool block);
     qpid::messaging::Sender createSenderImpl(const qpid::messaging::Address& address);
     qpid::messaging::Receiver createReceiverImpl(const qpid::messaging::Address& address);
     uint32_t availableImpl(const std::string* destination);
@@ -163,13 +161,13 @@ class SessionImpl : public qpid::messaging::SessionImpl
     struct Sync : Command
     {
         Sync(SessionImpl& i) : Command(i) {}
-        void operator()() { impl.syncImpl(); }
+        void operator()() { impl.syncImpl(true); }
     };
 
-    struct Flush : Command
+    struct NonBlockingSync : Command
     {
-        Flush(SessionImpl& i) : Command(i) {}
-        void operator()() { impl.flushImpl(); }
+        NonBlockingSync(SessionImpl& i) : Command(i) {}
+        void operator()() { impl.syncImpl(false); }
     };
 
     struct Reject : Command

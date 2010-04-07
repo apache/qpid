@@ -101,6 +101,8 @@ class SessionBase_0_10 {
 
     QPID_CLIENT_EXTERN Connection getConnection();
 
+    /** Send sync request without actually blocking for it**/
+    QPID_CLIENT_EXTERN void sendSyncRequest();
   protected:
     boost::shared_ptr<SessionImpl> impl;
   friend class SessionBase_0_10Access;

@@ -89,8 +89,15 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      */
     QPID_CLIENT_EXTERN void release(Message&);
 
-    QPID_CLIENT_EXTERN void sync();
-    QPID_CLIENT_EXTERN void flush();
+    /**
+     * Request synchronisation with the server.
+     * 
+     * @param block if true, this call will block until the server
+     * confirms completion of all pending operations; if false the
+     * call will request notifcation from the server but will return
+     * before receiving it.
+     */
+    QPID_CLIENT_EXTERN void sync(bool block=true);
 
     /**
      * Returns the total number of messages received and waiting to be

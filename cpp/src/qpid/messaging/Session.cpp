@@ -61,14 +61,9 @@ Receiver Session::createReceiver(const std::string& address)
     return impl->createReceiver(Address(address)); 
 }
 
-void Session::sync()
+void Session::sync(bool block)
 {
-    impl->sync();
-}
-
-void Session::flush()
-{
-    impl->flush();
+    impl->sync(block);
 }
 
 bool Session::nextReceiver(Receiver& receiver, Duration timeout)
