@@ -90,21 +90,21 @@ void Logger::log(const Statement& s, const std::string& msg) {
     os << msg << endl;
     std::string formatted=os.str();
     {
-        ScopedLock l(lock);
+        sys::RWlock::ScopedRlock l(outputsLock);
         std::for_each(outputs.begin(), outputs.end(),
                       boost::bind(&Output::log, _1, s, formatted));
     }
 }
 
 void Logger::output(std::auto_ptr<Output> out) {
-    ScopedLock l(lock);
+    sys::RWlock::ScopedWlock l(outputsLock);
     outputs.push_back(out.release());
 }
 
 void Logger::clear() {
     select(Selector());         // locked
     format(0);                  // locked
-    ScopedLock l(lock);
+    sys::RWlock::ScopedWlock l(outputsLock);
     outputs.clear();
 }
 
