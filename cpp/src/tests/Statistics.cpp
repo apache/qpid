@@ -25,6 +25,8 @@
 namespace qpid {
 namespace tests {
 
+Statistic::~Statistic() {}
+
 Throughput::Throughput() : messages(0), started(false) {}
 
 void Throughput::message(const messaging::Message&) {
@@ -81,6 +83,8 @@ void ThroughputAndLatency::report(std::ostream& o) const {
 
 ReporterBase::ReporterBase(std::ostream& o, int batch)
     : wantBatch(batch), batchCount(0), headerPrinted(false), out(o) {}
+
+ReporterBase::~ReporterBase() {}
 
 /** Count message in the statistics */
 void ReporterBase::message(const messaging::Message& m) {

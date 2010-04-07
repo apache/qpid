@@ -38,6 +38,7 @@ namespace tests {
 
 class Statistic {
   public:
+    virtual ~Statistic();
     virtual void message(const messaging::Message&) = 0;
     virtual void report(std::ostream&) const = 0;
     virtual void header(std::ostream&) const = 0;
@@ -72,6 +73,8 @@ class ThroughputAndLatency : public Throughput {
 /** Report batch and overall statistics */
 class ReporterBase {
   public:
+    virtual ~ReporterBase();
+
     /** Count message in the statistics */
     void message(const messaging::Message& m);
 
