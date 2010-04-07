@@ -98,6 +98,7 @@ class Logger : private boost::noncopyable {
     typedef std::set<Statement*> Statements;
 
     sys::Mutex lock;
+    sys::RWlock outputsLock;
     inline void enable_unlocked(Statement* s);
 
     Statements statements;
