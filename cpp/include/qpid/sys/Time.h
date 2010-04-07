@@ -88,13 +88,16 @@ class AbsTime {
     TimePrivate timepoint;
 
 public:
-    QPID_COMMON_EXTERN inline AbsTime() {}
+
+    QPID_COMMON_EXTERN inline AbsTime() : timepoint() {}
     QPID_COMMON_EXTERN AbsTime(const AbsTime& time0, const Duration& duration);
     // Default assignment operation fine
     // Default copy constructor fine
 
     QPID_COMMON_EXTERN static AbsTime now();
     QPID_COMMON_EXTERN static AbsTime FarFuture();
+    QPID_COMMON_EXTERN static AbsTime epoch(); // The Unix epoch: 1970-01-01T00:00:00
+
     const TimePrivate& getPrivate(void) const { return timepoint; }
     bool operator==(const AbsTime& t) const { return t.timepoint == timepoint; }
     template <class S> void serialize(S& s) { s(timepoint); }
