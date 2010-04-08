@@ -34,9 +34,6 @@
 namespace qpid {
 namespace sys {
 
-// Private Time related implementation details
-void toPtime(boost::posix_time::ptime& pt, const AbsTime& t);
-
 /**
  * A condition variable for thread synchronization.
  */
@@ -65,7 +62,7 @@ void Condition::wait(Mutex& mutex) {
 }
 
 bool Condition::wait(Mutex& mutex, const AbsTime& absoluteTime){
-    return condition.timed_wait(mutex.mutex, absoluteTime.getPrivate());
+    return condition.timed_wait(mutex.mutex, absoluteTime.timepoint);
 }
 
 void Condition::notify(){
