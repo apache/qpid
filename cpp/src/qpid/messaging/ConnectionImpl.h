@@ -38,7 +38,9 @@ class ConnectionImpl : public virtual qpid::RefCounted
 {
   public:
     virtual ~ConnectionImpl() {}
-    virtual void open(const std::string& url) = 0;
+    virtual void connect() = 0;
+    virtual bool isConnected() = 0;
+    virtual void detach() = 0;
     virtual void close() = 0;
     virtual Session newSession(bool transactional, const std::string& name) = 0;
     virtual Session getSession(const std::string& name) const = 0;

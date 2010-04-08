@@ -115,8 +115,8 @@ struct MessagingFixture : public BrokerFixture
 
     static Connection open(uint16_t port)
     {
-        Connection connection;
-        connection.open((boost::format("amqp:tcp:localhost:%1%") % (port)).str());
+        Connection connection((boost::format("amqp:tcp:localhost:%1%") % (port)).str());
+        connection.connect();
         return connection;
     }
 
