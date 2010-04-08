@@ -39,6 +39,11 @@ AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
     timepoint(d == Duration::max() ? max_abstime() : t.timepoint+d.nanosecs)
 {}
 
+AbsTime AbsTime::Epoch() {
+    AbsTime epoch; epoch.timepoint = 0;
+    return epoch;
+}
+
 AbsTime AbsTime::FarFuture() {
     AbsTime ff; ff.timepoint = max_abstime(); return ff;
 }
@@ -50,8 +55,6 @@ AbsTime AbsTime::now() {
     time_now.timepoint = toTime(ts).nanosecs;
     return time_now;
 }
-
-AbsTime AbsTime::epoch() { return AbsTime(); }
 
 Duration::Duration(const AbsTime& time0) :
     nanosecs(time0.timepoint)

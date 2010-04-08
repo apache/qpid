@@ -251,7 +251,7 @@ int main(int argc, char ** argv)
                 msg.setContent(content);
                 msg.getProperties()["sn"] = ++sent;
                 msg.getProperties()["ts"] = int64_t(
-                    qpid::sys::Duration(qpid::sys::AbsTime::epoch(), qpid::sys::now()));
+                    qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
                 sender.send(msg);
                 reporter.message(msg);
                 if (opts.tx && (sent % opts.tx == 0)) {

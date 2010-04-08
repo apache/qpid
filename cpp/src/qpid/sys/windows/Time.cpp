@@ -47,14 +47,16 @@ AbsTime AbsTime::FarFuture() {
     return ff;
 }
 
+AbsTime AbsTime::Epoch() {
+    AbsTime time_epoch;
+    time_epoch.timepoint = boost::posix_time::from_time_t(0);
+    return time_epoch;
+}
+
 AbsTime AbsTime::now() {
     AbsTime time_now;
     time_now.timepoint = boost::get_system_time();
     return time_now;
-}
-
-AbsTime AbsTime::epoch() {
-    return AbsTime(boost::posix_time::from_time_t(0));
 }
 
 Duration::Duration(const AbsTime& time0) : nanosecs(0) {
