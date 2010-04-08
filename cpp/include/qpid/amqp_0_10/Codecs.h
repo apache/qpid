@@ -37,8 +37,9 @@ namespace amqp_0_10 {
 class QPID_COMMON_EXTERN MapCodec
 {
   public:
-    static void encode(const qpid::types::Variant::Map&, std::string&);
-    static void decode(const std::string&, qpid::types::Variant::Map&);
+    typedef qpid::types::Variant::Map ObjectType;
+    static void encode(const ObjectType&, std::string&);
+    static void decode(const std::string&, ObjectType&);
     static const std::string contentType;
   private:
 };
@@ -50,8 +51,9 @@ class QPID_COMMON_EXTERN MapCodec
 class QPID_COMMON_EXTERN ListCodec
 {
   public:
-    static void encode(const qpid::types::Variant::List&, std::string&);
-    static void decode(const std::string&, qpid::types::Variant::List&);
+    typedef qpid::types::Variant::List ObjectType;
+    static void encode(const ObjectType&, std::string&);
+    static void decode(const std::string&, ObjectType&);
     static const std::string contentType;
   private:
 };
