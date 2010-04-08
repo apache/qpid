@@ -96,11 +96,10 @@ public:
 
     QPID_COMMON_EXTERN static AbsTime now();
     QPID_COMMON_EXTERN static AbsTime FarFuture();
-    QPID_COMMON_EXTERN static AbsTime epoch(); // The Unix epoch: 1970-01-01T00:00:00
+    QPID_COMMON_EXTERN static AbsTime Epoch();
 
     const TimePrivate& getPrivate(void) const { return timepoint; }
     bool operator==(const AbsTime& t) const { return t.timepoint == timepoint; }
-    template <class S> void serialize(S& s) { s(timepoint); }
 
     friend bool operator<(const AbsTime& a, const AbsTime& b);
     friend bool operator>(const AbsTime& a, const AbsTime& b);
@@ -158,6 +157,9 @@ const Duration TIME_NSEC = 1;
 
 /** Value to represent an infinite timeout */
 const Duration TIME_INFINITE = std::numeric_limits<int64_t>::max();
+
+/** Absolute time point for the Unix epoch: 1970-01-01T00:00:00 */
+const AbsTime EPOCH = AbsTime::Epoch();
 
 /** Time greater than any other time */
 const AbsTime FAR_FUTURE = AbsTime::FarFuture();

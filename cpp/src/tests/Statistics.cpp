@@ -57,7 +57,7 @@ void ThroughputAndLatency::message(const messaging::Message& m) {
     types::Variant::Map::const_iterator i = m.getProperties().find("ts");
     if (i != m.getProperties().end()) {
         int64_t start(i->second.asInt64());
-        int64_t end(sys::Duration(sys::AbsTime::epoch(),sys::now()));
+        int64_t end(sys::Duration(sys::EPOCH, sys::now()));
         double latency = double(end - start)/sys::TIME_MSEC;
         if (latency > 0) {
             total += latency;
