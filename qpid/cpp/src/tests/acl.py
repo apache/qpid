@@ -211,7 +211,82 @@ class ACLTests(TestBase010):
         if (result.text.find("Username 'bob' must contain a realm",0,len(result.text)) == -1):
             self.fail(result)
 
+   #=====================================
+   # ACL validation tests
+   #=====================================
+
+    def test_illegal_queue_policy(self):
+        """
+        Test illegal queue policy
+        """
+         
+        aclf = ACLFile()
+        aclf.write('acl deny bob@QPID create queue name=q2 exclusive=true policytype=ding\n')
+        aclf.write('acl allow all all')
+        aclf.close()        
         
+        result = self.reload_acl()       
+        expected = "ding is not a valid value for 'policytype', possible values are one of" \
+                   " { 'ring' 'ring_strict' 'flow_to_disk' 'reject' }"; 
+        if (result.text != expected): 
+            self.fail(result)        
+
+    def test_illegal_queue_size(self):
+        """
+        Test illegal queue policy
+        """
+         
+        aclf = ACLFile()
+        aclf.write('acl deny bob@QPID create queue name=q2 maxqueuesize=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "-1 is not a valid value for 'maxqueuesize', " \
+                   "values should be between 0 and 9223372036854775807"; 
+        if (result.text != expected): 
+            self.fail(result) 
+
+        aclf = ACLFile()
+        aclf.write('acl deny bob@QPID create queue name=q2 maxqueuesize=9223372036854775808\n')
+        aclf.write('acl allow all all')                                 
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "9223372036854775808 is not a valid value for 'maxqueuesize', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.text != expected): 
+            self.fail(result) 
+
+
+    def test_illegal_queue_count(self):
+        """
+        Test illegal queue policy
+        """
+         
+        aclf = ACLFile()
+        aclf.write('acl deny bob@QPID create queue name=q2 maxqueuecount=-1\n')
+        aclf.write('acl allow all all')
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "-1 is not a valid value for 'maxqueuecount', " \
+                   "values should be between 0 and 9223372036854775807"; 
+        if (result.text != expected): 
+            self.fail(result) 
+
+        aclf = ACLFile()
+        aclf.write('acl deny bob@QPID create queue name=q2 maxqueuecount=9223372036854775808\n')
+        aclf.write('acl allow all all')                                 
+        aclf.close()        
+        
+        result = self.reload_acl()       
+        expected = "9223372036854775808 is not a valid value for 'maxqueuecount', " \
+                   "values should be between 0 and 9223372036854775807";
+        if (result.text != expected): 
+            self.fail(result) 
+
+
    #=====================================
    # ACL queue tests
    #=====================================
