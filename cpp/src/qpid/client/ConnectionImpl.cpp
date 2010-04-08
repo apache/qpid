@@ -137,15 +137,6 @@ IOThread& theIO() {
     return io;
 }
 
-// Bring theIO into existence on library load rather than first use.
-// This avoids it being destroyed whilst something in the main program
-// still exists
-struct InitAtLoad {
-    InitAtLoad() {
-        (void) theIO();
-    }
-} init;
-
 class HeartbeatTask : public TimerTask {
     TimeoutHandler& timeout;
 
@@ -162,6 +153,13 @@ public:
     {}
 };
 
+}
+
+// Ensure the IO threads exist:
+// This needs to be called in the Connection constructor
+// so that they will still exist at last connection destruction
+void ConnectionImpl::init() {
+    (void) theIO();
 }
 
 ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSettings& settings)
