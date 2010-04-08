@@ -90,7 +90,7 @@ class AbsTime {
 
 public:
 
-    QPID_COMMON_EXTERN inline AbsTime() : timepoint() {}
+    inline AbsTime() : timepoint() {}
     QPID_COMMON_EXTERN AbsTime(const AbsTime& time0, const Duration& duration);
     // Default assignment operation fine
     // Default copy constructor fine
