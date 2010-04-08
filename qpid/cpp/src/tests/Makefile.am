@@ -162,14 +162,14 @@ sender_SOURCES = \
   ConnectionOptions.h
 sender_LDADD = $(lib_client)
 
-qpidtest_PROGRAMS += qpid_recv
-qpid_recv_SOURCES = \
-  qpid_recv.cpp \
+qpidtest_PROGRAMS += qpid_receive
+qpid_receive_SOURCES = \
+  qpid_receive.cpp \
   TestOptions.h \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
-qpid_recv_LDADD = $(lib_client)
+qpid_receive_LDADD = $(lib_client)
 
 qpidtest_PROGRAMS += qpid_send
 qpid_send_SOURCES = \

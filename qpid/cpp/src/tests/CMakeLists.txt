@@ -264,14 +264,12 @@ target_link_libraries (sender qpidclient)
 #sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
 remember_location(sender)
 
-add_executable (qpid_recv qpid_recv.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid_recv qpidclient)
-#qpid_recv_SOURCES=qpid_recv.cpp  TestOptions.h ConnectionOptions.h
-remember_location(qpid_recv)
+add_executable (qpid_receive qpid_receive.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (qpid_receive qpidclient)
+remember_location(qpid_receive)
 
 add_executable (qpid_send qpid_send.cpp Statistics.cpp ${platform_test_additions})
 target_link_libraries (qpid_send qpidclient)
-#qpid_send_SOURCES=qpid_send.cpp  TestOptions.h ConnectionOptions.h
 remember_location(qpid_send)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
