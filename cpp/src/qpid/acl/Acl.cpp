@@ -18,6 +18,7 @@
 
 #include "qpid/acl/Acl.h"
 #include "qpid/acl/AclData.h"
+#include "qpid/acl/AclValidator.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
@@ -128,6 +129,9 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
           QPID_LOG(error,ar.getError());
           return false;
       }
+
+      AclValidator validator;
+      validator.validate(d);
 
       data = d;
 	  transferAcl = data->transferAcl; // any transfer ACL

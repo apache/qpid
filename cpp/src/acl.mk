@@ -28,7 +28,9 @@ acl_la_SOURCES = \
   qpid/acl/AclData.h \
   qpid/acl/AclPlugin.cpp \
   qpid/acl/AclReader.cpp \
-  qpid/acl/AclReader.h
+  qpid/acl/AclReader.h \
+  qpid/acl/AclValidator.cpp \
+  qpid/acl/AclValidator.h
 
 acl_la_LIBADD = libqpidbroker.la
 if SUNOS

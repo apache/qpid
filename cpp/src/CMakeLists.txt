@@ -412,6 +412,8 @@ if (BUILD_ACL)
        qpid/acl/AclPlugin.cpp
        qpid/acl/AclReader.cpp
        qpid/acl/AclReader.h
+       qpid/acl/AclValidator.cpp
+       qpid/acl/AclValidator.h
       )
   # Windows builds the ACL code into the qpidbroker library; see QPID-1842
   # for history and rationale. If this is changed, remove the acl_SOURCES from
