@@ -50,6 +50,7 @@ class ConnectionImpl : public Bounds,
                        public boost::enable_shared_from_this<ConnectionImpl>
 
 {
+    friend class Connection;
     typedef std::map<uint16_t, boost::weak_ptr<SessionImpl> > SessionMap;
 
     static const uint16_t NEXT_CHANNEL;
@@ -65,7 +66,8 @@ class ConnectionImpl : public Bounds,
 
     template <class F> void closeInternal(const F&);
 
-    void incoming(framing::AMQFrame& frame);    
+    static void init();
+    void incoming(framing::AMQFrame& frame);
     void closed(uint16_t, const std::string&);
     void idleOut();
     void idleIn();
