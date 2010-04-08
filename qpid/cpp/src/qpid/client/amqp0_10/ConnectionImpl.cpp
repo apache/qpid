@@ -91,16 +91,17 @@ void convert(const Variant::Map& from, ConnectionSettings& to)
     setIfFound(from, "max-frame-size", to.maxFrameSize);
     setIfFound(from, "bounds", to.bounds);
 
-    setIfFound(from, "protocol", to.protocol);
+    setIfFound(from, "transport", to.protocol);
 }
 
-ConnectionImpl::ConnectionImpl(const Variant::Map& options) : 
+ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) : 
     reconnect(true), timeout(-1), limit(-1),
     minReconnectInterval(3), maxReconnectInterval(60),
     retries(0)
 {
     QPID_LOG(debug, "Created connection with " << options);
     setOptions(options);
+    urls.push_back(url);
 }
 
 void ConnectionImpl::setOptions(const Variant::Map& options)
@@ -127,12 +128,6 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
     QPID_LOG(debug, "Set " << name << " to " << value);
 }
 
-void ConnectionImpl::open(const std::string& u)
-{
-    urls.push_back(u);
-    connect();
-}
-
 void ConnectionImpl::close()
 {
     std::vector<std::string> names;
@@ -143,9 +138,19 @@ void ConnectionImpl::close()
     for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
         getSession(*i).close();
     }
+    detach();
+}
 
+void ConnectionImpl::detach()
+{
     qpid::sys::Mutex::ScopedLock l(lock);
     connection.close();
+}
+
+bool ConnectionImpl::isConnected()
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    return connection.isOpen();
 }
 
 boost::intrusive_ptr<SessionImpl> getImplPtr(qpid::messaging::Session& session)

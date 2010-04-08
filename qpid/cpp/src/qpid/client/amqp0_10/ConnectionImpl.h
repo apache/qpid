@@ -39,13 +39,14 @@ class SessionImpl;
 class ConnectionImpl : public qpid::messaging::ConnectionImpl
 {
   public:
-    ConnectionImpl(const qpid::types::Variant::Map& options);
-    void open(const std::string& url);
+    ConnectionImpl(const std::string& url, const qpid::types::Variant::Map& options);
+    void connect();
+    bool isConnected();
     void close();
     qpid::messaging::Session newSession(bool transactional, const std::string& name);
     qpid::messaging::Session getSession(const std::string& name) const;
     void closed(SessionImpl&);
-    void connect();
+    void detach();
     void setOption(const std::string& name, const qpid::types::Variant& value);
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
