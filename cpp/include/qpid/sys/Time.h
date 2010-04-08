@@ -84,6 +84,7 @@ class Duration;
  */
 class AbsTime {
     friend class Duration;
+    friend class Condition;
 
     TimePrivate timepoint;
 
@@ -98,7 +99,6 @@ public:
     QPID_COMMON_EXTERN static AbsTime FarFuture();
     QPID_COMMON_EXTERN static AbsTime Epoch();
 
-    const TimePrivate& getPrivate(void) const { return timepoint; }
     bool operator==(const AbsTime& t) const { return t.timepoint == timepoint; }
 
     friend bool operator<(const AbsTime& a, const AbsTime& b);

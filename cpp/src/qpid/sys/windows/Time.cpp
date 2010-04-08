@@ -79,10 +79,6 @@ std::ostream& operator<<(std::ostream& o, const AbsTime& t) {
 }
 
 
-void toPtime(ptime& pt, const AbsTime& t) {
-    pt = t.getPrivate();
-}
-
 void sleep(int secs) {
     ::Sleep(secs * 1000);
 }
