@@ -76,6 +76,9 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
         BoundKey& bk = bindings[routingKey];
         if (exclusiveBinding) bk.queues.clear();
 
+        QPID_LOG(debug, "Bind key [" << routingKey << "] to queue " << queue->getName()
+                 << " (origin=" << fedOrigin << ")");
+
         if (bk.queues.add_unless(b, MatchQueue(queue))) {
             b->startManagement();
             propagate = bk.fedBinding.addOrigin(fedOrigin);
@@ -83,11 +86,17 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
                 mgmtExchange->inc_bindingCount();
             }
         } else {
+            // queue already present - still need to track fedOrigin
+            bk.fedBinding.addOrigin(fedOrigin);
             return false;
         }
     } else if (fedOp == fedOpUnbind) {
         Mutex::ScopedLock l(lock);
         BoundKey& bk = bindings[routingKey];
+
+        QPID_LOG(debug, "Bind - fedOpUnbind key [" << routingKey << "] queue " << queue->getName()
+                 << " (origin=" << fedOrigin << ")");
+
         propagate = bk.fedBinding.delOrigin(fedOrigin);
         if (bk.fedBinding.count() == 0)
             unbind(queue, routingKey, 0);
@@ -122,6 +131,8 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
 bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/)
 {
     bool propagate = false;
+
+    QPID_LOG(debug, "Unbind key [" << routingKey << "] from queue " << queue->getName());
 
     {
         Mutex::ScopedLock l(lock);
