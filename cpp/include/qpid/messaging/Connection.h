@@ -53,7 +53,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     sasl-mechanism
      *     sasl-min-ssf
      *     sasl-max-ssf
-     *     protocol
+     *     transport
      * 
      * Reconnect behaviour can be controlled through the following options:
      * 
@@ -71,18 +71,20 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     doubled every failure until the value of max-retry-interval
      *     is reached.
      */
-    QPID_CLIENT_EXTERN Connection(const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
+    QPID_CLIENT_EXTERN Connection(const std::string& url, const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
     /**
      * Creates a connection using an option string of the form
      * {name=value,name2=value2...}, see above for options supported.
      * 
      * @exception InvalidOptionString if the string does not match the correct syntax
      */
-    QPID_CLIENT_EXTERN Connection(const std::string& options);
+    QPID_CLIENT_EXTERN Connection(const std::string& url, const std::string& options);
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
     QPID_CLIENT_EXTERN void setOption(const std::string& name, const qpid::types::Variant& value);
-    QPID_CLIENT_EXTERN void open(const std::string& url);
+    QPID_CLIENT_EXTERN void connect();
+    QPID_CLIENT_EXTERN bool isConnected();
+    QPID_CLIENT_EXTERN void detach();
     /**
      * Closes a connection and all sessions associated with it. An
      * opened connection must be closed before the last handle is

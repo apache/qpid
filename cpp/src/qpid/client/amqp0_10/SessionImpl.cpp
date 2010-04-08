@@ -108,7 +108,7 @@ void SessionImpl::close()
     for (std::vector<std::string>::const_iterator i = s.begin(); i != s.end(); ++i) getSender(*i).close();
     for (std::vector<std::string>::const_iterator i = r.begin(); i != r.end(); ++i) getReceiver(*i).close();
     
-
+    
     connection->closed(*this);
     session.close();
 }
