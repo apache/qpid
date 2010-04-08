@@ -83,56 +83,65 @@ size_t Message::getContentSize() const
     return impl->getBytes().size();
 }
 
-
 EncodingException::EncodingException(const std::string& msg) : qpid::Exception(msg) {}
 
 const std::string BAD_ENCODING("Unsupported encoding: %1% (only %2% is supported at present).");
 
-bool checkEncoding(const std::string& requested, const std::string& supported)
+template <class C> struct MessageCodec
 {
-    if (requested.size()) {
-        if (requested == supported) return true;
-        else throw EncodingException((boost::format(BAD_ENCODING) % requested % supported).str());
-    } else {
-        return false;
+    static bool checkEncoding(const std::string& requested)
+    {
+        if (requested.size()) {
+            if (requested == C::contentType) return true;
+            else throw EncodingException((boost::format(BAD_ENCODING) % requested % C::contentType).str());
+        } else {
+            return false;
+        }
     }
-}
+    
+    /*
+     * Currently only support a single encoding type for both list and
+     * map, based on AMQP 0-10, though wider support is anticipated in the
+     * future. This method simply checks that the desired encoding (if one
+     * is specified, either through the message-content or through an
+     * override) is indeed supported.
+     */
+    static void checkEncoding(const Message& message, const std::string& requested)
+    {
+        checkEncoding(requested) || checkEncoding(message.getContentType());
+    }
 
-/*
- * Currently only support a single encoding type for both list and
- * map, based on AMQP 0-10, though wider support is anticipated in the
- * future. This method simply checks that the desired encoding (if one
- * is specified, either through the message-content or through an
- * override) is indeed supported.
- */
-void checkEncoding(const Message& message, const std::string& requested, const std::string& supported)
-{
-    checkEncoding(requested, supported) || checkEncoding(message.getContentType(), supported);
-}
- 
+    template <class T> static void decode(const Message& message, T& object, const std::string& encoding)
+    {
+        checkEncoding(message, encoding);
+        C::decode(message.getContent(), object);
+    }
+
+    template <class T> static void encode(const T& map, Message& message, const std::string& encoding)
+    {
+        checkEncoding(message, encoding);
+        std::string content;
+        C::encode(map, content);
+        message.setContentType(C::contentType);
+        message.setContent(content);
+    }
+};
+
 void decode(const Message& message, Variant::Map& map, const std::string& encoding)
 {
-    checkEncoding(message, encoding, qpid::amqp_0_10::MapCodec::contentType);
-    qpid::amqp_0_10::MapCodec::decode(message.getContent(), map);
+    MessageCodec<qpid::amqp_0_10::MapCodec>::decode(message, map, encoding);
 }
 void decode(const Message& message, Variant::List& list, const std::string& encoding)
 {
-    checkEncoding(message, encoding, qpid::amqp_0_10::ListCodec::contentType);
-    qpid::amqp_0_10::ListCodec::decode(message.getContent(), list);
+    MessageCodec<qpid::amqp_0_10::ListCodec>::decode(message, list, encoding);
 }
 void encode(const Variant::Map& map, Message& message, const std::string& encoding)
 {
-    checkEncoding(message, encoding, qpid::amqp_0_10::MapCodec::contentType);
-    std::string content;
-    qpid::amqp_0_10::MapCodec::encode(map, content);
-    message.setContent(content);
+    MessageCodec<qpid::amqp_0_10::MapCodec>::encode(map, message, encoding);
 }
 void encode(const Variant::List& list, Message& message, const std::string& encoding)
 {
-    checkEncoding(message, encoding, qpid::amqp_0_10::ListCodec::contentType);
-    std::string content;
-    qpid::amqp_0_10::ListCodec::encode(list, content);
-    message.setContent(content);
+    MessageCodec<qpid::amqp_0_10::ListCodec>::encode(list, message, encoding);
 }
 
 }} // namespace qpid::messaging
