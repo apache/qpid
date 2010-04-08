@@ -193,11 +193,11 @@ if (NOT Boost_REGEX_LIBRARY)
   set(Boost_REGEX_LIBRARY boost_regex)
 endif (NOT Boost_REGEX_LIBRARY)
 
-# The Windows install also wants the Boost DLLs and headers that the release
-# is built with. The DLLs enable everything to run, and the headers ensure
-# that users building Qpid C++ client programs can compile (the C++ API
-# still exposes Boost headers, but hopefully this will be fixed in the
-# future).
+# The Windows install also wants the Boost DLLs, libs and headers that the
+# release is built with. The DLLs enable everything to run, and the headers
+# and libs ensure that users building Qpid C++ client programs can compile
+# (the C++ API still exposes Boost headers, but hopefully this will be fixed
+# in the future).
 #
 # On Windows you can pick whether the static or dynamic versions of the libs
 # are used; allow this choice to the user. Since we also install the Boost
@@ -207,6 +207,22 @@ endif (NOT Boost_REGEX_LIBRARY)
 # Boost libs based on compile-time touching of the headers. Since we don't
 # really need to add them to the link lines, set the names to blanks.
 if (MSVC)
+   install (PROGRAMS
+            ${Boost_DATE_TIME_LIBRARY_DEBUG} ${Boost_DATE_TIME_LIBRARY_RELEASE}
+            ${Boost_FILESYSTEM_LIBRARY_DEBUG} ${Boost_FILESYSTEM_LIBRARY_RELEASE}
+            ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG} ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
+            ${Boost_REGEX_LIBRARY_DEBUG} ${Boost_REGEX_LIBRARY_RELEASE}
+            ${Boost_THREAD_LIBRARY_DEBUG} ${Boost_THREAD_LIBRARY_RELEASE}
+            DESTINATION ${QPID_INSTALL_LIBDIR}/boost
+            COMPONENT ${QPID_COMPONENT_COMMON})
+
+   if (NOT Boost_VERSION LESS 103500)
+      install (PROGRAMS
+               ${Boost_SYSTEM_LIBRARY_DEBUG} ${Boost_SYSTEM_LIBRARY_RELEASE}
+               DESTINATION ${QPID_INSTALL_LIBDIR}/boost
+               COMPONENT ${QPID_COMPONENT_COMMON})
+   endif (NOT Boost_VERSION LESS 103500)
+
    option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
    if (QPID_LINK_BOOST_DYNAMIC)
       add_definitions( /D BOOST_ALL_DYN_LINK)
@@ -264,29 +280,28 @@ if (MSVC)
             PATTERN "concept*" EXCLUDE
             PATTERN "dynamic_bitset*" EXCLUDE
             PATTERN "flyweight*" EXCLUDE
-            PATTERN "fusion*" EXCLUDE
-            PATTERN "gil*" EXCLUDE
-            PATTERN "graph*" EXCLUDE
-            PATTERN "interprocess*" EXCLUDE
+            PATTERN "fusion/*" EXCLUDE
+            PATTERN "gil/*" EXCLUDE
+            PATTERN "graph/*" EXCLUDE
+            PATTERN "interprocess/*" EXCLUDE
             PATTERN "lambda/*" EXCLUDE
-            PATTERN "logic*" EXCLUDE
+            PATTERN "logic/*" EXCLUDE
             PATTERN "math*" EXCLUDE
             PATTERN "mpi*" EXCLUDE
             PATTERN "multi_*" EXCLUDE
-            PATTERN "numeric*" EXCLUDE
-            PATTERN "pending*" EXCLUDE
-            PATTERN "pool*" EXCLUDE
-            PATTERN "property_map*" EXCLUDE
-            PATTERN "proto*" EXCLUDE
+            PATTERN "numeric/*" EXCLUDE
+            PATTERN "pending/*" EXCLUDE
+            PATTERN "pool/*" EXCLUDE
+            PATTERN "property_map/*" EXCLUDE
+            PATTERN "proto/*" EXCLUDE
             PATTERN "random*" EXCLUDE
-            PATTERN "range*" EXCLUDE
             PATTERN "signals*" EXCLUDE
             PATTERN "spirit*" EXCLUDE
-            PATTERN "statechart*" EXCLUDE
-            PATTERN "units*" EXCLUDE
+            PATTERN "statechart/*" EXCLUDE
+            PATTERN "units/*" EXCLUDE
             PATTERN "unordered*" EXCLUDE
             PATTERN "wave*" EXCLUDE
-            PATTERN "xpressive*" EXCLUDE)
+            PATTERN "xpressive/*" EXCLUDE)
 
    set(Boost_DATE_TIME_LIBRARY "")
    set(Boost_THREAD_LIBRARY "")
