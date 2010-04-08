@@ -205,6 +205,9 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
     if (args == 0 || fedOp.empty() || fedOp == fedOpBind) {
         RWlock::ScopedWlock l(lock);
         if (isBound(queue, routingPattern)) {
+            // already bound, but may be from a different fedOrigin
+            BoundKey& bk = bindings[routingPattern];
+            bk.fedBinding.addOrigin(fedOrigin);
             return false;
         } else {
             Binding::shared_ptr binding (new Binding (routingPattern, queue, this, FieldTable(), fedOrigin));
@@ -215,7 +218,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
             }
-            QPID_LOG(debug, "Bound [" << routingPattern << "] to queue " << queue->getName()
+            QPID_LOG(debug, "Bound key [" << routingPattern << "] to queue " << queue->getName()
                      << " (origin=" << fedOrigin << ")");
         }
     } else if (fedOp == fedOpUnbind) {

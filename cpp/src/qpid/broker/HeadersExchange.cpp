@@ -120,6 +120,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
                     mgmtExchange->inc_bindingCount();
                 }
             } else {
+                bk.fedBinding.addOrigin(fedOrigin);
                 return false;
             }
         } // lock dropped

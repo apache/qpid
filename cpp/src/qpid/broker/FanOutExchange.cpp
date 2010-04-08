@@ -69,6 +69,8 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
                 mgmtExchange->inc_bindingCount();
             }
         } else {
+            // queue already present - still need to track fedOrigin
+            fedBinding.addOrigin(fedOrigin);
             return false;
         }
     } else if (fedOp == fedOpUnbind) {
