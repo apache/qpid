@@ -67,6 +67,26 @@ class SetupTests(Base):
       while fds:
         os.close(fds.pop())
 
+  def testOpenFailResourceLeaks(self):
+    fds = self.use_fds()
+    try:
+      for i in range(32):
+        if fds: os.close(fds.pop())
+      for i in xrange(64):
+        conn = Connection("localhost:0", **self.connection_options())
+        # XXX: we need to force a waiter to be created for this test
+        # to work
+        conn._lock.acquire()
+        conn._wait(lambda: False, timeout=0.001)
+        conn._lock.release()
+        try:
+          conn.open()
+        except ConnectError, e:
+          pass
+    finally:
+      while fds:
+        os.close(fds.pop())
+
   def testReconnect(self):
     options = self.connection_options()
     import socket
