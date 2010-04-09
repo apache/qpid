@@ -30,20 +30,27 @@ start_brokers() {
     LOCAL_PORT=`cat qpidd.port`
     ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
     REMOTE_PORT=`cat qpidd.port`
+
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    REMOTE_B1=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    REMOTE_B2=`cat qpidd.port`
 }
 
 stop_brokers() {
         $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
         $QPIDD_EXEC --no-module-dir -q --port $REMOTE_PORT
+        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_B1
+        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_B2
 }
 
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
-    echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
-    $QPID_PYTHON_TEST -m federation -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT $@
+    echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT $REMOTE_B1 $REMOTE_B2"
+    $QPID_PYTHON_TEST -m federation -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dextra-brokers="$REMOTE_B1 $REMOTE_B2" $@
     RETCODE=$?
     stop_brokers
-    if test x$RETCODE != x0; then 
+    if test x$RETCODE != x0; then
         echo "FAIL federation tests"; exit 1;
     fi
 fi
