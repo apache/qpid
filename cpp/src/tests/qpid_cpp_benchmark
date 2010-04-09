@@ -46,7 +46,7 @@ def start_receive(queue, opts):
                   "--forever",
                   "--print-content=no",
                   "--report-total",
-                  "--rate %s"%(opts.send_rate)],
+                  ],
                  stdout=PIPE, stderr=STDOUT)
 
 def start_send(queue, opts):
@@ -56,6 +56,7 @@ def start_send(queue, opts):
                   "--count", str(opts.messages),
                   "--send-eos", str(opts.receivers),
                   "--content", "benchmark",
+                  "--rate", str(opts.send_rate),
                   "--report-total"],
                  stdout=PIPE, stderr=STDOUT)
 
