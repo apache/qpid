@@ -271,7 +271,7 @@ class SessionTests(Base):
       while True:
         rcv = self.ssn.next_receiver(timeout=self.delay())
         assert rcv in (rcv1, rcv2, rcv3)
-        assert rcv.pending() > 0
+        assert rcv.available() > 0
         fetched.append(rcv.fetch().content)
     except Empty:
       pass
@@ -540,20 +540,20 @@ class ReceiverTests(Base):
   def testCapacityIncrease(self):
     content = self.send("testCapacityIncrease")
     self.sleep()
-    assert self.rcv.pending() == 0
+    assert self.rcv.available() == 0
     self.rcv.capacity = UNLIMITED
     self.sleep()
-    assert self.rcv.pending() == 1
+    assert self.rcv.available() == 1
     msg = self.rcv.fetch(0)
     assert msg.content == content
-    assert self.rcv.pending() == 0
+    assert self.rcv.available() == 0
     self.ssn.acknowledge()
 
   def testCapacityDecrease(self):
     self.rcv.capacity = UNLIMITED
     one = self.send("testCapacityDecrease", 1)
     self.sleep()
-    assert self.rcv.pending() == 1
+    assert self.rcv.available() == 1
     msg = self.rcv.fetch(0)
     assert msg.content == one
 
@@ -561,7 +561,7 @@ class ReceiverTests(Base):
 
     two = self.send("testCapacityDecrease", 2)
     self.sleep()
-    assert self.rcv.pending() == 0
+    assert self.rcv.available() == 0
     msg = self.rcv.fetch(0)
     assert msg.content == two
 
@@ -569,56 +569,56 @@ class ReceiverTests(Base):
 
   def testCapacity(self):
     self.rcv.capacity = 5
-    self.assertPending(self.rcv, 0)
+    self.assertAvailable(self.rcv, 0)
 
     for i in range(15):
       self.send("testCapacity", i)
     self.sleep()
-    self.assertPending(self.rcv, 5)
+    self.assertAvailable(self.rcv, 5)
 
     self.drain(self.rcv, limit = 5)
     self.sleep()
-    self.assertPending(self.rcv, 5)
+    self.assertAvailable(self.rcv, 5)
 
     drained = self.drain(self.rcv)
     assert len(drained) == 10, "%s, %s" % (len(drained), drained)
-    self.assertPending(self.rcv, 0)
+    self.assertAvailable(self.rcv, 0)
 
     self.ssn.acknowledge()
 
   def testCapacityUNLIMITED(self):
     self.rcv.capacity = UNLIMITED
-    self.assertPending(self.rcv, 0)
+    self.assertAvailable(self.rcv, 0)
 
     for i in range(10):
       self.send("testCapacityUNLIMITED", i)
     self.sleep()
-    self.assertPending(self.rcv, 10)
+    self.assertAvailable(self.rcv, 10)
 
     self.drain(self.rcv)
-    self.assertPending(self.rcv, 0)
+    self.assertAvailable(self.rcv, 0)
 
     self.ssn.acknowledge()
 
-  def testPending(self):
+  def testAvailable(self):
     self.rcv.capacity = UNLIMITED
-    assert self.rcv.pending() == 0
+    assert self.rcv.available() == 0
 
     for i in range(3):
-      self.send("testPending", i)
+      self.send("testAvailable", i)
     self.sleep()
-    assert self.rcv.pending() == 3
+    assert self.rcv.available() == 3
 
     for i in range(3, 10):
-      self.send("testPending", i)
+      self.send("testAvailable", i)
     self.sleep()
-    assert self.rcv.pending() == 10
+    assert self.rcv.available() == 10
 
     self.drain(self.rcv, limit=3)
-    assert self.rcv.pending() == 7
+    assert self.rcv.available() == 7
 
     self.drain(self.rcv)
-    assert self.rcv.pending() == 0
+    assert self.rcv.available() == 0
 
     self.ssn.acknowledge()
 
@@ -661,6 +661,8 @@ class ReceiverTests(Base):
     rb2 = self.ssn.receiver(rb.source)
     self.assertEmpty(rb2)
     self.drain(self.rcv, expected=[])
+
+  # XXX: need testUnsettled()
 
 class AddressTests(Base):
 

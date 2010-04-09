@@ -124,8 +124,8 @@ class Base(Test):
     contents = self.drain(rcv)
     assert len(contents) == 0, "%s is supposed to be empty: %s" % (rcv, contents)
 
-  def assertPending(self, rcv, expected):
-    p = rcv.pending()
+  def assertAvailable(self, rcv, expected):
+    p = rcv.available()
     assert p == expected, "expected %s, got %s" % (expected, p)
 
   def sleep(self):
