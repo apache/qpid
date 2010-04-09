@@ -779,7 +779,7 @@ class Engine:
     sst = self._attachments.get(lnk.session)
     _lnk = self._attachments.get(lnk)
 
-    if _lnk is None and not lnk.closing and not lnk.closed:
+    if _lnk is None and not lnk.closed:
       _lnk = Attachment(lnk)
       _lnk.closing = False
       dir.init_link(sst, lnk, _lnk)
@@ -812,7 +812,7 @@ class Engine:
           dir.do_unlink(sst, lnk, _lnk, unlinked)
         _lnk.closing = True
     elif not lnk.linked and lnk.closing and not lnk.closed:
-      lnk.closed = True
+      if lnk.error: lnk.closed = True
 
   def parse_address(self, lnk, dir, addr):
     if addr is None:
