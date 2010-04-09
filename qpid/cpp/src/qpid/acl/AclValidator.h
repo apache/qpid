@@ -38,6 +38,7 @@ class AclValidator {
             enum PropertyType { INT, STRING, ENUM };
 
         public:
+            virtual ~AclProperty(){};
             virtual int getType()=0;
             virtual bool validate(const std::string& val)=0;
             virtual std::string allowedValues()=0;
@@ -49,6 +50,7 @@ class AclValidator {
         
         public:
             AclIntProperty(int64_t min,int64_t max);
+            virtual ~AclIntProperty (){};
             int getType(){ return AclProperty::INT; }
             virtual bool validate(const std::string& val);
             virtual std::string allowedValues();
@@ -59,6 +61,7 @@ class AclValidator {
 
         public:
             AclEnumProperty(std::vector<std::string>& allowed);
+            virtual ~AclEnumProperty (){};
             int getType(){ return AclProperty::ENUM; }
             virtual bool validate(const std::string& val);
             virtual std::string allowedValues();
