@@ -445,7 +445,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         }
     }
 
-    private void checkPropertyName(String propName)
+    protected void checkPropertyName(String propName)
     {
         if ((propName == null) || propName.equals(""))
         {
