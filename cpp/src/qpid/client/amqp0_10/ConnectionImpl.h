@@ -23,7 +23,6 @@
  */
 #include "qpid/messaging/ConnectionImpl.h"
 #include "qpid/types/Variant.h"
-#include "qpid/Url.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/sys/Mutex.h"
@@ -40,14 +39,15 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
 {
   public:
     ConnectionImpl(const std::string& url, const qpid::types::Variant::Map& options);
-    void connect();
-    bool isConnected();
+    void open();
+    bool isOpen();
     void close();
     qpid::messaging::Session newSession(bool transactional, const std::string& name);
     qpid::messaging::Session getSession(const std::string& name) const;
     void closed(SessionImpl&);
     void detach();
     void setOption(const std::string& name, const qpid::types::Variant& value);
+    bool backoff();
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
 
@@ -63,6 +63,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     int64_t minReconnectInterval;
     int64_t maxReconnectInterval;
     int32_t retries;
+    bool reconnectOnLimitExceeded;
 
     void setOptions(const qpid::types::Variant::Map& options);
     void connect(const qpid::sys::AbsTime& started);

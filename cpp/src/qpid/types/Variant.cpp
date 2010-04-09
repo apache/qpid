@@ -29,12 +29,12 @@
 namespace qpid {
 namespace types {
 
-InvalidConversion::InvalidConversion(const std::string& msg) : Exception(msg) {}
-
-
 namespace {
-std::string EMPTY;
+const std::string EMPTY;
+const std::string PREFIX("invalid conversion: ");
 }
+
+InvalidConversion::InvalidConversion(const std::string& msg) : Exception(PREFIX + msg) {}
 
 class VariantImpl
 {

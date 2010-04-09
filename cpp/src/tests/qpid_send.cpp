@@ -218,7 +218,7 @@ int main(int argc, char ** argv)
     if (opts.parse(argc, argv)) {
         Connection connection(opts.url, opts.connectionOptions);
         try {
-            connection.connect();
+            connection.open();
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
             Sender sender = session.createSender(opts.address);

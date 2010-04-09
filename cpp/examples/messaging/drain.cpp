@@ -95,7 +95,7 @@ int main(int argc, char** argv)
     if (options.parse(argc, argv)) {
         Connection connection(options.url, options.connectionOptions);
         try {
-            connection.connect();
+            connection.open();
             Session session = connection.createSession();
             Receiver receiver = session.createReceiver(options.address);
             Duration timeout = options.getTimeout();

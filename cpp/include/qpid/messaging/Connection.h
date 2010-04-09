@@ -24,6 +24,7 @@
 #include <string>
 #include "qpid/messaging/ImportExport.h"
 #include "qpid/messaging/Handle.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/types/Variant.h"
 
 namespace qpid {
@@ -32,11 +33,6 @@ namespace messaging {
 template <class> class PrivateImplRef;
 class ConnectionImpl;
 class Session;
-
-struct InvalidOptionString : public qpid::Exception 
-{
-    InvalidOptionString(const std::string& msg);
-};
 
 class Connection : public qpid::messaging::Handle<ConnectionImpl>
 {
@@ -51,6 +47,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     heartbeat
      *     tcp-nodelay
      *     sasl-mechanism
+     *     sasl-service
      *     sasl-min-ssf
      *     sasl-max-ssf
      *     transport
@@ -78,13 +75,12 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      * 
      * @exception InvalidOptionString if the string does not match the correct syntax
      */
-    QPID_CLIENT_EXTERN Connection(const std::string& url, const std::string& options);
+    QPID_CLIENT_EXTERN Connection(const std::string& url, const std::string& options) throw(InvalidOptionString);
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
     QPID_CLIENT_EXTERN void setOption(const std::string& name, const qpid::types::Variant& value);
-    QPID_CLIENT_EXTERN void connect();
-    QPID_CLIENT_EXTERN bool isConnected();
-    QPID_CLIENT_EXTERN void detach();
+    QPID_CLIENT_EXTERN void open();
+    QPID_CLIENT_EXTERN bool isOpen();
     /**
      * Closes a connection and all sessions associated with it. An
      * opened connection must be closed before the last handle is

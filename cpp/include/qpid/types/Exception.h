@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_CONNECTIONIMPL_H
-#define QPID_MESSAGING_CONNECTIONIMPL_H
+#ifndef QPID_TYPES_EXCEPTION_H
+#define QPID_TYPES_EXCEPTION_H
 
 /*
  *
@@ -21,31 +21,24 @@
  * under the License.
  *
  */
+
 #include <string>
-#include "qpid/RefCounted.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
-
 namespace types {
-class Variant;
-}
 
-namespace messaging {
-
-class Session;
-
-class ConnectionImpl : public virtual qpid::RefCounted
+class Exception : public std::exception
 {
   public:
-    virtual ~ConnectionImpl() {}
-    virtual void open() = 0;
-    virtual bool isOpen() = 0;
-    virtual void close() = 0;
-    virtual Session newSession(bool transactional, const std::string& name) = 0;
-    virtual Session getSession(const std::string& name) const = 0;
-    virtual void setOption(const std::string& name, const qpid::types::Variant& value) = 0;
-  private:
-};
-}} // namespace qpid::messaging
+    QPID_COMMON_EXTERN explicit Exception(const std::string& message=std::string()) throw();
+    QPID_COMMON_EXTERN virtual ~Exception() throw();
+    QPID_COMMON_EXTERN virtual const char* what() const throw();
 
-#endif  /*!QPID_MESSAGING_CONNECTIONIMPL_H*/
+  private:
+    const std::string message;
+};
+
+}} // namespace qpid::types
+
+#endif  /*!QPID_TYPES_EXCEPTION_H*/

@@ -22,30 +22,13 @@
  *
  */
 #include <string>
-#include "qpid/Exception.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/types/Variant.h"
 #include "qpid/messaging/ImportExport.h"
 #include <ostream>
 
 namespace qpid {
 namespace messaging {
-
-/**
- * Thrown when a syntactically correct address cannot be resolved or
- * used.
- */
-struct InvalidAddress : public qpid::Exception 
-{
-    InvalidAddress(const std::string& msg);
-};
-
-/**
- * Thrown when an address string with inalid sytanx is used.
- */
-struct MalformedAddress : public qpid::Exception 
-{
-    MalformedAddress(const std::string& msg);
-};
 
 class AddressImpl;
 

@@ -1,6 +1,3 @@
-#ifndef QPID_MESSAGING_CONNECTIONIMPL_H
-#define QPID_MESSAGING_CONNECTIONIMPL_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,31 +18,13 @@
  * under the License.
  *
  */
-#include <string>
-#include "qpid/RefCounted.h"
+#include "qpid/types/Exception.h"
 
 namespace qpid {
-
 namespace types {
-class Variant;
-}
 
-namespace messaging {
+Exception::Exception(const std::string& msg) throw() : message(msg) {}
+Exception::~Exception() throw() {}
+const char* Exception::what() const throw() { return message.c_str(); }
 
-class Session;
-
-class ConnectionImpl : public virtual qpid::RefCounted
-{
-  public:
-    virtual ~ConnectionImpl() {}
-    virtual void open() = 0;
-    virtual bool isOpen() = 0;
-    virtual void close() = 0;
-    virtual Session newSession(bool transactional, const std::string& name) = 0;
-    virtual Session getSession(const std::string& name) const = 0;
-    virtual void setOption(const std::string& name, const qpid::types::Variant& value) = 0;
-  private:
-};
-}} // namespace qpid::messaging
-
-#endif  /*!QPID_MESSAGING_CONNECTIONIMPL_H*/
+}} // namespace qpid::types

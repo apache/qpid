@@ -148,8 +148,4 @@ std::ostream& operator<<(std::ostream& out, const Address& address)
     return out;
 }
 
-InvalidAddress::InvalidAddress(const std::string& msg) : Exception(msg) {}
-
-MalformedAddress::MalformedAddress(const std::string& msg) : Exception(msg) {}
-
 }} // namespace qpid::messaging
