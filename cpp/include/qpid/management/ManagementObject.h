@@ -23,7 +23,7 @@
  */
 
 #include "qpid/sys/Time.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/management/Mutex.h"
 #include "qpid/CommonImportExport.h"
 #include "qpid/types/Variant.h"
 #include <map>
@@ -139,7 +139,7 @@ protected:
     mutable bool     instChanged;
     bool             deleted;
     Manageable*      coreObject;
-    mutable sys::Mutex accessLock;
+    mutable Mutex    accessLock;
     uint32_t         flags;
 
     static int nextThreadIndex;
