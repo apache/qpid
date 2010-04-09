@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +147,7 @@ public class AMQPEncodedMapMessageTest extends QpidTestCase
     {
         MapMessage m = _session.createMapMessage();
         
-        List<String> myList = getList();
+        List<Integer> myList = getList();
         
         m.setObject("List", myList);            
         _producer.send(m);
@@ -157,12 +158,13 @@ public class AMQPEncodedMapMessageTest extends QpidTestCase
                         AMQPEncodedMapMessage.MIME_TYPE,
                         ((AbstractJMSMessage)msg).getContentType());
         
-        List<String> list = (List<String>)msg.getObject("List");
+        List<Integer> list = (List<Integer>)msg.getObject("List");
         assertNotNull("List not received",list);
+        Collections.sort(list);
         int i = 1;
-        for (String str: list)
+        for (Integer j: list)
         {
-            assertEquals("String" + i,str);
+            assertEquals(i,j.intValue());
             i++;
         }
     }
@@ -184,10 +186,9 @@ public class AMQPEncodedMapMessageTest extends QpidTestCase
         
         Map<String,String> map = (Map<String,String>)msg.getObject("Map");
         assertNotNull("Map not received",map);
-        int i = 1;
-        for (String str: map.keySet())
+        for (int i=1; i <4; i++ )
         {
-            assertEquals("String" + i,map.get(str));
+            assertEquals("String" + i,map.get("Key" + i));
             i++;
         }
     }
@@ -214,29 +215,30 @@ public class AMQPEncodedMapMessageTest extends QpidTestCase
         
         Map<String,String> map = (Map<String,String>)mainMap.get("map");
         assertNotNull("Nested Map not received",map);
-        int i = 1;
-        for (String str: map.keySet())
+        for (int i=1; i <4; i++ )
         {
-            assertEquals("String" + i,map.get(str));
+            assertEquals("String" + i,map.get("Key" + i));
             i++;
         }
         
-        List<String> list = (List<String>)mainMap.get("list");
+        List<Integer> list = (List<Integer>)mainMap.get("list");
         assertNotNull("Nested List not received",list);
-        i = 1;
-        for (String str: list)
+        Collections.sort(list);
+        
+        int i = 1;
+        for (Integer j: list)
         {
-            assertEquals("String" + i,str);
+            assertEquals(i,j.intValue());
             i++;
         }
     }
     
-    private List<String> getList()
+    private List<Integer> getList()
     {
-        List<String> myList = new ArrayList<String>();
-        myList.add("String1");
-        myList.add("String2");
-        myList.add("String3");
+        List<Integer> myList = new ArrayList<Integer>();
+        myList.add(1);
+        myList.add(2);
+        myList.add(3);
         
         return myList;
     }
