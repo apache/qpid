@@ -20,7 +20,6 @@
 
 /*MGEN:Root.Disclaimer*/
 
-#include "qpid/log/Statement.h"
 #include "qpid/management/Manageable.h" 
 #include "qpid/management/Buffer.h"
 #include "qpid/types/Variant.h"
@@ -33,6 +32,7 @@ using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
 using           qpid::management::ManagementObject;
 using           qpid::management::Args;
+using           qpid::management::Mutex;
 using           std::string;
 
 string  Event/*MGEN:Event.NameCap*/::packageName  = string ("/*MGEN:Event.NamePackageLower*/");

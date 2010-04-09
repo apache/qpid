@@ -148,7 +148,7 @@ class SchemaType:
     if self.accessor == "direct":
       stream.write ("    inline void set_" + varName + " (" + self.asArg + " val) {\n");
       if not self.perThread:
-        stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
+        stream.write ("        ::qpid::management::Mutex::ScopedLock mutex(accessLock);\n")
       if self.style != "mma":
         stream.write ("        " + prefix + varName + " = val;\n")
         if optional:
@@ -171,7 +171,7 @@ class SchemaType:
       if self.style != "mma":
         stream.write ("    inline " + self.asArg + " get_" + varName + "() {\n");
         if not self.perThread:
-          stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
+          stream.write ("        ::qpid::management::Mutex::ScopedLock mutex(accessLock);\n")
         stream.write ("        return " + prefix + varName + ";\n")
         stream.write ("    }\n")
       if optional:
@@ -186,7 +186,7 @@ class SchemaType:
     elif self.accessor == "counter":
       stream.write ("    inline void inc_" + varName + " (" + self.asArg + " by = 1) {\n");
       if not self.perThread:
-        stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
+        stream.write ("        ::qpid::management::Mutex::ScopedLock mutex(accessLock);\n")
       stream.write ("        " + prefix + varName + " += by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "High < " + varName + ")\n")
@@ -196,7 +196,7 @@ class SchemaType:
       stream.write ("    }\n");
       stream.write ("    inline void dec_" + varName + " (" + self.asArg + " by = 1) {\n");
       if not self.perThread:
-        stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
+        stream.write ("        ::qpid::management::Mutex::ScopedLock mutex(accessLock);\n")
       stream.write ("        " + prefix + varName + " -= by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low > " + varName + ")\n")

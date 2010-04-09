@@ -44,10 +44,10 @@ using qpid::framing::Uuid;
 using qpid::types::Variant;
 using qpid::amqp_0_10::MapCodec;
 using qpid::amqp_0_10::ListCodec;
+using qpid::sys::Mutex;
 using namespace qpid::framing;
 using namespace qpid::management;
 using namespace qpid::broker;
-using namespace qpid::sys;
 using namespace qpid;
 using namespace std;
 namespace _qmf = qmf::org::apache::qpid::broker;
@@ -80,7 +80,7 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
 
 ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
     threadPoolSize(1), interval(10), broker(0), timer(0),
-    startTime(uint64_t(Duration(now()))),
+    startTime(uint64_t(sys::Duration(sys::now()))),
     suppressed(false),
     qmf1Support(qmfV1), qmf2Support(qmfV2)
 {
@@ -95,7 +95,7 @@ ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
 ManagementAgent::~ManagementAgent ()
 {
     {
-        Mutex::ScopedLock lock (userLock);
+        sys::Mutex::ScopedLock lock (userLock);
 
         // Reset the shared pointers to exchanges.  If this is not done now, the exchanges
         // will stick around until dExchange and mExchange are implicitly destroyed (long
@@ -231,7 +231,7 @@ void ManagementAgent::registerClass (const string&  packageName,
                                      uint8_t* md5Sum,
                                      ManagementObject::writeSchemaCall_t schemaCall)
 {
-    Mutex::ScopedLock lock(userLock);
+    sys::Mutex::ScopedLock lock(userLock);
     PackageMap::iterator pIter = findOrAddPackageLH(packageName);
     addClassLH(ManagementItem::CLASS_KIND_TABLE, pIter, className, md5Sum, schemaCall);
 }
@@ -241,7 +241,7 @@ void ManagementAgent::registerEvent (const string&  packageName,
                                      uint8_t* md5Sum,
                                      ManagementObject::writeSchemaCall_t schemaCall)
 {
-    Mutex::ScopedLock lock(userLock);
+    sys::Mutex::ScopedLock lock(userLock);
     PackageMap::iterator pIter = findOrAddPackageLH(packageName);
     addClassLH(ManagementItem::CLASS_KIND_EVENT, pIter, eventName, md5Sum, schemaCall);
 }
@@ -266,7 +266,7 @@ ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId
     object->setObjectId(objId);
 
     {
-        Mutex::ScopedLock lock (addLock);
+        sys::Mutex::ScopedLock lock (addLock);
         ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
         if (destIter != newManagementObjects.end()) {
             if (destIter->second->isDeleted()) {
@@ -304,7 +304,7 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
     object->setObjectId(objId);
 
     {
-        Mutex::ScopedLock lock (addLock);
+        sys::Mutex::ScopedLock lock (addLock);
         ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
         if (destIter != newManagementObjects.end()) {
             if (destIter->second->isDeleted()) {
@@ -324,7 +324,7 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
 
 void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severity)
 {
-    Mutex::ScopedLock lock (userLock);
+    sys::Mutex::ScopedLock lock (userLock);
     uint8_t sev = (severity == SEV_DEFAULT) ? event.getSeverity() : (uint8_t) severity;
 
     if (qmf1Support) {
@@ -335,7 +335,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
         outBuffer.putShortString(event.getPackageName());
         outBuffer.putShortString(event.getEventName());
         outBuffer.putBin128(event.getMd5Sum());
-        outBuffer.putLongLong(uint64_t(Duration(now())));
+        outBuffer.putLongLong(uint64_t(sys::Duration(sys::now())));
         outBuffer.putOctet(sev);
         std::string sBuf;
         event.encode(sBuf);
@@ -359,7 +359,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
                                                event.getMd5Sum());
         event.mapEncode(values);
         map_["_values"] = values;
-        map_["_timestamp"] = uint64_t(Duration(now()));
+        map_["_timestamp"] = uint64_t(sys::Duration(sys::now()));
         map_["_severity"] = sev;
 
         headers["method"] = "indication";
@@ -379,7 +379,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
 }
 
 ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
-    : TimerTask (qpid::sys::Duration((_seconds ? _seconds : 1) * qpid::sys::TIME_SEC),
+    : TimerTask (sys::Duration((_seconds ? _seconds : 1) * sys::TIME_SEC),
                  "ManagementAgent::periodicProcessing"),
       agent(_agent) {}
 
@@ -538,7 +538,7 @@ void ManagementAgent::sendBuffer(const std::string& data,
 
 void ManagementAgent::moveNewObjectsLH()
 {
-    Mutex::ScopedLock lock (addLock);
+    sys::Mutex::ScopedLock lock (addLock);
     for (ManagementObjectMap::iterator iter = newManagementObjects.begin ();
          iter != newManagementObjects.end ();
          iter++) {
@@ -573,14 +573,14 @@ void ManagementAgent::periodicProcessing (void)
 #define BUFSIZE   65536
 #define HEADROOM  4096
     QPID_LOG(trace, "Management agent periodic processing");
-    Mutex::ScopedLock lock (userLock);
+    sys::Mutex::ScopedLock lock (userLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     string              routingKey;
     list<pair<ObjectId, ManagementObject*> > deleteList;
     std::string sBuf;
 
-    uint64_t uptime = uint64_t(Duration(now())) - startTime;
+    uint64_t uptime = uint64_t(sys::Duration(sys::now())) - startTime;
     static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
 
     moveNewObjectsLH();
@@ -779,7 +779,7 @@ void ManagementAgent::periodicProcessing (void)
         char                msgChars[BUFSIZE];
         Buffer msgBuffer(msgChars, BUFSIZE);
         encodeHeader(msgBuffer, 'h');
-        msgBuffer.putLongLong(uint64_t(Duration(now())));
+        msgBuffer.putLongLong(uint64_t(sys::Duration(sys::now())));
 
         contentSize = BUFSIZE - msgBuffer.available ();
         msgBuffer.reset ();
@@ -799,7 +799,7 @@ void ManagementAgent::periodicProcessing (void)
         headers["qmf.agent"] = name_address;
 
         map["_values"] = attrMap;
-        map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
+        map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::now()));
         map["_values"].asMap()["heartbeat_interval"] = interval;
 
         string content;
@@ -890,7 +890,7 @@ bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
                                        const FieldTable* /*args*/,
                                        const bool topic)
 {
-    Mutex::ScopedLock lock (userLock);
+    sys::Mutex::ScopedLock lock (userLock);
     Message&  msg = ((DeliverableMessage&) deliverable).getMessage ();
 
     if (qmf1Support && topic) {
@@ -1022,7 +1022,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
         else
             try {
                 outBuffer.record();
-                Mutex::ScopedUnlock u(userLock);
+                sys::Mutex::ScopedUnlock u(userLock);
                 std::string outBuf;
                 iter->second->doMethod(methodName, inArgs, outBuf);
                 outBuffer.putRawData(outBuf);
@@ -1687,7 +1687,7 @@ void ManagementAgent::handleLocateRequestLH(const string&, const string& replyTo
     headers["qmf.agent"] = name_address;
 
     map["_values"] = attrMap;
-    map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
+    map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::now()));
     map["_values"].asMap()["heartbeat_interval"] = interval;
 
     string content;
@@ -2109,13 +2109,13 @@ ManagementObjectMap::iterator ManagementAgent::numericFind(const ObjectId& oid)
 
 void ManagementAgent::setAllocator(std::auto_ptr<IdAllocator> a)
 {
-    Mutex::ScopedLock lock (userLock);
+    sys::Mutex::ScopedLock lock (userLock);
     allocator = a;
 }
 
 uint64_t ManagementAgent::allocateId(Manageable* object)
 {
-    Mutex::ScopedLock lock (userLock);
+    sys::Mutex::ScopedLock lock (userLock);
     if (allocator.get()) return allocator->getIdFor(object);
     return 0;
 }

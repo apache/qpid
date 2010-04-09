@@ -20,7 +20,6 @@
 
 /*MGEN:Root.Disclaimer*/
 
-#include "qpid/log/Statement.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Buffer.h"
 #include "qpid/types/Variant.h"
@@ -35,6 +34,7 @@ using           qpid::management::ManagementAgent;
 using           qpid::management::Manageable;
 using           qpid::management::ManagementObject;
 using           qpid::management::Args;
+using           qpid::management::Mutex;
 using           std::string;
 
 string  /*MGEN:Class.NameCap*/::packageName  = string ("/*MGEN:Class.NamePackageLower*/");
@@ -149,7 +149,7 @@ void /*MGEN:Class.NameCap*/::readProperties (const std::string& _sBuf)
     char *_tmpBuf = new char[_sBuf.length()];
     memcpy(_tmpBuf, _sBuf.data(), _sBuf.length());
     ::qpid::management::Buffer buf(_tmpBuf, _sBuf.length());
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    Mutex::ScopedLock mutex(accessLock);
 
     {
         std::string _tbuf;
@@ -172,7 +172,7 @@ void /*MGEN:Class.NameCap*/::writeProperties (std::string& _sBuf) const
     char _msgChars[_bufSize];
     ::qpid::management::Buffer buf(_msgChars, _bufSize);
 
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    Mutex::ScopedLock mutex(accessLock);
     configChanged = false;
 
     {
@@ -200,7 +200,7 @@ void /*MGEN:Class.NameCap*/::writeStatistics (std::string& _sBuf, bool skipHeade
     char _msgChars[_bufSize];
     ::qpid::management::Buffer buf(_msgChars, _bufSize);
 
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
 /*MGEN:IF(Class.ExistPerThreadAssign)*/
     for (int idx = 0; idx < maxThreads; idx++) {
@@ -279,7 +279,7 @@ void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::types::Variant::Map& _map,
                                               bool includeStatistics)
 {
     using namespace ::qpid::types;
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    Mutex::ScopedLock mutex(accessLock);
 
     if (includeProperties) {
         configChanged = false;
@@ -320,7 +320,7 @@ void /*MGEN:Class.NameCap*/::mapEncodeValues (::qpid::types::Variant::Map& _map,
 void /*MGEN:Class.NameCap*/::mapDecodeValues (const ::qpid::types::Variant::Map& _map)
 {
     ::qpid::types::Variant::Map::const_iterator _i;
-    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
+    Mutex::ScopedLock mutex(accessLock);
 /*MGEN:IF(Class.ExistOptionals)*/
     bool _found;
 /*MGEN:ENDIF*/

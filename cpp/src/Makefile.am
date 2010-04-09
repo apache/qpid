@@ -423,6 +423,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/management/Buffer.cpp			\
   qpid/management/Manageable.cpp		\
   qpid/management/ManagementObject.cpp		\
+  qpid/management/Mutex.cpp			\
   qpid/memory.h					\
   qpid/pointer_to_other.h			\
   qpid/ptr_map.h				\
@@ -806,6 +807,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/management/Manageable.h	\
   ../include/qpid/management/ManagementEvent.h	\
   ../include/qpid/management/ManagementObject.h	\
+  ../include/qpid/management/Mutex.h		\
   ../include/qpid/sys/Condition.h		\
   ../include/qpid/sys/ExceptionHolder.h		\
   ../include/qpid/sys/IOHandle.h		\

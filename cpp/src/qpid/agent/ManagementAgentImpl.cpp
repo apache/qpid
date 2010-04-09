@@ -46,7 +46,7 @@ using qpid::amqp_0_10::MapCodec;
 using qpid::amqp_0_10::ListCodec;
 
 namespace {
-    Mutex lock;
+    qpid::sys::Mutex lock;
     bool disabled = false;
     ManagementAgent* agent = 0;
     int refCount = 0;
@@ -54,7 +54,7 @@ namespace {
 
 ManagementAgent::Singleton::Singleton(bool disableManagement)
 {
-    Mutex::ScopedLock _lock(lock);
+    sys::Mutex::ScopedLock _lock(lock);
     if (disableManagement && !disabled) {
         disabled = true;
         assert(refCount == 0); // can't disable after agent has been allocated
@@ -66,7 +66,7 @@ ManagementAgent::Singleton::Singleton(bool disableManagement)
 
 ManagementAgent::Singleton::~Singleton()
 {
-    Mutex::ScopedLock _lock(lock);
+    sys::Mutex::ScopedLock _lock(lock);
     refCount--;
     if (refCount == 0 && !disabled) {
         delete agent;
@@ -103,7 +103,7 @@ ManagementAgentImpl::~ManagementAgentImpl()
 
     // Release the memory associated with stored management objects.
     {
-        Mutex::ScopedLock lock(agentLock);
+        sys::Mutex::ScopedLock lock(agentLock);
 
         moveNewObjectsLH();
         for (ManagementObjectMap::iterator iter = managementObjects.begin ();
@@ -186,7 +186,7 @@ void ManagementAgentImpl::registerClass(const string& packageName,
                                         uint8_t*     md5Sum,
                                         ManagementObject::writeSchemaCall_t schemaCall)
 { 
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     PackageMap::iterator pIter = findOrAddPackage(packageName);
     addClassLocal(ManagementItem::CLASS_KIND_TABLE, pIter, className, md5Sum, schemaCall);
 }
@@ -196,7 +196,7 @@ void ManagementAgentImpl::registerEvent(const string& packageName,
                                         uint8_t*     md5Sum,
                                         ManagementObject::writeSchemaCall_t schemaCall)
 { 
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     PackageMap::iterator pIter = findOrAddPackage(packageName);
     addClassLocal(ManagementItem::CLASS_KIND_EVENT, pIter, eventName, md5Sum, schemaCall);
 }
@@ -218,7 +218,7 @@ ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
                                         const std::string& key,
                                         bool persistent)
 {
-    Mutex::ScopedLock lock(addLock);
+    sys::Mutex::ScopedLock lock(addLock);
 
     uint16_t sequence  = persistent ? 0 : bootSequence;
 
@@ -236,7 +236,7 @@ ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
 
 void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t severity)
 {
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     Buffer outBuffer(eventBuffer, MA_BUFFER_SIZE);
     uint8_t sev = (severity == SEV_DEFAULT) ? event.getSeverity() : (uint8_t) severity;
     stringstream key;
@@ -269,7 +269,7 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t se
 
 uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
 {
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
 
     if (inCallback) {
         QPID_LOG(critical, "pollCallbacks invoked from the agent's thread!");
@@ -283,7 +283,7 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
         QueuedMethod* item = methodQueue.front();
         methodQueue.pop_front();
         {
-            Mutex::ScopedUnlock unlock(agentLock);
+            sys::Mutex::ScopedUnlock unlock(agentLock);
             invokeMethodRequest(item->body, item->cid, item->replyTo);
             delete item;
         }
@@ -309,14 +309,14 @@ int ManagementAgentImpl::getSignalFd()
 
 void ManagementAgentImpl::setSignalCallback(cb_t callback, void* context)
 {
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     notifyCallback = callback;
     notifyContext  = context;
 }
 
 void ManagementAgentImpl::setSignalCallback(Notifyable& _notifyable)
 {
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     notifyable = &_notifyable;
 }
 
@@ -407,7 +407,7 @@ void ManagementAgentImpl::sendException(const string& replyToKey, const string& 
 
 void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence, const string& replyTo)
 {
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     string packageName;
     SchemaClassKey key;
 
@@ -441,7 +441,7 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
 
 void ManagementAgentImpl::handleConsoleAddedIndication()
 {
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     clientWasAdded = true;
 
     QPID_LOG(trace, "RCVD ConsoleAddedInd");
@@ -680,7 +680,7 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
     QPID_LOG(trace, "SENT AgentLocateResponse replyTo=" << replyTo);
 
     {
-        Mutex::ScopedLock lock(agentLock);
+        sys::Mutex::ScopedLock lock(agentLock);
         clientWasAdded = true;
     }
 }
@@ -688,7 +688,7 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
 void ManagementAgentImpl::handleMethodRequest(const string& body, const string& cid, const string& replyTo)
 {
     if (extThread) {
-        Mutex::ScopedLock lock(agentLock);
+        sys::Mutex::ScopedLock lock(agentLock);
 
         methodQueue.push_back(new QueuedMethod(cid, replyTo, body));
         if (pipeHandle != 0) {
@@ -696,14 +696,14 @@ void ManagementAgentImpl::handleMethodRequest(const string& body, const string& 
         } else if (notifyable != 0) {
             inCallback = true;
             {
-                Mutex::ScopedUnlock unlock(agentLock);
+                sys::Mutex::ScopedUnlock unlock(agentLock);
                 notifyable->notify();
             }
             inCallback = false;
         } else if (notifyCallback != 0) {
             inCallback = true;
             {
-                Mutex::ScopedUnlock unlock(agentLock);
+                sys::Mutex::ScopedUnlock unlock(agentLock);
                 notifyCallback(notifyContext);
             }
             inCallback = false;
@@ -820,7 +820,7 @@ ManagementAgentImpl::PackageMap::iterator ManagementAgentImpl::findOrAddPackage(
 
 void ManagementAgentImpl::moveNewObjectsLH()
 {
-    Mutex::ScopedLock lock(addLock);
+    sys::Mutex::ScopedLock lock(addLock);
     for (ManagementObjectMap::iterator iter = newManagementObjects.begin();
          iter != newManagementObjects.end();
          iter++)
@@ -872,7 +872,7 @@ void ManagementAgentImpl::encodeClassIndication(Buffer&              buf,
 
 void ManagementAgentImpl::periodicProcessing()
 {
-    Mutex::ScopedLock lock(agentLock);
+    sys::Mutex::ScopedLock lock(agentLock);
     list<pair<ObjectId, ManagementObject*> > deleteList;
 
     if (!connected)
@@ -1007,14 +1007,14 @@ void ManagementAgentImpl::ConnectionThread::run()
                 subscriptions->subscribe(agent, queueName.str(), dest);
                 QPID_LOG(info, "Connection established with broker");
                 {
-                    Mutex::ScopedLock _lock(connLock);
+                    sys::Mutex::ScopedLock _lock(connLock);
                     if (shutdown)
                         return;
                     operational = true;
                     agent.connected = true;
                     agent.startProtocol();
                     try {
-                        Mutex::ScopedUnlock _unlock(connLock);
+                        sys::Mutex::ScopedUnlock _unlock(connLock);
                         subscriptions->run();
                     } catch (exception) {}
 
@@ -1039,13 +1039,13 @@ void ManagementAgentImpl::ConnectionThread::run()
             // sleep for "delay" seconds, but peridically check if the
             // agent is shutting down so we don't hang for up to delayMax 
             // seconds during agent shutdown
-             Mutex::ScopedLock _lock(connLock);
+             sys::Mutex::ScopedLock _lock(connLock);
              if (shutdown)
                  return;
              sleeping = true;
              int totalSleep = 0;
              do {
-                 Mutex::ScopedUnlock _unlock(connLock);
+                 sys::Mutex::ScopedUnlock _unlock(connLock);
                  ::sleep(delayMin);
                  totalSleep += delayMin;
              } while (totalSleep < delay && !shutdown);
@@ -1109,7 +1109,7 @@ void ManagementAgentImpl::ConnectionThread::sendMessage(Message msg,
 {
     ConnectionThread::shared_ptr s;
     {
-        Mutex::ScopedLock _lock(connLock);
+        sys::Mutex::ScopedLock _lock(connLock);
         if (!operational)
             return;
         s = subscriptions;
@@ -1142,7 +1142,7 @@ void ManagementAgentImpl::ConnectionThread::close()
 {
     ConnectionThread::shared_ptr s;
     {
-        Mutex::ScopedLock _lock(connLock);
+        sys::Mutex::ScopedLock _lock(connLock);
         shutdown = true;
         s = subscriptions;
     }
@@ -1152,7 +1152,7 @@ void ManagementAgentImpl::ConnectionThread::close()
 
 bool ManagementAgentImpl::ConnectionThread::isSleeping() const
 {
-    Mutex::ScopedLock _lock(connLock);
+    sys::Mutex::ScopedLock _lock(connLock);
     return sleeping;
 }
 
