@@ -540,6 +540,16 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
                 _requestCmd = cmd;
             }
             
+            public <xsl:value-of select="$ClassName"/>ResponseCommand createResponseCommand(CompletionCode status)
+            {
+                return new <xsl:value-of select="$ClassName"/>ResponseCommand(_requestCmd, status, null);
+            }
+            
+            public <xsl:value-of select="$ClassName"/>ResponseCommand createResponseCommand(CompletionCode status, String msg)
+            {
+                return new <xsl:value-of select="$ClassName"/>ResponseCommand(_requestCmd, status, msg);
+            }
+            
             public <xsl:value-of select="$ClassName"/>ResponseCommand createResponseCommand( <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="methodArgList"><xsl:with-param name="includeType">yes</xsl:with-param><xsl:with-param name="direction">O</xsl:with-param></xsl:apply-templates> )
             {
                 return new <xsl:value-of select="$ClassName"/>ResponseCommand(_requestCmd<xsl:if test="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]">, <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="methodArgList"><xsl:with-param name="direction">O</xsl:with-param></xsl:apply-templates></xsl:if>);
@@ -551,9 +561,16 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
             <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="methodInputArgDecl"/>
             private <xsl:value-of select="$ClassName"/>ResponseCommand(QMFMethodRequestCommand cmd<xsl:if test="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]">, <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="methodArgList"><xsl:with-param name="includeType">yes</xsl:with-param><xsl:with-param name="direction">O</xsl:with-param></xsl:apply-templates></xsl:if>)
             {
-                super(cmd);
+                super(cmd, CompletionCode.OK, "OK");
                 
                 <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="methodInputArgAssign"/>
+            }
+            
+            private <xsl:value-of select="$ClassName"/>ResponseCommand(QMFMethodRequestCommand cmd, CompletionCode status, String msg)
+            {
+                super(cmd, status, msg);
+                
+                <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="methodInputArgAssignNull"/>
             }
             
             @Override
@@ -561,7 +578,12 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
             {
                 super.encode(encoder);
                 
-                <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="encodeArg"/>
+                <xsl:if test="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]">
+                if(getStatus().equals(CompletionCode.OK))
+                {
+                    <xsl:apply-templates select="node()[name()='arg' and ( @dir='O' or @dir='IO' ) ]" mode="encodeArg"/>
+                }
+                </xsl:if>
             }
         }
         
@@ -600,6 +622,10 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
     <xsl:template match="node()[name()='arg']" mode="methodInputArgAssign">
                 _<xsl:value-of select="@name"/> = <xsl:value-of select="@name"/>;
     </xsl:template>
+    <xsl:template match="node()[name()='arg']" mode="methodInputArgAssignNull">
+                _<xsl:value-of select="@name"/> = null;
+    </xsl:template>
+    
     
     <xsl:template match="node()[name()='class']" mode="classList">_<xsl:call-template name="initLower"><xsl:with-param name="input" select="@name"/></xsl:call-template>Class<xsl:if test="following-sibling::node()[name()='class']">, </xsl:if></xsl:template>
     <xsl:template match="node()[name()='event']" mode="eventList">_<xsl:call-template name="initLower"><xsl:with-param name="input" select="@name"/></xsl:call-template>EventClass<xsl:if test="following-sibling::node()[name()='event']">, </xsl:if></xsl:template>

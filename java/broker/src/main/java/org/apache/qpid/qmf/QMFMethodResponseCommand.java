@@ -20,24 +20,57 @@
  */
 package org.apache.qpid.qmf;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.transport.codec.BBEncoder;
 
 public class QMFMethodResponseCommand extends QMFCommand
 {
-    public QMFMethodResponseCommand(final QMFMethodRequestCommand cmd)
+    private CompletionCode _status = null;
+    private String _msg = null;
+
+    public QMFMethodResponseCommand(final QMFMethodRequestCommand cmd, 
+                                    CompletionCode status,
+                                    String msg)
     {
         super( new QMFCommandHeader(cmd.getHeader().getVersion(),
                                     cmd.getHeader().getSeq(),
                                     QMFOperation.METHOD_RESPONSE));
+        
+        if(status == null)
+        {
+            _status = CompletionCode.OK;
+        }
+        else
+        {
+            _status = status;
+        }
+        
+        _msg = msg;
+    }
+    
+    public CompletionCode getStatus()
+    {
+       return _status;
+    }
+
+    public String getStatusText()
+    {
+       return _msg;
     }
 
     @Override
     public void encode(final BBEncoder encoder)
     {
         super.encode(encoder);
-        encoder.writeUint32(0);
-        encoder.writeStr16("OK");
+
+        encoder.writeUint32(_status.ordinal());
+
+        if(_msg == null)
+        {
+            encoder.writeStr16(_status.toString());
+        }
+        else
+        {
+            encoder.writeStr16(_msg);
+        }
     }
 }
