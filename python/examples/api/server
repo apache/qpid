@@ -44,16 +44,12 @@ if opts.verbose:
 else:
   enable("qpid", WARN)
 
-url = URL(opts.broker)
 if args:
   addr = args.pop(0)
 else:
   parser.error("address is required")
 
-# XXX: should make URL default the port for us
-conn = Connection(url.host, url.port,
-                  username=url.user,
-                  password=url.password,
+conn = Connection(opts.broker,
                   reconnect=opts.reconnect,
                   reconnect_interval=opts.reconnect_interval,
                   reconnect_limit=opts.reconnect_limit)
@@ -75,7 +71,7 @@ def dispatch(msg):
   return result
 
 try:
-  conn.connect()
+  conn.open()
   ssn = conn.session()
   rcv = ssn.receiver(addr)
 

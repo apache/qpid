@@ -65,7 +65,6 @@ if opts.verbose:
 else:
   enable("qpid", WARN)
 
-url = URL(opts.broker)
 if opts.id is None:
   spout_id = str(uuid4())
 else:
@@ -92,15 +91,12 @@ if opts.entries:
 else:
   content = text
 
-# XXX: should make URL default the port for us
-conn = Connection(url.host, url.port,
-                  username=url.user,
-                  password=url.password,
+conn = Connection(opts.broker,
                   reconnect=opts.reconnect,
                   reconnect_interval=opts.reconnect_interval,
                   reconnect_limit=opts.reconnect_limit)
 try:
-  conn.connect()
+  conn.open()
   ssn = conn.session()
   snd = ssn.sender(addr)
 

@@ -19,7 +19,9 @@
 
 from qpid.util import connect
 
-class plain:
+TRANSPORTS = {}
+
+class tcp:
 
   def __init__(self, host, port):
     self.socket = connect(host, port)
@@ -41,6 +43,8 @@ class plain:
 
   def close(self):
     self.socket.close()
+
+TRANSPORTS["tcp"] = tcp
 
 try:
   from ssl import wrap_socket, SSLError, SSL_ERROR_WANT_READ, \
@@ -105,3 +109,6 @@ else:
       self.socket.setblocking(1)
       # this closes the underlying socket
       self.tls.close()
+
+  TRANSPORTS["ssl"] = tls
+  TRANSPORTS["tcp+tls"] = tls

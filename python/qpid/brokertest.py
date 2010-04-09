@@ -295,7 +295,8 @@ class Broker(Popen):
 
     def connect(self):
         """New API connection to the broker."""
-        return messaging.Connection.open(self.host(), self.port())
+        return messaging.Connection.establish(host=self.host(),
+                                              port=self.port())
 
     def connect_old(self):
         """Old API connection to the broker."""

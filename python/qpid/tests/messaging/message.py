@@ -53,8 +53,7 @@ ECHO_Q = 'test-message-echo-queue; {create: always, delete: always}'
 class MessageEchoTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port,
-                           **self.connection_options())
+    return Connection.establish(self.broker, **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
