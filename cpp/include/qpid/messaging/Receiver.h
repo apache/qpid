@@ -104,7 +104,7 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      * acknowledgement has not yet been confirmed as processed by the
      * server.
      */
-    QPID_CLIENT_EXTERN uint32_t getPendingAck();
+    QPID_CLIENT_EXTERN uint32_t getUnsettled();
 
     /**
      * Cancels this receiver.

@@ -96,15 +96,17 @@ class Session : public qpid::messaging::Handle<SessionImpl>
 
     /**
      * Returns the total number of messages received and waiting to be
-     * fetched by all Receivers belonging to this session.
+     * fetched by all Receivers belonging to this session. This is the
+     * total number of available messages across all receivers on this
+     * session.
      */
-    QPID_CLIENT_EXTERN uint32_t getAvailable();
+    QPID_CLIENT_EXTERN uint32_t getReceivable();
     /**
      * Returns a count of the number of messages received this session
      * that have been acknowledged, but for which that acknowledgement
      * has not yet been confirmed as processed by the server.
      */
-    QPID_CLIENT_EXTERN uint32_t getPendingAck();
+    QPID_CLIENT_EXTERN uint32_t getUnsettledAcks();
     /**
      * Retrieves the receiver for the next available message. If there
      * are no available messages at present the call will block for up

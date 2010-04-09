@@ -84,9 +84,16 @@ class AddressImpl;
  *
  * <tr valign=top>
  *   <td>node</td>
+
  *   <td>A nested map describing properties of the addressed
  *       node. Current properties supported are type (topic or queue),
- *       durable (boolean), x-declare and x-bindings.
+ *       durable (boolean), x-declare and x-bindings. The x-declare
+ *       option is a nested map in whcih protocol amqp 0-10 specific
+ *       options for queue or exchange declare can be specified. The
+ *       x-bindings option is a nested list, each element of which can
+ *       specify a queue, an exchange, a binding-key and arguments,
+ *       which are used to establish a binding on create. The node
+ *       will be used if queue or exchange values are not specified.
  *   </td>
  * </tr>
  *

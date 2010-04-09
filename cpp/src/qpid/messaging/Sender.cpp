@@ -36,7 +36,8 @@ void Sender::send(const Message& message, bool sync) { impl->send(message, sync)
 void Sender::close() { impl->close(); }
 void Sender::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Sender::getCapacity() { return impl->getCapacity(); }
-uint32_t Sender::getPending() { return impl->pending(); }
+uint32_t Sender::getUnsettled() { return impl->getUnsettled(); }
+uint32_t Sender::getAvailable() { return getCapacity() - getUnsettled(); }
 const std::string& Sender::getName() const { return impl->getName(); }
 Session Sender::getSession() const { return impl->getSession(); }
 

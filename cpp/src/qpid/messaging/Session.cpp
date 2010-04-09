@@ -77,8 +77,8 @@ Receiver Session::nextReceiver(Duration timeout)
     return impl->nextReceiver(timeout);
 }
 
-uint32_t Session::getAvailable() { return impl->available(); }
-uint32_t Session::getPendingAck() { return impl->pendingAck(); }
+uint32_t Session::getReceivable() { return impl->getReceivable(); }
+uint32_t Session::getUnsettledAcks() { return impl->getUnsettledAcks(); }
 
 Sender Session::getSender(const std::string& name) const
 { 

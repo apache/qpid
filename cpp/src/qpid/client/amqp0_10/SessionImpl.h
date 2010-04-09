@@ -82,11 +82,11 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void receiverCancelled(const std::string& name);
     void senderCancelled(const std::string& name);
 
-    uint32_t available();
-    uint32_t available(const std::string& destination);
+    uint32_t getReceivable();
+    uint32_t getReceivable(const std::string& destination);
 
-    uint32_t pendingAck();
-    uint32_t pendingAck(const std::string& destination);
+    uint32_t getUnsettledAcks();
+    uint32_t getUnsettledAcks(const std::string& destination);
 
     void setSession(qpid::client::Session);
 
@@ -143,8 +143,8 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void syncImpl(bool block);
     qpid::messaging::Sender createSenderImpl(const qpid::messaging::Address& address);
     qpid::messaging::Receiver createReceiverImpl(const qpid::messaging::Address& address);
-    uint32_t availableImpl(const std::string* destination);
-    uint32_t pendingAckImpl(const std::string* destination);
+    uint32_t getReceivableImpl(const std::string* destination);
+    uint32_t getUnsettledAcksImpl(const std::string* destination);
 
     //functors for public facing methods (allows locking and retry
     //logic to be centralised)
@@ -203,8 +203,8 @@ class SessionImpl : public qpid::messaging::SessionImpl
     
     struct CreateSender;
     struct CreateReceiver;
-    struct PendingAck;
-    struct Available;
+    struct UnsettledAcks;
+    struct Receivable;
 
     //helper templates for some common patterns
     template <class F> bool execute()
