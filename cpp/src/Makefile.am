@@ -420,6 +420,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/log/OstreamOutput.h			\
   qpid/log/Selector.cpp				\
   qpid/log/Statement.cpp			\
+  qpid/management/Buffer.cpp			\
   qpid/management/Manageable.cpp		\
   qpid/management/ManagementObject.cpp		\
   qpid/memory.h					\
@@ -799,6 +800,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/log/SinkOptions.h		\
   ../include/qpid/log/Statement.h		\
   ../include/qpid/management/Args.h		\
+  ../include/qpid/management/Buffer.h		\
   ../include/qpid/management/Manageable.h	\
   ../include/qpid/management/ManagementEvent.h	\
   ../include/qpid/management/ManagementObject.h	\

@@ -425,22 +425,22 @@ class SchemaProperty:
 
   def genSchema (self, stream):
     stream.write ("    ft.clear();\n")
-    stream.write ("    ft.setString (NAME, \"" + self.name + "\");\n")
-    stream.write ("    ft.setInt    (TYPE, TYPE_" + self.type.type.base +");\n")
-    stream.write ("    ft.setInt    (ACCESS, ACCESS_" + self.access + ");\n")
-    stream.write ("    ft.setInt    (IS_INDEX, " + str (self.isIndex) + ");\n")
-    stream.write ("    ft.setInt    (IS_OPTIONAL, " + str (self.isOptional) + ");\n")
+    stream.write ("    ft[NAME] = \"" + self.name + "\";\n")
+    stream.write ("    ft[TYPE] = TYPE_" + self.type.type.base +";\n")
+    stream.write ("    ft[ACCESS] = ACCESS_" + self.access + ";\n")
+    stream.write ("    ft[IS_INDEX] = " + str (self.isIndex) + ";\n")
+    stream.write ("    ft[IS_OPTIONAL] = " + str (self.isOptional) + ";\n")
     if self.unit != None:
-      stream.write ("    ft.setString (UNIT,   \"" + self.unit   + "\");\n")
+      stream.write ("    ft[UNIT] = \"" + self.unit   + "\";\n")
     if self.min != None:
-      stream.write ("    ft.setInt    (MIN,    " + self.min    + ");\n")
+      stream.write ("    ft[MIN] = " + self.min    + ";\n")
     if self.max != None:
-      stream.write ("    ft.setInt    (MAX,    " + self.max    + ");\n")
+      stream.write ("    ft[MAX] = " + self.max    + ";\n")
     if self.maxLen != None:
-      stream.write ("    ft.setInt    (MAXLEN, " + self.maxLen + ");\n")
+      stream.write ("    ft[MAXLEN] = " + self.maxLen + ";\n")
     if self.desc != None:
-      stream.write ("    ft.setString (DESC,   \"" + self.desc   + "\");\n")
-    stream.write ("    buf.put (ft);\n\n")
+      stream.write ("    ft[DESC] = \"" + self.desc   + "\";\n")
+    stream.write ("    buf.putMap(ft);\n\n")
 
 
   def genSchemaMap(self, stream):
@@ -594,13 +594,13 @@ class SchemaStatistic:
 
   def genSchemaText (self, stream, name, desc):
     stream.write ("    ft.clear();\n")
-    stream.write ("    ft.setString (NAME,   \"" + name + "\");\n")
-    stream.write ("    ft.setInt    (TYPE,   TYPE_" + self.type.type.base +");\n")
+    stream.write ("    ft[NAME] = \"" + name + "\";\n")
+    stream.write ("    ft[TYPE] = TYPE_" + self.type.type.base +";\n")
     if self.unit != None:
-      stream.write ("    ft.setString (UNIT,   \"" + self.unit   + "\");\n")
+      stream.write ("    ft[UNIT] = \"" + self.unit   + "\";\n")
     if desc != None:
-      stream.write ("    ft.setString (DESC,   \"" + desc   + "\");\n")
-    stream.write ("    buf.put (ft);\n\n")
+      stream.write ("    ft[DESC] = \"" + desc   + "\";\n")
+    stream.write ("    buf.putMap(ft);\n\n")
 
   def genSchemaTextMap(self, stream, name, desc):
     stream.write ("    {\n")
@@ -782,24 +782,24 @@ class SchemaArg:
 
   def genSchema (self, stream, event=False):
     stream.write ("    ft.clear();\n")
-    stream.write ("    ft.setString (NAME,    \"" + self.name + "\");\n")
-    stream.write ("    ft.setInt    (TYPE,    TYPE_" + self.type.type.base +");\n")
+    stream.write ("    ft[NAME] = \"" + self.name + "\";\n")
+    stream.write ("    ft[TYPE] = TYPE_" + self.type.type.base +";\n")
     if (not event):
-      stream.write ("    ft.setString (DIR,     \"" + self.dir + "\");\n")
+      stream.write ("    ft[DIR] = \"" + self.dir + "\";\n")
     if self.unit != None:
-      stream.write ("    ft.setString (UNIT,    \"" + self.unit   + "\");\n")
+      stream.write ("    ft[UNIT] = \"" + self.unit + "\";\n")
     if not event:
       if self.min != None:
-        stream.write ("    ft.setInt    (MIN,     " + self.min    + ");\n")
+        stream.write ("    ft[MIN] = " + self.min + ";\n")
       if self.max != None:
-        stream.write ("    ft.setInt    (MAX,     " + self.max    + ");\n")
+        stream.write ("    ft[MAX] = " + self.max + ";\n")
       if self.maxLen != None:
-        stream.write ("    ft.setInt    (MAXLEN,  " + self.maxLen + ");\n")
+        stream.write ("    ft[MAXLEN] = " + self.maxLen + ";\n")
       if self.default != None:
-        stream.write ("    ft.setString (DEFAULT, \"" + self.default + "\");\n")
+        stream.write ("    ft[DEFAULT] = \"" + self.default + "\";\n")
     if self.desc != None:
-      stream.write ("    ft.setString (DESC,    \"" + self.desc + "\");\n")
-    stream.write ("    buf.put (ft);\n\n")
+      stream.write ("    ft[DESC] = \"" + self.desc + "\";\n")
+    stream.write ("    buf.putMap(ft);\n\n")
 
   def genSchemaMap (self, stream, event=False):
     stream.write ("        {\n")
@@ -896,11 +896,11 @@ class SchemaMethod:
 
   def genSchema (self, stream, variables):
     stream.write ("    ft.clear();\n")
-    stream.write ("    ft.setString (NAME,     \"" + self.name + "\");\n")
-    stream.write ("    ft.setInt    (ARGCOUNT, " + str (len (self.args)) + ");\n")
+    stream.write ("    ft[NAME] =  \"" + self.name + "\";\n")
+    stream.write ("    ft[ARGCOUNT] = " + str (len (self.args)) + ";\n")
     if self.desc != None:
-      stream.write ("    ft.setString (DESC,     \"" + self.desc + "\");\n")
-    stream.write ("    buf.put (ft);\n\n")
+      stream.write ("    ft[DESC] = \"" + self.desc + "\";\n")
+    stream.write ("    buf.putMap(ft);\n\n")
     for arg in self.args:
       arg.genSchema (stream)
 
@@ -1349,7 +1349,7 @@ class SchemaClass:
         stream.write("\n")
         stream.write("    char *_tmpBuf = new char[inStr.length()];\n")
         stream.write("    memcpy(_tmpBuf, inStr.data(), inStr.length());\n")
-        stream.write("    ::qpid::framing::Buffer inBuf(_tmpBuf, inStr.length());\n")
+        stream.write("    ::qpid::management::Buffer inBuf(_tmpBuf, inStr.length());\n")
 
     for method in self.methods:
       stream.write ("\n    if (methodName == \"" + method.getName () + "\") {\n")
