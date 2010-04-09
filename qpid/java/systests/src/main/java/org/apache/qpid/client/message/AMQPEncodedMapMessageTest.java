@@ -21,8 +21,10 @@ package org.apache.qpid.client.message;
  */
 
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.jms.Connection;
@@ -137,6 +139,116 @@ public class AMQPEncodedMapMessageTest extends QpidTestCase
         assertEquals(Integer.MAX_VALUE - 5000,m.getInt("Int"));
         assertEquals((short)58,m.getShort("Short"));
         assertEquals("Hello",m.getString("String"));
+    }
+    
+    
+    public void testMessageWithListEntries() throws JMSException
+    {
+        MapMessage m = _session.createMapMessage();
+        
+        List<String> myList = getList();
+        
+        m.setObject("List", myList);            
+        _producer.send(m);
+        
+        AMQPEncodedMapMessage msg = (AMQPEncodedMapMessage)_consumer.receive(RECEIVE_TIMEOUT);
+        assertNotNull("Message was not received on time",msg);            
+        assertEquals("Message content-type is incorrect",
+                        AMQPEncodedMapMessage.MIME_TYPE,
+                        ((AbstractJMSMessage)msg).getContentType());
+        
+        List<String> list = (List<String>)msg.getObject("List");
+        assertNotNull("List not received",list);
+        int i = 1;
+        for (String str: list)
+        {
+            assertEquals("String" + i,str);
+            i++;
+        }
+    }
+    
+    public void testMessageWithMapEntries() throws JMSException
+    {
+        MapMessage m = _session.createMapMessage();
+        
+        Map<String,String> myMap = getMap();
+        
+        m.setObject("Map", myMap);            
+        _producer.send(m);
+        
+        AMQPEncodedMapMessage msg = (AMQPEncodedMapMessage)_consumer.receive(RECEIVE_TIMEOUT);
+        assertNotNull("Message was not received on time",msg);            
+        assertEquals("Message content-type is incorrect",
+                        AMQPEncodedMapMessage.MIME_TYPE,
+                        ((AbstractJMSMessage)msg).getContentType());
+        
+        Map<String,String> map = (Map<String,String>)msg.getObject("Map");
+        assertNotNull("Map not received",map);
+        int i = 1;
+        for (String str: map.keySet())
+        {
+            assertEquals("String" + i,map.get(str));
+            i++;
+        }
+    }
+    
+    public void testMessageWithNestedListsAndMaps() throws JMSException
+    {
+        MapMessage m = _session.createMapMessage();
+        
+        Map<String,Object> myMap = new HashMap<String,Object>();
+        myMap.put("map", getMap());
+        myMap.put("list", getList());
+        
+        m.setObject("Map", myMap);            
+        _producer.send(m);
+        
+        AMQPEncodedMapMessage msg = (AMQPEncodedMapMessage)_consumer.receive(RECEIVE_TIMEOUT);
+        assertNotNull("Message was not received on time",msg);            
+        assertEquals("Message content-type is incorrect",
+                        AMQPEncodedMapMessage.MIME_TYPE,
+                        ((AbstractJMSMessage)msg).getContentType());
+        
+        Map<String,Object> mainMap = (Map<String,Object>)msg.getObject("Map");
+        assertNotNull("Main Map not received",mainMap);
+        
+        Map<String,String> map = (Map<String,String>)mainMap.get("map");
+        assertNotNull("Nested Map not received",map);
+        int i = 1;
+        for (String str: map.keySet())
+        {
+            assertEquals("String" + i,map.get(str));
+            i++;
+        }
+        
+        List<String> list = (List<String>)mainMap.get("list");
+        assertNotNull("Nested List not received",list);
+        i = 1;
+        for (String str: list)
+        {
+            assertEquals("String" + i,str);
+            i++;
+        }
+    }
+    
+    private List<String> getList()
+    {
+        List<String> myList = new ArrayList<String>();
+        myList.add("String1");
+        myList.add("String2");
+        myList.add("String3");
+        
+        return myList;
+    }
+    
+    private Map<String,String> getMap()
+    {
+        Map<String,String> myMap = new HashMap<String,String>();
+        myMap.put("Key1","String1");
+        myMap.put("Key2","String2");
+        myMap.put("Key3","String3");
+        
+        return myMap;
     }
     
     public void tearDown() throws Exception
