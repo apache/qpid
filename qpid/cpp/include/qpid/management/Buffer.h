@@ -19,8 +19,8 @@
  * under the License.
  *
  */
-#include "qpid/Exception.h"
 #include "qpid/CommonImportExport.h"
+#include "qpid/types/Exception.h"
 #include "qpid/types/Variant.h"
 #include <string>
 
@@ -31,8 +31,8 @@ namespace framing {
 
 namespace management {
 
-struct OutOfBounds : qpid::Exception {
-    OutOfBounds() : qpid::Exception(std::string("Out of Bounds")) {}
+struct OutOfBounds : qpid::types::Exception {
+    OutOfBounds() : qpid::types::Exception(std::string("Out of Bounds")) {}
 };
 
 
