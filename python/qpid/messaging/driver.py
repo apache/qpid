@@ -380,6 +380,11 @@ class Driver:
 
     self.update_status()
 
+    self._notify()
+
+  def _notify(self):
+    if self.connection.error:
+      self.connection._condition.gc()
     self.connection._waiter.notifyAll()
 
   def close_engine(self, e=None):
@@ -434,12 +439,12 @@ class Driver:
       notify = True
 
     if self.update_status() or notify:
-      self.connection._waiter.notifyAll()
+      self._notify()
 
   @synchronized
   def timeout(self):
     self.dispatch()
-    self.connection._waiter.notifyAll()
+    self._notify()
 
   def dispatch(self):
     try:
