@@ -331,7 +331,7 @@ void ManagementObject::setReference(ObjectId) {}
 int ManagementObject::getThreadIndex() {
     static QPID_TSS int thisIndex = -1;
     if (thisIndex == -1) {
-        sys::Mutex::ScopedLock mutex(accessLock);
+        Mutex::ScopedLock mutex(accessLock);
         thisIndex = nextThreadIndex;
         if (nextThreadIndex < maxThreads - 1)
             nextThreadIndex++;
