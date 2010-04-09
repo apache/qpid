@@ -50,7 +50,7 @@ class Base(Test):
     self.rcv = self.setup_receiver()
 
   def teardown(self):
-    if self.conn is not None and self.conn.connected():
+    if self.conn is not None and self.conn.attached():
       self.conn.close()
 
   def content(self, base, count = None):
@@ -146,9 +146,9 @@ class Base(Test):
 
   def transport(self):
     if self.broker.scheme == self.broker.AMQPS:
-      return "tls"
+      return "ssl"
     else:
-      return "plain"
+      return "tcp"
 
   def connection_options(self):
     return {"reconnect": self.reconnect(),

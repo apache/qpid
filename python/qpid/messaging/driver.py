@@ -324,9 +324,10 @@ class Driver:
     self._selector = Selector.default()
     self._attempts = 0
     self._delay = self.connection.reconnect_interval_min
+    urls = [URL(u) for u in self.connection.reconnect_urls]
     self._hosts = [(self.connection.host, self.connection.port)] + \
-        self.connection.reconnect_hosts
-    self._reconnect_log = self.connection.options.get("reconnect_log", True)
+        [(u.host, u.port) for u in urls]
+    self._reconnect_log = self.connection.reconnect_log
     self._host = 0
     self._retrying = False
     self._transport = None
@@ -463,7 +464,7 @@ class Driver:
       self.engine = Engine(self.connection)
       self.engine.open()
       rawlog.debug("OPEN[%s]: %s:%s", self.log_id, host, port)
-      trans = getattr(transports, self.connection.transport, None)
+      trans = transports.TRANSPORTS.get(self.connection.transport)
       if trans:
         self._transport = trans(host, port)
       else:
@@ -507,9 +508,7 @@ class Engine:
     self._channels = 0
     self._sessions = {}
 
-    options = self.connection.options
-
-    self.address_cache = Cache(options.get("address_ttl", 60))
+    self.address_cache = Cache(self.connection.address_ttl)
 
     self._status = CLOSED
     self._buf = ""
@@ -528,11 +527,11 @@ class Engine:
       self._sasl.setAttr("password", self.connection.password)
     if self.connection.host:
       self._sasl.setAttr("host", self.connection.host)
-    self._sasl.setAttr("service", options.get("service", "qpidd"))
-    if "min_ssf" in options:
-      self._sasl.setAttr("minssf", options["min_ssf"])
-    if "max_ssf" in options:
-      self._sasl.setAttr("maxssf", options["max_ssf"])
+    self._sasl.setAttr("service", self.connection.sasl_service)
+    if self.connection.sasl_min_ssf is not None:
+      self._sasl.setAttr("minssf", self.connection.sasl_min_ssf)
+    if self.connection.sasl_max_ssf is not None:
+      self._sasl.setAttr("maxssf", self.connection.sasl_max_ssf)
     self._sasl.init()
     self._sasl_encode = False
     self._sasl_decode = False
@@ -619,8 +618,8 @@ class Engine:
                          (cli_major, cli_minor, major, minor))
 
   def do_connection_start(self, start):
-    if self.connection.mechanisms:
-      permitted = self.connection.mechanisms.split()
+    if self.connection.sasl_mechanisms:
+      permitted = self.connection.sasl_mechanisms.split()
       mechs = [m for m in start.mechanisms if m in permitted]
     else:
       mechs = start.mechanisms

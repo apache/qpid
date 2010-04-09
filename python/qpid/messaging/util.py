@@ -26,31 +26,31 @@ from threading import Thread
 
 log = getLogger("qpid.messaging.util")
 
-def auto_fetch_reconnect_hosts(conn):
-  ssn = conn.session("auto-fetch-reconnect-hosts")
+def auto_fetch_reconnect_urls(conn):
+  ssn = conn.session("auto-fetch-reconnect-urls")
   rcv = ssn.receiver("amq.failover")
   rcv.capacity = 10
 
   def main():
     while True:
       msg = rcv.fetch()
-      set_reconnect_hosts(conn, msg)
+      set_reconnect_urls(conn, msg)
       ssn.acknowledge(msg, sync=False)
 
-  thread = Thread(name="auto-fetch-reconnect-hosts", target=main)
+  thread = Thread(name="auto-fetch-reconnect-urls", target=main)
   thread.setDaemon(True)
   thread.start()
 
 
-def set_reconnect_hosts(conn, msg):
-  reconnect_hosts = []
+def set_reconnect_urls(conn, msg):
+  reconnect_urls = []
   urls = msg.properties["amq.failover"]
   for u in urls:
     if u.startswith("amqp:tcp:"):
       parts = u.split(":")
       host, port = parts[2:4]
-      reconnect_hosts.append((host, port))
-  conn.reconnect_hosts = reconnect_hosts
-  log.warn("set reconnect_hosts for conn %s: %s", conn, reconnect_hosts)
+      reconnect_urls.append("%s:%s" % (host, port))
+  conn.reconnect_urls = reconnect_urls
+  log.warn("set reconnect_urls for conn %s: %s", conn, reconnect_urls)
 
-__all__ = ["auto_fetch_reconnect_hosts", "set_reconnect_hosts"]
+__all__ = ["auto_fetch_reconnect_urls", "set_reconnect_urls"]

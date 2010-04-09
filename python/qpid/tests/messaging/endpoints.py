@@ -28,26 +28,21 @@ from qpid.tests.messaging import Base
 
 class SetupTests(Base):
 
-  def testOpen(self):
-    # XXX: need to flesh out URL support/syntax
-    self.conn = Connection.open(self.broker.host, self.broker.port,
-                                **self.connection_options())
+  def testEstablish(self):
+    self.conn = Connection.establish(self.broker, **self.connection_options())
     self.ping(self.conn.session())
 
-  def testConnect(self):
-    # XXX: need to flesh out URL support/syntax
-    self.conn = Connection(self.broker.host, self.broker.port,
-                           **self.connection_options())
-    self.conn.connect()
+  def testOpen(self):
+    self.conn = Connection(self.broker, **self.connection_options())
+    self.conn.open()
     self.ping(self.conn.session())
 
   def testConnectError(self):
     try:
-      self.conn = Connection.open("localhost", 0)
+      self.conn = Connection.establish("localhost:0")
       assert False, "connect succeeded"
     except ConnectError, e:
-      # XXX: should verify that e includes appropriate diagnostic info
-      pass
+      assert "Connection refused" in str(e)
 
   def use_fds(self):
     fds = []
@@ -66,8 +61,7 @@ class SetupTests(Base):
       for i in range(32):
         if fds: os.close(fds.pop())
       for i in xrange(64):
-        conn = Connection.open(self.broker.host, self.broker.port,
-                               **self.connection_options())
+        conn = Connection.establish(self.broker, **self.connection_options())
         conn.close()
     finally:
       while fds:
@@ -76,8 +70,8 @@ class SetupTests(Base):
   def testReconnect(self):
     options = self.connection_options()
     import socket
-    from qpid.messaging import transports
-    real = transports.plain
+    from qpid.messaging.transports import TRANSPORTS
+    real = TRANSPORTS["tcp"]
 
     class flaky:
 
@@ -112,7 +106,7 @@ class SetupTests(Base):
       def close(self):
         self.real.close()
 
-    transports.flaky = flaky
+    TRANSPORTS["flaky"] = flaky
 
     options["reconnect"] = True
     options["reconnect_interval"] = 0
@@ -120,7 +114,7 @@ class SetupTests(Base):
     options["reconnect_log"] = False
     options["transport"] = "flaky"
 
-    self.conn = Connection.open(self.broker.host, self.broker.port, **options)
+    self.conn = Connection.establish(self.broker, **options)
     ssn = self.conn.session()
     snd = ssn.sender("test-reconnect-queue; {create: always, delete: always}")
     rcv = ssn.receiver(snd.target)
@@ -153,8 +147,7 @@ class SetupTests(Base):
 class ConnectionTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port,
-                           **self.connection_options())
+    return Connection.establish(self.broker, **self.connection_options())
 
   def testSessionAnon(self):
     ssn1 = self.conn.session()
@@ -172,23 +165,23 @@ class ConnectionTests(Base):
     assert ssn1 is self.conn.session("one")
     assert ssn2 is self.conn.session("two")
 
-  def testDisconnect(self):
+  def testDetach(self):
     ssn = self.conn.session()
     self.ping(ssn)
-    self.conn.disconnect()
+    self.conn.detach()
     try:
       self.ping(ssn)
       assert False, "ping succeeded"
-    except Disconnected:
-      # this is the expected failure when pinging on a disconnected
+    except Detached:
+      # this is the expected failure when pinging on a detached
       # connection
       pass
-    self.conn.connect()
+    self.conn.attach()
     self.ping(ssn)
 
   def testClose(self):
     self.conn.close()
-    assert not self.conn.connected()
+    assert not self.conn.attached()
 
 ACK_QC = 'test-ack-queue; {create: always}'
 ACK_QD = 'test-ack-queue; {delete: always}'
@@ -196,8 +189,7 @@ ACK_QD = 'test-ack-queue; {delete: always}'
 class SessionTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port,
-                           **self.connection_options())
+    return Connection.establish(self.broker, **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -230,11 +222,11 @@ class SessionTests(Base):
     self.ssn.acknowledge(msg)
     snd2 = self.ssn.receiver('test-rcv-queue; {delete: always}')
 
-  def testDisconnectedReceiver(self):
-    self.conn.disconnect()
+  def testDetachedReceiver(self):
+    self.conn.detach()
     rcv = self.ssn.receiver("test-dis-rcv-queue; {create: always, delete: always}")
-    m = self.content("testDisconnectedReceiver")
-    self.conn.connect()
+    m = self.content("testDetachedReceiver")
+    self.conn.attach()
     snd = self.ssn.sender("test-dis-rcv-queue")
     snd.send(m)
     self.drain(rcv, expected=[m])
@@ -475,7 +467,7 @@ class SessionTests(Base):
     try:
       self.ping(self.ssn)
       assert False, "ping succeeded"
-    except Disconnected:
+    except Detached:
       pass
 
 RECEIVER_Q = 'test-receiver-queue; {create: always, delete: always}'
@@ -483,8 +475,7 @@ RECEIVER_Q = 'test-receiver-queue; {create: always, delete: always}'
 class ReceiverTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port,
-                           **self.connection_options())
+    return Connection.establish(self.broker, **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -653,8 +644,7 @@ class ReceiverTests(Base):
 class AddressTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port,
-                           **self.connection_options())
+    return Connection.establish(self.broker, **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -896,8 +886,8 @@ test-link-bindings-queue; {
     rcv = self.ssn.receiver("amq.topic; {link: {reliability: %s}}" % reliability)
     for m in messages:
       snd.send(m)
-    self.conn.disconnect()
-    self.conn.connect()
+    self.conn.detach()
+    self.conn.attach()
     self.drain(rcv, expected=expected)
 
   def testReliabilityUnreliable(self):
@@ -924,8 +914,7 @@ UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"
 class AddressErrorTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port,
-                           **self.connection_options())
+    return Connection.establish(self.broker, **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
@@ -991,8 +980,7 @@ SENDER_Q = 'test-sender-q; {create: always, delete: always}'
 class SenderTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port,
-                           **self.connection_options())
+    return Connection.establish(self.broker, **self.connection_options())
 
   def setup_session(self):
     return self.conn.session()
