@@ -52,13 +52,13 @@ class Dispatcher:
 
       count = len(replies)
       sequence = 1
-      for r in replies:
+      for to, r in replies:
         r.correlation_id = msg.correlation_id
         r.properties["count"] = count
         r.properties["sequence"] = sequence
         sequence += 1
         try:
-          snd = session.sender(r.to)
+          snd = session.sender(to)
           snd.send(r)
         except SendError, e:
           print e

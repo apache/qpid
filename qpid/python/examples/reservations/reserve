@@ -21,7 +21,6 @@
 import optparse, os, sys, time
 from uuid import uuid4
 from qpid.messaging import *
-from qpid.util import URL
 from qpid.log import enable, DEBUG, WARN
 from common import *
 
@@ -58,9 +57,7 @@ if args:
 else:
   patterns = ["*"]
 
-url = URL(opts.broker)
-conn = Connection.open(url.host, url.port or AMQP_PORT,
-                       username=url.user, password=url.password)
+conn = Connection.establish(opts.broker)
 
 if opts.release:
   request_type = "release"
