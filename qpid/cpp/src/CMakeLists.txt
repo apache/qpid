@@ -448,7 +448,7 @@ check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (MSVC)
-    add_definitions( 
+    add_definitions(
       /D "_CRT_NONSTDC_NO_WARNINGS"
       /D "NOMINMAX"
       /D "WIN32_LEAN_AND_MEAN"
@@ -510,7 +510,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   # POSIX (Non-Windows) platforms have a lot of overlap in sources; the only
   # major difference is the poller module.
   if (CMAKE_SYSTEM_NAME STREQUAL Linux)
-    set (qpid_poller_module 
+    set (qpid_poller_module
       qpid/sys/epoll/EpollPoller.cpp
       qpid/sys/posix/SystemInfo.cpp
     )
@@ -619,6 +619,8 @@ set (qpidcommon_SOURCES
      qpid/log/OstreamOutput.cpp
      qpid/log/Selector.cpp
      qpid/log/Statement.cpp
+     qpid/management/Buffer.cpp
+     qpid/management/Mutex.cpp
      qpid/management/Manageable.cpp
      qpid/management/ManagementObject.cpp
      qpid/sys/AggregateOutput.cpp
