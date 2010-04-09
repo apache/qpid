@@ -1190,4 +1190,45 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         }
     }
 
+    public void mgmtCloseChannel(int channelId)
+    {
+        MethodRegistry methodRegistry = getMethodRegistry();
+        ChannelCloseBody responseBody =
+                methodRegistry.createChannelCloseBody(
+                        AMQConstant.REPLY_SUCCESS.getCode(),
+                        new AMQShortString("The channel was closed using the broker's management interface."),
+                        0,0);
+
+        // This seems ugly but because we use AMQChannel.close() in both normal
+        // broker operation and as part of the management interface it cannot
+        // be avoided. The Current Actor will be null when this method is
+        // called via the QMF management interface. As such we need to set one.
+        boolean removeActor = false;
+        if (CurrentActor.get() == null)
+        {
+            removeActor = true;
+            CurrentActor.set(new ManagementActor(_actor.getRootMessageLogger()));
+        }
+
+        try
+        {
+            writeFrame(responseBody.generateFrame(channelId));
+
+            try
+            {
+                closeChannel(channelId);
+            }
+            catch (AMQException ex)
+            {
+                throw new RuntimeException(ex);
+            }
+        }
+        finally
+        {
+            if (removeActor)
+            {
+                CurrentActor.remove();
+            }
+        }
+    }
 }

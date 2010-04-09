@@ -233,4 +233,5 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
 
     void closeIfLingeringClosedChannels();
 
+    void mgmtCloseChannel(int channelId);
 }
