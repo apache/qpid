@@ -174,6 +174,7 @@ class Connection:
 
   def _check_error(self, exc=ConnectionError):
     if self.error:
+      self._condition.gc()
       raise exc(*self.error)
 
   def _ewait(self, predicate, timeout=None, exc=ConnectionError):
