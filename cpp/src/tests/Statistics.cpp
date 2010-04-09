@@ -21,9 +21,13 @@
 #include "Statistics.h"
 #include <qpid/messaging/Message.h>
 #include <ostream>
+#include <iomanip>
 
 namespace qpid {
 namespace tests {
+
+using namespace std;
+const int WIDTH=10;
 
 Statistic::~Statistic() {}
 
@@ -37,19 +41,19 @@ void Throughput::message(const messaging::Message&) {
     }
 }
 
-void Throughput::header(std::ostream& o) const {
-    o << "msg/sec";
+void Throughput::header(ostream& o) const {
+    o << setw(WIDTH) << "msg/sec";
 }
 
-void Throughput::report(std::ostream& o) const {
+void Throughput::report(ostream& o) const {
     double elapsed(int64_t(sys::Duration(start, sys::now()))/double(sys::TIME_SEC));
-    o << messages/elapsed;
+    o << setw(WIDTH) << messages/elapsed;
 }
 
 ThroughputAndLatency::ThroughputAndLatency() :
     total(0),
-    min(std::numeric_limits<double>::max()),
-    max(std::numeric_limits<double>::min())
+    min(numeric_limits<double>::max()),
+    max(numeric_limits<double>::min())
 {}
 
 void ThroughputAndLatency::message(const messaging::Message& m) {
@@ -67,22 +71,25 @@ void ThroughputAndLatency::message(const messaging::Message& m) {
     }
 }
 
-void ThroughputAndLatency::header(std::ostream& o) const {
+void ThroughputAndLatency::header(ostream& o) const {
     Throughput::header(o);
-    o << "  latency(ms)min max avg";
+    o << setw(3*WIDTH) << "latency(ms): min max avg";
 }
 
-void ThroughputAndLatency::report(std::ostream& o) const {
+void ThroughputAndLatency::report(ostream& o) const {
     Throughput::report(o);
-    o << "  ";
     if (messages)
-        o << min << " "  << max << " " << total/messages;
+        o << setw(WIDTH) << min << setw(WIDTH)  << max << setw(WIDTH) << total/messages;
     else
         o << "Can't compute latency for 0 messages.";
 }
 
-ReporterBase::ReporterBase(std::ostream& o, int batch)
-    : wantBatch(batch), batchCount(0), headerPrinted(false), out(o) {}
+ReporterBase::ReporterBase(ostream& o, int batch)
+    : wantBatch(batch), batchCount(0), headerPrinted(false), out(o)
+{
+    o.precision(2);
+    o << fixed;
+}
 
 ReporterBase::~ReporterBase() {}
 
@@ -96,7 +103,7 @@ void ReporterBase::message(const messaging::Message& m) {
         if (++batchCount == wantBatch) {
             header();
             batch->report(out);
-            out << std::endl;
+            out << endl;
             batch = create();
             batchCount = 0;
         }
@@ -107,14 +114,14 @@ void ReporterBase::message(const messaging::Message& m) {
 void ReporterBase::report() {
     header();
     overall->report(out);
-    out << std::endl;
+    out << endl;
 }
 
 void ReporterBase::header() {
     if (!headerPrinted) {
         if (!overall.get()) overall = create();
         overall->header(out);
-        out << std::endl;
+        out << endl;
         headerPrinted = true;
     }
 }
