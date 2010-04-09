@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/Exception.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/ImportExport.h"
 #include "qpid/messaging/Handle.h"
@@ -39,11 +39,6 @@ class Sender;
 class Receiver;
 class SessionImpl;
 class Subscription;
-
-struct KeyError : qpid::Exception
-{
-    QPID_CLIENT_EXTERN KeyError(const std::string&);
-};
 
 /**
  * A session represents a distinct 'conversation' which can involve
@@ -158,6 +153,9 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * with.
      */
     QPID_CLIENT_EXTERN Connection getConnection() const;
+
+    QPID_CLIENT_EXTERN bool hasError();
+    QPID_CLIENT_EXTERN void checkError();
 
   private:
   friend class qpid::messaging::PrivateImplRef<Session>;

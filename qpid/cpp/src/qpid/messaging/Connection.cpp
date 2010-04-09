@@ -39,7 +39,7 @@ Connection::Connection(const Connection& c) : Handle<ConnectionImpl>() { PI::cop
 Connection& Connection::operator=(const Connection& c) { return PI::assign(*this, c); }
 Connection::~Connection() { PI::dtor(*this); }
 
-Connection::Connection(const std::string& url, const std::string& o)
+Connection::Connection(const std::string& url, const std::string& o) throw(InvalidOptionString)
 { 
     Variant::Map options;
     AddressParser parser(o);
@@ -54,9 +54,8 @@ Connection::Connection(const std::string& url, const Variant::Map& options)
     PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(url, options));
 }
 
-void Connection::connect() { impl->connect(); }
-bool Connection::isConnected() { return impl->isConnected(); }
-void Connection::detach() { impl->detach(); }
+void Connection::open() { impl->open(); }
+bool Connection::isOpen() { return impl->isOpen(); }
 void Connection::close() { impl->close(); }
 Session Connection::createSession(const std::string& name) { return impl->newSession(false, name); }
 Session Connection::createTransactionalSession(const std::string& name)
@@ -68,7 +67,5 @@ void Connection::setOption(const std::string& name, const Variant& value)
 { 
     impl->setOption(name, value);
 }
-
-InvalidOptionString::InvalidOptionString(const std::string& msg) : Exception(msg) {}
 
 }} // namespace qpid::messaging

@@ -116,7 +116,7 @@ struct MessagingFixture : public BrokerFixture
     static Connection open(uint16_t port)
     {
         Connection connection((boost::format("amqp:tcp:localhost:%1%") % (port)).str());
-        connection.connect();
+        connection.open();
         return connection;
     }
 
@@ -266,20 +266,20 @@ QPID_AUTO_TEST_CASE(testSenderError)
 {
     MessagingFixture fix;
     ScopedSuppressLogging sl;
-    BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress"), qpid::messaging::InvalidAddress);
+    BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress"), qpid::messaging::NotFound);
     fix.session = fix.connection.createSession();
     BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress; {create:receiver}"),
-                      qpid::messaging::InvalidAddress);
+                      qpid::messaging::NotFound);
 }
 
 QPID_AUTO_TEST_CASE(testReceiverError)
 {
     MessagingFixture fix;
     ScopedSuppressLogging sl;
-    BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress"), qpid::messaging::InvalidAddress);
+    BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress"), qpid::messaging::NotFound);
     fix.session = fix.connection.createSession();
     BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress; {create:sender}"),
-                      qpid::messaging::InvalidAddress);
+                      qpid::messaging::NotFound);
 }
 
 QPID_AUTO_TEST_CASE(testSimpleTopic)
@@ -766,10 +766,10 @@ QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
     std::string a2 = "q; {assert:receiver, node:{durable:true, x-declare:{arguments:{qpid.max-count:100}}}}";
     Sender s2 = fix.session.createSender(a2);
     s2.close();
-    BOOST_CHECK_THROW(fix.session.createReceiver(a2), qpid::messaging::InvalidAddress);
+    BOOST_CHECK_THROW(fix.session.createReceiver(a2), qpid::messaging::AssertionFailed);
 
     std::string a3 = "q; {assert:sender, node:{x-declare:{arguments:{qpid.max-count:99}}}}";
-    BOOST_CHECK_THROW(fix.session.createSender(a3), qpid::messaging::InvalidAddress);
+    BOOST_CHECK_THROW(fix.session.createSender(a3), qpid::messaging::AssertionFailed);
     Receiver r3 = fix.session.createReceiver(a3);
     r3.close();
 

@@ -94,6 +94,15 @@ Connection Session::getConnection() const
     return impl->getConnection(); 
 }
 
-KeyError::KeyError(const std::string& msg) : Exception(msg) {}
+void Session::checkError() { impl->checkError(); }
+bool Session::hasError() 
+{ 
+    try {
+        checkError();
+        return false;
+    } catch (const std::exception&) {
+        return true;
+    }
+}
 
 }} // namespace qpid::messaging

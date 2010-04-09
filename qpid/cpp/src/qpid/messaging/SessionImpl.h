@@ -54,6 +54,7 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual Sender getSender(const std::string& name) const = 0;
     virtual Receiver getReceiver(const std::string& name) const = 0;
     virtual Connection getConnection() const = 0;
+    virtual void checkError() = 0;
   private:
 };
 }} // namespace qpid::messaging

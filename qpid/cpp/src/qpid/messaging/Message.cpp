@@ -111,13 +111,13 @@ template <class C> struct MessageCodec
         checkEncoding(requested) || checkEncoding(message.getContentType());
     }
 
-    template <class T> static void decode(const Message& message, T& object, const std::string& encoding)
+    static void decode(const Message& message, typename C::ObjectType& object, const std::string& encoding)
     {
         checkEncoding(message, encoding);
         C::decode(message.getContent(), object);
     }
 
-    template <class T> static void encode(const T& map, Message& message, const std::string& encoding)
+    static void encode(const typename C::ObjectType& map, Message& message, const std::string& encoding)
     {
         checkEncoding(message, encoding);
         std::string content;

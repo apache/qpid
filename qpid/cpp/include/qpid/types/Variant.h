@@ -26,7 +26,7 @@
 #include <ostream>
 #include <string>
 #include "Uuid.h"
-#include "qpid/Exception.h"
+#include "qpid/types/Exception.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/CommonImportExport.h"
 
@@ -36,7 +36,7 @@ namespace types {
 /**
  * Thrown when an illegal conversion of a variant is attempted.
  */
-struct InvalidConversion : public qpid::Exception 
+struct InvalidConversion : public Exception 
 {
     InvalidConversion(const std::string& msg);
 };

@@ -22,6 +22,7 @@
 #include "AddressResolution.h"
 #include "MessageSource.h"
 #include "SessionImpl.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Session.h"
 
@@ -29,6 +30,7 @@ namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
+using qpid::messaging::NoMessageAvailable;
 using qpid::messaging::Receiver;
 using qpid::messaging::Duration;
 
@@ -44,14 +46,14 @@ void ReceiverImpl::received(qpid::messaging::Message&)
 qpid::messaging::Message ReceiverImpl::get(qpid::messaging::Duration timeout) 
 {
     qpid::messaging::Message result;
-    if (!get(result, timeout)) throw Receiver::NoMessageAvailable();
+    if (!get(result, timeout)) throw NoMessageAvailable();
     return result;
 }
     
 qpid::messaging::Message ReceiverImpl::fetch(qpid::messaging::Duration timeout) 
 {
     qpid::messaging::Message result;
-    if (!fetch(result, timeout)) throw Receiver::NoMessageAvailable();
+    if (!fetch(result, timeout)) throw NoMessageAvailable();
     return result;
 }
 
