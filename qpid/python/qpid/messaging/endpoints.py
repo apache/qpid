@@ -717,13 +717,20 @@ class Sender:
     return result
 
   @synchronized
-  def pending(self):
+  def unsettled(self):
     """
     Returns the number of messages awaiting acknowledgment.
     @rtype: int
     @return: the number of unacknowledged messages
     """
     return self.queued - self.acked
+
+  @synchronized
+  def available(self):
+    if self.capacity is UNLIMITED:
+      return UNLIMITED
+    else:
+      return self.capacity - self.unsettled()
 
   @synchronized
   def send(self, object, sync=True, timeout=None):
@@ -763,7 +770,7 @@ class Sender:
     if self.capacity is not UNLIMITED:
       if self.capacity <= 0:
         raise InsufficientCapacity("capacity = %s" % self.capacity)
-      if not self._ewait(lambda: self.pending() < self.capacity, timeout=timeout):
+      if not self._ewait(self.available, timeout=timeout):
         raise InsufficientCapacity("capacity = %s" % self.capacity)
 
     # XXX: what if we send the same message to multiple senders?
@@ -853,7 +860,14 @@ class Receiver(object):
     return result
 
   @synchronized
-  def pending(self):
+  def unsettled(self):
+    """
+    Returns the number of acknowledged messages awaiting confirmation.
+    """
+    return len([m for m in self.acked if m._receiver is self])
+
+  @synchronized
+  def available(self):
     """
     Returns the number of messages available to be fetched by the
     application.
