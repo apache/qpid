@@ -52,7 +52,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     void close();
     void setCapacity(uint32_t);
     uint32_t getCapacity();
-    uint32_t pending();
+    uint32_t getUnsettled();
     void init(qpid::client::AsyncSession, AddressResolution&);
     const std::string& getName() const;
     qpid::messaging::Session getSession() const;

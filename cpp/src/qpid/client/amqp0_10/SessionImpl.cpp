@@ -341,25 +341,25 @@ qpid::messaging::Receiver SessionImpl::nextReceiver(qpid::messaging::Duration ti
     return receiver;
 }
 
-uint32_t SessionImpl::available()
+uint32_t SessionImpl::getReceivable()
 {
-    return get1<Available, uint32_t>((const std::string*) 0);
+    return get1<Receivable, uint32_t>((const std::string*) 0);
 }
-uint32_t SessionImpl::available(const std::string& destination)
+uint32_t SessionImpl::getReceivable(const std::string& destination)
 {
-    return get1<Available, uint32_t>(&destination);
+    return get1<Receivable, uint32_t>(&destination);
 }
 
-struct SessionImpl::Available : Command
+struct SessionImpl::Receivable : Command
 {
     const std::string* destination;
     uint32_t result;
     
-    Available(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
-    void operator()() { result = impl.availableImpl(destination); }
+    Receivable(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
+    void operator()() { result = impl.getReceivableImpl(destination); }
 };
 
-uint32_t SessionImpl::availableImpl(const std::string* destination)
+uint32_t SessionImpl::getReceivableImpl(const std::string* destination)
 {
     if (destination) {
         return incoming.available(*destination);
@@ -368,26 +368,26 @@ uint32_t SessionImpl::availableImpl(const std::string* destination)
     }
 }
 
-uint32_t SessionImpl::pendingAck()
+uint32_t SessionImpl::getUnsettledAcks()
 {
-    return get1<PendingAck, uint32_t>((const std::string*) 0);
+    return get1<UnsettledAcks, uint32_t>((const std::string*) 0);
 }
 
-uint32_t SessionImpl::pendingAck(const std::string& destination)
+uint32_t SessionImpl::getUnsettledAcks(const std::string& destination)
 {
-    return get1<PendingAck, uint32_t>(&destination);
+    return get1<UnsettledAcks, uint32_t>(&destination);
 }
 
-struct SessionImpl::PendingAck : Command
+struct SessionImpl::UnsettledAcks : Command
 {
     const std::string* destination;
     uint32_t result;
     
-    PendingAck(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
-    void operator()() { result = impl.pendingAckImpl(destination); }
+    UnsettledAcks(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
+    void operator()() { result = impl.getUnsettledAcksImpl(destination); }
 };
 
-uint32_t SessionImpl::pendingAckImpl(const std::string* destination)
+uint32_t SessionImpl::getUnsettledAcksImpl(const std::string* destination)
 {
     if (destination) {
         return incoming.pendingAccept(*destination);

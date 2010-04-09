@@ -130,14 +130,14 @@ uint32_t ReceiverImpl::getCapacity()
     return capacity;
 }
 
-uint32_t ReceiverImpl::available()
+uint32_t ReceiverImpl::getAvailable()
 {
-    return parent->available(destination);
+    return parent->getReceivable(destination);
 }
 
-uint32_t ReceiverImpl::pendingAck()
+uint32_t ReceiverImpl::getUnsettled()
 {
-    return parent->pendingAck(destination);
+    return parent->getUnsettledAcks(destination);
 }
 
 ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name, 

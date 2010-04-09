@@ -49,8 +49,8 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual Receiver createReceiver(const Address& address) = 0;
     virtual bool nextReceiver(Receiver& receiver, Duration timeout) = 0;
     virtual Receiver nextReceiver(Duration timeout) = 0;
-    virtual uint32_t available() = 0;
-    virtual uint32_t pendingAck() = 0;
+    virtual uint32_t getReceivable() = 0;
+    virtual uint32_t getUnsettledAcks() = 0;
     virtual Sender getSender(const std::string& name) const = 0;
     virtual Receiver getReceiver(const std::string& name) const = 0;
     virtual Connection getConnection() const = 0;
