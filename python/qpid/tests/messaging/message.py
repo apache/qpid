@@ -97,7 +97,6 @@ class MessageEchoTests(Base):
 
   def testProperties(self):
     msg = Message()
-    msg.to = "to-address"
     msg.subject = "subject"
     msg.correlation_id = str(self.test_id)
     msg.durable = True

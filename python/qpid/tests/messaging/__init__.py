@@ -86,7 +86,7 @@ class Base(Test):
 
   def diff(self, m1, m2):
     result = {}
-    for attr in ("id", "subject", "user_id", "to", "reply_to",
+    for attr in ("id", "subject", "user_id", "reply_to",
                  "correlation_id", "durable", "priority", "ttl",
                  "redelivered", "properties", "content_type",
                  "content"):

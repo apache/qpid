@@ -76,8 +76,6 @@ class Message:
   @ivar id: the message id
   @type user_id: str
   @ivar user_id: the user-id of the message producer
-  @type to: str
-  @ivar to: the destination address
   @type reply_to: str
   @ivar reply_to: the address to send replies
   @type correlation_id: str
@@ -91,9 +89,8 @@ class Message:
   """
 
   def __init__(self, content=None, content_type=UNSPECIFIED, id=None,
-               subject=None, to=None, user_id=None, reply_to=None,
-               correlation_id=None, durable=None, priority=None, ttl=None,
-               properties=None):
+               subject=None, user_id=None, reply_to=None, correlation_id=None,
+               durable=None, priority=None, ttl=None, properties=None):
     """
     Construct a new message with the supplied content. The
     content-type of the message will be automatically inferred from
@@ -107,7 +104,6 @@ class Message:
     """
     self.id = id
     self.subject = subject
-    self.to = to
     self.user_id = user_id
     self.reply_to = reply_to
     self.correlation_id = correlation_id
@@ -127,8 +123,8 @@ class Message:
 
   def __repr__(self):
     args = []
-    for name in ["id", "subject", "to", "user_id", "reply_to",
-                 "correlation_id", "priority", "ttl"]:
+    for name in ["id", "subject", "user_id", "reply_to", "correlation_id",
+                 "priority", "ttl"]:
       value = self.__dict__[name]
       if value is not None: args.append("%s=%r" % (name, value))
     for name in ["durable", "redelivered", "properties"]:

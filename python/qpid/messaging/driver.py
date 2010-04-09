@@ -307,7 +307,6 @@ EMPTY_DP = DeliveryProperties()
 EMPTY_MP = MessageProperties()
 
 SUBJECT = "qpid.subject"
-TO = "qpid.to"
 
 CLOSED = "CLOSED"
 READ_ONLY = "READ_ONLY"
@@ -1120,10 +1119,6 @@ class Engine:
       if mp.application_headers is None:
         mp.application_headers = {}
       mp.application_headers[SUBJECT] = subject
-    if msg.to is not None:
-      if mp.application_headers is None:
-        mp.application_headers = {}
-      mp.application_headers[TO] = msg.to
     if msg.durable is not None:
       if msg.durable:
         dp.delivery_mode = delivery_mode.persistent
@@ -1175,7 +1170,6 @@ class Engine:
     msg = Message(content)
     msg.id = mp.message_id
     if ap is not None:
-      msg.to = ap.get(TO)
       msg.subject = ap.get(SUBJECT)
     msg.user_id = mp.user_id
     if mp.reply_to is not None:
