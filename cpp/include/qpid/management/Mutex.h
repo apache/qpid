@@ -19,6 +19,7 @@
  *
  */
 
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
     namespace sys {
@@ -52,10 +53,10 @@ namespace qpid {
             typedef ScopedLockTemplate<Mutex> ScopedLock;
             typedef ScopedUnlockTemplate<Mutex> ScopedUnlock;
 
-            Mutex();
-            ~Mutex();
-            void lock();
-            void unlock();
+            QPID_COMMON_EXTERN Mutex();
+            QPID_COMMON_EXTERN ~Mutex();
+            QPID_COMMON_EXTERN void lock();
+            QPID_COMMON_EXTERN void unlock();
         private:
             sys::Mutex* impl;
         };
