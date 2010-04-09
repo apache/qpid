@@ -40,6 +40,7 @@ class QPID_COMMON_EXTERN MapCodec
     typedef qpid::types::Variant::Map ObjectType;
     static void encode(const ObjectType&, std::string&);
     static void decode(const std::string&, ObjectType&);
+    static size_t encodedSize(const ObjectType&);
     static const std::string contentType;
   private:
 };
@@ -54,6 +55,7 @@ class QPID_COMMON_EXTERN ListCodec
     typedef qpid::types::Variant::List ObjectType;
     static void encode(const ObjectType&, std::string&);
     static void decode(const std::string&, ObjectType&);
+    static size_t encodedSize(const ObjectType&);
     static const std::string contentType;
   private:
 };

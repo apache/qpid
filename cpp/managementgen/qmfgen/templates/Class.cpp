@@ -22,8 +22,9 @@
 
 #include "qpid/log/Statement.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/framing/Buffer.h"
+#include "qpid/management/Buffer.h"
+#include "qpid/types/Variant.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
@@ -94,8 +95,8 @@ void /*MGEN:Class.NameCap*/::writeSchema (std::string& schema)
 {
     const int _bufSize=65536;
     char _msgChars[_bufSize];
-    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
-    ::qpid::framing::FieldTable ft;
+    ::qpid::management::Buffer buf(_msgChars, _bufSize);
+    ::qpid::types::Variant::Map ft;
 
     // Schema class header:
     buf.putOctet       (CLASS_KIND_TABLE);
@@ -147,7 +148,7 @@ void /*MGEN:Class.NameCap*/::readProperties (const std::string& _sBuf)
 {
     char *_tmpBuf = new char[_sBuf.length()];
     memcpy(_tmpBuf, _sBuf.data(), _sBuf.length());
-    ::qpid::framing::Buffer buf(_tmpBuf, _sBuf.length());
+    ::qpid::management::Buffer buf(_tmpBuf, _sBuf.length());
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
 
     {
@@ -169,7 +170,7 @@ void /*MGEN:Class.NameCap*/::writeProperties (std::string& _sBuf) const
 {
     const int _bufSize=65536;
     char _msgChars[_bufSize];
-    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+    ::qpid::management::Buffer buf(_msgChars, _bufSize);
 
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
     configChanged = false;
@@ -197,7 +198,7 @@ void /*MGEN:Class.NameCap*/::writeStatistics (std::string& _sBuf, bool skipHeade
 {
     const int _bufSize=65536;
     char _msgChars[_bufSize];
-    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+    ::qpid::management::Buffer buf(_msgChars, _bufSize);
 
     ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
@@ -248,7 +249,7 @@ void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
 
     const int _bufSize=65536;
     char _msgChars[_bufSize];
-    ::qpid::framing::Buffer outBuf(_msgChars, _bufSize);
+    ::qpid::management::Buffer outBuf(_msgChars, _bufSize);
 
 /*MGEN:Class.MethodHandlers*/
 

@@ -301,6 +301,13 @@ void MapCodec::decode(const std::string& data, Variant::Map& value)
     _decode<FieldTable>(data, value, &toVariantMapEntry);
 }
 
+size_t MapCodec::encodedSize(const Variant::Map& value)
+{
+    std::string encoded;
+    encode(value, encoded);
+    return encoded.size();
+}
+
 void ListCodec::encode(const Variant::List& value, std::string& data)
 {
     _encode<List>(value, data, &toFieldValue);
@@ -309,6 +316,13 @@ void ListCodec::encode(const Variant::List& value, std::string& data)
 void ListCodec::decode(const std::string& data, Variant::List& value)
 {
     _decode<List>(data, value, &toVariant);
+}
+
+size_t ListCodec::encodedSize(const Variant::List& value)
+{
+    std::string encoded;
+    encode(value, encoded);
+    return encoded.size();
 }
 
 void translate(const Variant::Map& from, FieldTable& to)
