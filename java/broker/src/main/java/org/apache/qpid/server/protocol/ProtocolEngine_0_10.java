@@ -188,4 +188,9 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
     {
         return false;
     }
+    
+    public void mgmtClose()
+    {
+        _connection.mgmtClose();
+    }
 }

@@ -188,6 +188,11 @@ public class BrokerLink implements LinkConfig, ConnectionListener
         {
             return false;
         }
+
+        public void mgmtClose()
+        {
+            _connectionConfig.mgmtClose();
+        }
     }
 
     private class SessionFactory implements Connection.SessionFactory

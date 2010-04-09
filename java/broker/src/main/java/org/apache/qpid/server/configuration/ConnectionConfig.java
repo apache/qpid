@@ -44,4 +44,6 @@ public interface ConnectionConfig extends ConfiguredObject<ConnectionConfigType,
     ConfigStore getConfigStore();
     
     Boolean isShadow();
+    
+    void mgmtClose();
 }
