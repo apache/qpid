@@ -21,6 +21,7 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.qmf.schema.BrokerSchema;
 import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -1336,8 +1337,17 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public BrokerSchema.SessionClass.CloseMethodResponseCommand close(final BrokerSchema.SessionClass.CloseMethodResponseCommandFactory factory)
         {
-            //todo
-            throw new UnsupportedOperationException();
+            try
+            {
+                _obj.mgmtClose();
+            }
+            catch (AMQException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+            return factory.createResponseCommand();
         }
 
         public UUID getId()

@@ -21,6 +21,8 @@
 
 package org.apache.qpid.server.configuration;
 
+import org.apache.qpid.AMQException;
+
 public interface SessionConfig extends ConfiguredObject<SessionConfigType, SessionConfig>
 {
     VirtualHostConfig getVirtualHost();
@@ -48,4 +50,6 @@ public interface SessionConfig extends ConfiguredObject<SessionConfigType, Sessi
     Long getTxnCount();
     
     boolean isTransactional();
+    
+    void mgmtClose() throws AMQException;
 }

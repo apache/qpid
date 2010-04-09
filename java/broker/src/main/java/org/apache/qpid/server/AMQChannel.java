@@ -141,7 +141,7 @@ public class AMQChannel implements SessionConfig
 
     // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
-    private boolean _closing;
+    private AtomicBoolean _closing = new AtomicBoolean(false);
 
     private final ConcurrentMap<AMQQueue, Boolean> _blockingQueues = new ConcurrentHashMap<AMQQueue, Boolean>();
 
@@ -480,7 +480,13 @@ public class AMQChannel implements SessionConfig
      */
     public void close() throws AMQException
     {
-        setClosing(true);
+        if(!_closing.compareAndSet(false, true))
+        {
+            //Channel is already closing
+            return;
+        }
+
+        CurrentActor.get().message(_logSubject, ChannelMessages.CHN_CLOSE());
 
         unsubscribeAllConsumers();
         _transaction.rollback();
@@ -496,13 +502,6 @@ public class AMQChannel implements SessionConfig
 
         getConfigStore().removeConfiguredObject(this);
 
-    }
-
-    private void setClosing(boolean closing)
-    {
-        _closing = closing;
-
-        CurrentActor.get().message(_logSubject, ChannelMessages.CHN_CLOSE());
     }
 
     private void unsubscribeAllConsumers() throws AMQException
@@ -881,7 +880,7 @@ public class AMQChannel implements SessionConfig
 
     public boolean isSuspended()
     {
-        return _suspended.get()  || _closing || _session.isClosing();
+        return _suspended.get()  || _closing.get() || _session.isClosing();
     }
 
     public void commit() throws AMQException
@@ -981,7 +980,7 @@ public class AMQChannel implements SessionConfig
 
     public boolean isClosing()
     {
-        return _closing;
+        return _closing.get();
     }
 
     public AMQProtocolSession getProtocolSession()
@@ -1376,5 +1375,10 @@ public class AMQChannel implements SessionConfig
     public long getCreateTime()
     {
         return _createTime;
+    }
+    
+    public void mgmtClose() throws AMQException
+    {
+        _session.mgmtCloseChannel(_channelId);
     }
 }
