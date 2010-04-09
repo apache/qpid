@@ -23,7 +23,9 @@
 #include "qpid/amqp_0_10/Codecs.h"
 
 using namespace std;
-using namespace qpid::management;
+
+namespace qpid {
+namespace management {
 
 Buffer::Buffer(char* data, uint32_t size) : impl(new framing::Buffer(data, size)) {}
 Buffer::~Buffer() { delete impl; }
@@ -101,3 +103,4 @@ void Buffer::getList(types::Variant::List& list)
     amqp_0_10::ListCodec::decode(encoded, list);
 }
 
+}}
