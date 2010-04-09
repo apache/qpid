@@ -20,7 +20,6 @@
 
 import optparse, socket
 from qpid.messaging import *
-from qpid.util import URL
 from qpid.log import enable, DEBUG, WARN
 from common import *
 
@@ -46,11 +45,7 @@ if opts.verbose:
 else:
   enable("qpid", WARN)
 
-url = URL(opts.broker)
-conn = Connection.open(url.host, url.port or AMQP_PORT,
-                       username=url.user, password=url.password,
-                       reconnect=True,
-                       reconnect_delay=1)
+conn = Connection.establish(opts.broker, reconnect=True, reconnect_interval=1)
 
 
 class Agent(Dispatcher):
@@ -72,8 +67,7 @@ class Agent(Dispatcher):
 
   def do_discover(self, msg):
     r = self.get_status()
-    r.to = msg.reply_to
-    return [r]
+    return [(msg.reply_to, r)]
 
   def do_reserve(self, msg):
     if self.status == FREE:

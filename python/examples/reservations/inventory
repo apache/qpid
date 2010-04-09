@@ -20,7 +20,6 @@
 
 import optparse, traceback
 from qpid.messaging import *
-from qpid.util import URL
 from qpid.log import enable, DEBUG, WARN
 from common import *
 
@@ -42,11 +41,7 @@ if opts.verbose:
 else:
   enable("qpid", WARN)
 
-url = URL(opts.broker)
-conn = Connection.open(url.host, url.port or AMQP_PORT,
-                       username=url.user, password=url.password,
-                       reconnect=True,
-                       reconnect_delay=1)
+conn = Connection.establish(opts.broker, reconnect=True, reconnect_interval=1)
 
 class Inventory(Dispatcher):
 
@@ -65,8 +60,7 @@ class Inventory(Dispatcher):
     result = []
     for id, (status, owner) in self.agents.items():
       if match(id, patterns):
-        r = Message(to = msg.reply_to,
-                    properties = {
+        r = Message(properties = {
             "type": "status"
             },
                     content = {
@@ -74,11 +68,11 @@ class Inventory(Dispatcher):
             "status": status,
             "owner": owner
             })
-        result.append(r)
+        result.append((msg.reply_to, r))
         continue
     if not result:
-      result.append(Message(to = msg.reply_to,
-                            properties = {"type": "empty"}))
+      result.append((msg.reply_to,
+                     Message(properties = {"type": "empty"})))
     return result
 
   def ignored(self, msg):
