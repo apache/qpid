@@ -46,6 +46,7 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.management.Managable;
@@ -61,6 +62,7 @@ import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Sender;
 
 import javax.management.JMException;
+import javax.management.MBeanException;
 import javax.security.sasl.SaslServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -703,6 +705,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                 }
 
                 closeAllChannels();
+                
+                getConfigStore().removeConfiguredObject(this);
+
                 if (_managedObject != null)
                 {
                     _managedObject.unregister();
@@ -763,8 +768,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void closeProtocolSession()
     {
-        getConfigStore().removeConfiguredObject(this);
-
         _networkDriver.close();
         try
         {
@@ -1142,6 +1145,49 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public Boolean isShadow()
     {
         return false;
+    }
+    
+    public void mgmtClose()
+    {
+        MethodRegistry methodRegistry = getMethodRegistry();
+        ConnectionCloseBody responseBody =
+                methodRegistry.createConnectionCloseBody(
+                        AMQConstant.REPLY_SUCCESS.getCode(),
+                        new AMQShortString("The connection was closed using the broker's management interface."),
+                        0,0);
+
+        // This seems ugly but because we use closeConnection in both normal
+        // broker operation and as part of the management interface it cannot
+        // be avoided. The Current Actor will be null when this method is
+        // called via the QMF management interface. As such we need to set one.
+        boolean removeActor = false;
+        if (CurrentActor.get() == null)
+        {
+            removeActor = true;
+            CurrentActor.set(new ManagementActor(_actor.getRootMessageLogger()));
+        }
+
+        try
+        {
+            writeFrame(responseBody.generateFrame(0));
+
+            try
+            {
+
+                closeSession();
+            }
+            catch (AMQException ex)
+            {
+                throw new RuntimeException(ex);
+            }
+        }
+        finally
+        {
+            if (removeActor)
+            {
+                CurrentActor.remove();
+            }
+        }
     }
 
 }

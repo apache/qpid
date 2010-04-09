@@ -1214,8 +1214,9 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public BrokerSchema.ConnectionClass.CloseMethodResponseCommand close(final BrokerSchema.ConnectionClass.CloseMethodResponseCommandFactory factory)
         {
-            //todo
-            throw new UnsupportedOperationException();
+            _obj.mgmtClose();
+            
+            return factory.createResponseCommand();
         }
 
         public UUID getId()

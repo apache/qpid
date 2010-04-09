@@ -532,13 +532,23 @@ public class Connection extends ConnectionInvoker
 
     public void close()
     {
+        close(ConnectionCloseCode.NORMAL, null);
+    }
+    
+    public void mgmtClose()
+    {
+        close(ConnectionCloseCode.CONNECTION_FORCED, "The connection was closed using the broker's management interface.");
+    }
+    
+    public void close(ConnectionCloseCode replyCode, String replyText, Option ... _options)
+    {
         synchronized (lock)
         {
             switch (state)
             {
             case OPEN:
                 state = CLOSING;
-                connectionClose(ConnectionCloseCode.NORMAL, null);
+                connectionClose(replyCode, replyText, _options);
                 Waiter w = new Waiter(lock, timeout);
                 while (w.hasTime() && state == CLOSING && error == null)
                 {
@@ -547,14 +557,14 @@ public class Connection extends ConnectionInvoker
 
                 if (error != null)
                 {
-                    close();
+                    close(replyCode, replyText, _options);
                     throw new ConnectionException(error);
                 }
 
                 switch (state)
                 {
                 case CLOSING:
-                    close();
+                    close(replyCode, replyText, _options);
                     throw new ConnectionException("close() timed out");
                 case CLOSED:
                     break;
