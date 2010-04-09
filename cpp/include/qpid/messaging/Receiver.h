@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/Exception.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/ImportExport.h"
 #include "qpid/messaging/Handle.h"
 #include "qpid/messaging/Duration.h"
@@ -41,8 +41,6 @@ class Session;
 class Receiver : public qpid::messaging::Handle<ReceiverImpl>
 {
   public:
-    struct NoMessageAvailable : qpid::Exception {};
-
     QPID_CLIENT_EXTERN Receiver(ReceiverImpl* impl = 0);
     QPID_CLIENT_EXTERN Receiver(const Receiver&);
     QPID_CLIENT_EXTERN ~Receiver();

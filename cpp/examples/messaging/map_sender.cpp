@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
     Connection connection(url);
     try {
-        connection.connect();
+        connection.open();
         Session session = connection.createSession();
         Sender sender = session.createSender("message_queue");
 

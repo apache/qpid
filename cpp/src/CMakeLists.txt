@@ -584,6 +584,7 @@ set (qpidcommon_SOURCES
      qpid/SessionId.cpp
      qpid/StringUtils.cpp
      qpid/Url.cpp
+     qpid/types/Exception.cpp
      qpid/types/Uuid.cpp
      qpid/types/Variant.cpp
      qpid/amqp_0_10/Codecs.cpp
@@ -698,6 +699,7 @@ set (qpidclient_SOURCES
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/Duration.cpp
+     qpid/messaging/exceptions.cpp
      qpid/messaging/Message.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp

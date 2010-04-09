@@ -90,7 +90,7 @@ struct Client : qpid::sys::Runnable
     {
         Connection connection(opts.url);
         try {
-            connection.connect();
+            connection.open();
             Session session = connection.createSession();
             doWork(session);
             session.close();

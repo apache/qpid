@@ -23,11 +23,13 @@
  */
 #include "qpid/messaging/SessionImpl.h"
 #include "qpid/messaging/Duration.h"
+#include "qpid/messaging/exceptions.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"
 #include "qpid/client/amqp0_10/IncomingMessages.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/framing/reply_exceptions.h"
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
@@ -73,6 +75,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     qpid::messaging::Receiver nextReceiver(qpid::messaging::Duration timeout);
 
     qpid::messaging::Connection getConnection() const;
+    void checkError();
 
     bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout);    
 
@@ -93,9 +96,20 @@ class SessionImpl : public qpid::messaging::SessionImpl
             qpid::sys::Mutex::ScopedLock l(lock);
             f();
             return true;
-        } catch (TransportFailure&) {
+        } catch (const qpid::TransportFailure&) {
             reconnect();
             return false;
+        } catch (const qpid::framing::ResourceLimitExceededException& e) {
+            if (backoff()) return false;
+            else throw qpid::messaging::TargetCapacityExceeded(e.what());
+        } catch (const qpid::framing::UnauthorizedAccessException& e) {
+            throw qpid::messaging::UnauthorizedAccess(e.what());
+        } catch (const qpid::SessionException& e) {
+            throw qpid::messaging::SessionError(e.what());
+        } catch (const qpid::ConnectionException& e) {
+            throw qpid::messaging::ConnectionError(e.what());
+        } catch (const qpid::ChannelException& e) {
+            throw qpid::messaging::MessagingException(e.what());            
         }
     }
 
@@ -118,6 +132,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     bool getIncoming(IncomingMessages::Handler& handler, qpid::messaging::Duration timeout);
     bool getNextReceiver(qpid::messaging::Receiver* receiver, IncomingMessages::MessageTransfer& transfer);
     void reconnect();
+    bool backoff();
 
     void commitImpl();
     void rollbackImpl();

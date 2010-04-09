@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
     Connection connection(url);
     try {
-        connection.connect();
+        connection.open();
         Session session = connection.createSession();
         Receiver receiver = session.createReceiver("message_queue");
         Variant::Map content;
