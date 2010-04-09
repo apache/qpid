@@ -22,8 +22,9 @@
 
 #include "qpid/log/Statement.h"
 #include "qpid/management/Manageable.h" 
-#include "qpid/framing/FieldTable.h"
-#include "qpid/framing/Buffer.h"
+#include "qpid/management/Buffer.h"
+#include "qpid/types/Variant.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid//*MGEN:Event.AgentHeaderLocation*//ManagementAgent.h"
 #include "Event/*MGEN:Event.NameCap*/.h"
 
@@ -60,8 +61,8 @@ void Event/*MGEN:Event.NameCap*/::writeSchema (std::string& schema)
 {
     const int _bufSize = 65536;
     char _msgChars[_bufSize];
-    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
-    ::qpid::framing::FieldTable ft;
+    ::qpid::management::Buffer buf(_msgChars, _bufSize);
+    ::qpid::types::Variant::Map ft;
 
     // Schema class header:
     buf.putOctet       (CLASS_KIND_EVENT);
@@ -83,7 +84,7 @@ void Event/*MGEN:Event.NameCap*/::encode(std::string& _sBuf) const
 {
     const int _bufSize=65536;
     char _msgChars[_bufSize];
-    ::qpid::framing::Buffer buf(_msgChars, _bufSize);
+    ::qpid::management::Buffer buf(_msgChars, _bufSize);
 
 /*MGEN:Event.ArgEncodes*/
 
