@@ -70,8 +70,12 @@ class Sender : public qpid::messaging::Handle<SenderImpl>
      * Returns the number of sent messages pending confirmation of
      * receipt by the broker. (These are the 'in-doubt' messages).
      */
-    QPID_CLIENT_EXTERN uint32_t getPending();
-
+    QPID_CLIENT_EXTERN uint32_t getUnsettled();
+    /**
+     * Returns the number of messages for which there is available
+     * capacity.
+     */
+    QPID_CLIENT_EXTERN uint32_t getAvailable();
     /**
      * Returns the name of this sender.
      */

@@ -491,7 +491,7 @@ QPID_AUTO_TEST_CASE(testAvailable)
     }
     qpid::sys::sleep(1);//is there any avoid an arbitrary sleep while waiting for messages to be dispatched?
     for (uint i = 0; i < 5; ++i) {
-        BOOST_CHECK_EQUAL(fix.session.getAvailable(), 15u - 2*i);
+        BOOST_CHECK_EQUAL(fix.session.getReceivable(), 15u - 2*i);
         BOOST_CHECK_EQUAL(r1.getAvailable(), 10u - i);
         BOOST_CHECK_EQUAL(r1.fetch().getContent(), (boost::format("A_%1%") % (i+1)).str());
         BOOST_CHECK_EQUAL(r2.getAvailable(), 5u - i);
@@ -499,13 +499,13 @@ QPID_AUTO_TEST_CASE(testAvailable)
         fix.session.acknowledge();
     }
     for (uint i = 5; i < 10; ++i) {
-        BOOST_CHECK_EQUAL(fix.session.getAvailable(), 10u - i);
+        BOOST_CHECK_EQUAL(fix.session.getReceivable(), 10u - i);
         BOOST_CHECK_EQUAL(r1.getAvailable(), 10u - i);
         BOOST_CHECK_EQUAL(r1.fetch().getContent(), (boost::format("A_%1%") % (i+1)).str());
     }
 }
 
-QPID_AUTO_TEST_CASE(testPendingAck)
+QPID_AUTO_TEST_CASE(testUnsettledAcks)
 {
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
@@ -516,14 +516,14 @@ QPID_AUTO_TEST_CASE(testPendingAck)
     for (uint i = 0; i < 10; ++i) {
         BOOST_CHECK_EQUAL(receiver.fetch().getContent(), (boost::format("Message_%1%") % (i+1)).str());
     }
-    BOOST_CHECK_EQUAL(fix.session.getPendingAck(), 0u);
+    BOOST_CHECK_EQUAL(fix.session.getUnsettledAcks(), 0u);
     fix.session.acknowledge();
-    BOOST_CHECK_EQUAL(fix.session.getPendingAck(), 10u);
+    BOOST_CHECK_EQUAL(fix.session.getUnsettledAcks(), 10u);
     fix.session.sync();
-    BOOST_CHECK_EQUAL(fix.session.getPendingAck(), 0u);
+    BOOST_CHECK_EQUAL(fix.session.getUnsettledAcks(), 0u);
 }
 
-QPID_AUTO_TEST_CASE(testPendingSend)
+QPID_AUTO_TEST_CASE(testUnsettledSend)
 {
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
@@ -532,9 +532,9 @@ QPID_AUTO_TEST_CASE(testPendingSend)
     //implementation and the fact that the simple test case makes it
     //possible to predict when completion information will be sent to
     //the client. TODO: is there a better way of testing this?
-    BOOST_CHECK_EQUAL(sender.getPending(), 10u);
+    BOOST_CHECK_EQUAL(sender.getUnsettled(), 10u);
     fix.session.sync();
-    BOOST_CHECK_EQUAL(sender.getPending(), 0u);
+    BOOST_CHECK_EQUAL(sender.getUnsettled(), 0u);
 
     Receiver receiver = fix.session.createReceiver(fix.queue);
     receive(receiver, 10);

@@ -39,8 +39,8 @@ bool Receiver::fetch(Message& message, Duration timeout) { return impl->fetch(me
 Message Receiver::fetch(Duration timeout) { return impl->fetch(timeout); }
 void Receiver::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Receiver::getCapacity() { return impl->getCapacity(); }
-uint32_t Receiver::getAvailable() { return impl->available(); }
-uint32_t Receiver::getPendingAck() { return impl->pendingAck(); }
+uint32_t Receiver::getAvailable() { return impl->getAvailable(); }
+uint32_t Receiver::getUnsettled() { return impl->getUnsettled(); }
 void Receiver::close() { impl->close(); }
 const std::string& Receiver::getName() const { return impl->getName(); }
 Session Receiver::getSession() const { return impl->getSession(); }

@@ -60,8 +60,8 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     const std::string& getName() const;
     void setCapacity(uint32_t);
     uint32_t getCapacity();
-    uint32_t available();
-    uint32_t pendingAck();
+    uint32_t getAvailable();
+    uint32_t getUnsettled();
     void received(qpid::messaging::Message& message);
     qpid::messaging::Session getSession() const;
   private:

@@ -58,7 +58,7 @@ void SenderImpl::setCapacity(uint32_t c)
     execute1<CheckPendingSends>(flush);
 }
 uint32_t SenderImpl::getCapacity() { return capacity; }
-uint32_t SenderImpl::pending()
+uint32_t SenderImpl::getUnsettled()
 {
     CheckPendingSends f(*this, false);
     parent->execute(f);
