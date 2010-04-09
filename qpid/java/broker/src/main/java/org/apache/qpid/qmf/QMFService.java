@@ -679,8 +679,8 @@ public class QMFService implements ConfigStore.ConfigEventListener
                                                                                                  final String destQueue,
                                                                                                  final Long qty)
         {
-            // todo
-            throw new UnsupportedOperationException();
+            // TODO
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
         public UUID getId()
@@ -1056,7 +1056,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
                                                                             final String exchange)
         {
             //TODO
-            return factory.createResponseCommand();
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
 
@@ -1319,20 +1319,20 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
         public BrokerSchema.SessionClass.SolicitAckMethodResponseCommand solicitAck(final BrokerSchema.SessionClass.SolicitAckMethodResponseCommandFactory factory)
         {
-            //todo
-            throw new UnsupportedOperationException();
+            //TODO
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
         public BrokerSchema.SessionClass.DetachMethodResponseCommand detach(final BrokerSchema.SessionClass.DetachMethodResponseCommandFactory factory)
         {
-            //todo
-            throw new UnsupportedOperationException();
+            //TODO
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
         public BrokerSchema.SessionClass.ResetLifespanMethodResponseCommand resetLifespan(final BrokerSchema.SessionClass.ResetLifespanMethodResponseCommandFactory factory)
         {
-            //todo
-            throw new UnsupportedOperationException();
+            //TODO
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
         public BrokerSchema.SessionClass.CloseMethodResponseCommand close(final BrokerSchema.SessionClass.CloseMethodResponseCommandFactory factory)
@@ -1343,8 +1343,7 @@ public class QMFService implements ConfigStore.ConfigEventListener
             }
             catch (AMQException e)
             {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                return factory.createResponseCommand(CompletionCode.EXCEPTION, e.getMessage());
             }
 
             return factory.createResponseCommand();
