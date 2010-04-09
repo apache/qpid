@@ -45,6 +45,7 @@ namespace amqp0_10 {
 
 using qpid::Exception;
 using qpid::messaging::Address;
+using qpid::messaging::AddressError;
 using qpid::messaging::MalformedAddress;
 using qpid::messaging::ResolutionError;
 using qpid::messaging::NotFound;
@@ -60,11 +61,21 @@ using namespace qpid::framing::message;
 using namespace qpid::amqp_0_10;
 using namespace boost::assign;
 
+class Verifier
+{
+  public:
+    Verifier();
+    void verify(const Address& address) const;
+  private:
+    Variant::Map defined;
+    void verify(const Variant::Map& allowed, const Variant::Map& actual) const;
+};
 
 namespace{
+const Verifier verifier;
 const Variant EMPTY_VARIANT;
 const FieldTable EMPTY_FIELD_TABLE;
- const Variant::List EMPTY_LIST;
+const Variant::List EMPTY_LIST;
 const std::string EMPTY_STRING;
 
 //policy types
@@ -250,8 +261,6 @@ class QueueSink : public Queue, public MessageSink
     void cancel(qpid::client::AsyncSession& session, const std::string& name);
   private:
 };
-
-
 bool isQueue(qpid::client::Session session, const qpid::messaging::Address& address);
 bool isTopic(qpid::client::Session session, const qpid::messaging::Address& address);
 
@@ -362,6 +371,7 @@ bool AddressResolution::is_reliable(const Address& address)
 
 std::string checkAddressType(qpid::client::Session session, const Address& address)
 {
+    verifier.verify(address);
     if (address.getName().empty()) {
         throw MalformedAddress("Name cannot be null");
     }
@@ -909,5 +919,43 @@ void Node::convert(const Variant& options, FieldTable& arguments)
 }
 std::vector<std::string> Node::RECEIVER_MODES = list_of<std::string>(ALWAYS) (RECEIVER);
 std::vector<std::string> Node::SENDER_MODES = list_of<std::string>(ALWAYS) (SENDER);
+
+Verifier::Verifier()
+{
+    defined["create"] = true;
+    defined["assert"] = true;
+    defined["delete"] = true;
+    defined["mode"] = true;
+    Variant::Map node;
+    node["type"] = true;
+    node["durable"] = true;
+    node["x-declare"] = true;
+    node["x-bindings"] = true;
+    defined["node"] = node;
+    Variant::Map link;
+    link["name"] = true;
+    link["durable"] = true;
+    link["reliable"] = true;
+    link["x-subscribe"] = true;
+    link["x-declare"] = true;
+    link["x-bindings"] = true;
+    defined["link"] = link;
+}
+void Verifier::verify(const Address& address) const
+{
+    verify(defined, address.getOptions());
+}
+
+void Verifier::verify(const Variant::Map& allowed, const Variant::Map& actual) const
+{
+    for (Variant::Map::const_iterator i = actual.begin(); i != actual.end(); ++i) {
+        Variant::Map::const_iterator option = allowed.find(i->first);
+        if (option == allowed.end()) {
+            throw AddressError((boost::format("Unrecognised option: %1%") % i->first).str());
+        } else if (option->second.getType() == qpid::types::VAR_MAP) {
+            verify(option->second.asMap(), i->second.asMap());
+        }
+    }
+}
 
 }}} // namespace qpid::client::amqp0_10
