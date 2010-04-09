@@ -547,4 +547,9 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     {
         return _createTime;
     }
+
+    public void mgmtClose()
+    {
+        close();
+    }
 }
