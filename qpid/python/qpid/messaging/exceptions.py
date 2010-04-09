@@ -33,10 +33,10 @@ class ConnectError(ConnectionError):
 class SessionError(Exception):
   pass
 
-class Disconnected(SessionError):
+class Detached(SessionError):
   """
   Exception raised when an operation is attempted that is illegal when
-  disconnected.
+  detached.
   """
   pass
 
