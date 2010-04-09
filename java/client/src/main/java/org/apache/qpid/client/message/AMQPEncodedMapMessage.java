@@ -21,9 +21,11 @@ package org.apache.qpid.client.message;
  */
 
 
+import java.util.List;
 import java.util.Map;
 
 import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
@@ -53,6 +55,25 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
     protected String getMimeType()
     {
         return MIME_TYPE;
+    }
+    
+    @ Override
+    public void setObject(String propName, Object value) throws JMSException
+    {
+        checkWritable();
+        checkPropertyName(propName);
+        if ((value instanceof Boolean) || (value instanceof Byte) || (value instanceof Short) || (value instanceof Integer)
+                || (value instanceof Long) || (value instanceof Character) || (value instanceof Float)
+                || (value instanceof Double) || (value instanceof String) || (value instanceof byte[])
+                || (value instanceof List) || (value instanceof Map) || (value == null))
+        {
+            _map.put(propName, value);
+        }
+        else
+        {
+            throw new MessageFormatException("Cannot set property " + propName + " to value " + value + "of type "
+                + value.getClass().getName() + ".");
+        }
     }
 
     // The super clas methods resets the buffer
