@@ -37,7 +37,9 @@ op.add_option("-m", "--messages", default=100000, type="int", metavar="N",
 op.add_option("--queue-name", default="benchmark",
                help="base name for queues (default %default)")
 op.add_option("--send-rate", default=0, metavar="R",
-              help="send rate limited to R messages/second, 0 means no limit")
+              help="send rate limited to R messages/second, 0 means no limit (default %default)")
+op.add_option("--content-size", default=1024, type="int", metavar="BYTES", 
+              help="message size in bytes (default %default)")
 
 def start_receive(queue, opts):
     return Popen(["qpid_receive",
@@ -53,9 +55,9 @@ def start_send(queue, opts):
     return Popen(["qpid_send",
                   "-b", opts.broker,
                   "-a", queue,
-                  "--count", str(opts.messages),
+                  "--messages", str(opts.messages),
                   "--send-eos", str(opts.receivers),
-                  "--content", "benchmark",
+                  "--content-size", str(opts.content_size),
                   "--rate", str(opts.send_rate),
                   "--report-total"],
                  stdout=PIPE, stderr=STDOUT)

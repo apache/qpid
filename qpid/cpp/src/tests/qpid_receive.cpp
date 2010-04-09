@@ -89,7 +89,7 @@ struct Options : public qpid::Options
             ("connection-options", qpid::optValue(connectionOptions, "OPTIONS"), "options for the connection")
             ("timeout,t", qpid::optValue(timeout, "TIMEOUT"), "timeout in seconds to wait before exiting")
             ("forever,f", qpid::optValue(forever), "ignore timeout and wait forever")
-            ("messages", qpid::optValue(messages, "N"), "Number of messages to receive; 0 means receive indefinitely")
+            ("messages,m", qpid::optValue(messages, "N"), "Number of messages to receive; 0 means receive indefinitely")
             ("ignore-duplicates", qpid::optValue(ignoreDuplicates), "Detect and ignore duplicates (by checking 'sn' header)")
             ("capacity", qpid::optValue(capacity, "N"), "Pre-fetch window (0 implies no pre-fetch)")
             ("ack-frequency", qpid::optValue(ackFrequency, "N"), "Ack frequency (0 implies none of the messages will get accepted)")
