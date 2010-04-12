@@ -71,12 +71,6 @@ public class TestClient implements MessageListener
     /** Holds the default identifying name of the test client. */
     public static final String CLIENT_NAME = "java";
 
-    /** Holds the URL of the broker to run the tests on. */
-    public static String brokerUrl;
-
-    /** Holds the virtual host to run the tests on. If <tt>null</tt>, then the default virtual host is used. */
-    public static String virtualHost;
-
     /**
      * Holds the test context properties that provides the default test parameters, plus command line overrides.
      * This is initialized with the default test parameters, to which command line overrides may be applied.
@@ -123,10 +117,18 @@ public class TestClient implements MessageListener
             + ", String clientName = " + clientName + ", boolean join = " + join + "): called");
 
         // Retain the connection parameters.
-        brokerUrl = pBrokerUrl;
-        virtualHost = pVirtualHost;
         this.clientName = clientName;
         this.join = join;
+
+        // Save properies from command line to defaults
+        if (pBrokerUrl != null)
+        {
+            testContextProperties.setProperty(MessagingTestConfigProperties.BROKER_PROPNAME, pBrokerUrl);
+        }
+        if (pVirtualHost != null)
+        {
+            testContextProperties.setProperty(MessagingTestConfigProperties.VIRTUAL_HOST_PROPNAME, pVirtualHost);
+        }
     }
 
     /**
@@ -368,7 +370,7 @@ public class TestClient implements MessageListener
                     enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + clientName);
                     enlistMessage.setJMSCorrelationID(message.getJMSCorrelationID());
 
-                    log.debug("Sending enlist message '" + enlistMessage + "' to " + message.getJMSReplyTo());
+                    log.debug("Sending enlist message '" + enlistMessage.getJMSMessageID() + "' to " + message.getJMSReplyTo());
 
                     producer.send(message.getJMSReplyTo(), enlistMessage);
                 }
@@ -381,7 +383,7 @@ public class TestClient implements MessageListener
                     enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + clientName);
                     enlistMessage.setJMSCorrelationID(message.getJMSCorrelationID());
 
-                    log.debug("Sending decline message '" + enlistMessage + "' to " + message.getJMSReplyTo());
+                    log.debug("Sending decline message '" + enlistMessage.getJMSMessageID() + "' to " + message.getJMSReplyTo());
 
                     producer.send(message.getJMSReplyTo(), enlistMessage);
                 }
@@ -403,7 +405,7 @@ public class TestClient implements MessageListener
                 acceptRoleMessage.setStringProperty("CONTROL_TYPE", "ACCEPT_ROLE");
                 acceptRoleMessage.setJMSCorrelationID(message.getJMSCorrelationID());
 
-                log.debug("Sending accept role message '" + acceptRoleMessage + "' to " + message.getJMSReplyTo());
+                log.debug("Sending accept role message '" + acceptRoleMessage.getJMSMessageID() + "' to " + message.getJMSReplyTo());
 
                 producer.send(message.getJMSReplyTo(), acceptRoleMessage);
             }
@@ -440,7 +442,7 @@ public class TestClient implements MessageListener
                 reportMessage.setStringProperty("CONTROL_TYPE", "REPORT");
                 reportMessage.setJMSCorrelationID(message.getJMSCorrelationID());
 
-                log.debug("Sending report message '" + reportMessage + "' to " + message.getJMSReplyTo());
+                log.debug("Sending report message '" + reportMessage.getJMSMessageID() + "' to " + message.getJMSReplyTo());
 
                 producer.send(message.getJMSReplyTo(), reportMessage);
             }
