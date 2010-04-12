@@ -323,10 +323,14 @@ def lineToDate(line):
         m = pattern.match(line)
         micro = None
         if m:
-	    micro = m.group('micro')
+            micro = m.group('micro')
 	    
         if micro == None:
-	   micro = 0
+            micro = 0
+            
+        # Correct issue where micros are actually nanos
+        if int(micro) > 999999:
+           micro = int(micro) / 1000
 	
         return datetime(year,month,day,hour,minute,seconds,int(micro))
     else:
