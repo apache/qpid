@@ -22,16 +22,17 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <boost/lexical_cast.hpp>
+#include <boost/bind.hpp>
 #include <numeric>
 #include <sstream>
 
 namespace qpid {
 namespace acl {
 
-AclValidator::AclIntProperty::AclIntProperty(int64_t i,int64_t j) : min(i), max(j){    
+AclValidator::IntPropertyType::IntPropertyType(int64_t i,int64_t j) : min(i), max(j){    
 }
 
-bool AclValidator::AclIntProperty::validate(const std::string& val) {
+bool AclValidator::IntPropertyType::validate(const std::string& val) {
   int64_t v;
   try
   {
@@ -47,16 +48,16 @@ bool AclValidator::AclIntProperty::validate(const std::string& val) {
   }
 }
 
-std::string AclValidator::AclIntProperty::allowedValues() {
+std::string AclValidator::IntPropertyType::allowedValues() {
    return "values should be between " + 
           boost::lexical_cast<std::string>(min) + " and " +
           boost::lexical_cast<std::string>(max);
 }
 
-AclValidator::AclEnumProperty::AclEnumProperty(std::vector<std::string>& allowed): values(allowed){      
+AclValidator::EnumPropertyType::EnumPropertyType(std::vector<std::string>& allowed): values(allowed){      
 }
 
-bool AclValidator::AclEnumProperty::validate(const std::string& val) {
+bool AclValidator::EnumPropertyType::validate(const std::string& val) {
   for (std::vector<std::string>::iterator itr = values.begin(); itr != values.end(); ++itr ){
      if (val.compare(*itr) == 0){
         return 1;
@@ -66,7 +67,7 @@ bool AclValidator::AclEnumProperty::validate(const std::string& val) {
   return 0;
 }
 
-std::string AclValidator::AclEnumProperty::allowedValues() {
+std::string AclValidator::EnumPropertyType::allowedValues() {
    std::ostringstream oss;
    oss << "possible values are one of { ";
    for (std::vector<std::string>::iterator itr = values.begin(); itr != values.end(); itr++ ){
@@ -78,21 +79,21 @@ std::string AclValidator::AclEnumProperty::allowedValues() {
 
 AclValidator::AclValidator(){
   validators.insert(Validator(acl::PROP_MAXQUEUESIZE,
-                              boost::shared_ptr<AclProperty>(
-                                new AclIntProperty(0,std::numeric_limits<int64_t>::max()))
+                              boost::shared_ptr<PropertyType>(
+                                new IntPropertyType(0,std::numeric_limits<int64_t>::max()))
                              )
                    );
 
   validators.insert(Validator(acl::PROP_MAXQUEUECOUNT,
-                              boost::shared_ptr<AclProperty>(
-                                new AclIntProperty(0,std::numeric_limits<int64_t>::max()))
+                              boost::shared_ptr<PropertyType>(
+                                new IntPropertyType(0,std::numeric_limits<int64_t>::max()))
                              )
                    );
 
   std::string policyTypes[] = {"ring", "ring_strict", "flow_to_disk", "reject"};
   std::vector<std::string> v(policyTypes, policyTypes + sizeof(policyTypes) / sizeof(std::string));
   validators.insert(Validator(acl::PROP_POLICYTYPE,
-                              boost::shared_ptr<AclProperty>(new AclEnumProperty(v))
+                              boost::shared_ptr<PropertyType>(new EnumPropertyType(v))
                              )
                    );
   
@@ -112,30 +113,38 @@ void AclValidator::validate(boost::shared_ptr<AclData> d) {
 
 		        if (d->actionList[cnt][cnt1]){
 
-                    for (AclData::actObjItr actionMapItr = d->actionList[cnt][cnt1]->begin(); 
-                      actionMapItr != d->actionList[cnt][cnt1]->end(); actionMapItr++) {
-
-                        for (AclData::ruleSetItr i = actionMapItr->second.begin(); i < actionMapItr->second.end(); i++) {
-                            
-                            for (AclData::propertyMapItr pMItr = i->props.begin(); pMItr != i->props.end(); pMItr++) {
-
-                               ValidatorItr itr = validators.find(pMItr->first);
-                               if (itr != validators.end()){
-                                 QPID_LOG(debug,"Found validator for property " << itr->second->allowedValues());
-
-                                 if (!itr->second->validate(pMItr->second)){
-                                    throw Exception( pMItr->second + " is not a valid value for '" + 
-                                                     AclHelper::getPropertyStr(pMItr->first) + "', " +
-                                                     itr->second->allowedValues());
-                                 }//if
-                               }//if
-                            }//for
-                        }//for 
-                    }//for
+                    std::for_each(d->actionList[cnt][cnt1]->begin(),
+                                  d->actionList[cnt][cnt1]->end(),
+                                  boost::bind(&AclValidator::validateRuleSet, this, _1));                    
                 }//if 
             }//for
 	    }//if
 	}//for
+}
+
+void AclValidator::validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules){
+    std::for_each(rules.second.begin(),
+                  rules.second.end(),
+                  boost::bind(&AclValidator::validateRule, this, _1)); 
+}
+
+void AclValidator::validateRule(qpid::acl::AclData::rule& rule){
+    std::for_each(rule.props.begin(),
+                  rule.props.end(),
+                  boost::bind(&AclValidator::validateProperty, this, _1)); 
+}
+
+void AclValidator::validateProperty(std::pair<const qpid::acl::Property, std::string>& prop){
+   ValidatorItr itr = validators.find(prop.first);
+    if (itr != validators.end()){
+        QPID_LOG(debug,"Found validator for property " << itr->second->allowedValues());
+
+        if (!itr->second->validate(prop.second)){
+            throw Exception( prop.second + " is not a valid value for '" + 
+                             AclHelper::getPropertyStr(prop.first) + "', " +
+                             itr->second->allowedValues());
+        } 
+    }
 }
 
 }}
