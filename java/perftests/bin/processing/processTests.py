@@ -729,9 +729,12 @@ def createTestStatData(resultDir, testName):
     # Keep track of the min/max sum and entries,.
     minLatency=float(sys.maxint)
     maxLatency=0.0
+    minThroughput=float(sys.maxint)
+    maxThroughput=0.0
     
     entries=0
     sumLatency=0.0    
+    sumThroughput=0.0
     
     #
     # Open csv File
@@ -746,6 +749,7 @@ def createTestStatData(resultDir, testName):
             # <Test> <TestName> <Thread> <Status> <Time> <Latency> <Concurrency> <Thread> <TestSize>
             #org.apache.qpid.ping.PingAsyncTestPerf, testAsyncPingOk, Dispatcher-Channel-1, Pass, 209.074, 219.706, 0, 1, 10
             LatencyIndex = 5 
+            ThroughputIndex = 4
             
         # The PingLatencyTestPerf test class just outputs the latency data.    
     	if line.find("PingLatencyTestPerf") != -1:               
@@ -754,6 +758,7 @@ def createTestStatData(resultDir, testName):
             # <Test> <TestName> <Thread> <Status> <Time> <Latency> <Concurrency> <Thread> <TestSize>
             # org.apache.qpid.ping.PingLatencyTestPerf, testPingLatency, Dispatcher-Channel-1, Pass, 397.05502, 0, 2, 1000
             LatencyIndex = 4          
+            ThroughputIndex = -1
             
     
         # Only process the test lines that have 'org.apache.qpid.ping', i.e. skip header and footer.
@@ -765,7 +770,7 @@ def createTestStatData(resultDir, testName):
             entries = entries + 1
             
             # Record Metrics
-            # Record Lateny data
+            # Record Latency data
             latency = float(data[LatencyIndex])
             if (latency < minLatency):
                 minLatency = latency
@@ -775,7 +780,18 @@ def createTestStatData(resultDir, testName):
             
             sumLatency = sumLatency + latency
 
+            if (ThroughputIndex != -1):
+                # Record Latency data
+                throughput = float(data[ThroughputIndex])
+                if (throughput < minThroughput):
+                    minThroughput = throughput
+            
+                if (throughput > maxThroughput):
+                    maxThroughput = throughput
+                
+                sumThroughput = sumThroughput + throughput
 
+            
     csvFile.close()
     
     # Output stats file
@@ -785,6 +801,12 @@ def createTestStatData(resultDir, testName):
     output.write('\n')
     output.write("LATENCY:"+str(minLatency)+"/"+str(maxLatency)+"/"+str(float(sumLatency)/float(entries)))
     output.write('\n')
+
+    if (ThroughputIndex != -1):
+        # Output msgs/sec based on time for a batch of msgs
+        output.write("THROUGHPUT:"+str(float(1000)/maxThroughput)+"/"+str(float(1000)/minThroughput)+"/"+str(float(1000)/(float(sumThroughput)/float(entries))))
+        output.write('\n')
+
     output.close
     
     log("Generated stat data from test "+testName+" CSV file")    
