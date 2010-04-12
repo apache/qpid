@@ -557,18 +557,7 @@ public class TKTestResult extends TestResult
          */
         public void completeTest(boolean testPassed, int param) throws InterruptedException
         {
-            /*log.debug("public long completeTest(boolean testPassed = " + testPassed + ", int param = " + param
-                + "): called");*/
-
-            // Calculate the test run time.
-            long endTime = System.nanoTime();
-            long runTime = endTime - startTime;
-            // log.debug("runTime = " + runTime);
-
-            // Reset the test start time to now, to reset the timer for the next result.
-            startTime = endTime;
-
-            completeTest(testPassed, param, runTime);
+            completeTest(testPassed, param, null, null);
         }
 
         /**
@@ -579,13 +568,52 @@ public class TKTestResult extends TestResult
          * @param param      The test parameter size for parameterized tests.
          * @param timeNanos  The time in nano-seconds to log the test result with.
          *
+         * A null value for timeNanos is a request to this method that it should
+         * calculate the time for the given test run.
+         *
          * @throws InterruptedException If the test runner decides that testing should stop it throws this exception to
          *                              indicate to the test method that it should stop immediately.
          */
-        public void completeTest(boolean testPassed, int param, long timeNanos) throws InterruptedException
+        public void completeTest(boolean testPassed, int param, Long timeNanos) throws InterruptedException
+        {
+            completeTest(testPassed, param, timeNanos, null);
+        }
+
+        /**
+         * Register an additional pass/fail for the current test. The test result is applies to a test of the specified
+         * 'size' parmeter and allows the caller to sepecify the timing to log.
+         *
+         * @param testPassed Whether or not this timing is for a test pass or fail.
+         * @param param      The test parameter size for parameterized tests.
+         * @param timeNanos  The time in nano seconds to log the test result with.
+         *
+         * A null value for timeNanos is a request to this method that it should
+         * calculate the time for the given test run.
+         * A null value for timeNanos2 means this test does not provide a second
+         * timing value so a '-' is printed in the log.
+         *
+         *
+         * @throws InterruptedException If the test runner decides that testing should stop it throws this exception to
+         *                              indicate to the test method that it should stop immediately.
+         */
+        public void completeTest(boolean testPassed, int param, Long timeNanos, Long time2Nanos) throws InterruptedException
         {
             log.debug("public void completeTest(boolean testPassed, int param, long timeNanos): called");
             log.debug("testResult = " + testResult);
+
+            /*log.debug("public long completeTest(boolean testPassed = " + testPassed + ", int param = " + param
+                + "): called");*/
+
+            // Calculate the test run time.
+            long endTime = System.nanoTime();
+            long runTime = endTime - startTime;
+            startTime = endTime;
+
+            //
+            if (timeNanos != null)
+            {
+                runTime = timeNanos;
+            }
 
             // Tell the test result that completeTest has been used, so to not register end test events for the whole
             // test method.
@@ -598,7 +626,8 @@ public class TKTestResult extends TestResult
                 for (TKTestListener listener : testResult.tkListeners)
                 {
                     listener.reset(test, threadId);
-                    listener.timing(test, timeNanos, threadId);
+                    listener.timing(test, runTime, threadId);
+                    listener.timing2(test, time2Nanos, threadId);
                     listener.parameterValue(test, param, threadId);
                     listener.concurrencyLevel(test, testResult.concurrencyLevel, threadId);
 
