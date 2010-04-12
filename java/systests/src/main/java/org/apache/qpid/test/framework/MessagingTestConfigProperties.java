@@ -96,7 +96,7 @@ public class MessagingTestConfigProperties extends ParsedProperties
     public static final String VIRTUAL_HOST_PROPNAME = "virtualHost";
 
     /** Holds the default virtual path for the test. */
-    public static final String VIRTUAL_HOST_DEFAULT = "";
+    public static final String VIRTUAL_HOST_DEFAULT = "test";
 
     /** Holds the name of the property to get the broker access username from. */
     public static final String USERNAME_PROPNAME = "username";
