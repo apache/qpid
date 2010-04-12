@@ -33,6 +33,12 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.MessageProducer;
 
+/**
+ * Test the various JMS Acknowledge Modes the single testAcking method does all
+ * the work of receiving and validation of acking.
+ *
+ * The ack mode is provided from the various test methods. 
+ */
 public class AcknowledgeTest extends FailoverBaseCase
 {
     protected int NUM_MESSAGES;
@@ -50,6 +56,7 @@ public class AcknowledgeTest extends FailoverBaseCase
 
         _queue = getTestQueue();
 
+        _logger.info("AT: setup");
         //Create Producer put some messages on the queue
         _connection = getConnection();
     }
@@ -68,6 +75,16 @@ public class AcknowledgeTest extends FailoverBaseCase
     }
 
     /**
+     * The main test method.
+     *
+     * Receive the initial message and then proceed to send and ack messages
+     * until we have processed NUM_MESSAGES worth of messages.
+     *
+     * Each message is tagged with an INDEX value and these are used to check
+     * that the messages are received in the correct order.
+     *
+     * The test concludes by validating that the queue depth is 0 as expected.
+     *
      * @param transacted
      * @param mode
      *

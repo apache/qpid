@@ -24,6 +24,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.util.FileUtils;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -33,7 +34,25 @@ import javax.jms.Session;
 import javax.jms.TransactionRolledBackException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.io.File;
 
+/**
+ * The AcknowlegeAfterFailoverOnMessageTests
+ *
+ * Extends the OnMessage AcknowledgeTests to validate that after the client has
+ * failed over that the client can still receive and ack messages.
+ *
+ * All the AcknowledgeTest ack modes are exercised here though some are disabled
+ * due to know issues (e.g. DupsOk, AutoAck : QPID-143 and the clientAck
+ * and dirtyClientAck due to QPID-1816)
+ *
+ * This class has two main test structures, overrides of AcknowledgeOnMessageTest
+ * to perform the clean acking based on session ack mode and a series of dirty
+ * ack tests that test what happends if you receive a message then try and ack
+ * AFTER you have failed over.
+ *
+ *
+ */
 public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageTest implements ConnectionListener
 {
 
@@ -68,61 +87,96 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
         }
     }
 
-    protected void prepBroker(int count) throws Exception
+    /**
+     * Prepare the broker for the next round.
+     *
+     * Called after acknowledging the messsage this method shuts the current
+     * broker down connnects to the new broker and send a new message for the
+     * client to failover to and receive.
+     *
+     * It ends by restarting the orignal broker so that the cycle can repeat.
+     *
+     * When we are able to cluster the java broker then will not need to do the
+     * message repopulation or QPID_WORK clearing. All that we will need to do
+     * is send the initial NUM_MESSAGES during startup and then bring the
+     * brokers down at the right time to cause the client to fail between them.
+     *
+     * @param index
+     * @throws Exception
+     */
+    protected void prepBroker(int index) throws Exception
     {
-        //Stop the connection whilst we repopulate the broker, or the no_ack
-        // test will drain the msgs before we can check we put the right number
-        // back on again.
-//        _connection.stop();
+        // Alternate killing the broker based on the message index we are at.
 
-        Connection connection = getConnection();
-        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        // ensure destination is created.
-        session.createConsumer(_queue).close();
-
-        sendMessage(session, _queue, count, NUM_MESSAGES - count, 0);
-
-        if (_consumerSession.getAcknowledgeMode() != AMQSession.NO_ACKNOWLEDGE)
-        {
-            assertEquals("Wrong number of messages on queue", count,
-                         ((AMQSession) session).getQueueDepth((AMQDestination) _queue));
-        }
-
-        connection.close();
-
-//        _connection.start();
-    }
-
-    @Override
-    public void doAcknowlegement(Message msg) throws JMSException
-    {
-        //Acknowledge current message
-        super.doAcknowlegement(msg);
-
-        int msgCount = msg.getIntProperty(INDEX);
-
-        if (msgCount % 2 == 0)
+        if (index % 2 == 0)
         {
             failBroker(getFailingPort());
+            // Clean up the failed broker
+            FileUtils.delete(new File(System.getProperty("QPID_WORK") + "/" + getFailingPort()), true);
         }
         else
         {
             failBroker(getPort());
+            // Clean up the failed broker
+            FileUtils.delete(new File(System.getProperty("QPID_WORK") + "/" + getPort()), true);
         }
+
+        _failoverCompleted = new CountDownLatch(1);
+
+        _logger.info("AAFOMT: prepNewBroker for message send");
+        Connection connection = getConnection();
 
         try
         {
-            prepBroker(NUM_MESSAGES - msgCount - 1);
+
+            //Stop the connection whilst we repopulate the broker, or the no_ack
+            // test will drain the msgs before we can check we put the right number
+            // back on again.
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            // ensure destination is created.
+            session.createConsumer(_queue).close();
+
+
+            // If this is the last message then we can skip the send.
+            // But we MUST ensure that we have created the queue with the
+            // above createConsumer(_queue).close() as the test will end by
+            // testing the queue depth which will fail if we don't ensure we
+            // declare the queue.
+            // index is 0 based so we need to check +1 against NUM_MESSAGES
+            if ((index + 1) == NUM_MESSAGES)
+            {
+                return;
+            }
+
+
+            sendMessage(session, _queue, 1, index + 1, 0);
+
+            // Validate that we have the message on the queue
+            // In NoAck mode though the messasge may already have been sent to
+            // the client so we have to skip the vaildation.
+            if (_consumerSession.getAcknowledgeMode() != AMQSession.NO_ACKNOWLEDGE)
+            {
+                assertEquals("Wrong number of messages on queue", 1,
+                             ((AMQSession) session).getQueueDepth((AMQDestination) _queue));
+            }
+
+
         }
         catch (Exception e)
         {
             fail("Unable to prep new broker," + e.getMessage());
         }
+        finally
+        {
+            connection.close();
+        }
 
         try
         {
 
-            if (msgCount % 2 == 0)
+            //Restart the broker
+            if (index % 2 == 0)
             {
                 startBroker(getFailingPort());
             }
@@ -138,8 +192,27 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
 
     }
 
-    int msgCount = 0;
-    boolean cleaned = false;
+    @Override
+    public void doAcknowlegement(Message msg) throws JMSException
+    {
+        //Acknowledge current message
+        super.doAcknowlegement(msg);
+
+        try
+        {
+            prepBroker(msg.getIntProperty(INDEX));
+        }
+        catch (Exception e)
+        {
+            // Provide details of what went wrong with the stack trace
+            e.printStackTrace();
+            fail("Unable to prep new broker," + e);
+        }
+    }
+
+    // Instance varilable for DirtyAcking test    
+    int _msgCount = 0;
+    boolean _cleaned = false;
 
     class DirtyAckingHandler implements MessageListener
     {
@@ -164,10 +237,10 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
             try
             {
                 // Check we have the next message as expected
-                assertNotNull("Message " + msgCount + " not correctly received.", message);
-                assertEquals("Incorrect message received", msgCount, message.getIntProperty(INDEX));
+                assertNotNull("Message " + _msgCount + " not correctly received.", message);
+                assertEquals("Incorrect message received", _msgCount, message.getIntProperty(INDEX));
 
-                if (msgCount == 0 && _failoverCompleted.getCount() != 0)
+                if (_msgCount == 0 && _failoverCompleted.getCount() != 0)
                 {
                     // This is the first message we've received so lets fail the broker
 
@@ -180,16 +253,16 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
                     return;
                 }
 
-                msgCount++;
+                _msgCount++;
 
                 // Don't acknowlege the first message after failover so we can commit
                 // them together
-                if (msgCount == 1)
+                if (_msgCount == 1)
                 {
-                    _logger.error("Received first msg after failover ignoring:" + msgCount);
+                    _logger.error("Received first msg after failover ignoring:" + _msgCount);
 
                     // Acknowledge the first message if we are now on the cleaned pass
-                    if (cleaned)
+                    if (_cleaned)
                     {
                         _receivedAll.countDown();
                     }
@@ -202,7 +275,7 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
                     try
                     {
                         _consumerSession.commit();
-                        if (!cleaned)
+                        if (!_cleaned)
                         {
                             fail("Session is dirty we should get an TransactionRolledBackException");
                         }
@@ -217,7 +290,7 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
                     try
                     {
                         message.acknowledge();
-                        if (!cleaned)
+                        if (!_cleaned)
                         {
                             fail("Session is dirty we should get an IllegalStateException");
                         }
@@ -232,14 +305,14 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
 
                 // Acknowledge the last message if we are in a clean state
                 // this will then trigger test teardown.
-                if (cleaned)
+                if (_cleaned)
                 {
                     _receivedAll.countDown();
                 }
 
                 //Reset message count so we can try again.
-                msgCount = 0;
-                cleaned = true;
+                _msgCount = 0;
+                _cleaned = true;
             }
             catch (Exception e)
             {
