@@ -35,8 +35,10 @@ TESTAGENT_GEN_SRC=									\
 	testagent_gen/qmf/org/apache/qpid/agent/example/Package.cpp
 
 $(TESTAGENT_GEN_SRC): testagent_gen.timestamp
-
-testagent_gen.timestamp: testagent.xml ../mgen.timestamp
+if GENERATE
+TESTAGENT_DEPS=../mgen.timestamp
+endif # GENERATE
+testagent_gen.timestamp: testagent.xml ${TESTAGENT_DEPS}
 	$(QMF_GEN) -o testagent_gen/qmf $(srcdir)/testagent.xml
 	touch $@
 
