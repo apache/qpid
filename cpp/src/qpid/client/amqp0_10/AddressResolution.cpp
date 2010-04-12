@@ -72,7 +72,6 @@ class Verifier
 };
 
 namespace{
-const Verifier verifier;
 const Variant EMPTY_VARIANT;
 const FieldTable EMPTY_FIELD_TABLE;
 const Variant::List EMPTY_LIST;
@@ -129,6 +128,8 @@ const std::string DIRECT_EXCHANGE("direct");
 const std::string HEADERS_EXCHANGE("headers");
 const std::string XML_EXCHANGE("xml");
 const std::string WILDCARD_ANY("*");
+
+const Verifier verifier;
 }
 
 struct Binding
@@ -922,24 +923,24 @@ std::vector<std::string> Node::SENDER_MODES = list_of<std::string>(ALWAYS) (SEND
 
 Verifier::Verifier()
 {
-    defined["create"] = true;
-    defined["assert"] = true;
-    defined["delete"] = true;
-    defined["mode"] = true;
+    defined[CREATE] = true;
+    defined[ASSERT] = true;
+    defined[DELETE] = true;
+    defined[MODE] = true;
     Variant::Map node;
-    node["type"] = true;
-    node["durable"] = true;
-    node["x-declare"] = true;
-    node["x-bindings"] = true;
-    defined["node"] = node;
+    node[TYPE] = true;
+    node[DURABLE] = true;
+    node[X_DECLARE] = true;
+    node[X_BINDINGS] = true;
+    defined[NODE] = node;
     Variant::Map link;
-    link["name"] = true;
-    link["durable"] = true;
-    link["reliable"] = true;
-    link["x-subscribe"] = true;
-    link["x-declare"] = true;
-    link["x-bindings"] = true;
-    defined["link"] = link;
+    link[NAME] = true;
+    link[DURABLE] = true;
+    link[RELIABILITY] = true;
+    link[X_SUBSCRIBE] = true;
+    link[X_DECLARE] = true;
+    link[X_BINDINGS] = true;
+    defined[LINK] = link;
 }
 void Verifier::verify(const Address& address) const
 {
