@@ -40,6 +40,8 @@ op.add_option("--send-rate", default=0, metavar="R",
               help="send rate limited to R messages/second, 0 means no limit (default %default)")
 op.add_option("--content-size", default=1024, type="int", metavar="BYTES", 
               help="message size in bytes (default %default)")
+op.add_option("--ack-frequency", default=0, metavar="N", type="int",
+              help="receiver ack's every N messages, 0 means unconfirmed")
 
 def start_receive(queue, opts):
     return Popen(["qpid_receive",
@@ -48,6 +50,7 @@ def start_receive(queue, opts):
                   "--forever",
                   "--print-content=no",
                   "--report-total",
+                  "--ack-frequency", str(opts.ack_frequency),
                   ],
                  stdout=PIPE, stderr=STDOUT)
 
