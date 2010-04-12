@@ -39,7 +39,7 @@ Connection::Connection(const Connection& c) : Handle<ConnectionImpl>() { PI::cop
 Connection& Connection::operator=(const Connection& c) { return PI::assign(*this, c); }
 Connection::~Connection() { PI::dtor(*this); }
 
-Connection::Connection(const std::string& url, const std::string& o) throw(InvalidOptionString)
+Connection::Connection(const std::string& url, const std::string& o)
 { 
     Variant::Map options;
     AddressParser parser(o);
