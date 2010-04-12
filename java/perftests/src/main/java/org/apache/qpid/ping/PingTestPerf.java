@@ -122,9 +122,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
         }
     }
 
-    /**
-     * Performs test fixture creation on a per thread basis. This will only be called once for each test thread.
-     */
+    /** Performs test fixture creation on a per thread basis. This will only be called once for each test thread. */
     public void threadSetUp()
     {
         _logger.debug("public void threadSetUp(): called");
@@ -142,9 +140,28 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                 perThreadSetup._pingClient.establishConnection(true, true);
             }
 
-            // Prefill the broker unless we are in consume only mode. 
-            int preFill = testParameters.getPropertyAsInteger(PingPongProducer.PREFILL_PROPNAME);
-            if (!testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME) && preFill > 0)
+            // Attach the per-thread set to the thread.
+            threadSetup.set(perThreadSetup);
+        }
+        catch (Exception e)
+        {
+            _logger.warn("There was an exception during per thread setup.", e);
+        }
+    }
+
+    /**
+     * Called after all threads have completed their setup.
+     */    
+    public void postThreadSetUp()
+    {
+        _logger.debug("public void postThreadSetUp(): called");
+
+        PerThreadSetup perThreadSetup = threadSetup.get();
+        // Prefill the broker unless we are in consume only mode.
+        int preFill = testParameters.getPropertyAsInteger(PingPongProducer.PREFILL_PROPNAME);
+        if (!testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME) && preFill > 0)
+        {
+            try
             {
                 // Manually set the correlation ID to 1. This is not ideal but it is the
                 // value that the main test loop will use.
@@ -156,8 +173,12 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
 
                 long delayBeforeConsume = testParameters.getPropertyAsLong(PingPongProducer.DELAY_BEFORE_CONSUME_PROPNAME);
 
-                //  Only delay if we have consumers and a delayBeforeConsume
-                if ((testParameters.getPropertyAsInteger(PingPongProducer.NUM_CONSUMERS_PROPNAME) > 0)
+                // Only delay if we are
+                //  not doing send only
+                //  and we have consumers
+                //  and a delayBeforeConsume
+                if (!(testParameters.getPropertyAsBoolean(PingPongProducer.SEND_ONLY_PROPNAME))
+                    && (testParameters.getPropertyAsInteger(PingPongProducer.NUM_CONSUMERS_PROPNAME) > 0)
                     && delayBeforeConsume > 0)
                 {
 
@@ -170,11 +191,11 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                             long minutes = delayBeforeConsume / 60000;
                             long seconds = (delayBeforeConsume - (minutes * 60000)) / 1000;
                             long ms = delayBeforeConsume - (minutes * 60000) - (seconds * 1000);
-                                _logger.info("Delaying for " + minutes + "m " + seconds + "s " + ms + "ms before starting test.");
+                            _logger.info("Delaying for " + minutes + "m " + seconds + "s " + ms + "ms before starting test.");
                         }
                         else
                         {
-                                _logger.info("Delaying for " + delayBeforeConsume + "ms before starting test.");
+                            _logger.info("Delaying for " + delayBeforeConsume + "ms before starting test.");
                         }
                     }
 
@@ -190,22 +211,30 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                 // only when the test method is executed will the correlationID map be set up and ready to consume
                 // the messages we have sent here.
             }
-            else //Only start the consumer if we are not preFilling.
+            catch (Exception e)
             {
-                // Only start the consumer if we don't have messages waiting to be received.
-                // we need to set up the correlationID mapping first
-                if (!testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME))
+                _logger.warn("There was an exception during per thread setup.", e);
+            }
+        }
+        else //Only start the consumer if we are not preFilling.
+        {
+            // Start the consumers, unless we have data on the broker
+            // already this is signified by being in consume_only, we will
+            //  start the clients after setting up the correlation IDs.
+            // We should also not start the clients if we are in Send only
+            if (!testParameters.getPropertyAsBoolean(PingPongProducer.CONSUME_ONLY_PROPNAME) &&
+                !(testParameters.getPropertyAsBoolean(PingPongProducer.SEND_ONLY_PROPNAME)))
+            {
+                // Start the client connection
+                try
                 {
-                    // Start the client connection
                     perThreadSetup._pingClient.start();
                 }
+                catch (JMSException e)
+                {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
             }
-            // Attach the per-thread set to the thread.
-            threadSetup.set(perThreadSetup);
-        }
-        catch (Exception e)
-        {
-            _logger.warn("There was an exception during per thread setup.", e);
         }
     }
 

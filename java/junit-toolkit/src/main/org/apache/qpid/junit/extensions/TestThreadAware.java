@@ -43,6 +43,11 @@ public interface TestThreadAware
     public void threadSetUp();
 
     /**
+     * Called after all threads have completed their setup.
+     */
+    public void postThreadSetUp();
+
+    /**
      * Called when a test thread is destroyed.
      */
     public void threadTearDown();
