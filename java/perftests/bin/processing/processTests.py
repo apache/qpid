@@ -29,7 +29,7 @@ import shutil
 
 
 def showUsage():
-    log("./pT.py [-b|--broker-log-dir] <dir> [-t|--test-dir] <dir>")
+    log("./processTests.py [-b|--broker-log-dir] <dir> [-t|--test-dir] <dir>")
 
 
 ACCESS="Access"
@@ -39,6 +39,7 @@ BROKER_LOG="broker.log"
 BROKER_PID="broker.pid"
 BROKER_CPU="broker_cpu.log"
 BROKER_CPU_DATED="broker_cpu.log.dated"
+BROKER_STATS="broker.stats"
 BROKER_GC="gc.log"
 
 GRAPH_DATA="graph.data"
@@ -124,7 +125,7 @@ def processCPUUsage(resultDir):
     # Calulate addition required per process line output
     #
     if topRate.find(".") == -1:
-       second = topRate
+       seconds = topRate
        millis = 0
     else:
        split = topRate.split('.')
@@ -142,32 +143,102 @@ def processCPUUsage(resultDir):
     logfile = open(logfile, "r")
 
     # Open the output file, erasing any existing version
+    # Keep track of the min/max sum and entries,.
+    minCPU=float(sys.maxint)
+    maxCPU=0.0
+    minMem=float(sys.maxint)
+    maxMem=0.0
+    
+    entries=0
+    sumCPU=0.0
+    sumMem=0.0
+    
+    entries = 0
     output= open(datedFile, "w")
-    for line in logfile:
-        if line.find(pid) != -1:
-	    # Split line on whitespace
-	    data = line.split()
-
+    for line in logfile:        
 	    #
 	    # Data format
 	    # 0  1     2   3  4    5     6    7    8   9   10 11
-	    # PID USER PR  NI %CPU TIME+ %MEM VIRT RES SHR S  COMMAND    
+	    # PID USER PR  NI %CPU TIME+ %MEM VIRT RES SHR S  COMMAND   
+        # PID USER PR  NI VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND       
 	    # 
-	    
-	    #Write out the date time (ISO-8601 format)
-	    output.write(str(start))
-	    # Output the %CPU value
-	    output.write(" "+str(data[4]))
-   	    # Output the %MEM value
-	    output.write(" "+str(data[5]))
-	    output.write('\n')
+        # %CPU and %MEM are vary, probably based on os/version of top.
+        # lets auto-detect where it is.
+        #    
+        # Index is 0 based for array usage.               
+        index = 0
+        if line.find("PID") != -1:            
+            for key in line.split(" "):
+                strippedKey = key.lstrip()
+                if len(strippedKey) > 0:
+                    # Record the key index
+                    if (strippedKey == "%CPU"):                                   
+                        cpuIndex=index
+                    if (strippedKey == "%MEM"):                                   
+                        memIndex=index
+                    # Increase count for next key                    
+                    index = index + 1
 
-	    # Add the offset based on the logging rate
-	    start = start + offset
+
+        # Find lines that contain our broker process                          
+        if line.find("QPBRKR") != -1:    
+            
+            # Split line on whitespace
+            data = line.split()
+            
+            #Write out the date time (ISO-8601 format)
+            output.write(str(start))
+            # Output the %CPU value
+            output.write(" "+str(data[cpuIndex]))
+            # Output the %MEM value
+            output.write(" "+str(data[memIndex]))
+            output.write('\n')
+            
+            # Add the offset based on the logging rate
+            start = start + offset
+            
+            # Record entires
+            entries = entries + 1
+            
+            # Record Metrics
+            # Record CPU data
+            cpu = float(data[cpuIndex])
+            if (cpu < minCPU):
+                minCPU = cpu
+        
+            if (cpu > maxCPU):
+                maxCPU = cpu
+            
+            sumCPU = sumCPU + cpu
+            
+            # Record Mem data
+            mem = float(data[memIndex])
+            
+            if (mem < minMem):
+                minMem = mem
+            
+            if (mem > maxMem):
+                maxMem = mem
+                
+            sumMem = sumMem + mem
+    
+            
+            #end for
 
     # Close the files
     logfile.close
     output.close  
+    
+    # Output stats file
+    statFile=resultDir+os.sep+BROKER_CPU+".stats"
+    output= open(statFile, "w")
+    output.write("#type:min/max/avg")        
+    output.write('\n')
+    output.write("CPU:"+str(minCPU)+"/"+str(maxCPU)+"/"+str(float(sumCPU)/float(entries)))
+    output.write('\n')
+    output.write("MEM:"+str(minMem)+"/"+str(maxMem)+"/"+str(float(sumMem)/float(entries)))
+    output.write('\n')    
+    output.close
     
     log("Pre Process of CPU Log file '"+BROKER_CPU+"' complete")
     
@@ -306,11 +377,23 @@ def sliceCPULog(resultDir, start, end):
     # Open log CPU file for reading
     logFile = open(logfilePath, "r")
     
+    # Open the output file, erasing any existing version
+    # Keep track of the min/max sum and entries,.
+    minCPU=float(sys.maxint)
+    maxCPU=0.0
+    minMem=float(sys.maxint)
+    maxMem=0.0
+    
+    entries=0
+    sumCPU=0.0
+    sumMem=0.0
+    
+    entries = 0
+    
     #
     # Create outputfile
     #
-    cpuslice = open(cpuSliceFile,"w")
-    
+    cpuslice = open(cpuSliceFile,"w")    
     for line in logFile:
     	data = line.split()
 	#
@@ -320,11 +403,63 @@ def sliceCPULog(resultDir, start, end):
 	
 	if lineTime > start:
 	    if lineTime < end:
+            # Write the data though to the new file
    	        cpuslice.writelines(line)
+            
+            # Perform stat processing for the min/max/avg
+            
+            data = line.split()
+            
+            #
+            # Data format is
+            # <Date> <Time> <%CPU> <%MEM>
+            # 2010-02-19 10:16:17 157 28.1
+            #
+            cpuIndex = 2
+            memIndex = 3
+            
+            # Record entires
+            entries = entries + 1
+            
+            # Record Metrics
+            # Record CPU data
+            cpu = float(data[cpuIndex])
+            if (cpu < minCPU):
+                minCPU = cpu
+        
+            if (cpu > maxCPU):
+                maxCPU = cpu
+            
+            sumCPU = sumCPU + cpu
+            
+            # Record Mem data
+            mem = float(data[memIndex])
+            
+            if (mem < minMem):
+                minMem = mem
+            
+            if (mem > maxMem):
+                maxMem = mem
+                
+            sumMem = sumMem + mem
 
     logFile.close()
     cpuslice.close()
     log("Sliced CPU log")
+    
+    # Output stats file
+    statFile=cpuSliceFile+".stats"
+    output= open(statFile, "w")
+    output.write("#type:min/max/avg")        
+    output.write('\n')
+    output.write("CPU:"+str(minCPU)+"/"+str(maxCPU)+"/"+str(float(sumCPU)/float(entries)))
+    output.write('\n')
+    output.write("MEM:"+str(minMem)+"/"+str(maxMem)+"/"+str(float(sumMem)/float(entries)))
+    output.write('\n')    
+    output.close
+    
+    log("Generated stat data from CPU Log file")
+    
 
 def sliceGCLog(resultDir, start, end):
     global _brokerLogs
@@ -332,6 +467,14 @@ def sliceGCLog(resultDir, start, end):
     sliceFile=resultDir+os.sep+BROKER_GC
     
     gcstart = extractTime(ACCESS, logfilePath+".stat")        
+    
+    # Open the output file, erasing any existing version
+    # Keep track of the min/max sum and entries,.
+    minGCDuration=float(sys.maxint)
+    maxGCDuration=0.0    
+    sumGCDuration=0.0        
+    entriesGCDuration = 0
+
     
     # Open log GC file for reading
     logFile = open(logfilePath, "r")
@@ -357,11 +500,59 @@ def sliceGCLog(resultDir, start, end):
 	    if lineTime > start:
 	        if lineTime < end:
    	            output.writelines(line)
+                # Perform stat processing for the min/max/avg
+                
+                # Process GC Duration lines in ParNew gc , 
+                #  ensure we do not have CMS printed as that means the line line has been corrupted
+                if line.find("ParNew") != -1 & line.find("CMS") == -1:                    
+                    
+                    #
+                    # Example data line
+                    # 7.646: [GC 7.646: [ParNew: 14778K->461K(14784K), 0.0026610 secs] 49879K->36609K(73288K), 0.0027560 secs] [Times: user=0.01 sys=0.00, real=0.01 secs]
+                    #   
+                    # So entry 5 is the ParNew time and 8 is the whole GC cycle. 14 entries total
+                    
+                    data = line.split()
+                    
+                    gcTime = 0  
+                    # Check we have a valid ParNew Line
+                    if (len(data) == 15):
+                        
+                        # Record entires
+                        # Record GC Duration data
+
+                        entriesGCDuration = entriesGCDuration + 1
+                        gcTime = float(data[8])
+                        
+                        if (gcTime < minGCDuration):
+                            minGCDuration = gcTime
+                        
+                        if (gcTime > maxGCDuration):
+                            maxGCDuration = gcTime
+                            
+                        sumGCDuration = sumGCDuration + gcTime
+
+
 				
     # Close the files
     logFile.close
     output.close()
+
     log("Sliced gc log")
+    
+    # Output stats file
+    statFile=sliceFile+".stats"
+    output= open(statFile, "w")
+    output.write("#type:min/max/avg")        
+    output.write('\n')
+    #
+    # Only provide GCDuration if it was processed
+    #       
+    output.write("GC_DUR:%.14f/%.14f/%.14f" % (minGCDuration, maxGCDuration , (sumGCDuration/float(entriesGCDuration))))
+    output.write('\n')
+    output.close
+    
+    log("Generated stat data from CPU Log file")                
 
 	    
 def sliceLog4j(resultDir, start, end):    
@@ -437,8 +628,7 @@ def hasTime(data):
     timeRE = re.compile('[0-9][0-9]:[0-9][0-9]:[0-9][0-9]?[0-9]*')
 
     return dateRE.match(date) and timeRE.match(time)
- 
-    
+     
 def createGraphData(resultDir, testName):
     # Create graph.data file for process.sh
     # Format two lines : Title and filename
@@ -564,4 +754,5 @@ def mkdir(dir):
         os.mkdir(dir)
     
 if __name__ == "__main__":
+    
     main()
