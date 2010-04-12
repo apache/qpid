@@ -872,6 +872,13 @@ QPID_AUTO_TEST_CASE(testRelease)
     fix.session.acknowledge(true);
 }
 
+QPID_AUTO_TEST_CASE(testOptionVerification)
+{
+    MessagingFixture fix;
+    fix.session.createReceiver("my-queue; {create: always, assert: always, delete: always, node: {type: queue, durable: false, x-declare: {arguments: {a: b}}, x-bindings: [{exchange: amq.fanout}]}, link: {name: abc, durable: false, reliability: exactly-once, x-subscribe: {arguments:{a:b}}, x-bindings:[{exchange: amq.fanout}]}, mode: browse}");
+    BOOST_CHECK_THROW(fix.session.createReceiver("my-queue; {invalid-option:blah}"), qpid::messaging::AddressError);    
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
