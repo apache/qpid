@@ -75,7 +75,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      * 
      * @exception InvalidOptionString if the string does not match the correct syntax
      */
-    QPID_CLIENT_EXTERN Connection(const std::string& url, const std::string& options) throw(InvalidOptionString);
+    QPID_CLIENT_EXTERN Connection(const std::string& url, const std::string& options);
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
     QPID_CLIENT_EXTERN void setOption(const std::string& name, const qpid::types::Variant& value);
