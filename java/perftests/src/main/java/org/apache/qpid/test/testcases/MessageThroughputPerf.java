@@ -165,6 +165,14 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
     }
 
     /**
+     * Called after all threads have completed their setup.
+     */
+    public void postThreadSetUp()
+    {
+        //Nothing to do here, potentially implement preFill as per PingTestPerf.
+    }
+
+    /**
      * Called when a test thread is destroyed.
      */
     public void threadTearDown()
