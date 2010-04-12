@@ -128,8 +128,8 @@ public class TestUtils
 
         if (size > 0)
         {
-            int div = MESSAGE_DATA_BYTES.length / size;
-            int mod = MESSAGE_DATA_BYTES.length % size;
+            int div = size / MESSAGE_DATA_BYTES.length;
+            int mod = size % MESSAGE_DATA_BYTES.length;
 
             for (int i = 0; i < div; i++)
             {
