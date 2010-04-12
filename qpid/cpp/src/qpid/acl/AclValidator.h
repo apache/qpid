@@ -33,49 +33,47 @@ namespace acl {
 class AclValidator {
 
     /* Base Property */
-   class AclProperty{        
+   class PropertyType{        
+        
         public:
-            enum PropertyType { INT, STRING, ENUM };
-
-        public:
-            virtual ~AclProperty(){};
-            virtual int getType()=0;
+            virtual ~PropertyType(){};
             virtual bool validate(const std::string& val)=0;
             virtual std::string allowedValues()=0;
    };
 
-   class AclIntProperty : public AclProperty{        
+   class IntPropertyType : public PropertyType{        
             int64_t min;
             int64_t max;
         
         public:
-            AclIntProperty(int64_t min,int64_t max);
-            virtual ~AclIntProperty (){};
-            int getType(){ return AclProperty::INT; }
+            IntPropertyType(int64_t min,int64_t max);
+            virtual ~IntPropertyType (){};
             virtual bool validate(const std::string& val);
             virtual std::string allowedValues();
    };
 
-   class AclEnumProperty : public AclProperty{
+   class EnumPropertyType : public PropertyType{
             std::vector<std::string> values;               
 
         public:
-            AclEnumProperty(std::vector<std::string>& allowed);
-            virtual ~AclEnumProperty (){};
-            int getType(){ return AclProperty::ENUM; }
+            EnumPropertyType(std::vector<std::string>& allowed);
+            virtual ~EnumPropertyType (){};
             virtual bool validate(const std::string& val);
             virtual std::string allowedValues();
    };
    
-   typedef std::pair<acl::Property,boost::shared_ptr<AclProperty> > Validator;
-   typedef std::map<acl::Property,boost::shared_ptr<AclProperty> > ValidatorMap;
+   typedef std::pair<acl::Property,boost::shared_ptr<PropertyType> > Validator;
+   typedef std::map<acl::Property,boost::shared_ptr<PropertyType> > ValidatorMap;
    typedef ValidatorMap::iterator ValidatorItr;
  
    ValidatorMap validators;
 
 public:
-     
-   void validate(boost::shared_ptr<AclData> d);
+
+   void validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules);
+   void validateRule(qpid::acl::AclData::rule& rule);
+   void validateProperty(std::pair<const qpid::acl::Property, std::string>& prop);
+   void validate(boost::shared_ptr<AclData> d);   
    AclValidator();
    ~AclValidator();
 };
