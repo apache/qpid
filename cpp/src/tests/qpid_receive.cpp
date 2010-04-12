@@ -22,6 +22,7 @@
 #include <qpid/messaging/Address.h>
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Receiver.h>
+#include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/Options.h>
@@ -63,6 +64,7 @@ struct Options : public qpid::Options
     qpid::log::Options log;
     bool reportTotal;
     uint reportEvery;
+    string readyAddress;
 
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
@@ -100,6 +102,8 @@ struct Options : public qpid::Options
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput and latency statistics every N messages.")
+            ("ready-address", qpid::optValue(readyAddress, "ADDRESS"),
+             "send a message to this address when ready to receive")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -173,6 +177,8 @@ int main(int argc, char ** argv)
             Duration timeout = opts.getTimeout();
             bool done = false;
             Reporter<ThroughputAndLatency> reporter(std::cout, opts.reportEvery);
+            if (!opts.readyAddress.empty()) 
+                session.createSender(opts.readyAddress).send(msg);
             while (!done && receiver.fetch(msg, timeout)) {
                 reporter.message(msg);
                 if (!opts.ignoreDuplicates || !sequenceTracker.isDuplicate(msg)) {
