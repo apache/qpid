@@ -260,8 +260,8 @@ public class ConversationFactory
          */
         public void send(Destination sendDestination, Message message) throws JMSException
         {
-            log.debug("public void send(Destination sendDestination = " + sendDestination + ", Message message = " + message
-                + "): called");
+            log.debug("public void send(Destination sendDestination = " + sendDestination + ", Message message = "
+                    + message.getJMSMessageID() + "): called");
 
             // Conversation settings = threadLocals.get();
             // long conversationId = conversationId;
