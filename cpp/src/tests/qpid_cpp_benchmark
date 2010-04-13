@@ -45,30 +45,36 @@ op.add_option("--ack-frequency", default=0, metavar="N", type="int",
 op.add_option("--no-report-header", dest="report_header", default=True,
               action="store_false", help="don't print header on report")
 op.add_option("--repeat", default=1, metavar="N", help="repeat N times", type="int")
+op.add_option("--reliable", default=False, action="store_true",
+              help="Use reliable message delivery")
 
 def start_receive(queue, opts, ready_queue):
+    relop=""
+    if not opts.reliable: relop=",link:{reliability:unreliable}"
     return Popen(["qpid_receive",
                   "-b", opts.broker,
-                  "-a", "%s;{create:always}"%(queue),
+                  "-a", "%s;{create:always%s}"%(queue,relop),
                   "--forever",
                   "--print-content=no",
                   "--report-total",
                   "--ack-frequency", str(opts.ack_frequency),
                   "--ready-address", ready_queue,
-                  "--report-header=no"
+                  "--report-header=no",
                   ],
                  stdout=PIPE, stderr=STDOUT)
 
 def start_send(queue, opts):
+    relop=""
+    if not opts.reliable: relop=";{link:{reliability:unreliable}}"
     return Popen(["qpid_send",
                   "-b", opts.broker,
-                  "-a", queue,
+                  "-a", "%s%s"%(queue, relop),
                   "--messages", str(opts.messages),
                   "--send-eos", str(opts.receivers),
                   "--content-size", str(opts.content_size),
                   "--rate", str(opts.send_rate),
                   "--report-total",
-                  "--report-header=no"
+                  "--report-header=no",
                   ],
                  stdout=PIPE, stderr=STDOUT)
 
@@ -106,14 +112,19 @@ class ReadyReceiver:
             "%s;{create:always,delete:always}"%(queue))
         self.timeout=2
 
-    def wait(self, n):
+    def wait(self, receivers):
         try:
-            for i in xrange(n): self.receiver.fetch(self.timeout)
-        except qpid.messaging.Empty: raise "Timed out waiting for receivers to be ready"
-        self.connection.close()
+            for i in xrange(len(receivers)): self.receiver.fetch(self.timeout)
+            self.connection.close()
+        except qpid.messaging.Empty:
+            for r in receivers:
+                if (r.poll()): raise "Receiver error: %s"%(wait_for_output(r))
+            raise "Timed out waiting for receivers to be ready"
 
 def main():
     opts, args = op.parse_args()
+    send_out = ""
+    receive_out = ""
     ready_queue="%s-ready"%(opts.queue_name)
     queues = ["%s-%s"%(opts.queue_name, i) for i in xrange(opts.queues)]
     for i in xrange(opts.repeat):
@@ -121,7 +132,7 @@ def main():
         ready_receiver = ReadyReceiver(ready_queue, opts.broker)
         receivers = [start_receive(q, opts, ready_queue)
                      for q in queues for i in xrange(opts.receivers)]
-        ready_receiver.wait(len(receivers)) # Wait for receivers to be ready.
+        ready_receiver.wait(receivers) # Wait for receivers to be ready.
         senders = [start_send(q, opts) for q in queues for i in xrange(opts.senders)]
         print_output(senders, receivers, opts.report_header)
         delete_queues(queues, opts.broker)
