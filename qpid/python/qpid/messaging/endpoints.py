@@ -172,14 +172,14 @@ class Connection:
     self._modcount += 1
     self._driver.wakeup()
 
-  def _check_error(self, exc=ConnectionError):
+  def check_error(self):
     if self.error:
       self._condition.gc()
-      raise exc(*self.error)
+      raise self.error
 
-  def _ewait(self, predicate, timeout=None, exc=ConnectionError):
+  def _ewait(self, predicate, timeout=None):
     result = self._wait(lambda: self.error or predicate(), timeout)
-    self._check_error(exc)
+    self.check_error()
     return result
 
   @synchronized
@@ -238,8 +238,7 @@ class Connection:
     self._connected = True
     self._driver.start()
     self._wakeup()
-    self._ewait(lambda: self._transport_connected and not self._unlinked(),
-                exc=ConnectError)
+    self._ewait(lambda: self._transport_connected and not self._unlinked())
 
   def _unlinked(self):
     return [l
@@ -509,14 +508,14 @@ class Session:
   def _wakeup(self):
     self.connection._wakeup()
 
-  def _check_error(self, exc=SessionError):
-    self.connection._check_error(exc)
+  def check_error(self):
+    self.connection.check_error()
     if self.error:
-      raise exc(*self.error)
+      raise self.error
 
-  def _ewait(self, predicate, timeout=None, exc=SessionError):
-    result = self.connection._ewait(lambda: self.error or predicate(), timeout, exc)
-    self._check_error(exc)
+  def _ewait(self, predicate, timeout=None):
+    result = self.connection._ewait(lambda: self.error or predicate(), timeout)
+    self.check_error()
     return result
 
   @synchronized
@@ -537,7 +536,7 @@ class Session:
       self._wakeup()
       try:
         sender._ewait(lambda: sender.linked)
-      except SendError, e:
+      except LinkError, e:
         sender.close()
         raise e
     return sender
@@ -560,7 +559,7 @@ class Session:
       self._wakeup()
       try:
         receiver._ewait(lambda: receiver.linked)
-      except ReceiveError, e:
+      except LinkError, e:
         receiver.close()
         raise e
     return receiver
@@ -706,14 +705,14 @@ class Sender:
   def _wakeup(self):
     self.session._wakeup()
 
-  def _check_error(self, exc=SendError):
-    self.session._check_error(exc)
+  def check_error(self):
+    self.session.check_error()
     if self.error:
-      raise exc(*self.error)
+      raise self.error
 
-  def _ewait(self, predicate, timeout=None, exc=SendError):
-    result = self.session._ewait(lambda: self.error or predicate(), timeout, exc)
-    self._check_error(exc)
+  def _ewait(self, predicate, timeout=None):
+    result = self.session._ewait(lambda: self.error or predicate(), timeout)
+    self.check_error()
     return result
 
   @synchronized
@@ -849,14 +848,14 @@ class Receiver(object):
   def _wakeup(self):
     self.session._wakeup()
 
-  def _check_error(self, exc=ReceiveError):
-    self.session._check_error(exc)
+  def check_error(self):
+    self.session.check_error()
     if self.error:
-      raise exc(*self.error)
+      raise self.error
 
-  def _ewait(self, predicate, timeout=None, exc=ReceiveError):
-    result = self.session._ewait(lambda: self.error or predicate(), timeout, exc)
-    self._check_error(exc)
+  def _ewait(self, predicate, timeout=None):
+    result = self.session._ewait(lambda: self.error or predicate(), timeout)
+    self.check_error()
     return result
 
   @synchronized
