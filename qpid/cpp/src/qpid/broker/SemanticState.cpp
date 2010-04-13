@@ -413,8 +413,17 @@ void SemanticState::handle(intrusive_ptr<Message> msg) {
     } else {
         DeliverableMessage deliverable(msg);
         route(msg, deliverable);
-        if (msg->checkContentReleasable()) {
-            msg->releaseContent();
+        if (msg->isContentReleaseRequested()) {
+            // NOTE: The log messages in this section are used for flow-to-disk testing (which checks the log for the
+            // presence of these messages). Do not change these without also checking these tests.
+            if (msg->isContentReleaseBlocked()) {
+                QPID_LOG(debug, "Message id=\"" << msg->getProperties<MessageProperties>()->getMessageId() << "\"; pid=0x" <<
+                                std::hex << msg->getPersistenceId() << std::dec << ": Content release blocked");
+            } else {
+                msg->releaseContent();
+                QPID_LOG(debug, "Message id=\"" << msg->getProperties<MessageProperties>()->getMessageId() << "\"; pid=0x" <<
+                                std::hex << msg->getPersistenceId() << std::dec << ": Content released");
+            }
         }
     }
 }

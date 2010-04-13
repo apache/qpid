@@ -110,6 +110,8 @@ class PersistableMessage : public Persistable
     void requestContentRelease();
     void blockContentRelease();
     bool checkContentReleasable();
+    bool isContentReleaseBlocked();
+    bool isContentReleaseRequested();
 
     virtual QPID_BROKER_EXTERN bool isPersistent() const = 0;
 

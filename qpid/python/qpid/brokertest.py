@@ -42,8 +42,8 @@ def find_exe(program):
     """Find an executable in the system PATH"""
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    dir, name = os.path.split(program)
-    if dir:
+    mydir, name = os.path.split(program)
+    if mydir:
         if is_exe(program): return program
     else:
         for path in os.environ["PATH"].split(os.pathsep):
@@ -69,6 +69,8 @@ class ExceptionWrapper:
         
     def __getattr__(self, name):
         func = getattr(self.obj, name)
+        if type(func) != callable:
+            return func
         return lambda *args, **kwargs: self._wrap(func, args, kwargs)
 
     def _wrap(self, func, args, kwargs):
@@ -125,7 +127,7 @@ class Popen(popen2.Popen3):
                 if self.outfile is not None: self.outfile.close()
 
     class OutStream(ExceptionWrapper):
-        """Wrapper for output streams, handles excpetions & draining output"""
+        """Wrapper for output streams, handles exceptions & draining output"""
         def __init__(self, infile, outfile, msg):
             ExceptionWrapper.__init__(self, infile, msg)
             self.infile, self.outfile = infile, outfile
@@ -214,7 +216,7 @@ class Popen(popen2.Popen3):
         return self.poll() is None
 
     def assert_running(self):
-        if not self.is_running(): unexpected("Exit code %d" % self.returncode)
+        if not self.is_running(): self.unexpected("Exit code %d" % self.returncode)
 
     def poll(self):
         if self.returncode is not None: return self.returncode
@@ -256,8 +258,11 @@ class Broker(Popen):
         while (os.path.exists(self.log)):
             self.log = "%s-%d.log" % (self.name, i)
             i += 1
+    
+    def get_log(self):
+        return os.path.abspath(self.log)
 
-    def __init__(self, test, args=[], name=None, expect=EXPECT_RUNNING, port=0):
+    def __init__(self, test, args=[], name=None, expect=EXPECT_RUNNING, port=0, log_level=None):
         """Start a broker daemon. name determines the data-dir and log
         file names."""
 
@@ -270,7 +275,9 @@ class Broker(Popen):
             Broker._broker_count += 1
         self.find_log()
         cmd += ["--log-to-file", self.log, "--log-prefix", self.name]
-        cmd += ["--log-to-stderr=no"] 
+        cmd += ["--log-to-stderr=no"]
+        if log_level != None:
+            cmd += ["--log-enable=%s" % log_level] 
         self.datadir = self.name
         cmd += ["--data-dir", self.datadir]
         Popen.__init__(self, cmd, expect, drain=False)
@@ -285,7 +292,7 @@ class Broker(Popen):
         # Read port from broker process stdout if not already read.
         if (self._port == 0):
             try: self._port = int(self.stdout.readline())
-            except ValueError, e:
+            except ValueError:
                 raise Exception("Can't get port for broker %s (%s)%s" %
                                 (self.name, self.pname, error_line(self.log)))
         return self._port
@@ -459,9 +466,9 @@ class BrokerTest(TestCase):
         self.cleanup_stop(p)
         return p
 
-    def broker(self, args=[], name=None, expect=EXPECT_RUNNING,wait=True,port=0):
+    def broker(self, args=[], name=None, expect=EXPECT_RUNNING, wait=True, port=0, log_level=None):
         """Create and return a broker ready for use"""
-        b = Broker(self, args=args, name=name, expect=expect, port=port)
+        b = Broker(self, args=args, name=name, expect=expect, port=port, log_level=log_level)
         if (wait):
             try: b.ready()
             except Exception, e:
@@ -473,9 +480,9 @@ class BrokerTest(TestCase):
         cluster = Cluster(self, count, args, expect=expect, wait=wait)
         return cluster
 
-    def wait():
-        """Wait for all brokers in the cluster to be ready"""
-        for b in _brokers: b.connect().close()
+#    def wait(self):
+#        """Wait for all brokers in the cluster to be ready"""
+#        for b in _brokers: b.connect().close()
 
 class RethrownException(Exception):
     """Captures the stack trace of the current exception to be thrown later"""

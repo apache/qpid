@@ -47,8 +47,17 @@ void TxPublish::commit() throw()
 {
     try {
         for_each(prepared.begin(), prepared.end(), Commit(msg));
-        if (msg->checkContentReleasable()) {
-            msg->releaseContent();
+        if (msg->isContentReleaseRequested()) {
+            // NOTE: The log messages in this section are used for flow-to-disk testing (which checks the log for the
+            // presence of these messages). Do not change these without also checking these tests.
+            if (msg->isContentReleaseBlocked()) {
+                QPID_LOG(debug, "Message id=\"" << msg->getProperties<qpid::framing::MessageProperties>()->getMessageId() << "\"; pid=0x" <<
+                                std::hex << msg->getPersistenceId() << std::dec << ": Content release blocked on commit");
+            } else {
+                msg->releaseContent();
+                QPID_LOG(debug, "Message id=\"" << msg->getProperties<qpid::framing::MessageProperties>()->getMessageId() << "\"; pid=0x" <<
+                                std::hex << msg->getPersistenceId() << std::dec << ": Content released on commit");
+            }
         }
     } catch (const std::exception& e) {
         QPID_LOG(error, "Failed to commit: " << e.what());
