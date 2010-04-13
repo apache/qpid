@@ -69,6 +69,7 @@ struct Options : public qpid::Options
     qpid::log::Options log;
     bool reportTotal;
     uint reportEvery;
+    bool reportHeader;
     uint rate;
 
     Options(const std::string& argv0=std::string())
@@ -89,6 +90,7 @@ struct Options : public qpid::Options
           log(argv0),
           reportTotal(false),
           reportEvery(0),
+          reportHeader(true),
           rate(0)
     {
         addOptions()
@@ -114,6 +116,7 @@ struct Options : public qpid::Options
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("report-total", qpid::optValue(reportTotal), "Report total throughput statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput statistics every N messages")
+            ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")
             ("rate", qpid::optValue(rate,"N"), "Send at rate of N messages/second. 0 means send as fast as possible.")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
@@ -256,7 +259,7 @@ int main(int argc, char ** argv)
             opts.setProperties(msg);
             uint sent = 0;
             uint txCount = 0;
-            Reporter<Throughput> reporter(std::cout, opts.reportEvery);
+            Reporter<Throughput> reporter(std::cout, opts.reportEvery, opts.reportHeader);
 
             std::auto_ptr<ContentGenerator> contentGen;
             if (opts.contentStdin) {
