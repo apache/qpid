@@ -82,7 +82,7 @@ class ReporterBase {
     void report();
 
   protected:
-    ReporterBase(std::ostream& o, int batchSize);
+    ReporterBase(std::ostream& o, int batchSize, bool wantHeader);
     virtual std::auto_ptr<Statistic> create() = 0;
 
   private:
@@ -90,15 +90,16 @@ class ReporterBase {
     void report(const Statistic& s);
     std::auto_ptr<Statistic> overall;
     std::auto_ptr<Statistic> batch;
-    bool wantOverall;
-    int wantBatch, batchCount;
+    int batchSize, batchCount;
     bool stopped, headerPrinted;
     std::ostream& out;
 };
 
 template <class Stats> class Reporter : public ReporterBase {
   public:
-    Reporter(std::ostream& o, int batchSize) : ReporterBase(o, batchSize) {}
+    Reporter(std::ostream& o, int batchSize, bool wantHeader)
+        : ReporterBase(o, batchSize, wantHeader) {}
+
     virtual std::auto_ptr<Statistic> create() {
         return std::auto_ptr<Statistic>(new Stats);
     }

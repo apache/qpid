@@ -64,6 +64,7 @@ struct Options : public qpid::Options
     qpid::log::Options log;
     bool reportTotal;
     uint reportEvery;
+    bool reportHeader;
     string readyAddress;
 
     Options(const std::string& argv0=std::string())
@@ -83,7 +84,8 @@ struct Options : public qpid::Options
           failoverUpdates(false),
           log(argv0),
           reportTotal(false),
-          reportEvery(0)
+          reportEvery(0),
+          reportHeader(true)
     {
         addOptions()
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
@@ -102,7 +104,7 @@ struct Options : public qpid::Options
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput and latency statistics every N messages.")
-            ("ready-address", qpid::optValue(readyAddress, "ADDRESS"),
+            ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")            ("ready-address", qpid::optValue(readyAddress, "ADDRESS"),
              "send a message to this address when ready to receive")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
@@ -176,7 +178,7 @@ int main(int argc, char ** argv)
             SequenceTracker sequenceTracker;
             Duration timeout = opts.getTimeout();
             bool done = false;
-            Reporter<ThroughputAndLatency> reporter(std::cout, opts.reportEvery);
+            Reporter<ThroughputAndLatency> reporter(std::cout, opts.reportEvery, opts.reportHeader);
             if (!opts.readyAddress.empty()) 
                 session.createSender(opts.readyAddress).send(msg);
             while (!done && receiver.fetch(msg, timeout)) {

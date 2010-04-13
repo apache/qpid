@@ -27,7 +27,6 @@ namespace qpid {
 namespace tests {
 
 using namespace std;
-const int WIDTH=10;
 
 Statistic::~Statistic() {}
 
@@ -42,12 +41,12 @@ void Throughput::message(const messaging::Message&) {
 }
 
 void Throughput::header(ostream& o) const {
-    o << setw(WIDTH) << "msg/sec";
+    o << "tp(m/s)";
 }
 
 void Throughput::report(ostream& o) const {
     double elapsed(int64_t(sys::Duration(start, sys::now()))/double(sys::TIME_SEC));
-    o << setw(WIDTH) << messages/elapsed;
+    o << fixed << setprecision(0) << messages/elapsed;
 }
 
 ThroughputAndLatency::ThroughputAndLatency() :
@@ -73,23 +72,21 @@ void ThroughputAndLatency::message(const messaging::Message& m) {
 
 void ThroughputAndLatency::header(ostream& o) const {
     Throughput::header(o);
-    o << setw(3*WIDTH) << "latency(ms): min max avg";
+    o << '\t' << "l-min" << '\t' << "l-max" << '\t' << "l-avg";
 }
 
 void ThroughputAndLatency::report(ostream& o) const {
     Throughput::report(o);
     if (messages)
-        o << setw(WIDTH) << min << setw(WIDTH)  << max << setw(WIDTH) << total/messages;
+        o << fixed << setprecision(2)
+          << '\t' << min << '\t'  << max << '\t' << total/messages;
     else
         o << "Can't compute latency for 0 messages.";
 }
 
-ReporterBase::ReporterBase(ostream& o, int batch)
-    : wantBatch(batch), batchCount(0), headerPrinted(false), out(o)
-{
-    o.precision(2);
-    o << fixed;
-}
+ReporterBase::ReporterBase(ostream& o, int batch, bool wantHeader)
+    : batchSize(batch), batchCount(0), headerPrinted(!wantHeader), out(o)
+{}
 
 ReporterBase::~ReporterBase() {}
 
@@ -97,10 +94,10 @@ ReporterBase::~ReporterBase() {}
 void ReporterBase::message(const messaging::Message& m) {
     if (!overall.get()) overall = create();
     overall->message(m);
-    if (wantBatch) {
+    if (batchSize) {
         if (!batch.get()) batch = create();
         batch->message(m);
-        if (++batchCount == wantBatch) {
+        if (++batchCount == batchSize) {
             header();
             batch->report(out);
             out << endl;
