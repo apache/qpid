@@ -1020,6 +1020,7 @@ class Engine:
         ssn.committed = True
         ssn.aborting = False
         ssn.aborted = False
+        sst.committing = False
       sst.write_cmd(TxCommit(), commit_ok)
       sst.committing = True
 
