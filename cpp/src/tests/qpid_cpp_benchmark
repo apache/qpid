@@ -42,6 +42,9 @@ op.add_option("--content-size", default=1024, type="int", metavar="BYTES",
               help="message size in bytes (default %default)")
 op.add_option("--ack-frequency", default=0, metavar="N", type="int",
               help="receiver ack's every N messages, 0 means unconfirmed")
+op.add_option("--no-report-header", dest="report_header", default=True,
+              action="store_false", help="don't print header on report")
+op.add_option("--repeat", default=1, metavar="N", help="repeat N times", type="int")
 
 def start_receive(queue, opts, ready_queue):
     return Popen(["qpid_receive",
@@ -51,7 +54,8 @@ def start_receive(queue, opts, ready_queue):
                   "--print-content=no",
                   "--report-total",
                   "--ack-frequency", str(opts.ack_frequency),
-                  "--ready-address", ready_queue
+                  "--ready-address", ready_queue,
+                  "--report-header=no"
                   ],
                  stdout=PIPE, stderr=STDOUT)
 
@@ -63,7 +67,9 @@ def start_send(queue, opts):
                   "--send-eos", str(opts.receivers),
                   "--content-size", str(opts.content_size),
                   "--rate", str(opts.send_rate),
-                  "--report-total"],
+                  "--report-total",
+                  "--report-header=no"
+                  ],
                  stdout=PIPE, stderr=STDOUT)
 
 def wait_for_output(p):
@@ -79,11 +85,16 @@ def delete_queues(queues, broker):
         except qpid.messaging.exceptions.SendError:pass # Ignore "no such queue"
     c.close()
 
-def skip_first_line(text): return "\n".join(text.split("\n")[1:])
-
-def print_output(processes):
-    print wait_for_output(processes.pop(0)),
-    for p in processes: print skip_first_line(wait_for_output(p)),
+def print_output(senders, receivers, want_header):
+    send_stats = sum([wait_for_output(p).split("\n")[:-1] for p in senders],[])
+    recv_stats = sum([wait_for_output(p).split("\n")[:-1] for p in receivers],[])
+    def empty_if_none(s):
+        if s: return s
+        else: return ""
+    stats = map(lambda s,r: empty_if_none(s)+"\t\t"+empty_if_none(r),
+                send_stats, recv_stats)
+    if want_header: print "send-tp\t\trecv-tp\tl-min\tl-max\tl-avg"
+    for s in stats: print s;
 
 class ReadyReceiver:
     """A receiver for ready messages"""
@@ -105,17 +116,15 @@ def main():
     opts, args = op.parse_args()
     ready_queue="%s-ready"%(opts.queue_name)
     queues = ["%s-%s"%(opts.queue_name, i) for i in xrange(opts.queues)]
-    delete_queues(queues, opts.broker)
-    ready_receiver = ReadyReceiver(ready_queue, opts.broker)
-    receivers = [start_receive(q, opts, ready_queue) for q in queues for i in xrange(opts.receivers)]
-    ready_receiver.wait(len(receivers)) # Wait for receivers to be ready.
-    senders = [start_send(q, opts) for q in queues for i in xrange(opts.senders)]
-    print "Send"
-    print_output(senders)
-    print "\nReceive"
-    print_output(receivers)
-    print
-    delete_queues(queues, opts.broker)
+    for i in xrange(opts.repeat):
+        delete_queues(queues, opts.broker)
+        ready_receiver = ReadyReceiver(ready_queue, opts.broker)
+        receivers = [start_receive(q, opts, ready_queue)
+                     for q in queues for i in xrange(opts.receivers)]
+        ready_receiver.wait(len(receivers)) # Wait for receivers to be ready.
+        senders = [start_send(q, opts) for q in queues for i in xrange(opts.senders)]
+        print_output(senders, receivers, opts.report_header)
+        delete_queues(queues, opts.broker)
 
 if __name__ == "__main__": main()
 

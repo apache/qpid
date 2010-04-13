@@ -81,7 +81,7 @@ void ThroughputAndLatency::report(ostream& o) const {
         o << fixed << setprecision(2)
           << '\t' << min << '\t'  << max << '\t' << total/messages;
     else
-        o << "Can't compute latency for 0 messages.";
+        o << "\t<0 messages, can't compute latency>";
 }
 
 ReporterBase::ReporterBase(ostream& o, int batch, bool wantHeader)
@@ -109,6 +109,7 @@ void ReporterBase::message(const messaging::Message& m) {
 
 /** Print overall report. */
 void ReporterBase::report() {
+    if (!overall.get()) overall = create();
     header();
     overall->report(out);
     out << endl;
