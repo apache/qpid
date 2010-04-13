@@ -29,7 +29,9 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 
 QueuePolicy::QueuePolicy(const std::string& _name, uint32_t _maxCount, uint64_t _maxSize, const std::string& _type) : 
-    maxCount(_maxCount), maxSize(_maxSize), type(_type), count(0), size(0), policyExceeded(false), name(_name) {}
+    maxCount(_maxCount), maxSize(_maxSize), type(_type), count(0), size(0), policyExceeded(false), name(_name) {
+    QPID_LOG(info, "Queue \"" << name << "\": Policy created: type=" << type << "; maxCount=" << maxCount << "; maxSize=" << maxSize);
+}
 
 void QueuePolicy::enqueued(uint64_t _size)
 {
@@ -86,7 +88,7 @@ void QueuePolicy::tryEnqueue(boost::intrusive_ptr<Message> m)
 
 void QueuePolicy::recoverEnqueued(boost::intrusive_ptr<Message> m)
 {
-    enqueued(m->contentSize());
+    tryEnqueue(m);
 }
 
 void QueuePolicy::enqueueAborted(boost::intrusive_ptr<Message> m)

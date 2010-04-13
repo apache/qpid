@@ -188,10 +188,14 @@ void Queue::recover(boost::intrusive_ptr<Message>& msg){
     msg->enqueueComplete(); // mark the message as enqueued
     mgntEnqStats(msg);
 
-    if (store && !msg->isContentLoaded()) {
+    if (store && (!msg->isContentLoaded() || msg->checkContentReleasable())) {
         //content has not been loaded, need to ensure that lazy loading mode is set:
         //TODO: find a nicer way to do this
         msg->releaseContent(store);
+        // NOTE: The log message in this section are used for flow-to-disk testing (which checks the log for the
+        // presence of this message). Do not change this without also checking these tests.
+        QPID_LOG(debug, "Message id=\"" << msg->getProperties<MessageProperties>()->getMessageId() << "\"; pid=0x" <<
+                        std::hex << msg->getPersistenceId() << std::dec << ": Content released after recovery");
     }
 }
 

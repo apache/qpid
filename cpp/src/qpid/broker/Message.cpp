@@ -186,6 +186,7 @@ void Message::decodeContent(framing::Buffer& buffer)
     loaded = true;
 }
 
+// Used for testing only
 void Message::tryReleaseContent()
 {
     if (checkContentReleasable()) {
