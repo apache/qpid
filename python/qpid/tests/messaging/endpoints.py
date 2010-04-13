@@ -676,13 +676,13 @@ class AddressTests(Base):
     try:
       self.ssn.sender("test-bad-options-snd; %s" % options)
       assert False
-    except SendError, e:
+    except InvalidOption, e:
       assert "error in options: %s" % error == str(e), e
 
     try:
       self.ssn.receiver("test-bad-options-rcv; %s" % options)
       assert False
-    except ReceiveError, e:
+    except InvalidOption, e:
       assert "error in options: %s" % error == str(e), e
 
   def testIllegalKey(self):
@@ -759,7 +759,7 @@ class AddressTests(Base):
     snd.close()
     try:
       self.ssn.sender("test-delete")
-    except SendError, e:
+    except NotFound, e:
       assert "no such queue" in str(e)
 
   def testDeleteByReceiver(self):
@@ -773,7 +773,7 @@ class AddressTests(Base):
     try:
       self.ssn.receiver("test-delete")
       assert False
-    except ReceiveError, e:
+    except NotFound, e:
       assert "no such queue" in str(e)
 
   def testDeleteSpecial(self):
@@ -957,45 +957,36 @@ class AddressErrorTests(Base):
       assert check(e), "unexpected error: %s" % compat.format_exc(e)
 
   def testNoneTarget(self):
-    # XXX: should have specific exception for this
-    self.senderErrorTest(None, SendError)
+    self.senderErrorTest(None, MalformedAddress)
 
   def testNoneSource(self):
-    # XXX: should have specific exception for this
-    self.receiverErrorTest(None, ReceiveError)
+    self.receiverErrorTest(None, MalformedAddress)
 
   def testNoTarget(self):
-    # XXX: should have specific exception for this
-    self.senderErrorTest(NOSUCH_Q, SendError, lambda e: NOSUCH_Q in str(e))
+    self.senderErrorTest(NOSUCH_Q, NotFound, lambda e: NOSUCH_Q in str(e))
 
   def testNoSource(self):
-    # XXX: should have specific exception for this
-    self.receiverErrorTest(NOSUCH_Q, ReceiveError, lambda e: NOSUCH_Q in str(e))
+    self.receiverErrorTest(NOSUCH_Q, NotFound, lambda e: NOSUCH_Q in str(e))
 
   def testUnparseableTarget(self):
-    # XXX: should have specific exception for this
-    self.senderErrorTest(UNPARSEABLE_ADDR, SendError,
+    self.senderErrorTest(UNPARSEABLE_ADDR, MalformedAddress,
                          lambda e: "expecting COLON" in str(e))
 
   def testUnparseableSource(self):
-    # XXX: should have specific exception for this
-    self.receiverErrorTest(UNPARSEABLE_ADDR, ReceiveError,
+    self.receiverErrorTest(UNPARSEABLE_ADDR, MalformedAddress,
                            lambda e: "expecting COLON" in str(e))
 
   def testUnlexableTarget(self):
-    # XXX: should have specific exception for this
-    self.senderErrorTest(UNLEXABLE_ADDR, SendError,
+    self.senderErrorTest(UNLEXABLE_ADDR, MalformedAddress,
                          lambda e: "unrecognized characters" in str(e))
 
   def testUnlexableSource(self):
-    # XXX: should have specific exception for this
-    self.receiverErrorTest(UNLEXABLE_ADDR, ReceiveError,
+    self.receiverErrorTest(UNLEXABLE_ADDR, MalformedAddress,
                            lambda e: "unrecognized characters" in str(e))
 
   def testInvalidMode(self):
-    # XXX: should have specific exception for this
     self.receiverErrorTest('name; {mode: "this-is-a-bad-receiver-mode"}',
-                           ReceiveError,
+                           InvalidOption,
                            lambda e: "not in ('browse', 'consume')" in str(e))
 
 SENDER_Q = 'test-sender-q; {create: always, delete: always}'
