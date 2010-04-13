@@ -483,6 +483,18 @@ class SessionTests(Base):
   def testRollbackAck(self):
     self.txTestAck(False)
 
+  def testDoubleCommit(self):
+    ssn = self.conn.session(transactional=True)
+    snd = ssn.sender("amq.direct")
+    rcv = ssn.receiver("amq.direct")
+    msgs = [self.message("testDoubleCommit", i) for i in range(3)]
+    for m in msgs:
+      snd.send(m)
+    ssn.commit()
+    self.drain(rcv, expected=msgs)
+    ssn.acknowledge()
+    ssn.commit()
+
   def testClose(self):
     self.ssn.close()
     try:
