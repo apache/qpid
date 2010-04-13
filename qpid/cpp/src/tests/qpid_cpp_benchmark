@@ -88,7 +88,7 @@ def delete_queues(queues, broker):
     c.open()
     for q in queues:
         try: s = c.session().sender("%s;{delete:always}"%(q))
-        except qpid.messaging.exceptions.SendError:pass # Ignore "no such queue"
+        except qpid.messaging.exceptions.NotFound: pass # Ignore "no such queue"
     c.close()
 
 def print_output(senders, receivers, want_header):
