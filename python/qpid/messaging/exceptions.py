@@ -17,7 +17,26 @@
 # under the License.
 #
 
-class ConnectionError(Exception):
+class MessagingError(Exception):
+
+  def __init__(self, code=None, text=None, **info):
+    self.code = code
+    self.text = text
+    self.info = info
+    if self.code is None:
+      msg = self.text
+    else:
+      msg = "%s(%s)" % (self.text, self.code)
+    if info:
+      msg += " " + ", ".join(["%s=%r" % (k, v) for k, v in self.info.items()])
+    Exception.__init__(self, msg)
+
+class InternalError(MessagingError):
+  pass
+
+## Connection Errors
+
+class ConnectionError(MessagingError):
   """
   The base class for all connection related exceptions.
   """
@@ -30,7 +49,15 @@ class ConnectError(ConnectionError):
   """
   pass
 
-class SessionError(Exception):
+class VersionError(ConnectError):
+  pass
+
+class AuthenticationFailure(ConnectError):
+  pass
+
+## Session Errors
+
+class SessionError(MessagingError):
   pass
 
 class Detached(SessionError):
@@ -47,19 +74,64 @@ class NontransactionalSession(SessionError):
   """
   pass
 
-class TransactionAborted(SessionError):
+class TransactionError(SessionError):
   pass
 
-class SendError(SessionError):
+class TransactionAborted(TransactionError):
   pass
 
-class InsufficientCapacity(SendError):
+class UnauthorizedAccess(SessionError):
   pass
 
-class ReceiveError(SessionError):
+class ServerError(SessionError):
   pass
 
-class Empty(ReceiveError):
+## Link Errors
+
+class LinkError(MessagingError):
+  pass
+
+class InsufficientCapacity(LinkError):
+  pass
+
+class AddressError(LinkError):
+  pass
+
+class MalformedAddress(AddressError):
+  pass
+
+class InvalidOption(AddressError):
+  pass
+
+class ResolutionError(AddressError):
+  pass
+
+class AssertionFailed(ResolutionError):
+  pass
+
+class NotFound(ResolutionError):
+  pass
+
+## Sender Errors
+
+class SenderError(LinkError):
+  pass
+
+class SendError(SenderError):
+  pass
+
+class TargetCapacityExceeded(SendError):
+  pass
+
+## Receiver Errors
+
+class ReceiverError(LinkError):
+  pass
+
+class FetchError(ReceiverError):
+  pass
+
+class Empty(FetchError):
   """
   Exception raised by L{Receiver.fetch} when there is no message
   available within the alloted time.
