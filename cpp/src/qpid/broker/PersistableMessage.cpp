@@ -170,6 +170,16 @@ bool PersistableMessage::checkContentReleasable()
     return contentReleaseState.requested && !contentReleaseState.blocked;
 }
 
+bool PersistableMessage::isContentReleaseBlocked()
+{
+    return contentReleaseState.blocked;
+}
+
+bool PersistableMessage::isContentReleaseRequested()
+{
+    return contentReleaseState.requested;
+}
+
 }}
 
 
