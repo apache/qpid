@@ -255,7 +255,7 @@ bool ConnectionImpl::tryConnect(const std::vector<std::string>& urls)
             }
             QPID_LOG(info, "Connected to " << *i);                
             return true;
-        } catch (const qpid::Exception& e) {
+        } catch (const qpid::ConnectionException& e) {
             //TODO: need to fix timeout on
             //qpid::client::Connection::open() so that it throws
             //TransportFailure rather than a ConnectionException
