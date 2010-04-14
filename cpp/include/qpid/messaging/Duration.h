@@ -23,6 +23,7 @@
  */
 
 #include "qpid/messaging/ImportExport.h"
+
 #include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {

@@ -23,6 +23,7 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/sys/Time.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Statement.h"
 #include <boost/lexical_cast.hpp>
@@ -240,6 +241,23 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
 }
 
 }}
+
+ManagementObject::ManagementObject(Manageable* _core) :
+createTime(qpid::sys::Duration(sys::EPOCH, sys::now())),
+        destroyTime(0), updateTime(createTime), configChanged(true),
+        instChanged(true), deleted(false),
+        coreObject(_core), forcePublish(false) {}
+
+void ManagementObject::setUpdateTime()
+{
+    updateTime = sys::Duration(sys::EPOCH, sys::now());
+}
+
+void ManagementObject::resourceDestroy()
+{
+    destroyTime = sys::Duration(sys::EPOCH, sys::now());
+    deleted     = true;
+}
 
 int ManagementObject::maxThreads = 1;
 int ManagementObject::nextThreadIndex = 0;

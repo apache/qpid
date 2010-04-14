@@ -21,12 +21,13 @@
  * under the License.
  *
  */
+#include "qpid/messaging/ImportExport.h"
+
+#include "qpid/messaging/Duration.h"
+#include "qpid/types/Exception.h"
+#include "qpid/types/Variant.h"
 
 #include <string>
-#include "qpid/Exception.h"
-#include "qpid/messaging/Duration.h"
-#include "qpid/types/Variant.h"
-#include "qpid/messaging/ImportExport.h"
 
 namespace qpid {
 namespace messaging {
@@ -104,7 +105,7 @@ class Message
     friend struct MessageImplAccess;
 };
 
-struct EncodingException : qpid::Exception
+struct EncodingException : qpid::types::Exception
 {
     EncodingException(const std::string& msg);
 };

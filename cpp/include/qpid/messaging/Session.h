@@ -21,10 +21,12 @@
  * under the License.
  *
  */
+#include "qpid/messaging/ImportExport.h"
+
 #include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/Duration.h"
-#include "qpid/messaging/ImportExport.h"
 #include "qpid/messaging/Handle.h"
+
 #include <string>
 
 namespace qpid {
