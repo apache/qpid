@@ -21,11 +21,11 @@
  * under the License.
  *
  */
-
-#include "qpid/sys/Time.h"
-#include "qpid/management/Mutex.h"
 #include "qpid/CommonImportExport.h"
+
+#include "qpid/management/Mutex.h"
 #include "qpid/types/Variant.h"
+
 #include <map>
 #include <vector>
 
@@ -158,11 +158,7 @@ protected:
     //typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
     typedef void (*writeSchemaCall_t) (std::string&);
 
-    ManagementObject(Manageable* _core) :
-        createTime(uint64_t(qpid::sys::Duration(qpid::sys::now()))),
-        destroyTime(0), updateTime(createTime), configChanged(true),
-        instChanged(true), deleted(false),
-        coreObject(_core), forcePublish(false) {}
+    QPID_COMMON_EXTERN ManagementObject(Manageable* _core);
     virtual ~ManagementObject() {}
 
     virtual writeSchemaCall_t getWriteSchemaCall() = 0;
@@ -201,12 +197,8 @@ protected:
     virtual bool hasInst() { return true; }
     inline  void setForcePublish(bool f) { forcePublish = f; }
     inline  bool getForcePublish() { return forcePublish; }
-    inline  void setUpdateTime() { updateTime = (uint64_t(sys::Duration(sys::now()))); }
-
-    inline void resourceDestroy() {
-        destroyTime = uint64_t (qpid::sys::Duration(qpid::sys::now()));
-        deleted     = true;
-    }
+    QPID_COMMON_EXTERN void setUpdateTime();
+    QPID_COMMON_EXTERN void resourceDestroy();
     inline bool isDeleted() { return deleted; }
     inline void setFlags(uint32_t f) { flags = f; }
     inline uint32_t getFlags() { return flags; }
