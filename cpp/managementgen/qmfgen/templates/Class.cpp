@@ -28,6 +28,7 @@
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
 #include <iostream>
+#include <sstream>
 
 using namespace qmf::/*MGEN:Class.Namespace*/;
 using           qpid::management::ManagementAgent;
