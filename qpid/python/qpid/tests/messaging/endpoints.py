@@ -44,6 +44,14 @@ class SetupTests(Base):
     except ConnectError, e:
       assert "Connection refused" in str(e)
 
+  def testGetError(self):
+    self.conn = Connection("localhost:0")
+    try:
+      self.conn.open()
+      assert False, "connect succeeded"
+    except ConnectError, e:
+      assert self.conn.get_error() == e
+
   def use_fds(self):
     fds = []
     try:

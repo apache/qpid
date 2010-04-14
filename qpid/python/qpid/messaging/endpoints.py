@@ -177,6 +177,9 @@ class Connection:
       self._condition.gc()
       raise self.error
 
+  def get_error(self):
+    return self.error
+
   def _ewait(self, predicate, timeout=None):
     result = self._wait(lambda: self.error or predicate(), timeout)
     self.check_error()
@@ -513,6 +516,13 @@ class Session:
     if self.error:
       raise self.error
 
+  def get_error(self):
+    err = self.connection.get_error()
+    if err:
+      return err
+    else:
+      return self.error
+
   def _ewait(self, predicate, timeout=None):
     result = self.connection._ewait(lambda: self.error or predicate(), timeout)
     self.check_error()
@@ -710,6 +720,13 @@ class Sender:
     if self.error:
       raise self.error
 
+  def get_error(self):
+    err = self.session.get_error()
+    if err:
+      return err
+    else:
+      return self.error
+
   def _ewait(self, predicate, timeout=None):
     result = self.session._ewait(lambda: self.error or predicate(), timeout)
     self.check_error()
@@ -852,6 +869,13 @@ class Receiver(object):
     self.session.check_error()
     if self.error:
       raise self.error
+
+  def get_error(self):
+    err = self.session.get_error()
+    if err:
+      return err
+    else:
+      return self.error
 
   def _ewait(self, predicate, timeout=None):
     result = self.session._ewait(lambda: self.error or predicate(), timeout)
