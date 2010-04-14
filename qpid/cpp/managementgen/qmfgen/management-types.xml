@@ -52,12 +52,12 @@
       encode="@.putMap(#)"
       decode="@.getMap(#)"
       size="::qpid::amqp_0_10::MapCodec::encodedSize(#)"
-      stream="#" accessor="direct" init="::qpid::types::Variant::Map()" byRef="y" unmap="::qpid::types::Variant::Map(); assert(false); /*TBD*/"/>
+      stream="#" accessor="direct" init="::qpid::types::Variant::Map()" byRef="y" unmap="(#).asMap()"/>
 <type name="list"      base="LIST"      cpp="::qpid::types::Variant::List" 
       encode="@.putList(#)"
       decode="@.getList(#)"
       size="::qpid::amqp_0_10::ListCodec::encodedSize(#)"
-      stream="#" accessor="direct" init="::qpid::types::Variant::List()" byRef="y" unmap="::qpid::types::Variant::List(); assert(false); /*TBD*/"/>
+      stream="#" accessor="direct" init="::qpid::types::Variant::List()" byRef="y" unmap="(#).asList()"/>
 
 <type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    style="wm" stream="#" size="1" accessor="counter" init="0"/>
 <type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    style="wm" stream="#" size="2" accessor="counter" init="0"/>

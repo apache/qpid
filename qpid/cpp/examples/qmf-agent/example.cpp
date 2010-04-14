@@ -28,6 +28,7 @@
 #include "qmf/org/apache/qpid/agent/example/Parent.h"
 #include "qmf/org/apache/qpid/agent/example/Child.h"
 #include "qmf/org/apache/qpid/agent/example/ArgsParentCreate_child.h"
+#include "qmf/org/apache/qpid/agent/example/ArgsParentTest_method.h"
 #include "qmf/org/apache/qpid/agent/example/EventChildCreated.h"
 #include "qmf/org/apache/qpid/agent/example/Package.h"
 
@@ -141,7 +142,7 @@ Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, 
     Mutex::ScopedLock _lock(vectorLock);
 
     switch (methodId) {
-    case _qmf::Parent::METHOD_CREATE_CHILD:
+    case _qmf::Parent::METHOD_CREATE_CHILD: {
         _qmf::ArgsParentCreate_child& ioArgs = (_qmf::ArgsParentCreate_child&) args;
 
         ChildClass *child = new ChildClass(agent, this, ioArgs.i_name);
@@ -152,6 +153,16 @@ Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, 
         agent->raiseEvent(_qmf::EventChildCreated(ioArgs.i_name));
 
         return STATUS_OK;
+    }
+
+    case _qmf::Parent::METHOD_TEST_METHOD: {
+        _qmf::ArgsParentTest_method& ioArgs = (_qmf::ArgsParentTest_method&) args;
+
+        ioArgs.io_aMap["add"] = "me";
+        ioArgs.io_aList.push_back(Variant("Stuff"));
+        // TBD
+        return STATUS_OK;
+    }
     }
 
     return STATUS_NOT_IMPLEMENTED;
@@ -181,10 +192,6 @@ int main_int(int argc, char** argv)
     singleton = new ManagementAgent::Singleton();
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
-    qpid::client::ConnectionSettings settings;
-
-    settings.host = host;
-    settings.port = port;
 
     signal(SIGINT, shutdown);
 
@@ -199,7 +206,7 @@ int main_int(int argc, char** argv)
 
     // Start the agent.  It will attempt to make a connection to the
     // management broker
-    agent->init(settings, 5, false, ".magentdata");
+    agent->init(host, port, 5, false, ".magentdata");
 
     // Allocate some core objects
     CoreClass core1(agent, "Example Core Object #1");
