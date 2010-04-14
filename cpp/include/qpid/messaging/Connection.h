@@ -21,11 +21,13 @@
  * under the License.
  *
  */
-#include <string>
 #include "qpid/messaging/ImportExport.h"
+
 #include "qpid/messaging/Handle.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/types/Variant.h"
+
+#include <string>
 
 namespace qpid {
 namespace messaging {

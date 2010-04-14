@@ -83,7 +83,7 @@ size_t Message::getContentSize() const
     return impl->getBytes().size();
 }
 
-EncodingException::EncodingException(const std::string& msg) : qpid::Exception(msg) {}
+EncodingException::EncodingException(const std::string& msg) : qpid::types::Exception(msg) {}
 
 const std::string BAD_ENCODING("Unsupported encoding: %1% (only %2% is supported at present).");
 
