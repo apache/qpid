@@ -116,7 +116,7 @@ class UrlParser {
         const char* start=i;
         while (unreserved() || pctEncoded())
             ;
-        if (start == i) h = LOCALHOST; // Default
+        if (start == i) return false;//host is required
         else h.assign(start, i);
         return true;
     }

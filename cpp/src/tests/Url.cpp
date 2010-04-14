@@ -41,9 +41,11 @@ QPID_AUTO_TEST_CASE(TestParseTcp) {
     // Check defaults
     BOOST_CHECK_EQUAL(Url("amqp:host:42").str(), "amqp:tcp:host:42");
     BOOST_CHECK_EQUAL(Url("amqp:tcp:host").str(), "amqp:tcp:host:5672");
-    BOOST_CHECK_EQUAL(Url("amqp:tcp:").str(), "amqp:tcp:127.0.0.1:5672");
-    BOOST_CHECK_EQUAL(Url("amqp:").str(), "amqp:tcp:127.0.0.1:5672");
-    BOOST_CHECK_EQUAL(Url("amqp::42").str(), "amqp:tcp:127.0.0.1:42");
+
+    //host is required:
+    URL_CHECK_INVALID("amqp:tcp:");
+    URL_CHECK_INVALID("amqp:");
+    URL_CHECK_INVALID("amqp::42");
 
     URL_CHECK_INVALID("amqp::badHost!#$#");
     URL_CHECK_INVALID("amqp::host:badPort");
