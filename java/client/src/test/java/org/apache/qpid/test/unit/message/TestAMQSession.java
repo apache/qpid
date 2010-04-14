@@ -183,4 +183,9 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         throw new UnsupportedOperationException("The new addressing based sytanx is "
                 + "not supported for AMQP 0-8/0-9 versions");
     }
+
+    @Override
+    protected void flushAcknowledgments()
+    {      
+    }
 }

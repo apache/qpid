@@ -1043,8 +1043,24 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     }
 
     public void clearReceiveQueue()
-    {
+    {        
         _synchronousQueue.clear();
+    }
+    
+    
+    public List<Long> drainReceiverQueueAndRetrieveDeliveryTags()
+    {       
+        Iterator<AbstractJMSMessage> iterator = _synchronousQueue.iterator();
+        List<Long> tags = new ArrayList<Long>(_synchronousQueue.size());
+
+        while (iterator.hasNext())
+        {
+
+            AbstractJMSMessage msg = iterator.next();
+            tags.add(msg.getDeliveryTag()); 
+            iterator.remove();
+        }
+        return tags;    
     }
 
     public AMQShortString getQueuename()
