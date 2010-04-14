@@ -39,6 +39,12 @@
       <arg name="name"     dir="I" type="sstr"/>
       <arg name="childRef" dir="O" type="objId"/>
     </method>
+
+    <method name="test_method" desc="Test Method with Map and List Arguments">
+      <arg name="aMap"  dir="IO" type="map"/>
+      <arg name="aList"  dir="IO" type="list"/>
+    </method>
+
   </class>
 
 
