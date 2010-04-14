@@ -208,7 +208,7 @@ public class CommandLineParser
         for (CommandLineOption optionInfo : optionMap.values())
         {
             result +=
-                optionInfo.option + " " + ((optionInfo.argument != null) ? (optionInfo.argument + " ") : "")
+                "-" + optionInfo.option + " " + ((optionInfo.argument != null) ? (optionInfo.argument + " ") : "")
                 + optionInfo.comment + "\n";
         }
 
@@ -463,7 +463,7 @@ public class CommandLineParser
             else if (optionInfo.mandatory && !options.containsKey(optionInfo.option))
             {
                 // Create an error for the missing option.
-                parsingErrors.add("Option " + optionInfo.option + " is mandatory but not was not specified.\n");
+                parsingErrors.add("Option -" + optionInfo.option + " is mandatory but not was not specified.\n");
             }
         }
 
@@ -597,7 +597,7 @@ public class CommandLineParser
             if (!argumentMatcher.matches())
             {
                 // Create an error for this badly formed argument.
-                parsingErrors.add("The argument to option " + optionInfo.option + " does not meet its required format.\n");
+                parsingErrors.add("The argument to option -" + optionInfo.option + " does not meet its required format.\n");
             }
         }
     }
