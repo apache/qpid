@@ -24,6 +24,7 @@
 
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/Url.h"
 
 
 namespace qpid {
