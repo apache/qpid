@@ -280,7 +280,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
 
-    void flushAcknowledgments()
+    protected void flushAcknowledgments()
     {
         flushAcknowledgments(false);
     }
@@ -447,7 +447,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     public void sendRecover() throws AMQException, FailoverException
     {
-        // release all unack messages
+        // release all unacked messages
         RangeSet ranges = new RangeSet();
         while (true)
         {
@@ -463,6 +463,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         getQpidSession().sync();
         getCurrentException();
     }
+
 
     public void releaseForRollback()
     {
