@@ -20,6 +20,9 @@
  */
 
 #include <stdio.h>
+#include <set>
+#include <string>
+#include <sstream>
 #include <unistd.h>
 #include <cstdlib>
 #include <iostream>
