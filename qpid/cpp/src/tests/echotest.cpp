@@ -25,6 +25,7 @@
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
 #include <qpid/sys/Time.h>
+#include <qpid/Options.h>
 
 #include <iostream>
 

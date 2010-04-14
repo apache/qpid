@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include <iostream>
 #include <fstream>
-
+#include <boost/lexical_cast.hpp>
 
 using namespace qpid::client;
 using namespace qpid::framing;

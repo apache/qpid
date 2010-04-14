@@ -28,6 +28,8 @@
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/framing/ProtocolVersion.h"
 
+#include "boost/function.hpp"
+
 namespace qpid {
 
 struct Url;

@@ -21,6 +21,7 @@
 #include "qpid/client/SaslFactory.h"
 #include "qpid/client/ConnectionSettings.h"
 #include <map>
+#include <string.h>
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
