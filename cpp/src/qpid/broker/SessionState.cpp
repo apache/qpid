@@ -58,7 +58,7 @@ SessionState::SessionState(
       broker(b), handler(&h),
       semanticState(*this, *this),
       adapter(semanticState),
-      msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
+      msgBuilder(&broker.getStore()),
       enqueuedOp(boost::bind(&SessionState::enqueued, this, _1)),
       mgmtObject(0),
       rateFlowcontrol(0)

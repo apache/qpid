@@ -99,7 +99,6 @@ public:
         int workerThreads;
         int maxConnections;
         int connectionBacklog;
-        uint64_t stagingThreshold;
         bool enableMgmt;
         uint16_t mgmtPubInterval;
         uint16_t queueCleanInterval;
@@ -205,7 +204,6 @@ public:
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
     LinkRegistry& getLinks() { return links; }
-    uint64_t getStagingThreshold() { return config.stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
     DataDir& getDataDir() { return dataDir; }
     Options& getOptions() { return config; }
