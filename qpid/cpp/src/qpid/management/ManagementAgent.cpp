@@ -1621,7 +1621,7 @@ void ManagementAgent::handleGetQueryLH(const std::string& body, std::string repl
     if (i != inMap.end())
         try {
             className = i->second.asString();
-        } catch(exception& e) {
+        } catch(exception& /*e*/) {
             className.clear();
             QPID_LOG(trace, "RCVD GetQuery: invalid format - class target ignored.");
         }
@@ -1633,7 +1633,7 @@ void ManagementAgent::handleGetQueryLH(const std::string& body, std::string repl
 
             try {
                 objId = ObjectId(i->second.asMap());
-            } catch (exception &e) {
+            } catch (exception & /*e*/) {
                 objId = ObjectId();   // empty object id - won't find a match (I hope).
                 QPID_LOG(trace, "RCVD GetQuery (invalid Object Id format) to=" << replyTo << " seq=" << cid);
             }
@@ -1769,7 +1769,7 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
                 // coversions will throw if input is invalid.
                 objId = ObjectId(oid->second.asMap());
                 methodName = mid->second.getString();
-            } catch(exception& e) {
+            } catch(exception& /*e*/) {
                 QPID_LOG(warning,
                          "Badly formatted QMF authorize req received.");
                 return false;
