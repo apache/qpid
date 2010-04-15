@@ -39,10 +39,11 @@ class SetupTests(Base):
 
   def testConnectError(self):
     try:
-      self.conn = Connection.establish("localhost:0")
+      # Specifying port 0 yields a bad address on Windows; port 4 is unassigned
+      self.conn = Connection.establish("localhost:4")
       assert False, "connect succeeded"
     except ConnectError, e:
-      assert "Connection refused" in str(e)
+      assert "refused" in str(e)
 
   def testGetError(self):
     self.conn = Connection("localhost:0")
