@@ -76,9 +76,6 @@ class TCPConnector : public Connector, public sys::Codec
     boost::shared_ptr<sys::Poller> poller;
     std::auto_ptr<qpid::sys::SecurityLayer> securityLayer;
 
-    void handleClosed();
-    bool closeInternal();
-
     virtual void connected(const sys::Socket&);
     void writeDataBlock(const framing::AMQDataBlock& data);
 
@@ -107,6 +104,7 @@ protected:
     bool readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void writebuff(qpid::sys::AsynchIO&);
     void eof(qpid::sys::AsynchIO&);
+    void socketClosed(qpid::sys::AsynchIO&, const qpid::sys::Socket&);
 
 public:
     TCPConnector(boost::shared_ptr<sys::Poller>,
