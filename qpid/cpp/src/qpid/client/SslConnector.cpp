@@ -106,9 +106,6 @@ class SslConnector : public Connector
 
     ~SslConnector();
 
-    void handleClosed();
-    bool closeInternal();
-
     void readbuff(qpid::sys::ssl::SslIO&, qpid::sys::ssl::SslIOBufferBase*);
     void writebuff(qpid::sys::ssl::SslIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
@@ -128,6 +125,7 @@ class SslConnector : public Connector
     framing::OutputHandler* getOutputHandler();
     const std::string& getIdentifier() const;
     const SecuritySettings* getSecuritySettings();
+    void socketClosed(qpid::sys::ssl::SslIO&, const qpid::sys::ssl::SslSocket&);
 
 public:
     SslConnector(Poller::shared_ptr p, framing::ProtocolVersion pVersion,
@@ -204,7 +202,7 @@ void SslConnector::connect(const std::string& host, int port){
                        boost::bind(&SslConnector::readbuff, this, _1, _2),
                        boost::bind(&SslConnector::eof, this, _1),
                        boost::bind(&SslConnector::eof, this, _1),
-                       0, // closed
+                       boost::bind(&SslConnector::socketClosed, this, _1, _2),
                        0, // nobuffs
                        boost::bind(&SslConnector::writebuff, this, _1));
     writer.init(identifier, aio);
@@ -220,19 +218,20 @@ void SslConnector::init(){
     aio->start(poller);
 }
 
-bool SslConnector::closeInternal() {
+void SslConnector::close() {
     Mutex::ScopedLock l(closedLock);
-    bool ret = !closed;
     if (!closed) {
         closed = true;
-        aio->queueForDeletion();
-        socket.close();
+        if (aio)
+            aio->queueWriteClose();
     }
-    return ret;
 }
 
-void SslConnector::close() {
-    closeInternal();
+void SslConnector::socketClosed(SslIO&, const SslSocket&) {
+    if (aio)
+        aio->queueForDeletion();
+    if (shutdownHandler)
+        shutdownHandler->shutdown();
 }
 
 void SslConnector::setInputHandler(InputHandler* handler){
@@ -257,11 +256,6 @@ const std::string& SslConnector::getIdentifier() const {
 
 void SslConnector::send(AMQFrame& frame) {
     writer.handle(frame);
-}
-
-void SslConnector::handleClosed() {
-    if (closeInternal() && shutdownHandler)
-        shutdownHandler->shutdown();
 }
 
 SslConnector::Writer::Writer(uint16_t s, Bounds* b) : maxFrameSize(s), aio(0), buffer(0), lastEof(0), bounds(b)
@@ -365,7 +359,7 @@ void SslConnector::writeDataBlock(const AMQDataBlock& data) {
 }
 
 void SslConnector::eof(SslIO&) {
-    handleClosed();
+    close();
 }
 
 const SecuritySettings* SslConnector::getSecuritySettings()

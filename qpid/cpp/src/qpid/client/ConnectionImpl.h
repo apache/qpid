@@ -26,7 +26,7 @@
 #include "qpid/client/ConnectionHandler.h"
 
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 
@@ -60,7 +60,8 @@ class ConnectionImpl : public Bounds,
     boost::scoped_ptr<Connector> connector;
     framing::ProtocolVersion version;
     uint16_t nextChannel;
-    sys::Mutex lock;
+    sys::Monitor lock;
+    bool shutdownComplete;
 
     boost::intrusive_ptr<qpid::sys::TimerTask> heartbeatTask;
 
@@ -72,6 +73,9 @@ class ConnectionImpl : public Bounds,
     void idleOut();
     void idleIn();
     void shutdown();
+    void failedConnection();
+    void waitForShutdownComplete();
+    void notifyShutdownComplete();
 
     boost::function<void ()> failureCallback;
 

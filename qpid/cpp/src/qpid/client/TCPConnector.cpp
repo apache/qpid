@@ -105,7 +105,7 @@ void TCPConnector::connected(const Socket&) {
                        boost::bind(&TCPConnector::readbuff, this, _1, _2),
                        boost::bind(&TCPConnector::eof, this, _1),
                        boost::bind(&TCPConnector::eof, this, _1),
-                       0, // closed
+                       boost::bind(&TCPConnector::socketClosed, this, _1, _2),
                        0, // nobuffs
                        boost::bind(&TCPConnector::writebuff, this, _1));
     start(aio);
@@ -128,28 +128,28 @@ void TCPConnector::initAmqp() {
 }
 
 void TCPConnector::connectFailed(const std::string& msg) {
-    QPID_LOG(warning, "Connecting failed: " << msg);
+    QPID_LOG(warning, "Connect failed: " << msg);
     socket.close();
-    if (!closed && shutdownHandler) {
+    if (!closed)
         closed = true;
+    if (shutdownHandler)
         shutdownHandler->shutdown();
-    }
-}
-
-bool TCPConnector::closeInternal() {
-    Mutex::ScopedLock l(lock);
-    bool ret = !closed;
-    closed = true;
-    if (ret) {
-        if (aio)
-            aio->queueForDeletion();
-        socket.close();
-    }
-    return ret;
 }
 
 void TCPConnector::close() {
-    closeInternal();
+    Mutex::ScopedLock l(lock);
+    if (!closed) {
+        closed = true;
+        if (aio)
+            aio->queueWriteClose();
+    }
+}
+
+void TCPConnector::socketClosed(AsynchIO&, const Socket&) {
+    if (aio)
+        aio->queueForDeletion();
+    if (shutdownHandler)
+        shutdownHandler->shutdown();
 }
 
 void TCPConnector::abort() {
@@ -212,11 +212,6 @@ void TCPConnector::send(AMQFrame& frame) {
     */
     if (notifyWrite && !closed) aio->notifyPendingWrite();
     }
-}
-
-void TCPConnector::handleClosed() {
-    if (closeInternal() && shutdownHandler)
-        shutdownHandler->shutdown();
 }
 
 void TCPConnector::writebuff(AsynchIO& /*aio*/) 
@@ -315,7 +310,7 @@ void TCPConnector::writeDataBlock(const AMQDataBlock& data) {
 }
 
 void TCPConnector::eof(AsynchIO&) {
-    handleClosed();
+    close();
 }
 
 void TCPConnector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer> sl)
