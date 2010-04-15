@@ -301,15 +301,16 @@ private:
     void deleteObjectNowLH(const ObjectId& oid);
     void encodeHeader       (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
     bool checkHeader        (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
-    void sendBuffer         (framing::Buffer&             buf,
-                             uint32_t                     length,
-                             qpid::broker::Exchange::shared_ptr exchange,
-                             std::string                  routingKey);
-    void sendBuffer(const std::string&     data,
-                    const std::string&     cid,
-                    const qpid::types::Variant::Map& headers,
-                    qpid::broker::Exchange::shared_ptr exchange,
-                    const std::string& routingKey);
+    void sendBufferLH(framing::Buffer&             buf,
+                      uint32_t                     length,
+                      qpid::broker::Exchange::shared_ptr exchange,
+                      std::string                  routingKey);
+    void sendBufferLH(const std::string&     data,
+                      const std::string&     cid,
+                      const qpid::types::Variant::Map& headers,
+                      const std::string&     content_type,
+                      qpid::broker::Exchange::shared_ptr exchange,
+                      const std::string& routingKey);
     void moveNewObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
@@ -330,7 +331,7 @@ private:
     uint32_t allocateNewBank ();
     uint32_t assignBankLH (uint32_t requestedPrefix);
     void deleteOrphanedAgentsLH();
-    void sendCommandComplete (std::string replyToKey, uint32_t sequence,
+    void sendCommandCompleteLH(std::string replyToKey, uint32_t sequence,
                               uint32_t code = 0, std::string text = std::string("OK"));
     void handleBrokerRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handlePackageQueryLH   (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
