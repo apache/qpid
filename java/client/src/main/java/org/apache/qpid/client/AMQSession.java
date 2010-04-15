@@ -1071,6 +1071,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public Queue createQueue(String queueName) throws JMSException
     {
         checkNotClosed();
+        
         if (queueName.indexOf('/') == -1)
         {
             return new AMQQueue(getDefaultQueueExchangeName(), new AMQShortString(queueName));
@@ -1079,7 +1080,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             try
             {
-                return new AMQQueue(new AMQBindingURL(queueName));
+                return new AMQQueue(queueName);
             }
             catch (URISyntaxException urlse)
             {
@@ -1090,6 +1091,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 throw jmse;
             }
         }
+
     }
 
     /**
@@ -1344,7 +1346,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             try
             {
-                return new AMQTopic(new AMQBindingURL(topicName));
+                return new AMQTopic(topicName);
             }
             catch (URISyntaxException urlse)
             {
