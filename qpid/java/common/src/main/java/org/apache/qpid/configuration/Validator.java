@@ -23,5 +23,9 @@ package org.apache.qpid.configuration;
 
 public interface Validator
 {
-    public void validate(Object value);
+    public void validate(Integer value);
+    
+    public void validate(Long value);
+    
+    public void validate(String value);
 }
