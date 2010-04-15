@@ -221,12 +221,8 @@ public interface Accessor
 
         public Boolean getBoolean(String name)
         {
-            Boolean v = delegate.getBoolean(name);
-            for (Validator validator: validators)
-            {
-                validator.validate(v);
-            }
-            return v;
+            // there is nothing to validate in a boolean
+            return delegate.getBoolean(name);
         }
         
         public Integer getInt(String name)
