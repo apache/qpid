@@ -62,4 +62,6 @@ public class ExchangeDefaults
 
     /** Defines the identifying type name of fanout exchanges. */
     public static final AMQShortString FANOUT_EXCHANGE_CLASS = new AMQShortString("fanout");
+    
+    public static final AMQShortString WILDCARD_ANY = new AMQShortString("*");
 }

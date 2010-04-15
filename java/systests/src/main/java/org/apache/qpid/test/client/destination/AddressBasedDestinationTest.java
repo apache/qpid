@@ -30,10 +30,14 @@ import javax.jms.Session;
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession_0_10;
+import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
+import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 public class AddressBasedDestinationTest extends QpidTestCase
 {
@@ -67,7 +71,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         MessageProducer prod;
         MessageConsumer cons;
         
-        // default (create never, assert always) -------------------
+        // default (create never, assert never) -------------------
         // create never --------------------------------------------
         String addr1 = "ADDR:testQueue1";
         AMQDestination  dest = new AMQAnyDestination(addr1);
@@ -92,7 +96,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
             
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest, (QueueNode)dest.getSourceNode() ,true));
         
         
         // create always -------------------------------------------
@@ -101,10 +105,10 @@ public class AddressBasedDestinationTest extends QpidTestCase
         cons = jmsSession.createConsumer(dest); 
         
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));              
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getName(),dest.getName(), dest.getQueueOptions()));
+                    dest.getAddressName(),dest.getAddressName(), dest.getSourceNode().getDeclareArgs()));
         
         // create receiver -----------------------------------------
         addr1 = "ADDR:testQueue2; { create: receiver }";
@@ -120,16 +124,16 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
             
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));
         
         
         cons = jmsSession.createConsumer(dest); 
         
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));              
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getName(),dest.getName(), dest.getQueueOptions()));
+                    dest.getAddressName(),dest.getAddressName(), dest.getSourceNode().getDeclareArgs()));
         
         // create never --------------------------------------------
         addr1 = "ADDR:testQueue3; { create: never }";
@@ -155,7 +159,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
             
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));
         
         // create sender ------------------------------------------
         addr1 = "ADDR:testQueue3; { create: sender }";
@@ -171,14 +175,14 @@ public class AddressBasedDestinationTest extends QpidTestCase
                     "doesn't resolve to an exchange or a queue"));
         }
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));
         
         prod = jmsSession.createProducer(dest);
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));              
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getName(),dest.getName(), dest.getQueueOptions()));
+                    dest.getAddressName(),dest.getAddressName(), dest.getSourceNode().getDeclareArgs()));
         
     }
     
@@ -193,40 +197,46 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
-        String addr = "ADDR:my-queue/hello; { " + 
-                        "create: always, " +
-                        "node-properties: {" + 
-                             "durable: true ," +
-                             "x-properties: { " + 
-                                 "auto-delete: true," +
-                                 "'qpid.max_size': 1000," +
-                                 "'qpid.max_count': 100," + 
-                                 " bindings: ['amq.direct/test', 'amq.fanout', 'amq.topic/a.#']" +
-                                 
-                             "}" +
-                        "}" +
+        String addr = "ADDR:my-queue/hello; " +
+                      "{" + 
+                            "create: always, " +
+                            "node: " + 
+                            "{" + 
+                                 "durable: true ," +
+                                 "x-declare: " +
+                                 "{" + 
+                                     "auto-delete: true," +
+                                     "'qpid.max_size': 1000," +
+                                     "'qpid.max_count': 100" +
+                                  "}, " +   
+                                  "x-bindings: [{exchange : 'amq.direct', key : test}, " + 
+                                               "{exchange : 'amq.fanout'}," +
+                                               "{exchange : 'amq.topic', key : 'a.#'}" +
+                                              "]," + 
+                                     
+                            "}" +
                       "}";
         AMQDestination dest = new AMQAnyDestination(addr);
         MessageConsumer cons = jmsSession.createConsumer(dest); 
         
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));              
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
         
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getName(),dest.getName(), null));
+                    dest.getAddressName(),dest.getAddressName(), null));
         
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.direct", 
-                    dest.getName(),"test", null));
+                    dest.getAddressName(),"test", null));
         
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.fanout", 
-                    dest.getName(),null, null));
+                    dest.getAddressName(),null, null));
         
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.topic", 
-                    dest.getName(),"a.#", null));        
+                    dest.getAddressName(),"a.#", null));        
         
     }
     
@@ -239,11 +249,14 @@ public class AddressBasedDestinationTest extends QpidTestCase
         }
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
-        String addr = "ADDR:my-exchange/hello; { " + 
+        String addr = "ADDR:my-exchange/hello; " + 
+                      "{ " + 
                         "create: always, " +                        
-                        "node-properties: {" +
+                        "node: " + 
+                        "{" +
                              "type: topic, " +
-                             "x-properties: { " + 
+                             "x-declare: " +
+                             "{ " + 
                                  "auto-delete: true," +
                                  "'qpid.msg_sequence': 1," +
                                  "'qpid.ive': 1," + 
@@ -255,12 +268,12 @@ public class AddressBasedDestinationTest extends QpidTestCase
         MessageConsumer cons = jmsSession.createConsumer(dest); 
         
         assertTrue("Exchange not created as expected",(
-                (AMQSession_0_10)jmsSession).isExchangeExist(dest, true));
+                (AMQSession_0_10)jmsSession).isExchangeExist(dest, (ExchangeNode)dest.getTargetNode() , true));
        
         // The existence of the queue is implicitly tested here
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("my-exchange", 
-                    dest.getQueueName(),"hello", dest.getQueueOptions()));        
+                    dest.getQueueName(),"hello", Collections.emptyMap()));        
         
     }
     
@@ -274,43 +287,48 @@ public class AddressBasedDestinationTest extends QpidTestCase
         
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
-        String headersBinding = "'amq.match; {x-match: any, dep: sales, loc: CA}'";
+        String headersBinding = "{exchange: 'amq.match', arguments: {x-match: any, dep: sales, loc: CA}}";
         
-        String addr = "ADDR:my-queue/hello; { " + 
-                        "create: always, " +
-                        "node-properties: {" + 
-                             "durable: true ," +
-                             "x-properties: { " + 
-                                 "auto-delete: true," +
-                                 "'qpid.max_count': 100," + 
-                                 " bindings: ['amq.direct/test', 'amq.topic/a.#'," + headersBinding + "]" +
-                                 
-                             "}" +
-                        "}" +
+        String addr = "ADDR:my-queue/hello; " + 
+                      "{ " + 
+                           "create: always, " +
+                           "node: "  + 
+                           "{" + 
+                               "durable: true ," +
+                               "x-declare: " + 
+                               "{ " + 
+                                     "auto-delete: true," +
+                                     "'qpid.max_count': 100" +
+                               "}, " +
+                               "x-bindings: [{exchange : 'amq.direct', key : test}, " +
+                                            "{exchange : 'amq.topic', key : 'a.#'}," + 
+                                             headersBinding + 
+                                           "]" +
+                           "}" +
                       "}";
 
         AMQDestination dest = new AMQAnyDestination(addr);
         MessageConsumer cons = jmsSession.createConsumer(dest); 
         
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));              
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
         
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getName(),dest.getName(), null));
+                    dest.getAddressName(),dest.getAddressName(), null));
         
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.direct", 
-                    dest.getName(),"test", null));  
+                    dest.getAddressName(),"test", null));  
       
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.topic", 
-                    dest.getName(),"a.#", null));
+                    dest.getAddressName(),"a.#", null));
         
         Address a = Address.parse(headersBinding);
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.match", 
-                    dest.getName(),null, a.getOptions()));
+                    dest.getAddressName(),null, a.getOptions()));
     }
     
     /*public void testBindQueueForXMLExchange() throws Exception

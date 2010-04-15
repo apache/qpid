@@ -32,6 +32,8 @@ import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 
 import org.apache.qpid.client.messaging.address.AddressHelper;
+import org.apache.qpid.client.messaging.address.Link;
+import org.apache.qpid.client.messaging.address.Node;
 import org.apache.qpid.client.messaging.address.QpidExchangeOptions;
 import org.apache.qpid.client.messaging.address.QpidQueueOptions;
 import org.apache.qpid.configuration.ClientProperties;
@@ -119,27 +121,25 @@ public abstract class AMQDestination implements Destination, Referenceable
       }
     }
     
-    public enum FilterType { SQL92, XQUERY, SUBJECT }
+    
     
     protected static DestSyntax defaultDestSyntax;
     
     protected DestSyntax _destSyntax;
 
+    protected AddressHelper _addrHelper;
     protected Address _address;
+    protected int _addressType = AMQDestination.UNKNOWN_TYPE;
     protected String _name;
     protected String _subject;
     protected AddressOption _create = AddressOption.NEVER;
-    protected AddressOption _assert = AddressOption.ALWAYS;
-    protected AddressOption _delete = AddressOption.NEVER;
-    
-    protected String _filter;
-    protected FilterType _filterType = FilterType.SUBJECT;
-    protected boolean _isNoLocal;
-    protected int _nodeType = QUEUE_TYPE;
-    protected String _alternateExchange;
-    protected QpidQueueOptions _queueOptions;
-    protected QpidExchangeOptions _exchangeOptions;
-    protected List<Binding> _bindings = new ArrayList<Binding>();
+    protected AddressOption _assert = AddressOption.NEVER;
+    protected AddressOption _delete = AddressOption.NEVER; 
+
+    protected Node _targetNode;
+    protected Node _sourceNode;
+    protected Link _targetLink;
+    protected Link _sourceLink;    
     // ----- / Fields required to support new address syntax -------
     
     static
@@ -149,7 +149,7 @@ public abstract class AMQDestination implements Destination, Referenceable
                                         DestSyntax.BURL.toString()));
     }
     
-    protected AMQDestination(Address address)
+    protected AMQDestination(Address address) throws Exception
     {
         this._address = address;
         getInfoFromAddress();
@@ -169,7 +169,16 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             _destSyntax = DestSyntax.ADDR;
             this._address = createAddressFromString(str);
-            getInfoFromAddress();
+            try
+            {
+                getInfoFromAddress();
+            }
+            catch(Exception e)
+            {
+                URISyntaxException ex = new URISyntaxException(str,"Error parsing address");
+                ex.initCause(e);
+                throw ex;
+            }
         }
         _logger.info("Based on " + str + " the selected destination syntax is " + _destSyntax);
     }
@@ -264,6 +273,11 @@ public abstract class AMQDestination implements Destination, Referenceable
         _logger.info("Based on " + toString() + " the selected destination syntax is " + _destSyntax);
     }
 
+    public DestSyntax getDestSyntax() 
+    {
+        return _destSyntax;
+    }
+    
     public AMQShortString getEncodedName()
     {
         if(_urlAsShortString == null)
@@ -629,15 +643,21 @@ public abstract class AMQDestination implements Destination, Referenceable
     }
 
     // ----- new address syntax -----------
+    
     public static class Binding
     {
         String exchange;
         String bindingKey;
+        String queue;
         Map<String,Object> args;
         
-        public Binding(String exchange,String bindingKey,Map<String,Object> args)
+        public Binding(String exchange,
+                       String queue,
+                       String bindingKey,
+                       Map<String,Object> args)
         {
             this.exchange = exchange;
+            this.queue = queue;
             this.bindingKey = bindingKey;
             this.args = args;
         }
@@ -647,6 +667,11 @@ public abstract class AMQDestination implements Destination, Referenceable
             return exchange;
         }
 
+        public String getQueue() 
+        {
+            return queue;
+        }
+        
         public String getBindingKey() 
         {
             return bindingKey;
@@ -662,7 +687,15 @@ public abstract class AMQDestination implements Destination, Referenceable
         return _address;
     }
     
-    public String getName() {
+    public int getAddressType(){
+        return _addressType;
+    }
+
+    public void setAddressType(int addressType){
+        _addressType = addressType;
+    }
+    
+    public String getAddressName() {
         return _name;
     }
 
@@ -670,6 +703,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         return _subject;
     }
 
+    public void setSubject(String subject) {
+        _subject = subject;
+    }
+    
     public AddressOption getCreate() {
         return _create;
     }
@@ -681,49 +718,35 @@ public abstract class AMQDestination implements Destination, Referenceable
     public AddressOption getDelete() {
         return _delete;
     }
-
-    public String getFilter() {
-        return _filter;
-    }
-
-    public FilterType getFilterType() {
-        return _filterType;
-    }
-
-    public boolean isNoLocal() {
-        return _isNoLocal;
-    }
-
-    public int getNodeType() {
-        return _nodeType;
-    }
-
-    public QpidQueueOptions getQueueOptions() {
-        return _queueOptions;
-    }
-
-    public List<Binding> getBindings() {
-        return _bindings;
-    }
-
-    public void addBinding(Binding binding) {
-        this._bindings.add(binding);
-    }
     
-    public DestSyntax getDestSyntax() {
-        return _destSyntax;
-    }
-    
-    public QpidExchangeOptions getExchangeOptions() {
-        return _exchangeOptions;
+    public Node getTargetNode()
+    {
+        return _targetNode;
     }
 
-    public String getAlternateExchange() {
-        return _alternateExchange;
+    public void setTargetNode(Node node)
+    {
+        _targetNode = node;
     }
 
-    public void setAlternateExchange(String alternateExchange) {
-        this._alternateExchange = alternateExchange;
+    public Node getSourceNode()
+    {
+        return _sourceNode;
+    }
+
+    public void setSourceNode(Node node)
+    {
+        _sourceNode = node;
+    }
+
+    public Link getSourceLink()
+    {
+        return _sourceLink;
+    }
+
+    public void setSourceLink(Link link)
+    {
+        _sourceLink = link;
     }
     
     public void setExchangeName(AMQShortString name)
@@ -750,37 +773,35 @@ public abstract class AMQDestination implements Destination, Referenceable
        return Address.parse(str);
     }
     
-    private void getInfoFromAddress()
+    private void getInfoFromAddress() throws Exception
     {
         _name = _address.getName();
         _subject = _address.getSubject();
         
-        AddressHelper addrHelper = new AddressHelper(_address);
+        _addrHelper = new AddressHelper(_address);
         
-        _create = addrHelper.getCreate() != null ?
-                 AddressOption.getOption(addrHelper.getCreate()):AddressOption.NEVER;
+        _create = _addrHelper.getCreate() != null ?
+                 AddressOption.getOption(_addrHelper.getCreate()):AddressOption.NEVER;
                 
-        _assert = addrHelper.getAssert() != null ?
-                 AddressOption.getOption(addrHelper.getAssert()):AddressOption.ALWAYS;
+        _assert = _addrHelper.getAssert() != null ?
+                 AddressOption.getOption(_addrHelper.getAssert()):AddressOption.NEVER;
 
-        _delete = addrHelper.getDelete() != null ?
-                 AddressOption.getOption(addrHelper.getDelete()):AddressOption.NEVER;
+        _delete = _addrHelper.getDelete() != null ?
+                 AddressOption.getOption(_addrHelper.getDelete()):AddressOption.NEVER;
                         
-        _filter = addrHelper.getFilter(); 
-        _isNoLocal = addrHelper.isNoLocal();
-        _isDurable = addrHelper.isDurable();
-        _isAutoDelete = addrHelper.isAutoDelete();
-        _isExclusive = addrHelper.isExclusive();
-        _browseOnly = addrHelper.isBrowseOnly();
-        
-        _nodeType = addrHelper.getNodeType() == null || addrHelper.getNodeType().equals("queue")?
-                   QUEUE_TYPE : TOPIC_TYPE;
-        
-        _alternateExchange = addrHelper.getAltExchange();
-        
-        _queueOptions = addrHelper.getQpidQueueOptions();
-        _exchangeOptions = addrHelper.getQpidExchangeOptions();
-        _bindings = addrHelper.getBindings();
+        _addressType = _addrHelper.getTargetNodeType();         
+        _targetNode =  _addrHelper.getTargetNode(_addressType);
+        _sourceNode = _addrHelper.getSourceNode(_addressType);
+        _sourceLink = _addrHelper.getLink();       
+    }
+    
+    // This method is needed if we didn't know the node type at the beginning.
+    // Therefore we have to query the broker to figure out the type.
+    // Once the type is known we look for the necessary properties.
+    public void rebuildTargetAndSourceNodes(int addressType)
+    {
+        _targetNode =  _addrHelper.getTargetNode(addressType);
+        _sourceNode =  _addrHelper.getSourceNode(addressType);
     }
     
     // ----- / new address syntax -----------    
