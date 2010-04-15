@@ -272,6 +272,10 @@ add_executable (qpid_send qpid_send.cpp Statistics.cpp ${platform_test_additions
 target_link_libraries (qpid_send qpidclient)
 remember_location(qpid_send)
 
+# perftest and latencytest are generally useful so install them
+install (TARGETS perftest latencytest RUNTIME
+         DESTINATION ${QPID_INSTALL_BINDIR})
+
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (ENV{OUTDIR} ${EXECUTABLE_OUTPUT_PATH})
   set (test_script_suffix ".ps1")
