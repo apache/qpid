@@ -23,8 +23,10 @@ import static org.apache.qpid.transport.Option.SYNC;
 import static org.apache.qpid.transport.Option.UNRELIABLE;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -89,6 +91,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.messaging.address.Node;
+import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
+import org.apache.qpid.client.messaging.address.Node.QueueNode;
 
 /**
  * This is a 0.10 Session
@@ -354,13 +359,18 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         else
         {
-            for (Binding binding: destination.getBindings())
+            List<Binding> bindings = new ArrayList<Binding>();
+            bindings.addAll(destination.getSourceNode().getBindings());
+            bindings.addAll(destination.getTargetNode().getBindings());
+            for (Binding binding: bindings)
             {
-                _logger.debug("Binding queue : " + queueName.toString() + 
+                String queue = binding.getQueue() == null?
+                                   queueName.asString(): binding.getQueue();
+                _logger.debug("Binding queue : " + queue + 
                               " exchange: " + binding.getExchange() + 
                               " using binding key " + binding.getBindingKey() + 
                               " with args " + printMap(binding.getArgs()));
-                getQpidSession().exchangeBind(queueName.toString(), 
+                getQpidSession().exchangeBind(queue, 
                                               binding.getExchange(),
                                               binding.getBindingKey(),
                                               binding.getArgs()); 
@@ -687,21 +697,34 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             queueName = amqd.getAMQQueueName();
         }
         
-        Map<String,Object> arguments = new HashMap<String,Object>();
-        if (noLocal || amqd.isNoLocal())
-        {            
-            arguments.put("no-local", true);
+        if (amqd.getDestSyntax() == DestSyntax.BURL)
+        {        
+            Map<String,Object> arguments = new HashMap<String,Object>();
+            if (noLocal)
+            {            
+                arguments.put("no-local", true);
+            }
+            
+            /*if (amqd.getDestSyntax() == DestSyntax.ADDR && amqd.getQueueOptions() != null)
+            {
+                arguments.putAll(amqd.getta);
+            }*/
+            
+            getQpidSession().queueDeclare(queueName.toString(), "" , arguments,
+                                          amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
+                                          amqd.isDurable() ? Option.DURABLE : Option.NONE,
+                                          amqd.isExclusive() ? Option.EXCLUSIVE : Option.NONE);   
         }
-        
-        if (amqd.getDestSyntax() == DestSyntax.ADDR && amqd.getQueueOptions() != null)
+        else
         {
-            arguments.putAll(amqd.getQueueOptions());
+            QueueNode node = (QueueNode)amqd.getSourceNode();
+            getQpidSession().queueDeclare(queueName.toString(), "" ,
+                    node.getDeclareArgs(),
+                    node.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
+                    node.isDurable() ? Option.DURABLE : Option.NONE,
+                    node.isExclusive() ? Option.EXCLUSIVE : Option.NONE);   
         }
         
-        getQpidSession().queueDeclare(queueName.toString(), amqd.getAlternateExchange() , arguments,
-                                      amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
-                                      amqd.isDurable() ? Option.DURABLE : Option.NONE,
-                                      amqd.isExclusive() ? Option.EXCLUSIVE : Option.NONE);                
         // passive --> false
         if (!nowait)
         {
@@ -1017,39 +1040,58 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return AMQMessageDelegateFactory.FACTORY_0_10;
     }
     
-    public boolean isExchangeExist(AMQDestination dest,boolean assertNode)
+    public boolean isExchangeExist(AMQDestination dest,ExchangeNode node,boolean assertNode)
     {
         boolean match = true;
-        ExchangeQueryResult result = getQpidSession().exchangeQuery(dest.getName(), Option.NONE).get();
-        match = !result.getNotFound();
+        ExchangeQueryResult result = getQpidSession().exchangeQuery(dest.getAddressName(), Option.NONE).get();
+        match = !result.getNotFound();        
         
-        if (match && assertNode)
-        {
-            match =  (result.getDurable() == dest.isDurable()) && 
-                     (dest.getExchangeClass() != null) &&
-                     (dest.getExchangeClass().asString().equals(result.getType())) &&
-                     (matchProps(result.getArguments(),dest.getQueueOptions()));
-        }
         if (match)
         {
-            dest.setExchangeClass(new AMQShortString(result.getType()));
+            if (assertNode)
+            {
+                match =  (result.getDurable() == node.isDurable()) && 
+                         (node.getExchangeType() != null && 
+                          node.getExchangeType().equals(result.getType())) &&
+                         (matchProps(result.getArguments(),node.getDeclareArgs()));
+            }            
+            else if (node.getExchangeType() != null)
+            {
+                // even if assert is false, better to verify this
+                match = node.getExchangeType().equals(result.getType());
+                if (!match)
+                {
+                    _logger.debug("Exchange type doesn't match. Expected : " +  node.getExchangeType() +
+                             " actual " + result.getType());
+                }
+            }
+            else
+            {
+                _logger.debug("Setting Exchange type " + result.getType());
+                node.setExchangeType(result.getType());
+                dest.setExchangeClass(new AMQShortString(result.getType()));
+            }
         }
         
         return match;
     }
     
-    public boolean isQueueExist(AMQDestination dest,boolean assertNode)
+    public boolean isQueueExist(AMQDestination dest,QueueNode node,boolean assertNode)
     {
         boolean match = true;
-        QueueQueryResult result = getQpidSession().queueQuery(dest.getName(), Option.NONE).get();
-        match = dest.getName().equals(result.getQueue());
+        QueueQueryResult result = getQpidSession().queueQuery(dest.getAddressName(), Option.NONE).get();
+        match = dest.getAddressName().equals(result.getQueue());
         
         if (match && assertNode)
         {
-            match = (result.getDurable() == dest.isDurable()) && 
-                     (result.getAutoDelete() == dest.isAutoDelete()) &&
-                     (result.getExclusive() == dest.isExclusive()) &&
-                     (matchProps(result.getArguments(),dest.getQueueOptions()));
+            match = (result.getDurable() == node.isDurable()) && 
+                     (result.getAutoDelete() == node.isAutoDelete()) &&
+                     (result.getExclusive() == node.isExclusive()) &&
+                     (matchProps(result.getArguments(),node.getDeclareArgs()));
+        }
+        else if (match)
+        {
+            // should I use the queried details to update the local data structure.
         }
         
         return match;
@@ -1063,76 +1105,177 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             match = target.containsKey(key) && 
                     target.get(key).equals(source.get(key));
             
-            if (!match) return match;
+            if (!match) 
+            { 
+                StringBuffer buf = new StringBuffer();
+                buf.append("Property given in address did not match with the args sent by the broker.");
+                buf.append(" Expected { ").append(key).append(" : ").append(source.get(key)).append(" }, ");
+                buf.append(" Actual { ").append(key).append(" : ").append(target.get(key)).append(" }");
+                _logger.debug(buf.toString());
+                return match;
+            }
         }
         
         return match;
     }
 
+    @SuppressWarnings("deprecation")
     public void handleAddressBasedDestination(AMQDestination dest, 
                                               boolean isConsumer,
                                               boolean noWait) throws AMQException
     {
-        boolean noLocal = dest.isNoLocal();
         boolean assertNode = (dest.getAssert() == AddressOption.ALWAYS) || 
                              (isConsumer && dest.getAssert() == AddressOption.RECEIVER) ||
                              (!isConsumer && dest.getAssert() == AddressOption.SENDER);
+        
+        boolean createNode = (dest.getCreate() == AddressOption.ALWAYS) ||
+                             (isConsumer && dest.getCreate() == AddressOption.RECEIVER) ||
+                             (!isConsumer && dest.getCreate() == AddressOption.SENDER);
                     
         
-        if (isExchangeExist(dest,assertNode))
+        
+        int type = resolveAddressType(dest);
+        
+        switch (type)
         {
-            dest.setExchangeName(new AMQShortString(dest.getName()));
-            dest.setRoutingKey(new AMQShortString(dest.getSubject()));
-            if (isConsumer)
+            case AMQDestination.QUEUE_TYPE: 
             {
-                dest.setQueueName(null);
-                dest.addBinding(new Binding(dest.getName(),
-                                                 dest.getSubject(),
-                                                 null));
-            }
-        }
-        else if (isQueueExist(dest,assertNode))
-        {
-            dest.setQueueName(new AMQShortString(dest.getName()));
-            dest.setExchangeName(new AMQShortString(""));
-            dest.setExchangeClass(new AMQShortString(""));
-            dest.setRoutingKey(dest.getAMQQueueName());
-        }
-        else if (dest.getCreate() == AddressOption.ALWAYS ||
-                 dest.getCreate() == AddressOption.RECEIVER && isConsumer ||
-                 dest.getCreate() == AddressOption.SENDER && !isConsumer)
-        {
-            if (dest.getNodeType() == AMQDestination.QUEUE_TYPE)
-            {
-                dest.setQueueName(new AMQShortString(dest.getName()));
-                dest.setExchangeName(new AMQShortString(""));
-                dest.setExchangeClass(new AMQShortString(""));
-                dest.setRoutingKey(dest.getAMQQueueName());
-            }
-            else
-            {
-                dest.setQueueName(null);
-                dest.setExchangeName(new AMQShortString(dest.getName()));
-                dest.setExchangeClass(dest.getExchangeClass() == null? 
-                                      ExchangeDefaults.TOPIC_EXCHANGE_CLASS:dest.getExchangeClass());  
-                dest.setRoutingKey(new AMQShortString(dest.getSubject()));
-                dest.addBinding(new Binding(dest.getName(),
-                                                 dest.getSubject(),
-                                                 null));
-                
-                sendExchangeDeclare(dest.getName(), dest.getExchangeClass().asString(),
-                                    dest.getAlternateExchange(), dest.getExchangeOptions(),false);
-                
+                if (isQueueExist(dest,(QueueNode)dest.getSourceNode(),assertNode))
+                {
+                    setLegacyFiledsForQueueType(dest);
+                    break;
+                }
+                else if(createNode)
+                {
+                    setLegacyFiledsForQueueType(dest);
+                    send0_10QueueDeclare(dest,null,false,noWait);
+                    break;
+                }                
             }
             
-            send0_10QueueDeclare(dest,null,noLocal,noWait);
+            case AMQDestination.TOPIC_TYPE: 
+            {
+                if (isExchangeExist(dest,(ExchangeNode)dest.getTargetNode(),assertNode))
+                {                    
+                    setLegacyFiledsForTopicType(dest);
+                    verifySubject(dest);
+                    createSubscriptionQueue(dest);
+                    break;
+                }
+                else if(createNode)
+                {                    
+                    setLegacyFiledsForTopicType(dest);
+                    verifySubject(dest);
+                    sendExchangeDeclare(dest.getAddressName(), 
+                            dest.getExchangeClass().asString(),
+                            dest.getTargetNode().getAlternateExchange(),
+                            dest.getTargetNode().getDeclareArgs(),
+                            false);        
+                    createSubscriptionQueue(dest);
+                    break;
+                }
+            }
+            
+            default:
+                throw new AMQException(
+                        "The name '" + dest.getAddressName() +
+                        "' supplied in the address doesn't resolve to an exchange or a queue");
+        }
+    }
+    
+    int resolveAddressType(AMQDestination dest) throws AMQException
+    {
+       int type = dest.getAddressType();
+       String name = dest.getAddressName();
+       if (type != AMQDestination.UNKNOWN_TYPE)
+       {
+           return type;
+       }
+       else
+       {
+            ExchangeBoundResult result = getQpidSession().exchangeBound(name,name,null,null).get();
+            if (result.getQueueNotFound() && result.getExchangeNotFound()) {
+                //neither a queue nor an exchange exists with that name; treat it as a queue
+                type = AMQDestination.QUEUE_TYPE;
+            } else if (result.getExchangeNotFound()) {
+                //name refers to a queue
+                type = AMQDestination.QUEUE_TYPE;
+            } else if (result.getQueueNotFound()) {
+                //name refers to an exchange
+                type = AMQDestination.TOPIC_TYPE;
+            } else {
+                //both a queue and exchange exist for that name
+                throw new AMQException("Ambiguous address, please specify queue or topic as node type");
+            }
+            dest.rebuildTargetAndSourceNodes(type);
+            return type;
+        }        
+    }
+    
+    @SuppressWarnings("deprecation")
+    private void verifySubject(AMQDestination dest) throws AMQException
+    {
+        if (dest.getSubject() == null || dest.getSubject().trim().equals(""))
+        {
+            if (dest.getExchangeClass() == ExchangeDefaults.TOPIC_EXCHANGE_CLASS)
+            {
+                dest.setRoutingKey(ExchangeDefaults.WILDCARD_ANY);
+                dest.setSubject(ExchangeDefaults.WILDCARD_ANY.toString());
+            }
+            else if (dest.getExchangeClass() == ExchangeDefaults.DIRECT_EXCHANGE_CLASS)
+            {
+               throw new AMQException("If sending to an exchange of type direct," +
+               		" a valid subject must be specified");
+            }
+        }
+    }
+    
+    private void createSubscriptionQueue(AMQDestination dest) throws AMQException
+    {
+        if (dest.getSourceNode() != null)
+        {
+            QueueNode node = (QueueNode)dest.getSourceNode();
+            if (dest.getQueueName() == null || !isQueueExist(dest,node,true))
+            {
+                // can name : my-queue be used in x-declare?
+                // if so set it to dest queue name
+                // if (dest.getQueueName() == null) { dest.setName(node.getName()) }
+                send0_10QueueDeclare(dest,null,false,false);
+            }
+            node.addBinding(new Binding(dest.getAddressName(),
+                                        dest.getQueueName(),// should have one by now
+                                        dest.getSubject(),
+                                        node.getDeclareArgs()));
         }
         else
         {
-            throw new AMQException(
-                    "The name '" + dest.getName() +
-                    "' supplied in the address doesn't resolve to an exchange or a queue");
-        }
+            send0_10QueueDeclare(dest,null,false,false);
+            dest.getTargetNode().addBinding(new Binding(dest.getAddressName(),
+                                                        null,
+                                                        dest.getSubject(),
+                                                        null));
+        }        
+    }
+    
+    private void setLegacyFiledsForQueueType(AMQDestination dest)
+    {
+        // legacy support
+        dest.setQueueName(new AMQShortString(dest.getAddressName()));
+        dest.setExchangeName(new AMQShortString(""));
+        dest.setExchangeClass(new AMQShortString(""));
+        dest.setRoutingKey(dest.getAMQQueueName());
+    }
+
+    private void setLegacyFiledsForTopicType(AMQDestination dest)
+    {
+        // legacy support
+        dest.setQueueName(null);
+        dest.setExchangeName(new AMQShortString(dest.getAddressName()));
+        ExchangeNode node = (ExchangeNode)dest.getTargetNode();
+        dest.setExchangeClass(node.getExchangeType() == null? 
+                              ExchangeDefaults.TOPIC_EXCHANGE_CLASS:
+                              new AMQShortString(node.getExchangeType()));  
+        dest.setRoutingKey(new AMQShortString(dest.getSubject()));
     }
     
     /** This should be moved to a suitable utility class */
