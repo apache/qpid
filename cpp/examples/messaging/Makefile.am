@@ -21,7 +21,10 @@ examplesdir=$(pkgdatadir)/examples/messaging
 MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
-noinst_PROGRAMS=drain spout queue_sender queue_receiver topic_sender topic_receiver client server map_sender map_receiver
+noinst_PROGRAMS=drain spout queue_sender queue_receiver topic_sender topic_receiver client server map_sender map_receiver hello_world
+
+hello_world_SOURCES=hello_world.cpp
+hello_world_LDADD=$(CLIENT_LIB)
 
 drain_SOURCES=drain.cpp
 drain_LDADD=$(CLIENT_LIB)
@@ -55,6 +58,7 @@ map_receiver_LDADD=$(CLIENT_LIB)
 
 EXTRA_DIST=                  \
 	CMakeLists.txt \
+	messaging_hello_world.vcproj \
 	messaging_client.vcproj \
 	messaging_drain.vcproj \
 	messaging_map_receiver.vcproj \
