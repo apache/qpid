@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import java.net.URISyntaxException;
+
 import javax.jms.JMSException;
 import javax.jms.Topic;
 
@@ -29,6 +31,11 @@ import org.apache.qpid.url.BindingURL;
 
 public class AMQTopic extends AMQDestination implements Topic
 {
+    public AMQTopic(String address) throws URISyntaxException
+    {
+        super(address);
+    }
+    
     /**
      * Constructor for use in creating a topic using a BindingURL.
      *

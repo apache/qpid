@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import java.net.URISyntaxException;
+
 import javax.jms.Queue;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -29,6 +31,11 @@ import org.apache.qpid.url.BindingURL;
 public class AMQQueue extends AMQDestination implements Queue
 {
 
+    public AMQQueue(String address) throws URISyntaxException
+    {
+        super(address);
+    }
+    
     /**
      * Create a reference to a non temporary queue using a BindingURL object.
      * Note this does not actually imply the queue exists.
