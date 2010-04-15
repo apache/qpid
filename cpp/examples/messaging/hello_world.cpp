@@ -16,9 +16,9 @@ int main() {
     connection.open();
     Session session = connection.createSession();
 
-    std::string queueName = "message_queue";
+    std::string address = "message_queue";
 
-    Sender sender = session.createSender(queueName);
+    Sender sender = session.createSender(address);
     
     for (int i=0; i<5; i++) {
       std::stringstream content;
@@ -28,7 +28,7 @@ int main() {
     }
     sender.close();
 	
-    Receiver receiver = session.createReceiver(queueName);
+    Receiver receiver = session.createReceiver(address);
 
     Message message;
     Duration timeout(1000); /* in milliseconds */
