@@ -307,7 +307,7 @@ public class AddressHelper
         Link link = new Link();
         if (linkProps != null)
         {            
-            link.setDurable(linkProps.getBoolean(DURABLE));
+            link.setDurable(linkProps.getBoolean(DURABLE)== null? false : linkProps.getBoolean(DURABLE));
             link.setName(linkProps.getString(NAME));
             link.setCapacity(linkProps.getInt(CAPACITY));
             link.setFilter(linkProps.getString(FILTER));
