@@ -2155,6 +2155,8 @@ class Broker:
       self._v1CbProtected(msg)
     except Exception, e:
       print "EXCEPTION in Broker._v1Cb:", e
+      import traceback
+      traceback.print_exc()
 
   def _v1CbProtected(self, msg):
     """
