@@ -46,7 +46,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         framemax(65535),
         heartbeat(0),
         heartbeatmax(120),
-        stagingThreshold(broker.getStagingThreshold()),
         federationLink(true),
         clientSupportsThrottling(false),
         clusterOrderOut(0)
@@ -57,12 +56,10 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     uint32_t getFrameMax() const { return framemax; }
     uint16_t getHeartbeat() const { return heartbeat; }
     uint16_t getHeartbeatMax() const { return heartbeatmax; }
-    uint64_t getStagingThreshold() const { return stagingThreshold; }
 
     void setFrameMax(uint32_t fm) { framemax = std::max(fm, (uint32_t) 4096); }
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
-    void setStagingThreshold(uint64_t st) { stagingThreshold = st; }
 
     virtual void setUserId(const string& uid) {  userId = uid; }
     const string& getUserId() const { return userId; }
@@ -107,7 +104,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     uint32_t framemax;
     uint16_t heartbeat;
     uint16_t heartbeatmax;
-    uint64_t stagingThreshold;
     string userId;
     string url;
     bool federationLink;

@@ -36,8 +36,8 @@ namespace
     const std::string QPID_MANAGEMENT("qpid.management");
 }
 
-MessageBuilder::MessageBuilder(MessageStore* const _store, uint64_t _stagingThreshold) :
-    state(DORMANT), store(_store), stagingThreshold(_stagingThreshold), staging(false) {}
+MessageBuilder::MessageBuilder(MessageStore* const _store) :
+    state(DORMANT), store(_store) {}
 
 void MessageBuilder::handle(AMQFrame& frame)
 {
@@ -68,29 +68,13 @@ void MessageBuilder::handle(AMQFrame& frame)
     default:
         throw CommandInvalidException(QPID_MSG("Invalid frame sequence for message (state=" << state << ")"));
     }
-    if (staging) {
-        intrusive_ptr<const PersistableMessage> cpmsg = boost::static_pointer_cast<const PersistableMessage>(message);
-        store->appendContent(cpmsg, frame.castBody<AMQContentBody>()->getData());
-    } else {
-        message->getFrames().append(frame);
-        //have we reached the staging limit? if so stage message and release content
-        if (state == CONTENT
-            && stagingThreshold
-            && message->getFrames().getContentSize() >= stagingThreshold
-            && !NullMessageStore::isNullStore(store)
-            && message->getExchangeName() != QPID_MANAGEMENT /* don't stage mgnt messages */)
-        {
-            message->releaseContent();
-            staging = true;
-        }
-    }
+    message->getFrames().append(frame);
 }
 
 void MessageBuilder::end()
 {
     message = 0;
     state = DORMANT;
-    staging = false;
 }
 
 void MessageBuilder::start(const SequenceNumber& id)
@@ -98,7 +82,6 @@ void MessageBuilder::start(const SequenceNumber& id)
     message = intrusive_ptr<Message>(new Message(id));
     message->setStore(store);
     state = METHOD;
-    staging = false;
 }
 
 namespace {
