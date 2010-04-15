@@ -5,45 +5,31 @@
 #include <qpid/messaging/Session.h>
 
 #include <iostream>
-#include <sstream>
 
 using namespace qpid::messaging;
 
-int main() {
+int main(int argc, char** argv) {
+    std::string broker = argc > 1 ? argv[1] : "localhost:5672";
+    std::string address = argc > 2 ? argv[2] : "amq.topic";
+    Connection connection(broker);
+    try {
+        connection.open();
+        Session session = connection.createSession();
 
-  Connection connection("localhost:5672");
-  try {
-    connection.open();
-    Session session = connection.createSession();
+        Receiver receiver = session.createReceiver(address);
+        Sender sender = session.createSender(address);
 
-    std::string address = "message_queue";
+        sender.send(Message("Hello world!"));
 
-    Sender sender = session.createSender(address);
-    
-    for (int i=0; i<5; i++) {
-      std::stringstream content;
-      content << "Message " << i;
-      std::cout << "Sending " << content.str() << std::endl;
-      sender.send(Message(content.str()));
+        Message message = receiver.fetch(Duration::SECOND * 1);
+        std::cout << message.getContent() << std::endl;
+        session.acknowledge();
+        
+        connection.close();
+        return 0;
+    } catch(const std::exception& error) {
+        std::cerr << error.what() << std::endl;
+        connection.close();
+        return 1;   
     }
-    sender.close();
-	
-    Receiver receiver = session.createReceiver(address);
-
-    Message message;
-    Duration timeout(1000); /* in milliseconds */
-    while (receiver.fetch(message, timeout)) {
-      std::cout << "Received " << message.getContent() << std::endl;
-      session.acknowledge();
-    }
-
-    receiver.close();
-
-    connection.close();
-    return 0;
-  } catch(const std::exception& error) {
-    std::cerr << error.what() << std::endl;
-    connection.close();
-    return 1;   
-  }
 }
