@@ -35,17 +35,16 @@ namespace qpid {
 namespace broker {
 
 RecoveryManagerImpl::RecoveryManagerImpl(QueueRegistry& _queues, ExchangeRegistry& _exchanges, LinkRegistry& _links,
-                                         DtxManager& _dtxMgr, uint64_t _stagingThreshold) 
-    : queues(_queues), exchanges(_exchanges), links(_links), dtxMgr(_dtxMgr), stagingThreshold(_stagingThreshold) {}
+                                         DtxManager& _dtxMgr)
+    : queues(_queues), exchanges(_exchanges), links(_links), dtxMgr(_dtxMgr) {}
 
 RecoveryManagerImpl::~RecoveryManagerImpl() {}
 
 class RecoverableMessageImpl : public RecoverableMessage
 {
     intrusive_ptr<Message> msg;
-    const uint64_t stagingThreshold;
 public:
-    RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold); 
+    RecoverableMessageImpl(const intrusive_ptr<Message>& _msg);
     ~RecoverableMessageImpl() {};
     void setPersistenceId(uint64_t id);
     void setRedelivered();
@@ -130,7 +129,7 @@ RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buff
 {
     boost::intrusive_ptr<Message> message(new Message());
     message->decodeHeader(buffer);
-    return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message, stagingThreshold));    
+    return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message));
 }
 
 RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid, 
@@ -161,16 +160,16 @@ void RecoveryManagerImpl::recoveryComplete()
     exchanges.eachExchange(boost::bind(&Exchange::recoveryComplete, _1, boost::ref(exchanges)));
 }
 
-RecoverableMessageImpl:: RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold) : msg(_msg), stagingThreshold(_stagingThreshold) 
+RecoverableMessageImpl:: RecoverableMessageImpl(const intrusive_ptr<Message>& _msg) : msg(_msg)
 {
     if (!msg->isPersistent()) {
         msg->forcePersistent(); // set so that message will get dequeued from store.
     }
 }
 
-bool RecoverableMessageImpl::loadContent(uint64_t available)
+bool RecoverableMessageImpl::loadContent(uint64_t /*available*/)
 {
-    return !stagingThreshold || available < stagingThreshold;
+    return true;
 }
 
 void RecoverableMessageImpl::decodeContent(framing::Buffer& buffer)

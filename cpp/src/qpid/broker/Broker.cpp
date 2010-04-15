@@ -81,7 +81,6 @@ Broker::Options::Options(const std::string& name) :
     workerThreads(5),
     maxConnections(500),
     connectionBacklog(10),
-    stagingThreshold(5000000),
     enableMgmt(1),
     mgmtPubInterval(10),
     queueCleanInterval(60*10),//10 minutes
@@ -113,7 +112,6 @@ Broker::Options::Options(const std::string& name) :
         ("worker-threads", optValue(workerThreads, "N"), "Sets the broker thread pool size")
         ("max-connections", optValue(maxConnections, "N"), "Sets the maximum allowed connections")
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
-        ("staging-threshold", optValue(stagingThreshold, "N"), "Stages messages over N bytes to disk")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-qmf2", optValue(qmf2Support,"yes|no"), "Use QMF v2 for Broker Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
@@ -178,7 +176,6 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_workerThreads(conf.workerThreads);
         mgmtObject->set_maxConns(conf.maxConnections);
         mgmtObject->set_connBacklog(conf.connectionBacklog);
-        mgmtObject->set_stagingThreshold(conf.stagingThreshold);
         mgmtObject->set_mgmtPubInterval(conf.mgmtPubInterval);
         mgmtObject->set_version(qpid::version);
         if (dataDir.isEnabled())
@@ -223,8 +220,7 @@ Broker::Broker(const Broker::Options& conf) :
         // The cluster plug-in will setRecovery(false) on all but the first
         // broker to join a cluster.
         if (getRecovery()) {
-            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager,
-                                          conf.stagingThreshold);
+            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager);
             store->recover(recoverer);
         }
         else {

@@ -97,7 +97,7 @@ QPID_AUTO_TEST_SUITE(MessageBuilderTestSuite)
 
 QPID_AUTO_TEST_CASE(testHeaderOnly)
 {
-    MessageBuilder builder(0, 0);
+    MessageBuilder builder(0);
     builder.start(SequenceNumber());
 
     std::string exchange("builder-exchange");
@@ -120,7 +120,7 @@ QPID_AUTO_TEST_CASE(testHeaderOnly)
 
 QPID_AUTO_TEST_CASE(test1ContentFrame)
 {
-    MessageBuilder builder(0, 0);
+    MessageBuilder builder(0);
     builder.start(SequenceNumber());
 
     std::string data("abcdefg");
@@ -153,7 +153,7 @@ QPID_AUTO_TEST_CASE(test1ContentFrame)
 
 QPID_AUTO_TEST_CASE(test2ContentFrames)
 {
-    MessageBuilder builder(0, 0);
+    MessageBuilder builder(0);
     builder.start(SequenceNumber());
 
     std::string data1("abcdefg");
@@ -185,67 +185,6 @@ QPID_AUTO_TEST_CASE(test2ContentFrames)
     BOOST_CHECK(builder.getMessage());
     BOOST_CHECK(builder.getMessage()->getFrames().isComplete());
 }
-
-QPID_AUTO_TEST_CASE(testStaging)
-{
-    MockMessageStore store;
-    MessageBuilder builder(&store, 5);
-    builder.start(SequenceNumber());
-
-    std::string data1("abcdefg");
-    std::string data2("hijklmn");
-    std::string exchange("builder-exchange");
-    std::string key("builder-exchange");
-
-    AMQFrame method(MessageTransferBody(ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header((AMQHeaderBody()));
-    AMQFrame content1((AMQContentBody(data1)));
-    AMQFrame content2((AMQContentBody(data2)));
-
-    header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(data1.size() + data2.size());
-    header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);
-
-    builder.handle(method);
-    builder.handle(header);
-
-    store.expectStage(*builder.getMessage());
-    builder.handle(content1);
-    BOOST_CHECK(store.expectationsMet());
-    BOOST_CHECK_EQUAL((uint64_t) 1, builder.getMessage()->getPersistenceId());
-
-    store.expectAppendContent(*builder.getMessage(), data2);
-    builder.handle(content2);
-    BOOST_CHECK(store.expectationsMet());
-    //were the content frames dropped?
-    BOOST_CHECK(!builder.getMessage()->isContentLoaded());
-}
-
-QPID_AUTO_TEST_CASE(testNoManagementStaging)
-{
-    // Make sure management messages don't stage
-    MockMessageStore store;
-    MessageBuilder builder(&store, 5);
-    builder.start(SequenceNumber());
-
-    std::string data1("abcdefg");
-    std::string exchange("qpid.management");
-    std::string key("builder-exchange");
-
-    AMQFrame method(MessageTransferBody(ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header((AMQHeaderBody()));
-    AMQFrame content1((AMQContentBody(data1)));
-
-    header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(data1.size());
-    header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);
-
-    builder.handle(method);
-    builder.handle(header);
-
-    builder.handle(content1);
-    BOOST_CHECK(store.expectationsMet());
-    BOOST_CHECK_EQUAL((uint64_t) 0, builder.getMessage()->getPersistenceId());
-}
-
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

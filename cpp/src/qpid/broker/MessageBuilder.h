@@ -35,8 +35,7 @@ namespace qpid {
 
         class MessageBuilder : public framing::FrameHandler{
         public:
-            QPID_BROKER_EXTERN MessageBuilder(MessageStore* const store,
-                                              uint64_t stagingThreshold);
+            QPID_BROKER_EXTERN MessageBuilder(MessageStore* const store);
             QPID_BROKER_EXTERN void handle(framing::AMQFrame& frame);
             boost::intrusive_ptr<Message> getMessage() { return message; }
             QPID_BROKER_EXTERN void start(const framing::SequenceNumber& id);
@@ -46,8 +45,6 @@ namespace qpid {
             State state;
             boost::intrusive_ptr<Message> message;
             MessageStore* const store;
-            const uint64_t stagingThreshold;
-            bool staging;
 
             void checkType(uint8_t expected, uint8_t actual);
         };
