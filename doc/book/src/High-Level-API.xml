@@ -1,4 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
 
 <!--
  
@@ -21,38 +23,46 @@
  
 -->
 
-<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-]>
 
 <chapter id="high-level-client-api">
-  <title>Qpid High Level Client API</title>
+  <title>Apache Qpid Messaging API</title>
 
-  <para>The Apache Qpid High Level Client API is a reliable,
-  asynchronous messaging API that is similar to Java JMS, but designed
-  to support programming in other commonly used programming languages,
-  and to support cross-platform messaging using the AMQP protocol. It
-  is currently implemented for C++ and Python. The addressing
-  mechanisms it defines can also be used in Java JMS.</para>
+  <para>Apache Qpid is a reliable, asynchronous messaging system that
+  supports the AMQP messaging protocol in several common programming
+  languages on the Linux, Windows, Java, and Unix platforms. On the
+  Java platform, Qpid uses the established <ulink
+  url="http://java.sun.com/products/jms/">Java JMS API</ulink>. On the
+  .NET platform, Qpid uses a <ulink
+  url="http://qpid.apache.org/wcf.html">WCF binding</ulink>. For
+  Python and C++, Qpid uses the Qpid Messaging API, which has
+  implementations in both languages. Support for this API in Ruby will
+  be added soon<footnote><para>Ruby currently uses an API that is
+  closely tied to the AMQP version.</para></footnote>.</para>
 
-  <para>Unlike earlier Qpid APIs, the High Level Client API does not
+
+  <para>Unlike earlier Qpid APIs, the Qpid Messaging API does not
   expose the details of the underlying messaging protocol or the
   software components defined by the protocol. Instead, it defines a
   declarative syntax for addressing messaging components; to use it
   with a given messaging protocol, a protocol mapping must be defined.
-  This specification provides a mapping to AMQP 0-10. At this point,
-  AMQP 1.0 is not yet final, but we expect that applications written
-  using the High Level Client API can be migrated to AMQP 1.0 with
-  minimal changes, and applications that do not need to configure
-  messaging components can be used without change. 
-  </para>
+  This specification provides a mapping to AMQP 0-10.</para>
 
-  <para>The Qpid High Level Client API programming model is very
-  similar to the Java JMS programming model. Here are the most
-  important classes in the high level programming model:
+  <para>Qpid uses the same addressing scheme in Java JMS, WCF, and the
+  Qpid Messaging API. An <emphasis>address</emphasis> is a simple
+  string that represents the name of a node on a messaging broker. In
+  the AMQP 0-10 mapping, an address resolves to an exchange or a
+  queue.</para>
+
+
+  <para>Here are the most important classes in the Qpid Messaging API
+  programming model.
   </para>
 
   <itemizedlist>
 
+<!--
+TODO: Add definition for message
+-->
     <listitem><para>A <emphasis>connection</emphasis> represents a
     network connection. The parameters for the network connection are
     specified using a URL-based syntax when the connection is
@@ -63,12 +73,13 @@
     <emphasis>messaging broker</emphasis>. A session is created by a
     connection.</para></listitem>
 
-    <listitem><para>An <emphasis>address</emphasis> is a string that
-    represents a node on a messaging broker. In the AMQP 0-10 mapping,
-    an address represents either an exchange or a queue. In the AMQP
-    1.0 mapping, an address will represent an AMQP 1.0 node. Most
-    addresses are simple names. An extended address can also specify
-    options.</para></listitem>
+    <listitem><para>A <emphasis>message</emphasis> consists of
+    <emphasis>message content</emphasis> (the body of the message),
+    and <emphasis>message properties</emphasis>, which may include a
+    subject, a reply address, etc. Message content is a blob which may
+    contain text or binary data. Map messages allow binary data to be
+    exchanged portably across languages and
+    platforms.</para></listitem>
 
     <listitem><para>A <emphasis>sender</emphasis> is a messaging
     client that sends <emphasis>message</emphasis>s to a destination
@@ -83,21 +94,11 @@
   </itemizedlist>
 
   <section>
-    <title>A Simple Sender and Receiver in C++</title>
+    <title>A Simple Messaging Program in C++</title>
 
-    <para>This section shows the code for two programs. One is a
-    simple sender, the other is a simple receiver.</para>
-
-    <section>
-      <title>Connections and Sessions</title>
-
-    <para>Both of these programs use the same skeleton, which includes
-    the headers that define the Connection, Message, Receiver, Sender,
-    and Session objects. The code in <methodname>main()</methodname>
-    opens a connection using a URL that identifies a messaging broker,
-    creates a session, and catches any errors that occur during
-    messaging:</para>
-
+    <para>The following program shows how to create a Connection,
+    create a Session, send messages to a queue using a Sender, and
+    receive messages from a queue using a Receiver.</para>
 
 <programlisting><![CDATA[
 #include <qpid/messaging/Connection.h>
@@ -110,106 +111,106 @@
 
 using namespace qpid::messaging;
 
-int main() {
-
-    Connection connection;
+int main(int argc, char** argv) {
+    std::string broker = argc > 1 ? argv[1] : "localhost:5672";
+    std::string address = argc > 2 ? argv[2] : "amq.topic";
+    Connection connection(broker);
     try {
-        connection.open("amqp:tcp:127.0.0.1:5672");
-        Session session = connection.newSession();
+        connection.open();
+        Session session = connection.createSession();
 
-	/* #### Main body of messaging code goes here #### */
+        Receiver receiver = session.createReceiver(address);
+        Sender sender = session.createSender(address);
 
+        sender.send(Message("Hello world!"));
+
+        Message message = receiver.fetch(Duration::SECOND * 1);
+        std::cout << message.getContent() << std::endl;
+        session.acknowledge();
+        
         connection.close();
         return 0;
     } catch(const std::exception& error) {
-        std::cout << error.what() << std::endl;
+        std::cerr << error.what() << std::endl;
         connection.close();
+        return 1;   
     }
-    return 1;   
 }]]></programlisting>
+
+  <para>##########################</para>
 
   </section>
 
   <section>
-    <title>A Message Sender</title>
-  <para>The sender program creates a Sender object that sends messages
-  to <varname>message_queue</varname>, which happens to be a queue on
-  on AMQP 0-10 messaging broker.</para>
+    <title>A Simple Messaging Program in Python</title>
 
-<programlisting><![CDATA[
-        Sender sender = session.createSender("message_queue");
+    <programlisting><![CDATA[
+import sys
+from qpid.messaging import *
 
-	for (int i=0; i<5; i++) {
-            std::stringstream content;
-            content << "Message " << i;
-            sender.send(Message(content.str()));
-	}
-	sender.close();
-}]]></programlisting>
+broker =  "localhost:5672" if len(sys.argv)<2 else sys.argv[1]
+address = "amq.topic" if len(sys.argv)<3 else sys.argv[2]
 
-    <para> The AMQP 0-10 mapping implements this by sending messages
-    to the default exchange, with <varname>message_queue</varname> as
-    the routing key.</para>
+connection = Connection(broker)
 
-  </section>
-  <section>
-    <title>A Message Receiver</title>
+try:
+  connection.open()
+  session = connection.session()
 
-  <para>The receiver program creates a Receiver object, reads messages
-  from <varname>message_queue</varname>, acknowledging them so the
-  messaging broker knows they have been received and can be safely
-  removed from the queue, and prints them:</para>
+  sender = session.sender(address)
+  receiver = session.receiver(address)
 
-<programlisting><![CDATA[
-        Receiver receiver = session.createReceiver("message_queue");
+  sender.send(Message("Hello world!"));
 
-	Message message;
-	int timeout = 1000;  /* in milliseconds */
-	while (receiver.fetch(message, timeout)) {
-	  std::cout << message.getContent();
-	  session.acknowledge();
-	}
-	receiver.close();
+  message = receiver.fetch(timeout=1)
+  print message.content
+  session.acknowledge() # acknowledge message receipt
+
+except MessagingError,m:
+  print m
+finally:
+  connection.close()
 ]]></programlisting>
 
-   <para>The <methodname>Receiver::fetch()</methodname> method can be
-   used with or without a timeout. In either case, it is guaranteed to
-   receive any messages on the queue. Here, the timeout is used in
-   case <command>sender</command> is publishing at the same time
-   message are being read.</para>
-
-  </section>
+  <para>##########################</para>
 
   </section>
 
   <section>
-    <title>Addresses</title>
+    <title>A Simple Messaging Program in Java JMS</title>
+    <programlisting><![CDATA[
+]]></programlisting>
 
+  </section>
+
+  <section>
+    <title>Address Strings</title>
 
     <para>As we have seen, an address is a string that identifies
-    objects on the messaging broker. There are two kinds of
-    addresses. A <firstterm>simple address</firstterm> is a name. An
-    <firstterm>extended address</firstterm> can also have a
+    objects on the messaging broker. An <firstterm>address</firstterm>
+    is simply a name.</para>
+
+    <para>An <firstterm>address string</firstterm> can also have a
     <firstterm>subject</firstterm> and
     <firstterm>options</firstterm>.</para>
 
-    <para>The syntax for an address is:</para>
+    <para>The syntax for an address string is:</para>
 
 <programlisting><![CDATA[
-address ::=  <name> [ / <subject> ] [ ; <options> ]
+address_string ::=  <adress> [ / <subject> ] [ ; <options> ]
 options ::=  { <key> : <value>, ... }
 ]]></programlisting>
 
-    <para>Names, subjects, and keys are strings.</para>
+    <para>Addresses, subjects, and keys are strings.</para>
 
     <para>Values can be numbers, strings (with optional single or double quotes), maps, or lists.</para>
 
     <para>In most cases, queues, bindings, and exchanges are
-    configured externally with management tools. Qpid High Level API
+    configured externally with management tools. Qpid Messaging API
     clients send to and receive from these queues and exchanges.</para>
 
     <para>In AMQP 0-10, messages are sent to exchanges, and received
-    from queues. The Qpid High Level Client API allows programs to
+    from queues. The Qpid Messaging API allows programs to
     send to or receive from any node. To make this possible, the
     mapping defines the semantics of sending and receiving for all
     AMQP 0-10 exchange types and queues as follows:
@@ -217,17 +218,17 @@ options ::=  { <key> : <value>, ... }
     <itemizedlist>
       <listitem><para>When a Sender sends a message to an exchange,
       the transfer destination is set to the exchange name, and the
-      routing key is set to the value of the address
+      routing key is set to the value of the address string's
       subject.</para></listitem>
       <listitem><para>When a Receiver receives messages from an
       exchange, the API automatically creates a subscription queue and
-      binds it to the exchange. If the address contains a subject,
-      then it is used as the binding key. If the address does not
+      binds it to the exchange. If the address string contains a subject,
+      then it is used as the binding key. If the address string does not
       contain a subject, then the binding key depends on the exchange
       type:
       <itemizedlist>
 	<listitem><para>topic exchange: wildcard match</para></listitem>
-	<listitem><para>direct exchange: error &mdash; the address must specify a subject</para></listitem>
+	<listitem><para>direct exchange: error &mdash; the address string must specify a subject</para></listitem>
 	<listitem><para>fanout: none</para></listitem>
 	</itemizedlist></para>
 	<para>The subscription queue's <varname>durability</varname>
@@ -245,25 +246,25 @@ options ::=  { <key> : <value>, ... }
     </para>
 
     <para>The following sections describe the various kinds of
-    addresses in detail. The examples in these sections use the
+    address strings in detail. The examples in these sections use the
     <command>qpid-config</command> utility to configure AMQP 0-10
     queues and exchanges, send messages using
     <command>drain</command>, and receive messages using
     <command>spout</command>. The source code for
     <command>drain</command> and <command>spout</command> is available
     in both C++ and Python, and can be found in the examples directory
-    for each language. These programs can use any address as a source
+    for each language. These programs can use any address string as a source
     or a destination, and have many command line options to configure
     behavior&mdash;use the <command>-h</command> option for
     documentation on these options.</para>
 
 
     <section>
-      <title>Simple Addresses</title>
+      <title>Simple Address Strings</title>
 
-    <para>If an address contains only a name, it resolves to a named
-    node. On AMQP 0-10, a named node maps to a queue or an exchange with
-    the same name.
+    <para>If an address string contains only a name, it is the address
+    of a named node. On AMQP 0-10, a named node maps to a queue or an
+    exchange with the same name.
     <note>
       <para>Address resolution is not yet well-defined if a queue and
       an exchange have the same name. This is a known problem, and is
@@ -271,7 +272,7 @@ options ::=  { <key> : <value>, ... }
     </note></para>
 
     <example>
-      <title>Simple Addresses</title>
+      <title>Simple Address Strings</title>
 
       <para>Create a queue with qpid-config, send a message using
       spout, and read it using drain:</para>
@@ -285,7 +286,7 @@ Message(properties={spout-id:c877e622-d57b-4df2-bf3e-6014c68da0ea:0}, content=''
       </screen>
 
       <para>Exchanges and queues are addressed in exactly the same way
-      in the Qpid High Level Client API. If we delete the queue named
+      in the Qpid Messaging API. If we delete the queue named
       <literal>hello-world</literal> and create an exchange with the
       same name, we can write to and read from the exchange in the
       same way as for the queue:</para>
@@ -371,7 +372,7 @@ Message(properties={spout-id:7da2d27d-93e6-4803-8a61-536d87b8d93f:0}, content=''
 
 	  <para>In an AMQP 0-10 direct exchange, messages are routed
 	  to queues if the routing key exactly matches the binding
-	  key. In the High Level Client API, if a Sender and a
+	  key. In the Qpid Messaging API, if a Sender and a
 	  Receiver are bound to the same exchange, the Receiver will
 	  receive messages if the Sender's subject matches the
 	  Receiver's subject.</para>
@@ -628,32 +629,14 @@ Message(properties={spout-id:c8ab5013-a19e-4f54-967c-797c8ad6568b:0}, content=''
 
     <section>
       <title>Extended Address Options</title>
-<!-- #### Not a good name. The options don't configure the address. 
-
-Not sure how best to fix this. One possibility is to change the names of the non-terminals.
-
-Instead of:
-
-address ::= <name> [ / <subject> ] [ ; <options> ]
-options ::=  { <key> : <value>, ... }
-
-We could use something along these lines:
-
-configuration ::= <address> [ / <subject> ] [ ; <options> ]
-options ::=  { <key> : <value>, ... }
-
-We could then have tables showing the available options. Some of these would be client configuration options, others would specify broker host/port/connection, etc. 
-
--->
-
 
       <para>Extended Address Options are parameters that affect the behavior of Senders and Receivers.</para>
 
       <para>Some of these options specify aspects of the resolution process; for instance, they may make assertions that must be satisfied in order for resolution to succeed, or they may state that the node should be created if it does not already exist.</para>
 
-      <para>Let's use <command>drain</command> and <command>spout</command> to show how this works. First, let's use the <literal>assert</literal> option to insist that an address must resolve to a queue.  In the High Level Client API, a node is either a queue or a topic. A queue is used the same way as in AMQP 0-10, but for consistency with Java JMS, a topic node is the same thing AMQP 0-10 calls an exchange.(In this section, we will use the term <quote>topic node</quote> for a High Level Client API topic node, and <quote>AMQP 0-10 topic exchange</quote> for the exchange type that has the same name.) </para>
+      <para>Let's use <command>drain</command> and <command>spout</command> to show how this works. First, let's use the <literal>assert</literal> option to insist that an address must resolve to a queue.  In the Qpid Messaging API, a node is either a queue or a topic. A queue is used the same way as in AMQP 0-10, a topic node is the same thing AMQP 0-10 calls an exchange. (In this section, we will use the term <quote>topic node</quote> for a Qpid Messaging API topic node, and <quote>AMQP 0-10 topic exchange</quote> for the exchange type that has the same name.) </para>
 
-      <para>AMQP 0-10 has several built-in exchanges that are predeclared: <literal>amq.topic</literal>, <literal>amq.direct</literal>, <literal>amq.match</literal>, and <literal>amq.fanout</literal>. To the High Level Exchange, any of these exchanges is considered a topic node. Let's use <command>drain</command>, and assert that  <literal>amq.fanout</literal> is a topic node:</para>
+      <para>AMQP 0-10 has several built-in exchanges that are predeclared: <literal>amq.topic</literal>, <literal>amq.direct</literal>, <literal>amq.match</literal>, and <literal>amq.fanout</literal>. In the Qpid Messaging API, any of these exchanges is considered a topic node. Let's use <command>drain</command>, and assert that  <literal>amq.fanout</literal> is a topic node:</para>
 
       <screen>$ ./drain -a "amq.fanout; { assert: always, node: { type: topic }}"</screen>
 
@@ -685,44 +668,6 @@ TODO: Add some x-declare, x-subscribe, link, x-bindings examples
 -->
 
 
-<!--
-  In all the above cases, the address is resolved to an existing node.
-
-
-  If you want the node to be auto-created, then you can do the
-  following. By default nonexistent nodes are assumed to be queues::
-
-    my-queue; {create: always}
-
-  You can customize the properties of the queue::
-
-    my-queue; {create: always, node: {durable: True}}
-
-  You can create a topic instead if you want::
-
-    my-queue; {create: always, node: {type: topic}}
-
-  You can assert that the address resolves to a node with particular
-  properties::
-
-    my-transient-topic; {
-      assert: always,
-      node: {
-        type: topic,
-        durable: False
-      }
-    }
-
-
-; {create: always}'
-spout 'hello-whirled; {assert: always, node: {type: topic}}'
-SH: spout 'small-world; {create: always, node: {type: topic}}'
-SH: spout 'cruel-world; {create: always, node: {type: topic, x-declare: {type: direct}}}'
-SH1: drain -f 'world-news; {create: always, node: {x-declare: {bindings: ["small-world/news.#", "hello-world/news.#", "cruel-world/news"]}}}'
-
-SH: spout small-world/news.local
--->
-
       <para>Other options specify message transfer semantics; for instance, they may state whether messages should be consumed or read in browsing mode, or specify reliability characteristics. For instance, we can use browse mode to receive messages without removing them from the queue, thus allowing other Readers to receive them:</para>
 
       <screen>
@@ -732,8 +677,6 @@ $ ./drain 'hello-queue; {mode: browse}'
 <!--
 TODO: Add some reliability option examples
 -->
-
-
 
       <table>
 	<title>Extended Address Options</title>
@@ -912,7 +855,7 @@ TODO: Add some reliability option examples
 		unrestricted map
 	      </entry>
 	      <entry>
-                If the property is defined in the underlying protocol (AMQP 0-10), the values and semantics are defined by the protocol. Otherwise, values are added to the arguments map used to declare topics<footnote><para>The High Level Client API, like Java JMS, uses the term topic to refer to what AMQP 0-10 calls an exchange. One kind of AMQP 0-10 exchange is called a topic exchange, that is not what is meant here.</para></footnote> or queues.
+                If the property is defined in the underlying protocol (AMQP 0-10), the values and semantics are defined by the protocol. Otherwise, values are added to the arguments map used to declare topics<footnote><para>The Qpid Messaging API, like Java JMS, uses the term topic to refer to what AMQP 0-10 calls an exchange. One kind of AMQP 0-10 exchange is called a topic exchange, that is not what is meant here.</para></footnote> or queues.
 	      </entry>
 	    </row>
 	  </tbody>
@@ -965,7 +908,7 @@ TODO: Add some reliability option examples
   <section>
     <title>Messaging Properties</title>
 
-    <para>This section shows how Qpid High Level Client API message
+    <para>This section shows how Qpid Messaging API message
     properties are mapped to AMQP message properties and delivery
     properties.</para>
 
@@ -988,7 +931,7 @@ TODO: Add some reliability option examples
     </programlisting>
 
     <para>In the following table, <varname>msg</varname> refers to the
-    Message class defined in the High Level Client API,
+    Message class defined in the Qpid Messaging API,
     <varname>mp</varname> refers to an AMQP 0-10
     <varname>message-properties</varname> struct, and
     <varname>dp</varname> refers to an AMQP 0-10
@@ -1062,22 +1005,4 @@ Examples - do client / server, pub-sub here...
        reports it, no fudge factor timeout is required [this assumes
        nobody is concurrently publishing of course])
      - drain -f invokes blocking fetch (you could use a timeout here also)
-
-SH: spout -c 10 hello-queue
-SH: drain 'hello-queue; {mode: browse}'
-SH: drain 'hello-queue; {mode: browse}'
-SH: drain 'hello-queue; {mode: consume}'
-SH: drain 'hello-queue; {mode: consume}'
-     - durable: True/False (currently only for receivers from topics/exchanges)
-SH: # durable demo???
-     - no-local: True/False (only for receivers from topics/exchanges)
-SH: #- filter: XXX
--->
-<!--
-SH: #spout 'hello-whirled; {assert: always, node: {type: topic}}'
-SH: spout 'small-world; {create: always, node: {type: topic}}'
-SH: qpid-config exchanges
-SH: spout 'cruel-world; {create: always, node: {type: topic, x-declare: {type: direct}}}'
-SH: qpid-config exchanges
-SH1: drain -f 'world-news; {create: always, node: {x-declare: {bindings: ["small-world/news.#", "hello-world/news.#", "cruel-world/news"]}}}'
 -->
