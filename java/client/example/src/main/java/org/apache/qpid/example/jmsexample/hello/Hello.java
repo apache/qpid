@@ -27,8 +27,6 @@ import java.util.Properties;
 
 
 public class Hello {
-    private static final String CLASS = "Hello";
-
 
     public Hello() {
     }
@@ -51,6 +49,7 @@ public class Hello {
                     e.printStackTrace();
                 }
             });
+            connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Destination destination = (Destination) context.lookup("topicExchange");
@@ -62,18 +61,12 @@ public class Hello {
             messageProducer.send(message);
 
             message = messageConsumer.receive();
-            if (message instanceof TextMessage) {
-                String text = ((TextMessage) message).getText();
-                System.out.println(text);
-            } else {
-                System.out.println("Ooops, not a TextMessage!");
-            }
+            System.out.println(message.getText());
 
             connection.close();
             context.close();
         }
         catch (Exception exp) {
-            System.err.println(CLASS + ": Caught an Exception: " + exp);
             exp.printStackTrace();
         }
     }
