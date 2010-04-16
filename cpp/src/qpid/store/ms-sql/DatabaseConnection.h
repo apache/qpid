@@ -55,6 +55,8 @@ public:
     void beginTransaction() { conn->BeginTrans(); }
     void commitTransaction() {conn->CommitTrans(); }
     void rollbackTransaction() { conn->RollbackTrans(); }
+
+    std::string getErrors();
 };
 
 }}}  // namespace qpid::store::ms_sql

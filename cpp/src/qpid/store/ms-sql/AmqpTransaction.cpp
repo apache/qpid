@@ -26,64 +26,42 @@ namespace qpid {
 namespace store {
 namespace ms_sql {
 
-AmqpTransaction::AmqpTransaction(std::auto_ptr<DatabaseConnection>& _db)
-  : db(_db), transDepth(0)
+AmqpTransaction::AmqpTransaction(const boost::shared_ptr<DatabaseConnection>& _db)
+  : db(_db), sqlTrans(_db)
 {
 }
 
 AmqpTransaction::~AmqpTransaction()
 {
-    if (transDepth > 0)
-        this->abort();
 }
 
 void
-AmqpTransaction::begin()
+AmqpTransaction::sqlBegin()
 {
-    _bstr_t beginCmd("BEGIN TRANSACTION");
-    _ConnectionPtr c = *db;
-    c->Execute(beginCmd, NULL, adExecuteNoRecords);
-    ++transDepth;
+    sqlTrans.begin();
 }
 
 void
-AmqpTransaction::commit()
+AmqpTransaction::sqlCommit()
 {
-    if (transDepth > 0) {
-        _bstr_t commitCmd("COMMIT TRANSACTION");
-        _ConnectionPtr c = *db;
-        c->Execute(commitCmd, NULL, adExecuteNoRecords);
-        --transDepth;
-    }
+    sqlTrans.commit();
 }
 
 void
-AmqpTransaction::abort()
+AmqpTransaction::sqlAbort()
 {
-    if (transDepth > 0) {
-        _bstr_t rollbackCmd("ROLLBACK TRANSACTION");
-        _ConnectionPtr c = *db;
-        c->Execute(rollbackCmd, NULL, adExecuteNoRecords);
-        transDepth = 0;
-    }
+    sqlTrans.abort();
 }
 
-AmqpTPCTransaction::AmqpTPCTransaction(std::auto_ptr<DatabaseConnection>& _db,
+
+AmqpTPCTransaction::AmqpTPCTransaction(const boost::shared_ptr<DatabaseConnection>& db,
                                        const std::string& _xid)
-  : AmqpTransaction(_db), xid(_xid)
+  : AmqpTransaction(db), prepared(false), xid(_xid)
 {
 }
 
 AmqpTPCTransaction::~AmqpTPCTransaction()
 {
-}
-
-void
-AmqpTPCTransaction::prepare()
-{
-    // Intermediate transactions should have already assured integrity of
-    // the content in the database; just waiting to pull the trigger on the
-    // outermost transaction.
 }
 
 }}}  // namespace qpid::store::ms_sql
