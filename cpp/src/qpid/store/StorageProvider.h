@@ -44,8 +44,16 @@ typedef std::map<uint64_t, qpid::broker::RecoverableQueue::shared_ptr>
     QueueMap;
 typedef std::map<uint64_t, qpid::broker::RecoverableMessage::shared_ptr>
     MessageMap;
-// Msg Id -> vector of queue Ids where message is queued
-typedef std::map<uint64_t, std::vector<uint64_t> > MessageQueueMap;
+// Msg Id -> vector of queue entries where message is queued
+struct QueueEntry {
+    enum TplStatus { NONE = 0, ADDING = 1, REMOVING = 2 };
+    uint64_t queueId;
+    TplStatus tplStatus;
+    std::string xid;
+};
+typedef std::map<uint64_t, std::vector<QueueEntry> > MessageQueueMap;
+typedef std::map<std::string, qpid::broker::RecoverableTransaction::shared_ptr>
+    PreparedTransactionMap;
 
 class MessageStorePlugin;
 
@@ -316,6 +324,8 @@ public:
     virtual void recoverMessages(qpid::broker::RecoveryManager& recoverer,
                                  MessageMap& messageMap,
                                  MessageQueueMap& messageQueueMap) = 0;
+    virtual void recoverTransactions(qpid::broker::RecoveryManager& recoverer,
+                                     PreparedTransactionMap& dtxMap) = 0;
     //@}
 };
 

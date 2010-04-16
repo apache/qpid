@@ -23,8 +23,10 @@
  */
 
 #include <qpid/broker/TransactionalStore.h>
+#include <boost/shared_ptr.hpp>
 #include <string>
-#include <memory>
+
+#include "SqlTransaction.h"
 
 namespace qpid {
 namespace store {
@@ -41,23 +43,18 @@ class DatabaseConnection;
  */
 class AmqpTransaction : public qpid::broker::TransactionContext {
 
-    std::auto_ptr<DatabaseConnection> db;
-
-    // Since ADO w/ SQLOLEDB can't do nested transaction via its BeginTrans(),
-    // et al, nested transactions are carried out with direct SQL commands.
-    // To ensure the state of this is known, keep track of how deeply the
-    // transactions are nested.
-    unsigned int transDepth;
+    boost::shared_ptr<DatabaseConnection> db;
+    SqlTransaction sqlTrans;
 
 public:
-    AmqpTransaction(std::auto_ptr<DatabaseConnection>& _db);
+    AmqpTransaction(const boost::shared_ptr<DatabaseConnection>& _db);
     virtual ~AmqpTransaction();
 
     DatabaseConnection *dbConn() { return db.get(); }
 
-    void begin();
-    void commit();
-    void abort();
+    void sqlBegin();
+    void sqlCommit();
+    void sqlAbort();
 };
 
 /**
@@ -69,14 +66,18 @@ public:
  */
 class AmqpTPCTransaction : public AmqpTransaction,
                            public qpid::broker::TPCTransactionContext {
+    bool prepared;
     std::string  xid;
 
 public:
-    AmqpTPCTransaction(std::auto_ptr<DatabaseConnection>& _db,
+    AmqpTPCTransaction(const boost::shared_ptr<DatabaseConnection>& db,
                        const std::string& _xid);
     virtual ~AmqpTPCTransaction();
 
-    void prepare();
+    void setPrepared(void) { prepared = true; }
+    bool isPrepared(void) const { return prepared; }
+
+    const std::string& getXid(void) const { return xid; }
 };
 
 }}}  // namespace qpid::store::ms_sql

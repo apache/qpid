@@ -35,63 +35,35 @@ namespace qpid {
 namespace store {
 namespace ms_sql {
 
-#if 0
-Recordset::Iterator::Iterator(Recordset& _rs) : rs(_rs)
-{
-    rs->MoveFirst();
-    setCurrent();
-}
-
-std::pair<uint64_t, BlobAdapter>&
-Recordset::Iterator::dereference() const
-{
-  return const_cast<std::pair<uint64_t, BlobAdapter> >(current);
-}
 
 void
-Recordset::Iterator::increment()
+Recordset::init(DatabaseConnection* conn, const std::string& table)
 {
-    rs->MoveNext();
-    setCurrent();
-}
-
-bool
-Recordset::Iterator::equal(const Iterator& x) const
-{
-    return current.first == x.current.first;
-}
-
-void
-Recordset::Iterator::setCurrent()
-{
-    if (!rs->EndOfFile) {
-        uint64_t id = rs->Fields->Item["persistenceId"]->Value;
-        long blobSize = rs->Fields->Item["fieldTableBlob"]->ActualSize;
-        BlobAdapter blob(blobSize);
-        blob = rs->Fields->Item["fieldTableBlob"]->GetChunk(blobSize);
-        current = std::make_pair(id, blob);
-    }
-    else {
-        current.first = 0;
-    }
-}
-#endif
-
-void
-Recordset::open(DatabaseConnection* conn, const std::string& table)
-{
-    _ConnectionPtr p = *conn;
+    dbConn = conn;
     TESTHR(rs.CreateInstance(__uuidof(::Recordset)));
+    tableName = table;
+}
+
+void
+Recordset::openRs()
+{
     // Client-side cursors needed to get access to newly added
     // identity column immediately. Recordsets need this to get the
     // persistence ID for the broker objects.
     rs->CursorLocation = adUseClient;
-    rs->Open(table.c_str(),
+    _ConnectionPtr p = *dbConn;
+    rs->Open(tableName.c_str(),
              _variant_t((IDispatch *)p, true), 
              adOpenStatic,
              adLockOptimistic,
              adCmdTable);
-    tableName = table;
+}
+
+void
+Recordset::open(DatabaseConnection* conn, const std::string& table)
+{
+    init(conn, table);
+    openRs();
 }
 
 void
@@ -99,7 +71,6 @@ Recordset::close()
 {
     if (rs && rs->State == adStateOpen)
         rs->Close();
-    rs = 0;    
 }
 
 void

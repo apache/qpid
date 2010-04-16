@@ -41,13 +41,25 @@ VariantHelper<Wrapped>::operator const _variant_t& () const
 // Specialization for using _variant_t to wrap a std::string
 VariantHelper<std::string>::VariantHelper(const std::string &init)
 {
-    var.SetString(init.c_str());
+    if (init.empty() || init.length() == 0) {
+        var.vt = VT_BSTR;
+        var.bstrVal = NULL;
+    }
+    else {
+        var.SetString(init.c_str());
+    }
 }
 
 VariantHelper<std::string>&
 VariantHelper<std::string>::operator=(const std::string &rhs)
 {
-    var.SetString(rhs.c_str());
+    if (rhs.empty() || rhs.length() == 0) {
+        var.vt = VT_BSTR;
+        var.bstrVal = NULL;
+    }
+    else {
+        var.SetString(rhs.c_str());
+    }
     return *this;
 }
 
