@@ -28,6 +28,9 @@
 #include <qpid/Exception.h>
 #include "TestOptions.h"
 
+#include "qpid/messaging/Message.h" // Only for Statistics
+#include "Statistics.h"
+
 #include <fstream>
 #include <iostream>
 
@@ -49,8 +52,15 @@ struct Args : public qpid::TestOptions
     uint ttl;
     string lvqMatchValue;
     string lvqMatchFile;
+    bool reportTotal;
+    int reportEvery;
+    bool reportHeader;
 
-    Args() : key("test-queue"), sendEos(0), durable(false), ttl(0)
+    Args() :
+        key("test-queue"), sendEos(0), durable(false), ttl(0),
+        reportTotal(false),
+        reportEvery(0),
+        reportHeader(true)
     {
         addOptions()
             ("exchange", qpid::optValue(destination, "EXCHANGE"), "Exchange to send messages to")
@@ -59,7 +69,11 @@ struct Args : public qpid::TestOptions
             ("durable", qpid::optValue(durable, "true|false"), "Mark messages as durable.")
 	    ("ttl", qpid::optValue(ttl, "msecs"), "Time-to-live for messages, in milliseconds")
             ("lvq-match-value", qpid::optValue(lvqMatchValue, "KEY"), "The value to set for the LVQ match key property")
-            ("lvq-match-file", qpid::optValue(lvqMatchFile, "FILE"), "A file containing values to set for the LVQ match key property");
+            ("lvq-match-file", qpid::optValue(lvqMatchFile, "FILE"), "A file containing values to set for the LVQ match key property")
+            ("report-total", qpid::optValue(reportTotal), "Report total throughput statistics")
+            ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput statistics every N messages")
+            ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")
+            ;
     }
 };
 
@@ -68,10 +82,13 @@ const string EOS("eos");
 class Sender : public FailoverManager::Command
 {
   public:
-    Sender(const std::string& destination, const std::string& key, uint sendEos, bool durable, uint ttl,
+    Sender(Reporter<Throughput>& reporter, const std::string& destination, const std::string& key, uint sendEos, bool durable, uint ttl,
            const std::string& lvqMatchValue, const std::string& lvqMatchFile);
     void execute(AsyncSession& session, bool isRetry);
+
   private:
+    Reporter<Throughput>& reporter;
+    messaging::Message dummyMessage;
     const std::string destination;
     MessageReplayTracker sender;
     Message message;
@@ -80,8 +97,8 @@ class Sender : public FailoverManager::Command
     std::ifstream lvqMatchValues;
 };
 
-Sender::Sender(const std::string& dest, const std::string& key, uint eos, bool durable, uint ttl, const std::string& lvqMatchValue, const std::string& lvqMatchFile) :
-    destination(dest), sender(10), message("", key), sendEos(eos), sent(0) , lvqMatchValues(lvqMatchFile.c_str())
+Sender::Sender(Reporter<Throughput>& rep, const std::string& dest, const std::string& key, uint eos, bool durable, uint ttl, const std::string& lvqMatchValue, const std::string& lvqMatchFile) :
+    reporter(rep), destination(dest), sender(10), message("", key), sendEos(eos), sent(0) , lvqMatchValues(lvqMatchFile.c_str())
 {
     if (durable){
         message.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
@@ -108,6 +125,7 @@ void Sender::execute(AsyncSession& session, bool isRetry)
         if (lvqMatchValues && getline(lvqMatchValues, matchKey)) {
             message.getHeaders().setString(QueueOptions::strLVQMatchProperty, matchKey);
         }
+        reporter.message(dummyMessage); // For statistics
         sender.send(message, destination);
     }
     for (uint i = sendEos; i > 0; --i) {
@@ -125,10 +143,12 @@ int main(int argc, char ** argv)
     Args opts;
     try {
         opts.parse(argc, argv);
+        Reporter<Throughput> reporter(std::cout, opts.reportEvery, opts.reportHeader);
         FailoverManager connection(opts.con);
-        Sender sender(opts.destination, opts.key, opts.sendEos, opts.durable, opts.ttl, opts.lvqMatchValue, opts.lvqMatchFile);
+        Sender sender(reporter, opts.destination, opts.key, opts.sendEos, opts.durable, opts.ttl, opts.lvqMatchValue, opts.lvqMatchFile);
         connection.execute(sender);
         connection.close();
+        if (opts.reportTotal) reporter.report();
         return 0;
     } catch(const std::exception& error) {
         std::cout << "Failed: " << error.what() << std::endl;

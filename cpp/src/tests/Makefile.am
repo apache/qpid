@@ -159,7 +159,8 @@ qpidtest_PROGRAMS += sender
 sender_SOURCES = \
   sender.cpp \
   TestOptions.h \
-  ConnectionOptions.h
+  ConnectionOptions.h \
+  Statistics.cpp
 sender_LDADD = $(lib_client)
 
 qpidtest_PROGRAMS += qpid_receive
