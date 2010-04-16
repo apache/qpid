@@ -667,7 +667,10 @@ void ManagementAgent::periodicProcessing (void)
                 if ((send_stats || send_props) && qmf2Support) {
                     Variant::Map  map_;
                     Variant::Map values;
+                    Variant::Map oid;
 
+                    object->getObjectId().mapEncode(oid);
+                    map_["_object_id"] = oid;
                     map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
                                                            object->getClassName(),
                                                            "_data",
@@ -675,7 +678,6 @@ void ManagementAgent::periodicProcessing (void)
                     object->mapEncodeValues(values, send_props, send_stats);
                     map_["_values"] = values;
                     list_.push_back(map_);
-
                 }
 
                 if (send_props) pcount++;
@@ -698,7 +700,7 @@ void ManagementAgent::periodicProcessing (void)
                     stringstream key;
                     key << "console.obj.1.0." << baseObject->getPackageName() << "." << baseObject->getClassName();
                     sendBufferLH(msgBuffer, contentSize, mExchange, key.str());
-                    QPID_LOG(trace, "SEND Multicast ContentInd to=" << key.str() << " props=" << pcount << " stats=" << scount);
+                    QPID_LOG(trace, "SEND V1 Multicast ContentInd to=" << key.str() << " props=" << pcount << " stats=" << scount);
                 }
             }
 
@@ -815,6 +817,7 @@ void ManagementAgent::periodicProcessing (void)
         map["_values"] = attrMap;
         map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::now()));
         map["_values"].asMap()["heartbeat_interval"] = interval;
+        map["_values"].asMap()["epoch"] = bootSequence;
 
         string content;
         MapCodec::encode(map, content);
@@ -906,8 +909,7 @@ bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
 {
     sys::Mutex::ScopedLock lock (userLock);
     Message&  msg = ((DeliverableMessage&) deliverable).getMessage ();
-
-    if (qmf1Support && topic) {
+    if (topic) {
 
         // qmf1 is bound only to the topic management exchange.
         // Parse the routing key.  This management broker should act as though it
@@ -943,11 +945,9 @@ bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
     if (qmf2Support) {
 
         if (topic) {
-
             // Intercept messages bound to:
             //  "console.ind.locate.# - process these messages, and also allow them to be forwarded.
-
-            if (routingKey.compare(0, 18, "console.ind.locate") == 0) {
+            if (routingKey == "console.request.agent_locate") {
                 dispatchAgentCommandLH(msg);
                 return true;
             }
@@ -1704,10 +1704,12 @@ void ManagementAgent::handleLocateRequestLH(const string&, const string& replyTo
     map["_values"] = attrMap;
     map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::now()));
     map["_values"].asMap()["heartbeat_interval"] = interval;
+    map["_values"].asMap()["epoch"] = bootSequence;
 
     string content;
     MapCodec::encode(map, content);
     sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
+    clientWasAdded = true;
 
     QPID_LOG(trace, "SENT AgentLocateResponse replyTo=" << replyTo);
 }
@@ -1736,7 +1738,7 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
 
     const framing::FieldTable *headers = msg.getApplicationHeaders();
 
-    if (headers && headers->getAsString("app_id") == "qmf2")
+    if (headers && msg.getAppId() == "qmf2")
     {
         mapMsg = true;
 
@@ -1874,7 +1876,6 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
 void ManagementAgent::dispatchAgentCommandLH(Message& msg)
 {
     string   replyToKey;
-
     const framing::MessageProperties* p =
         msg.getFrames().getHeaders()->get<framing::MessageProperties>();
     if (p && p->hasReplyTo()) {
@@ -1898,14 +1899,12 @@ void ManagementAgent::dispatchAgentCommandLH(Message& msg)
     inBuffer.reset();
 
     const framing::FieldTable *headers = msg.getApplicationHeaders();
-
-    if (headers && headers->getAsString("app_id") == "qmf2")
+    if (headers && msg.getAppId() == "qmf2")
     {
         std::string opcode = headers->getAsString("qmf.opcode");
         std::string contentType = headers->getAsString("qmf.content");
         std::string body;
         std::string cid;
-
         inBuffer.getRawData(body, bufferLen);
 
         if (p && p->hasCorrelationId()) {
