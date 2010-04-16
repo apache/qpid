@@ -374,6 +374,7 @@ void ManagementAgentImpl::sendHeartbeat()
     map["_values"] = attrMap;
     map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
     map["_values"].asMap()["heartbeat_interval"] = interval;
+    map["_values"].asMap()["epoch"] = bootSequence;
 
     MapCodec::encode(map, content);
     connThreadBody.sendBuffer(content, "", headers, addr_exchange, addr_key);
@@ -673,6 +674,7 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
     map["_values"] = attrMap;
     map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
     map["_values"].asMap()["heartbeat_interval"] = interval;
+    map["_values"].asMap()["epoch"] = bootSequence;
 
     MapCodec::encode(map, content);
     connThreadBody.sendBuffer(content, cid, headers, addr_exchange, replyTo);
