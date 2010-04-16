@@ -104,6 +104,7 @@ protected:
     bool readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void writebuff(qpid::sys::AsynchIO&);
     void eof(qpid::sys::AsynchIO&);
+    void disconnected(qpid::sys::AsynchIO&);
     void socketClosed(qpid::sys::AsynchIO&, const qpid::sys::Socket&);
 
 public:
