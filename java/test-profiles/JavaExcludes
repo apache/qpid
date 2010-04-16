@@ -21,3 +21,6 @@ org.apache.qpid.server.queue.ModelTest#*
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgs
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgsAckOnEarlier
 org.apache.qpid.test.unit.ack.RecoverTest#testAcknowledgePerConsumer
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverResendsMsgs
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverResendsMsgsAckOnEarlier
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testAcknowledgePerConsumer
