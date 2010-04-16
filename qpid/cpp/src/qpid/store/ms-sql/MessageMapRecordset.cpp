@@ -24,96 +24,197 @@
 #include <qpid/store/StorageProvider.h>
 
 #include "MessageMapRecordset.h"
+#include "BlobEncoder.h"
+#include "DatabaseConnection.h"
+#include "Exception.h"
 #include "VariantHelper.h"
+
+namespace {
+inline void TESTHR(HRESULT x) {if FAILED(x) _com_issue_error(x);};
+}
 
 namespace qpid {
 namespace store {
 namespace ms_sql {
 
 void
-MessageMapRecordset::add(uint64_t messageId, uint64_t queueId)
+MessageMapRecordset::open(DatabaseConnection* conn, const std::string& table)
 {
-    rs->AddNew();
-    rs->Fields->GetItem("messageId")->Value = messageId;
-    rs->Fields->GetItem("queueId")->Value = queueId;
-    rs->Update();
+    init(conn, table);
 }
 
-bool
+void
+MessageMapRecordset::add(uint64_t messageId,
+                         uint64_t queueId,
+                         const std::string& xid)
+{
+    std::ostringstream command;
+    command << "INSERT INTO " << tableName
+            << " (messageId, queueId";
+    if (!xid.empty())
+        command << ", prepareStatus, xid";
+    command << ") VALUES (" << messageId << "," << queueId;
+    if (!xid.empty())
+        command << "," << PREPARE_ADD << ",?";
+    command << ")" << std::ends;
+
+    _CommandPtr cmd = NULL;
+    _ParameterPtr xidVal = NULL;
+    TESTHR(cmd.CreateInstance(__uuidof(Command)));
+    _ConnectionPtr p = *dbConn;
+    cmd->ActiveConnection = p;
+    cmd->CommandText = command.str().c_str();
+    cmd->CommandType = adCmdText;
+    if (!xid.empty()) {
+        TESTHR(xidVal.CreateInstance(__uuidof(Parameter)));
+        xidVal->Name = "@xid";
+        xidVal->Type = adVarBinary;
+        xidVal->Size = xid.length();
+        xidVal->Direction = adParamInput;
+        xidVal->Value = BlobEncoder(xid);
+        cmd->Parameters->Append(xidVal);
+    }
+    cmd->Execute(NULL, NULL, adCmdText | adExecuteNoRecords);
+}
+
+void
 MessageMapRecordset::remove(uint64_t messageId, uint64_t queueId)
 {
-    // Look up all mappings for the specified message. Then scan
-    // for the specified queue and keep track of whether or not the
-    // message exists on any queue we are not looking for a well.
-    std::ostringstream filter;
-    filter << "messageId = " << messageId << std::ends;
-    rs->PutFilter (VariantHelper<std::string>(filter.str()));
-    if (rs->RecordCount == 0)
-        return false;
+    std::ostringstream command;
+    command << "DELETE FROM " << tableName
+            << " WHERE queueId = " << queueId
+            << " AND messageId = " << messageId << std::ends;
+    _CommandPtr cmd = NULL;
+    TESTHR(cmd.CreateInstance(__uuidof(Command)));
+    _ConnectionPtr p = *dbConn;
+    cmd->ActiveConnection = p;
+    cmd->CommandText = command.str().c_str();
+    cmd->CommandType = adCmdText;
+    _variant_t deletedRecords;
+    cmd->Execute(&deletedRecords, NULL, adCmdText | adExecuteNoRecords);
+    if ((long)deletedRecords == 0)
+        throw ms_sql::Exception("Message does not exist in queue mapping");
+    // Trigger on deleting the mapping takes care of deleting orphaned
+    // message record from tblMessage.
+}
+
+void
+MessageMapRecordset::pendingRemove(uint64_t messageId,
+                                   uint64_t queueId,
+                                   const std::string& xid)
+{
+    // Look up the mapping for the specified message and queue. There
+    // should be only one because of the uniqueness constraint in the
+    // SQL table. Update it to reflect it's pending delete with
+    // the specified xid.
+    std::ostringstream command;
+    command << "UPDATE " << tableName
+            << " SET prepareStatus=" << PREPARE_REMOVE
+            << " , xid=?"
+            << " WHERE queueId = " << queueId
+            << " AND messageId = " << messageId << std::ends;
+
+    _CommandPtr cmd = NULL;
+    _ParameterPtr xidVal = NULL;
+    TESTHR(cmd.CreateInstance(__uuidof(Command)));
+    TESTHR(xidVal.CreateInstance(__uuidof(Parameter)));
+    _ConnectionPtr p = *dbConn;
+    cmd->ActiveConnection = p;
+    cmd->CommandText = command.str().c_str();
+    cmd->CommandType = adCmdText;
+    xidVal->Name = "@xid";
+    xidVal->Type = adVarBinary;
+    xidVal->Size = xid.length();
+    xidVal->Direction = adParamInput;
+    xidVal->Value = BlobEncoder(xid);
+    cmd->Parameters->Append(xidVal);
+    cmd->Execute(NULL, NULL, adCmdText | adExecuteNoRecords);
+}
+
+void
+MessageMapRecordset::removeForQueue(uint64_t queueId)
+{
+    std::ostringstream command;
+    command << "DELETE FROM " << tableName
+            << " WHERE queueId = " << queueId << std::ends;
+    _CommandPtr cmd = NULL;
+
+    TESTHR(cmd.CreateInstance(__uuidof(Command)));
+    _ConnectionPtr p = *dbConn;
+    cmd->ActiveConnection = p;
+    cmd->CommandText = command.str().c_str();
+    cmd->CommandType = adCmdText;
+    cmd->Execute(NULL, NULL, adCmdText | adExecuteNoRecords);
+}
+
+void
+MessageMapRecordset::commitPrepared(const std::string& xid)
+{
+    // Find all the records for the specified xid. Records marked as adding
+    // are now permanent so remove the xid and prepareStatus. Records marked
+    // as removing are removed entirely.
+    openRs();
     MessageMap m;
     IADORecordBinding *piAdoRecordBinding;
     rs->QueryInterface(__uuidof(IADORecordBinding),
                        (LPVOID *)&piAdoRecordBinding);
     piAdoRecordBinding->BindToRecordset(&m);
-    bool moreEntries = false, deleted = false;
-    rs->MoveFirst();
-    // If the desired mapping gets deleted, and we already know there are
-    // other mappings for the message, don't bother finishing the scan.
-    while (!rs->EndOfFile && !(deleted && moreEntries)) {
-        if (m.queueId == queueId) {
+    for (; !rs->EndOfFile; rs->MoveNext()) {
+        if (m.xidStatus != adFldOK)
+            continue;
+        const std::string x(m.xid, m.xidLength);
+        if (x != xid)
+            continue;
+        if (m.prepareStatus == PREPARE_REMOVE) {
             rs->Delete(adAffectCurrent);
-            rs->Update();
-            deleted = true;
         }
         else {
-            moreEntries = true;
+            _variant_t dbNull;
+            dbNull.ChangeType(VT_NULL);
+            rs->Fields->GetItem("prepareStatus")->Value = dbNull;
+            rs->Fields->GetItem("xid")->Value = dbNull;
         }
-        rs->MoveNext();
+        rs->Update();
     }
     piAdoRecordBinding->Release();
-    rs->Filter = "";
-    return moreEntries;
 }
 
 void
-MessageMapRecordset::removeForQueue(uint64_t queueId,
-                                    std::vector<uint64_t>& orphaned)
+MessageMapRecordset::abortPrepared(const std::string& xid)
 {
-    // Read all the messages queued on queueId and add them to the orphaned
-    // list. Then remove each one and learn if there are references to it
-    // from other queues. The ones without references are left in the
-    // orphaned list, others are removed.
-    std::ostringstream filter;
-    filter << "queueId = " << queueId << std::ends;
-    rs->PutFilter (VariantHelper<std::string>(filter.str()));
+    // Find all the records for the specified xid. Records marked as adding
+    // need to be removed while records marked as removing are put back to
+    // no xid and no prepareStatus.
+    openRs();
     MessageMap m;
     IADORecordBinding *piAdoRecordBinding;
     rs->QueryInterface(__uuidof(IADORecordBinding), 
                        (LPVOID *)&piAdoRecordBinding);
     piAdoRecordBinding->BindToRecordset(&m);
-    while (!rs->EndOfFile) {
-        orphaned.push_back(m.messageId);
-        rs->MoveNext();
+    for (; !rs->EndOfFile; rs->MoveNext()) {
+        if (m.xidStatus != adFldOK)
+            continue;
+        const std::string x(m.xid, m.xidLength);
+        if (x != xid)
+            continue;
+        if (m.prepareStatus == PREPARE_ADD) {
+            rs->Delete(adAffectCurrent);
+        }
+        else {
+            _variant_t dbNull;
+            dbNull.ChangeType(VT_NULL);
+            rs->Fields->GetItem("prepareStatus")->Value = dbNull;
+            rs->Fields->GetItem("xid")->Value = dbNull;
+        }
+        rs->Update();
     }
     piAdoRecordBinding->Release();
-    rs->Filter = "";     // Remove filter on queueId
-    rs->Requery(adOptionUnspecified);  // Get the entire map again
-
-    // Now delete all the messages on this queue; any message that still has
-    // references from other queue(s) is removed from orphaned.
-    for (std::vector<uint64_t>::iterator i = orphaned.begin();
-         i != orphaned.end();
-         ) {
-        if (remove(*i, queueId))
-            i = orphaned.erase(i);     // There are other refs to message *i
-        else
-            ++i;
-    }
 }
 
 void
 MessageMapRecordset::recover(MessageQueueMap& msgMap)
 {
+    openRs();
     if (rs->BOF && rs->EndOfFile)
         return;   // Nothing to do
     rs->MoveFirst();
@@ -123,7 +224,18 @@ MessageMapRecordset::recover(MessageQueueMap& msgMap)
                        (LPVOID *)&piAdoRecordBinding);
     piAdoRecordBinding->BindToRecordset(&b);
     while (!rs->EndOfFile) {
-        msgMap[b.messageId].push_back(b.queueId);
+        qpid::store::QueueEntry entry;
+        entry.queueId = b.queueId;
+        if (b.xidStatus == adFldOK && b.xidLength > 0) {
+            entry.xid.assign(b.xid, b.xidLength);
+            entry.tplStatus =
+                b.prepareStatus == PREPARE_ADD ? QueueEntry::ADDING
+                                               : QueueEntry::REMOVING;
+        }
+        else {
+            entry.tplStatus = QueueEntry::NONE;
+        }
+        msgMap[b.messageId].push_back(entry);
         rs->MoveNext();
     }
 
@@ -133,6 +245,7 @@ MessageMapRecordset::recover(MessageQueueMap& msgMap)
 void
 MessageMapRecordset::dump()
 {
+    openRs();
     Recordset::dump();
     if (rs->EndOfFile && rs->BOF)    // No records
         return;

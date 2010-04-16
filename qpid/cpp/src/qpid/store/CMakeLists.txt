@@ -71,7 +71,9 @@ if (BUILD_MSSQL)
                ms-sql/MessageMapRecordset.cpp
                ms-sql/MessageRecordset.cpp
                ms-sql/Recordset.cpp
+               ms-sql/SqlTransaction.cpp
                ms-sql/State.cpp
+               ms-sql/TplRecordset.cpp
                ms-sql/VariantHelper.cpp)
   target_link_libraries (mssql_store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
   install (TARGETS mssql_store # RUNTIME

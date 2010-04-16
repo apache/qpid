@@ -51,46 +51,20 @@ protected:
     DatabaseConnection* dbConn;
     std::string tableName;
 
+    void init(DatabaseConnection* conn, const std::string& table);
+    void openRs();
+
 public:
+    Recordset() : rs(0), dbConn(0) {}
+    virtual ~Recordset() { close(); rs = 0; dbConn = 0; }
 
-#if 0
     /**
-     * Iterator support for walking through the recordset.
-     * If I need to try this again, I'd look at Recordset cloning.
+     * Default open() reads all records into the recordset.
      */
-    class Iterator : public boost::iterator_facade<
-      Iterator, std::pair<uint64_t, BlobAdapter>, boost::random_access_traversal_tag>
-    {
-    public:
-        Iterator() : rs(0) { }
-        Iterator(Recordset& _rs);
-
-    private:
-        friend class boost::iterator_core_access;
-
-        std::pair<uint64_t, BlobAdapter>& dereference() const;
-        void increment();
-        bool equal(const Iterator& x) const;
-
-        _RecordsetPtr rs;
-        std::pair<uint64_t, BlobAdapter> current;
-
-        void setCurrent();
-    };
-
-    friend class Iterator;
-#endif
-
-    Recordset() : rs(0) {}
-    virtual ~Recordset() { close(); }
-    void open(DatabaseConnection* conn, const std::string& table);
+    virtual void open(DatabaseConnection* conn, const std::string& table);
     void close();
     void requery();
     operator _RecordsetPtr () { return rs; }
-#if 0
-    Iterator begin() { Iterator iter(*this); return iter; }
-    Iterator end() { Iterator iter; return iter; }
-#endif
 
     // Dump table contents; useful for debugging.
     void dump();

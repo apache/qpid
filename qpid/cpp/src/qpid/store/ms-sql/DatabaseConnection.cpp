@@ -67,4 +67,25 @@ DatabaseConnection::close()
     conn = 0;
 }
 
+std::string
+DatabaseConnection::getErrors()
+{
+    long errCount = conn->Errors->Count;
+    if (errCount <= 0)
+        return "";
+    // Collection ranges from 0 to nCount -1.
+    std::ostringstream messages;
+    ErrorPtr pErr = NULL;
+    for (long i = 0 ; i < errCount ; i++ ) {
+        if (i > 0)
+            messages << "\n";
+        messages << "[" << i << "] ";
+        pErr = conn->Errors->GetItem(i);
+        messages << "Error " << pErr->Number << ": "
+                 << (LPCSTR)pErr->Description;
+    }
+    messages << std::ends;
+    return messages.str();
+}
+
 }}}  // namespace qpid::store::ms_sql

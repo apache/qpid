@@ -43,7 +43,9 @@ public:
 class ADOException : public Exception
 {
 public:
-    ADOException(const std::string& _text, _com_error &e)
+ ADOException(const std::string& _text,
+              _com_error &e,
+              const std::string& providerErrors = "")
       : Exception(_text) {
         text += ": ";
         text += e.ErrorMessage();
@@ -54,6 +56,8 @@ public:
             text += (const char *)wmsg;
             i->Release();
         }
+        if (providerErrors.length() > 0)
+            text += providerErrors;
     }
 };
 
