@@ -163,6 +163,8 @@ class Popen(popen2.Popen3):
         if drain: self.drain()
         self._clean = False
 
+        def __str__(self): return "Popen<%s>"%(self.pname)
+
     def drain(self):
         """Start threads to drain stdout/err"""
         self.stdout.drain()
@@ -251,6 +253,8 @@ def checkenv(name):
 class Broker(Popen):
     "A broker process. Takes care of start, stop and logging."
     _broker_count = 0
+
+    def __str__(self): return "Broker<%s %s>"%(self.name, self.pname)
 
     def find_log(self):
         self.log = "%s.log" % self.name
