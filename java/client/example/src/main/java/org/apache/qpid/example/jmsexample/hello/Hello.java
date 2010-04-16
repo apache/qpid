@@ -57,10 +57,10 @@ public class Hello {
             MessageProducer messageProducer = session.createProducer(destination);
             MessageConsumer messageConsumer = session.createConsumer(destination);
 
-            Message message = session.createTextMessage("Hello world!");
+            TextMessage message = session.createTextMessage("Hello world!");
             messageProducer.send(message);
 
-            message = messageConsumer.receive();
+            message = (TextMessage)messageConsumer.receive();
             System.out.println(message.getText());
 
             connection.close();
