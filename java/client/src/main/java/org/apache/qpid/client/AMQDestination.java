@@ -146,7 +146,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         defaultDestSyntax = DestSyntax.getSyntaxType(
                      System.getProperty(ClientProperties.DEST_SYNTAX,
-                                        DestSyntax.BURL.toString()));
+                                        DestSyntax.ADDR.toString()));
     }
     
     protected AMQDestination(Address address) throws Exception
