@@ -44,11 +44,6 @@ public class Hello {
 
             ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
             Connection connection = connectionFactory.createConnection();
-            connection.setExceptionListener(new ExceptionListener() {
-                public void onException(JMSException e) {
-                    e.printStackTrace();
-                }
-            });
             connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
