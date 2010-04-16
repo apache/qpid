@@ -36,7 +36,7 @@ op.add_option("-m", "--messages", default=100000, type="int", metavar="N",
                       help="send N messages per sender (default %default)")
 op.add_option("--queue-name", default="benchmark",
                help="base name for queues (default %default)")
-op.add_option("--send-rate", default=0, metavar="R",
+op.add_option("--rate", default=0, metavar="R",
               help="send rate limited to R messages/second, 0 means no limit (default %default)")
 op.add_option("--content-size", default=1024, type="int", metavar="BYTES", 
               help="message size in bytes (default %default)")
@@ -45,15 +45,16 @@ op.add_option("--ack-frequency", default=0, metavar="N", type="int",
 op.add_option("--no-report-header", dest="report_header", default=True,
               action="store_false", help="don't print header on report")
 op.add_option("--repeat", default=1, metavar="N", help="repeat N times", type="int")
-op.add_option("--reliable", default=False, action="store_true",
-              help="Use reliable message delivery")
+op.add_option("--send-option", default=[], action="append", type="str",
+              help="Additional option for sending addresses")
+op.add_option("--receive-option", default=[], action="append", type="str",
+              help="Additional option for receiving addresses")
 
 def start_receive(queue, opts, ready_queue):
-    relop=""
-    if not opts.reliable: relop=",link:{reliability:unreliable}"
+    address="%s;{%s}"%(queue,",".join(["create:always"]+opts.receive_option))
     return Popen(["qpid_receive",
                   "-b", opts.broker,
-                  "-a", "%s;{create:always%s}"%(queue,relop),
+                  "-a", address,
                   "--forever",
                   "--print-content=no",
                   "--report-total",
@@ -64,15 +65,14 @@ def start_receive(queue, opts, ready_queue):
                  stdout=PIPE, stderr=STDOUT)
 
 def start_send(queue, opts):
-    relop=""
-    if not opts.reliable: relop=";{link:{reliability:unreliable}}"
+    address="%s;{%s}"%(queue,",".join(opts.send_option))
     return Popen(["qpid_send",
                   "-b", opts.broker,
-                  "-a", "%s%s"%(queue, relop),
+                  "-a", address,
                   "--messages", str(opts.messages),
                   "--send-eos", str(opts.receivers),
                   "--content-size", str(opts.content_size),
-                  "--rate", str(opts.send_rate),
+                  "--rate", str(opts.rate),
                   "--report-total",
                   "--report-header=no",
                   ],
@@ -131,10 +131,10 @@ def main():
         delete_queues(queues, opts.broker)
         ready_receiver = ReadyReceiver(ready_queue, opts.broker)
         receivers = [start_receive(q, opts, ready_queue)
-                     for q in queues for i in xrange(opts.receivers)]
+                     for q in queues for j in xrange(opts.receivers)]
         ready_receiver.wait(receivers) # Wait for receivers to be ready.
-        senders = [start_send(q, opts) for q in queues for i in xrange(opts.senders)]
-        print_output(senders, receivers, opts.report_header)
+        senders = [start_send(q, opts) for q in queues for j in xrange(opts.senders)]
+        print_output(senders, receivers, opts.report_header and i == 0)
         delete_queues(queues, opts.broker)
 
 if __name__ == "__main__": main()
