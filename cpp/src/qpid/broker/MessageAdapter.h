@@ -41,6 +41,7 @@ struct MessageAdapter
     virtual bool isPersistent(const framing::FrameSet& f) = 0;
     virtual bool requiresAccept(const framing::FrameSet& f) = 0;    
     virtual uint8_t getPriority(const framing::FrameSet& f) = 0;
+    virtual std::string getAppId(const framing::FrameSet& f) = 0;
 };
 
 struct TransferAdapter : MessageAdapter
@@ -52,6 +53,7 @@ struct TransferAdapter : MessageAdapter
     bool isImmediate(const framing::FrameSet&);
     bool requiresAccept(const framing::FrameSet& f);    
     uint8_t getPriority(const framing::FrameSet& f);
+    virtual std::string getAppId(const framing::FrameSet& f);
 };
 
 }}

@@ -99,6 +99,11 @@ const FieldTable* Message::getApplicationHeaders() const
     return getAdapter().getApplicationHeaders(frames);
 }
 
+std::string Message::getAppId() const
+{
+    return getAdapter().getAppId(frames);
+}
+
 bool Message::isPersistent() const
 {
     return (getAdapter().isPersistent(frames) || forcePersistentPolicy);

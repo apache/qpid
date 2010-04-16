@@ -72,4 +72,10 @@ namespace broker{
         const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
         return p ? p->getPriority() : 0;
     }
+
+    std::string TransferAdapter::getAppId(const framing::FrameSet& f)
+    {
+        const framing::MessageProperties* p = f.getHeaders()->get<framing::MessageProperties>();
+        return p ? p->getAppId() : empty;
+    }
 }}
