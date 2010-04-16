@@ -25,9 +25,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import java.util.Properties;
 
-/**
- * Message producer example, sends message to a queue.
- */
+
 public class Hello {
     private static final String CLASS = "Hello";
 
@@ -42,7 +40,6 @@ public class Hello {
 
     private void runTest() {
         try {
-            // Create JNDI context
             Properties properties = new Properties();
             properties.load(this.getClass().getResourceAsStream("hello.properties"));
             Context context = new InitialContext(properties);
@@ -55,7 +52,7 @@ public class Hello {
                 }
             });
 
-            Session session = connection.createSession();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Destination destination = (Destination) context.lookup("topicExchange");
 
             MessageProducer messageProducer = session.createProducer(destination);
