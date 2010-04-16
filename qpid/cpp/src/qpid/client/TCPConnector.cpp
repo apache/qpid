@@ -104,7 +104,7 @@ void TCPConnector::connected(const Socket&) {
     aio = AsynchIO::create(socket,
                        boost::bind(&TCPConnector::readbuff, this, _1, _2),
                        boost::bind(&TCPConnector::eof, this, _1),
-                       boost::bind(&TCPConnector::eof, this, _1),
+                       boost::bind(&TCPConnector::disconnected, this, _1),
                        boost::bind(&TCPConnector::socketClosed, this, _1, _2),
                        0, // nobuffs
                        boost::bind(&TCPConnector::writebuff, this, _1));
@@ -311,6 +311,11 @@ void TCPConnector::writeDataBlock(const AMQDataBlock& data) {
 
 void TCPConnector::eof(AsynchIO&) {
     close();
+}
+
+void TCPConnector::disconnected(AsynchIO&) {
+    close();
+    socketClosed(*aio, socket);
 }
 
 void TCPConnector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer> sl)
