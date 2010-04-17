@@ -23,7 +23,6 @@
  
 -->
 
-
 <chapter id="high-level-client-api">
   <title>Apache Qpid Messaging API</title>
 
@@ -60,9 +59,6 @@
 
   <itemizedlist>
 
-<!--
-TODO: Add definition for message
--->
     <listitem><para>A <emphasis>connection</emphasis> represents a
     network connection. The parameters for the network connection are
     specified using a URL-based syntax when the connection is
@@ -96,11 +92,11 @@ TODO: Add definition for message
   <section>
     <title>A Simple Messaging Program in C++</title>
 
-    <para>The following program shows how to create a Connection,
+    <para>The following C++ program shows how to create a Connection,
     create a Session, send messages to a queue using a Sender, and
     receive messages from a queue using a Receiver.</para>
 
-<programlisting><![CDATA[
+<programlisting lang="c++"><![CDATA[
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Receiver.h>
@@ -137,14 +133,19 @@ int main(int argc, char** argv) {
     }
 }]]></programlisting>
 
-  <para>##########################</para>
 
   </section>
 
   <section>
     <title>A Simple Messaging Program in Python</title>
 
-    <programlisting><![CDATA[
+
+    <para>The following Python program shows how to create a
+    Connection, create a Session, send messages to a queue using a
+    Sender, and receive messages from a queue using a Receiver.</para>
+
+
+    <programlisting lang="python"><![CDATA[
 import sys
 from qpid.messaging import *
 
@@ -172,13 +173,79 @@ finally:
   connection.close()
 ]]></programlisting>
 
-  <para>##########################</para>
-
   </section>
 
   <section>
     <title>A Simple Messaging Program in Java JMS</title>
+
+    <para>The following program shows how to use address strings and
+    JNDI for Qpid programs that use Java JMS.</para>
+
+    <para>This program uses a JNDI file that defines a connection
+    factory for the broker we are using, and the address of the topic
+    exchange node that we will bind the sender and receiver to. (The
+    syntax of a ConnectionURL is given in <xref
+    linkend="QpidJNDI"/>.)</para>
+
     <programlisting><![CDATA[
+java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+
+# connectionfactory.[jndiname] = [ConnectionURL]
+connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'
+# destination.[jndiname] = [address_string]
+destination.topicExchange = amq.topic
+]]></programlisting>
+
+    <para>In the Java JMS code, we use create a JNDI context, use the context to find a connection factory and create and start a connection, create a session, and create a destination that corresponds to the topic exchange. Then we create a sender and a receiver, send a message with the sender, and receive it with the receiver. This code should be straightforward for anyone familiar with Java JMS.</para>
+
+    <programlisting lang="java"><![CDATA[
+package org.apache.qpid.example.jmsexample.hello;
+
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import java.util.Properties;
+
+public class Hello {
+
+    public Hello() {
+    }
+
+    public static void main(String[] args) {
+        Hello producer = new Hello();
+        producer.runTest();
+    }
+
+    private void runTest() {
+        try {
+            Properties properties = new Properties();
+            properties.load(this.getClass().getResourceAsStream("hello.properties"));
+            Context context = new InitialContext(properties);
+
+            ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
+            Connection connection = connectionFactory.createConnection();
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Destination destination = (Destination) context.lookup("topicExchange");
+
+            MessageProducer messageProducer = session.createProducer(destination);
+            MessageConsumer messageConsumer = session.createConsumer(destination);
+
+            TextMessage message = session.createTextMessage("Hello world!");
+            messageProducer.send(message);
+
+            message = (TextMessage)messageConsumer.receive();
+            System.out.println(message.getText());
+
+            connection.close();
+            context.close();
+        }
+        catch (Exception exp) {
+            exp.printStackTrace();
+        }
+    }
+}
 ]]></programlisting>
 
   </section>
@@ -912,9 +979,9 @@ TODO: Add some reliability option examples
     properties are mapped to AMQP message properties and delivery
     properties.</para>
 
-    <para>Request-response applications frequently use a reply-to property to tell a server where to send a response. The following code shows how a server extracts the reply-to property and uses it to set the address to respond to a client.</para>
+    <para>Request-response applications frequently use a reply-to property to tell a server where to send a response. The following C++ code shows how a server extracts the reply-to property and uses it to set the address to respond to a client.</para>
 
-    <programlisting>
+    <programlisting lang="c++">
             Message request = receiver.fetch();
             const Address&amp; address = request.getReplyTo(); <lineannotation>Get "reply-to" field from request ...</lineannotation>
             if (address) {
@@ -992,17 +1059,187 @@ Examples - do client / server, pub-sub here...
 -->
 
   </section>
+  <section id="QpidJNDI">
+    <title>Apache Qpid JNDI Properties for AMQP Messaging</title>
+
+
+      <para>Apache Qpid defines JNDI properties that can be used to
+      specify the parameters for a connection. Here is a typical JNDI properties file:</para>
+
+      <programlisting>java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+
+# register some connection factories
+# connectionfactory.[jndiname] = [ConnectionURL]
+connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
+
+# Register an AMQP destination in JNDI
+# destination.[jndiName] = [Address]
+destination.directQueue = direct://amq.direct//message_queue?routingkey=&#39;routing_key&#39;
+      </programlisting>
+
+      
+
+    
+    <section>
+      <title>JNDI Properties for Apache Qpid</title>
+      <para>
+	Apache Qpid supports the properties shown in the following table:
+      </para>
+      <table>
+	<title>JNDI Properties supported by Apache Qpid</title>
+	<tgroup cols="2">
+	  <thead>
+	    <row>
+	      <entry>
+		Property
+	      </entry>
+	      <entry>
+		Purpose
+	      </entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>
+		connectionfactory.&lt;jndiname&gt;
+	      </entry>
+	      <entry>
+		<para>
+		  The Connection URL that the connection factory will use to perform connections.
+		</para>
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		queue.&lt;jndiname&gt;
+	      </entry>
+	      <entry>
+		<para>
+		  A JMS queue, which is implemented as an amq.direct exchange in Apache Qpid.
+		</para>
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		topic.&lt;jndiname&gt;
+	      </entry>
+	      <entry>
+		<para>
+		  A JMS topic, which is implemented as an amq.topic exchange in Apache Qpid.
+		</para>
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		destination.&lt;jndiname&gt;
+	      </entry>
+	      <entry>
+		<para>
+		  Can be used for defining all amq destinations, queues, topics and header matching, using an address string.
+		</para>
+	      </entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+    </section>
+    
+    <section>
+      <title>Connection URLs</title>
+      <para>
+	In JNDI properties, a Connection URL specifies properties for a connection. The format for a Connection URL is:
+      </para>
+      
+      <programlisting>amqp://[&lt;user&gt;:&lt;pass&gt;@][&lt;clientid&gt;]&lt;virtualhost&gt;[?&lt;option&gt;=&#39;&lt;value&gt;&#39;[&amp;&lt;option&gt;=&#39;&lt;value&gt;&#39;]]
+      </programlisting>
+      <para>
+	For instance, the following Connection URL specifies a user name, a password, a client ID, a virtual host ("test"), a broker list with a single broker, and a TCP host with the host name <quote>localhost</quote> using port 5672:
+      </para>
+      
+      <programlisting>amqp://username:password@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
+      </programlisting>
+      <para>
+	Apache Qpid supports the following properties in Connection URLs:
+      </para>
+      <table>
+	<title>Connection URL Properties</title>
+	<tgroup cols="3">
+	  <thead>
+	    <row>
+	      <entry>
+		Option
+	      </entry>
+	      <entry>
+		Type
+	      </entry>
+	      <entry>
+		Description
+	      </entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>
+		brokerlist
+	      </entry>
+	      <entry>
+		see below
+	      </entry>
+	      <entry>
+		The broker to use for this connection. In the current release, precisely one broker must be specified.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		maxprefetch
+	      </entry>
+	      <entry>
+		--
+	      </entry>
+	      <entry>
+		The maximum number of pre-fetched messages per destination.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		sync_persistence
+	      </entry>
+	      <entry>
+		false
+	      </entry>
+	      <entry>
+		When true, a sync command is sent after every persistent message to guarantee that it has been received.
+	      </entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+      <para>
+	Broker lists are specified using a URL in this format:
+      </para>
+      
+      <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;]
+      </programlisting>
+      <para>
+	For instance, this is a typical broker list:
+      </para>
+      
+      <programlisting>brokerlist=&#39;tcp://localhost:5672&#39;
+      </programlisting>
+    </section>
+    
+  </section>
 </chapter>
 
 <!--
-     - client code remains exactly the same, but routing behavior
-       changes
-     - exchanges drop messages if nobody is listening, so we need to
-       start drain first
-     - drain will exit immediately if the source is empty (note that
-       this is actually a semantic guarantee provided by the API, we
-       know for a fact that the source is empty when drain/fetch
-       reports it, no fudge factor timeout is required [this assumes
-       nobody is concurrently publishing of course])
-     - drain -f invokes blocking fetch (you could use a timeout here also)
+    - client code remains exactly the same, but routing behavior
+    changes
+    - exchanges drop messages if nobody is listening, so we need to
+    start drain first
+    - drain will exit immediately if the source is empty (note that
+    this is actually a semantic guarantee provided by the API, we
+    know for a fact that the source is empty when drain/fetch
+    reports it, no fudge factor timeout is required [this assumes
+    nobody is concurrently publishing of course])
+    - drain -f invokes blocking fetch (you could use a timeout here also)
 -->
