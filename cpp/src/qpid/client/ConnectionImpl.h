@@ -26,7 +26,7 @@
 #include "qpid/client/ConnectionHandler.h"
 
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 
@@ -48,9 +48,7 @@ class ConnectionImpl : public Bounds,
                        public sys::TimeoutHandler, 
                        public sys::ShutdownHandler,
                        public boost::enable_shared_from_this<ConnectionImpl>
-
 {
-    friend class Connection;
     typedef std::map<uint16_t, boost::weak_ptr<SessionImpl> > SessionMap;
 
     static const uint16_t NEXT_CHANNEL;
@@ -60,27 +58,28 @@ class ConnectionImpl : public Bounds,
     boost::scoped_ptr<Connector> connector;
     framing::ProtocolVersion version;
     uint16_t nextChannel;
-    sys::Monitor lock;
+    sys::Mutex lock;
     bool shutdownComplete;
+    bool released;
 
     boost::intrusive_ptr<qpid::sys::TimerTask> heartbeatTask;
 
     template <class F> void closeInternal(const F&);
 
-    static void init();
     void incoming(framing::AMQFrame& frame);
     void closed(uint16_t, const std::string&);
     void idleOut();
     void idleIn();
     void shutdown();
     void failedConnection();
-    void waitForShutdownComplete();
-    void notifyShutdownComplete();
+    void release();
+    ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);
 
     boost::function<void ()> failureCallback;
 
   public:
-    ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);
+    static void init();
+    static boost::shared_ptr<ConnectionImpl> create(framing::ProtocolVersion version, const ConnectionSettings& settings);
     ~ConnectionImpl();
     
     void open();
