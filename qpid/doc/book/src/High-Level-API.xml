@@ -188,10 +188,12 @@ finally:
     linkend="QpidJNDI"/>.)</para>
 
     <programlisting><![CDATA[
-java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+java.naming.factory.initial 
+  = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 
 # connectionfactory.[jndiname] = [ConnectionURL]
-connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'
+connectionfactory.qpidConnectionfactory 
+  = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'
 # destination.[jndiname] = [address_string]
 destination.topicExchange = amq.topic
 ]]></programlisting>
@@ -208,43 +210,43 @@ import java.util.Properties;
 
 public class Hello {
 
-    public Hello() {
+  public Hello() {
+  }
+
+  public static void main(String[] args) {
+    Hello producer = new Hello();
+    producer.runTest();
+  }
+
+  private void runTest() {
+    try {
+      Properties properties = new Properties();
+      properties.load(this.getClass().getResourceAsStream("hello.properties"));
+      Context context = new InitialContext(properties);
+
+      ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
+      Connection connection = connectionFactory.createConnection();
+      connection.start();
+
+      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      Destination destination = (Destination) context.lookup("topicExchange");
+
+      MessageProducer messageProducer = session.createProducer(destination);
+      MessageConsumer messageConsumer = session.createConsumer(destination);
+
+      TextMessage message = session.createTextMessage("Hello world!");
+      messageProducer.send(message);
+
+      message = (TextMessage)messageConsumer.receive();
+      System.out.println(message.getText());
+
+      connection.close();
+      context.close();
     }
-
-    public static void main(String[] args) {
-        Hello producer = new Hello();
-        producer.runTest();
+    catch (Exception exp) {
+      exp.printStackTrace();
     }
-
-    private void runTest() {
-        try {
-            Properties properties = new Properties();
-            properties.load(this.getClass().getResourceAsStream("hello.properties"));
-            Context context = new InitialContext(properties);
-
-            ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
-            Connection connection = connectionFactory.createConnection();
-            connection.start();
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Destination destination = (Destination) context.lookup("topicExchange");
-
-            MessageProducer messageProducer = session.createProducer(destination);
-            MessageConsumer messageConsumer = session.createConsumer(destination);
-
-            TextMessage message = session.createTextMessage("Hello world!");
-            messageProducer.send(message);
-
-            message = (TextMessage)messageConsumer.receive();
-            System.out.println(message.getText());
-
-            connection.close();
-            context.close();
-        }
-        catch (Exception exp) {
-            exp.printStackTrace();
-        }
-    }
+  }
 }
 ]]></programlisting>
 
@@ -337,6 +339,9 @@ options ::=  { <key> : <value>, ... }
       an exchange have the same name. This is a known problem, and is
       being resolved.</para>
     </note></para>
+
+    <para>For many applications, there is no need to use anything more
+    complex than a simple address string.</para>
 
     <example>
       <title>Simple Address Strings</title>
@@ -661,6 +666,9 @@ $ ./drain -a amqp010-queue -t 30
 	  </screen>
 
 	  <para>Now let's send some messages. The subject is not used for routing purposes.</para>
+
+	  <para><emphasis>Second Window:</emphasis></para>
+
 	  <screen>
 $ ./spout -a amqp010-queue/news
 $ ./spout -a amqp010-queue
@@ -982,19 +990,16 @@ TODO: Add some reliability option examples
     <para>Request-response applications frequently use a reply-to property to tell a server where to send a response. The following C++ code shows how a server extracts the reply-to property and uses it to set the address to respond to a client.</para>
 
     <programlisting lang="c++">
-            Message request = receiver.fetch();
-            const Address&amp; address = request.getReplyTo(); <lineannotation>Get "reply-to" field from request ...</lineannotation>
-            if (address) {
-                Sender sender = session.createSender(address); <lineannotation>... and use it as the address to send response</lineannotation>
-                std::string s = request.getContent();
-                std::transform(s.begin(), s.end(), s.begin(), toupper);
-                Message response(s);
-                sender.send(response);
-                std::cout &lt;&lt; "Processed request: "
-                          &lt;&lt; request.getContent()
-                          &lt;&lt; " -> "
-                          &lt;&lt; response.getContent() &lt;&lt; std::endl;
-                session.acknowledge();
+Message request = receiver.fetch();
+const Address&amp; address = request.getReplyTo(); // Get "reply-to" from request ...
+if (address) {
+    Sender sender = session.createSender(address); // ... send response to "reply-to"
+    std::string s = request.getContent();
+    std::transform(s.begin(), s.end(), s.begin(), toupper);
+    Message response(s);
+    sender.send(response);
+    session.acknowledge();
+}
     </programlisting>
 
     <para>In the following table, <varname>msg</varname> refers to the
@@ -1070,14 +1075,16 @@ Examples - do client / server, pub-sub here...
 
 # register some connection factories
 # connectionfactory.[jndiname] = [ConnectionURL]
-connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
+connectionfactory.qpidConnectionfactory 
+  = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
 
 # Register an AMQP destination in JNDI
 # destination.[jndiName] = [Address]
-destination.directQueue = direct://amq.direct//message_queue?routingkey=&#39;routing_key&#39;
+destination.directQueue 
+  = direct://amq.direct//message_queue?routingkey=&#39;routing_key&#39;
       </programlisting>
 
-      
+      <para>The following sections describe the JNDI properties that Qpid uses.</para>
 
     
     <section>
