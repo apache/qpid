@@ -162,14 +162,20 @@ void ConnectionImpl::init() {
     (void) theIO();
 }
 
+boost::shared_ptr<ConnectionImpl> ConnectionImpl::create(framing::ProtocolVersion version, const ConnectionSettings& settings)
+{
+    boost::shared_ptr<ConnectionImpl> instance(new ConnectionImpl(version, settings), boost::bind(&ConnectionImpl::release, _1));
+    return instance;
+}
+
 ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSettings& settings)
     : Bounds(settings.maxFrameSize * settings.bounds),
       handler(settings, v),
       version(v),
       nextChannel(1),
-      shutdownComplete(false)
+      shutdownComplete(false),
+      released(false)
 {
-    QPID_LOG(debug, "ConnectionImpl created for " << version.toString());
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
     handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
@@ -182,12 +188,6 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
 const uint16_t ConnectionImpl::NEXT_CHANNEL = std::numeric_limits<uint16_t>::max();
 
 ConnectionImpl::~ConnectionImpl() {
-    if (connector) {
-        connector->close();
-        //wait until we get the shutdown callback to ensure that the
-        //io threads will not call back on us after deletion
-        waitForShutdownComplete();
-    }
     theIO().sub();
 }
 
@@ -249,6 +249,7 @@ void ConnectionImpl::open()
     connector->setShutdownHandler(this);
     try {
         connector->connect(host, port);
+    
     } catch (const std::exception& e) {
         QPID_LOG(debug, "Failed to connect to " << protocol << ":" << host << ":" << port << " " << e.what());
         connector.reset();
@@ -340,16 +341,33 @@ void ConnectionImpl::closed(uint16_t code, const std::string& text) {
 }
 
 void ConnectionImpl::shutdown() {
-    //May need to take a temporary reference to ourselves to prevent
-    //our destructor being called until after we have notified of
-    //shutdown completion; the destructor may be called as a result of
-    //the call to failedConnection().
-    boost::shared_ptr<ConnectionImpl> temp;
     if (!handler.isClosed()) {
-        temp = shared_from_this();
         failedConnection();
     }
-    notifyShutdownComplete();
+    bool canDelete;
+    {
+        Mutex::ScopedLock l(lock);
+        //association with IO thread is now ended
+        shutdownComplete = true;
+        //If we have already been released, we can now delete ourselves
+        canDelete = released;
+    }
+    if (canDelete) delete this;
+}
+
+void ConnectionImpl::release() {
+    bool isActive;
+    {
+        Mutex::ScopedLock l(lock);
+        released = true;
+        isActive = connector && !shutdownComplete;
+    }
+    //If we are still active - i.e. associated with an IO thread -
+    //then we cannot delete ourselves yet, but must wait for the
+    //shutdown callback which we can trigger by calling
+    //connector.close()
+    if (isActive) connector->close();
+    else delete this;
 }
 
 static const std::string CONN_CLOSED("Connection closed");
@@ -395,18 +413,6 @@ boost::shared_ptr<SessionImpl>  ConnectionImpl::newSession(const std::string& na
     addSession(simpl, channel);
     simpl->open(timeout);
     return simpl;
-}
-
-void ConnectionImpl::waitForShutdownComplete()
-{
-    Mutex::ScopedLock l(lock);
-    while(!shutdownComplete) lock.wait();
-}
-void ConnectionImpl::notifyShutdownComplete()
-{
-    Mutex::ScopedLock l(lock);
-    shutdownComplete = true;
-    lock.notifyAll();
 }
 
 }} // namespace qpid::client
