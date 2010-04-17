@@ -122,7 +122,7 @@ void Connection::open(const ConnectionSettings& settings)
     if (isOpen())
         throw Exception(QPID_MSG("Connection::open() was already called"));
 
-    impl = boost::shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
+    impl = ConnectionImpl::create(version, settings);
     impl->open();
     if ( failureCallback )
         impl->registerFailureCallback ( failureCallback );
