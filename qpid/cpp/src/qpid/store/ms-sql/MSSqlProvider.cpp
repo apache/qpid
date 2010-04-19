@@ -1203,6 +1203,20 @@ MSSqlProvider::createDb(DatabaseConnection *db, const std::string &name)
         "  xid varbinary(512) REFERENCES tblTPL(xid)"
         "  CONSTRAINT CK_NoDups UNIQUE NONCLUSTERED (messageId, queueId) )";
     const std::string tplSpecs = " (xid varbinary(512) PRIMARY KEY NOT NULL)";
+    // SET NOCOUNT ON added to prevent extra result sets from
+    // interfering with SELECT statements. (Added by SQL Management)
+    const std::string removeUnrefMsgsTrigger =
+        "CREATE TRIGGER dbo.RemoveUnreferencedMessages "
+        "ON  tblMessageMap AFTER DELETE AS BEGIN "
+        "SET NOCOUNT ON; "
+        "DELETE FROM tblMessage "
+        "WHERE tblMessage.persistenceId IN "
+        "  (SELECT messageId FROM deleted) AND"
+        "  NOT EXISTS(SELECT * FROM tblMessageMap"
+        "             WHERE tblMessageMap.messageId IN"
+        "               (SELECT messageId FROM deleted)) "
+        "END";
+
     _variant_t unused;
     _bstr_t dbStr = dbCmd.c_str();
     _ConnectionPtr conn(*db);
@@ -1231,6 +1245,8 @@ MSSqlProvider::createDb(DatabaseConnection *db, const std::string &name)
         makeTable = tableCmd + TblMessageMap + messageMapSpecs;
         makeTableStr = makeTable.c_str();
         conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+        _bstr_t addTriggerStr = removeUnrefMsgsTrigger.c_str();
+        conn->Execute(addTriggerStr, &unused, adExecuteNoRecords);
     }
     catch(_com_error &e) {
         throw ADOException("MSSQL can't create " + name, e, db->getErrors());
