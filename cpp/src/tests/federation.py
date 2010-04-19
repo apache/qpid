@@ -878,16 +878,24 @@ class FederationTests(TestBase010):
         exchanges=[]
         for _b in self._brokers:
             _b.client_session.exchange_declare(exchange="fedX.direct", type="direct")
-
+            self.assertEqual(_b.client_session.exchange_query(name="fedX.direct").type,
+                             "direct", "exchange_declare failed!")
             # pull the exchange out of qmf...
+            retries = 0
             my_exchange = None
-            objs = qmf.getObjects(_broker=_b.qmf_broker, _class="exchange")
-            for ooo in objs:
-                if ooo.name == "fedX.direct":
-                    my_exchange = ooo
-                    break
-            self.assertTrue(my_exchange is not None)
+            while my_exchange is None:
+                objs = qmf.getObjects(_broker=_b.qmf_broker, _class="exchange")
+                for ooo in objs:
+                    if ooo.name == "fedX.direct":
+                        my_exchange = ooo
+                        break
+                if my_exchange is None:
+                    retries += 1
+                    self.failIfEqual(retries, 10,
+                                     "QMF failed to find new exchange!")
+                    sleep(1)
             exchanges.append(my_exchange)
+
         self.assertEqual(len(exchanges), len(self._brokers), "Exchange creation failed!")
 
         # connect B0 --> B1
@@ -945,7 +953,7 @@ class FederationTests(TestBase010):
 
         binding_counts = [1, 2, 1, 1]
         self.assertEqual(len(binding_counts), len(exchanges), "Update Test!")
-        for i in range(len(exchanges)):
+        for i in reversed(range(len(exchanges))):
             retries = 0
             exchanges[i].update()
             while exchanges[i].bindingCount < binding_counts[i]:
@@ -1110,15 +1118,24 @@ class FederationTests(TestBase010):
         exchanges=[]
         for _b in self._brokers:
             _b.client_session.exchange_declare(exchange="fedX.topic", type="topic")
+            self.assertEqual(_b.client_session.exchange_query(name="fedX.topic").type,
+                             "topic", "exchange_declare failed!")
             # pull the exchange out of qmf...
+            retries = 0
             my_exchange = None
-            objs = qmf.getObjects(_broker=_b.qmf_broker, _class="exchange")
-            for ooo in objs:
-                if ooo.name == "fedX.topic":
-                    my_exchange = ooo
-                    break
-            self.assertTrue(my_exchange is not None)
+            while my_exchange is None:
+                objs = qmf.getObjects(_broker=_b.qmf_broker, _class="exchange")
+                for ooo in objs:
+                    if ooo.name == "fedX.topic":
+                        my_exchange = ooo
+                        break
+                if my_exchange is None:
+                    retries += 1
+                    self.failIfEqual(retries, 10,
+                                     "QMF failed to find new exchange!")
+                    sleep(1)
             exchanges.append(my_exchange)
+
         self.assertEqual(len(exchanges), len(self._brokers), "Exchange creation failed!")
 
         # connect B0 --> B1
@@ -1176,7 +1193,7 @@ class FederationTests(TestBase010):
 
         binding_counts = [1, 2, 1, 1]
         self.assertEqual(len(binding_counts), len(exchanges), "Update Test!")
-        for i in range(len(exchanges)):
+        for i in reversed(range(len(exchanges))):
             retries = 0
             exchanges[i].update()
             while exchanges[i].bindingCount < binding_counts[i]:
@@ -1341,15 +1358,24 @@ class FederationTests(TestBase010):
         exchanges=[]
         for _b in self._brokers:
             _b.client_session.exchange_declare(exchange="fedX.fanout", type="fanout")
+            self.assertEqual(_b.client_session.exchange_query(name="fedX.fanout").type,
+                             "fanout", "exchange_declare failed!")
             # pull the exchange out of qmf...
+            retries = 0
             my_exchange = None
-            objs = qmf.getObjects(_broker=_b.qmf_broker, _class="exchange")
-            for ooo in objs:
-                if ooo.name == "fedX.fanout":
-                    my_exchange = ooo
-                    break
-            self.assertTrue(my_exchange is not None)
+            while my_exchange is None:
+                objs = qmf.getObjects(_broker=_b.qmf_broker, _class="exchange")
+                for ooo in objs:
+                    if ooo.name == "fedX.fanout":
+                        my_exchange = ooo
+                        break
+                if my_exchange is None:
+                    retries += 1
+                    self.failIfEqual(retries, 10,
+                                     "QMF failed to find new exchange!")
+                    sleep(1)
             exchanges.append(my_exchange)
+
         self.assertEqual(len(exchanges), len(self._brokers), "Exchange creation failed!")
 
         # connect B0 --> B1
@@ -1407,7 +1433,7 @@ class FederationTests(TestBase010):
 
         binding_counts = [1, 2, 1, 1]
         self.assertEqual(len(binding_counts), len(exchanges), "Update Test!")
-        for i in range(len(exchanges)):
+        for i in reversed(range(len(exchanges))):
             retries = 0
             exchanges[i].update()
             while exchanges[i].bindingCount < binding_counts[i]:
