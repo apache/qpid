@@ -110,6 +110,7 @@ class SslConnector : public Connector
     void writebuff(qpid::sys::ssl::SslIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
     void eof(qpid::sys::ssl::SslIO&);
+    void disconnected(qpid::sys::ssl::SslIO&);
 
     std::string identifier;
 
@@ -201,7 +202,7 @@ void SslConnector::connect(const std::string& host, int port){
     aio = new SslIO(socket,
                        boost::bind(&SslConnector::readbuff, this, _1, _2),
                        boost::bind(&SslConnector::eof, this, _1),
-                       boost::bind(&SslConnector::eof, this, _1),
+                       boost::bind(&SslConnector::disconnected, this, _1),
                        boost::bind(&SslConnector::socketClosed, this, _1, _2),
                        0, // nobuffs
                        boost::bind(&SslConnector::writebuff, this, _1));
@@ -360,6 +361,11 @@ void SslConnector::writeDataBlock(const AMQDataBlock& data) {
 
 void SslConnector::eof(SslIO&) {
     close();
+}
+
+void SslConnector::disconnected(SslIO&) {
+    close();
+    socketClosed(*aio, socket);
 }
 
 const SecuritySettings* SslConnector::getSecuritySettings()
