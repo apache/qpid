@@ -359,6 +359,12 @@ public class QMFService implements ConfigStore.ConfigEventListener
 
     public void close()
     {
+        for(ConfigObjectType v : _qmfClassMapping.values())
+        {
+            _configStore.removeConfigEventListener(v, this);
+        }
+        _listeners.clear();
+        
         _managedObjects.clear();
         _managedObjectsById.clear();
         _classMap.clear();
@@ -414,6 +420,11 @@ public class QMFService implements ConfigStore.ConfigEventListener
     private void unmanageObject(final ConfiguredObject object)
     {
         final QMFClass qmfClass = _classMap.get(object.getConfigType());
+        
+        if(qmfClass == null)
+        {
+            return;
+        }
 
         ConcurrentHashMap<ConfiguredObject, QMFObject> classObjects = _managedObjects.get(qmfClass);
         if(classObjects != null)
