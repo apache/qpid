@@ -607,9 +607,11 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
             objId.mapEncode(oidMap);
             map_["_values"] = values;
             map_["_object_id"] = oidMap;
+            object->writeTimestamps(map_);
             map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
                                                    object->getClassName(),
                                                    object->getMd5Sum());
+
             list_.push_back(map_);
             headers.erase("partial");
 
@@ -638,6 +640,7 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
                 iter->first.mapEncode(oidMap);
                 map_["_values"] = values;
                 map_["_object_id"] = oidMap;
+                object->writeTimestamps(map_);
                 map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
                                                        object->getClassName(),
                                                        object->getMd5Sum());
@@ -940,6 +943,7 @@ void ManagementAgentImpl::periodicProcessing()
                     map_["_schema_id"] = mapEncodeSchemaId(object->getPackageName(),
                                                            object->getClassName(),
                                                            object->getMd5Sum());
+                    object->writeTimestamps(map_);
                     object->mapEncodeValues(values, send_props, send_stats);
                     map_["_values"] = values;
                     list_.push_back(map_);

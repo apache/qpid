@@ -316,15 +316,15 @@ uint32_t ManagementObject::writeTimestampsSize() const
 
 void ManagementObject::writeTimestamps (types::Variant::Map& map) const
 {
-    types::Variant::Map oid, sid;
+    // types::Variant::Map oid, sid;
 
-    sid["_package_name"] = getPackageName();
-    sid["_class_name"] = getClassName();
-    sid["_hash"] = qpid::types::Uuid(getMd5Sum());
-    map["_schema_id"] = sid;
+    // sid["_package_name"] = getPackageName();
+    // sid["_class_name"] = getClassName();
+    // sid["_hash"] = qpid::types::Uuid(getMd5Sum());
+    // map["_schema_id"] = sid;
 
-    objectId.mapEncode(oid);
-    map["_object_id"] = oid;
+    // objectId.mapEncode(oid);
+    // map["_object_id"] = oid;
 
     map["_update_ts"] = updateTime;
     map["_create_ts"] = createTime;
@@ -358,24 +358,24 @@ int ManagementObject::getThreadIndex() {
 }
 
 
-void ManagementObject::mapEncode(types::Variant::Map& map,
-                                 bool includeProperties,
-                                 bool includeStatistics)
-{
-    types::Variant::Map values;
+// void ManagementObject::mapEncode(types::Variant::Map& map,
+//                                  bool includeProperties,
+//                                  bool includeStatistics)
+// {
+//     types::Variant::Map values;
 
-    writeTimestamps(map);
+//     writeTimestamps(map);
 
-    mapEncodeValues(values, includeProperties, includeStatistics);
-    map["_values"] = values;
-}
+//     mapEncodeValues(values, includeProperties, includeStatistics);
+//     map["_values"] = values;
+// }
 
-void ManagementObject::mapDecode(const types::Variant::Map& map)
-{
-    types::Variant::Map::const_iterator i;
+// void ManagementObject::mapDecode(const types::Variant::Map& map)
+// {
+//     types::Variant::Map::const_iterator i;
 
-    readTimestamps(map);
+//     readTimestamps(map);
 
-    if ((i = map.find("_values")) != map.end())
-        mapDecodeValues(i->second.asMap());
-}
+//     if ((i = map.find("_values")) != map.end())
+//         mapDecodeValues(i->second.asMap());
+// }

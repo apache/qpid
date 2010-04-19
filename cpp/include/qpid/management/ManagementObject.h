@@ -147,9 +147,7 @@ protected:
 
     QPID_COMMON_EXTERN int  getThreadIndex();
     QPID_COMMON_EXTERN void writeTimestamps(std::string& buf) const;
-    QPID_COMMON_EXTERN void writeTimestamps(types::Variant::Map& map) const;
     QPID_COMMON_EXTERN void readTimestamps(const std::string& buf);
-    QPID_COMMON_EXTERN void readTimestamps(const types::Variant::Map& buf);
     QPID_COMMON_EXTERN uint32_t writeTimestampsSize() const;
 
   public:
@@ -173,6 +171,8 @@ protected:
     virtual void doMethod(std::string&           methodName,
                           const types::Variant::Map& inMap,
                           types::Variant::Map& outMap) = 0;
+    QPID_COMMON_EXTERN void writeTimestamps(types::Variant::Map& map) const;
+    QPID_COMMON_EXTERN void readTimestamps(const types::Variant::Map& buf);
 
     /**
      * The following five methods are not pure-virtual because they will only
@@ -215,11 +215,11 @@ protected:
     //QPID_COMMON_EXTERN uint32_t encodedSize() const { return writePropertiesSize(); }
 
     // Encode/Decode the entire object as a map
-    QPID_COMMON_EXTERN void mapEncode(types::Variant::Map& map,
-                                      bool includeProperties=true,
-                                      bool includeStatistics=true);
+    //QPID_COMMON_EXTERN void mapEncode(types::Variant::Map& map,
+    //bool includeProperties=true,
+    //bool includeStatistics=true);
 
-    QPID_COMMON_EXTERN void mapDecode(const types::Variant::Map& map);
+    //QPID_COMMON_EXTERN void mapDecode(const types::Variant::Map& map);
 };
 
 typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;

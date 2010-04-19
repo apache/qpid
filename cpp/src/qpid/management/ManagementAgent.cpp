@@ -675,6 +675,7 @@ void ManagementAgent::periodicProcessing (void)
                                                            object->getClassName(),
                                                            "_data",
                                                            object->getMd5Sum());
+                    object->writeTimestamps(map_);
                     object->mapEncodeValues(values, send_props, send_stats);
                     map_["_values"] = values;
                     list_.push_back(map_);
@@ -762,6 +763,7 @@ void ManagementAgent::periodicProcessing (void)
                                                        (*cdIter)->getClassName(),
                                                        "_data",
                                                        (*cdIter)->getMd5Sum());
+                (*cdIter)->writeTimestamps(map_);
                 (*cdIter)->mapEncodeValues(values, true, false);
                 map_["_values"] = values;
                 list_.push_back(map_);
@@ -864,6 +866,7 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
                                                object->getClassName(),
                                                "_data",
                                                object->getMd5Sum());
+        object->writeTimestamps(map_);
         object->mapEncodeValues(values, true, false);
         map_["_values"] = values;
         list_.push_back(map_);
@@ -1646,6 +1649,7 @@ void ManagementAgent::handleGetQueryLH(const std::string& body, std::string repl
                     object->setUpdateTime();
 
                 if (!object->isDeleted()) {
+                    object->writeTimestamps(map_);
                     object->mapEncodeValues(values, true, true); // write both stats and properties
                     map_["_values"] = values;
                     list_.push_back(map_);
@@ -1669,6 +1673,7 @@ void ManagementAgent::handleGetQueryLH(const std::string& body, std::string repl
                     object->setUpdateTime();
 
                 if (!object->isDeleted()) {
+                    object->writeTimestamps(map_);
                     object->mapEncodeValues(values, true, true); // write both stats and properties
                 map_["_values"] = values;
                 list_.push_back(map_);
