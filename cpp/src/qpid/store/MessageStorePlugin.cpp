@@ -453,6 +453,8 @@ MessageStorePlugin::recover(broker::RecoveryManager& recoverer)
             case QueueEntry::REMOVING:
                 dtxMap[j->xid]->dequeue(iQ->second, msg);
                 break;
+            default:
+                break;
             }
         }
     }
