@@ -259,7 +259,7 @@ target_link_libraries (receiver qpidclient)
 #receiver_SOURCES=receiver.cpp  TestOptions.h ConnectionOptions.h
 remember_location(receiver)
 
-add_executable (sender sender.cpp ${platform_test_additions})
+add_executable (sender sender.cpp Statistics.cpp ${platform_test_additions})
 target_link_libraries (sender qpidclient)
 #sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
 remember_location(sender)
