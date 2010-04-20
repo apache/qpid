@@ -182,7 +182,7 @@ void ObjectId::decode(const std::string& buffer)
 void ObjectId::setV2Key(const ManagementObject& object)
 {
     std::stringstream oname;
-    oname << object.getPackageName() << "." << object.getClassName() << ":" << object.getKey();
+    oname << object.getPackageName() << ":" << object.getClassName() << ":" << object.getKey();
     v2Key = oname.str();
 }
 
