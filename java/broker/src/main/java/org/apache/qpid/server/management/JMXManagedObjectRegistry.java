@@ -56,7 +56,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
-import java.rmi.RemoteException;
+import java.rmi.NoSuchObjectException;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
@@ -81,7 +82,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private final MBeanServer _mbeanServer;
     private JMXConnectorServer _cs;
     private Registry _rmiRegistry;
-    
+    private boolean _useCustomSocketFactory;
 
     public JMXManagedObjectRegistry() throws AMQException
     {
@@ -89,6 +90,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
 
         // Retrieve the config parameters
+        _useCustomSocketFactory = appRegistry.getConfiguration().getUseCustomRMISocketFactory();
         boolean platformServer = appRegistry.getConfiguration().getPlatformMbeanserver();
 
         _mbeanServer =
@@ -226,7 +228,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
          * As a result, only binds made using the object reference will succeed, thus securing it from external change. 
          */
         System.setProperty("java.rmi.server.randomIDs", "true");
-        _rmiRegistry = LocateRegistry.createRegistry(port, null, new CustomRMIServerSocketFactory());
+        if(_useCustomSocketFactory)
+        {
+            _rmiRegistry = LocateRegistry.createRegistry(port, null, new CustomRMIServerSocketFactory());
+        }
+        else
+        {
+            _rmiRegistry = LocateRegistry.createRegistry(port, null, null);
+        }
 
         /*
          * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls 
@@ -274,8 +283,27 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
                 //now do the normal tasks
                 super.start();   
-            }   
+            }
 
+            @Override  
+            public synchronized void stop() throws IOException
+            {   
+                try
+                {
+                    if (_rmiRegistry != null)
+                    {
+                        _rmiRegistry.unbind("jmxrmi");
+                    }
+                }
+                catch (NotBoundException nbe)
+                {
+                    //ignore
+                }
+                
+                //now do the normal tasks
+                super.stop();
+            }
+            
             @Override  
             public JMXServiceURL getAddress()
             {
@@ -374,27 +402,34 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         return false;
     }
 
-    // stops the RMIRegistry and unregisters the MBeans from the MBeanServer
-    public void close() throws RemoteException
+    //Stops the JMXConnectorServer and RMIRegistry, then unregisters any remaining MBeans from the MBeanServer
+    public void close()
     {
-        if (_rmiRegistry != null)
-        {
-            // Stopping the RMI registry
-            UnicastRemoteObject.unexportObject(_rmiRegistry, true);
-        }
-        
         if (_cs != null)
         {
             // Stopping the JMX ConnectorServer
             try
             {
-                _cs.stop();
-                CurrentActor.get().message(ManagementConsoleMessages.MNG_SHUTTING_DOWN("RMI Registry", _cs.getAddress().getPort() - PORT_EXPORT_OFFSET));
                 CurrentActor.get().message(ManagementConsoleMessages.MNG_SHUTTING_DOWN("RMI ConnectorServer", _cs.getAddress().getPort()));
+                _cs.stop();
             }
             catch (IOException e)
             {
-                _log.warn("Error while closing the JMX ConnectorServer: " + e.getMessage());
+                _log.error("Exception while closing the JMX ConnectorServer: " + e.getMessage());
+            }
+        }
+        
+        if (_rmiRegistry != null)
+        {
+            // Stopping the RMI registry
+            CurrentActor.get().message(ManagementConsoleMessages.MNG_SHUTTING_DOWN("RMI Registry", _cs.getAddress().getPort() - PORT_EXPORT_OFFSET));
+            try
+            {
+                UnicastRemoteObject.unexportObject(_rmiRegistry, false);
+            }
+            catch (NoSuchObjectException e)
+            {
+                _log.error("Exception while closing the RMI Registry: " + e.getMessage());
             }
         }
         

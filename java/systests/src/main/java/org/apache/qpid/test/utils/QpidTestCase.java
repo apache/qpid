@@ -490,6 +490,7 @@ public class QpidTestCase extends TestCase
         if (_broker.equals(VM))
         {
             setConfigurationProperty("management.jmxport", String.valueOf(getManagementPort(port)));
+            setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
             saveTestConfiguration();
             
             // create an in_VM broker
