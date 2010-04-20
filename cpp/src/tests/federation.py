@@ -949,11 +949,11 @@ class FederationTests(TestBase010):
         queue_3 = self._brokers[3].client_session.incoming("f1")
 
         # wait until the binding key has propagated to each broker (twice at
-        # broker B1)
+        # broker B1).  Work backwards from binding brokers.
 
         binding_counts = [1, 2, 1, 1]
         self.assertEqual(len(binding_counts), len(exchanges), "Update Test!")
-        for i in reversed(range(len(exchanges))):
+        for i in range(3,-1,-1):
             retries = 0
             exchanges[i].update()
             while exchanges[i].bindingCount < binding_counts[i]:
@@ -961,7 +961,7 @@ class FederationTests(TestBase010):
                 self.failIfEqual(retries, 10,
                                  "binding failed to propagate to broker %d"
                                  % i)
-                sleep(1)
+                sleep(3)
                 exchanges[i].update()
 
         # send 10 msgs from B0
@@ -1189,11 +1189,11 @@ class FederationTests(TestBase010):
         queue_3 = self._brokers[3].client_session.incoming("f1")
 
         # wait until the binding key has propagated to each broker (twice at
-        # broker B1)
+        # broker B1).  Work backwards from binding brokers.
 
         binding_counts = [1, 2, 1, 1]
         self.assertEqual(len(binding_counts), len(exchanges), "Update Test!")
-        for i in reversed(range(len(exchanges))):
+        for i in range(3,-1,-1):
             retries = 0
             exchanges[i].update()
             while exchanges[i].bindingCount < binding_counts[i]:
@@ -1201,7 +1201,7 @@ class FederationTests(TestBase010):
                 self.failIfEqual(retries, 10,
                                  "binding failed to propagate to broker %d"
                                  % i)
-                sleep(1)
+                sleep(3)
                 exchanges[i].update()
 
         # send 10 msgs from B0
@@ -1429,11 +1429,11 @@ class FederationTests(TestBase010):
         queue_3 = self._brokers[3].client_session.incoming("f1")
 
         # wait until the binding key has propagated to each broker (twice at
-        # broker B1)
+        # broker B1).  Work backwards from binding brokers.
 
         binding_counts = [1, 2, 1, 1]
         self.assertEqual(len(binding_counts), len(exchanges), "Update Test!")
-        for i in reversed(range(len(exchanges))):
+        for i in range(3,-1,-1):
             retries = 0
             exchanges[i].update()
             while exchanges[i].bindingCount < binding_counts[i]:
@@ -1441,7 +1441,7 @@ class FederationTests(TestBase010):
                 self.failIfEqual(retries, 10,
                                  "binding failed to propagate to broker %d"
                                  % i)
-                sleep(1)
+                sleep(3)
                 exchanges[i].update()
 
         # send 10 msgs from B0
