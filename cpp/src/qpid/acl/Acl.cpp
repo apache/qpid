@@ -45,7 +45,7 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
-Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false)
+Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false), mgmtObject(0)
 {
 	   
     agent = broker->getManagementAgent();
@@ -135,6 +135,11 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 
       data = d;
 	  transferAcl = data->transferAcl; // any transfer ACL
+
+      if (data->transferAcl){
+        QPID_LOG(debug,"Transfer ACL is Enabled!");
+      }
+
       data->aclSource = aclFile; 
 	  if (mgmtObject!=0){
 	      mgmtObject->set_transferAcl(transferAcl?1:0);
