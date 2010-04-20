@@ -70,7 +70,10 @@ public class JMXTestUtils
 
     public void close() throws IOException
     {
-        _jmxc.close();
+        if(_jmxc != null)
+        {
+            _jmxc.close();
+        }
     }
 
     /**

@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 public class ManagementActorLoggingTest extends AbstractTestLogging
 {
     private JMXTestUtils _jmxUtils;
+    private boolean _closed = false;
     private static final String USER = "admin";
 
     @Override
@@ -52,12 +53,16 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         _jmxUtils = new JMXTestUtils(this, USER, USER);
         _jmxUtils.setUp();
         super.setUp();
+        _jmxUtils.open();
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        _jmxUtils.close();
+        if(!_closed)
+        {
+            _jmxUtils.close();
+        }
         super.tearDown();
     }
 
@@ -106,7 +111,8 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         assertEquals("Unexpected Management Connection close count", 0, results.size());
 
         _jmxUtils.close();
-
+        _closed  = true;
+        
         results = _monitor.waitAndFindMatches("MNG-1008", DEFAULT_LOG_WAIT);
 
         assertEquals("Unexpected Management Connection count", 1, results.size());
@@ -198,7 +204,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     {
         _monitor.reset();
 
-        _jmxUtils.createExchange("test", "direct", null, false);
+        _jmxUtils.createExchange("test", getName(), "direct", false);
 
         // Validate
 
@@ -222,7 +228,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         //Remove any previous exchange declares
         _monitor.reset();
 
-        _jmxUtils.createExchange("test", "topic", null, false);
+        _jmxUtils.createExchange("test", getName(), "topic", false);
 
         // Validate
 
@@ -247,7 +253,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         //Remove any previous exchange declares
         _monitor.reset();
 
-        _jmxUtils.createExchange("test", "fanout", null, false);
+        _jmxUtils.createExchange("test", getName(), "fanout", false);
 
         // Validate
 
@@ -272,7 +278,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         //Remove any previous exchange declares
         _monitor.reset();
 
-        _jmxUtils.createExchange("test", "headers", null, false);
+        _jmxUtils.createExchange("test", getName(), "headers", false);
 
         // Validate
 
@@ -474,7 +480,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         // Validate correct binding
         String subject = fromSubject(log);
         assertEquals("Incorrect queue named in create", getName(), AbstractTestLogSubject.getSlice("qu", subject));
-        assertEquals("Incorrect routing key in create", "*", AbstractTestLogSubject.getSlice("rk", subject));
+        assertEquals("Incorrect routing key in create", getName(), AbstractTestLogSubject.getSlice("rk", subject));
 
         // Validate it was a management actor.
         String actor = fromActor(log);
@@ -506,7 +512,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         //Remove any previous queue declares
         _monitor.reset();
 
-        _jmxUtils.createExchange("test", "direct", null, false);
+        _jmxUtils.createExchange("test", getName(), "direct", false);
 
         ManagedBroker managedBroker = _jmxUtils.getManagedBroker("test");
 
