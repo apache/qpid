@@ -138,7 +138,7 @@ public class ModelTest extends QpidTestCase
         String owner = null;
         boolean durable = false;
 
-        createViaJMXandValidateViaJMX(name, owner, durable, durable);
+        createViaJMXandValidateViaJMX(name, owner, durable);
     }
 
     /**
@@ -153,7 +153,7 @@ public class ModelTest extends QpidTestCase
         String owner = null;
         boolean durable = true;
 
-        createViaJMXandValidateViaJMX(name, owner, durable, durable);
+        createViaJMXandValidateViaJMX(name, owner, durable);
 
         // Clean up
         ManagedBroker managedBroker =
@@ -246,8 +246,7 @@ public class ModelTest extends QpidTestCase
         session.createQueue(new AMQShortString(queueName),
                             autoDelete, durable, exclusive);
 
-        validateQueueViaJMX(queueName, exclusive ? ((AMQConnection) connection).
-                getUsername() : null, durable, autoDelete);
+        validateQueueViaJMX(queueName, ((AMQConnection) connection).getUsername(), durable, autoDelete);
     }
 
     /**
@@ -263,12 +262,12 @@ public class ModelTest extends QpidTestCase
      * @throws IOException if there is a problem with the JMX connection
      */
     private void createViaJMXandValidateViaJMX(String queueName, String owner,
-                                               boolean durable, boolean autoDelete)
+                                               boolean durable)
             throws JMException, IOException
     {
         _jmxUtils.createQueue(VIRTUALHOST_NAME, queueName, owner, durable);
 
-        validateQueueViaJMX(queueName, owner, durable, autoDelete);
+        validateQueueViaJMX(queueName, owner, durable, false);
     }
 
     /**
