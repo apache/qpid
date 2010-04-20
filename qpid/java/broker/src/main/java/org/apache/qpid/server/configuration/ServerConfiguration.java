@@ -86,6 +86,7 @@ public class ServerConfiguration implements SignalHandler
     public static final String CONNECTOR_PROTECTIO_ENABLED = "connector.protectio.enabled";
     public static final String CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE = "connector.protectio.readBufferLimitSize";
     public static final String CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE = "connector.protectio.writeBufferLimitSize";
+    public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
 
@@ -389,6 +390,16 @@ public class ServerConfiguration implements SignalHandler
     public int getJMXManagementPort()
     {
         return _jmxPort;
+    }
+    
+    public boolean getUseCustomRMISocketFactory()
+    {
+        return getConfig().getBoolean(MGMT_CUSTOM_REGISTRY_SOCKET, true);
+    }
+    
+    public void setUseCustomRMISocketFactory(boolean bool)
+    {
+        getConfig().setProperty(MGMT_CUSTOM_REGISTRY_SOCKET, bool);
     }
 
     public boolean getPlatformMbeanserver()
