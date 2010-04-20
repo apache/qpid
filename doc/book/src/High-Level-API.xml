@@ -1,102 +1,111 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-]>
+          ]>
 
 <!--
- 
- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
+   
+   Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+   
    http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
- 
--->
+   
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+   
+  -->
 
-<chapter id="high-level-client-api">
-  <title>Apache Qpid Messaging API</title>
-
-  <para>Apache Qpid is a reliable, asynchronous messaging system that
-  supports the AMQP messaging protocol in several common programming
-  languages on the Linux, Windows, Java, and Unix platforms. On the
-  Java platform, Qpid uses the established <ulink
-  url="http://java.sun.com/products/jms/">Java JMS API</ulink>. On the
-  .NET platform, Qpid uses a <ulink
-  url="http://qpid.apache.org/wcf.html">WCF binding</ulink>. For
-  Python and C++, Qpid uses the Qpid Messaging API, which has
-  implementations in both languages. Support for this API in Ruby will
-  be added soon<footnote><para>Ruby currently uses an API that is
-  closely tied to the AMQP version.</para></footnote>.</para>
-
-
-  <para>Unlike earlier Qpid APIs, the Qpid Messaging API does not
-  expose the details of the underlying messaging protocol or the
-  software components defined by the protocol. Instead, it defines a
-  declarative syntax for addressing messaging components; to use it
-  with a given messaging protocol, a protocol mapping must be defined.
-  This specification provides a mapping to AMQP 0-10.</para>
-
-  <para>Qpid uses the same addressing scheme in Java JMS, WCF, and the
-  Qpid Messaging API. An <emphasis>address</emphasis> is a simple
-  string that represents the name of a node on a messaging broker. In
-  the AMQP 0-10 mapping, an address resolves to an exchange or a
-  queue.</para>
-
-
-  <para>Here are the most important classes in the Qpid Messaging API
-  programming model.
-  </para>
-
-  <itemizedlist>
-
-    <listitem><para>A <emphasis>connection</emphasis> represents a
-    network connection. The parameters for the network connection are
-    specified using a URL-based syntax when the connection is
-    opened.</para></listitem>
-
-    <listitem><para>A <emphasis>session</emphasis> represents the
-    interface between a <emphasis>messaging client</emphasis> and a
-    <emphasis>messaging broker</emphasis>. A session is created by a
-    connection.</para></listitem>
-
-    <listitem><para>A <emphasis>message</emphasis> consists of
-    <emphasis>message content</emphasis> (the body of the message),
-    and <emphasis>message properties</emphasis>, which may include a
-    subject, a reply address, etc. Message content is a blob which may
-    contain text or binary data. Map messages allow binary data to be
-    exchanged portably across languages and
-    platforms.</para></listitem>
-
-    <listitem><para>A <emphasis>sender</emphasis> is a messaging
-    client that sends <emphasis>message</emphasis>s to a destination
-    on a <emphasis>messaging broker</emphasis>. A sender is created by
-    a session.</para></listitem>
-
-    <listitem><para>A <emphasis>receiver</emphasis> is a messaging
-    client that receives <emphasis>message</emphasis>s from a
-    source on a <emphasis>Messaging Broker</emphasis>. A Receiver
-    is created by a Session.</para></listitem>
-
-  </itemizedlist>
+<chapter id="client-api-tutorial">
+  <title>Using Qpid for Messaging</title>
 
   <section>
-    <title>A Simple Messaging Program in C++</title>
+    <title>Supported APIs</title>
+    
+    <para>Apache Qpid is a reliable, asynchronous messaging system that
+      supports the AMQP messaging protocol in several common programming
+      languages. On the Java platform, Qpid uses the
+      established <ulink url="http://java.sun.com/products/jms/">Java JMS
+        API</ulink>. On the .NET platform, Qpid defines
+      a <ulink url="http://qpid.apache.org/wcf.html">WCF
+        binding</ulink>. For Python and C++ however, Qpid defines its own
+      messaging API which is conceptually similar in each supported
+      language. Support for this API in Ruby will be added
+      soon<footnote><para>Ruby currently uses an API that is closely tied
+          to the AMQP version.</para></footnote>.
+    </para>
+  </section>
+  
+  <section>
+    <title>Using the Qpid messaging API</title>
 
-    <para>The following C++ program shows how to create a Connection,
-    create a Session, send messages to a queue using a Sender, and
-    receive messages from a queue using a Receiver.</para>
+    <para>The Qpid messaging API is quite simple, consisting of only a
+      handful of core classes.
+    </para>
+    
+    <itemizedlist>
+      
+      <listitem>
+        <para>
+          A <emphasis>connection</emphasis> manages a group
+          of <emphasis>sessions</emphasis> and connects them with a
+          remote endpoint.
+        </para>
+      </listitem>
+      
+      <listitem>
+        <para>
+          <emphasis>Sessions</emphasis> provide a linear context for
+          sending and receiving <emphasis>messages</emphasis>.
+        </para>
+      </listitem>
+      
+      <listitem>
+        <para>
+          Messages are sent using the send method on
+          a <emphasis>sender</emphasis>. A sender is obtained from a
+          session for a given target address.
+        </para>
+      </listitem>
+      
+      <listitem>
+        <para>
+          Messages are received using the fetch method of
+          a <emphasis>receiver</emphasis>. A receiver is obtained from a
+          session for a given source address.
+        </para>
+      </listitem>
+      
+      <listitem>
+        <para>
+          A <emphasis>message</emphasis> consists of a standard set of
+          fields, an application defined set of properties, and some
+          content.
+        </para>
+      </listitem>
 
-<programlisting lang="c++"><![CDATA[
+    </itemizedlist>
+
+    <para>
+      The following sections show how these classes might be used in a
+      simple example program.
+    </para>
+
+    <section>
+      <title>A Simple Messaging Program in C++</title>
+
+      <para>The following C++ program shows how to create a connection,
+        create a session, send messages using a sender, and receive
+        messages using a receiver.</para>
+
+      <programlisting lang="c++"><![CDATA[
 #include <qpid/messaging/Connection.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Receiver.h>
@@ -134,18 +143,16 @@ int main(int argc, char** argv) {
 }]]></programlisting>
 
 
-  </section>
+    </section>
 
-  <section>
-    <title>A Simple Messaging Program in Python</title>
+    <section>
+      <title>A Simple Messaging Program in Python</title>
 
+      <para>The following Python program shows how to create a
+        connection, create a session, send messages using a sender, and
+        receive messages using a receiver.</para>
 
-    <para>The following Python program shows how to create a
-    Connection, create a Session, send messages to a queue using a
-    Sender, and receive messages from a queue using a Receiver.</para>
-
-
-    <programlisting lang="python"><![CDATA[
+      <programlisting lang="python"><![CDATA[
 import sys
 from qpid.messaging import *
 
@@ -173,21 +180,981 @@ finally:
   connection.close()
 ]]></programlisting>
 
+    </section>
+    <section>
+      <title>Addresses</title>
+      
+      <para>
+        When creating a sender or receiver, an address is
+        specified. An <firstterm>address</firstterm> identifies a
+        target or source for messages. This makes it easy to change
+        the target to which messages are being sent without affecting
+        the application doing the sending. Likewise it is easy to
+        change the source from which messages are received without
+        changing the code that controls their receipt.
+      </para>
+
+      <para>
+        The Qpid messaging API currently recognises two broad types of
+        address. The first is an address that resolves to
+        a <emphasis>queue</emphasis>, the second is an address that
+        resolves to a <emphasis>topic</emphasis><footnote><para>The
+            terms <emphasis>queue</emphasis>
+            and <emphasis>topic</emphasis> here were chosen to align well
+            with their meaning in JMS. These two addressing 'patterns',
+            queue and topic, are sometimes refered as point-to-point and
+            publish-subscribe.</para></footnote>. There are two key differences
+        in behaviour between these two types of address. The first
+        difference is that a queue will store messages sent to it
+        until a receiver wants that message, whereas a topic will in
+        general discard a message for which there is no interested
+        receiver at the time the message is sent. The second
+        difference is that multiple receivers on a queue will in
+        general compete for the messages sent to that queue, that is
+        each message will go to one receiver only. By contrast each of
+        multiple receivers for a topic may receive the same message.
+      </para>
+
+      <para>
+        We can see the different message flows here, and how they
+        are independent of the application code, by an example. This
+        example, and indeed those in the following sections, send
+        messages using <command>drain</command>, and receive messages
+        using <command>spout</command>. The source code for
+        <command>drain</command> and <command>spout</command> is available
+        in both C++ and Python, and can be found in the examples directory
+        for each language. These programs can use any address string as a source
+        or a destination, and have many command line options to configure
+        behavior&mdash;use the <command>-h</command> option for
+        documentation on these options.
+      </para>
+
+      <para>
+        In the AMQP 0-10 implementation of the API <footnote><para>The
+            only implementation of the API there is at
+            present.</para></footnote> queue addresses specify the name of
+        the AMQP queue while topic addresses specify the name of an
+        exchange. We can use the
+        <command>qpid-config</command> utility to configure AMQP 0-10
+        queues and exchanges on a Qpid broker to demonstrate the
+        behaviour of the different types of address.
+      </para>
+
+
+      <example>
+        <title>Queues and Topics</title>
+
+        <para>Create a queue with qpid-config, send a message using
+          spout, and read it using drain:</para>
+
+        <screen>
+          $ qpid-config add queue hello-world
+          $ ./spout -a hello-world
+          $ ./drain -a hello-world
+
+          Message(properties={spout-id:c877e622-d57b-4df2-bf3e-6014c68da0ea:0}, content='')
+        </screen>
+
+        <para>The queue stored the message we sent and delivered it to
+          drain when requested. If we now delete the queue named
+          <literal>hello-world</literal> and create an exchange with the
+          same name, we can observe different behaviour:</para>
+
+        <screen>
+          $ qpid-config del queue hello-world
+          $ qpid-config add exchange topic hello-world
+          $ ./spout -a hello-world
+          $ ./drain -a hello-world
+          $
+        </screen>
+
+        <para>As hello-world now resolves to an exchange, i.e. to a
+          topic address, the message is not stored. On receiving a message
+          for which there are no interested receivers, the exchange
+          discards the message. When drain was then run there were no
+          messages to deliver and so no messages were output in the above
+          screen. If <command>drain</command> is called
+          before <command>spout</command>, a Receiver is created for the
+          exchange, which also creates a subscription queue and a
+          binding. Run <command>drain</command> in one terminal window
+          using <literal>-t</literal> to specify a timeout in seconds, and
+          run <command>spout</command> in another window to send a message
+          for <command>drain</command> to receive.</para>
+
+        
+        
+        <para><emphasis>First Window:</emphasis></para>
+
+        <screen>
+          $ ./drain -a hello-word -t 30
+        </screen>
+        
+
+        <para><emphasis>Second Window:</emphasis></para>
+
+        <screen>
+          $ ./spout -a hello-word
+        </screen>
+
+        <para>Once <command>spout</command> has sent a message, return
+          to the first window to see the output from
+          <command>drain</command>:</para>
+
+        <screen>
+          Message(properties={spout-id:7da2d27d-93e6-4803-8a61-536d87b8d93f:0}, content='')
+        </screen>
+
+        <para>You can run <command>drain</command> in several separate
+          windows; each will create a subscription for the exchange, and
+          each will receive all messages sent to the exchange.</para>
+
+      </example>
+
+      <para>In addition to naming a target or a source for messages,
+        an <firstterm>address string</firstterm> can also contain a
+        <firstterm>subject</firstterm> and
+        <firstterm>options</firstterm>.</para>
+      
+      <para>The syntax for an address string is:</para>
+      
+      <programlisting><![CDATA[
+address_string ::=  <address> [ / <subject> ] [ ; <options> ]
+options ::=  { <key> : <value>, ... }
+]]></programlisting>
+      
+      <para>Addresses, subjects, and keys are strings.</para>
+      
+      <para>Values can be numbers, strings (with optional single or
+        double quotes), maps, or lists.</para>
+
+      <para>
+        Subjects are used to classify messages. When an address is used as
+        a target for a sender, any subject specified in the address is
+        used as the default subject of outgoing messages for that
+        target. When an address is used as a source for a receiver, any
+        subject specified is treated as an indication of the set of
+        messages of interest, the details of how this works depend on the
+        exact configuration of the source.
+      </para>
+
+      <note>
+        <para>
+          At present if the source address is a queue, then the
+          subject is not used by any receiver created for that
+          address. Filtering by subject is only supported for topics
+          and varies depending on the type of exchange used to
+          represent the topic.
+        </para>
+      </note>
+
+      <example>
+        <title>Using subjects</title>
+
+        <para>In this example we will show how use of subjects can
+          affect the message flow.</para>
+
+        <para>First lets create a topic address. Recall from above
+          that this means an exchange in the AMQP model. We will again
+          use qpid-config to create one<footnote><para>In AMQP there are
+              different types of exchange. One type is called
+              a <emphasis>topic</emphasis> exchange. This is a slightly
+              different use of the term topic from that we introduced
+              earlier. This is indeed a little confusing but we have
+              prefered to alig the terminology used by the Qpid messaging
+              API with the more commonly understood meaning of topic
+              (e.g. as in JMS).</para></footnote>.</para>
+        <screen>
+          $ qpid-config add exchange topic news-service
+        </screen>
+
+        <para>Now we will use drain to receive messages from this
+          address using a particular subject.</para>
+        <para><emphasis>First Window:</emphasis></para>
+        <screen>
+          $ ./drain -a news-service/sports -t 30
+        </screen>
+
+        <para>In a second window, let's send messages to this address:</para>
+
+        <para><emphasis>Second Window:</emphasis></para>
+        <screen>
+          $ ./spout -a news-service/sports
+          $ ./spout -a news-service/news
+        </screen>
+
+        <para>Now look at the first window, and you will see the
+          message with the subject <literal>sports</literal> has been
+          received, but not the message with the subject
+          <literal>news</literal>:</para>
+
+        <screen>
+          Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea998291:0}, content='')
+        </screen>
+
+        <para>If you run <command>drain</command> in multiple
+          windows using the same subject, all instances of
+          <command>drain</command> receive the messages for that
+          subject.</para>
+        
+        <para>The exchange type we are using here offers a more
+	  sophisticated matching if desired. The subject can contain
+	  multiple words separated by a <quote>.</quote>
+	  delimiter. For instance, in a news application, messages
+	  might be sent with subjects
+	  like <literal>usa.news</literal>,
+	  <literal>usa.weather</literal>,
+	  <literal>europe.news</literal>, or
+	  <literal>europe.weather</literal>. The subject (or more
+	  properly in this context subject pattern) used in the source
+	  address for a receiver can then include wildcard
+	  characters&mdash; <quote>#</quote> matches one or more words
+	  in the message's subject, <quote>*</quote> matches a single
+	  word. For instance, if the subject in the source address
+	  is <literal>*.news</literal>, it matches messages with the
+	  subject <literal>europe.news</literal> or
+	  <literal>usa.news</literal>; if it is
+	  <literal>europe.#</literal>, it matches messages with
+	  subjects like <literal>europe.news</literal> or
+	  <literal>europe.pseudo.news</literal>.</para>
+        
+        <para>Let's try this out using drain and spout. This time,
+	  let's use two-word keys.</para>
+
+        <para><emphasis>First Window:</emphasis></para>
+
+        <screen>
+          $ ./drain -a news-service/*.news -t 30
+        </screen>
+
+        <para>The drain program uses the subject
+	  <literal>*.news</literal> to listen for messages in which
+	  the second word of the key is
+	  <literal>news</literal>. Now let's send messages using
+	  several different two-word keys:</para>
+
+        <para><emphasis>Second Window:</emphasis></para>
+
+        <screen>
+          $ ./spout -a news-service/usa.news
+          $ ./spout -a news-service/usa.sports
+          $ ./spout -a news-service/europe.sports
+          $ ./spout -a news-service/europe.news
+        </screen>
+
+        <para>Now look at the first window, and you will see the
+	  messages with <literal>news</literal> in the second word of
+	  the key have been received:</para>
+
+        <screen>
+          Message(properties={qpid.subject:usa.news, spout-id:73fc8058-5af6-407c-9166-b49a9076097a:0}, content='')
+          Message(properties={qpid.subject:europe.news, spout-id:f72815aa-7be4-4944-99fd-c64c9747a876:0}, content='')
+        </screen>
+
+        <para>Finally, let's use the <literal>#</literal> wildcard to
+	  match any number of words in the key.</para>
+
+        <para><emphasis>First Window:</emphasis></para>
+
+        <screen>
+          $ ./drain -a news-service/#.news -t 30
+        </screen>
+
+        <para>Now let's send messages using a variety of different
+	  multi-word keys:</para>
+
+        <para><emphasis>Second Window:</emphasis></para>
+
+        <screen>
+          $ ./spout -a news-service/news
+          $ ./spout -a news-service/sports
+          $ ./spout -a news-service/usa.news
+          $ ./spout -a news-service/usa.sports
+          $ ./spout -a news-service/usa.faux.news
+          $ ./spout -a news-service/usa.faux.sports
+        </screen>
+
+        <para>Now look at the first window, and you will see the
+	  messages with <literal>news</literal> in the last word of
+	  the key have been received:</para>
+
+        <screen>
+          Message(properties={qpid.subject:news, spout-id:cbd42b0f-c87b-4088-8206-26d7627c9640:0}, content='')
+          Message(properties={qpid.subject:usa.news, spout-id:234a78d7-daeb-4826-90e1-1c6540781eac:0}, content='')
+          Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b-cbe4a81fca5f:0}, content='')
+        </screen>
+      </example>
+
+      <para>
+        More detail on the handling of subjects with AMQP 0-10 is
+        presented in the section on the AMQP 0-10 mapping. Let's now
+        turn our attention to the third and final component of an
+        address string, the options map. 
+      </para>
+
+      <para>
+        The options map contains additional information about the
+        address including:
+      </para>
+      <itemizedlist>
+        <listitem>
+          <para>
+            policies for asserting facts about the node to which an address refers
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            policies for automatically creating, and deleting the node to which an address refers
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            extension points that can be used for sender/receiver configuration
+          </para>
+        </listitem>
+      </itemizedlist>
+
+      <para>
+        Let's use <command>drain</command> and <command>spout</command>
+        to show some options in action.
+      </para>
+      
+      <para>
+        First, let's use the <literal>assert</literal> option to
+        ensure that the address resolves to a node of the required
+        type.  Recall that in the Qpid Messaging API, an address may
+        resolve to a queue or a topic
+        <footnote><para>Queue here means the same as it does in AMQP
+            0-10. Topic is used to describe a publish-subscribe based
+            addressing scheme and resolves to what AMQP 0-10 calls an
+            exchange.</para></footnote>. We use qpid-config to create a
+        queue and an topic.
+      </para>
+
+      <screen>
+        $ qpid-config add queue my-queue
+        $ qpid-config add exchange topic my-topic
+      </screen>
+      
+      <para>
+        We can now use the address specified to drain to assert that it is
+        of a particular type:
+      </para>
+
+      <screen>
+        $ ./drain -a 'my-queue; {assert: always, node:{ type: queue }}'
+        $ ./drain -a 'my-queue; {assert: always, node:{ type: topic }}'
+        2010-04-20 17:30:46 warning Exception received from broker: not-found: not-found: Exchange not found: my-queue (../../src/qpid/broker/ExchangeRegistry.cpp:92) [caused by 2 \x07:\x01]
+        Exchange my-queue does not exist
+      </screen>
+
+      <para>
+        The first attempt passed without error as my-queue is indeed a
+        queue. The second attempt however failed; my-queue is not a
+        topic.
+      </para>
+      
+      <para>
+        We can do the same thing for my-topic:
+      </para>
+
+      <screen>
+        $ ./drain -a 'my-topic; {assert: always, node:{ type: topic }}'
+        $ ./drain -a 'my-topic; {assert: always, node:{ type: queue }}'
+        2010-04-20 17:31:01 warning Exception received from broker: not-found: not-found: Queue not found: my-topic (../../src/qpid/broker/SessionAdapter.cpp:754) [caused by 1 \x08:\x01]
+        Queue my-topic does not exist
+      </screen>
+
+      <para>Now let's use the <literal>create</literal> option with <command>drain</command>, telling it to create the queue <literal>xoxox</literal> if it does not already exist:</para>
+
+      <para><emphasis>First Window:</emphasis></para>
+      <screen>$ ./drain -a "xoxox ; {create: always}" -t 30</screen>
+
+      <para>In previous examples, we created the queue before listening for messages on it. Using <literal>create: always</literal>, the queue is automatically created if it does not exist. Now we can send messages to this queue:</para>
+
+      <para><emphasis>Second Window:</emphasis></para>
+      <screen>$ ./spout -a "xoxox ; {create: always}"</screen>
+
+      <para>Returning to the first window, we see that <command>drain</command> has received this message:</para>
+
+      <screen>Message(properties={spout-id:1a1a3842-1a8b-4f88-8940-b4096e615a7d:0}, content='')</screen>
+
+      <!--
+         TODO: Add some x-declare, x-subscribe, link, x-bindings examples
+        -->
+
+      <para>Other options specify message transfer semantics; for
+        instance, they may state whether messages should be consumed or
+        read in browsing mode, or specify reliability characteristics.</para>
+
+      <example>
+        <title>Browsing a queue</title>
+        <para>
+          Let's use the browse mode to receive messages without
+          removing them from the queue. First we send three messages to the
+          queue:
+        </para>
+        <screen>
+          $ ./spout -a my-queue --content one
+          $ ./spout -a my-queue --content two
+          $ ./spout -a my-queue --content three
+        </screen>
+        
+        <para>Now we use drain to get those messages, but specify the browse option:</para>
+        <screen>
+          $ ./drain -a 'my-queue; {mode: browse}'
+          Message(properties={spout-id:fbb93f30-0e82-4b6d-8c1d-be60eb132530:0}, content='one')
+          Message(properties={spout-id:ab9e7c31-19b0-4455-8976-34abe83edc5f:0}, content='two')
+          Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='three')
+        </screen>
+        
+        <para>We can confirm the messages are still on the queue my repeating the drain:</para>
+        <screen>
+          $ ./drain -a 'my-queue; {mode: browse}'
+          Message(properties={spout-id:fbb93f30-0e82-4b6d-8c1d-be60eb132530:0}, content='one')
+          Message(properties={spout-id:ab9e7c31-19b0-4455-8976-34abe83edc5f:0}, content='two')
+          Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='three')
+        </screen>
+      </example>
+
+      <!--
+         TODO: Add some reliability option examples
+        -->
+
+      <table>
+        <title>Address Options</title>
+        <tgroup cols="3">
+          <thead>
+	    <row>
+	      <entry>option</entry>
+	      <entry>value</entry>
+	      <entry>semantics</entry>
+	    </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>
+	        assert
+	      </entry>
+	      <entry>
+	        one of: always, never, sender or receiver
+	      </entry>
+	      <entry>
+	        Asserts that the properties specified in the node option
+	        match whatever the address resolves to. If they don't,
+	        resolution fails and an exception is raised. <!-- ###
+	                                                          Which exception -->
+	      </entry>
+	    </row>
+
+	    <row>
+	      <entry>
+	        create
+	      </entry>
+	      <entry>
+                one of: always, never, sender or receiver
+	      </entry>
+	      <entry>
+	        Creates the node to which an address refers if it does
+	        not exist. No error is raised if the node does
+	        exist. The details of the node may be specified in the
+	        node option.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        delete
+	      </entry>
+	      <entry>
+                one of: always, never, sender or receiver
+	      </entry>
+	      <entry>
+	        Delete the node when the sender or receiver is closed.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        node
+	      </entry>
+	      <entry>
+	        A nested map the valid entries in which are described by
+	        the node properties table below.
+	      </entry>
+	      <entry>
+                Specifies properties of the node to which the address
+                refers. These are used in conjunction with the assert or
+                create options.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        link
+	      </entry>
+	      <entry>
+	        A nested map the valid entries in which are described by
+	        the link properties table below.
+	      </entry>
+	      <entry>
+                Used to control the establishment of a conceptual link
+                from the client application to or from the target/source
+                address.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        mode
+	      </entry>
+	      <entry>
+	        one of: browse, consume
+	      </entry>
+	      <entry>
+                This option is only of relevance for source addresses
+                that resolve to a queue. If browse is specified the
+                messages delivered to the receiver are left on the queue
+                rather than being removed. If consume is specified the
+                normal behaviour applies; messages are removed from teh
+                queue once the client acknoweldges their receipt.
+	      </entry>
+	    </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+
+      <table>
+        <title>Node Properties</title>
+        <tgroup cols="3">
+          <thead>
+	    <row>
+	      <entry>property</entry>
+	      <entry>value</entry>
+	      <entry>semantics</entry>
+	    </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>
+	        type
+	      </entry>
+	      <entry>
+	        topic, queue
+	      </entry>
+	      <entry>
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        durable
+	      </entry>	       
+	      <entry>
+	        True, False
+	      </entry>
+	      <entry>
+                Indicates whether the node will survive a loss of
+                volatile storage e.g. if the broker is restarted.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        x-declare
+	      </entry>
+	      <entry>
+	        A nested map whose values correspond to the valid fields
+	        on an AMQP 0-10 queue-declare or exchange-declare
+	        command.
+	      </entry>
+	      <entry>
+                These values are used to fine tune the creation or
+                assertion process. Note however that they are protocol
+                specific.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        x-bindings
+	      </entry>
+	      <entry>
+	        A nested list each of whose entries is a map that may
+	        contain fields (queue, exchange, key and arguments)
+	        describing an AMQP 0-10 binding. 
+	      </entry>
+	      <entry>
+                In conjunction with the create option, each of these
+	        bindings will be established as the address is
+	        resolved. In conjunction with the assert option, the
+	        existence of each of these bindings will be verified
+	        during resolution. Again, these are protocol specific.
+	      </entry>
+	    </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <table>
+        <title>Link Properties</title>
+        <tgroup cols="3">
+          <thead>
+	    <row>
+	      <entry>option</entry>
+	      <entry>value</entry>
+	      <entry>semantics</entry>
+	    </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>
+	        reliability
+	      </entry>
+	      <entry>
+	        one of: unreliable, at-least-once, at-most-once, exactly-once
+	      </entry>
+	      <entry>
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        durable
+	      </entry>	       
+	      <entry>
+	        True, False
+	      </entry>
+	      <entry>
+                Indicates whether the link will survive a loss of
+                volatile storage e.g. if the broker is restarted.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        x-declare
+	      </entry>
+	      <entry>
+	        A nested map whose values correspond to the valid fields
+	        on an AMQP 0-10 queue-declare command.
+	      </entry>
+	      <entry>
+                These values can be used to customise the subscription
+	        queue in the case of receiving from an exchange. Note
+	        however that they are protocol specific.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        x-subscribe
+	      </entry>
+	      <entry>
+	        A nested map whose values correspond to the valid fields
+	        on an AMQP 0-10 message-subscribe command.
+	      </entry>
+	      <entry>
+                These values can be used to customise the subscription.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        x-bindings
+	      </entry>
+	      <entry>
+	        A nested list each of whose entries is a map that may
+	        contain fields (queue, exchange, key and arguments)
+	        describing an AMQP 0-10 binding.
+	      </entry>
+	      <entry>
+                These bindings will be established during resolution
+                independent of the create option. They are considered
+                logically part of the linking process rathe rthan of
+                node creation.
+	      </entry>
+	    </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+    </section>
+
+    <section>
+      <title>Reconnect/Failover</title>
+      <table>
+        <title>Connection properties</title>
+        <tgroup cols="3">
+          <thead>
+	    <row>
+	      <entry>property</entry>
+	      <entry>value</entry>
+	      <entry>semantics</entry>
+	    </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>
+	        reconnect
+	      </entry>
+	      <entry>
+	        True, False
+	      </entry>
+	      <entry>
+	        Transparently reconnect if the connection is lost.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_timeout
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Total number of seconds to continue reconnection attempts before giving up and raising an exception.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_limit
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Maximum number of reconnection attempts before giving up and raising an exception.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_interval_min
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnection interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_interval_max
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Maximum reconnection interval.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnection_interval
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
+	      </entry>
+	    </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>The AMQP 0-10 mapping in more detail</title>
+
+      <para>
+        The interaction with the broker triggered by creating a sender
+        or receiver depends on what the specified address resolves
+        to. Where the node type is not specified in the address, the
+        client queries the broker to determine whether it refers to a
+        queue or an exchange.
+      </para>
+      <para>
+        When sending to a queue, the queue's name is set as the
+        routing key and the message is transfered to the default (or
+        nameless) exchange. When sending to an exchange, the message
+        is transfered to that exchange and the routing key is set to
+        the message subject if one is specified. A default subject may
+        be specified in the target address. The subject may also be
+        set on each message individually to override the default if
+        required. In each case any specified subject is also added as
+        a qpid.subject entry in the application-headers field of the
+        message-properties.
+      </para>
+      <para>
+        When receiving from a queue, any subject in the source address
+        is currently ignored. The client sends a message-subscribe
+        request for the queue in question. The accept-mode is
+        determined by the reliability option in the link properties;
+        for unreliable links the accept-mode is none, for reliable
+        links it is explicit. The default for a queue is reliable. The
+        acquire-mode is determined by the value of the mode option. If
+        the mode is set to browse the acquire mode is not-acquired,
+        otherwise it is set to pre-acquired. The exclusive and
+        arguments fields in the message-subscribe command can be
+        controlled using the x-subscribe map.
+      </para>
+      <para>
+        When receiving from an exchange, the client creates a
+        subscription queue and binds that to the exchange. The
+        subscription queue's arguments can be specified using the
+        x-declare map within the link properties. The reliability
+        option determines most of the other parameters. If the
+        reliability is set to unreliable then an auto-deleted,
+        exclusive queue is used meaning that if the client or
+        connection fails messages may be lost. For exactly-once the
+        queue is not set to be auto-deleted. The durability of the
+        subscription queue is determined by the durable option in the
+        link properties. The binding process depends on the type of
+        the exchange the source address resolves to.
+      </para>
+
+      <itemizedlist>
+        <listitem>
+          <para>
+            For a topic exchange, if no subject is specified and no
+            x-bindings are defined for the link, the subscription
+            queue will by be bound using a wildcard matching any
+            routing key (thus satisfying the expectation that any
+            message sent to that address will be received from it). If
+            a subject is specified in the source address however, it
+            will be used for the binding key (this means that the
+            subject in the source address may be a binding pattern
+            incuding wildcards).
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            For a fanout exchange the binding key is irrelevant to
+            matching. A receiver created from a source address that
+            resolves to a fanout exchange will receive all messages
+            sent to that exchange regardless of any subject the source
+            address may contain. An x-bindings element in the link
+            properties should be used if there is any need to set the
+            arguments to the bind.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            A source address that resolves to a direct exchange must
+            either contain a subject or must include a value for the
+            x-bindings option in the link properties. This is because
+            there is no way to receive all messages sent to an
+            exchange of that type. The subject specified will be used
+            as the binding key (this means it must match the message
+            subject exactly).
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            For a headers exchange, if no subject is specified the
+            binding arguments will simply contain an x-match entry an
+            no other entries, causing all messages to match. If a
+            subject is specified then the binding arguments will
+            contain an x-match entry set to all and an entry for
+            qpid.subject whose value is the subject in the source
+            address (this means the subject in the source address must
+            match the message subject exactly). For more control the
+            x-bindings element in the link properties must be used.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            For the XML exchange<footnote><para>Note that the XML
+            exchange is not a standard AMQP exchange type. It is a
+            Qpid extension and is currently only supported by the c++
+            broker.</para></footnote> if a subject is specified it is
+            used as the bidning key and an xquery is defined that will
+            match any message with that value for qpid.subject. Again
+            this means that only messages whose subject exactly match
+            that specified in the source address will be received. For
+            more control the x-bindings element in the link properties
+            must be used. A source address that resolves to the XML
+            exchange must contain either a subject or an x-bindings
+            element in the link properties as there is no way at
+            present to receive any message regardless of routing key.
+          </para>
+        </listitem>
+      </itemizedlist>
+
+      <para>
+        If an x-bindings list is present in the link options a binding
+        is created for each element within that list. Each element is
+        a nested map that may contain values named queue, exchange,
+        key or arguments. If the queue value is absent the queue name
+        the address resolves to is implied. If the exchange value is
+        absent the exchange name the address resolves to is implied.
+      </para>
+
+      <para>The following table shows how Qpid Messaging API message
+        properties are mapped to AMQP 0-10 message properties and
+        delivery properties. In this table <varname>msg</varname>
+        refers to the Message class defined in the Qpid Messaging API,
+        <varname>mp</varname> refers to an AMQP 0-10
+        <varname>message-properties</varname> struct, and
+        <varname>dp</varname> refers to an AMQP 0-10
+        <varname>delivery-properties</varname> struct.</para>
+
+      <table>
+        <title>Mapping to AMQP 0-10 Message Properties</title>
+        <tgroup cols="3">
+          <thead>
+	    <row>
+	      <entry>Python API</entry>
+	      <entry>C++ API</entry>
+	      <entry>AMQP 0-10 Property</entry>
+	    </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>msg.id</entry><entry>msg.{get,set}MessageId()</entry><entry>mp.message_id</entry>
+	    </row>
+	    <row>
+	      <entry>msg.subject</entry><entry>msg.{get,set}Subject()</entry><entry>mp.application_headers["qpid.subject"]</entry>
+	    </row>
+	    <row>
+	      <entry>msg.user_id</entry><entry>msg.{get,set}UserId()</entry><entry>mp.user_id</entry>
+	    </row>
+	    <row>
+	      <entry>msg.reply_to</entry><entry>msg.{get,set}ReplyTo()</entry><entry>mp.reply_to<footnote><para>The reply_to is converted from the protocol representation into an address.</para></footnote></entry>
+	    </row>
+	    <row>
+	      <entry>msg.correlation_id</entry><entry>msg.{get,set}CorrelationId()</entry><entry>mp.correlation_id</entry>
+	    </row>
+	    <row>
+	      <entry>msg.durable</entry><entry>msg.{get,set}Durable()</entry><entry>dp.delivery_mode == delivery_mode.persistent<footnote><para>Note that msg.durable is a boolean, not an enum.</para></footnote></entry>
+	    </row>
+	    <row>
+	      <entry>msg.priority</entry><entry>msg.{get,set}Priority()</entry><entry>dp.priority</entry>
+	    </row>
+	    <row>
+	      <entry>msg.ttl</entry><entry>msg.{get,set}Ttl()</entry><entry>dp.ttl</entry>
+	    </row>
+	    <row>
+	      <entry>msg.redelivered</entry><entry>msg.{get,set}Redelivered()</entry><entry>dp.redelivered</entry>
+	    </row>
+	    <row><entry>msg.properties</entry><entry>msg.{get,set}Properties()</entry><entry>mp.application_headers</entry>
+	    </row>
+	    <row>
+	      <entry>msg.content_type</entry><entry>msg.{get,set}ContentType()</entry><entry>mp.content_type</entry>
+	    </row>
+          </tbody>
+        </tgroup>
+      </table>
+      
+    </section>
   </section>
 
-  <section>
-    <title>A Simple Messaging Program in Java JMS</title>
 
-    <para>The following program shows how to use address strings and
-    JNDI for Qpid programs that use Java JMS.</para>
+  <section id="QpidJMS">
+    <title>Using the Qpid JMS client</title>
+    <section>
+      <title>A Simple Messaging Program in Java JMS</title>
+      
+      <para>The following program shows how to use address strings and
+        JNDI for Qpid programs that use Java JMS.</para>
 
-    <para>This program uses a JNDI file that defines a connection
-    factory for the broker we are using, and the address of the topic
-    exchange node that we will bind the sender and receiver to. (The
-    syntax of a ConnectionURL is given in <xref
-    linkend="QpidJNDI"/>.)</para>
+      <para>This program uses a JNDI file that defines a connection
+        factory for the broker we are using, and the address of the topic
+        exchange node that we will bind the sender and receiver to. (The
+        syntax of a ConnectionURL is given in <xref
+                                                 linkend="QpidJNDI"/>.)</para>
 
-    <programlisting><![CDATA[
+      <programlisting><![CDATA[
 java.naming.factory.initial 
   = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 
@@ -198,9 +1165,9 @@ connectionfactory.qpidConnectionfactory
 destination.topicExchange = amq.topic
 ]]></programlisting>
 
-    <para>In the Java JMS code, we use create a JNDI context, use the context to find a connection factory and create and start a connection, create a session, and create a destination that corresponds to the topic exchange. Then we create a sender and a receiver, send a message with the sender, and receive it with the receiver. This code should be straightforward for anyone familiar with Java JMS.</para>
+      <para>In the Java JMS code, we use create a JNDI context, use the context to find a connection factory and create and start a connection, create a session, and create a destination that corresponds to the topic exchange. Then we create a sender and a receiver, send a message with the sender, and receive it with the receiver. This code should be straightforward for anyone familiar with Java JMS.</para>
 
-    <programlisting lang="java"><![CDATA[
+      <programlisting lang="java"><![CDATA[
 package org.apache.qpid.example.jmsexample.hello;
 
 import javax.jms.*;
@@ -250,1003 +1217,191 @@ public class Hello {
 }
 ]]></programlisting>
 
-  </section>
-
-  <section>
-    <title>Address Strings</title>
-
-    <para>As we have seen, an address is a string that identifies
-    objects on the messaging broker. An <firstterm>address</firstterm>
-    is simply a name.</para>
-
-    <para>An <firstterm>address string</firstterm> can also have a
-    <firstterm>subject</firstterm> and
-    <firstterm>options</firstterm>.</para>
-
-    <para>The syntax for an address string is:</para>
-
-<programlisting><![CDATA[
-address_string ::=  <adress> [ / <subject> ] [ ; <options> ]
-options ::=  { <key> : <value>, ... }
-]]></programlisting>
-
-    <para>Addresses, subjects, and keys are strings.</para>
-
-    <para>Values can be numbers, strings (with optional single or double quotes), maps, or lists.</para>
-
-    <para>In most cases, queues, bindings, and exchanges are
-    configured externally with management tools. Qpid Messaging API
-    clients send to and receive from these queues and exchanges.</para>
-
-    <para>In AMQP 0-10, messages are sent to exchanges, and received
-    from queues. The Qpid Messaging API allows programs to
-    send to or receive from any node. To make this possible, the
-    mapping defines the semantics of sending and receiving for all
-    AMQP 0-10 exchange types and queues as follows:
-
-    <itemizedlist>
-      <listitem><para>When a Sender sends a message to an exchange,
-      the transfer destination is set to the exchange name, and the
-      routing key is set to the value of the address string's
-      subject.</para></listitem>
-      <listitem><para>When a Receiver receives messages from an
-      exchange, the API automatically creates a subscription queue and
-      binds it to the exchange. If the address string contains a subject,
-      then it is used as the binding key. If the address string does not
-      contain a subject, then the binding key depends on the exchange
-      type:
-      <itemizedlist>
-	<listitem><para>topic exchange: wildcard match</para></listitem>
-	<listitem><para>direct exchange: error &mdash; the address string must specify a subject</para></listitem>
-	<listitem><para>fanout: none</para></listitem>
-	</itemizedlist></para>
-	<para>The subscription queue's <varname>durability</varname>
-	and <varname>autodelete</varname> properties can be set
-	using options.</para>
-      </listitem>
-      <listitem><para>When a Sender sends a message to a queue, the
-      message is sent to the AQMP 0-10 default queue, using the name
-      of the queue as the routing key.</para></listitem>
-      <listitem><para>When a Receiver receives messages from a queue,
-      it is treated as a normal AMQP 0-10 queue subscription. The
-      <varname>accept-mode</varname> property can be set using
-      options.</para></listitem>
-    </itemizedlist>
-    </para>
-
-    <para>The following sections describe the various kinds of
-    address strings in detail. The examples in these sections use the
-    <command>qpid-config</command> utility to configure AMQP 0-10
-    queues and exchanges, send messages using
-    <command>drain</command>, and receive messages using
-    <command>spout</command>. The source code for
-    <command>drain</command> and <command>spout</command> is available
-    in both C++ and Python, and can be found in the examples directory
-    for each language. These programs can use any address string as a source
-    or a destination, and have many command line options to configure
-    behavior&mdash;use the <command>-h</command> option for
-    documentation on these options.</para>
-
-
-    <section>
-      <title>Simple Address Strings</title>
-
-    <para>If an address string contains only a name, it is the address
-    of a named node. On AMQP 0-10, a named node maps to a queue or an
-    exchange with the same name.
-    <note>
-      <para>Address resolution is not yet well-defined if a queue and
-      an exchange have the same name. This is a known problem, and is
-      being resolved.</para>
-    </note></para>
-
-    <para>For many applications, there is no need to use anything more
-    complex than a simple address string.</para>
-
-    <example>
-      <title>Simple Address Strings</title>
-
-      <para>Create a queue with qpid-config, send a message using
-      spout, and read it using drain:</para>
-
-      <screen>
-$ qpid-config add queue hello-world
-$ ./spout -a hello-world
-$ ./drain -a hello-world
-
-Message(properties={spout-id:c877e622-d57b-4df2-bf3e-6014c68da0ea:0}, content='')
-      </screen>
-
-      <para>Exchanges and queues are addressed in exactly the same way
-      in the Qpid Messaging API. If we delete the queue named
-      <literal>hello-world</literal> and create an exchange with the
-      same name, we can write to and read from the exchange in the
-      same way as for the queue:</para>
-
-      <screen>
-$ qpid-config del queue hello-world
-$ qpid-config add exchange topic hello-world
-$ ./spout -a hello-world
-$ ./drain -a hello-world
-$
-      </screen>
-
-      <para>However, in AMQP 0-10, exchanges discard messages if no
-      queue is bound to the exchange, unlike queues, which store
-      messages until they are retrieved.  Because of this, no messages
-      were output in the above screen. If <command>drain</command> is
-      called before <command>spout</command>, a Receiver is created
-      for the exchange, which also creates a subscription queue and a
-      binding. Run <command>drain</command> in one terminal window
-      using <literal>-t</literal> to specify a timeout in seconds, and
-      run <command>spout</command> in another window to send a message
-      for <command>drain</command> to receive.</para>
-
-      
-      
-      <para><emphasis>First Window:</emphasis></para>
-
-      <screen>
-$ ./drain -a hello-word -t 30
-      </screen>
-      
-
-      <para><emphasis>Second Window:</emphasis></para>
-
-      <screen>
-$ ./spout -a hello-word
-      </screen>
-
-      <para>Once <command>spout</command> has sent a message, return
-      to the first window to see the output from
-      <command>drain</command>:</para>
-
-      <screen>
-Message(properties={spout-id:7da2d27d-93e6-4803-8a61-536d87b8d93f:0}, content='')
-      </screen>
-
-      <para>You can run <command>drain</command> in several separate
-      windows; each will create a subscription for the exchange, and
-      each will receive all messages sent to the exchange.</para>
-
-    </example>
-    </section>
-    
-    <section>
-      <title>Subjects</title>
-      <para>Subjects are used to classify messages.</para>
-
-      <para>A Sender's subject is assigned to each message that it
-      sends (this can be overridden by specifying a subject directly
-      on the message). In the AMQP 0-10 mapping, the message's subject
-      is used as the routing key for all messages sent to the
-      messaging broker. If a Sender is bound to an AMQP 0-10 exchange,
-      it sends messages to that exchange. If a Sender is bound to an
-      AMQP 0-10 queue, the message is sent to the default
-      exchange.</para>
-
-      <para>A Receiver's subject is used to filter messages; only
-      messages with a subject that matches the Receiver's subject will
-      be received. If a Receiver's name resolves to an AMQP 0-10
-      exchange, the subject is used as a binding key for the
-      corresponding AMQP 0-10 exchange type.
-      </para>
-
-      <note>
-	<para>The C++ implementation of the Qpid messaging broker does
-	not currently support selectors, so a Receiver's subject does
-	not filter messages if the Receiver's address resolves to a
-	queue.</para>
-      </note>
-
-      <section>
-	  <title>Direct Exchanges</title>
-
-	  <para>In an AMQP 0-10 direct exchange, messages are routed
-	  to queues if the routing key exactly matches the binding
-	  key. In the Qpid Messaging API, if a Sender and a
-	  Receiver are bound to the same exchange, the Receiver will
-	  receive messages if the Sender's subject matches the
-	  Receiver's subject.</para>
-
-	  <para>Let's create a direct exchange and listen for messages
-	  whose subject is <literal>sports</literal>:</para>
-
-	  <para><emphasis>First Window:</emphasis></para>
-	  <screen>
-$ qpid-config add exchange direct direct-exchange
-$ ./drain -a direct-exchange/sports -t 30
-	  </screen>
-
-	  <para>In a second window, let's send messages to the
-	  exchange we created:</para>
-
-	  <para><emphasis>Second Window:</emphasis></para>
-	  <screen>
-$ ./spout -a direct-exchange/sports
-$ ./spout -a direct-exchange/news
-	  </screen>
-
-	  <para>Now look at the first window, and you will see the
-	  message with the subject <literal>sports</literal> has been
-	  received, but not the message with the subject
-	  <literal>news</literal>:</para>
-
-	  <screen>
-Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea998291:0}, content='')
-	  </screen>
-
-	  <para>If you run <command>drain</command> in multiple
-	  windows using the same subject, all instances of
-	  <command>drain</command> receive the messages for that
-	  subject.</para>
-
-      </section>
-      <section>
-	  <title>Topic Exchanges</title>
-
-	  <para>An AMQP 0-10 topic exchange uses routing keys that
-	  contain multiple words separated by a <quote>.</quote>
-	  delimiter. For instance, in a news application, a Sender's
-	  subject might be <literal>usa.news</literal>,
-	  <literal>usa.weather</literal>,
-	  <literal>europe.news</literal>, or
-	  <literal>europe.weather</literal>. A Receiver's subject can
-	  include wildcard characters&mdash; <quote>#</quote> matches
-	  one or more words in the message's subject, <quote>*</quote>
-	  matches a single word. For instance, if the Receiver's
-	  subject is <literal>*.news</literal>, it matches messages
-	  with the subject <literal>europe.news</literal> or
-	  <literal>usa.news</literal>; if the Receiver's subject is
-	  <literal>europe.#</literal>, it matches messages with
-	  subjects like <literal>europe.news</literal> or
-	  <literal>europe.pseudo.news</literal>.</para>
-
-	  <para>Let's create a topic exchange and listen for messages
-	  whose subject is <literal>news</literal>:</para>
-
-	  <para><emphasis>First Window:</emphasis></para>
-
-	  <screen>
-$ qpid-config add exchange topic topic-exchange
-$ ./drain -a topic-exchange/news -t 30
-          </screen>
-
-	  <para>In a second window, let's send messages to the
-	  exchange we created:</para>
-
-	  <para><emphasis>Second Window:</emphasis></para>
-	  <screen>
-$ ./spout -a topic-exchange/news
-$ ./spout -a topic-exchange/sports
-	  </screen>
-
-
-	  <para>Now look at the first window, and you will see the
-	  message with the subject <literal>news</literal> has been
-	  received, but not the message with the subject
-	  <literal>sports</literal>:</para>
-
-	  <screen>
-Message(properties={qpid.subject:news, spout-id:bafefb74-c5be-4a8b-9e4b-45f7a855e250:0}, content='')
-	  </screen>
-
-
-	  <para>Now let's use the topic exchange with wildcards in the
-	  Receiver and multi-word keys in the Sender. This time, let's
-	  use two-word keys. The Receiver uses the subject
-	  <literal>*.news</literal> to listen for messages in which
-	  the second word of the key is
-	  <literal>news</literal>:</para>
-
-
-	  <para><emphasis>First Window:</emphasis></para>
-
-	  <screen>
-$ ./drain -a topic-exchange/*.news -t 30
-	  </screen>
-
-	  <para>Now let's send messages using several different
-	  two-word keys:</para>
-
-	  <para><emphasis>Second Window:</emphasis></para>
-
-	  <screen>
-$ ./spout -a topic-exchange/usa.news
-$ ./spout -a topic-exchange/usa.sports
-$ ./spout -a topic-exchange/europe.sports
-$ ./spout -a topic-exchange/europe.news
-$ 
-	  </screen>
-
-	  <para>Now look at the first window, and you will see the
-	  messages with <literal>news</literal> in the second word of
-	  the key have been received:</para>
-
-	  <screen>
-Message(properties={qpid.subject:usa.news, spout-id:73fc8058-5af6-407c-9166-b49a9076097a:0}, content='')
-Message(properties={qpid.subject:europe.news, spout-id:f72815aa-7be4-4944-99fd-c64c9747a876:0}, content='')
-	  </screen>
-
-	  <para>Finally, let's use the <literal>#</literal> wildcard
-	  in the Receiver to match any number of words in the key. The
-	  Receiver uses the key <literal>#.news</literal> to listen
-	  for messages in which the last word of the key is
-	  <literal>news</literal>, no matter how many words are in the
-	  key:</para>
-
-	  <para><emphasis>First Window:</emphasis></para>
-
-	  <screen>
-$ ./drain -a topic-exchange/#.news -t 30
-	  </screen>
-
-	  <para>Now let's send messages using a variety of different
-	  multi-word keys:</para>
-
-	  <para><emphasis>Second Window:</emphasis></para>
-
-	  <screen>
-$ ./spout -a topic-exchange/news
-$ ./spout -a topic-exchange/sports
-$ ./spout -a topic-exchange/usa.news
-$ ./spout -a topic-exchange/usa.sports
-$ ./spout -a topic-exchange/usa.faux.news
-$ ./spout -a topic-exchange/usa.faux.sports
-	  </screen>
-
-	  <para>Now look at the first window, and you will see the
-	  messages with <literal>news</literal> in the last word of
-	  the key have been received:</para>
-
-	  <screen>
-Message(properties={qpid.subject:news, spout-id:cbd42b0f-c87b-4088-8206-26d7627c9640:0}, content='')
-Message(properties={qpid.subject:usa.news, spout-id:234a78d7-daeb-4826-90e1-1c6540781eac:0}, content='')
-Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b-cbe4a81fca5f:0}, content='')
-	  </screen>
-
-	</section>
-
-	<section>
-	  <title>Fanout Exchanges</title>
-
-	  <para>A fanout exchange ignores the subject, and no
-	  filtering is done.</para>
-
-	  <para>Let's create a fanout exchange and listen for
-	  messages.  We will use the subject <literal>news</literal>
-	  in the Receiver to demonstrate that this subject is not
-	  actually used to filter messages:</para>
-
-
-	  <para><emphasis>First Window:</emphasis></para>
-
-	  <screen>
-$ qpid-config add exchange fanout fanout-exchange
-$ ./drain -a fanout-exchange/news -t 30
-	  </screen>
-
-	  <para>Now let's send a message using a different
-	  subject:</para>
-
-	  <para><emphasis>Second Window:</emphasis></para>
-
-	  <screen>
-$ ./spout -a fanout-exchange/sports
-	  </screen>
-
-	  <para>Returning to the first window, we see that the message
-	  was received even though the Receiver's subject was
-	  different from the Sender's subject:</para>
-
-	  <screen>
-Message(properties={qpid.subject:sports, spout-id:931399a1-27fc-471c-8dbe-3048260f9441:0}, content='')
-	  </screen>
-
-	  <para>This happens because of the routing semantics of the AMQP 0-10 fanout exchange.</para>
-
-	</section>
-
-	</section>
-	<section>
-	  <title>Queues</title>
-
-	  <para>If a Sender is bound to a queue, its messages are sent
-	  to the default exchange using the queue's name as the
-	  routing key. If a Receiver is bound to a queue, it receives
-	  messages from the queue.</para>
-
-	  <para>Let's create a queue and listen for messages on it.</para>
-
-	  <para><emphasis>First Window:</emphasis></para>
-
-	  <screen>
-$ ./qpid-config add queue amqp010-queue
-$ ./drain -a amqp010-queue -t 30
-	  </screen>
-
-	  <para>Now let's send some messages. The subject is not used for routing purposes.</para>
-
-	  <para><emphasis>Second Window:</emphasis></para>
-
-	  <screen>
-$ ./spout -a amqp010-queue/news
-$ ./spout -a amqp010-queue
-	  </screen>
-
-	  <para>Now look at the first window, and you will see that
-	  both messages have been received:</para>
-
-	  <screen>
-Message(properties={qpid.subject:news, spout-id:6c769437-60be-4bc0-9bf6-5a77cb6ba65f:0}, content='')
-Message(properties={spout-id:c8ab5013-a19e-4f54-967c-797c8ad6568b:0}, content='')
-	  </screen>
-
-	</section>
-
-
-	<!-- ### match exchange? -->
-
-	<section>
-	  <title>Custom Exchanges</title>
-	
-	  <para>AMQP 0-10 also supports custom exchanges. The
-	  Qpid messaging broker includes the XML Exchange, which uses an
-	  XQuery to filter messages based on message properties and XML
-	  message content.</para>
-
-<!-- ### Do drain / spout support the XML Exchange? -->
-
-	</section>
-
     </section>
 
-
-    <section>
-      <title>Extended Address Options</title>
-
-      <para>Extended Address Options are parameters that affect the behavior of Senders and Receivers.</para>
-
-      <para>Some of these options specify aspects of the resolution process; for instance, they may make assertions that must be satisfied in order for resolution to succeed, or they may state that the node should be created if it does not already exist.</para>
-
-      <para>Let's use <command>drain</command> and <command>spout</command> to show how this works. First, let's use the <literal>assert</literal> option to insist that an address must resolve to a queue.  In the Qpid Messaging API, a node is either a queue or a topic. A queue is used the same way as in AMQP 0-10, a topic node is the same thing AMQP 0-10 calls an exchange. (In this section, we will use the term <quote>topic node</quote> for a Qpid Messaging API topic node, and <quote>AMQP 0-10 topic exchange</quote> for the exchange type that has the same name.) </para>
-
-      <para>AMQP 0-10 has several built-in exchanges that are predeclared: <literal>amq.topic</literal>, <literal>amq.direct</literal>, <literal>amq.match</literal>, and <literal>amq.fanout</literal>. In the Qpid Messaging API, any of these exchanges is considered a topic node. Let's use <command>drain</command>, and assert that  <literal>amq.fanout</literal> is a topic node:</para>
-
-      <screen>$ ./drain -a "amq.fanout; { assert: always, node: { type: topic }}"</screen>
-
-      <para>The address resolves succesfully. No exception is raised, because a topic node named <literal>amq.fanout</literal> exists. Now let's assert that <literal>amq.fanout</literal> is a queue node:</para>
-
-      <screen>$ ./drain -a "amq.fanout; { assert: always, node: { type: queue }}"
-2010-04-09 14:01:35 warning Exception received from broker: not-found: not-found: Queue not found: amq.fanout (qpid/broker/SessionAdapter.cpp:753) [caused by 0 \x08:\x01]
-Queue amq.fanout does not exist</screen>
-
-      <para>An exception was raised because there is no queue named <literal>amq.fanout</literal>, so address resolution failed.</para>
-
-
-      <para>Now let's use the <literal>create</literal> option with <command>drain</command>, telling it to create the queue <literal>xoxox</literal> if it does not already exist:</para>
-
-      <para><emphasis>First Window:</emphasis></para>
-      <screen>$ ./drain -a "xoxox ; {create: always}" -t 30</screen>
-
-      <para>In previous examples, we created the queue before listening for messages on it. Using <literal>create: always</literal>, the queue is automatically created if it does not exist. Now we can send messages to this queue:</para>
-
-      <para><emphasis>Second Window:</emphasis></para>
-      <screen>$ ./drain -a "xoxox ; {create: always}" -t 30</screen>
-
-      <para>Returning to the first window, we see that <command>drain</command> has received this message:</para>
-
-      <screen>Message(properties={spout-id:1a1a3842-1a8b-4f88-8940-b4096e615a7d:0}, content='')</screen>
-
-<!--
-TODO: Add some x-declare, x-subscribe, link, x-bindings examples
--->
-
-
-      <para>Other options specify message transfer semantics; for instance, they may state whether messages should be consumed or read in browsing mode, or specify reliability characteristics. For instance, we can use browse mode to receive messages without removing them from the queue, thus allowing other Readers to receive them:</para>
-
-      <screen>
-$ ./drain 'hello-queue; {mode: browse}'
-      </screen>
-
-<!--
-TODO: Add some reliability option examples
--->
-
-      <table>
-	<title>Extended Address Options</title>
-	<tgroup cols="3">
-	  <thead>
-	    <row>
-	      <entry>option</entry>
-	      <entry>parameters</entry>
-	      <entry>semantics</entry>
-	    </row>
-	  </thead>
-	  <tbody>
-	    <row>
-	      <entry>
-		assert
-	      </entry>
-	      <entry>
-		node
-	      </entry>
-	      <entry>
-		Asserts that the node properties are satisfied for a
-		node. If they are not, node resolution fails and an
-		exception is raised. <!-- ### Which exception -->
-	      </entry>
-	    </row>
-
-	    <row>
-	      <entry>
-		create
-	      </entry>
-	      <entry>
-		node (optional)
-	      </entry>
-	      <entry>
-		Creates the node if it does not exist. No error is raised if the node does exist.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		delete
-	      </entry>
-	      <entry>
-		N/A
-	      </entry>
-	      <entry>
-		Delete the node when the Sender or Receiver is closed.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		reliability
-	      </entry>
-	      <entry>
-		unreliable, at-least-once, at-most-once, exactly-once
-	      </entry>
-	      <entry>
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		mode
-	      </entry>
-	      <entry>
-		browse, consume
-	      </entry>
-	      <entry>
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		reconnect
-	      </entry>
-	      <entry>
-	        True, False
-	      </entry>
-	      <entry>
-		Transparently reconnect if the connection is lost.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		reconnect_timeout
-	      </entry>
-	      <entry>
-		N
-	      </entry>
-	      <entry>
-		Total number of seconds to continue reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		reconnect_limit
-	      </entry>
-	      <entry>
-		N
-	      </entry>
-	      <entry>
-		Maximum number of reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		reconnect_interval_min
-	      </entry>
-	      <entry>
-		N
-	      </entry>
-	      <entry>
-		Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnection interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		reconnect_interval_max
-	      </entry>
-	      <entry>
-		N
-	      </entry>
-	      <entry>
-		Maximum reconnection interval.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		reconnection_interval
-	      </entry>
-	      <entry>
-		N
-	      </entry>
-	      <entry>
-		Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
-	      </entry>
-	    </row>
-	  </tbody>
-	</tgroup>
-      </table>
-
-
-      <table>
-	<title>Node Properties</title>
-	<tgroup cols="3">
-	  <thead>
-	    <row>
-	      <entry>property</entry>
-	      <entry>parameters</entry>
-	      <entry>semantics</entry>
-	    </row>
-	  </thead>
-	  <tbody>
-	    <row>
-	      <entry>
-		type
-	      </entry>
-	      <entry>
-		topic, queue
-	      </entry>
-	      <entry>
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		durable
-	      </entry>	       
-	      <entry>
-		True, False
-	      </entry>
-	      <entry>
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		x-declare
-	      </entry>
-	      <entry>
-		unrestricted map
-	      </entry>
-	      <entry>
-                If the property is defined in the underlying protocol (AMQP 0-10), the values and semantics are defined by the protocol. Otherwise, values are added to the arguments map used to declare topics<footnote><para>The Qpid Messaging API, like Java JMS, uses the term topic to refer to what AMQP 0-10 calls an exchange. One kind of AMQP 0-10 exchange is called a topic exchange, that is not what is meant here.</para></footnote> or queues.
-	      </entry>
-	    </row>
-	  </tbody>
-	</tgroup>
-      </table>
-
-
-
-     <table>
-	<title>x-declare properties for AMQP 0-10</title>
-	<tgroup cols="3">
-	  <thead>
-	    <row>
-	      <entry>property</entry>
-	      <entry>parameters</entry>
-	      <entry>semantics</entry>
-	    </row>
-	  </thead>
-	  <tbody>
-	    <row>
-	      <entry>
-		type
-	      </entry>
-	      <entry>
-		direct, topic, fanout, header, xml
-	      </entry>
-	      <entry>
-                The AMQP 0-10 exchange type. 		
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		bindings
-	      </entry>
-	      <entry>
-		["exchange/binding-key", ... ] 
-	      </entry>
-	      <entry>
-		This property is used to create bindings for queues. If the Address does not resolve to a queue, an error is raised. 
-	      </entry>
-	    </row>
-	  </tbody>
-	</tgroup>
-     </table>
-
-
-  </section>
-
-
-  <section>
-    <title>Messaging Properties</title>
-
-    <para>This section shows how Qpid Messaging API message
-    properties are mapped to AMQP message properties and delivery
-    properties.</para>
-
-    <para>Request-response applications frequently use a reply-to property to tell a server where to send a response. The following C++ code shows how a server extracts the reply-to property and uses it to set the address to respond to a client.</para>
-
-    <programlisting lang="c++">
-Message request = receiver.fetch();
-const Address&amp; address = request.getReplyTo(); // Get "reply-to" from request ...
-if (address) {
-    Sender sender = session.createSender(address); // ... send response to "reply-to"
-    std::string s = request.getContent();
-    std::transform(s.begin(), s.end(), s.begin(), toupper);
-    Message response(s);
-    sender.send(response);
-    session.acknowledge();
-}
-    </programlisting>
-
-    <para>In the following table, <varname>msg</varname> refers to the
-    Message class defined in the Qpid Messaging API,
-    <varname>mp</varname> refers to an AMQP 0-10
-    <varname>message-properties</varname> struct, and
-    <varname>dp</varname> refers to an AMQP 0-10
-    <varname>delivery-properties</varname> struct.</para>
-
-     <table>
-       <title>Mapping to AMQP 0-10 Message Properties</title>
-       <tgroup cols="3">
-	 <thead>
-	   <row>
-	     <entry>Python API</entry>
-	     <entry>C++ API</entry>
-	     <entry>AMQP 0-10 Property</entry>
-	   </row>
-	 </thead>
-	 <tbody>
-	   <row>
-	     <entry>msg.id</entry><entry>msg.{get,set}MessageId()</entry><entry>mp.message_id</entry>
-	   </row>
-	   <row>
-	     <entry>msg.to</entry><entry>- -</entry><entry>mp.application_headers["qpid.to"]</entry>
-	   </row>
-	   <row>
-	     <entry>msg.subject</entry><entry>msg.{get,set}Subject()</entry><entry>mp.application_headers["qpid.subject"]</entry>
-	   </row>
-	   <row>
-	     <entry>msg.user_id</entry><entry>msg.{get,set}UserId()</entry><entry>mp.user_id</entry>
-	   </row>
-	   <row>
-	     <entry>msg.reply_to</entry><entry>msg.{get,set}ReplyTo()</entry><entry>mp.reply_to<footnote><para>The reply_to is converted from the protocol representation into an address.</para></footnote></entry>
-	   </row>
-	   <row>
-	     <entry>msg.correlation_id</entry><entry>msg.{get,set}CorrelationId()</entry><entry>mp.correlation_id</entry>
-	   </row>
-	   <row>
-	     <entry>msg.durable</entry><entry>msg.{get,set}Durable()</entry><entry>dp.delivery_mode == delivery_mode.persistent<footnote><para>Note that msg.durable is a boolean, not an enum.</para></footnote></entry>
-	   </row>
-	   <row>
-	     <entry>msg.priority</entry><entry>msg.{get,set}Priority()</entry><entry>dp.priority</entry>
-	   </row>
-	   <row>
-	     <entry>msg.ttl</entry><entry>msg.{get,set}Ttl()</entry><entry>dp.ttl</entry>
-	   </row>
-	   <row>
-	     <entry>msg.redelivered</entry><entry>msg.isRedelivered()</entry><entry>dp.redelivered</entry>
-	   </row>
-	   <row><entry>msg.properties</entry><entry>msg.{get,set}Headers()</entry><entry>mp.application_headers</entry>
-	   </row>
-	   <row>
-	     <entry>msg.content_type</entry><entry>msg.{get,set}ContentType()</entry><entry>mp.content_type</entry>
-	   </row>
-	 </tbody>
-       </tgroup>
-     </table>
-
-<!--
-Examples - do client / server, pub-sub here...
--->
-
-  </section>
-  <section id="QpidJNDI">
-    <title>Apache Qpid JNDI Properties for AMQP Messaging</title>
+    <section id="QpidJNDI">
+      <title>Apache Qpid JNDI Properties for AMQP Messaging</title>
 
 
       <para>Apache Qpid defines JNDI properties that can be used to
-      specify the parameters for a connection. Here is a typical JNDI properties file:</para>
+        specify the parameters for a connection. Here is a typical JNDI properties file:</para>
 
       <programlisting>java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 
-# register some connection factories
-# connectionfactory.[jndiname] = [ConnectionURL]
-connectionfactory.qpidConnectionfactory 
-  = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
+        # register some connection factories
+        # connectionfactory.[jndiname] = [ConnectionURL]
+        connectionfactory.qpidConnectionfactory 
+        = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
 
-# Register an AMQP destination in JNDI
-# destination.[jndiName] = [Address]
-destination.directQueue 
-  = direct://amq.direct//message_queue?routingkey=&#39;routing_key&#39;
+        # Register an AMQP destination in JNDI
+        # destination.[jndiName] = [Address]
+        destination.directQueue 
+        = direct://amq.direct//message_queue?routingkey=&#39;routing_key&#39;
       </programlisting>
 
       <para>The following sections describe the JNDI properties that Qpid uses.</para>
 
-    
-    <section>
-      <title>JNDI Properties for Apache Qpid</title>
-      <para>
-	Apache Qpid supports the properties shown in the following table:
-      </para>
-      <table>
-	<title>JNDI Properties supported by Apache Qpid</title>
-	<tgroup cols="2">
-	  <thead>
-	    <row>
-	      <entry>
-		Property
-	      </entry>
-	      <entry>
-		Purpose
-	      </entry>
-	    </row>
-	  </thead>
-	  <tbody>
-	    <row>
-	      <entry>
-		connectionfactory.&lt;jndiname&gt;
-	      </entry>
-	      <entry>
-		<para>
-		  The Connection URL that the connection factory will use to perform connections.
-		</para>
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		queue.&lt;jndiname&gt;
-	      </entry>
-	      <entry>
-		<para>
-		  A JMS queue, which is implemented as an amq.direct exchange in Apache Qpid.
-		</para>
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		topic.&lt;jndiname&gt;
-	      </entry>
-	      <entry>
-		<para>
-		  A JMS topic, which is implemented as an amq.topic exchange in Apache Qpid.
-		</para>
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		destination.&lt;jndiname&gt;
-	      </entry>
-	      <entry>
-		<para>
-		  Can be used for defining all amq destinations, queues, topics and header matching, using an address string.
-		</para>
-	      </entry>
-	    </row>
-	  </tbody>
-	</tgroup>
-      </table>
-    </section>
-    
-    <section>
-      <title>Connection URLs</title>
-      <para>
-	In JNDI properties, a Connection URL specifies properties for a connection. The format for a Connection URL is:
-      </para>
       
-      <programlisting>amqp://[&lt;user&gt;:&lt;pass&gt;@][&lt;clientid&gt;]&lt;virtualhost&gt;[?&lt;option&gt;=&#39;&lt;value&gt;&#39;[&amp;&lt;option&gt;=&#39;&lt;value&gt;&#39;]]
-      </programlisting>
-      <para>
-	For instance, the following Connection URL specifies a user name, a password, a client ID, a virtual host ("test"), a broker list with a single broker, and a TCP host with the host name <quote>localhost</quote> using port 5672:
-      </para>
+      <section>
+        <title>JNDI Properties for Apache Qpid</title>
+        <para>
+	  Apache Qpid supports the properties shown in the following table:
+        </para>
+        <table>
+	  <title>JNDI Properties supported by Apache Qpid</title>
+	  <tgroup cols="2">
+	    <thead>
+	      <row>
+	        <entry>
+		  Property
+	        </entry>
+	        <entry>
+		  Purpose
+	        </entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+	        <entry>
+		  connectionfactory.&lt;jndiname&gt;
+	        </entry>
+	        <entry>
+		  <para>
+		    The Connection URL that the connection factory will use to perform connections.
+		  </para>
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  queue.&lt;jndiname&gt;
+	        </entry>
+	        <entry>
+		  <para>
+		    A JMS queue, which is implemented as an amq.direct exchange in Apache Qpid.
+		  </para>
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  topic.&lt;jndiname&gt;
+	        </entry>
+	        <entry>
+		  <para>
+		    A JMS topic, which is implemented as an amq.topic exchange in Apache Qpid.
+		  </para>
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  destination.&lt;jndiname&gt;
+	        </entry>
+	        <entry>
+		  <para>
+		    Can be used for defining all amq destinations, queues, topics and header matching, using an address string.
+		  </para>
+	        </entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+        </table>
+      </section>
       
-      <programlisting>amqp://username:password@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
-      </programlisting>
-      <para>
-	Apache Qpid supports the following properties in Connection URLs:
-      </para>
-      <table>
-	<title>Connection URL Properties</title>
-	<tgroup cols="3">
-	  <thead>
-	    <row>
-	      <entry>
-		Option
-	      </entry>
-	      <entry>
-		Type
-	      </entry>
-	      <entry>
-		Description
-	      </entry>
-	    </row>
-	  </thead>
-	  <tbody>
-	    <row>
-	      <entry>
-		brokerlist
-	      </entry>
-	      <entry>
-		see below
-	      </entry>
-	      <entry>
-		The broker to use for this connection. In the current release, precisely one broker must be specified.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		maxprefetch
-	      </entry>
-	      <entry>
-		--
-	      </entry>
-	      <entry>
-		The maximum number of pre-fetched messages per destination.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		sync_persistence
-	      </entry>
-	      <entry>
-		false
-	      </entry>
-	      <entry>
-		When true, a sync command is sent after every persistent message to guarantee that it has been received.
-	      </entry>
-	    </row>
-	  </tbody>
-	</tgroup>
-      </table>
-      <para>
-	Broker lists are specified using a URL in this format:
-      </para>
-      
-      <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;]
-      </programlisting>
-      <para>
-	For instance, this is a typical broker list:
-      </para>
-      
-      <programlisting>brokerlist=&#39;tcp://localhost:5672&#39;
-      </programlisting>
-    </section>
-    
-  </section>
+      <section>
+        <title>Connection URLs</title>
+        <para>
+	  In JNDI properties, a Connection URL specifies properties for a connection. The format for a Connection URL is:
+        </para>
+        
+        <programlisting>amqp://[&lt;user&gt;:&lt;pass&gt;@][&lt;clientid&gt;]&lt;virtualhost&gt;[?&lt;option&gt;=&#39;&lt;value&gt;&#39;[&amp;&lt;option&gt;=&#39;&lt;value&gt;&#39;]]
+        </programlisting>
+        <para>
+	  For instance, the following Connection URL specifies a user name, a password, a client ID, a virtual host ("test"), a broker list with a single broker, and a TCP host with the host name <quote>localhost</quote> using port 5672:
+        </para>
+        
+        <programlisting>amqp://username:password@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
+        </programlisting>
+        <para>
+	  Apache Qpid supports the following properties in Connection URLs:
+        </para>
+        <table>
+	  <title>Connection URL Properties</title>
+	  <tgroup cols="3">
+	    <thead>
+	      <row>
+	        <entry>
+		  Option
+	        </entry>
+	        <entry>
+		  Type
+	        </entry>
+	        <entry>
+		  Description
+	        </entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+	        <entry>
+		  brokerlist
+	        </entry>
+	        <entry>
+		  see below
+	        </entry>
+	        <entry>
+		  The broker to use for this connection. In the current release, precisely one broker must be specified.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  maxprefetch
+	        </entry>
+	        <entry>
+		  --
+	        </entry>
+	        <entry>
+		  The maximum number of pre-fetched messages per destination.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  sync_persistence
+	        </entry>
+	        <entry>
+		  false
+	        </entry>
+	        <entry>
+		  When true, a sync command is sent after every persistent message to guarantee that it has been received.
+	        </entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+        </table>
+        <para>
+	  Broker lists are specified using a URL in this format:
+        </para>
+        
+        <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;]
+        </programlisting>
+        <para>
+	  For instance, this is a typical broker list:
+        </para>
+        
+        <programlisting>brokerlist=&#39;tcp://localhost:5672&#39;
+        </programlisting>
+      </section>
+    </section>    
+  </section>    
 </chapter>
 
 <!--
-    - client code remains exactly the same, but routing behavior
-    changes
-    - exchanges drop messages if nobody is listening, so we need to
-    start drain first
-    - drain will exit immediately if the source is empty (note that
-    this is actually a semantic guarantee provided by the API, we
-    know for a fact that the source is empty when drain/fetch
-    reports it, no fudge factor timeout is required [this assumes
-    nobody is concurrently publishing of course])
-    - drain -f invokes blocking fetch (you could use a timeout here also)
--->
+   - client code remains exactly the same, but routing behavior
+   changes
+   - exchanges drop messages if nobody is listening, so we need to
+   start drain first
+   - drain will exit immediately if the source is empty (note that
+   this is actually a semantic guarantee provided by the API, we
+   know for a fact that the source is empty when drain/fetch
+   reports it, no fudge factor timeout is required [this assumes
+   nobody is concurrently publishing of course])
+   - drain -f invokes blocking fetch (you could use a timeout here also)
+  -->
