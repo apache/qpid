@@ -286,28 +286,32 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
         if (period != 0L)
         {
-            class RemoveExpiredMessagesTask extends TimerTask
+            class HouseKeepingTask extends TimerTask
             {
+                Logger _hkLogger = Logger.getLogger(HouseKeepingTask.class);
+                
                 public void run()
                 {
+                    _hkLogger.info("Starting the houseKeeping job");
                     for (AMQQueue q : _queueRegistry.getQueues())
                     {
-
+                        _hkLogger.debug("Checking message status for queue: "+q.getName().toString());
                         try
                         {
                             q.checkMessageStatus();
                         }
                         catch (Exception e)
                         {
-                            _logger.error("Exception in housekeeping for queue: " + q.getNameShortString().toString(), e);
+                            _hkLogger.error("Exception in housekeeping for queue: " + q.getNameShortString().toString(), e);
                             //Don't throw exceptions as this will stop the
                             // house keeping task from running.
                         }
                     }
+                    _hkLogger.info("HouseKeeping job completed.");
                 }
             }
 
-            final TimerTask expiredMessagesTask = new RemoveExpiredMessagesTask();
+            final TimerTask expiredMessagesTask = new HouseKeepingTask();
             scheduleTask(period, expiredMessagesTask);
 
             class ForceChannelClosuresTask extends TimerTask
