@@ -52,13 +52,15 @@ void Throughput::report(ostream& o) const {
 ThroughputAndLatency::ThroughputAndLatency() :
     total(0),
     min(numeric_limits<double>::max()),
-    max(numeric_limits<double>::min())
+    max(numeric_limits<double>::min()),
+    samples(0)
 {}
 
 void ThroughputAndLatency::message(const messaging::Message& m) {
     Throughput::message(m);
     types::Variant::Map::const_iterator i = m.getProperties().find("ts");
     if (i != m.getProperties().end()) {
+        ++samples;
         int64_t start(i->second.asInt64());
         int64_t end(sys::Duration(sys::EPOCH, sys::now()));
         double latency = double(end - start)/sys::TIME_MSEC;
@@ -77,11 +79,12 @@ void ThroughputAndLatency::header(ostream& o) const {
 
 void ThroughputAndLatency::report(ostream& o) const {
     Throughput::report(o);
-    if (messages)
+    if (samples) {
         o << fixed << setprecision(2)
-          << '\t' << min << '\t'  << max << '\t' << total/messages;
+          << '\t' << min << '\t'  << max << '\t' << total/samples;
+    }
     else
-        o << "\t<0 messages, can't compute latency>";
+        o << "\t[No latency samples]";
 }
 
 ReporterBase::ReporterBase(ostream& o, int batch, bool wantHeader)
