@@ -61,6 +61,7 @@ struct Args : public qpid::TestOptions
 };
 
 const string EOS("eos");
+const string SN("sn");
 
 class Receiver : public MessageListener, public FailoverManager::Command
 {
@@ -99,7 +100,7 @@ void Receiver::received(Message& message)
 
 bool Receiver::isDuplicate(Message& message)
 {
-    uint sn = message.getHeaders().getAsInt("sn");
+    uint sn = message.getHeaders().getAsInt(SN);
     if (lastSn < sn) {
         lastSn = sn;
         return false;

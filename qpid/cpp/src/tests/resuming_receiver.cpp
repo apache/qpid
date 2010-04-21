@@ -73,6 +73,7 @@ Listener::Listener ( int freq, int verbosity, char const * name )
     queueName ( name )
 {}
 
+const std::string SN("sn");
 
 void Listener::received(Message & message)
 {
@@ -108,7 +109,7 @@ void Listener::received(Message & message)
                         << endl;
         }
     } else {
-        uint sn = message.getHeaders().getAsInt("sn");
+        uint sn = message.getHeaders().getAsInt(SN);
         if (lastSn < sn) {
             if (sn - lastSn > 1) {
                 cerr << "Error: gap in sequence between " << lastSn << " and " << sn << endl;
