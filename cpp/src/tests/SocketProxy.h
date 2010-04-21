@@ -76,7 +76,7 @@ class SocketProxy : private qpid::sys::Runnable
             if (closed) { return; }
             closed=true;
         }
-        if (thread.id() != qpid::sys::Thread::current().id()) {
+        if (thread && thread != qpid::sys::Thread::current()) {
             thread.join();
             joined = true;
         }
