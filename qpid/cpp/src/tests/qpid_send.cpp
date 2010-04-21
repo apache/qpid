@@ -70,7 +70,9 @@ struct Options : public qpid::Options
     bool reportTotal;
     uint reportEvery;
     bool reportHeader;
-    uint rate;
+    uint sendRate;
+    bool sequence;
+    bool timestamp;
 
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
@@ -91,7 +93,9 @@ struct Options : public qpid::Options
           reportTotal(false),
           reportEvery(0),
           reportHeader(true),
-          rate(0)
+          sendRate(0),
+          sequence(true),
+          timestamp(true)
     {
         addOptions()
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
@@ -117,7 +121,9 @@ struct Options : public qpid::Options
             ("report-total", qpid::optValue(reportTotal), "Report total throughput statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput statistics every N messages")
             ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")
-            ("rate", qpid::optValue(rate,"N"), "Send at rate of N messages/second. 0 means send as fast as possible.")
+            ("send-rate", qpid::optValue(sendRate,"N"), "Send at rate of N messages/second. 0 means send as fast as possible.")
+            ("sequence", qpid::optValue(sequence, "yes|no"), "Add a sequence number messages property (required for duplicate/lost message detection)")
+            ("timestamp", qpid::optValue(sequence, "yes|no"), "Add a time stamp messages property (required for latency measurement)")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -277,11 +283,11 @@ int main(int argc, char ** argv)
 
             qpid::sys::AbsTime start = qpid::sys::now();
             int64_t interval = 0;
-            if (opts.rate) interval = qpid::sys::TIME_SEC/opts.rate;
+            if (opts.sendRate) interval = qpid::sys::TIME_SEC/opts.sendRate;
 
             while (contentGen->setContent(msg)) {
-                msg.getProperties()[SN] = ++sent;
-                msg.getProperties()[TS] = int64_t(
+                if (opts.sequence) msg.getProperties()[SN] = ++sent;
+                if (opts.timestamp) msg.getProperties()[TS] = int64_t(
                     qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
                 sender.send(msg);
                 reporter.message(msg);
@@ -293,7 +299,7 @@ int main(int argc, char ** argv)
                         session.commit();
                 }
                 if (opts.messages && sent >= opts.messages) break;
-                if (opts.rate) {
+                if (opts.sendRate) {
                     qpid::sys::AbsTime waitTill(start, sent*interval);
                     int64_t delay = qpid::sys::Duration(qpid::sys::now(), waitTill);
                     if (delay > 0)

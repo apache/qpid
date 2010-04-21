@@ -36,7 +36,7 @@ op.add_option("-m", "--messages", default=100000, type="int", metavar="N",
                       help="send N messages per sender (default %default)")
 op.add_option("--queue-name", default="benchmark",
                help="base name for queues (default %default)")
-op.add_option("--rate", default=0, metavar="R",
+op.add_option("--send-rate", default=0, metavar="R",
               help="send rate limited to R messages/second, 0 means no limit (default %default)")
 op.add_option("--content-size", default=1024, type="int", metavar="BYTES", 
               help="message size in bytes (default %default)")
@@ -49,6 +49,8 @@ op.add_option("--send-option", default=[], action="append", type="str",
               help="Additional option for sending addresses")
 op.add_option("--receive-option", default=[], action="append", type="str",
               help="Additional option for receiving addresses")
+op.add_option("--no-timestamp", dest="timestamp", default=True,
+              action="store_false", help="don't add a timestamp, no latency results")
 
 def start_receive(queue, opts, ready_queue):
     address="%s;{%s}"%(queue,",".join(["create:always"]+opts.receive_option))
@@ -72,9 +74,11 @@ def start_send(queue, opts):
                   "--messages", str(opts.messages),
                   "--send-eos", str(opts.receivers),
                   "--content-size", str(opts.content_size),
-                  "--rate", str(opts.rate),
+                  "--send-rate", str(opts.send_rate),
                   "--report-total",
                   "--report-header=no",
+                  "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
+                  "--sequence=no",
                   ],
                  stdout=PIPE, stderr=STDOUT)
 
