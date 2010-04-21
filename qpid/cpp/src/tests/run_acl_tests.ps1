@@ -25,8 +25,11 @@ if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     "Skipping acl tests as python libs not found"
     exit 1
 }
-$env:PYTHONPATH="$PYTHON_DIR;$srcdir"
-$BROKER_EXE = ""
+
+$PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py"
+$QMF_LIB = "$srcdir\..\..\..\extras\qmf\src\py"
+$env:PYTHONPATH="$PYTHON_DIR;$srcdir;$PYTHON_TEST_DIR;$QMF_LIB"
+$Global:BROKER_EXE = ""
 
 Function start_broker($acl_options)
 {
@@ -58,7 +61,7 @@ Function start_broker($acl_options)
 
 Function stop_broker
 {
-  "Stoppping $BROKER_EXE"
+  "Stopping $BROKER_EXE"
   Invoke-Expression "$BROKER_EXE --no-module-dir -q --port $env:BROKER_PORT" | Write-Output
   Remove-Item qpidd.port
 }
