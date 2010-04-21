@@ -74,7 +74,7 @@ struct Catcher : public Runnable {
     }
 
     bool join() {
-        if (thread.id()) {
+        if (thread) {
             thread.join();
             thread=Thread();
         }

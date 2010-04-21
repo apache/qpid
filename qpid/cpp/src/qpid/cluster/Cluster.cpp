@@ -308,7 +308,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
 
 Cluster::~Cluster() {
     broker.setClusterTimer(std::auto_ptr<sys::Timer>(0)); // Delete cluster timer
-    if (updateThread.id()) updateThread.join(); // Join the previous updatethread.
+    if (updateThread) updateThread.join(); // Join the previous updatethread.
 }
 
 void Cluster::initialize() {
@@ -831,7 +831,7 @@ void Cluster::retractOffer(const MemberId& updater, uint64_t updateeInt, Lock& l
     if (updater == self) {
         assert(state == OFFER);
         if (url)  {             // My offer was first.
-            if (updateThread.id())
+            if (updateThread)
                 updateThread.join(); // Join the previous updateThread to avoid leaks.
             updateThread = Thread(new RetractClient(*url, connectionSettings(settings)));
         }
@@ -848,7 +848,7 @@ void Cluster::updateStart(const MemberId& updatee, const Url& url, Lock& l) {
     assert(state == OFFER);
     state = UPDATER;
     QPID_LOG(notice, *this << " sending update to " << updatee << " at " << url);
-    if (updateThread.id())
+    if (updateThread)
         updateThread.join(); // Join the previous updateThread to avoid leaks.
     updateThread = Thread(
         new UpdateClient(self, updatee, url, broker, map, *expiryPolicy,

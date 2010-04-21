@@ -132,7 +132,7 @@ template <class T> void PollableQueue<T>::push(const T& t) {
 
 template <class T> void PollableQueue<T>::dispatch(PollableCondition& cond) {
     ScopedLock l(lock);
-    assert(dispatcher.id() == 0);
+    assert(!dispatcher);
     dispatcher = Thread::current();
     process();
     dispatcher = Thread();
@@ -167,8 +167,8 @@ template <class T> void PollableQueue<T>::stop() {
     condition.clear();
     stopped = true;
     // Avoid deadlock if stop is called from the dispatch thread
-    if (dispatcher.id() != Thread::current().id())
-        while (dispatcher.id()) lock.wait();
+    if (dispatcher && dispatcher != Thread::current())
+        while (dispatcher) lock.wait();
 }
 
 }} // namespace qpid::sys
