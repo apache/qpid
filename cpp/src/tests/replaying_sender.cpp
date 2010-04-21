@@ -71,6 +71,8 @@ Sender::Sender(const std::string& queue, uint count_, uint reportFreq )
     message.getDeliveryProperties().setRoutingKey(queueName.c_str());
 }
 
+const string SN("sn");
+
 void Sender::execute(AsyncSession& session, bool isRetry)
 {
     if (verbosity > 0)
@@ -81,7 +83,7 @@ void Sender::execute(AsyncSession& session, bool isRetry)
         stringstream message_data;
         message_data << ++sent;
         message.setData(message_data.str());
-        message.getHeaders().setInt("sn", sent);
+        message.getHeaders().setInt(SN, sent);
         if ( persistence )
           message.getDeliveryProperties().setDeliveryMode(PERSISTENT);
 

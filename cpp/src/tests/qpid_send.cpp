@@ -192,6 +192,8 @@ struct Options : public qpid::Options
 };
 
 const string EOS("eos");
+const string SN("sn");
+const string TS("ts");
 
 }} // namespace qpid::tests
 
@@ -278,8 +280,8 @@ int main(int argc, char ** argv)
             if (opts.rate) interval = qpid::sys::TIME_SEC/opts.rate;
 
             while (contentGen->setContent(msg)) {
-                msg.getProperties()["sn"] = ++sent;
-                msg.getProperties()["ts"] = int64_t(
+                msg.getProperties()[SN] = ++sent;
+                msg.getProperties()[TS] = int64_t(
                     qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
                 sender.send(msg);
                 reporter.message(msg);
@@ -300,7 +302,7 @@ int main(int argc, char ** argv)
             }
             if (opts.reportTotal) reporter.report();
             for (uint i = opts.sendEos; i > 0; --i) {
-                msg.getProperties()["sn"] = ++sent;
+                msg.getProperties()[SN] = ++sent;
                 msg.setContent(EOS);//TODO: add in ability to send digest or similar
                 sender.send(msg);
             }
