@@ -28,7 +28,6 @@ import javax.security.sasl.SaslClient;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -387,7 +386,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             id = _queueId++;
         }
         // get rid of / and : and ; from address for spec conformance
-        String localAddress = StringUtils.replaceChars(_protocolHandler.getLocalAddress().toString(), "/;:", "");
+        String localAddress = _protocolHandler.getLocalAddress().toString().replaceAll("[/;:]", "");
 
         return new AMQShortString("tmp_" + localAddress + "_" + id);
     }

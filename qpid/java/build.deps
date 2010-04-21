@@ -79,7 +79,7 @@ commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} ${com
 
 common.libs=${slf4j-api} ${slf4j-log4j} ${backport-util-concurrent} ${mina-core} ${mina-filter-ssl} 
 
-client.libs=${common.libs} ${geronimo-jms} ${commons-lang} ${commons-collections}
+client.libs=${common.libs} ${geronimo-jms} ${commons-collections}
 tools.libs=${client.libs} ${commons-configuration.libs}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs}
