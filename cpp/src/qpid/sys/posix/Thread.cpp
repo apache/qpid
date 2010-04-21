@@ -39,11 +39,11 @@ void* runRunnable(void* p)
 
 struct ThreadPrivate {
     pthread_t thread;
-    
+
     ThreadPrivate(Runnable* runnable) {
         QPID_POSIX_ASSERT_THROW_IF(::pthread_create(&thread, NULL, runRunnable, runnable));
     }
-    
+
     ThreadPrivate() : thread(::pthread_self()) {}
 };
 
@@ -53,17 +53,29 @@ Thread::Thread(Runnable* runnable) : impl(new ThreadPrivate(runnable)) {}
 
 Thread::Thread(Runnable& runnable) : impl(new ThreadPrivate(&runnable)) {}
 
+Thread::operator bool() {
+    return impl;
+}
+
+bool Thread::operator==(const Thread& t) const {
+    return ::pthread_equal(impl->thread, t.impl->thread) != 0;
+}
+
+bool Thread::operator!=(const Thread& t) const {
+    return !(*this==t);
+}
+
 void Thread::join(){
     if (impl) {
         QPID_POSIX_ASSERT_THROW_IF(::pthread_join(impl->thread, 0));
     }
 }
 
-unsigned long Thread::id() {
-    if (impl)
-        return impl->thread;
-    else
-        return 0;
+unsigned long Thread::logId() {
+    // This does need to be the C cast operator as
+    // pthread_t could be either a pointer or an integer
+    // and so we can't know static_cast<> or reinterpret_cast<>
+    return (unsigned long) ::pthread_self();
 }
 
 Thread Thread::current() {

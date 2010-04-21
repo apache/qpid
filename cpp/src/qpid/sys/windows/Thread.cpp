@@ -65,6 +65,18 @@ Thread::Thread(Runnable* runnable) : impl(new ThreadPrivate(runnable)) {}
 
 Thread::Thread(Runnable& runnable) : impl(new ThreadPrivate(&runnable)) {}
 
+Thread::operator bool() {
+    return impl;
+}
+
+bool Thread::operator==(const Thread& t) const {
+    return impl->threadId == t.impl->threadId;
+}
+
+bool Thread::operator!=(const Thread& t) const {
+    return !(*this==t);
+}
+
 void Thread::join() {
     if (impl) {
         DWORD status = WaitForSingleObject (impl->threadHandle, INFINITE);
@@ -74,8 +86,8 @@ void Thread::join() {
     }
 }
 
-unsigned long Thread::id() {
-    return impl ? impl->threadId : 0;
+unsigned long Thread::logId() {
+    return GetCurrentThreadId();
 }
 
 /* static */
