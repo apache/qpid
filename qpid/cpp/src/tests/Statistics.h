@@ -68,6 +68,7 @@ class ThroughputAndLatency : public Throughput {
 
   private:
     double total, min, max;     // Milliseconds
+    int samples;
 };
 
 /** Report batch and overall statistics */
