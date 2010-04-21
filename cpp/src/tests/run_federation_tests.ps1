@@ -26,6 +26,9 @@ if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     exit 1
 }
 
+$PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py"
+$QMF_LIB = "$srcdir\..\..\..\extras\qmf\src\py"
+
 # Test runs from the tests directory but the broker executable is one level
 # up, and most likely in a subdirectory from there based on what build type.
 # Look around for it before trying to start it.
@@ -70,7 +73,7 @@ trap {
 
 &start_brokers
 "Running federation tests using brokers on ports $env:LOCAL_PORT $env:REMOTE_PORT"
-$env:PYTHONPATH="$PYTHON_DIR;$srcdir"
+$env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH;$QMF_LIB"
 $tests = "*"
 Invoke-Expression "python $PYTHON_DIR/qpid-python-test -m federation -b localhost:$env:LOCAL_PORT -Dremote-port=$env:REMOTE_PORT $tests" | Out-Default
 $RETCODE=$LASTEXITCODE

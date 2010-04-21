@@ -27,6 +27,7 @@ if (!(Test-Path $PYTHON_DIR -pathType Container)) {
 }
 
 $PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py"
+$QMF_LIB = "$srcdir\..\..\..\extras\qmf\src\py"
 
 if (Test-Path env:FAILING) {
     $fails = "-I $env:FAILING"
@@ -39,6 +40,6 @@ else {
 }
 
 #cd $PYTHON_DIR
-$env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH"
+$env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH;$QMF_LIB"
 python $PYTHON_DIR/qpid-python-test -m qpid_tests.broker_0_10 -m qpid.tests -b localhost:$env:QPID_PORT $fails $tests
 exit $LASTEXITCODE

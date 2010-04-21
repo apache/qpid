@@ -30,6 +30,8 @@ if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     exit 1
 }
 
+$QMF_LIB = "$srcdir\..\..\..\extras\qmf\src\py"
+
 # Test runs from the tests directory but the broker executable is one level
 # up, and most likely in a subdirectory from there based on what build type.
 # Look around for it before trying to start it.
@@ -73,7 +75,7 @@ if (!(Test-Path qpidd-store.port)) {
 set-item -path env:QPID_PORT -value (get-content -path qpidd-store.port -totalcount 1)
 Remove-Item qpidd-store.port
 $PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py\qpid_tests\broker_0_10"
-$env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH"
+$env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH;$QMF_LIB"
 python $PYTHON_DIR/qpid-python-test -m dtx -m persistence -b localhost:$env:QPID_PORT $fails $tests
 $RETCODE=$LASTEXITCODE
 if ($RETCODE -ne 0) {
