@@ -56,9 +56,11 @@ ThroughputAndLatency::ThroughputAndLatency() :
     samples(0)
 {}
 
+const std::string TS = "ts";
+
 void ThroughputAndLatency::message(const messaging::Message& m) {
     Throughput::message(m);
-    types::Variant::Map::const_iterator i = m.getProperties().find("ts");
+    types::Variant::Map::const_iterator i = m.getProperties().find(TS);
     if (i != m.getProperties().end()) {
         ++samples;
         int64_t start(i->second.asInt64());

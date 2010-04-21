@@ -138,6 +138,7 @@ struct Options : public qpid::Options
 };
 
 const string EOS("eos");
+const string SN("sn");
 
 class SequenceTracker
 {
@@ -147,7 +148,7 @@ class SequenceTracker
 
     bool isDuplicate(Message& message)
     {
-        uint sn = message.getProperties()["sn"];
+        uint sn = message.getProperties()[SN];
         if (lastSn < sn) {
             lastSn = sn;
             return false;
