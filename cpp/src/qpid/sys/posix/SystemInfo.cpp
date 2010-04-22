@@ -24,11 +24,10 @@
 
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
-#include <net/if.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <unistd.h>
+#include <sys/types.h> // For FreeBSD
+#include <sys/socket.h> // For FreeBSD
+#include <netinet/in.h> // For FreeBSD
+#include <ifaddrs.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -63,27 +62,43 @@ static const string LOCALHOST("127.0.0.1");
 
 void SystemInfo::getLocalIpAddresses (uint16_t port,
                                       std::vector<Address> &addrList) {
-    int s = ::socket(PF_INET, SOCK_STREAM, 0);
-    for (int i=1;;i++) {
-        ::ifreq ifr;
-        ifr.ifr_ifindex = i;
-        if (::ioctl (s, SIOCGIFNAME, &ifr) < 0)
+    ::ifaddrs* ifaddr = 0;
+    QPID_POSIX_CHECK(::getifaddrs(&ifaddr));
+    for (::ifaddrs* ifap = ifaddr; ifap != 0; ifap = ifap->ifa_next) {
+        if (ifap->ifa_addr == 0) continue;
+
+        int family = ifap->ifa_addr->sa_family;
+        switch (family) {
+        case AF_INET: {
+            char dispName[NI_MAXHOST];
+            int rc = ::getnameinfo(
+                        ifap->ifa_addr,
+                        (family == AF_INET)
+                            ? sizeof(struct sockaddr_in)
+                            : sizeof(struct sockaddr_in6),
+                        dispName, sizeof(dispName),
+                        0, 0, NI_NUMERICHOST);
+            if (rc != 0) {
+                throw QPID_POSIX_ERROR(rc);
+            }
+            string addr(dispName);
+            if (addr != LOCALHOST) {
+                addrList.push_back(TcpAddress(addr, port));
+            }
             break;
-        /* now ifr.ifr_name is set */
-        if (::ioctl (s, SIOCGIFADDR, &ifr) < 0)
+        }
+        // TODO: Url parsing currently can't cope with IPv6 addresses so don't return them
+        // when it can cope move this line to above "case AF_INET:"
+        case AF_INET6:
+        default:
             continue;
-        ::sockaddr *saddr = (::sockaddr *) &ifr.ifr_addr;
-        char dispName[NI_MAXHOST];
-        if (int rc=::getnameinfo(saddr, sizeof(ifr.ifr_addr), dispName, sizeof(dispName), 0, 0, NI_NUMERICHOST) != 0)
-            throw QPID_POSIX_ERROR(rc);
-        string addr(dispName);
-        if (addr != LOCALHOST)
-            addrList.push_back(TcpAddress(addr, port));
+        }
     }
+    freeifaddrs(ifaddr);
+
     if (addrList.empty()) {
         addrList.push_back(TcpAddress(LOCALHOST, port));
     }
-    close (s);
 }
 
 void SystemInfo::getSystemId (std::string &osName,
