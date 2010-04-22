@@ -67,6 +67,7 @@ $move[0]=$move1
 
 $preserve=(
 	'include/qpid/agent',
+	'include/qpid/amqp_0_10',
 	'include/qpid/management',
 	'include/qpid/messaging',
 	'include/qpid/sys/IntegerTypes.h',
