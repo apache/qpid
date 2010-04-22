@@ -76,11 +76,9 @@ class _agentApp(Thread):
     def run(self):
         # Connect the agent to the broker,
         # broker_url = "user/passwd@hostname:port"
-        conn = qpid.messaging.Connection(self.broker_url.host,
-                                         self.broker_url.port,
-                                         self.broker_url.user,
-                                         self.broker_url.password)
-        conn.connect()
+        
+        conn = qpid.messaging.Connection(self.broker_url)
+        conn.open()
         self.agent.set_connection(conn)
         self.ready.set()
 
@@ -129,11 +127,8 @@ class BaseTest(unittest.TestCase):
         self.notifier = _testNotifier()
         self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
-        self.conn = qpid.messaging.Connection(self.broker.host,
-                                              self.broker.port,
-                                              self.broker.user,
-                                              self.broker.password)
-        self.conn.connect()
+        self.conn = qpid.messaging.Connection(self.broker)
+        self.conn.open()
         self.console.add_connection(self.conn)
         self.console.enable_agent_discovery()
 
@@ -172,11 +167,8 @@ class BaseTest(unittest.TestCase):
         self.notifier = _testNotifier()
         self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=3)
-        self.conn = qpid.messaging.Connection(self.broker.host,
-                                              self.broker.port,
-                                              self.broker.user,
-                                              self.broker.password)
-        self.conn.connect()
+        self.conn = qpid.messaging.Connection(self.broker)
+        self.conn.open()
         self.console.add_connection(self.conn)
 
         query = qmf2.common.QmfQuery.create_predicate(
@@ -218,11 +210,8 @@ class BaseTest(unittest.TestCase):
         self.notifier = _testNotifier()
         self.console = qmf2.console.Console(notifier=self.notifier,
                                               agent_timeout=2)
-        self.conn = qpid.messaging.Connection(self.broker.host,
-                                              self.broker.port,
-                                              self.broker.user,
-                                              self.broker.password)
-        self.conn.connect()
+        self.conn = qpid.messaging.Connection(self.broker)
+        self.conn.open()
         self.console.add_connection(self.conn)
         self.console.enable_agent_discovery()
 
@@ -311,11 +300,8 @@ class BaseTest(unittest.TestCase):
         """
         self.notifier = _testNotifier()
         self.console = qmf2.console.Console(notifier=self.notifier)
-        self.conn = qpid.messaging.Connection(self.broker.host,
-                                              self.broker.port,
-                                              self.broker.user,
-                                              self.broker.password)
-        self.conn.connect()
+        self.conn = qpid.messaging.Connection(self.broker)
+        self.conn.open()
         self.console.add_connection(self.conn)
 
         agent1 = self.console.find_agent("agent1", timeout=3)
@@ -344,11 +330,8 @@ class BaseTest(unittest.TestCase):
             console = qmf2.console.Console("test-console-" + str(i),
                                            notifier=_testNotifier(),
                                            agent_timeout=2)
-            conn = qpid.messaging.Connection(self.broker.host,
-                                             self.broker.port,
-                                             self.broker.user,
-                                             self.broker.password)
-            conn.connect()
+            conn = qpid.messaging.Connection(self.broker)
+            conn.open()
             console.add_connection(conn)
             console.enable_agent_discovery()
             self.consoles.append(console)
@@ -448,11 +431,8 @@ class BaseTest(unittest.TestCase):
             console = qmf2.console.Console("test-console-" + str(i),
                                            notifier=_testNotifier(),
                                            agent_timeout=2)
-            conn = qpid.messaging.Connection(self.broker.host,
-                                             self.broker.port,
-                                             self.broker.user,
-                                             self.broker.password)
-            conn.connect()
+            conn = qpid.messaging.Connection(self.broker)
+            conn.open()
             console.add_connection(conn)
             self.consoles.append(console)
 
