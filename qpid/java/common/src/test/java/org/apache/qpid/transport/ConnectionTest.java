@@ -22,8 +22,6 @@ package org.apache.qpid.transport;
 
 import org.apache.mina.util.AvailablePortFinder;
 
-import org.apache.qpid.util.concurrent.Condition;
-
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoAcceptor;
 import org.apache.qpid.transport.util.Logger;
@@ -34,6 +32,8 @@ import junit.framework.TestCase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import static org.apache.qpid.transport.Option.*;
@@ -157,7 +157,7 @@ public class ConnectionTest extends TestCase implements SessionListener
              null, msg, sync ? SYNC : NONE);
     }
 
-    private Connection connect(final Condition closed)
+    private Connection connect(final CountDownLatch closed)
     {
         Connection conn = new Connection();
         conn.addConnectionListener(new ConnectionListener()
@@ -171,7 +171,7 @@ public class ConnectionTest extends TestCase implements SessionListener
             {
                 if (closed != null)
                 {
-                    closed.set();
+                    closed.countDown();
                 }
             }
         });
@@ -188,7 +188,7 @@ public class ConnectionTest extends TestCase implements SessionListener
         // Start server as 0-9 to froce a ProtocolVersionException
         startServer(new ProtocolHeader(1, 0, 9));
         
-        Condition closed = new Condition();
+        CountDownLatch closed = new CountDownLatch(1);
 
         try
         {
@@ -249,13 +249,13 @@ public class ConnectionTest extends TestCase implements SessionListener
     {
         startServer();
 
-        Condition closed = new Condition();
+        CountDownLatch closed = new CountDownLatch(1);
         Connection conn = connect(closed);
 
         Session ssn = conn.createSession(1);
         send(ssn, "CLOSE");
 
-        if (!closed.get(3000))
+        if (!closed.await(3, TimeUnit.SECONDS))
         {
             fail("never got notified of connection close");
         }
