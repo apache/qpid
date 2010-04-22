@@ -123,7 +123,7 @@ struct Options : public qpid::Options
             ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")
             ("send-rate", qpid::optValue(sendRate,"N"), "Send at rate of N messages/second. 0 means send as fast as possible.")
             ("sequence", qpid::optValue(sequence, "yes|no"), "Add a sequence number messages property (required for duplicate/lost message detection)")
-            ("timestamp", qpid::optValue(sequence, "yes|no"), "Add a time stamp messages property (required for latency measurement)")
+            ("timestamp", qpid::optValue(timestamp, "yes|no"), "Add a time stamp messages property (required for latency measurement)")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -286,9 +286,12 @@ int main(int argc, char ** argv)
             if (opts.sendRate) interval = qpid::sys::TIME_SEC/opts.sendRate;
 
             while (contentGen->setContent(msg)) {
-                if (opts.sequence) msg.getProperties()[SN] = ++sent;
-                if (opts.timestamp) msg.getProperties()[TS] = int64_t(
-                    qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
+                ++sent;
+                if (opts.sequence) 
+                    msg.getProperties()[SN] = sent;
+                if (opts.timestamp) 
+                    msg.getProperties()[TS] = int64_t(
+                        qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
                 sender.send(msg);
                 reporter.message(msg);
                 if (opts.tx && (sent % opts.tx == 0)) {
@@ -308,7 +311,8 @@ int main(int argc, char ** argv)
             }
             if (opts.reportTotal) reporter.report();
             for (uint i = opts.sendEos; i > 0; --i) {
-                msg.getProperties()[SN] = ++sent;
+                if (opts.sequence)
+                    msg.getProperties()[SN] = ++sent;
                 msg.setContent(EOS);//TODO: add in ability to send digest or similar
                 sender.send(msg);
             }
