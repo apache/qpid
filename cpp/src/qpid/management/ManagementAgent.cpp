@@ -1076,9 +1076,11 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
     if ((oid = inMap.find("_object_id")) == inMap.end() ||
         (mid = inMap.find("_method_name")) == inMap.end())
     {
+        Variant::Map _values;
         headers["qmf.opcode"] = "_exception";
-        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_PARAMETER_INVALID;
-        (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
+        _values["_status"] = Manageable::STATUS_PARAMETER_INVALID;
+        _values["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
+        outMap["_values"] = _values;
 
         MapCodec::encode(outMap, content);
         sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
@@ -1099,9 +1101,12 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
             inArgs = (mid->second).asMap();
         }
     } catch(exception& e) {
+        Variant::Map _values;
         headers["qmf.opcode"] = "_exception";
-        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
-        (outMap["_values"].asMap())["_status_text"] = e.what();
+        _values["_status"] = Manageable::STATUS_EXCEPTION;
+        _values["_status_text"] = e.what();
+        outMap["_values"] = _values;
+
 
         MapCodec::encode(outMap, content);
         sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
@@ -1112,9 +1117,11 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
     ManagementObjectMap::iterator iter = managementObjects.find(objId);
 
     if (iter == managementObjects.end() || iter->second->isDeleted()) {
+        Variant::Map _values;
         headers["qmf.opcode"] = "_exception";
-        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
-        (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
+        _values["_status"] = Manageable::STATUS_UNKNOWN_OBJECT;
+        _values["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
+        outMap["_values"] = _values;
 
         MapCodec::encode(outMap, content);
         sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
@@ -1128,9 +1135,11 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
 
     i = disallowed.find(std::make_pair(iter->second->getClassName(), methodName));
     if (i != disallowed.end()) {
+        Variant::Map _values;
         headers["qmf.opcode"] = "_exception";
-        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
-        (outMap["_values"].asMap())["_status_text"] = i->second;
+        _values["_status"] = Manageable::STATUS_FORBIDDEN;
+        _values["_status_text"] = i->second;
+        outMap["_values"] = _values;
 
         MapCodec::encode(outMap, content);
         sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
@@ -1145,9 +1154,11 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         params[acl::PROP_SCHEMACLASS]   = iter->second->getClassName();
 
         if (!acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_METHOD, methodName, &params)) {
+            Variant::Map _values;
             headers["qmf.opcode"] = "_exception";
-            (outMap["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
-            (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
+            _values["_status"] = Manageable::STATUS_FORBIDDEN;
+            _values["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
+            outMap["_values"] = _values;
 
             MapCodec::encode(outMap, content);
             sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
@@ -1166,10 +1177,12 @@ void ManagementAgent::handleMethodRequestLH (const std::string& body, string rep
         sys::Mutex::ScopedUnlock u(userLock);
         iter->second->doMethod(methodName, inArgs, outMap);
     } catch(exception& e) {
+        Variant::Map _values;
         outMap.clear();
         headers["qmf.opcode"] = "_exception";
-        (outMap["_values"].asMap())["_status"] = Manageable::STATUS_EXCEPTION;
-        (outMap["_values"].asMap())["_status_text"] = e.what();
+        _values["_status"] = Manageable::STATUS_EXCEPTION;
+        _values["_status_text"] = e.what();
+        outMap["_values"] = _values;
 
         MapCodec::encode(outMap, content);
         sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
@@ -1841,16 +1854,17 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
             string replyToKey = rt.getRoutingKey();
 
             if (mapMsg) {
-
+                Variant::Map _values;
                 Variant::Map outMap;
                 Variant::Map headers;
 
                 headers["method"] = "response";
-                headers["qmf.opcode"] = "_method_response";
+                headers["qmf.opcode"] = "_exception";
                 headers["qmf.agent"] = name_address;
 
-                ((outMap["_error"].asMap())["_values"].asMap())["_status"] = Manageable::STATUS_FORBIDDEN;
-                ((outMap["_error"].asMap())["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
+                _values["_status"] = Manageable::STATUS_FORBIDDEN;
+                _values["_status_text"] = Manageable::StatusText(Manageable::STATUS_FORBIDDEN);
+                outMap["_values"] = _values;
 
                 string content;
                 MapCodec::encode(outMap, content);
