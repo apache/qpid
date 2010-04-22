@@ -73,8 +73,8 @@
         <para>
           A <firstterm>session</firstterm> provides a sequentially
           ordered context for sending and receiving
-          <emphasis>messages</emphasis>. A session is created using the
-          <function>connection.createSession</function> method.
+          <emphasis>messages</emphasis>. A session is obtained from a
+          connection.
         </para>
       </listitem>
       
@@ -82,8 +82,7 @@
         <para>
 	  A <firstterm>sender</firstterm> sends messages to a target
 	  using the <literal>sender.send</literal> method. A sender is
-	  created using the address of the target as a parameter to
-	  the <function>session.createSender</function> method.
+	  obtained from a session for a given target address.
         </para>
       </listitem>
       
@@ -91,9 +90,8 @@
         <para>
 	  A <firstterm>receiver</firstterm> receives messages from a
 	  source using the <literal>receiver.fetch</literal> method.
-	  A receiver is created using the address of the source as a
-	  parameter to the <function>session.createReceiver</function>
-	  method.
+	  A receiver is obtained from a session for a given source
+	  address.
         </para>
       </listitem>
       
@@ -209,7 +207,7 @@ finally:
       </para>
 
       <para>An address resolves to a <firstterm>node</firstterm>. The
-      Qpid messaging API has two kinds of nodes,
+      Qpid messaging API recognises two kinds of nodes,
       <firstterm>queues</firstterm> and <firstterm>topics</firstterm>.
 
 	   <footnote><para>The terms <emphasis>queue</emphasis> and
@@ -238,7 +236,16 @@ finally:
 
       queues map to AMQP queues, and topics map to AMQP exchanges.
 
-          <footnote><para>In AMQP 0-10, messages are sent to exchanges, and read from queues. The messaging API also allows a sender to send messages to a queue; internally, Qpid implements this by sending the message to the default exchange, with the name of the queue as the routing key. The messaging API also allows a receiver to receive messages from a topic; internally, Qpid implements this by setting up a private subscription queue for the receiver and binding the subscription queue to the exchange that corresponds to the topic.</para></footnote>
+          <footnote><para>In AMQP 0-10, messages are sent to
+          exchanges, and read from queues. The messaging API also
+          allows a sender to send messages to a queue; internally,
+          Qpid implements this by sending the message to the default
+          exchange, with the name of the queue as the routing key. The
+          messaging API also allows a receiver to receive messages
+          from a topic; internally, Qpid implements this by setting up
+          a private subscription queue for the receiver and binding
+          the subscription queue to the exchange that corresponds to
+          the topic.</para></footnote>
       </para>
 
       <para>In the rest of this tutorial, we present many examples
@@ -349,7 +356,7 @@ Message(properties={spout-id:7da2d27d-93e6-4803-8a61-536d87b8d93f:0}, content=''
 	<title>Address Strings</title>
 
 	<para>So far, our examples have used address strings that
-	contain only the address of a node. An <firstterm>address
+	contain only the name of a node. An <firstterm>address
 	string</firstterm> can also contain a
 	<firstterm>subject</firstterm> and
 	<firstterm>options</firstterm>.</para>
@@ -389,13 +396,11 @@ options ::=  { <key> : <value>, ... }
 
       <note>
         <para>
-          At present, subjects are not implemented for AMQP 0-10
-          queues in C++ or Python clients. The subject is ignored, and
-          messages on the queue are received regardless of their
-          subject.
-
-	  In a Java JMS client, the subject is used as a Java JMS
-	  selector when reading from an AMQP 0-10 queue.
+          At present, receivers will ignore the subject in the the
+          source address if that address resolves to a queue. Implicit
+          filtering by subject is only supported for topics and varies
+          depending on the type of exchange used to represent the
+          topic.
         </para>
       </note>
 
@@ -544,7 +549,9 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
       <title>Address String Options</title>
 
       <para>
-        Address string options contain policies and extension points such as these:
+        The options in an address string contain additional
+        information for the senders or receivers created for it,
+        including:
       </para>
       <itemizedlist>
         <listitem>
