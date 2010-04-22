@@ -257,9 +257,19 @@ finally:
       language. These programs can use any address string as a source
       or a destination, and have many command line options to
       configure behavior&mdash;use the <command>-h</command> option
-      for documentation on these options. The examples in this
-      tutorial also use the <command>qpid-config</command> utility to
-      configure AMQP 0-10 queues and exchanges on a Qpid broker.
+      for documentation on these options. 
+
+      <footnote><para>Currently, the Python and C++
+      implementations of <command>drain</command> and
+      <command>spout</command> have slightly different
+      options. This tutorial uses the C++ implementation. The
+      options will be reconciled in the near
+      future.</para></footnote>
+
+
+      The examples in this tutorial also use the
+      <command>qpid-config</command> utility to configure AMQP 0-10
+      queues and exchanges on a Qpid broker.
       </para>
 
 
@@ -323,7 +333,7 @@ $
 	<para>Now let's run <command>drain</command> first, using the
 	<literal>-t</literal> option to specify a timeout in seconds.
 	While <command>drain</command> is waiting for messages,
-	run <command>drain</command> in another window.</para>
+	run <command>spout</command> in another window.</para>
 
         <para><emphasis>First Window:</emphasis></para>
 
@@ -383,26 +393,37 @@ options ::=  { <key> : <value>, ... }
       <section>
 	<title>Subjects</title>
 
-	<para>
-	  Subjects are used to classify messages. 
 
-	  If a sender's address contains a subject, it is used as the
-	  default subject for any messages that it sends.
+	<para>Every message has a property called
+	<firstterm>subject</firstterm>, which is analogous to the
+	subject on an email message. If no subject is specified, the
+	message's subject is null. For convenience, address strings
+	also allow a subject. If a sender's address contains a
+	subject, it is used as the default subject for the messages
+	it sends. 
 
-	  If a receiver's address contains a subject, it is used to
-	  select only messages that match the subject&mdash;the
-	  matching algorithm depends on the message source; this is discussed in <xref linkend="section-amqp0-10-mapping"/>
+	If a receiver's address contains a subject, it is used to
+	select only messages that match the subject&mdash;the matching
+	algorithm depends on the message source.
+      </para>
+
+      <para>
+	In AMQP 0-10, each exchange type has its own matching
+	algorithm, and queues do not provide filtering. This is
+	discussed in <xref linkend="section-amqp0-10-mapping"/>.
       </para>
 
       <note>
-        <para>
-          At present, receivers will ignore the subject in the the
-          source address if that address resolves to a queue. Implicit
-          filtering by subject is only supported for topics and varies
-          depending on the type of exchange used to represent the
-          topic.
-        </para>
+	<para>
+	  Currently, a receiver bound to a queue ignores subjects,
+	  receiving messages from the queue without filtering.
+
+	  In the future, if a receiver is bound to a queue, and its
+	  address contains a subject, the subject will be used as a
+	  selector to filter messages.
+	</para>
       </note>
+
 
       <example>
         <title>Using subjects</title>
@@ -1025,7 +1046,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        N
 	      </entry>
 	      <entry>
-	        Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnection interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
+	        Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
 	      </entry>
 	    </row>
 	    <row>
@@ -1036,12 +1057,12 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        N
 	      </entry>
 	      <entry>
-	        Maximum reconnection interval.
+	        Maximum reconnect interval.
 	      </entry>
 	    </row>
 	    <row>
 	      <entry>
-	        reconnection_interval
+	        reconnect_interval
 	      </entry>
 	      <entry>
 	        N
@@ -1296,7 +1317,7 @@ options := map
 	    <row>
 	      <entry>Python API</entry>
 	      <entry>C++ API</entry>
-	      <entry>AMQP 0-10 Property</entry>
+	      <entry>AMQP 0-10 Property<footnote><para>In these entries, <literal>mp></literal> refers to an AMQP message property, and <literal>dp</literal> refers to an AMQP delivery property.</para></footnote></entry>
 	    </row>
           </thead>
           <tbody>
@@ -1438,19 +1459,16 @@ public class Hello {
 
       <example>
 	<title>JNDI Properties File</title>
-	<programlisting>java.naming.factory.initial 
+    <programlisting><![CDATA[
+java.naming.factory.initial 
   = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 
-# register some connection factories
 # connectionfactory.[jndiname] = [ConnectionURL]
 connectionfactory.qpidConnectionfactory 
-  = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
-
-# Register an AMQP destination in JNDI
-# destination.[jndiName] = [Address]
-destination.directQueue 
-   = direct://amq.direct//message_queue?routingkey=&#39;routing_key&#39;
-	</programlisting>
+  = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'
+# destination.[jndiname] = [address_string]
+destination.topicExchange = amq.topic
+]]></programlisting>
       </example>
 
       <para>The following sections describe the JNDI properties that Qpid uses.</para>
@@ -1511,7 +1529,14 @@ destination.directQueue
 	        </entry>
 	        <entry>
 		  <para>
-		    Can be used for defining all amq destinations, queues, topics and header matching, using an address string.
+		    Can be used for defining all amq destinations,
+		    queues, topics and header matching, using an
+		    address string.  
+
+		    <footnote><para>Binding URLs, which were used in
+		    earlier versions of the Qpid Java JMS client, can
+		    still be used instead of address
+		    strings.</para></footnote>
 		  </para>
 	        </entry>
 	      </row>
