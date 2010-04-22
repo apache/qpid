@@ -22,8 +22,8 @@ package org.apache.qpid.test.unit.client.connection;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 
-import org.apache.qpid.util.concurrent.Condition;
-
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -42,18 +42,18 @@ public class ExceptionListenerTest extends QpidTestCase
 
         conn.start();
 
-        final Condition fired = new Condition();
+        final CountDownLatch fired = new CountDownLatch(1);
         conn.setExceptionListener(new ExceptionListener()
         {
             public void onException(JMSException e)
             {
-                fired.set();
+                fired.countDown();
             }
         });
 
         stopBroker();
 
-        if (!fired.get(3000))
+        if (!fired.await(3, TimeUnit.SECONDS))
         {
             fail("exception listener was not fired");
         }
