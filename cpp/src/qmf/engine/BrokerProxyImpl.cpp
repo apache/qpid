@@ -445,9 +445,19 @@ void BrokerProxyImpl::handleHeartbeatIndication(Buffer& inBuffer, uint32_t seq, 
     QPID_LOG(trace, "RCVD HeartbeatIndication seq=" << seq << " agentBank=" << agentBank);
 }
 
-void BrokerProxyImpl::handleEventIndication(Buffer& /*inBuffer*/, uint32_t /*seq*/)
+void BrokerProxyImpl::handleEventIndication(Buffer& inBuffer, uint32_t seq)
 {
-    // TODO
+    auto_ptr<SchemaClassKey> classKey(SchemaClassKeyImpl::factory(inBuffer));
+    const SchemaEventClass *schema = console.impl->getEventClass(classKey.get());
+    if (schema == 0) {
+        QPID_LOG(trace, "No Schema Found for EventIndication. seq=" << seq << " key=" << classKey->impl->str());
+        return;
+    }
+
+    EventPtr eptr(EventImpl::factory(schema, inBuffer));
+
+    console.impl->eventEventReceived(eptr);
+    QPID_LOG(trace, "RCVD EventIndication seq=" << seq << " key=" << classKey->impl->str());
 }
 
 void BrokerProxyImpl::handleSchemaResponse(Buffer& inBuffer, uint32_t seq)

@@ -60,7 +60,7 @@ ConsoleEvent ConsoleEventImpl::copy()
     item.classKey  = classKey;
     item.object    = object.get();
     item.context   = context;
-    item.event     = event;
+    item.event     = event.get();
     item.timestamp = timestamp;
     item.hasProps  = hasProps;
     item.hasStats  = hasStats;
@@ -390,6 +390,15 @@ void ConsoleImpl::eventAgentHeartbeat(boost::shared_ptr<AgentProxy> agent, uint6
     event->timestamp = timestamp;
     Mutex::ScopedLock _lock(lock);
     eventQueue.push_back(event);
+}
+
+
+void ConsoleImpl::eventEventReceived(EventPtr event)
+{
+    ConsoleEventImpl::Ptr console_event(new ConsoleEventImpl(ConsoleEvent::EVENT_RECEIVED));
+    console_event->event = event;
+    Mutex::ScopedLock _lock(lock);
+    eventQueue.push_back(console_event);
 }
 
 //==================================================================

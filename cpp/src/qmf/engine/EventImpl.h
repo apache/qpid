@@ -29,9 +29,13 @@
 namespace qmf {
 namespace engine {
 
+    typedef boost::shared_ptr<Event> EventPtr;
+
     struct EventImpl {
         typedef boost::shared_ptr<Value> ValuePtr;
         const SchemaEventClass* eventClass;
+        uint64_t timestamp;
+        uint8_t severity;
         mutable std::map<std::string, ValuePtr> arguments;
 
         EventImpl(const SchemaEventClass* type);

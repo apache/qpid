@@ -26,7 +26,7 @@ using namespace std;
 using namespace qmf::engine;
 using qpid::framing::Buffer;
 
-EventImpl::EventImpl(const SchemaEventClass* type) : eventClass(type)
+EventImpl::EventImpl(const SchemaEventClass* type) : eventClass(type), timestamp(0), severity(0)
 {
     int argCount = eventClass->getArgumentCount();
     int idx;
@@ -38,9 +38,21 @@ EventImpl::EventImpl(const SchemaEventClass* type) : eventClass(type)
 }
 
 
-EventImpl::EventImpl(const SchemaEventClass* type, Buffer&) :
-    eventClass(type)
+EventImpl::EventImpl(const SchemaEventClass* type, Buffer& buffer) :
+    eventClass(type), timestamp(0), severity(0)
 {
+    int argCount = eventClass->getArgumentCount();
+    int idx;
+
+    timestamp = buffer.getLongLong();
+    severity = buffer.getOctet();
+
+    for (idx = 0; idx < argCount; idx++)
+    {
+        const SchemaArgument *arg = eventClass->getArgument(idx);
+        Value* pval = ValueImpl::factory(arg->getType(), buffer);
+        arguments[arg->getName()] = ValuePtr(pval);
+    }
 }
 
 
