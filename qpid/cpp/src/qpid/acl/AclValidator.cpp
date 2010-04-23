@@ -104,31 +104,28 @@ AclValidator::~AclValidator(){
 
 /* Iterate through the data model and validate the parameters. */
 void AclValidator::validate(boost::shared_ptr<AclData> d) {
-  
-    for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++){
 
-        if (d->actionList[cnt]){
+ for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++){
 
-	        for (unsigned int cnt1=0; cnt1< qpid::acl::OBJECTSIZE; cnt1++){
+    for (unsigned int cnt1=0; cnt1< qpid::acl::OBJECTSIZE; cnt1++){
 
-		        if (d->actionList[cnt][cnt1]){
+        if (!d->actionList[cnt].empty() && !d->actionList[cnt][cnt1].empty()){
+            std::for_each(d->actionList[cnt][cnt1].begin(),
+                          d->actionList[cnt][cnt1].end(),
+                          boost::bind(&AclValidator::validateRuleSet, this, _1));  
+        }
+    } 
+  }
 
-                    std::for_each(d->actionList[cnt][cnt1]->begin(),
-                                  d->actionList[cnt][cnt1]->end(),
-                                  boost::bind(&AclValidator::validateRuleSet, this, _1));                    
-                }//if 
-            }//for
-	    }//if
-	}//for
 }
 
-void AclValidator::validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules){
+void AclValidator::validateRuleSet(std::pair<const std::string, qpid::acl::AclData::RuleSet>& rules){
     std::for_each(rules.second.begin(),
                   rules.second.end(),
                   boost::bind(&AclValidator::validateRule, this, _1)); 
 }
 
-void AclValidator::validateRule(qpid::acl::AclData::rule& rule){
+void AclValidator::validateRule(qpid::acl::AclData::Rule& rule){
     std::for_each(rule.props.begin(),
                   rule.props.end(),
                   boost::bind(&AclValidator::validateProperty, this, _1)); 

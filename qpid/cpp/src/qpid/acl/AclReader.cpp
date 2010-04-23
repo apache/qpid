@@ -101,7 +101,7 @@ void AclReader::loadDecisionData(boost::shared_ptr<AclData> d) {
                      << AclHelper::getAclResultStr(d->decisionMode));
             foundmode = true;
         } else {
-            AclData::rule rule((*i)->props);
+            AclData::Rule rule((*i)->props);
             bool addrule = true;
 
             switch ((*i)->res) {
@@ -138,17 +138,15 @@ void AclReader::loadDecisionData(boost::shared_ptr<AclData> d) {
                      acnt < acl::ACTIONSIZE;
                      (*i)->actionAll ? acnt++ : acnt = acl::ACTIONSIZE) {
 
-                    if (acnt == acl::ACT_PUBLISH)
+                    if (acnt == acl::ACT_PUBLISH) {
                         d->transferAcl = true; // we have transfer ACL
-
+                        QPID_LOG(debug, "Transfer ACL enabled !");
+                    } 
+                    
                     actionstr << AclHelper::getActionStr((Action) acnt) << ",";
 
-                    //find the Action, create if not exist
-                    if (d->actionList[acnt] == NULL) {
-                        d->actionList[acnt] =
-                            new AclData::aclAction[qpid::acl::OBJECTSIZE];
-                        for (int j = 0; j < qpid::acl::OBJECTSIZE; j++)
-                            d->actionList[acnt][j] = NULL;
+                    if (d->actionList[acnt].empty()){
+                       d->actionList[acnt] = AclData::AclAction(qpid::acl::OBJECTSIZE);  
                     }
 
                     // optimize this loop to limit to valid options only!!
@@ -156,11 +154,6 @@ void AclReader::loadDecisionData(boost::shared_ptr<AclData> d) {
                                      : (*i)->object);
                          ocnt < acl::OBJECTSIZE;
                          (*i)->objStatus != aclRule::VALUE ? ocnt++ : ocnt = acl::OBJECTSIZE) {
-
-                        //find the Object, create if not exist
-                        if (d->actionList[acnt][ocnt] == NULL)
-                            d->actionList[acnt][ocnt] =
-                                new AclData::actionObject;
 
                         // add users and Rule to object set
                         bool allNames = false;
@@ -173,13 +166,13 @@ void AclReader::loadDecisionData(boost::shared_ptr<AclData> d) {
                              itr != (allNames ? names.end() : (*i)->names.end());
                              itr++) {
 
-                            AclData::actObjItr itrRule =
-                              d->actionList[acnt][ocnt]->find(*itr);
+                            AclData::ActObjItr itrRule =
+                              d->actionList[acnt][ocnt].find(*itr);
 
-                            if (itrRule == d->actionList[acnt][ocnt]->end()) {
-                                AclData::ruleSet rSet;
+                            if (itrRule == d->actionList[acnt][ocnt].end()) {
+                                AclData::RuleSet rSet;
                                 rSet.push_back(rule);
-                                d->actionList[acnt][ocnt]->insert
+                                d->actionList[acnt][ocnt].insert
                                     (make_pair(std::string(*itr), rSet));
                             } else {
                                 // TODO add code to check for dead rules
