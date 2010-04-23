@@ -339,7 +339,7 @@ module Qmf
         @impl = Qmfengine::Event.new(@event_class.impl)
       elsif kwargs.include?(:impl)
         @impl = Qmfengine::Event.new(kwargs[:impl])
-        @event_class = SchemaEventClass.new(nil, nil, :impl => @impl.getClass)
+        @event_class = SchemaEventClass.new(nil, nil, nil, :impl => @impl.getClass)
       end
     end
 
@@ -1034,7 +1034,7 @@ module Qmf
           if kind == CLASS_OBJECT
             clist << SchemaObjectClass.new(nil, nil, :impl => @impl.getObjectClass(key))
           elsif kind == CLASS_EVENT
-            clist << SchemaEventClass.new(nil, nil, :impl => @impl.getEventClass(key))
+            clist << SchemaEventClass.new(nil, nil, nil, :impl => @impl.getEventClass(key))
           end
         end
       end
@@ -1190,6 +1190,7 @@ module Qmf
           when Qmfengine::ConsoleEvent::OBJECT_UPDATE
             @handler.object_update(ConsoleObject.new(nil, :impl => @event.object), @event.hasProps, @event.hasStats) if @handler
           when Qmfengine::ConsoleEvent::EVENT_RECEIVED
+            @handler.event_received(QmfEvent.new(nil, :impl => @event.event)) if @handler
           when Qmfengine::ConsoleEvent::AGENT_HEARTBEAT
             @handler.agent_heartbeat(AgentProxy.new(@event.agent, nil), @event.timestamp) if @handler
           when Qmfengine::ConsoleEvent::METHOD_RESPONSE

@@ -59,13 +59,13 @@ namespace engine {
         const SchemaClassKey* classKey;
         boost::shared_ptr<Object> object;
         void* context;
-        Event* event;
+        boost::shared_ptr<Event> event;
         uint64_t timestamp;
         bool hasProps;
         bool hasStats;
 
         ConsoleEventImpl(ConsoleEvent::EventKind k) :
-            kind(k), classKey(0), context(0), event(0), timestamp(0) {}
+        kind(k), classKey(0), context(0), timestamp(0) {}
         ~ConsoleEventImpl() {}
         ConsoleEvent copy();
     };
@@ -137,6 +137,7 @@ namespace engine {
         void eventNewClass(const SchemaClassKey* key);
         void eventObjectUpdate(ObjectPtr object, bool prop, bool stat);
         void eventAgentHeartbeat(boost::shared_ptr<AgentProxy> agent, uint64_t timestamp);
+        void eventEventReceived(boost::shared_ptr<Event> event);
     };
 }
 }

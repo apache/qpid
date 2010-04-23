@@ -28,10 +28,13 @@ class ConsoleTestBase < Qmf::ConsoleHandler
     @settings.host = ARGV[0] if ARGV.size > 0
     @settings.port = ARGV[1].to_i if ARGV.size > 1
     @connection = Qmf::Connection.new(@settings)
-    @qmfc = Qmf::Console.new
+    @qmfc = Qmf::Console.new(self)
 
     @broker = @qmfc.add_connection(@connection)
     @broker.wait_for_stable
+
+    @store_events = :false
+    @event_list = []
 
     tests = []
     methods.each do |m|
@@ -70,4 +73,9 @@ class ConsoleTestBase < Qmf::ConsoleHandler
   def fail(text)
     raise text
   end
+
+  def event_received(event) 
+    @event_list << event if @store_events
+  end
+
 end
