@@ -80,7 +80,7 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
 
 ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
     threadPoolSize(1), interval(10), broker(0), timer(0),
-    startTime(uint64_t(sys::Duration(sys::now()))),
+    startTime(sys::now()),
     suppressed(false),
     qmf1Support(qmfV1), qmf2Support(qmfV2)
 {
@@ -335,7 +335,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
         outBuffer.putShortString(event.getPackageName());
         outBuffer.putShortString(event.getEventName());
         outBuffer.putBin128(event.getMd5Sum());
-        outBuffer.putLongLong(uint64_t(sys::Duration(sys::now())));
+        outBuffer.putLongLong(uint64_t(sys::Duration(sys::EPOCH, sys::now())));
         outBuffer.putOctet(sev);
         std::string sBuf;
         event.encode(sBuf);
@@ -359,7 +359,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
                                                event.getMd5Sum());
         event.mapEncode(values);
         map_["_values"] = values;
-        map_["_timestamp"] = uint64_t(sys::Duration(sys::now()));
+        map_["_timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
         map_["_severity"] = sev;
 
         headers["method"] = "indication";
@@ -594,7 +594,7 @@ void ManagementAgent::periodicProcessing (void)
     list<pair<ObjectId, ManagementObject*> > deleteList;
     std::string sBuf;
 
-    uint64_t uptime = uint64_t(sys::Duration(sys::now())) - startTime;
+    uint64_t uptime = sys::Duration(startTime, sys::now());
     static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
 
     moveNewObjectsLH();
@@ -797,7 +797,7 @@ void ManagementAgent::periodicProcessing (void)
         char                msgChars[BUFSIZE];
         Buffer msgBuffer(msgChars, BUFSIZE);
         encodeHeader(msgBuffer, 'h');
-        msgBuffer.putLongLong(uint64_t(sys::Duration(sys::now())));
+        msgBuffer.putLongLong(uint64_t(sys::Duration(sys::EPOCH, sys::now())));
 
         contentSize = BUFSIZE - msgBuffer.available ();
         msgBuffer.reset ();
@@ -817,7 +817,7 @@ void ManagementAgent::periodicProcessing (void)
         headers["qmf.agent"] = name_address;
 
         map["_values"] = attrMap;
-        map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::now()));
+        map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
         map["_values"].asMap()["heartbeat_interval"] = interval;
         map["_values"].asMap()["epoch"] = bootSequence;
 
@@ -1720,7 +1720,7 @@ void ManagementAgent::handleLocateRequestLH(const string&, const string& replyTo
     headers["qmf.agent"] = name_address;
 
     map["_values"] = attrMap;
-    map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::now()));
+    map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
     map["_values"].asMap()["heartbeat_interval"] = interval;
     map["_values"].asMap()["epoch"] = bootSequence;
 

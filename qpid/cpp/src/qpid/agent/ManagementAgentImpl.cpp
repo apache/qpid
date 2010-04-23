@@ -255,7 +255,7 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t se
                                            event.getMd5Sum());
     event.mapEncode(values);
     map_["_values"] = values;
-    map_["_timestamp"] = uint64_t(Duration(now()));
+    map_["_timestamp"] = uint64_t(Duration(EPOCH, now()));
     map_["_severity"] = sev;
 
     headers["method"] = "indication";
@@ -372,7 +372,7 @@ void ManagementAgentImpl::sendHeartbeat()
     headers["qmf.agent"] = name_address;
 
     map["_values"] = attrMap;
-    map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
+    map["_values"].asMap()["timestamp"] = uint64_t(Duration(EPOCH, now()));
     map["_values"].asMap()["heartbeat_interval"] = interval;
     map["_values"].asMap()["epoch"] = bootSequence;
 
@@ -675,7 +675,7 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
     headers["qmf.agent"] = name_address;
 
     map["_values"] = attrMap;
-    map["_values"].asMap()["timestamp"] = uint64_t(Duration(now()));
+    map["_values"].asMap()["timestamp"] = uint64_t(Duration(EPOCH, now()));
     map["_values"].asMap()["heartbeat_interval"] = interval;
     map["_values"].asMap()["epoch"] = bootSequence;
 

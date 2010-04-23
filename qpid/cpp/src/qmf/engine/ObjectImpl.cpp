@@ -27,7 +27,7 @@ using namespace qmf::engine;
 using namespace qpid::sys;
 using qpid::framing::Buffer;
 
-ObjectImpl::ObjectImpl(const SchemaObjectClass* type) : objectClass(type), broker(0), createTime(uint64_t(Duration(now()))), destroyTime(0), lastUpdatedTime(createTime)
+ObjectImpl::ObjectImpl(const SchemaObjectClass* type) : objectClass(type), broker(0), createTime(uint64_t(Duration(EPOCH, now()))), destroyTime(0), lastUpdatedTime(createTime)
 {
     int propCount = objectClass->getPropertyCount();
     int statCount = objectClass->getStatisticCount();
@@ -93,7 +93,7 @@ ObjectImpl::~ObjectImpl()
 
 void ObjectImpl::destroy()
 {
-    destroyTime = uint64_t(Duration(now()));
+    destroyTime = uint64_t(Duration(EPOCH, now()));
     // TODO - flag deletion
 }
 

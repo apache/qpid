@@ -59,11 +59,6 @@ AbsTime AbsTime::now() {
     return time_now;
 }
 
-Duration::Duration(const AbsTime& time0) : nanosecs(0) {
-    time_period p(ptime(min_date_time), time0.timepoint);
-    nanosecs = p.length().total_nanoseconds();
-}
-
 Duration::Duration(const AbsTime& start, const AbsTime& finish) {
     time_duration d = finish.timepoint - start.timepoint;
     nanosecs = d.total_nanoseconds();
