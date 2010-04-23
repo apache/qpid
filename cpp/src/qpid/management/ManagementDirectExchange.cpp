@@ -47,7 +47,7 @@ void ManagementDirectExchange::route(Deliverable&      msg,
     bool routeIt = true;
 
     if (managementAgent)
-        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, false /*direct*/);
+        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, false, qmfVersion);
 
     if (routeIt)
         DirectExchange::route(msg, routingKey, args);

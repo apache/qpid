@@ -653,7 +653,7 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
         }
     }
 
-    // end empty "non-partial" message to indicate CommandComplete
+    // Send empty "non-partial" message to indicate CommandComplete
     list_.clear();
     headers.erase("partial");
     ListCodec::encode(list_, content);

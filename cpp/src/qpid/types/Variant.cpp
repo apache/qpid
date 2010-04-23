@@ -217,17 +217,25 @@ uint8_t VariantImpl::asUint8() const
     switch(type) {
       case VAR_UINT8: return value.ui8;
       case VAR_STRING: return convertFromString<uint8_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT8)));
+      case VAR_INT64:
+          if (value.i64 >= 0 && value.i64 <= 0x00000000000000ff)
+              return uint8_t(value.i64);
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT8)));
 }
 uint16_t VariantImpl::asUint16() const
 {
     switch(type) {
       case VAR_UINT8: return value.ui8;
       case VAR_UINT16: return value.ui16;
+      case VAR_INT64:
+          if (value.i64 >= 0 && value.i64 <= 0x000000000000ffff)
+              return uint16_t(value.i64);
       case VAR_STRING: return convertFromString<uint16_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT16)));
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT16)));
 }
 uint32_t VariantImpl::asUint32() const
 {
@@ -235,9 +243,13 @@ uint32_t VariantImpl::asUint32() const
       case VAR_UINT8: return value.ui8;
       case VAR_UINT16: return value.ui16;
       case VAR_UINT32: return value.ui32;
+      case VAR_INT64:
+          if (value.i64 >= 0 && value.i64 <= 0x00000000ffffffff)
+              return uint32_t(value.i64);
       case VAR_STRING: return convertFromString<uint32_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT32)));
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT32)));
 }
 uint64_t VariantImpl::asUint64() const
 {
@@ -254,18 +266,26 @@ int8_t VariantImpl::asInt8() const
 {
     switch(type) {
       case VAR_INT8: return value.i8;
+      case VAR_INT64:
+          if (value.i64 <= 0x000000000000007f)
+              return int8_t(value.i64);
       case VAR_STRING: return convertFromString<int8_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT8)));
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT8)));
 }
 int16_t VariantImpl::asInt16() const
 {
     switch(type) {
       case VAR_INT8: return value.i8;
       case VAR_INT16: return value.i16;
+      case VAR_INT64:
+          if (value.i64 <= 0x0000000000007fff)
+              return int16_t(value.i64);
       case VAR_STRING: return convertFromString<int16_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT16)));
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT16)));
 }
 int32_t VariantImpl::asInt32() const
 {
@@ -273,9 +293,13 @@ int32_t VariantImpl::asInt32() const
       case VAR_INT8: return value.i8;
       case VAR_INT16: return value.i16;
       case VAR_INT32: return value.i32;
+      case VAR_INT64:
+          if (value.i64 <= 0x000000007fffffff)
+              return int32_t(value.i64);
       case VAR_STRING: return convertFromString<int32_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT32)));
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT32)));
 }
 int64_t VariantImpl::asInt64() const
 {
