@@ -141,6 +141,10 @@ class Object(object):
     self._schema  = schema
     self._properties  = []
     self._statistics  = []
+    self._currentTime = None
+    self._createTime  = None
+    self._deleteTime  = 0
+    self._objectId    = None
     if v2Map:
       self.v2Init(v2Map, agentName)
       return
@@ -150,11 +154,6 @@ class Object(object):
       self._createTime  = codec.read_uint64()
       self._deleteTime  = codec.read_uint64()
       self._objectId    = ObjectId(codec)
-    else:
-      self._currentTime = None
-      self._createTime  = None
-      self._deleteTime  = None
-      self._objectId    = None
     if codec:
       if prop:
         notPresent = self._parsePresenceMasks(codec, schema)
@@ -184,7 +183,12 @@ class Object(object):
     values = omap['_values']
     for prop in self._schema.getProperties():
       if prop.name in values:
-        self._properties.append((prop, values[prop.name]))
+        if prop.type == 10: # Reference
+          self._properties.append((prop, ObjectId(values[prop.name], agentName=agentName)))
+        else:
+          self._properties.append((prop, values[prop.name]))
+      else:
+        self._properties.append((prop, None))
     for stat in self._schema.getStatistics():
       if stat.name in values:
         self._statistics.append((stat, values[stat.name]))
@@ -210,6 +214,14 @@ class Object(object):
   def getBroker(self):
     """ Return the broker from which this object was sent """
     return self._broker
+
+  def getAgent(self):
+    """ Return the agent from which this object was sent """
+    return self._agent
+
+  def getV2RoutingKey(self):
+    """ Get the QMFv2 routing key to address this object """
+    return self._agent.getV2RoutingKey()
 
   def getObjectId(self):
     """ Return the object identifier for this object """
@@ -356,7 +368,7 @@ class Object(object):
           call['_arguments'] = argMap
 
           dp = self._broker.amqpSession.delivery_properties()
-          dp.routing_key = self._objectId.getAgentBank()
+          dp.routing_key = self.getV2RoutingKey()
           mp = self._broker.amqpSession.message_properties()
           mp.content_type = "amqp/map"
           mp.user_id = self._broker.authUser
@@ -599,7 +611,8 @@ class Session:
 
     self.brokers.append(broker)
     if not self.manageConnections:
-      agent = broker.getAgent(1,0)
+      broker._waitForStable()
+      agent = broker.getBrokerAgent()
       if agent:
         agent.getObjects(_class="agent")
     return broker
@@ -933,6 +946,15 @@ class Session:
     except:
       return
 
+    ##
+    ## For now, ignore heartbeats from messaging brokers.  We already have the "local-broker"
+    ## agent in our list.
+    ##
+    if '_vendor' in values and values['_vendor'] == 'apache.org' and \
+          '_product' in values and values['_product'] == 'qpidd':
+      broker._ageAgents()
+      return
+
     agent = broker.getAgent(1, agentName)
     if agent == None:
       agent = Agent(broker, agentName, "QMFv2 Agent", True, interval)
@@ -1185,7 +1207,7 @@ class Session:
           call['_arguments'] = args
 
           dp = broker.amqpSession.delivery_properties()
-          dp.routing_key = objectId.getAgentBank()
+          dp.routing_key = objectId.getV2RoutingKey()
           mp = broker.amqpSession.message_properties()
           mp.content_type = "amqp/map"
           mp.user_id = broker.authUser
@@ -1821,6 +1843,8 @@ class Broker:
     self.error = None
     self.brokerId = None
     self.connected = False
+    self.brokerAgent = None
+    self.brokerSupportsV2 = None
     self.amqpSessionId = "%s.%d.%d" % (platform.uname()[1], os.getpid(), Broker.nextSeq)
     Broker.nextSeq += 1
     if self.session.manageConnections:
@@ -1858,6 +1882,9 @@ class Broker:
     finally:
       self.cv.release()
     return None
+
+  def getBrokerAgent(self):
+    return self.brokerAgent
 
   def getSessionId(self):
     """ Get the identifier of the AMQP session to the broker """
@@ -1915,7 +1942,6 @@ class Broker:
       try:
         self.cv.acquire()
         self.agents = {}
-        self.agents['0'] = Agent(self, 0, "BrokerAgent")
       finally:
         self.cv.release()
 
@@ -1968,22 +1994,38 @@ class Broker:
       self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFFL)
 
       ##
+      ## Check to see if the broker has QMFv2 exchanges configured
+      ##
+      direct_result = self.amqpSession.exchange_query("qmf.default.direct")
+      topic_result = self.amqpSession.exchange_query("qmf.default.topic")
+      self.brokerSupportsV2 = not (direct_result.not_found or topic_result.not_found)
+
+      try:
+        self.cv.acquire()
+        self.agents = {}
+        self.brokerAgent = Agent(self, 0, "BrokerAgent", isV2=self.brokerSupportsV2)
+        self.agents['0'] = self.brokerAgent
+      finally:
+        self.cv.release()
+
+      ##
       ## Set up connectivity for QMFv2
       ##
-      self.v2_queue_name = "qmfc-v2-%s" % self.amqpSessionId
-      self.amqpSession.queue_declare(queue=self.v2_queue_name, exclusive=True, auto_delete=True)
-      self.amqpSession.exchange_bind(exchange="qmf.default.direct",
-                                     queue=self.v2_queue_name, binding_key=self.v2_queue_name)
-      self.amqpSession.exchange_bind(exchange="qmf.default.topic",
-                                     queue=self.v2_queue_name, binding_key="agent.#")
-      ## Other bindings here...
-      self.amqpSession.message_subscribe(queue=self.v2_queue_name, destination="v2dest",
-                                         accept_mode=self.amqpSession.accept_mode.none,
-                                         acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
-      self.amqpSession.incoming("v2dest").listen(self._v2Cb, self._exceptionCb)
-      self.amqpSession.message_set_flow_mode(destination="v2dest", flow_mode=1)
-      self.amqpSession.message_flow(destination="v2dest", unit=0, value=0xFFFFFFFFL)
-      self.amqpSession.message_flow(destination="v2dest", unit=1, value=0xFFFFFFFFL)
+      if self.brokerSupportsV2:
+        self.v2_queue_name = "qmfc-v2-%s" % self.amqpSessionId
+        self.amqpSession.queue_declare(queue=self.v2_queue_name, exclusive=True, auto_delete=True)
+        self.amqpSession.exchange_bind(exchange="qmf.default.direct",
+                                       queue=self.v2_queue_name, binding_key=self.v2_queue_name)
+        self.amqpSession.exchange_bind(exchange="qmf.default.topic",
+                                       queue=self.v2_queue_name, binding_key="agent.#")
+        ## Other bindings here...
+        self.amqpSession.message_subscribe(queue=self.v2_queue_name, destination="v2dest",
+                                           accept_mode=self.amqpSession.accept_mode.none,
+                                           acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
+        self.amqpSession.incoming("v2dest").listen(self._v2Cb, self._exceptionCb)
+        self.amqpSession.message_set_flow_mode(destination="v2dest", flow_mode=1)
+        self.amqpSession.message_flow(destination="v2dest", unit=0, value=0xFFFFFFFFL)
+        self.amqpSession.message_flow(destination="v2dest", unit=1, value=0xFFFFFFFFL)
 
       self.connected = True
       self.session._handleBrokerConnect(self)
@@ -1992,7 +2034,8 @@ class Broker:
       self._setHeader(codec, 'B')
       msg = self._message(codec.encoded)
       self._send(msg)
-      self._v2SendAgentLocate()
+      if self.brokerSupportsV2:
+        self._v2SendAgentLocate()
 
     except socket.error, e:
       self.error = "Socket Error %s - %s" % (e.__class__.__name__, e)
@@ -2257,6 +2300,8 @@ class Broker:
           ## of the message.
           ##
           agent_addr = ah['qmf.agent']
+          if agent_addr == 'broker':
+            agent_addr = '0'
           if agent_addr in self.agents:
             agent = self.agents[agent_addr]
             agent._handleQmfV2Message(opcode, mp, ah, content)
@@ -2370,6 +2415,13 @@ class Agent:
 
   def getAgentBank(self):
     self._checkClosed()
+    return self.agentBank
+
+
+  def getV2RoutingKey(self):
+    self._checkClosed()
+    if self.agentBank == '0':
+      return 'broker'
     return self.agentBank
 
 
@@ -2634,19 +2686,26 @@ class Agent:
     else:
       return
 
+    values = {}
+    if '_values' in content:
+      values = content['_values']
+
+    code = 7
+    text = "error"
+    if 'error_code' in values:
+      code = values['error_code']
+    if 'error_text' in values:
+      text = values['error_text']
+
     pair = self.seqMgr._release(seq)
     if pair == None:
       return
-    method, synchronous = pair
 
-    code = 7
-    text = ""
-    if '_status_code' in content:
-      code = content['_status_code']
-    if '_status_text' in content:
-      text = content['_status_text']
-    else:
-      text = content
+    if pair.__class__ == RequestContext:
+      pair.cancel(text)
+      return
+
+    method, synchronous = pair
 
     result = MethodResult(code, text, {})
     if synchronous:
@@ -2713,7 +2772,7 @@ class Agent:
     # Construct and transmit the message
     #
     dp = self.broker.amqpSession.delivery_properties()
-    dp.routing_key = self.agentBank
+    dp.routing_key = self.getV2RoutingKey()
     mp = self.broker.amqpSession.message_properties()
     mp.content_type = "amqp/map"
     mp.user_id = self.broker.authUser
@@ -2812,8 +2871,12 @@ class RequestContext(object):
     values = data['_values']
     for key in values:
       val = values[key]
-      if key in self.selectors and val != self.selectors[key]:
-        return
+      if key in self.selectors:
+        sel_val = self.selectors[key]
+        if sel_val.__class__ == ObjectId:
+          val = ObjectId(val, agentName=self.agent.getAgentBank())
+        if val != sel_val:
+          return
     self.rawQueryResults.append(data)
 
 
@@ -2908,6 +2971,9 @@ class RequestContext(object):
       self.agent._v2SendSchemaRequest(schemaId)
 
     for result in queryResults:
+      key = result.getClassKey()
+      if key.getPackageName() == "org.apache.qpid.broker" and key.getClassName() == "agent":
+        self.agent.broker._updateAgent(result)
       if self.notifiable:
         self.notifiable(qmf_object=result)
       else:
