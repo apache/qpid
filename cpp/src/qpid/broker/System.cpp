@@ -78,7 +78,7 @@ System::System (string _dataDir, Broker* broker) : mgmtObject(0)
         mgmtObject->set_version  (version);
         mgmtObject->set_machine  (machine);
 
-        agent->addObject (mgmtObject, 0x1000000000000001LL);
+        agent->addObject(mgmtObject, 0, true);
     }
 }
 

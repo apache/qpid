@@ -38,7 +38,7 @@ Vhost::Vhost (qpid::management::Manageable* parentBroker, Broker* broker) : mgmt
         if (agent != 0)
         {
             mgmtObject = new _qmf::Vhost(agent, this, parentBroker, "/");
-            agent->addObject (mgmtObject, 0x1000000000000003LL);
+            agent->addObject(mgmtObject, 0, true);
         }
     }
 }

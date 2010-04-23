@@ -32,7 +32,6 @@
 #include "qpid/log/Statement.h"
 
 #include "qpid/management/ManagementAgent.h"
-#include "qpid/management/IdAllocator.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
@@ -48,7 +47,6 @@ namespace cluster {
 
 using namespace std;
 using broker::Broker;
-using management::IdAllocator;
 using management::ManagementAgent;
 
 
@@ -77,46 +75,6 @@ struct ClusterOptions : public Options {
     }
 };
 
-struct UpdateClientIdAllocator : management::IdAllocator
-{
-    qpid::sys::AtomicValue<uint64_t> sequence;
-
-    UpdateClientIdAllocator() : sequence(0x4000000000000000LL) {}
-
-    uint64_t getIdFor(management::Manageable* m)
-    {
-        if (isUpdateQueue(m) || isUpdateExchange(m) || isUpdateSession(m) || isUpdateBinding(m)) {
-            return ++sequence;
-        } else {
-            return 0;
-        }
-    }
-
-    bool isUpdateQueue(management::Manageable* manageable)
-    {
-        qpid::broker::Queue* queue = dynamic_cast<qpid::broker::Queue*>(manageable);
-        return queue && queue->getName() == UpdateClient::UPDATE;
-    }
-
-    bool isUpdateExchange(management::Manageable* manageable)
-    {
-        qpid::broker::Exchange* exchange = dynamic_cast<qpid::broker::Exchange*>(manageable);
-        return exchange && exchange->getName() == UpdateClient::UPDATE;
-    }
-
-    bool isUpdateSession(management::Manageable* manageable)
-    {
-        broker::SessionState* session = dynamic_cast<broker::SessionState*>(manageable);
-        return session && session->getId().getName() == UpdateClient::UPDATE;
-    }
-
-    bool isUpdateBinding(management::Manageable* manageable)
-    {
-        broker::Exchange::Binding* binding = dynamic_cast<broker::Exchange::Binding*>(manageable);
-        return binding && binding->queue->getName() == UpdateClient::UPDATE;
-    }
-};
-
 struct ClusterPlugin : public Plugin {
 
     ClusterSettings settings;
@@ -139,11 +97,6 @@ struct ClusterPlugin : public Plugin {
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
-        ManagementAgent* mgmt = broker->getManagementAgent();
-        if (mgmt) {
-            std::auto_ptr<IdAllocator> allocator(new UpdateClientIdAllocator());
-            mgmt->setAllocator(allocator);
-        }
     }
 
     void disallowManagementMethods(ManagementAgent* agent) {

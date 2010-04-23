@@ -105,19 +105,12 @@ Queue::Queue(const string& _name, bool _autodelete,
     broker(b),
     deleted(false)
 {
-    if (parent != 0 && broker != 0)
-    {
+    if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
 
-        if (agent != 0)
-        {
+        if (agent != 0) {
             mgmtObject = new _qmf::Queue(agent, this, parent, _name, _store != 0, _autodelete, _owner != 0);
-
-            // Add the object to the management agent only if this queue is not durable.
-            // If it's durable, we will add it later when the queue is assigned a persistenceId.
-            if (store == 0) {
-                agent->addObject (mgmtObject, agent->allocateId(this));
-            }
+            agent->addObject(mgmtObject, 0, store != 0);
         }
     }
 }
@@ -125,7 +118,7 @@ Queue::Queue(const string& _name, bool _autodelete,
 Queue::~Queue()
 {
     if (mgmtObject != 0)
-        mgmtObject->resourceDestroy ();
+        mgmtObject->resourceDestroy();
 }
 
 bool isLocalTo(const OwnershipToken* token, boost::intrusive_ptr<Message>& msg)
@@ -942,16 +935,11 @@ uint64_t Queue::getPersistenceId() const
 
 void Queue::setPersistenceId(uint64_t _persistenceId) const
 {
-    if (mgmtObject != 0 && persistenceId == 0)
+    if (mgmtObject != 0 && persistenceId == 0 && externalQueueStore)
     {
-        ManagementAgent* agent = broker->getManagementAgent();
-        agent->addObject (mgmtObject, 0x3000000000000000LL + _persistenceId);
-
-        if (externalQueueStore) {
-            ManagementObject* childObj = externalQueueStore->GetManagementObject();
-            if (childObj != 0)
-                childObj->setReference(mgmtObject->getObjectId());
-        }
+        ManagementObject* childObj = externalQueueStore->GetManagementObject();
+        if (childObj != 0)
+            childObj->setReference(mgmtObject->getObjectId());
     }
     persistenceId = _persistenceId;
 }
