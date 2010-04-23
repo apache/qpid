@@ -77,7 +77,7 @@ const std::string TS = "ts";
 
 uint64_t timestamp(const qpid::sys::AbsTime& time)
 {
-    qpid::sys::Duration t(time);
+    qpid::sys::Duration t(qpid::sys::EPOCH, time);
     return t;
 }
 
