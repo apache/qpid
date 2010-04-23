@@ -44,13 +44,12 @@ import org.osgi.util.tracker.ServiceTracker;
 /**
  * 
  * @author aidan
- *
+ * 
  * Provides access to pluggable elements, such as exchanges
  */
 
 public class PluginManager
 {
-
     private Felix _felix = null;
     private ServiceTracker _exchangeTracker = null;
     private ServiceTracker _securityTracker = null;
@@ -70,16 +69,28 @@ public class PluginManager
                 + "org.osgi.service.packageadmin; version=1.2.0," + 
                 "org.osgi.service.startlevel; version=1.0.0," + 
                 "org.osgi.service.url; version=1.0.0," + 
-                "org.apache.qpid.framing; version=0.2.1," +
-                "org.apache.qpid.server.exchange; version=0.2.1," +
-                "org.apache.qpid.server.management; version=0.2.1,"+
-                "org.apache.qpid.protocol; version=0.2.1,"+
-                "org.apache.qpid.server.virtualhost; version=0.2.1," +
-                "org.apache.qpid; version=0.2.1," +
-                "org.apache.qpid.server.queue; version=0.2.1," +
+                "org.osgi.util.tracker; version=1.0.0,"+
+                "org.apache.qpid; version=0.7," +
+                "org.apache.qpid.framing; version=0.7," +
+                "org.apache.qpid.server.exchange; version=0.7," +
+                "org.apache.qpid.server.management; version=0.7,"+
+                "org.apache.qpid.server.protocol; version=0.7,"+
+                "org.apache.qpid.server.virtualhost; version=0.7," +
+                "org.apache.qpid.server.registry; version=0.7," +
+                "org.apache.qpid.server.queue; version=0.7," +
+                "org.apache.qpid.server.binding; version=0.7," +
+                "org.apache.qpid.server.configuration; version=0.7," +
+                "org.apache.qpid.server.configuration.management; version=0.7," +
+                "org.apache.qpid.server.persistent; version=0.7," +
+                "org.apache.qpid.server.plugins; version=0.7," +           
+                "org.apache.qpid.server.queue; version=0.7," +
+                "org.apache.qpid.server.security; version=0.7," + 
+                "org.apache.qpid.framing.AMQShortString; version=0.7," + 
+                "org.apache.qpid.server.queue.AMQQueue; version=0.7," +
+                "org.apache.qpid.server.security.access; version=0.7,"+
+                "org.apache.commons.configuration; version=0.7," +
                 "javax.management.openmbean; version=1.0.0,"+
-                "javax.management; version=1.0.0,"+
-                "org.apache.qpid.junit.extensions.util; version=0.6.1,"
+                "javax.management; version=1.0.0,"
                 );
         
         if (plugindir == null)
@@ -91,10 +102,11 @@ public class PluginManager
         // Set the list of bundles to load
         File dir = new File(plugindir);
         if (!dir.exists())
-        {
+        {	
         	_empty = true;
             return;
-        }
+        } 
+        
         StringBuffer pluginJars = new StringBuffer();
         
         if (dir.isDirectory())
@@ -107,6 +119,7 @@ public class PluginManager
                 }
             }
         }
+        
         if (pluginJars.length() == 0)
         {
             _empty = true;
@@ -124,13 +137,13 @@ public class PluginManager
         try
         {
             _felix.start();
-            
+              
             _exchangeTracker = new ServiceTracker(_activator.getContext(), ExchangeType.class.getName(), null);
             _exchangeTracker.open();
             
             _securityTracker = new ServiceTracker(_activator.getContext(), ACLPlugin.class.getName(), null);
-            _exchangeTracker.open();
-            
+            _securityTracker.open();
+             
         }
         catch (BundleException e)
         {
@@ -138,19 +151,19 @@ public class PluginManager
         }
     }
 
-    private <type> Map<String, type> getServices(ServiceTracker tracker)
+    private <T> Map<String, T> getServices(ServiceTracker tracker)
     {   
-        Map<String, type>exchanges = new HashMap<String, type>();
+        Map<String, T>services = new HashMap<String, T>();
         
-        if (tracker != null)
+        if ((tracker != null) && (tracker.getServices() != null))
         {
             for (Object service : tracker.getServices())
             {
-                exchanges.put(service.getClass().getName(), (type) service);
+                services.put(service.getClass().getName(), (T) service);
             }
-        }
+        } 
         
-        return exchanges;
+        return services;
     }
     
     public Map<String, ExchangeType<?>> getExchanges()
