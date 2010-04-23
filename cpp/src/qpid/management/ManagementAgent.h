@@ -108,7 +108,8 @@ public:
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args,
-                          const bool topic);
+                          const bool topic,
+                          int qmfVersion);
 
     const framing::Uuid& getUuid() const { return uuid; }
 
@@ -117,6 +118,9 @@ public:
 
     /** Disallow a method. Attempts to call it will receive an exception with message. */
     void disallow(const std::string& className, const std::string& methodName, const std::string& message);
+
+    /** Disallow all QMFv1 methods (used in clustered brokers). */
+    void disallowV1Methods() { disallowAllV1Methods = true; }
 
     /** Serialize my schemas as a binary blob into schemaOut */
     void exportSchemas(std::string& schemaOut);
@@ -281,6 +285,7 @@ private:
     typedef std::pair<std::string,std::string> MethodName;
     typedef std::map<MethodName, std::string> DisallowedMethods;
     DisallowedMethods disallowed;
+    bool disallowAllV1Methods;
 
     // Agent name and address
     qpid::types::Variant::Map attrMap;
@@ -314,7 +319,7 @@ private:
     void moveNewObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
-    void dispatchAgentCommandLH(qpid::broker::Message& msg);
+    void dispatchAgentCommandLH(qpid::broker::Message& msg, bool viaLocal=false);
 
     PackageMap::iterator findOrAddPackageLH(std::string name);
     void addClassLH(uint8_t                      kind,
@@ -331,20 +336,21 @@ private:
     uint32_t allocateNewBank ();
     uint32_t assignBankLH (uint32_t requestedPrefix);
     void deleteOrphanedAgentsLH();
-    void sendCommandCompleteLH(std::string replyToKey, uint32_t sequence,
-                              uint32_t code = 0, std::string text = std::string("OK"));
-    void handleBrokerRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handlePackageQueryLH   (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handlePackageIndLH     (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleClassQueryLH     (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleClassIndLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleSchemaRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleSchemaResponseLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
-    void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
-    void handleGetQueryLH       (const std::string& body, std::string replyToKey, const std::string& cid, const std::string& contentType);
-    void handleMethodRequestLH  (const std::string& body, std::string replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken);
+    void sendCommandCompleteLH(const std::string& replyToKey, uint32_t sequence,
+                              uint32_t code = 0, const std::string& text = "OK");
+    void sendExceptionLH(const std::string& replyToKey, const std::string& cid, const std::string& text, uint32_t code=1, bool viaLocal=false);
+    void handleBrokerRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handlePackageQueryLH   (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handlePackageIndLH     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleClassQueryLH     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleClassIndLH       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleSchemaRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleSchemaResponseLH (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleAttachRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleGetQueryLH       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleMethodRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
+    void handleGetQueryLH       (const std::string& body, const std::string& replyToKey, const std::string& cid, bool viaLocal);
+    void handleMethodRequestLH  (const std::string& body, const std::string& replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken, bool viaLocal);
     void handleLocateRequestLH  (const std::string& body, const std::string &replyToKey, const std::string& cid);
 
 

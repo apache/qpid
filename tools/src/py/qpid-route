@@ -73,12 +73,14 @@ class RouteManager:
         self.remote  = None
         self.qmf = Session()
         self.broker = self.qmf.addBroker(localBroker, _connTimeout)
+        self.broker._waitForStable()
+        self.agent = self.broker.getBrokerAgent()
 
     def disconnect(self):
         self.qmf.delBroker(self.broker)
 
     def getLink(self):
-        links = self.qmf.getObjects(_class="link")
+        links = self.agent.getObjects(_class="link")
         for link in links:
             if self.remote.match(link.host, link.port):
                 return link
@@ -89,7 +91,7 @@ class RouteManager:
         if self.local.match(self.remote.host, self.remote.port):
             raise Exception("Linking broker to itself is not permitted")
 
-        brokers = self.qmf.getObjects(_class="broker")
+        brokers = self.agent.getObjects(_class="broker")
         broker = brokers[0]
         link = self.getLink()
         if link == None:
@@ -105,7 +107,7 @@ class RouteManager:
 
     def delLink(self, remoteBroker):
         self.remote = BrokerURL(remoteBroker)
-        brokers = self.qmf.getObjects(_class="broker")
+        brokers = self.agent.getObjects(_class="broker")
         broker = brokers[0]
         link = self.getLink()
         if link == None:
@@ -116,7 +118,7 @@ class RouteManager:
             print "Close method returned:", res.status, res.text
 
     def listLinks(self):
-        links = self.qmf.getObjects(_class="link")
+        links = self.agent.getObjects(_class="link")
         if len(links) == 0:
             print "No Links Found"
         else:
@@ -128,7 +130,6 @@ class RouteManager:
                 (link.host, link.port, link.transport, YN(link.durable), link.state, link.lastError)
 
     def mapRoutes(self):
-        qmf = self.qmf
         print
         print "Finding Linked Brokers:"
 
@@ -139,13 +140,13 @@ class RouteManager:
         added = True
         while added:
             added = False
-            links = qmf.getObjects(_class="link")
+            links = self.qmf.getObjects(_class="link")
             for link in links:
                 url = BrokerURL("%s:%d" % (link.host, link.port))
                 if url.name() not in brokerList:
                     print "    %s..." % url.name(),
                     try:
-                        b = qmf.addBroker("%s:%d" % (link.host, link.port), _connTimeout)
+                        b = self.qmf.addBroker("%s:%d" % (link.host, link.port), _connTimeout)
                         brokerList[url.name()] = b
                         added = True
                         print "Ok"
@@ -154,7 +155,7 @@ class RouteManager:
 
         print
         print "Dynamic Routes:"
-        bridges = qmf.getObjects(_class="bridge", dynamic=True)
+        bridges = self.qmf.getObjects(_class="bridge", dynamic=True)
         fedExchanges = []
         for bridge in bridges:
             if bridge.src not in fedExchanges:
@@ -182,7 +183,7 @@ class RouteManager:
             print
 
         print "Static Routes:"
-        bridges = qmf.getObjects(_class="bridge", dynamic=False)
+        bridges = self.qmf.getObjects(_class="bridge", dynamic=False)
         if len(bridges) == 0:
             print "  none found"
         print
@@ -216,7 +217,7 @@ class RouteManager:
 
         for broker in brokerList:
             if broker != self.local.name():
-                qmf.delBroker(brokerList[broker])
+                self.qmf.delBroker(brokerList[broker])
 
 
     def addRoute(self, remoteBroker, exchange, routingKey, tag, excludes, dynamic=False):
@@ -228,7 +229,7 @@ class RouteManager:
         if link == None:
             raise Exception("Link failed to create")
 
-        bridges = self.qmf.getObjects(_class="bridge")
+        bridges = self.agent.getObjects(_class="bridge")
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and \
                     bridge.dest == exchange and bridge.key == routingKey and not bridge.srcIsQueue:
@@ -250,7 +251,7 @@ class RouteManager:
         if link == None:
             raise Exception("Link failed to create")
 
-        bridges = self.qmf.getObjects(_class="bridge")
+        bridges = self.agent.getObjects(_class="bridge")
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and \
                     bridge.dest == exchange and bridge.src == queue and bridge.srcIsQueue:
@@ -274,7 +275,7 @@ class RouteManager:
                 raise Exception("No link found from %s to %s" % (self.remote.name(), self.local.name()))
             sys.exit(0)
 
-        bridges = self.qmf.getObjects(_class="bridge")
+        bridges = self.agent.getObjects(_class="bridge")
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and \
                     bridge.dest == exchange and bridge.src == queue and bridge.srcIsQueue:
@@ -304,7 +305,7 @@ class RouteManager:
                 raise Exception("No link found from %s to %s" % (self.remote.name(), self.local.name()))
             sys.exit(0)
 
-        bridges = self.qmf.getObjects(_class="bridge")
+        bridges = self.agent.getObjects(_class="bridge")
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and bridge.dest == exchange and bridge.key == routingKey \
                     and bridge.dynamic == dynamic:

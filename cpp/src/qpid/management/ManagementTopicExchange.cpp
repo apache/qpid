@@ -47,7 +47,7 @@ void ManagementTopicExchange::route(Deliverable&      msg,
 
     // Intercept management agent commands
     if (managementAgent)
-        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, true /* topic */);
+        routeIt = managementAgent->dispatchCommand(msg, routingKey, args, true, qmfVersion);
 
     if (routeIt)
         TopicExchange::route(msg, routingKey, args);

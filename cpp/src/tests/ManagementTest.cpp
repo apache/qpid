@@ -33,7 +33,7 @@ using namespace qpid::framing;
 using namespace qpid::management;
 
 QPID_AUTO_TEST_CASE(testObjectIdSerializeStream) {
-    std::string text("0-10-4-2500-80000000000");
+    std::string text("0-10-4-2500-80000000000()");
     std::stringstream input(text);
 
     ObjectId oid(input);
@@ -45,7 +45,7 @@ QPID_AUTO_TEST_CASE(testObjectIdSerializeStream) {
 }
 
 QPID_AUTO_TEST_CASE(testObjectIdSerializeString) {
-    std::string text("0-10-4-2500-80000000000");
+    std::string text("0-10-4-2500-80000000000()");
 
     ObjectId oid(text);
 
@@ -65,7 +65,7 @@ QPID_AUTO_TEST_CASE(testObjectIdEncode) {
     std::stringstream out1;
     out1 << oid;
 
-    BOOST_CHECK_EQUAL(out1.str(), "1-2-3-myAgent-9999");
+    BOOST_CHECK_EQUAL(out1.str(), "1-2-3-myAgent-9999(testkey)");
 }
 
 QPID_AUTO_TEST_CASE(testObjectIdAttach) {
@@ -77,13 +77,13 @@ QPID_AUTO_TEST_CASE(testObjectIdAttach) {
     std::stringstream out1;
     out1 << oid;
 
-    BOOST_CHECK_EQUAL(out1.str(), "10-20-0-MrSmith-0");
+    BOOST_CHECK_EQUAL(out1.str(), "10-20-0-MrSmith-0(GabbaGabbaHey)");
 
     agent.setBanks(30, 40);
     std::stringstream out2;
     out2 << oid;
 
-    BOOST_CHECK_EQUAL(out2.str(), "10-20-30-MrSmith-0");
+    BOOST_CHECK_EQUAL(out2.str(), "10-20-30-MrSmith-0(GabbaGabbaHey)");
 }
 
 QPID_AUTO_TEST_CASE(testConsoleObjectId) {

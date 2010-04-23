@@ -236,7 +236,8 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
         "-" << ((virtFirst & 0x0FFF000000000000LL) >> 48) <<
         "-" << ((virtFirst & 0x0000FFFFF0000000LL) >> 28) <<
         "-" << i.agentName <<
-        "-" << i.second;
+        "-" << i.second <<
+        "(" << i.v2Key << ")";
     return out;
 }
 
