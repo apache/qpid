@@ -97,7 +97,7 @@ Connection globalConnection;
 
 uint64_t current_time()
 {
-    Duration t(now());
+    Duration t(EPOCH, now());
     return t;
 }
 
@@ -363,7 +363,7 @@ void Sender::sendByRate()
     AbsTime start = now();
     while (true) {
         AbsTime sentAt=now();
-        msg.getDeliveryProperties().setTimestamp(Duration(sentAt));
+        msg.getDeliveryProperties().setTimestamp(Duration(EPOCH, sentAt));
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
         if (opts.sync) session.sync();
         ++sent;

@@ -348,7 +348,7 @@ void AgentImpl::heartbeat()
     Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
 
     Protocol::encodeHeader(buffer, Protocol::OP_HEARTBEAT_INDICATION);
-    buffer.putLongLong(uint64_t(Duration(now())));
+    buffer.putLongLong(uint64_t(Duration(EPOCH, now())));
     stringstream key;
     key << "console.heartbeat." << assignedBrokerBank << "." << assignedAgentBank;
     sendBufferLH(buffer, QMF_EXCHANGE, key.str());
@@ -484,7 +484,7 @@ void AgentImpl::raiseEvent(Event& event)
     Protocol::encodeHeader(buffer, Protocol::OP_EVENT_INDICATION);
 
     event.impl->encodeSchemaKey(buffer);
-    buffer.putLongLong(uint64_t(Duration(now())));
+    buffer.putLongLong(uint64_t(Duration(EPOCH, now())));
     event.impl->encode(buffer);
     string key(event.impl->getRoutingKey(assignedBrokerBank, assignedAgentBank));
 
