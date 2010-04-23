@@ -172,7 +172,9 @@ Broker::Broker(const Broker::Options& conf) :
         System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string(), this);
         systemObject = System::shared_ptr(system);
 
-        mgmtObject = new _qmf::Broker(managementAgent.get(), this, system, conf.port);
+        mgmtObject = new _qmf::Broker(managementAgent.get(), this, system, "amqp-broker");
+        mgmtObject->set_systemRef(system->GetManagementObject()->getObjectId());
+        mgmtObject->set_port(conf.port);
         mgmtObject->set_workerThreads(conf.workerThreads);
         mgmtObject->set_maxConns(conf.maxConnections);
         mgmtObject->set_connBacklog(conf.connectionBacklog);

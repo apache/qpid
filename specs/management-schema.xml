@@ -61,8 +61,9 @@
   ===============================================================
   -->
   <class name="Broker">
-    <property name="systemRef"        type="objId"  references="System" access="RC" index="y" desc="System ID" parentRef="y"/>
-    <property name="port"             type="uint16" access="RC" index="y" desc="TCP Port for AMQP Service"/>
+    <property name="name"             type="sstr"   access="RC" index="y" desc="Index for the broker at this agent"/>
+    <property name="systemRef"        type="objId"  references="System" access="RO" desc="System ID" parentRef="y"/>
+    <property name="port"             type="uint16" access="RO" desc="TCP Port for AMQP Service"/>
     <property name="workerThreads"    type="uint16" access="RO" desc="Thread pool size"/>
     <property name="maxConns"         type="uint16" access="RO" desc="Maximum allowed connections"/>
     <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
