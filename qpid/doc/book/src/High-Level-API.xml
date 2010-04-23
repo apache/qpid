@@ -67,9 +67,9 @@
   </section>
    
   <section>
-    <title>Using the Qpid messaging API</title>
+    <title>Using the Qpid Messaging API</title>
 
-    <para>The Qpid messaging API is quite simple, consisting of only a
+    <para>The Qpid Messaging API is quite simple, consisting of only a
       handful of core classes.
     </para>
 
@@ -214,7 +214,7 @@ finally:
 	</example>
 
     </section>
-    <section>
+    <section id="section-addresses">
       <title>Addresses</title>
       
       <para>An <firstterm>address</firstterm> is the name of a message
@@ -230,7 +230,7 @@ finally:
       </para>
 
       <para>An address resolves to a <firstterm>node</firstterm>. The
-      Qpid messaging API recognises two kinds of nodes,
+      Qpid Messaging API recognises two kinds of nodes,
       <firstterm>queues</firstterm> and <firstterm>topics</firstterm>.
 
 	   <footnote><para>The terms <emphasis>queue</emphasis> and
@@ -240,7 +240,7 @@ finally:
 	   and publish-subscribe. AMQP 0-10 has an exchange type
 	   called a <emphasis>topic exchange</emphasis>. When the term
 	   <emphasis>topic</emphasis> occurs alone, it refers to a
-	   messaging API topic, not the topic
+	   Messaging API topic, not the topic
 	   exchange.</para></footnote>.
 
       A queue stores each message until it has been received and
@@ -260,11 +260,11 @@ finally:
       queues map to AMQP queues, and topics map to AMQP exchanges.
 
           <footnote><para>In AMQP 0-10, messages are sent to
-          exchanges, and read from queues. The messaging API also
+          exchanges, and read from queues. The Messaging API also
           allows a sender to send messages to a queue; internally,
           Qpid implements this by sending the message to the default
           exchange, with the name of the queue as the routing key. The
-          messaging API also allows a receiver to receive messages
+          Messaging API also allows a receiver to receive messages
           from a topic; internally, Qpid implements this by setting up
           a private subscription queue for the receiver and binding
           the subscription queue to the exchange that corresponds to
@@ -759,7 +759,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
         -->
 
       <table>
-        <title>Address Options</title>
+        <title>Address String Options</title>
         <tgroup cols="3">
           <thead>
 	    <row>
@@ -1061,8 +1061,10 @@ options := map
    ]]></programlisting>
 
 
-    <para>The address string options map supports the following parameters:</para>
-
+    <formalpara>
+      <title>Address String Options</title>
+      <para>The address string options map supports the following parameters:</para>
+    </formalpara>
 
     <programlisting><![CDATA[
 <name> [ / <subject> ] ; {
@@ -1095,7 +1097,7 @@ options := map
       <listitem><para><emphasis>always</emphasis>: the action will be performed by any messaging client</para></listitem>
       <listitem><para><emphasis>sender</emphasis>: the action will only be performed by a sender</para></listitem>
       <listitem><para><emphasis>receiver</emphasis>: the action will only be performed by a receiver</para></listitem>
-      <listitem><para><emphasis>never: the action will never be performed (this is the default)</emphasis></para></listitem>
+      <listitem><para><emphasis>never</emphasis>: the action will never be performed (this is the default)</para></listitem>
     </itemizedlist>
 
     <itemizedlist>
@@ -1205,7 +1207,7 @@ options := map
 
     <para>
       This section describes the AMQP 0-10 mapping for the Qpid
-      messaging API.
+      Messaging API.
     </para>
     <para>
         The interaction with the broker triggered by creating a sender
@@ -1309,7 +1311,7 @@ options := map
             exchange is not a standard AMQP exchange type. It is a
             Qpid extension and is currently only supported by the C++
             broker.</para></footnote> if a subject is specified it is
-            used as the bidning key and an xquery is defined that will
+            used as the binding key and an XQuery is defined that will
             match any message with that value for qpid.subject. Again
             this means that only messages whose subject exactly match
             that specified in the source address will be received. For
@@ -1347,7 +1349,7 @@ options := map
 	    <row>
 	      <entry>Python API</entry>
 	      <entry>C++ API</entry>
-	      <entry>AMQP 0-10 Property<footnote><para>In these entries, <literal>mp></literal> refers to an AMQP message property, and <literal>dp</literal> refers to an AMQP delivery property.</para></footnote></entry>
+	      <entry>AMQP 0-10 Property<footnote><para>In these entries, <literal>mp</literal> refers to an AMQP message property, and <literal>dp</literal> refers to an AMQP delivery property.</para></footnote></entry>
 	    </row>
           </thead>
           <tbody>
@@ -1397,9 +1399,11 @@ options := map
       <title>A Simple Messaging Program in Java JMS</title>
       
       <para>The following program shows how to use address strings and
-        JNDI for Qpid programs that use Java JMS.</para>
+      JNDI for Qpid programs that use Java JMS.</para>
 
-      <para>This program uses a JNDI file that defines a connection
+      <para>The Qpid JMS client uses <xref
+      linkend="section-address-strings"/> to identify sources and
+      targets. This program uses a JNDI file that defines a connection
       factory for the broker we are using, and the address of the
       topic exchange node that we will bind the sender and receiver
       to. (The syntax of a ConnectionURL is given in <xref
@@ -1658,7 +1662,68 @@ destination.topicExchange = amq.topic
         <programlisting>brokerlist=&#39;tcp://localhost:5672&#39;
         </programlisting>
       </section>
-    </section>    
+    </section>  
+
+    <section>
+      <title>Java JMS Message Properties</title>
+
+      <para>The following table shows how Qpid Messaging API message
+        properties are mapped to AMQP 0-10 message properties and
+        delivery properties. In this table <varname>msg</varname>
+        refers to the Message class defined in the Qpid Messaging API,
+        <varname>mp</varname> refers to an AMQP 0-10
+        <varname>message-properties</varname> struct, and
+        <varname>dp</varname> refers to an AMQP 0-10
+        <varname>delivery-properties</varname> struct.</para>
+
+      <table>
+        <title>Java JMS Mapping to AMQP 0-10 Message Properties</title>
+        <tgroup cols="2">
+          <thead>
+	    <row>
+	      <entry>Java JMS Message Property</entry>
+	      <entry>AMQP 0-10 Property<footnote><para>In these entries, <literal>mp</literal> refers to an AMQP message property, and <literal>dp</literal> refers to an AMQP delivery property.</para></footnote></entry>
+
+	    </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>msg.id</entry><entry>mp.message_id</entry>
+	    </row>
+	    <row>
+	      <entry>msg.subject</entry><entry>mp.application_headers["qpid.subject"]</entry>
+	    </row>
+	    <row>
+	      <entry>msg.user_id</entry><entry>mp.user_id</entry>
+	    </row>
+	    <row>
+	      <entry>msg.reply_to</entry><entry>mp.reply_to<footnote><para>The reply_to is converted from the protocol representation into an address.</para></footnote></entry>
+	    </row>
+	    <row>
+	      <entry>msg.correlation_id</entry><entry>mp.correlation_id</entry>
+	    </row>
+	    <row>
+	      <entry>msg.durable</entry><entry>dp.delivery_mode == delivery_mode.persistent<footnote><para>Note that msg.durable is a boolean, not an enum.</para></footnote></entry>
+	    </row>
+	    <row>
+	      <entry>msg.priority</entry><entry>dp.priority</entry>
+	    </row>
+	    <row>
+	      <entry>msg.ttl</entry><entry>dp.ttl</entry>
+	    </row>
+	    <row>
+	      <entry>msg.redelivered</entry><entry>dp.redelivered</entry>
+	    </row>
+	    <row><entry>mp.application_headers</entry>
+	    </row>
+	    <row>
+	      <entry>msg.content_type</entry><entry>mp.content_type</entry>
+	    </row>
+          </tbody>
+        </tgroup>
+      </table>
+      
+    </section>
   </section>    
 </chapter>
 
