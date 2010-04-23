@@ -267,6 +267,39 @@ class ConsoleTest < ConsoleTestBase
   end
 
 
+  def test_F_events
+
+    @event_list.clear
+    @store_events = :true
+
+    parent = @qmfc.object(:class =>"parent")
+    assert(parent, "Number of parent objects")
+
+    parent.set_numerics("big")
+    parent.set_numerics("small")
+    parent.set_numerics("negative")
+    parent.set_short_string("TEST")
+    parent.set_long_string("LONG_TEST")
+    parent.probe_userid()
+
+    @store_events = :false
+
+    assert_equal(@event_list.length, 5)
+
+    assert_equal(@event_list[0].get_attr("uint32val"), 0xA5A55A5A)
+    assert_equal(@event_list[0].get_attr("strval"), "Unused")
+    assert_equal(@event_list[1]["uint32val"], 5)
+    assert_equal(@event_list[1].get_attr("strval"), "Unused")
+    assert_equal(@event_list[2].get_attr("uint32val"), 0)
+    assert_equal(@event_list[2].get_attr("strval"), "Unused")
+    assert_equal(@event_list[3].get_attr("uint32val"), 0)
+    assert_equal(@event_list[3].get_attr("strval"), "TEST")
+    assert_equal(@event_list[4].get_attr("uint32val"), 0)
+    assert_equal(@event_list[4].get_attr("strval"), "LONG_TEST")
+
+    @event_list.clear
+
+  end
 
   def test_G_basic_map_list_data
     parent = @qmfc.object(:class => "parent")

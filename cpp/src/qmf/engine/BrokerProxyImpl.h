@@ -22,6 +22,7 @@
 
 #include "qmf/engine/Console.h"
 #include "qmf/engine/ObjectImpl.h"
+#include "qmf/engine/EventImpl.h"
 #include "qmf/engine/SchemaImpl.h"
 #include "qmf/engine/ValueImpl.h"
 #include "qmf/engine/QueryImpl.h"
