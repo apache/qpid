@@ -19,6 +19,8 @@
 
 package org.apache.qpid.server.plugins;
 
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
@@ -30,6 +32,8 @@ public class Activator implements BundleActivator
     public void start(BundleContext ctx) throws Exception
     {
         _context = ctx;
+         ctx.registerService(ServerConfiguration.class.getName(), ApplicationRegistry.getInstance().getConfiguration(), null);
+         
     }
 
     public void stop(BundleContext ctx) throws Exception
