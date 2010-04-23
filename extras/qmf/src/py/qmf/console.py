@@ -2404,22 +2404,18 @@ class Agent:
 
 
   def getBroker(self):
-    self._checkClosed()
     return self.broker
 
 
   def getBrokerBank(self):
-    self._checkClosed()
     return self.brokerBank
 
 
   def getAgentBank(self):
-    self._checkClosed()
     return self.agentBank
 
 
   def getV2RoutingKey(self):
-    self._checkClosed()
     if self.agentBank == '0':
       return 'broker'
     return self.agentBank

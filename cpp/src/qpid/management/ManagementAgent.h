@@ -42,8 +42,6 @@
 namespace qpid {
 namespace management {
 
-struct IdAllocator;
-
 class ManagementAgent
 {
 private:
@@ -95,10 +93,11 @@ public:
                                              uint8_t*    md5Sum,
                                              ManagementObject::writeSchemaCall_t schemaCall);
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
-                                             uint64_t          persistId = 0);
+                                             uint64_t          persistId = 0,
+                                             bool              persistent = false);
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject*  object,
                                              const std::string& key,
-                                             bool               persistent = true);
+                                             bool               persistent = false);
     QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
@@ -112,9 +111,6 @@ public:
                           int qmfVersion);
 
     const framing::Uuid& getUuid() const { return uuid; }
-
-    void setAllocator(std::auto_ptr<IdAllocator> allocator);
-    uint64_t allocateId(Manageable* object);
 
     /** Disallow a method. Attempts to call it will receive an exception with message. */
     void disallow(const std::string& className, const std::string& methodName, const std::string& message);
@@ -279,8 +275,6 @@ private:
     bool                         clientWasAdded;
     const qpid::sys::AbsTime     startTime;
     bool                         suppressed;
-
-    std::auto_ptr<IdAllocator> allocator;
 
     typedef std::pair<std::string,std::string> MethodName;
     typedef std::map<MethodName, std::string> DisallowedMethods;

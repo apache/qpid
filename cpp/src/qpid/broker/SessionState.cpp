@@ -81,7 +81,7 @@ SessionState::SessionState(
             mgmtObject->set_detachedLifespan (0);
             mgmtObject->clr_expireTime();
             if (rateFlowcontrol) mgmtObject->set_maxClientRate(maxRate);
-            agent->addObject (mgmtObject, agent->allocateId(this));
+            agent->addObject(mgmtObject);
         }
     }
     attach(h);

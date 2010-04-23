@@ -281,7 +281,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
         {
             mgmtObject = new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId() ,name,
                                                 !acquire, ackExpected, exclusive, ManagementAgent::toMap(arguments));
-            agent->addObject (mgmtObject, agent->allocateId(this));
+            agent->addObject (mgmtObject);
             mgmtObject->set_creditMode("WINDOW");
         }
     }

@@ -639,7 +639,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.cpp \
   qpid/broker/Vhost.h \
-  qpid/management/IdAllocator.h \
   qpid/management/ManagementAgent.cpp \
   qpid/management/ManagementAgent.h \
   qpid/management/ManagementDirectExchange.cpp \

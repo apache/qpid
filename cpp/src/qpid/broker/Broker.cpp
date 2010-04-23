@@ -185,7 +185,7 @@ Broker::Broker(const Broker::Options& conf) :
         else
             mgmtObject->clr_dataDir();
 
-        managementAgent->addObject(mgmtObject, 0x1000000000000002LL);
+        managementAgent->addObject(mgmtObject, 0, true);
 
         // Since there is currently no support for virtual hosts, a placeholder object
         // representing the implied single virtual host is added here to keep the
