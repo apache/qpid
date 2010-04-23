@@ -19,6 +19,7 @@
 #include "qpid/acl/Acl.h"
 #include "qpid/acl/AclData.h"
 #include "qpid/acl/AclValidator.h"
+#include "qpid/sys/Mutex.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
@@ -39,6 +40,7 @@
 using namespace std;
 using namespace qpid::acl;
 using qpid::broker::Broker;
+using namespace qpid::sys;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
@@ -55,7 +57,6 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         mgmtObject = new _qmf::Acl (agent, this, broker);
         agent->addObject (mgmtObject);
     }
-
     std::string errorString;
     if (!readAclFile(errorString)){
         throw Exception("Could not read ACL file " + errorString);
@@ -67,7 +68,11 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
    {
-      boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
+      boost::shared_ptr<AclData> dataLocal;
+      { 
+        Mutex::ScopedLock locker(dataLock);
+        dataLocal = data;  //rcu copy
+      }
 
       // add real ACL check here...
       AclResult aclreslt = dataLocal->lookup(id,action,objType,name,params);
@@ -78,7 +83,11 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey)
    {
-      boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
+      boost::shared_ptr<AclData> dataLocal;
+      {
+        Mutex::ScopedLock locker(dataLock);
+        dataLocal = data;  //rcu copy
+      }
 
       // only use dataLocal here...
       AclResult aclreslt = dataLocal->lookup(id,action,objType,ExchangeName,RoutingKey);
@@ -116,11 +125,11 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 
    bool Acl::readAclFile(std::string& errorText)
    {
-      // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for permormance reasons.
+      // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for performance reasons.
       return readAclFile(aclValues.aclFile, errorText);
    }
 
-   bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
+   bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {      
       boost::shared_ptr<AclData> d(new AclData);
       AclReader ar;
       if (ar.read(aclFile, d)){
@@ -133,7 +142,10 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
       AclValidator validator;
       validator.validate(d);
 
-      data = d;
+      {  
+        Mutex::ScopedLock locker(dataLock);
+        data = d;
+      }
 	  transferAcl = data->transferAcl; // any transfer ACL
 
       if (data->transferAcl){
