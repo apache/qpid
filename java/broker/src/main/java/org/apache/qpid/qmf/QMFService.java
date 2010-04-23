@@ -619,6 +619,11 @@ public class QMFService implements ConfigStore.ConfigEventListener
             return (BrokerSchema.SystemObject) adapt(_obj.getSystem());
         }
 
+        public String getName()
+        {
+            return "amqp-broker";
+        }
+
         public Integer getPort()
         {
             return _obj.getPort();
