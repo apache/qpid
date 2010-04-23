@@ -31,16 +31,39 @@
     
     <para>Apache Qpid is a reliable, asynchronous messaging system that
       supports the AMQP messaging protocol in several common programming
-      languages. On the Java platform, Qpid uses the
-      established <ulink url="http://java.sun.com/products/jms/">Java JMS
-        API</ulink>. On the .NET platform, Qpid defines
-      a <ulink url="http://qpid.apache.org/wcf.html">WCF
-        binding</ulink>. For Python and C++, Qpid defines its own
-      messaging API which is conceptually similar in each supported
-      language. Support for this API in Ruby will be added
-      soon<footnote><para>Ruby currently uses an API that is closely tied
-          to the AMQP version.</para></footnote>.
+      languages.   
     </para>
+
+    <itemizedlist>
+      <listitem>
+        <para>
+          On the Java platform, Qpid uses the
+          established <ulink url="http://java.sun.com/products/jms/">Java JMS
+            API</ulink>. 
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          On the .NET platform, Qpid defines
+          a <ulink url="http://qpid.apache.org/wcf.html">WCF
+            binding</ulink>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          For Python and C++, Qpid defines its own
+          messaging API which is conceptually similar in each supported
+          language.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Support for this API in Ruby will be added
+          soon<footnote><para>Ruby currently uses an API that is closely tied
+              to the AMQP version.</para></footnote>.
+        </para>
+      </listitem>
+    </itemizedlist>
   </section>
    
   <section>
@@ -992,89 +1015,6 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 
     </section>
 
-    <section>
-      <title>Reconnect/Failover</title>
-      <table>
-        <title>Connection properties</title>
-        <tgroup cols="3">
-          <thead>
-	    <row>
-	      <entry>property</entry>
-	      <entry>value</entry>
-	      <entry>semantics</entry>
-	    </row>
-          </thead>
-          <tbody>
-	    <row>
-	      <entry>
-	        reconnect
-	      </entry>
-	      <entry>
-	        True, False
-	      </entry>
-	      <entry>
-	        Transparently reconnect if the connection is lost.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_timeout
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Total number of seconds to continue reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_limit
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Maximum number of reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_interval_min
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_interval_max
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Maximum reconnect interval.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_interval
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
-	      </entry>
-	    </row>
-          </tbody>
-        </tgroup>
-      </table>
-    </section>
 
   <section id="section-address-string-bnf">
     <title>Address String Grammar</title>
@@ -1170,6 +1110,96 @@ options := map
 
 
 </section>
+
+    <section>
+      <title>Reconnect and Failover</title>
+      <para>Connections in the Qpid messaging API support automatic
+      reconnection. The following table lists some of the connection
+      properties that control this. See the reference documentation
+      for details on how to set these on connections fro each
+      langauge.</para>
+      <table>
+        <title>Connection properties</title>
+        <tgroup cols="3">
+          <thead>
+	    <row>
+	      <entry>property</entry>
+	      <entry>value</entry>
+	      <entry>semantics</entry>
+	    </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>
+	        reconnect
+	      </entry>
+	      <entry>
+	        True, False
+	      </entry>
+	      <entry>
+	        Transparently reconnect if the connection is lost.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_timeout
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Total number of seconds to continue reconnection attempts before giving up and raising an exception.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_limit
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Maximum number of reconnection attempts before giving up and raising an exception.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_interval_min
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_interval_max
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Maximum reconnect interval.
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+	        reconnect_interval
+	      </entry>
+	      <entry>
+	        N
+	      </entry>
+	      <entry>
+	        Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
+	      </entry>
+	    </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+
   <section id="section-amqp0-10-mapping">
     <title>The AMQP 0-10 mapping</title>
 
