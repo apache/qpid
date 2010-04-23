@@ -157,7 +157,6 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Helpers.h"
 #include "qpid/log/Statement.h"
-#include "qpid/management/IdAllocator.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"

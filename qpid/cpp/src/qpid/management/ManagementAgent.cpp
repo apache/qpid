@@ -21,7 +21,6 @@
  
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/management/ManagementObject.h"
-#include "qpid/management/IdAllocator.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
@@ -247,18 +246,13 @@ void ManagementAgent::registerEvent (const string&  packageName,
 }
 
 // Deprecated:  V1 objects
-ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId)
+ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId, bool persistent)
 {
     uint16_t sequence;
     uint64_t objectNum;
 
-    if (persistId == 0) {
-        sequence  = bootSequence;
-        objectNum = nextObjectId++;
-    } else {
-        sequence  = 0;
-        objectNum = persistId;
-    }
+    sequence = persistent ? 0 : bootSequence;
+    objectNum = persistId ? persistId : nextObjectId++;
 
     ObjectId objId(0 /*flags*/, sequence, brokerBank, objectNum);
     objId.setV2Key(*object);   // let object generate the v2 key
@@ -2168,19 +2162,6 @@ ManagementObjectMap::iterator ManagementAgent::numericFind(const ObjectId& oid)
     }
 
     return iter;
-}
-
-void ManagementAgent::setAllocator(auto_ptr<IdAllocator> a)
-{
-    sys::Mutex::ScopedLock lock (userLock);
-    allocator = a;
-}
-
-uint64_t ManagementAgent::allocateId(Manageable* object)
-{
-    sys::Mutex::ScopedLock lock (userLock);
-    if (allocator.get()) return allocator->getIdFor(object);
-    return 0;
 }
 
 void ManagementAgent::disallow(const string& className, const string& methodName, const string& message) {
