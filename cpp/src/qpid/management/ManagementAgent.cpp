@@ -1724,11 +1724,10 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& replyTo
                                                            "_data",
                                                            object->getMd5Sum());
                     list_.push_back(map_);
+                    ListCodec::encode(list_, content);
+                    sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
+                    QPID_LOG(trace, "SENT QueryResponse (query by schema_id) to=" << replyTo);
                 }
-
-                ListCodec::encode(list_, content);
-                sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
-                QPID_LOG(trace, "SENT QueryResponse (query by schema_id) to=" << replyTo);
             }
         }
     }
