@@ -21,16 +21,11 @@ nn - or more contributor license agreements.  See the NOTICE file
 <project name="AMQ Broker-Plugins" default="build">
 
     <property name="module.depends" value="client management/common broker common junit-toolkit"/>
+    <property name="module.manifest" value="MANIFEST.MF"/>
     <property name="module.plugin" value="true"/>
 
-    <import file="../module.xml"/>
+    <import file="../../module.xml"/>
 
-    <target name="build">
-     <subant target="jar">
-      <filelist dir=".">
-        <file name="extras/build.xml"/>
-      </filelist>
-     </subant>
-    </target>
-    
+    <target name="bundle" depends="bundle-tasks"/>
+
 </project>
