@@ -28,6 +28,7 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/acl/Acl.h"
+#include "qpid/sys/Mutex.h"
 
 #include <map>
 #include <string>
@@ -55,6 +56,7 @@ private:
    boost::shared_ptr<AclData> data;
    qmf::org::apache::qpid::acl::Acl* mgmtObject; // mgnt owns lifecycle
    qpid::management::ManagementAgent* agent;
+   mutable qpid::sys::Mutex dataLock; 
 
 public:
    Acl (AclValues& av, broker::Broker& b);
