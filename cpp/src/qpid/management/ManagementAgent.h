@@ -273,7 +273,7 @@ private:
     uint32_t                     nextRemoteBank;
     uint32_t                     nextRequestSequence;
     bool                         clientWasAdded;
-    const uint64_t               startTime;
+    const qpid::sys::AbsTime     startTime;
     bool                         suppressed;
 
     std::auto_ptr<IdAllocator> allocator;

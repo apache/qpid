@@ -56,10 +56,6 @@ AbsTime AbsTime::now() {
     return time_now;
 }
 
-Duration::Duration(const AbsTime& time0) :
-    nanosecs(time0.timepoint)
-{}
-
 Duration::Duration(const AbsTime& start, const AbsTime& finish) :
     nanosecs(finish.timepoint - start.timepoint)
 {}

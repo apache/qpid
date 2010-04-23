@@ -58,20 +58,15 @@ class Duration;
  * accessors to its internal state. If you think you want to replace its value,
  * you need to construct a new AbsTime and assign it, viz:
  *
- *  AbsTime when = AbsTime::now();
+ *  AbsTime when = now();
  *  ...
  *  when = AbsTime(when, 2*TIME_SEC); // Advance timer 2 secs
  *
- * If for some reason you need access to the internal nanosec value you need
- * to convert the AbsTime to a Duration and use its conversion to int64_t, viz:
+ * AbsTime is not intended to be used to represent calendar dates/times
+ * but you can construct a Duration since the Unix Epoch, 1970-1-1-00:00,
+ * so that you can convert to a date/time if needed:
  *
- *  AbsTime now = AbsTime::now();
- *
- *  int64_t ns = Duration(now);
- *
- * However note that the nanosecond value that is returned here is not
- * defined to be anything in particular and could vary from platform to
- * platform.
+ *  int64_t nanosec_since_epoch = Duration(EPOCH, now());
  *
  * There are some sensible operations that are currently missing from
  * AbsTime, but nearly all that's needed can be done with a mixture of
@@ -125,7 +120,6 @@ class Duration {
 
 public:
     QPID_COMMON_EXTERN inline Duration(int64_t time0 = 0);
-    QPID_COMMON_EXTERN explicit Duration(const AbsTime& time0);
     QPID_COMMON_EXTERN explicit Duration(const AbsTime& start, const AbsTime& finish);
     inline operator int64_t() const;
 };

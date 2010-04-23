@@ -64,7 +64,7 @@ struct  Args : public qpid::Options,
 
 uint64_t current_time()
 {
-    Duration t(now());
+    Duration t(EPOCH, now());
     return t;
 }
 

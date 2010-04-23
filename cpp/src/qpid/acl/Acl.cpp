@@ -157,7 +157,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 	      mgmtObject->set_transferAcl(transferAcl?1:0);
 		  mgmtObject->set_policyFile(aclFile);
 		  sys::AbsTime now = sys::AbsTime::now();
-          int64_t ns = sys::Duration(now);
+          int64_t ns = sys::Duration(sys::EPOCH, now);
 		  mgmtObject->set_lastAclLoad(ns);
           agent->raiseEvent(_qmf::EventFileLoaded(""));
 	  }
