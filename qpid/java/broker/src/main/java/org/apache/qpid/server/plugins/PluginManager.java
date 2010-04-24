@@ -70,8 +70,10 @@ public class PluginManager
                 "org.osgi.service.startlevel; version=1.0.0," + 
                 "org.osgi.service.url; version=1.0.0," + 
                 "org.osgi.util.tracker; version=1.0.0,"+
+                "org.apache.qpid.junit.extensions.util; version=0.7," +
                 "org.apache.qpid; version=0.7," +
                 "org.apache.qpid.framing; version=0.7," +
+                "org.apache.qpid.protocol; version=0.7," +
                 "org.apache.qpid.server.exchange; version=0.7," +
                 "org.apache.qpid.server.management; version=0.7,"+
                 "org.apache.qpid.server.protocol; version=0.7,"+
