@@ -35,13 +35,13 @@ public class PluginTest extends TestCase
 
     public void testLoadExchanges() throws Exception
     {
-        /*PluginManager manager = new PluginManager(PLUGIN_DIRECTORY);
+        PluginManager manager = new PluginManager(PLUGIN_DIRECTORY);
         Map<String, ExchangeType<?>> exchanges = manager.getExchanges();
         assertNotNull("No exchanges found in "+PLUGIN_DIRECTORY, exchanges);
         assertEquals("Wrong number of exchanges found in "+PLUGIN_DIRECTORY, 
                      2, exchanges.size());
         assertNotNull("Wrong exchange found in "+PLUGIN_DIRECTORY,
-                      exchanges.get(TEST_EXCHANGE_CLASS));*/
+                      exchanges.get(TEST_EXCHANGE_CLASS));
     } 
     
     public void testNoExchanges() throws Exception
