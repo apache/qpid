@@ -1115,7 +1115,7 @@ options := map
 
     <section>
       <title>Reconnect and Failover</title>
-      <para>Connections in the Qpid messaging API support automatic
+      <para>Connections in the Qpid Messaging API support automatic
       reconnection. The following table lists some of the connection
       properties that control this. See the reference documentation
       for details on how to set these on connections fro each
@@ -1401,8 +1401,8 @@ options := map
       <para>The following program shows how to use address strings and
       JNDI for Qpid programs that use Java JMS.</para>
 
-      <para>The Qpid JMS client uses <xref
-      linkend="section-address-strings"/> to identify sources and
+      <para>The Qpid JMS client uses Qpid Messaging API <xref
+      linkend="section-addresses"/> to identify sources and
       targets. This program uses a JNDI file that defines a connection
       factory for the broker we are using, and the address of the
       topic exchange node that we will bind the sender and receiver
@@ -1653,14 +1653,211 @@ destination.topicExchange = amq.topic
 	  Broker lists are specified using a URL in this format:
         </para>
         
-        <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;]
-        </programlisting>
+        <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;](?&lt;param>=&lt;value>)?(&amp;&lt;param>=&lt;value>)*</programlisting>
         <para>
 	  For instance, this is a typical broker list:
         </para>
         
         <programlisting>brokerlist=&#39;tcp://localhost:5672&#39;
         </programlisting>
+
+	<para>
+	  A broker list can contain more than one broker address; if so, the connection is made to the first broker in the list that is available. In general, it is better to use the failover exchange when using multiple brokers, since it allows applications to fail over if a broker goes down.
+	</para>
+
+	<example>
+	  <title>Broker Lists</title>
+	<para>A broker list can specify properties to be used when connecting to the broker, such as security options. This broker list specifies options for a Kerberos connection using GSSAPI:</para>
+	<programlisting><![CDATA[
+amqp://guest:guest@test/test?sync_ack='true'
+    &brokerlist='tcp://ip1:5672?sasl_mechs='GSSAPI'
+	]]></programlisting>
+
+	<para>This broker list specifies SSL options:</para>
+
+	<programlisting><![CDATA[
+amqp://guest:guest@test/test?sync_ack='true'
+   &brokerlist='tcp://ip1:5672?ssl='true'&ssl_cert_alias='cert1'
+	]]></programlisting>
+	</example>
+
+	<para>The following broker list options are supported.</para>
+
+        <table>
+	  <title>Broker List Options</title>
+	  <tgroup cols="3">
+	    <thead>
+	      <row>
+	        <entry>
+		  Option
+	        </entry>
+	        <entry>
+		  Type
+	        </entry>
+	        <entry>
+		  Description
+	        </entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+	        <entry>
+		  heartbeat
+	        </entry>
+	        <entry>
+		  integer
+	        </entry>
+	        <entry>
+		  frequency of heartbeat messages (in seconds)
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  sasl_mechs
+	        </entry>
+	        <entry>
+		  --
+	        </entry>
+	        <entry>
+		  For secure applications, we suggest CRAM-MD5,
+		  DIGEST-MD5, or GSSAPI. The ANONYMOUS method is not
+		  secure. The PLAIN method is secure only when used
+		  together with SSL. 
+		  For Kerberos, sasl_mechs must be set to GSSAPI,
+		  sasl_protocol must be set to the principal for the qpidd broker, e.g. qpidd/, and 
+		  sasl_server must be set to the host for the SASL server, e.g. sasl.com. 
+		  SASL External is supported using SSL certification, e.g.
+		  <literal>ssl='true'&amp;sasl_mechs='EXTERNAL'</literal>
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  sasl_encryption
+	        </entry>
+	        <entry>
+	        </entry>
+	        <entry>
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  ssl
+	        </entry>
+	        <entry>
+		  Boolean
+	        </entry>
+	        <entry>
+		  If <literal>ssl='true'</literal>, only encrypted
+		  connections will be accepted.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  tcp_nodelay
+	        </entry>
+	        <entry>
+		  Boolean
+	        </entry>
+	        <entry>
+		  If <literal>tcp_nodelay='true'</literal>, TCP packet
+		  batching is disabled.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  sasl_protocol
+	        </entry>
+	        <entry>
+		  --
+	        </entry>
+	        <entry>
+		  Used only for
+		  Kerberos. <literal>sasl_protocol</literal> must be
+		  set to the principal for the qpidd broker,
+		  e.g. <literal>qpidd/</literal>
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  sasl_server
+	        </entry>
+	        <entry>
+		  --
+	        </entry>
+	        <entry>
+		  For Kerberos, sasl_mechs must be set to GSSAPI,
+		  sasl_server must be set to the host for the SASL
+		  server, e.g. <literal>sasl.com</literal>.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  trust_store
+	        </entry>
+	        <entry>
+		  --
+	        </entry>
+	        <entry>
+		  path to Keberos trust store
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  trust_store_password
+	        </entry>
+	        <entry>
+	        </entry>
+	        <entry>
+		  Kerberos trust store password
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  key_store
+	        </entry>
+	        <entry>
+	        </entry>
+	        <entry>
+		  path to Kerberos key store
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  key_store_password
+	        </entry>
+	        <entry>
+		  --
+	        </entry>
+	        <entry>
+		  Kerberos key store password
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  ssl_verify_hostname
+	        </entry>
+	        <entry>
+		  Boolean
+	        </entry>
+	        <entry>
+		  When using SSL you can enable hostname verification
+		  by using "ssl_verify_hostname=true" in the broker
+		  URL.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  ssl_cert_alias
+	        </entry>
+	        <entry>
+		  
+	        </entry>
+	        <entry>
+	        </entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
       </section>
     </section>  
 
@@ -1688,36 +1885,37 @@ destination.topicExchange = amq.topic
           </thead>
           <tbody>
 	    <row>
-	      <entry>msg.id</entry><entry>mp.message_id</entry>
+	      <entry>JMSMessageID</entry><entry>mp.message_id</entry>
 	    </row>
 	    <row>
-	      <entry>msg.subject</entry><entry>mp.application_headers["qpid.subject"]</entry>
+	      <entry>qpid.subject<footnote><para>This is a custom JMS property, set automatically by the Java JMS client implementation.</para></footnote></entry><entry>mp.application_headers["qpid.subject"]</entry>
 	    </row>
 	    <row>
-	      <entry>msg.user_id</entry><entry>mp.user_id</entry>
+	      <entry>JMSXUserID</entry><entry>mp.user_id</entry>
 	    </row>
 	    <row>
-	      <entry>msg.reply_to</entry><entry>mp.reply_to<footnote><para>The reply_to is converted from the protocol representation into an address.</para></footnote></entry>
+	      <entry>JMSReplyTo</entry><entry>mp.reply_to<footnote><para>The reply_to is converted from the protocol representation into an address.</para></footnote></entry>
 	    </row>
 	    <row>
-	      <entry>msg.correlation_id</entry><entry>mp.correlation_id</entry>
+	      <entry>JMSCorrelationID</entry><entry>mp.correlation_id</entry>
 	    </row>
 	    <row>
-	      <entry>msg.durable</entry><entry>dp.delivery_mode == delivery_mode.persistent<footnote><para>Note that msg.durable is a boolean, not an enum.</para></footnote></entry>
+	      <entry>JMSDeliveryMode</entry><entry>dp.delivery_mode</entry>
 	    </row>
 	    <row>
-	      <entry>msg.priority</entry><entry>dp.priority</entry>
+	      <entry>JMSPriority</entry><entry>dp.priority</entry>
 	    </row>
 	    <row>
-	      <entry>msg.ttl</entry><entry>dp.ttl</entry>
+	      <entry>JMSExpiration</entry><entry>dp.ttl<footnote><para>JMSExpiration = dp.ttl + currentTime</para></footnote></entry>
 	    </row>
 	    <row>
-	      <entry>msg.redelivered</entry><entry>dp.redelivered</entry>
-	    </row>
-	    <row><entry>mp.application_headers</entry>
+	      <entry>JMSRedelivered</entry><entry>dp.redelivered</entry>
 	    </row>
 	    <row>
-	      <entry>msg.content_type</entry><entry>mp.content_type</entry>
+	      <entry>JMS Properties</entry><entry>mp.application_headers</entry>
+	    </row>
+	    <row>
+	      <entry>JMSType</entry><entry>mp.content_type</entry>
 	    </row>
           </tbody>
         </tgroup>
