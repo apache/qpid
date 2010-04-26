@@ -21,16 +21,10 @@
 package org.apache.qpid.tasks;
 
 import org.apache.tools.ant.BuildException;
-
 import org.apache.tools.ant.util.ChainedMapper;
 import org.apache.tools.ant.util.FileNameMapper;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Map -- an ant task that allows arbitrary use of FileNameMappers
- **/
+/** Map -- an ant task that allows arbitrary use of FileNameMappers */
 
 public class Map extends BaseTask {
 
@@ -75,14 +69,25 @@ public class Map extends BaseTask {
 
         String[] parts = value.split(split);
         StringBuffer buf = new StringBuffer();
-        for (int i = 0; i < parts.length; i++) {
-            if (parts[i].length() == 0) { continue; }
+        for (int i = 0; i < parts.length; i++)
+        {
+            if (parts[i].length() == 0)
+            {
+                continue;
+            }
             String[] names = mapper.mapFileName(parts[i]);
-            for (int j = 0; j < names.length; j++) {
-                if (buf.length() > 0) {
-                    buf.append(join);
+
+            //Mappers can return null.
+            if (names != null)
+            {
+                for (int j = 0; j < names.length; j++)
+                {
+                    if (buf.length() > 0)
+                    {
+                        buf.append(join);
+                    }
+                    buf.append(names[j]);
                 }
-                buf.append(names[j]);
             }
         }
 

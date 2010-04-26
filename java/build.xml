@@ -22,11 +22,15 @@
 
   <import file="common.xml"/>
 
+
+  <findSubProjects name="broker-plugins" dir="broker-plugins"/>
+  <findSubProjects name="management" dir="management" excludes="common,example,tools/qpid-cli"/>
+
   <property name="modules.core"       value="junit-toolkit common management/common broker client tools"/>
   <property name="modules.examples"   value="client/example management/example"/>
   <property name="modules.tests"      value="systests perftests integrationtests testkit"/>
-  <property name="modules.management" value="management/client management/eclipse-plugin management/agent management/console"/>
-  <property name="modules.plugin"     value="broker-plugins"/>
+  <property name="modules.management" value="${management}"/>
+  <property name="modules.plugin"     value="${broker-plugins}"/>
   <property name="modules.management.tools" value="management/tools/qpid-cli"/>
   <property name="modules"            value="${modules.core}
   ${modules.plugin} ${modules.examples}
@@ -40,6 +44,7 @@
   <map property="release.excludes" value="${modules}">
     <globmapper from="*" to="*/\*\*"/>
   </map>
+
 
   <property name="release.zip"          location="${release}/${project.namever}-java.zip"/>
   <property name="release.tar"          location="${release}/${project.namever}-java.tar"/>
