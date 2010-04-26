@@ -86,6 +86,10 @@ void SubscriptionManager::setFlowControl(const std::string& name, const FlowCont
     impl->setFlowControl(name, flow);
 }
 
+void SubscriptionManager::setDefaultSettings(const SubscriptionSettings& s){
+	impl->setDefaultSettings(s);
+}
+
 void SubscriptionManager::setFlowControl(const std::string& name, uint32_t messages,  uint32_t bytes, bool window) {
     impl->setFlowControl(name, FlowControl(messages, bytes, window));
 }
