@@ -52,7 +52,7 @@ sasldb_DATA = $(SASL_DB)
 # these reasons we always want the broker to specify a realm where its
 # users live, and we want the users to exist in that realm as well.
 $(SASL_DB):
-	echo guest | /usr/sbin/saslpasswd2 -c -p -f $(SASL_DB) -u QPID guest
+	echo guest | $(SASL_PASSWD) -c -p -f $(SASL_DB) -u QPID guest
 
 CLEANFILES=$(SASL_DB)
 
