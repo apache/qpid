@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
         Sender sender = session.createSender("service_queue");
 
         //create temp queue & receiver...
-        Address responseQueue("#response-queue; {create:always, type:queue, node-properties:{ x-properties:{auto-delete:true}}}");
+        Address responseQueue("#response-queue; {create:always, delete:always}");
         Receiver receiver = session.createReceiver(responseQueue);
 
 	// Now send some messages ...
