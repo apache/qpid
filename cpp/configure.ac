@@ -330,9 +330,12 @@ AS_IF([test "x$WANT_SASL" != xno],
      [AC_DEFINE([BROKER_SASL_NAME], ["qpidd"],
                 [The SASL app name for the qpid Broker])
       AC_DEFINE([HAVE_SASL], [1], [Enable if libsasl is present])
-      have_sasl=yes])])
+      have_sasl=yes])
+     AC_PATH_PROG([SASL_PASSWD], [saslpasswd2], [], [$PATH$PATH_SEPARATOR/usr/sbin])
+     AS_IF([test x$SASL_PASSWD = x], [AC_MSG_ERROR([saslpasswd2 not found])], [])
+   ])
 AM_CONDITIONAL([HAVE_SASL], [test "x$have_sasl" = xyes])
-
+AC_SUBST([SASL_PASSWD])
 
 # Setup --with-xml/--without-xml as arguments to configure
 use_xml=yes
