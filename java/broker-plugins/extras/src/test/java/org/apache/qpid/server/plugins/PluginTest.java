@@ -24,6 +24,7 @@ package org.apache.qpid.server.plugins;
 import java.util.Map;
 
 import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import junit.framework.TestCase;
 
@@ -49,5 +50,12 @@ public class PluginTest extends TestCase
         PluginManager manager = new PluginManager("/path/to/nowhere");
         Map<String, ExchangeType<?>> exchanges = manager.getExchanges();
         assertEquals("Exchanges found", 0, exchanges.size());
+    }
+
+    @Override
+    public void tearDown()
+    {
+        // PluginManager will start an ApplicationRegistry instance. 
+        ApplicationRegistry.remove(ApplicationRegistry.DEFAULT_INSTANCE);
     }
 }
