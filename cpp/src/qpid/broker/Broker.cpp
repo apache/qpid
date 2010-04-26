@@ -55,6 +55,7 @@
 #include "qpid/Version.h"
 
 #include <boost/bind.hpp>
+#include <boost/format.hpp>
 
 #include <iostream>
 #include <memory>
@@ -323,21 +324,25 @@ void Broker::setStore () {
 }
 
 void Broker::run() {
-    QPID_LOG(notice, "Broker running");
-    Dispatcher d(poller);
-    int numIOThreads = config.workerThreads;
-    std::vector<Thread> t(numIOThreads-1);
-
-    // Run n-1 io threads
-    for (int i=0; i<numIOThreads-1; ++i)
-        t[i] = Thread(d);
-
-    // Run final thread
-    d.run();
-
-    // Now wait for n-1 io threads to exit
-    for (int i=0; i<numIOThreads-1; ++i) {
-        t[i].join();
+    if (config.workerThreads > 0) {
+        QPID_LOG(notice, "Broker running");
+        Dispatcher d(poller);
+        int numIOThreads = config.workerThreads;
+        std::vector<Thread> t(numIOThreads-1);
+        
+        // Run n-1 io threads
+        for (int i=0; i<numIOThreads-1; ++i)
+            t[i] = Thread(d);
+        
+        // Run final thread
+        d.run();
+        
+        // Now wait for n-1 io threads to exit
+        for (int i=0; i<numIOThreads-1; ++i) {
+            t[i].join();
+        }
+    } else {
+        throw Exception((boost::format("Invalid value for worker-threads: %1%") % config.workerThreads).str());
     }
 }
 
