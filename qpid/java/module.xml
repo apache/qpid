@@ -30,7 +30,7 @@
     <filtermapper>
         <replacestring from="${file.separator}" to="-"/>
     </filtermapper>
-  </map>	
+  </map>
 	
   <echo message="Running ant for module : ${module}" level="info"/>
 
@@ -73,10 +73,53 @@
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
 
+  <!-- module.depends and module.test.depends are supplied by the importing file -->
+  <property name="module.depends"       value=""/>
+  <property name="module.test.depends"  value=""/>
+  <property name="module.test.excludes" value=""/>
+
+  <map property="module.depends.path" value="${module.depends}" join="${path.separator}">
+    <globmapper from="*" to="${build.scratch}/*/classes"/>
+  </map>
+
+  <map property="module.test.depends.path" value="${module.test.depends}" join="${path.separator}">
+    <globmapper from="*" to="${build.scratch}/*/classes"/>
+  </map>
+
+
+   <!-- Add depenencies dependencies to path -->
+   <map property="module.depends.libs" value="${module.depends}" join=" ">
+       <chainedmapper>
+           <filtermapper>
+               <replacestring from="${file.separator}" to="-"/>
+           </filtermapper>
+           <propertymapper from="*" to="*.libs"/>
+       </chainedmapper>
+   </map>
+    <condition property="module.depends.libs.includes" value="__EMPTY__" else="${module.depends.libs}">
+      <equals trim="true" arg1="${module.depends.libs}" arg2=""/>
+    </condition>
+
+
+    <!-- Add depenencies test dependencies to path -->
+    <map property="module.test.depends.libs" value="${module.test.depends}" join=" ">
+        <chainedmapper>
+            <filtermapper>
+                <replacestring from="${file.separator}" to="-"/>
+            </filtermapper>
+            <propertymapper from="*" to="*.libs"/>
+        </chainedmapper>
+    </map>
+    <condition property="module.test.depends.libs.includes" value="__EMPTY__" else="${module.test.depends.libs}">
+      <equals trim="true" arg1="${module.test.depends.libs}" arg2=""/>
+    </condition>
+
+
   <indirect name="module.libs"         variable="${module.name}.libs"/>
   <condition property="module.libs.includes" value="__EMPTY__" else="${module.libs}">
     <equals trim="true" arg1="${module.libs}" arg2=""/>
   </condition>
+    
   <indirect name="module.test.libs"    variable="${module.name}.test.libs"/>
   <condition property="module.test.libs.includes" value="__EMPTY__" else="${module.test.libs}">
     <equals trim="true" arg1="${module.test.libs}" arg2=""/>
@@ -84,10 +127,12 @@
 
   <path id="module.libs">
     <fileset dir="${project.root}" includes="${module.libs.includes}"/>
+    <fileset dir="${project.root}" includes="${module.depends.libs.includes}"/>
   </path>
 
   <path id="module.test.libs">
     <fileset dir="${project.root}" includes="${module.test.libs.includes}"/>
+    <fileset dir="${project.root}" includes="${module.test.depends.libs.includes}"/>
   </path>
 
   <path id="module.src.path">
@@ -106,19 +151,6 @@
 
   <property name="module.test.jar"
             location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
-
-  <!-- module.depends and module.test.depends are supplied by the importing file -->
-  <property name="module.depends"       value=""/>
-  <property name="module.test.depends"  value=""/>
-  <property name="module.test.excludes" value=""/>
-
-  <map property="module.depends.path" value="${module.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build.scratch}/*/classes"/>
-  </map>
-
-  <map property="module.test.depends.path" value="${module.test.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build.scratch}/*/classes"/>
-  </map>
 
   <path id="module.class.path">
     <pathelement location="${module.classes}"/>
@@ -147,6 +179,8 @@
     <echo-prop name="module.depends.path"/>
     <echo-prop name="module.test.depends"/>
     <echo-prop name="module.test.depends.path"/>
+    <echo-prop name="module.depends.libs"/>
+    <echo-prop name="module.test.depends.libs"/>      
     <echo-path refid="module.src.path"/>
     <echo-path refid="module.class.path"/>
     <echo-path refid="module.test.path"/>
@@ -391,7 +425,10 @@
  
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
+      <echo message="${module.libs}"/>
     <copylist todir="${module.release}/lib" dir="${project.root}" files="${module.libs}"/>
+    <copylist todir="${module.release}/lib" dir="${project.root}" files="${module.depends.libs}"/>
+
     <!-- Copy the jar for this module -->
     <copy todir="${module.release}/lib" failonerror="true">
         <fileset file="${module.jar}"/>

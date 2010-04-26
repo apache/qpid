@@ -93,6 +93,28 @@
     </sequential>
   </macrodef>
 
+  <macrodef name="findSubProjects">
+	<attribute name="dir"/>
+        <attribute name="name"/>
+	<attribute name="excludes" default=""/>
+	  
+	<sequential>
+	  <dirset id="@{dir}.refid" dir="@{dir}" excludes="@{excludes}">
+	   <present targetdir="@{dir}">
+        	 <mapper type="glob" from="*" to="*/build.xml" />
+	   </present>
+	  </dirset>
+
+	  <pathconvert property="@{name}"
+        	       refid="@{dir}.refid"
+	               pathsep=" ">
+		<map from="${project.root}/" to=""/>
+          </pathconvert>
+ 	</sequential>
+  </macrodef>
+
+
+
   <macrodef name="jython">
     <attribute name="path"/>
     <element name="args"/>
@@ -108,6 +130,10 @@
   <javac source="${java.source}" target="${java.target}" srcdir="${tasks.src}" destdir="${tasks.classes}"  classpath="${java.class.path}" includeantruntime="false">
     <compilerarg line="${javac.compiler.args}"/>
   </javac>
+
+
+  <typedef name="propertymapper" classname="org.apache.qpid.tasks.PropertyMapper"
+             classpath="${tasks.classes}"/>
 
   <taskdef name="map" classname="org.apache.qpid.tasks.Map"
            classpath="${tasks.classes}"/>

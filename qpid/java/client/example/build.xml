@@ -20,7 +20,8 @@
  -->
 <project name="AMQ Client" default="build">
 
-  <property name="module.depends" value="common client"/>
+  <property name="module.depends" value="client common"/>
+  <property name="module.test.depends" value=""/>
 
   <import file="../../module.xml"/>
 
