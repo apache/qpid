@@ -56,9 +56,11 @@ class Model
     method.add_argument(Qmf::SchemaArgument.new("test", Qmf::TYPE_SSTR, :dir => Qmf::DIR_IN))
     @parent_class.add_method(method)
 
-    method = Qmf::SchemaMethod.new("set_map", :desc => "Set the map value in the object")
-    method.add_argument(Qmf::SchemaArgument.new("value", Qmf::TYPE_MAP, :dir => Qmf::DIR_IN))
-    method.add_argument(Qmf::SchemaArgument.new("output", Qmf::TYPE_MAP, :dir => Qmf::DIR_OUT))
+    method = Qmf::SchemaMethod.new("test_map_list", :desc => "A method call that accepts map and list arguments.")
+    method.add_argument(Qmf::SchemaArgument.new("inMap", Qmf::TYPE_MAP, :dir => Qmf::DIR_IN))
+    method.add_argument(Qmf::SchemaArgument.new("inList", Qmf::TYPE_LIST, :dir => Qmf::DIR_IN))
+    method.add_argument(Qmf::SchemaArgument.new("outMap", Qmf::TYPE_MAP, :dir => Qmf::DIR_OUT))
+    method.add_argument(Qmf::SchemaArgument.new("outList", Qmf::TYPE_LIST, :dir => Qmf::DIR_OUT))
     @parent_class.add_method(method)
 
     method = Qmf::SchemaMethod.new("set_short_string", :desc => "Set the short string value in the object")
@@ -84,6 +86,8 @@ class Model
     @event_class = Qmf::SchemaEventClass.new("org.apache.qpid.qmf", "test_event", Qmf::SEV_INFORM)
     @event_class.add_argument(Qmf::SchemaArgument.new("uint32val", Qmf::TYPE_UINT32))
     @event_class.add_argument(Qmf::SchemaArgument.new("strval", Qmf::TYPE_LSTR))
+    @event_class.add_argument(Qmf::SchemaArgument.new("mapval", Qmf::TYPE_MAP))
+    @event_class.add_argument(Qmf::SchemaArgument.new("listval", Qmf::TYPE_LIST))
   end
 
   def register(agent)
@@ -114,12 +118,22 @@ class App < Qmf::AgentHandler
     if name == "echo"
       @agent.method_response(context, 0, "OK", args)
 
-    elsif name == "set_map"
+    elsif name == "test_map_list"
+      # build the output map from the input map, accessing each key,
+      # value to ensure they are encoded/decoded
+      outMap = {}
+      args['inMap'].each do |k,v|
+        outMap[k] = v
+      end
 
-      map = args['value']
+      # same deal for the output list
+      outList = []
+      args['inList'].each do |v|
+        outList << v
+      end
 
-      map['added'] = 'Added Text'
-      args['output'] = map
+      args['outMap'] = outMap
+      args['outList'] = outList
 
     elsif name == "set_numerics"
 
@@ -137,6 +151,8 @@ class App < Qmf::AgentHandler
         event = Qmf::QmfEvent.new(@model.event_class)
         event.uint32val = @parent.uint32val
         event.strval = "Unused"
+        event.mapval = @parent.mapval
+        event.listval = @parent.listval
         @agent.raise_event(event)
 
       elsif args['test'] == "small"

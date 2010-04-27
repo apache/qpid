@@ -194,6 +194,34 @@ class QmfInteropTests(TestBase010):
         self.assertEqual(len(queue), 5)
         self.assertEqual(queue[0].arguments["uint32val"], 0xA5A55A5A)
         self.assertEqual(queue[0].arguments["strval"], "Unused")
+
+        # verify map and list event content.
+        # see agent for structure of listval and mapval
+        listval = queue[0].arguments["listval"]
+        self.assertTrue(isinstance(listval, list))
+        self.assertEqual(len(listval), 5)
+        self.assertTrue(isinstance(listval[4], list))
+        self.assertEqual(len(listval[4]), 4)
+        self.assertTrue(isinstance(listval[4][3], dict))
+        self.assertEqual(listval[4][3]["hi"], 10)
+        self.assertEqual(listval[4][3]["lo"], 5)
+        self.assertEqual(listval[4][3]["neg"], -3)
+
+        mapval = queue[0].arguments["mapval"]
+        self.assertTrue(isinstance(mapval, dict))
+        self.assertEqual(len(mapval), 7)
+        self.assertEqual(mapval['aLong'], 9999999999)
+        self.assertEqual(mapval['aInt'], 54321)
+        self.assertEqual(mapval['aSigned'], -666)
+        self.assertEqual(mapval['aString'], "A String"),
+        self.assertEqual(mapval['aFloat'], 3.1415),
+        self.assertTrue(isinstance(mapval['aMap'], dict))
+        self.assertEqual(len(mapval['aMap']), 2)
+        self.assertEqual(mapval['aMap']['second'], 2)
+        self.assertTrue(isinstance(mapval['aList'], list))
+        self.assertEqual(len(mapval['aList']), 4)
+        self.assertEqual(mapval['aList'][1], -1)
+
         self.assertEqual(queue[1].arguments["uint32val"], 5)
         self.assertEqual(queue[1].arguments["strval"], "Unused")
         self.assertEqual(queue[2].arguments["uint32val"], 0)
@@ -202,6 +230,7 @@ class QmfInteropTests(TestBase010):
         self.assertEqual(queue[3].arguments["strval"], "TEST")
         self.assertEqual(queue[4].arguments["uint32val"], 0)
         self.assertEqual(queue[4].arguments["strval"], "LONG_TEST")
+
 
 
     def test_G_basic_map_list_data(self):
@@ -238,6 +267,36 @@ class QmfInteropTests(TestBase010):
         self.assertTrue(isinstance(parent.mapval['aList'], list))
         self.assertEqual(len(parent.mapval['aList']), 4)
         self.assertEqual(parent.mapval['aList'][1], -1)
+
+    def test_H_map_list_method_call(self):
+        self.startQmf();
+        qmf = self.qmf
+
+        parents = qmf.getObjects(_class="parent")
+        self.assertEqual(len(parents), 1)
+        parent = parents[0]
+
+        inMap = {'aLong' : long(9999999999),
+                 'aInt'  : int(54321),
+                 'aSigned' : -666,
+                 'aString' : "A String",
+                 'aFloat' : 3.1415,
+                 'aList' : ['x', -1, 'y', 2]}
+
+        inList = ['aString', long(1), -1, 2.7182, {'aMap': -8}]
+
+        result = parent.test_map_list(inMap, inList)
+        self.assertEqual(result.status, 0)
+        self.assertEqual(result.text, "OK")
+
+        # verify returned values
+        self.assertEqual(len(inMap), len(result.outArgs['outMap']))
+        for key,value in result.outArgs['outMap'].items():
+            self.assertEqual(inMap[key], value)
+
+        self.assertEqual(len(inList), len(result.outArgs['outList']))
+        for idx in range(len(inList)):
+            self.assertEqual(inList[idx], result.outArgs['outList'][idx])
 
 
     def getProperty(self, msg, name):

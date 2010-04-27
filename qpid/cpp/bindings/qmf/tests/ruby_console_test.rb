@@ -250,6 +250,35 @@ class ConsoleTest < ConsoleTestBase
 
     assert_equal(@event_list[0].get_attr("uint32val"), 0xA5A55A5A)
     assert_equal(@event_list[0].get_attr("strval"), "Unused")
+
+    # verify map and list event content.
+    # see agent for structure of listval and mapval
+
+    listval = @event_list[0].listval
+    assert(listval.class == Array)
+    assert_equal(listval.length, 5)
+    assert(listval[4].class == Array)
+    assert_equal(listval[4].length, 4)
+    assert(listval[4][3].class == Hash)
+    assert_equal(listval[4][3]["hi"], 10)
+    assert_equal(listval[4][3]["lo"], 5)
+    assert_equal(listval[4][3]["neg"], -3)
+
+    mapval = @event_list[0].mapval
+    assert(mapval.class == Hash)
+    assert_equal(mapval.length, 7)
+    assert_equal(mapval['aLong'], 9999999999)
+    assert_equal(mapval['aInt'], 54321)
+    assert_equal(mapval['aSigned'], -666)
+    assert_equal(mapval['aString'], "A String")
+    assert_equal(mapval['aFloat'], 3.1415)
+    assert(mapval['aMap'].class == Hash)
+    assert_equal(mapval['aMap'].length, 2)
+    assert_equal(mapval['aMap']['second'], 2)
+    assert(mapval['aList'].class == Array)
+    assert_equal(mapval['aList'].length, 4)
+    assert_equal(mapval['aList'][1], -1)
+
     assert_equal(@event_list[1]["uint32val"], 5)
     assert_equal(@event_list[1].get_attr("strval"), "Unused")
     assert_equal(@event_list[2].get_attr("uint32val"), 0)
@@ -293,6 +322,35 @@ class ConsoleTest < ConsoleTestBase
     assert(parent.mapval['aList'].class == Array)
     assert_equal(parent.mapval['aList'].length, 4)
     assert_equal(parent.mapval['aList'][1], -1)
+  end
+
+  def test_H_map_list_method_call
+    parent = @qmfc.object(:class => "parent")
+    assert(parent, "Number of 'parent' objects")
+
+    inMap = {'aLong' => 9999999999,
+             'aInt'  => 54321,
+             'aSigned' => -666,
+             'aString' => "A String",
+             'aFloat' => 3.1415,
+             'aList' => ['x', -1, 'y', 2]}
+
+    inList = ['aString', 1, -1, 2.7182, {'aMap'=> -8}]
+
+    result = parent.test_map_list(inMap, inList)
+    assert_equal(result.status, 0)
+    assert_equal(result.text, "OK")
+
+    # verify returned values
+    assert_equal(inMap.length, result.args['outMap'].length)
+    result.args['outMap'].each do |k,v|
+      assert_equal(inMap[k], v)
+    end
+
+    assert_equal(inList.length, result.args['outList'].length)
+    for idx in 0...inList.length
+      assert_equal(inList[idx], result.args['outList'][idx])
+    end
   end
 
 end
