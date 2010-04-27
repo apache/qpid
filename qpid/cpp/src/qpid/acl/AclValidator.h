@@ -70,8 +70,8 @@ class AclValidator {
 
 public:
 
-   void validateRuleSet(std::pair<const std::string, qpid::acl::AclData::RuleSet>& rules);
-   void validateRule(qpid::acl::AclData::Rule& rule);
+   void validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules);
+   void validateRule(qpid::acl::AclData::rule& rule);
    void validateProperty(std::pair<const qpid::acl::Property, std::string>& prop);
    void validate(boost::shared_ptr<AclData> d);   
    AclValidator();
