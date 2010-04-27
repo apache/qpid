@@ -33,14 +33,17 @@ namespace fs=boost::filesystem;
 namespace {
 
 // CMake sets QPID_MODULE_SUFFIX; Autoconf doesn't, so assume Linux .so
-#if defined (QPID_MODULE_SUFFIX)
-    std::string suffix(QPID_MODULE_SUFFIX);
-#else
-    std::string suffix(".so");
+#ifndef QPID_MODULE_SUFFIX
+#define QPID_MODULE_SUFFIX ".so"
 #endif
 
+inline std::string& suffix() {
+    static std::string s(QPID_MODULE_SUFFIX);
+    return s;
+}
+
 bool isShlibName(const std::string& name) {
-    return name.find (suffix) == name.length() - suffix.length();
+    return name.find (suffix()) == name.length() - suffix().length();
 }
 
 }
@@ -58,7 +61,7 @@ ModuleOptions::ModuleOptions(const std::string& defaultModuleDir)
 
 void tryShlib(const char* libname_, bool noThrow) {
     std::string libname(libname_);
-    if (!isShlibName(libname)) libname += suffix;
+    if (!isShlibName(libname)) libname += suffix();
     try {
         sys::Shlib shlib(libname);
         QPID_LOG (info, "Loaded Module: " << libname);
