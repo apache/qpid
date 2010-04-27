@@ -29,7 +29,8 @@ namespace Apache.Qpid.Channel
     {
         AmqpChannelProperties channelProperties;
         bool shared;
-	int prefetchLimit;
+        int prefetchLimit;
+        AmqpSecurity bindingSecurity;
 
         public AmqpTransportBindingElement()
         {
@@ -43,6 +44,13 @@ namespace Apache.Qpid.Channel
             this.channelProperties = other.channelProperties.Clone();
             this.shared = other.shared;
             this.prefetchLimit = other.prefetchLimit;
+            this.bindingSecurity = other.bindingSecurity;
+        }
+
+        internal AmqpSecurity BindingSecurity
+        {
+            get { return this.bindingSecurity; }
+            set { this.bindingSecurity = value; }
         }
 
         public override IChannelFactory<TChannel> BuildChannelFactory<TChannel>(BindingContext context)
@@ -88,6 +96,12 @@ namespace Apache.Qpid.Channel
             get { return channelProperties; }
         }
 
+        public AmqpCredential AmqpCredential
+        {
+            get { return this.channelProperties.AmqpCredential; }
+            set { this.channelProperties.AmqpCredential = value; }
+        }
+
         public string BrokerHost
         {
             get { return this.channelProperties.BrokerHost; }
@@ -122,6 +136,20 @@ namespace Apache.Qpid.Channel
             get { return this.channelProperties.TransferMode; }
             set { this.channelProperties.TransferMode = value; }
         }
+
+        public AmqpTransportSecurity TransportSecurity
+        {
+            get
+            {
+                if (this.channelProperties.AmqpTransportSecurity == null)
+                {
+                    this.channelProperties.AmqpTransportSecurity = new AmqpTransportSecurity();
+                }
+
+                return this.channelProperties.AmqpTransportSecurity;
+            }
+        }
+
 
         public AmqpProperties DefaultMessageProperties
         {

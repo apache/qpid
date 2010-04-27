@@ -33,11 +33,11 @@ namespace Apache.Qpid.Channel
     {
         protected AmqpTransportBindingElement transport;
         protected MessageEncodingBindingElement encoding;
+        protected AmqpSecurity security;
 
         public AmqpBinding()
+            : this (new BinaryMessageEncodingBindingElement())
         {
-            transport = new AmqpTransportBindingElement();
-            encoding = new BinaryMessageEncodingBindingElement();
         }
 
         protected AmqpBinding(MessageEncodingBindingElement encoding)
@@ -68,6 +68,25 @@ namespace Apache.Qpid.Channel
         {
             get { return transport.PrefetchLimit; }
             set { transport.PrefetchLimit = value; }
+        }
+
+        public AmqpSecurity Security
+        {
+            get
+            {
+                if (security == null)
+                {
+                    if (transport.ChannelProperties.AmqpTransportSecurity == null)
+                    {
+                        transport.ChannelProperties.AmqpTransportSecurity = new AmqpTransportSecurity();
+                    }
+
+                    security = new AmqpSecurity(transport.ChannelProperties.AmqpTransportSecurity);
+                    transport.BindingSecurity = security;
+                }
+
+                return security;
+            }
         }
 
         public bool Shared

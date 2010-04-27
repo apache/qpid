@@ -22,6 +22,7 @@ namespace Apache.Qpid.Channel
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Text;
     using System.Threading;
 
     using Apache.Qpid.Interop;
@@ -61,7 +62,38 @@ namespace Apache.Qpid.Channel
 
         private static string MakeKey(AmqpChannelProperties props)
         {
-            return props.BrokerHost + ':' + props.BrokerPort + ':' + props.TransferMode;
+            StringBuilder sb = new StringBuilder();
+            sb.Append(props.BrokerHost);
+            sb.Append(':');
+            sb.Append(props.BrokerPort);
+            sb.Append(':');
+            sb.Append(props.TransferMode);
+
+            AmqpTransportSecurity sec = props.AmqpTransportSecurity;
+            if (sec == null)
+            {
+                return sb.ToString();
+            }
+
+            if (sec.UseSSL)
+            {
+                sb.Append(":SSL");
+            }
+
+            if (sec.CredentialType == AmqpCredentialType.Plain)
+            {
+                sb.Append(":saslP");
+                AmqpCredential cred = props.AmqpCredential;
+                if (cred != null)
+                {
+                    sb.Append(":NM:");
+                    sb.Append(cred.UserName);
+                    sb.Append(":PW:");
+                    sb.Append(cred.Password);
+                }
+            }
+
+            return sb.ToString();
         }
 
         private static ManagedConnection GetManagedConnection(AmqpChannelProperties channelProperties, bool connectionSharing)
@@ -165,7 +197,38 @@ namespace Apache.Qpid.Channel
 
                     if (connection == null)
                     {
-                        connection = new AmqpConnection(channelProperties.BrokerHost, channelProperties.BrokerPort);
+                        if (channelProperties.AmqpSecurityMode != AmqpSecurityMode.None)
+                        {
+                            string user = null;
+                            string passwd = null;
+                            bool ssl = false;
+                            bool saslPlain = false;
+
+                            AmqpTransportSecurity tsec = channelProperties.AmqpTransportSecurity;
+                            if (tsec.UseSSL)
+                            {
+                                ssl = true;
+                            }
+
+                            if (tsec.CredentialType == AmqpCredentialType.Plain)
+                            {
+                                saslPlain = true;
+                                AmqpCredential plainCred = channelProperties.AmqpCredential;
+                                if (plainCred != null)
+                                {
+                                    user = plainCred.UserName;
+                                    passwd = plainCred.Password;
+                                }
+                            }
+
+                            connection = new AmqpConnection(channelProperties.BrokerHost, channelProperties.BrokerPort,
+                                ssl, saslPlain, user, passwd);
+                        }
+                        else
+                        {
+                            connection = new AmqpConnection(channelProperties.BrokerHost, channelProperties.BrokerPort);
+                        }
+
                         newConnection = true;
                         if (this.shared)
                         {

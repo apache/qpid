@@ -31,6 +31,7 @@ namespace Apache.Qpid.Channel
         MessageEncoderFactory messageEncoderFactory;
         AmqpTransportBindingElement bindingElement;
         AmqpChannelProperties channelProperties;
+        BindingContext bindingContext;
         bool shared;
         int prefetchLimit;
         long maxBufferPoolSize;
@@ -45,6 +46,7 @@ namespace Apache.Qpid.Channel
         {
             this.bindingElement = bindingElement;
             this.channelProperties = bindingElement.ChannelProperties.Clone();
+            this.bindingContext = context;
             this.shared = bindingElement.Shared;
             this.prefetchLimit = bindingElement.PrefetchLimit;
 
@@ -100,6 +102,20 @@ namespace Apache.Qpid.Channel
 
         protected override void OnOpen(TimeSpan timeout)
         {
+            // check and freeze security properties now
+            AmqpSecurityMode mode = AmqpSecurityMode.None;
+            if (this.bindingElement.BindingSecurity != null)
+            {
+                mode = bindingElement.BindingSecurity.Mode;
+            }
+
+            this.channelProperties.AmqpSecurityMode = mode;
+            if (mode == AmqpSecurityMode.None)
+            {
+                return;
+            }
+
+            AmqpChannelHelpers.FindAuthenticationCredentials(this.channelProperties, this.bindingContext);
         }
 
         protected override IAsyncResult OnBeginOpen(TimeSpan timeout, AsyncCallback callback, object state)

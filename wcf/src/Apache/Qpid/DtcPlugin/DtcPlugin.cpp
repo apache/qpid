@@ -31,7 +31,7 @@
 // registers the Qpid resource manager with DTC, the plugin is loaded and a successful
 // connection via xa_open is confirmed before completing registration and saving the DSN
 // connection string in the DTC log for possible recovery.  On recovery, the DSN is re-used to
-// restablish a new connection with the broker and perform recovery.
+// re-establish a new connection with the broker and perform recovery.
 //
 // Because this plugin is not involved in coordinating any active transactions it only needs to
 // partially implement the XA interface.
@@ -71,12 +71,19 @@ private:
     bool active;
     std::string host;
     int port;
+    std::string username;
+    std::string password;
+    bool ssl;
+    bool saslPlain;
+
     int rmid;
     std::vector<qpid::framing::Xid> inDoubtXids;
     // current scan position, or -1 if no scan
     int cursor;
 public:
-    ResourceManager(int id, std::string h, int p) : rmid(id), host(h), port(p), active(false), cursor(-1) {}
+    ResourceManager(int id, std::string h, int p, bool sslP, bool saslPlainP, std::string uname, std::string pass)
+	: rmid(id), host(h), port(p), ssl(sslP), saslPlain(saslPlainP), username(uname), password(pass), 
+	  active(false), cursor(-1) {}
     ~ResourceManager() {}
     INT open();
     INT close();
@@ -93,6 +100,7 @@ HMODULE thisDll = NULL;
 bool memLocked = false;
 
 #define QPIDHMCHARS 512
+
 
 void pinDll() {
     if (!memLocked) {
@@ -141,16 +149,53 @@ void QpidToXa(Xid &qpidXid, XID &winXid) {
 }
 
 
-/* parse string from AmqpConnection.h
+static char *dsnHeader = "QPIDdsnV2";
 
-   this info will eventually include authentication tokens
+const char* nextDot(const char *p) {
+    while (*p && (*p != '.'))
+	p++;
+    return p;
+}
 
-        dataSourceName = String::Format("{0}.{1}..AMQP.{2}.{3}", port, host, 
-                System::Diagnostics::Process::GetCurrentProcess()->Id, 
-                AppDomain::CurrentDomain->Id);
-*/
+int getHexChar (char c) {
+    if ((c >= '0') && (c <= '9'))
+	return c - '0';
 
-bool parseDsn (const char *dsn, std::string& host, int& port) {
+    if ((c >= 'a') && (c <= 'f'))
+	return 10 + (c - 'a');
+
+    if ((c >= 'A') && (c <= 'F'))
+	return 10 + (c - 'A');
+    
+    return -1;
+}
+
+bool parseFromHex(const char* start, const char* end, std::string& target)
+{
+    const char *p = start;
+
+    while ((p + 1) < end) {
+	int nibble = getHexChar(*p++);
+	if (nibble < 0)
+	    return false;
+	int byte = (nibble << 4);
+	nibble = getHexChar(*p++);
+	if (nibble < 0)
+	    return false;
+	byte += nibble;
+	target.append (1, (char) byte & 0xFF);
+    }
+    return (p == end);
+}
+
+
+// parse string from AmqpConnection::DataSourcename
+//   "QPIDdsnV2.port.host.instance_id.SSL_tf.SASL_mech.username.password"
+//
+// parse strictly and return false if the dsn is in a bad format
+
+bool parseDsn (const char *dsn, std::string& host, int& port, bool& ssl, bool& saslPlain,
+	       std::string& username, std::string& password) {
     if (dsn == NULL)
 	return false;
 
@@ -158,36 +203,102 @@ bool parseDsn (const char *dsn, std::string& host, int& port) {
     if (len > 1024)
 	return false;
 
-    int firstDot = 0;
-    for (int i = 0; i < len; i++)
-	if (dsn[i] == '.') {
-	    firstDot = i;
-	    break;
-	}
-    if (!firstDot)
+    if (strncmp(dsn, dsnHeader, strlen(dsnHeader)))
 	return false;
 
-    // look for 2 dots side by side to indicate end of the host
-    int doubleDot = 0;
-    for (int i = firstDot + 1; i < (len - 1); i++)
-	if ((dsn[i] == '.') && (dsn[i+1] == '.')) {
-	    doubleDot = i;
-	    break;
-	}
-    if (!doubleDot)
+    const char *endp = dsn + len;
+    const char *tokenp = dsn + strlen(dsnHeader);
+    if (*tokenp != '.')
+	return false;
+
+    // port
+    tokenp++;
+    if (tokenp >= endp)
+	return false;
+    if (*tokenp == '.')
+	return false;		// null port not allowed
+
+    const char *token_end = nextDot(tokenp);
+    if ((token_end - tokenp) > 5)
 	return false;
 
     port = 0;
-    for (int i = 0; i < firstDot; i++) {
-	char c = dsn[i];
-	if ((c < '0') || (c > '9'))
+    for (const char *p = tokenp; p < token_end; p++) {
+	if ((*p < '0') || (*p > '9'))
 	    return false;
-	port = (10 * port) + (c - '0');
+	port = (10 * port) + (*p - '0');
     }
 
-    host.assign(dsn + firstDot + 1, (doubleDot - firstDot) - 1);
-    return true;
+    if (port > 65535)
+	return false;
+
+    // host
+    tokenp = token_end + 1;
+    if (tokenp >= endp)
+	return false;
+    if (*tokenp == '.')
+	return false;		// null host not allowed
+
+    token_end = nextDot(tokenp);
+    if (!parseFromHex(tokenp, token_end, host))
+	return false;
+
+    // skip the RM identifier, but verify it exists
+    tokenp = token_end + 1;
+    if (tokenp >= endp)
+	return false;
+    token_end = nextDot (tokenp);
+    if ((token_end - tokenp) < 3)
+	return false;
+
+    // ssl: look for T or F
+    tokenp = token_end + 1;
+    if (tokenp >= endp)
+	return false;
+    if (*tokenp == 'T')
+	ssl = true;
+    else if (*tokenp == 'F')
+	ssl = false;
+    else
+	return false;
+    if (*++tokenp != '.')
+	return false;
+
+    // sasl mechanism: A = anonymous, P = plain.  More to come...
+    ++tokenp;
+    if (tokenp >= endp)
+	return false;
+    if (*(tokenp+1) != '.')
+	return false;
+
+    if (*tokenp == 'A') {
+	saslPlain = false;
+	tokenp += 2;
+	// no auth tokens
+    }
+    else if (*tokenp == 'P') {
+	saslPlain = true;
+	tokenp += 2;
+	if (tokenp >= endp)
+	    return false;
+	token_end = nextDot (tokenp);
+	if (!parseFromHex(tokenp, token_end, username))
+	    return false;
+	tokenp = token_end + 1;
+	
+	if (tokenp >= endp)
+	    return false;
+	token_end = nextDot (tokenp);
+	if (!parseFromHex(tokenp, token_end, password))
+	    return false;
+	tokenp = token_end + 1;
+    }
+    else
+	return false;
+
+    return (tokenp == endp);
 }
+
 
 
 INT ResourceManager::open() {
@@ -196,7 +307,21 @@ INT ResourceManager::open() {
     LeaveCriticalSection(&rmLock);
 
     try {
-	qpidConnection.open(host, port);
+	ConnectionSettings settings;
+	settings.host = this->host;
+	settings.port = this->port;
+
+
+	if (ssl)
+	    settings.protocol = "ssl";
+
+	if (saslPlain) {
+	    settings.username = this->username;
+	    settings.password = this->password;
+	    settings.mechanism = "PLAIN";
+	}
+
+	qpidConnection.open(settings);
 	qpidSession = qpidConnection.newSession();
 	rv = XA_OK;
 /*
@@ -359,7 +484,7 @@ INT ResourceManager::recover(XID *xids, long count, long flags) {
 	    if (nXids > 0) {
 		StructHelper decoder;
 		Xid qpidXid;
-		for (int i = 0; i < nXids; i++) {
+		for (size_t i = 0; i < nXids; i++) {
 		    decoder.decode (qpidXid, wireFormatXids[i]);
 		    inDoubtXids.push_back(qpidXid);
 		}
@@ -369,7 +494,7 @@ INT ResourceManager::recover(XID *xids, long count, long flags) {
 
 		// make sure none are too big, just in case
 		
-		for (int i = 0; i < nXids; i++) {
+		for (size_t i = 0; i < nXids; i++) {
 		    Xid& xid = inDoubtXids[i];
 		    size_t l1 = xid.hasGlobalId() ? xid.getGlobalId().size() : 0;
 		    size_t l2 = xid.hasBranchId() ? xid.getBranchId().size() : 0;
@@ -449,10 +574,15 @@ INT __cdecl xa_open (char *xa_info, int rmid, long flags) {
     else {
 	std::string brokerHost;
 	int brokerPort;
-	if (parseDsn(xa_info, brokerHost, brokerPort)) {
+	std::string username;
+	std::string password;
+	bool ssl;
+	bool saslPlain;
+
+	if (parseDsn(xa_info, brokerHost, brokerPort, ssl, saslPlain, username, password)) {
 
 	    try {
-		rmp = new ResourceManager(rmid, brokerHost, brokerPort);
+		rmp = new ResourceManager(rmid, brokerHost, brokerPort, ssl, saslPlain, username, password);
 
 		rv = rmp->open();
 		if (rv != XA_OK) {

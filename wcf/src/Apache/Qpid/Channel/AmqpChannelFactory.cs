@@ -22,6 +22,7 @@ namespace Apache.Qpid.Channel
     using System;
     using System.ServiceModel;
     using System.ServiceModel.Channels;
+    using System.ServiceModel.Description;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
 
@@ -33,12 +34,14 @@ namespace Apache.Qpid.Channel
         long maxBufferPoolSize;
         bool shared;
 	    int prefetchLimit;
+        BindingContext bindingContext;
         List<AmqpTransportChannel> openChannels;
 
         internal AmqpChannelFactory(AmqpTransportBindingElement bindingElement, BindingContext context)
             : base(context.Binding)
         {
             this.bindingElement = bindingElement;
+            this.bindingContext = context;
             this.channelProperties = bindingElement.ChannelProperties.Clone();
             this.shared = bindingElement.Shared;
             this.prefetchLimit = bindingElement.PrefetchLimit;
@@ -81,6 +84,20 @@ namespace Apache.Qpid.Channel
 
         protected override void OnOpen(TimeSpan timeout)
         {
+            // check and freeze security properties now
+            AmqpSecurityMode mode = AmqpSecurityMode.None;
+            if (this.bindingElement.BindingSecurity != null)
+            {
+                mode = bindingElement.BindingSecurity.Mode;
+            }
+
+            this.channelProperties.AmqpSecurityMode = mode;
+            if (mode == AmqpSecurityMode.None)
+            {
+                return;
+            }
+
+            AmqpChannelHelpers.FindAuthenticationCredentials(this.channelProperties, this.bindingContext);
         }
 
         protected override IAsyncResult OnBeginOpen(TimeSpan timeout, AsyncCallback callback, object state)

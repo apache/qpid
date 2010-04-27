@@ -36,17 +36,26 @@ public ref class AmqpConnection
 {
 private:
     Connection* connectionp;
-    String^ host;
-    int port;
     bool disposed;
     Collections::Generic::List<AmqpSession^>^ sessions;
     bool isOpen;
     int busyCount;
     int maxFrameSize;
     DtxResourceManager^ dtxResourceManager;
-    void Cleanup();
     // unique string used for distributed transactions
     String^ dataSourceName;
+    Object ^thisLock;
+
+    // properties needed to allow DTC to do transactions (see DataSourceName
+    String^ host;
+    int port;
+    bool ssl;
+    bool saslPlain;
+    String^ username;
+    String^ password;
+
+    void Cleanup();
+    void initialize (System::String^ server, int port, bool ssl, bool saslPlain, System::String^ username, System::String^ password);
 
  internal:
     void NotifyBusy();
@@ -63,19 +72,12 @@ private:
     }
 
     property String^ DataSourceName {
-	// Note: any change to this format has to be reflected in the DTC plugin's xa_open()
-	String^ get() {
-	    if (dataSourceName == nullptr) {
-		dataSourceName = String::Format("{0}.{1}..AMQP.{2}.{3}", port, host, 
-						System::Diagnostics::Process::GetCurrentProcess()->Id, 
-						AppDomain::CurrentDomain->Id);
-	    }
-	    return dataSourceName;
-	}
+	String^ get();
     }
 
 public:  
     AmqpConnection(System::String^ server, int port);
+    AmqpConnection(System::String^ server, int port, bool ssl, bool saslPlain, System::String^ username, System::String^ password);
     ~AmqpConnection();
     !AmqpConnection();
     void Close();
