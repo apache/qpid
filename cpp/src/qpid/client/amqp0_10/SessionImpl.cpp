@@ -61,6 +61,12 @@ void SessionImpl::checkError()
     s.get()->assertOpen();
 }
 
+bool SessionImpl::hasError()
+{
+    qpid::client::SessionBase_0_10Access s(session);
+    return s.get()->hasError();
+}
+
 void SessionImpl::sync(bool block)
 {
     if (block) retry<Sync>();
@@ -105,22 +111,26 @@ void SessionImpl::release(qpid::messaging::Message& m)
 
 void SessionImpl::close()
 {
-    //close all the senders and receivers (get copy of names and then
-    //make the calls to avoid modifying maps while iterating over
-    //them):
-    std::vector<std::string> s;
-    std::vector<std::string> r;
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);        
-        for (Senders::const_iterator i = senders.begin(); i != senders.end(); ++i) s.push_back(i->first);
-        for (Receivers::const_iterator i = receivers.begin(); i != receivers.end(); ++i) r.push_back(i->first);
+    if (hasError()) {
+        senders.clear();
+        receivers.clear();
+    } else {
+        //close all the senders and receivers (get copy of names and then
+        //make the calls to avoid modifying maps while iterating over
+        //them):
+        std::vector<std::string> s;
+        std::vector<std::string> r;
+        {
+            qpid::sys::Mutex::ScopedLock l(lock);        
+            for (Senders::const_iterator i = senders.begin(); i != senders.end(); ++i) s.push_back(i->first);
+            for (Receivers::const_iterator i = receivers.begin(); i != receivers.end(); ++i) r.push_back(i->first);
+        }
+        for (std::vector<std::string>::const_iterator i = s.begin(); i != s.end(); ++i) getSender(*i).close();
+        for (std::vector<std::string>::const_iterator i = r.begin(); i != r.end(); ++i) getReceiver(*i).close();
     }
-    for (std::vector<std::string>::const_iterator i = s.begin(); i != s.end(); ++i) getSender(*i).close();
-    for (std::vector<std::string>::const_iterator i = r.begin(); i != r.end(); ++i) getReceiver(*i).close();
-    
     
     connection->closed(*this);
-    session.close();
+    if (!hasError()) session.close();
 }
 
 template <class T, class S> boost::intrusive_ptr<S> getImplPtr(T& t)
