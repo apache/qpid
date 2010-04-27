@@ -144,8 +144,10 @@ class Connection(Framer):
     self.delegate.start()
     self.thread.start()
     if not wait(self.condition, lambda: self.opened or self.failed, timeout):
+      self.thread.join()
       raise Timeout()
     if self.failed:
+      self.thread.join()
       raise ConnectionFailed(*self.close_code)
 
   def run(self):
@@ -176,7 +178,14 @@ class Connection(Framer):
       seg_dec.write(*frame_dec.read())
       op_dec.write(*seg_dec.read())
       for op in op_dec.read():
-        self.delegate.received(op)
+        try:
+          self.delegate.received(op)
+        except Closed, e:
+          self.close_code = (None, str(e))
+          if not self.opened:
+            self.failed = True
+            self.closed = True
+            notify(self.condition)
     self.sock.close()
 
   def write_op(self, op):
