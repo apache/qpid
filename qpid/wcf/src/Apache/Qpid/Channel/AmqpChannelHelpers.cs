@@ -24,6 +24,7 @@ namespace Apache.Qpid.Channel
     using System.Net.Sockets;
     using System.ServiceModel;
     using System.ServiceModel.Channels;
+    using System.ServiceModel.Description;
     using System.Globalization;
 
     using Apache.Qpid.AmqpTypes;
@@ -67,7 +68,9 @@ namespace Apache.Qpid.Channel
         int brokerPort;
         TransferMode transferMode;
         AmqpProperties defaultMessageProperties;
-        
+        AmqpSecurityMode amqpSecurityMode;
+        AmqpTransportSecurity amqpTransportSecurity;
+        AmqpCredential amqpCredential;
         long maxBufferPoolSize;
         int maxReceivedMessageSize;
 
@@ -77,6 +80,9 @@ namespace Apache.Qpid.Channel
             this.brokerPort = AmqpDefaults.BrokerPort;
             this.transferMode = AmqpDefaults.TransferMode;
             this.defaultMessageProperties = null;
+            this.amqpSecurityMode = AmqpSecurityMode.None;
+            this.amqpTransportSecurity = null;
+            this.amqpCredential = null;
             this.maxBufferPoolSize = AmqpDefaults.MaxBufferPoolSize;
             this.maxReceivedMessageSize = AmqpDefaults.MaxReceivedMessageSize;
         }
@@ -87,6 +93,16 @@ namespace Apache.Qpid.Channel
             if (this.defaultMessageProperties != null)
             {
                 props.defaultMessageProperties = this.defaultMessageProperties.Clone();
+            }
+
+            if (this.amqpTransportSecurity != null)
+            {
+                props.amqpTransportSecurity = this.amqpTransportSecurity.Clone();
+            }
+
+            if (this.amqpCredential != null)
+            {
+                this.amqpCredential = this.amqpCredential.Clone();
             }
 
             return props;
@@ -116,6 +132,24 @@ namespace Apache.Qpid.Channel
             set { this.defaultMessageProperties = value; }
         }
 
+        internal AmqpSecurityMode AmqpSecurityMode
+        {
+            get { return this.amqpSecurityMode; }
+            set { this.amqpSecurityMode = value; }
+        }
+
+        internal AmqpTransportSecurity AmqpTransportSecurity
+        {
+            get { return this.amqpTransportSecurity; }
+            set { this.amqpTransportSecurity = value; }
+        }
+
+        internal AmqpCredential AmqpCredential
+        {
+            get { return this.amqpCredential; }
+            set { this.amqpCredential = value; }
+        }
+
         internal long MaxBufferPoolSize
         {
             get { return this.maxBufferPoolSize; }
@@ -138,5 +172,49 @@ namespace Apache.Qpid.Channel
                 throw new ArgumentOutOfRangeException("timeout", timeout, "Timeout must be greater than or equal to TimeSpan.Zero. To disable timeout, specify TimeSpan.MaxValue.");
             }
         }
+
+        internal static void FindAuthenticationCredentials(AmqpChannelProperties channelProperties,
+            BindingContext bindingContext)
+        {
+            AmqpTransportSecurity tsec = channelProperties.AmqpTransportSecurity;
+            if (tsec == null)
+            {
+                // no auth
+                return;
+            }
+
+            if (tsec.CredentialType == AmqpCredentialType.Anonymous)
+            {
+                // no auth
+                return;
+            }
+
+            // credentials search order: specific AmqpCredentials, specific
+            // ClientCredentials (if applicable), binding's default credentials
+
+            AmqpCredential amqpCred = bindingContext.BindingParameters.Find<AmqpCredential>();
+            if (amqpCred != null)
+            {
+               channelProperties.AmqpCredential = amqpCred;
+                return;
+            }
+
+            if (!tsec.IgnoreEndpointClientCredentials)
+            {
+                ClientCredentials cliCred = bindingContext.BindingParameters.Find<ClientCredentials>();
+                if (cliCred != null)
+                {
+                    channelProperties.AmqpCredential = new AmqpCredential(cliCred.UserName.UserName,
+                        cliCred.UserName.Password);
+                    return;
+                }
+            }
+
+            if (tsec.DefaultCredential != null)
+            {
+                channelProperties.AmqpCredential = tsec.DefaultCredential.Clone();
+            }
+        }
+
     }
 }

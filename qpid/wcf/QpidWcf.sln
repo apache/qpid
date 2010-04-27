@@ -28,9 +28,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Interop", "src\Apache\Qpid\
 		{820BFC34-A40F-46BA-B86B-05334854CA17} = {820BFC34-A40F-46BA-B86B-05334854CA17}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Channel", "src\Apache\Qpid\Channel\Channel.csproj", "{8AABAB30-7D1E-4539-B7D1-05450262BAD2}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionalTests", "test\Apache\Qpid\Test\Channel\Functional\FunctionalTests.csproj", "{E2D8C779-E417-40BA-BEE1-EE034268482F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Channel", "src\Apache\Qpid\Channel\Channel.csproj", "{8AABAB30-7D1E-4539-B7D1-05450262BAD2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfPerfTest", "test\Apache\Qpid\Test\Channel\WcfPerfTest\WcfPerfTest.csproj", "{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,6 +74,14 @@ Global
 		{8AABAB30-7D1E-4539-B7D1-05450262BAD2}.Release|Win32.Build.0 = Release|Any CPU
 		{8AABAB30-7D1E-4539-B7D1-05450262BAD2}.Release|x64.ActiveCfg = Release|Any CPU
 		{8AABAB30-7D1E-4539-B7D1-05450262BAD2}.Release|x64.Build.0 = Release|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Debug|Win32.Build.0 = Debug|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Debug|x64.Build.0 = Debug|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Release|Win32.ActiveCfg = Release|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Release|Win32.Build.0 = Release|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Release|x64.ActiveCfg = Release|Any CPU
+		{D0F8FDE4-7AC6-4CFF-986A-50D06F7FD733}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

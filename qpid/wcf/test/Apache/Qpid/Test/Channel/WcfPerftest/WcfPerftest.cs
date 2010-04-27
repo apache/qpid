@@ -44,10 +44,14 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
     public class QueueChannelFactory
     {
         private static AmqpBinding brokerBinding;
+        private static BindingParameterCollection bindingParameters;
         private static IChannelFactory<IInputChannel> readerFactory;
         private static IChannelFactory<IOutputChannel> writerFactory;
         private static string brokerAddr = "127.0.0.1";
         private static int brokerPort = 5672;
+        private static string userName;
+        private static string password;
+        private static bool ssl = false;
 
         public static void SetBroker(string addr, int port)
         {
@@ -55,14 +59,43 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
             brokerPort = port;
         }
 
+        public static void SetSecurity(bool sslMode, string name, string pass)
+        {
+            ssl = sslMode;
+            if (name != null)
+            {
+                userName = name;
+                password = pass;
+            }
+        }
+
         private static void InitializeBinding()
         {
             AmqpBinaryBinding binding = new AmqpBinaryBinding();
+            bindingParameters = new BindingParameterCollection();
+
             binding.BrokerHost = brokerAddr;
             binding.BrokerPort = brokerPort;
             binding.TransferMode = TransferMode.Streamed;
             binding.PrefetchLimit = 5000;
             binding.Shared = true;
+
+            if (ssl || (userName != null))
+            {
+                binding.Security.Mode = AmqpSecurityMode.Transport;
+                binding.Security.Transport.UseSSL = ssl;
+
+                if (userName != null)
+                {
+                    binding.Security.Transport.CredentialType = AmqpCredentialType.Plain;
+
+                    ClientCredentials credentials = new ClientCredentials();
+                    credentials.UserName.UserName = userName;
+                    credentials.UserName.Password = password;
+                    bindingParameters.Add(credentials);
+                }
+            }
+
             brokerBinding = binding;
         }
 
@@ -77,7 +110,7 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
 
                 if (readerFactory == null)
                 {
-                    readerFactory = brokerBinding.BuildChannelFactory<IInputChannel>();
+                    readerFactory = brokerBinding.BuildChannelFactory<IInputChannel>(bindingParameters);
                     readerFactory.Open();
                 }
 
@@ -100,7 +133,7 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
 
                 if (writerFactory == null)
                 {
-                    writerFactory = brokerBinding.BuildChannelFactory<IOutputChannel>();
+                    writerFactory = brokerBinding.BuildChannelFactory<IOutputChannel>(bindingParameters);
                     writerFactory.Open();
                 }
 
@@ -121,6 +154,12 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
         InteropDemo
     }
 
+    public enum SaslMechanism
+    {
+        None,
+        Plain
+    }
+
     public class Options
     {
         public string broker;
@@ -132,6 +171,10 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
         public int subTxSize;
         public int pubTxSize;
         public bool durable;
+        public bool ssl;
+        public string username;
+        public string password;
+        public SaslMechanism saslMechanism;
 
         public Options()
         {
@@ -144,6 +187,10 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
             this.pubTxSize = 0;
             this.subTxSize = 0;
             this.durable = false;
+            this.ssl = false;
+            this.username = null;
+            this.password = null;
+            this.saslMechanism = SaslMechanism.None;
         }
 
         public void Parse(string[] args)
@@ -226,9 +273,64 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
                         this.durable = true;
                     }
                 }
-                
+
+                else if (arg == "--protocol")
+                {
+                    arg = args[++current];
+                    if (arg.Equals("ssl"))
+                    {
+                        this.ssl = true;
+                    }
+                }
+
+                else if (arg == "--username")
+                {
+                    this.username = args[++current];
+                }
+
+                else if (arg == "--password")
+                {
+                    this.password = args[++current];
+                }
+
+                else if (arg == "--mechanism")
+                {
+                    arg = args[++current];
+                    if (arg.Equals("PLAIN", StringComparison.OrdinalIgnoreCase))
+                    {
+                        this.saslMechanism = SaslMechanism.Plain;
+                    }
+                }
+
+                else
+                {
+                    throw new ArgumentException(String.Format("unknown argument \"{0}\"", arg));
+                }
+
                 current++;
             }
+
+            if (this.saslMechanism == SaslMechanism.Plain)
+            {
+                // use guest/guest as defaults if neither is specified
+                if ((this.username == null) && (this.password == null))
+                {
+                    this.username = "guest";
+                    this.password = "guest";
+                }
+                else
+                {
+                    if (this.username == null)
+                    {
+                        this.username = "";
+                    }
+                    if (this.password == null)
+                    {
+                        this.password = "";
+                    }
+                }
+            }
+
         }
     }
 
@@ -302,14 +404,28 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
             Console.WriteLine("transaction resource manager ready");
         }
 
+
+        // demonstrate message exchange between WcfPerftest.exe and native 
+        // C++ perftest.exe
+
         static void InteropDemo(Options opts)
         {
             string perftest_cpp_exe = "perftest.exe";
-            string commonArgs = String.Format(" --count {0} --size {1}", opts.messageCount, opts.messageSize);
+            string commonArgs = String.Format(" --count {0} --size {1} --broker {2} --port {3}", opts.messageCount, opts.messageSize, opts.broker, opts.port);
 
             if (opts.durable)
             {
                 commonArgs += " --durable yes";
+            }
+
+            if (opts.ssl)
+            {
+                commonArgs += " --protocol ssl";
+            }
+
+            if (opts.saslMechanism == SaslMechanism.Plain)
+            {
+                commonArgs += String.Format(" --username {0} --password {1} --mechanism PLAIN", opts.username, opts.password);
             }
 
             Console.WriteLine("===== WCF Subscriber and C++ Publisher =====");
@@ -386,6 +502,7 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
             Options opts = new Options();
             opts.Parse(mainArgs);
             QueueChannelFactory.SetBroker(opts.broker, opts.port);
+            QueueChannelFactory.SetSecurity(opts.ssl, opts.username, opts.password);
 
             WarmUpTransactionSubsystem(opts);
 
