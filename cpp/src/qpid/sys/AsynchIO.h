@@ -23,6 +23,9 @@
 
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/CommonImportExport.h"
+
+#include <string.h>
+
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -90,7 +93,7 @@ struct AsynchIOBufferBase {
 
     void squish() {
         if (dataStart != 0) {
-            memmove(bytes, bytes + dataStart, dataCount);
+            ::memmove(bytes, bytes + dataStart, dataCount);
             dataStart = 0;
         }
     }
