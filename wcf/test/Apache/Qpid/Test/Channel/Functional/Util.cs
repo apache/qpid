@@ -19,6 +19,7 @@
 
 namespace Apache.Qpid.Test.Channel.Functional
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.ServiceModel;
@@ -69,6 +70,88 @@ namespace Apache.Qpid.Test.Channel.Functional
             brokerBinding.Elements.Add(transportElement);
 
             return brokerBinding;
+        }
+
+        public static int GetMessageCountFromQueue(string listenUri)
+        {
+            Message receivedMessage = null;
+            int messageCount = 0;
+
+            IChannelListener<IInputChannel> listener = Util.GetBinding().BuildChannelListener<IInputChannel>(new Uri(listenUri), new BindingParameterCollection());
+            listener.Open();
+            IInputChannel proxy = listener.AcceptChannel(TimeSpan.FromSeconds(10));
+            proxy.Open();
+
+            while (true)
+            {
+                try
+                {
+                    receivedMessage = proxy.Receive(TimeSpan.FromSeconds(3));
+                }
+                catch (Exception e)
+                {
+                    if (e.GetType() == typeof(TimeoutException))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
+                messageCount++;
+            }
+
+            listener.Close();
+            return messageCount;
+        }
+
+        public static void PurgeQueue(string listenUri)
+        {
+            GetMessageCountFromQueue(listenUri);
+        }
+
+        public static bool CompareResults(List<string> expectedResults, List<string> actualResults)
+        {
+            IEnumerator<string> actualResultEnumerator = actualResults.GetEnumerator();
+            IEnumerator<string> expectedResultEnumerator = expectedResults.GetEnumerator();
+
+            bool expectedResultEnumeratorPosition = expectedResultEnumerator.MoveNext();
+            bool actualResultEnumeratorPosition = actualResultEnumerator.MoveNext();
+
+            while (true == actualResultEnumeratorPosition &&
+                   true == expectedResultEnumeratorPosition)
+            {
+                string expectedResult = expectedResultEnumerator.Current;
+                string actualResult = actualResultEnumerator.Current;
+
+                if (expectedResult.Equals(actualResult) == false)
+                {
+                    Console.WriteLine("OrderedResultsComparator: Expected result '{0}', but got '{1}' instead.", expectedResult, actualResult);
+                    return false;
+                }
+
+                expectedResultEnumeratorPosition = expectedResultEnumerator.MoveNext();
+                actualResultEnumeratorPosition = actualResultEnumerator.MoveNext();
+            }
+
+            // if either of them has still more data left, its an error
+            if (true == expectedResultEnumeratorPosition)
+            {
+                string expectedResult = expectedResultEnumerator.Current;
+                Console.WriteLine("OrderedResultsComparator: Got fewer results than expected, first missing result: '{0}'", expectedResult);
+                return false;
+            }
+
+            if (true == actualResultEnumeratorPosition)
+            {
+                string actualResult = actualResultEnumerator.Current;
+                Console.WriteLine("OrderedResultsComparator: Got more results than expected, first extra result: '{0}'", actualResult);
+                return false;
+            }
+
+            return true;
         }
     }
 }

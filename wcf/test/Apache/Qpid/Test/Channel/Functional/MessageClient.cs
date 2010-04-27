@@ -23,6 +23,7 @@ namespace Apache.Qpid.Test.Channel.Functional
     using System.Reflection;
     using System.ServiceModel;
     using System.ServiceModel.Channels;
+    using System.Transactions;
 
     public class MessageClient
     {
@@ -38,18 +39,35 @@ namespace Apache.Qpid.Test.Channel.Functional
             set;
         }
 
+        public bool TransactedSend
+        {
+            get;
+            set;
+        }
+
+        public bool CommitTransaction
+        {
+            get;
+            set;
+        }
+
         public void RunClient<TServiceContract>(EndpointAddress address)
         {
-            Binding amqpBinding = Util.GetBinding();
-            Type proxyType = typeof(TServiceContract);
-            MethodInfo helloMethod = proxyType.GetMethod("Hello");
-            MethodInfo goodbyeMethod = proxyType.GetMethod("Goodbye");
-
             string[] messages = new string[this.NumberOfMessages];
             for (int i = 0; i < this.NumberOfMessages; ++i)
             {
                 messages[i] = "Message " + i;
             }
+
+            RunTestClient<TServiceContract>(address, messages);
+        }
+
+        public void RunTestClient<TServiceContract>(EndpointAddress address, object[] messages)
+        {
+            Binding amqpBinding = Util.GetBinding();
+            Type proxyType = typeof(TServiceContract);
+            MethodInfo helloMethod = proxyType.GetMethod("Hello");
+            MethodInfo goodbyeMethod = proxyType.GetMethod("Goodbye");            
 
             for (int i = 0; i < this.NumberOfIterations; ++i)
             {
@@ -76,13 +94,38 @@ namespace Apache.Qpid.Test.Channel.Functional
             ChannelFactory<TServiceContract> channelFactory = new ChannelFactory<TServiceContract>(amqpBinding, address);
             TServiceContract proxy = channelFactory.CreateChannel();
 
-            foreach (object message in messages)
+            if (this.TransactedSend)
             {
-                helloMethod.Invoke(proxy, new object[] { message });
-            }
+                using (TransactionScope tx = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(20)))
+                {
+                    foreach (object message in messages)
+                    {
+                        helloMethod.Invoke(proxy, new object[] { message });
+                    }
 
-            goodbyeMethod.Invoke(proxy, new object[0]);
-            channelFactory.Close();
+                    if (goodbyeMethod != null)
+                    {
+                        goodbyeMethod.Invoke(proxy, new object[0]);
+                    }
+
+                    if (this.CommitTransaction)
+                    {
+                        tx.Complete();
+                    }                    
+                }
+            }
+            else
+            {
+                foreach (object message in messages)
+                {
+                    helloMethod.Invoke(proxy, new object[] { message });
+                }
+
+                if (goodbyeMethod != null)
+                {
+                    goodbyeMethod.Invoke(proxy, new object[0]);
+                }
+            }
         }
 
         private void CreateInteropChannelAndSendMessages<TServiceContract>(EndpointAddress address, Binding amqpBinding, MethodInfo helloMethod, int messageCount)

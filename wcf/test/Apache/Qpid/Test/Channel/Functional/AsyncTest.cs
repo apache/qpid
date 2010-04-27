@@ -175,10 +175,10 @@ namespace Apache.Qpid.Test.Channel.Functional
                 Thread.Sleep(TimeSpan.FromMilliseconds(300.0)); // Dummy work
                 inputChannel = listener.EndAcceptChannel(acceptResult);
             }
-            catch (TimeoutException e)
+            catch (TimeoutException)
             {
                 listener.Close();
-                throw e;
+                throw;
             }
             finally
             {
