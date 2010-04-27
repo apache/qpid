@@ -58,9 +58,11 @@ class Model:
         _method.add_argument(qmf.SchemaArgument("test", qmf.TYPE_SSTR, {"dir":qmf.DIR_IN}))
         self.parent_class.add_method(_method)
 
-        _method = qmf.SchemaMethod("set_map", {"desc":"Set the map value in the object"})
-        _method.add_argument(qmf.SchemaArgument("value", qmf.TYPE_MAP, {"dir":qmf.DIR_IN}))
-        _method.add_argument(qmf.SchemaArgument("output", qmf.TYPE_MAP, {"dir":qmf.DIR_OUT}))
+        _method = qmf.SchemaMethod("test_map_list", {"desc":"A method call that accepts map and list arguments."})
+        _method.add_argument(qmf.SchemaArgument("inMap", qmf.TYPE_MAP, {"dir":qmf.DIR_IN}))
+        _method.add_argument(qmf.SchemaArgument("inList", qmf.TYPE_LIST, {"dir":qmf.DIR_IN}))
+        _method.add_argument(qmf.SchemaArgument("outMap", qmf.TYPE_MAP, {"dir":qmf.DIR_OUT}))
+        _method.add_argument(qmf.SchemaArgument("outList", qmf.TYPE_LIST, {"dir":qmf.DIR_OUT}))
         self.parent_class.add_method(_method)
 
         _method = qmf.SchemaMethod("set_short_string", {"desc":"Set the short string value in the object"})
@@ -86,7 +88,8 @@ class Model:
         self.event_class = qmf.SchemaEventClass("org.apache.qpid.qmf", "test_event", qmf.SEV_NOTICE)
         self.event_class.add_argument(qmf.SchemaArgument("uint32val", qmf.TYPE_UINT32))
         self.event_class.add_argument(qmf.SchemaArgument("strval", qmf.TYPE_LSTR))
-
+        self.event_class.add_argument(qmf.SchemaArgument("mapval", qmf.TYPE_MAP))
+        self.event_class.add_argument(qmf.SchemaArgument("listval", qmf.TYPE_LIST))
 
     def register(self, agent):
         agent.register_class(self.parent_class)
@@ -122,10 +125,20 @@ class App(qmf.AgentHandler):
         if name == "echo":
             self._agent.method_response(context, 0, "OK", args)
 
-        elif name == "set_map":
-            map = args['value']
-            map['added'] = "Added Text"
-            args['output'] = map
+        elif name == "test_map_list":
+            # build the output map from the input map, accessing each key,
+            # value to ensure they are encoded/decoded
+            outMap = {}
+            for key,value in args['inMap'].items():
+                outMap[key] = value
+
+            # same deal for the output list
+            outList = []
+            for value in args['inList']:
+                outList.append(value)
+
+            args['outMap'] = outMap
+            args['outList'] = outList
             self._agent.method_response(context, 0, "OK", args)
 
         elif name == "set_numerics":
@@ -149,6 +162,8 @@ class App(qmf.AgentHandler):
                 event = qmf.QmfEvent(self._model.event_class)
                 event.uint32val = self._parent.get_attr("uint32val")
                 event.strval = "Unused"
+                event.mapval = self._parent.get_attr("mapval")
+                event.listval = self._parent["listval"]
 
                 self._agent.raise_event(event)
 
