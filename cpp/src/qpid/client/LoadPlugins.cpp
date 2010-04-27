@@ -19,6 +19,8 @@
  *
  */
 
+#include "LoadPlugins.h"
+
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
@@ -26,8 +28,12 @@
 #include "qpid/sys/Shlib.h"
 #include <string>
 #include <vector>
+
 using std::vector;
 using std::string;
+
+namespace qpid {
+namespace client {
 
 namespace {
 
@@ -47,6 +53,12 @@ struct LoadtimeInitialise {
             qpid::loadModuleDir (moduleOptions.loadDir, isDefault);
         }
     }
-} init;
+};
 
 } // namespace
+
+void theModuleLoader() {
+    static LoadtimeInitialise l;
+}
+
+}} // namespace qpid::client

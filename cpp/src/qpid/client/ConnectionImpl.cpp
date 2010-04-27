@@ -21,6 +21,7 @@
 
 #include "qpid/client/ConnectionImpl.h"
 
+#include "qpid/client/LoadPlugins.h"
 #include "qpid/client/Connector.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/SessionImpl.h"
@@ -162,10 +163,14 @@ public:
 
 }
 
-// Ensure the IO threads exist:
-// This needs to be called in the Connection constructor
-// so that they will still exist at last connection destruction
 void ConnectionImpl::init() {
+    // Ensure that the plugin modules have been loaded
+    // This will make sure that any plugin protocols are available
+    theModuleLoader();
+
+    // Ensure the IO threads exist:
+    // This needs to be called in the Connection constructor
+    // so that they will still exist at last connection destruction
     (void) theIO();
 }
 
