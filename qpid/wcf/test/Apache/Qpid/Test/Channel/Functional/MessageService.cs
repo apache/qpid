@@ -24,8 +24,9 @@ namespace Apache.Qpid.Test.Channel.Functional
     using System.ServiceModel;
     using System.ServiceModel.Channels;
     using System.Threading;
+    using System.Transactions;
 
-    public class MessageService : IQueuedDatagramService1, IQueuedDatagramService2, IQueuedDatagramService3, IInteropService
+    public class MessageService : IQueuedDatagramService1, IQueuedDatagramService2, IQueuedDatagramService3, IInteropService, IQueuedServiceUsingTransactionScope, IQueuedServiceUsingTSRAttribute
     {
         private static Dictionary<string, int> methodCallCount = new Dictionary<string, int>();
         private static ServiceHost serviceHost;
@@ -48,7 +49,7 @@ namespace Apache.Qpid.Test.Channel.Functional
             set;
         }
 
-        // The test must set these paramters                  
+        // The test must set the following paramters                  
         public static List<Type> ContractTypes
         {
             get;
@@ -87,11 +88,27 @@ namespace Apache.Qpid.Test.Channel.Functional
             serviceHost.Open();
         }
 
+        public static bool IsServiceRunning()
+        {
+            return (serviceHost != null && serviceHost.State == CommunicationState.Opened) ? true : false;
+        }
+
         public static void StopService()
         {
             if (serviceHost.State != CommunicationState.Faulted)
             {
-                serviceHost.Close();
+                try
+                {
+                    serviceHost.Close();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("An exception was thrown while trying to close the service host.\n" + e);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Service Faulted.");
             }
         }
 
@@ -106,10 +123,33 @@ namespace Apache.Qpid.Test.Channel.Functional
 
                 ++methodCallCount[method];
                 ++TotalMethodCallCount;
+
                 if (TotalMethodCallCount >= IntendedInvocationCount && CompletionHandle != null)
                 {
                     CompletionHandle.Set();
                 }
+            }
+        }
+
+        [OperationBehavior(TransactionScopeRequired = true, TransactionAutoComplete = true)]
+        void IQueuedServiceUsingTransactionScope.Hello(string message)
+        {
+            this.UpdateCounts("IQueuedServiceUsingTransactionScope.Hello");
+
+            if (message.Trim().ToLower().StartsWith("abort"))
+            {
+                throw new Exception();                
+            }
+        }
+
+        [OperationBehavior(TransactionScopeRequired = true, TransactionAutoComplete = true)]
+        void IQueuedServiceUsingTSRAttribute.Hello(string message)
+        {            
+            this.UpdateCounts("IQueuedServiceUsingTSRAttribute.Hello");
+
+            if (message.Trim().ToLower().StartsWith("abort"))
+            {
+                Transaction.Current.Rollback();                
             }
         }
 
