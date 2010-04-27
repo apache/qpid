@@ -50,6 +50,15 @@ namespace Apache.Qpid.Channel
         public const string PrefetchLimit = "prefetchLimit";
         public const string MaxBufferPoolSize = "maxBufferPoolSize";
         public const string MaxReceivedMessageSize = "maxReceivedMessageSize";
+        public const string Security = "security";
+        public const string SecurityMode = "mode";
+        public const string SecurityTransport = "transport";
+        public const string SecurityTransportCredentialType = "credentialType";
+        public const string SecurityTransportUseSSL = "useSSL";
+        public const string SecurityTransportDefaultCredential = "defaultCredential";
+        public const string SecurityTransportIgnoreEndpointCredentials = "ignoreEndpointCredentials";
+        public const string CredentialUserName = "userName";
+        public const string CredentialPassword = "password";
     }
 
     static class AmqpDefaults
@@ -195,7 +204,7 @@ namespace Apache.Qpid.Channel
             AmqpCredential amqpCred = bindingContext.BindingParameters.Find<AmqpCredential>();
             if (amqpCred != null)
             {
-               channelProperties.AmqpCredential = amqpCred;
+                channelProperties.AmqpCredential = amqpCred.Clone();
                 return;
             }
 
@@ -204,9 +213,15 @@ namespace Apache.Qpid.Channel
                 ClientCredentials cliCred = bindingContext.BindingParameters.Find<ClientCredentials>();
                 if (cliCred != null)
                 {
-                    channelProperties.AmqpCredential = new AmqpCredential(cliCred.UserName.UserName,
-                        cliCred.UserName.Password);
-                    return;
+                    if (cliCred.UserName != null)
+                    {
+                        if (cliCred.UserName.UserName != null)
+                        {
+                            channelProperties.AmqpCredential = new AmqpCredential(cliCred.UserName.UserName,
+                                cliCred.UserName.Password);
+                            return;
+                        }
+                    }
                 }
             }
 
@@ -215,6 +230,5 @@ namespace Apache.Qpid.Channel
                 channelProperties.AmqpCredential = tsec.DefaultCredential.Clone();
             }
         }
-
     }
 }
