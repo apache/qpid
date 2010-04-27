@@ -44,7 +44,15 @@ namespace Apache.Qpid.Channel
 
         private void ApplyConfiguration(string configurationName)
         {
-            AmqpBinaryBindingCollectionElement section = (AmqpBinaryBindingCollectionElement)ConfigurationManager.GetSection(AmqpConstants.AmqpBinaryBindingSectionName);
+            BindingsSection wcfBindings = (BindingsSection)ConfigurationManager.GetSection("system.serviceModel/bindings");
+            // wcfBindings contains system defined bindings and bindingExtensions
+
+            AmqpBinaryBindingCollectionElement section = (AmqpBinaryBindingCollectionElement)wcfBindings["amqpBinaryBinding"];
+            if (section == null)
+            {
+                throw new ConfigurationErrorsException("Missing \"amqpBinaryBinding\" configuration section.");
+            }
+            
             AmqpBinaryBindingConfigurationElement element = section.Bindings[configurationName];
             if (element == null)
             {

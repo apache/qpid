@@ -73,15 +73,8 @@ namespace Apache.Qpid.Channel
         /// </summary>
         public AmqpCredential DefaultCredential
         {
-            get
-            {
-                if (this.defaultCredential == null)
-                {
-                    this.defaultCredential = new AmqpCredential("", "");
-                }
-
-                return this.defaultCredential;
-            }
+            get { return this.defaultCredential; }
+            set { this.defaultCredential = value; }
         }
 
         /// <summary>
