@@ -27,7 +27,7 @@ if (GEN_DOXYGEN)
     configure_file (${CMAKE_CURRENT_SOURCE_DIR}/user.doxygen.in
                     ${CMAKE_CURRENT_BINARY_DIR}/user.doxygen)
     configure_file (${CMAKE_CURRENT_SOURCE_DIR}/developer.doxygen.in
-                    ${CMAKE_CURRENT_BINARY_DIR}/develeoper.doxygen)
+                    ${CMAKE_CURRENT_BINARY_DIR}/developer.doxygen)
     add_custom_target (docs-user-api COMMAND ${DOXYGEN_EXECUTABLE} user.doxygen)
     add_custom_target (docs-developer COMMAND ${DOXYGEN_EXECUTABLE} developer.doxygen)
 
