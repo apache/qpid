@@ -64,6 +64,10 @@ under the License.
     <Compile Include="AmqpBinaryBinding.cs" />
     <Compile Include="AmqpBinaryBindingCollectionElement.cs" />
     <Compile Include="AmqpBinaryBindingConfigurationElement.cs" />
+    <Compile Include="AmqpCredential.cs" />
+    <Compile Include="AmqpCredentialType.cs" />
+    <Compile Include="AmqpSecurity.cs" />
+    <Compile Include="AmqpSecurityMode.cs" />
     <Compile Include="AmqpChannelFactory.cs" />
     <Compile Include="AmqpChannelHelpers.cs" />
     <Compile Include="AmqpChannelListener.cs" />
@@ -72,6 +76,7 @@ under the License.
     <Compile Include="AmqpBindingConfigurationElement.cs" />
     <Compile Include="AmqpTransportBindingElement.cs" />
     <Compile Include="AmqpTransportChannel.cs" />
+    <Compile Include="AmqpTransportSecurity.cs" />
     <Compile Include="ConnectionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RawMessage.cs" />
