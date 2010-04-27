@@ -20,7 +20,6 @@
 namespace Apache.Qpid.Test.Channel.Functional
 {
     using System.ServiceModel;
-    using System.ServiceModel.Channels;
 
     [ServiceContract(SessionMode = SessionMode.NotAllowed)]
     public interface IQueuedDatagramService2

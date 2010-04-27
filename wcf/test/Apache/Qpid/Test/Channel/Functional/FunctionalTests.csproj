@@ -62,6 +62,7 @@ under the License.
     <Reference Include="System.ServiceModel">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -73,18 +74,26 @@ under the License.
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncTest.cs" />
+    <Compile Include="ChannelAbortCommitTest.cs" />
+    <Compile Include="ChannelContextParameters.cs" />
+    <Compile Include="ChannelEntity.cs" />
+    <Compile Include="ChannelReceiver.cs" />
+    <Compile Include="ChannelSender.cs" />
     <Compile Include="CustomAmqpBindingTest.cs" />
     <Compile Include="IGenericObjectService.cs" />
     <Compile Include="IInteropService.cs" />
     <Compile Include="IQueuedDatagramService1.cs" />
     <Compile Include="IQueuedDatagramService2.cs" />
     <Compile Include="IQueuedDatagramService3.cs" />
+    <Compile Include="IQueuedServiceUsingTransactionScope.cs" />
+    <Compile Include="IQueuedServiceUsingTSRAttribute.cs" />
     <Compile Include="MessageBodyTest.cs" />
     <Compile Include="MessagePropertiesTest.cs" />
     <Compile Include="MultipleEndpointsSameQueueTest.cs" />
     <Compile Include="MessageClient.cs" />
     <Compile Include="MessageService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BasicTransactionTest.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>
   <ItemGroup>
