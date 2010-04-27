@@ -221,6 +221,23 @@ class QmfInteropTests(TestBase010):
         self.assertTrue(isinstance(parent.listval[4][3], dict))
         self.assertEqual(parent.listval[4][3]["hi"], 10)
         self.assertEqual(parent.listval[4][3]["lo"], 5)
+        self.assertEqual(parent.listval[4][3]["neg"], -3)
+
+        # see agent for structure of mapval
+
+        self.assertTrue(isinstance(parent.mapval, dict))
+        self.assertEqual(len(parent.mapval), 7)
+        self.assertEqual(parent.mapval['aLong'], 9999999999)
+        self.assertEqual(parent.mapval['aInt'], 54321)
+        self.assertEqual(parent.mapval['aSigned'], -666)
+        self.assertEqual(parent.mapval['aString'], "A String"),
+        self.assertEqual(parent.mapval['aFloat'], 3.1415),
+        self.assertTrue(isinstance(parent.mapval['aMap'], dict))
+        self.assertEqual(len(parent.mapval['aMap']), 2)
+        self.assertEqual(parent.mapval['aMap']['second'], 2)
+        self.assertTrue(isinstance(parent.mapval['aList'], list))
+        self.assertEqual(len(parent.mapval['aList']), 4)
+        self.assertEqual(parent.mapval['aList'][1], -1)
 
 
     def getProperty(self, msg, name):

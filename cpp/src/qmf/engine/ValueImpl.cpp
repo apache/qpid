@@ -121,9 +121,13 @@ void ValueImpl::initMap(const FieldTable& ft)
             case 0x22 : subval->setUint(fvalue.get<int>()); break;
             }
             insert(name.c_str(), subval);
-        } else if ((amqType & 0xCF) == 0x01) {
+        } else if (amqType == 0x31) {   // int64
             Value* subval(new Value(TYPE_INT64));
             subval->setInt64(fvalue.get<int64_t>());
+            insert(name.c_str(), subval);
+        } else if ((amqType & 0xCF) == 0x01) {  // 0x01:int8, 0x11:int16, 0x21:int21
+            Value* subval(new Value(TYPE_INT32));
+            subval->setInt((int32_t)fvalue.get<int>());
             insert(name.c_str(), subval);
         } else if (amqType == 0x85 || amqType == 0x95) {
             Value* subval(new Value(TYPE_LSTR));
@@ -233,14 +237,18 @@ void ValueImpl::initList(const List& fl)
         } else if ((amqType & 0xCF) == 0x02) {
             Value* subval(new Value(TYPE_UINT32));
             switch (amqType) {
-            case 0x02 : subval->setUint(fvalue.get<int>()); break;
-            case 0x12 : subval->setUint(fvalue.get<int>()); break;
-            case 0x22 : subval->setUint(fvalue.get<int>()); break;
+            case 0x02 : subval->setUint(fvalue.get<int>()); break; // uint8
+            case 0x12 : subval->setUint(fvalue.get<int>()); break; // uint16
+            case 0x22 : subval->setUint(fvalue.get<int>()); break; // uint32
             }
             appendToList(subval);
-        } else if ((amqType & 0xCF) == 0x01) {
+        } else if (amqType == 0x31) {   // int64
             Value* subval(new Value(TYPE_INT64));
             subval->setInt64(fvalue.get<int64_t>());
+            appendToList(subval);
+        } else if ((amqType & 0xCF) == 0x01) {  // 0x01:int8, 0x11:int16, 0x21:int32
+            Value* subval(new Value(TYPE_INT32));
+            subval->setInt((int32_t)fvalue.get<int>());
             appendToList(subval);
         } else if (amqType == 0x85 || amqType == 0x95) {
             Value* subval(new Value(TYPE_LSTR));
