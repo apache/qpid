@@ -76,6 +76,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
 
     qpid::messaging::Connection getConnection() const;
     void checkError();
+    bool hasError();
 
     bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout);    
 

@@ -84,6 +84,7 @@ public:
     void suspend();
 
     void assertOpen() const;
+    bool hasError() const;
 
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);

@@ -789,6 +789,12 @@ void SessionImpl::assertOpen() const
     checkOpen();
 }
 
+bool SessionImpl::hasError() const
+{
+    Lock l(state);
+    return !exceptionHolder.empty();
+}
+
 void SessionImpl::handleClosed()
 {
     demux.close(exceptionHolder.empty() ?
