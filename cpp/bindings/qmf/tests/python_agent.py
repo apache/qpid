@@ -146,17 +146,6 @@ class App(qmf.AgentHandler):
                 self._parent["int16val"] = 10000
                 self._parent.set_attr("int8val",  100)
 
-                self._parent.set_attr("mapval", {'u64'  : self._parent['uint64val'],
-                                                 'u32'  : self._parent['uint32val'],
-                                                 'u16'  : self._parent['uint16val'],
-                                                 'u8'   : self._parent['uint8val'],
-                                                 'i64'  : self._parent['int64val'],
-                                                 'i32'  : self._parent['int32val'],
-                                                 'i16'  : self._parent['int16val'],
-                                                 'i8'   : self._parent['int8val'],
-                                                 'sstr' : "Short String",
-                                                 'map'  : {'first' : 'FIRST', 'second' : 'SECOND'}})
-
                 event = qmf.QmfEvent(self._model.event_class)
                 event.uint32val = self._parent.get_attr("uint32val")
                 event.strval = "Unused"
@@ -292,9 +281,20 @@ class App(qmf.AgentHandler):
         self._parent.set_attr("int8val",  0)
 
         # a list containing a list that contains a map (so there!)
-        self._parent.set_attr("listval", ['a', 1, 'b', 2,
+        self._parent.set_attr("listval", ['a', 1, 'b', -2,
                                           ['c', True, 3.1415,
-                                           {"hi": 10, "lo": 5}]])
+                                           {"hi": 10, "lo": 5, "neg": -3}]])
+        # a default map
+        self._parent.set_attr("mapval", {'aLong' : long(9999999999),
+                                         'aInt'  : int(54321),
+                                         'aSigned' : -666,
+                                         'aString' : "A String",
+                                         'aFloat' : 3.1415,
+                                         'aMap'  : {'first' : 1,
+                                                    'second': 2},
+                                         'aList' : ['x', -1, 'y', 2]})
+
+
 
         self._parent_oid = self._agent.alloc_object_id(1)
         self._parent.set_object_id(self._parent_oid)
