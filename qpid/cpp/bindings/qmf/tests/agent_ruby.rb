@@ -134,17 +134,6 @@ class App < Qmf::AgentHandler
         @parent.int16val = 10000
         @parent.int8val  = 100
 
-        @parent.mapval = {'u64'  => @parent.uint64val,
-                          'u32'  => @parent.uint32val,
-                          'u16'  => @parent.uint16val,
-                          'u8'   => @parent.uint8val,
-                          'i64'  => @parent.int64val,
-                          'i32'  => @parent.int32val,
-                          'i16'  => @parent.int16val,
-                          'i8'   => @parent.int8val,
-                          'sstr' => "Short String",
-                          'map'  => {'first' => 'FIRST', 'second' => 'SECOND'}}
-
         event = Qmf::QmfEvent.new(@model.event_class)
         event.uint32val = @parent.uint32val
         event.strval = "Unused"
@@ -248,9 +237,18 @@ class App < Qmf::AgentHandler
     @parent.int8val  = 0
 
     # a list containing a list that contains a map (so there!)
-    @parent.listval = ['a', 1, 'b', 2,
+    @parent.listval = ['a', 1, 'b', -2,
                        ['c', true, 3.1415,
-                        {"hi" => 10, "lo" => 5}]]
+                        {"hi" => 10, "lo" => 5, "neg" => -3}]]
+
+    # a default map
+    @parent.mapval = {'aLong'  => 9999999999,
+      'aInt'  => 54321,
+      'aSigned' => -666,
+      'aString'  => "A String",
+      'aFloat'=> 3.1415,
+      'aMap'  => {"first" => 1, "second" => 2},
+      'aList' => ['x', -1, 'y', 2]}
 
     @parent_oid = @agent.alloc_object_id(1)
     @parent.set_object_id(@parent_oid)
