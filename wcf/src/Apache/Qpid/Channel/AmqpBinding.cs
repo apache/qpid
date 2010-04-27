@@ -36,7 +36,7 @@ namespace Apache.Qpid.Channel
         protected AmqpSecurity security;
 
         public AmqpBinding()
-            : this (new BinaryMessageEncodingBindingElement())
+            : this(new BinaryMessageEncodingBindingElement())
         {
         }
 
@@ -89,6 +89,11 @@ namespace Apache.Qpid.Channel
             }
         }
 
+        internal bool SecurityEnabled
+        {
+            get { return (transport.ChannelProperties.AmqpSecurityMode != AmqpSecurityMode.None); }
+        }
+
         public bool Shared
         {
             get { return transport.Shared; }
@@ -124,7 +129,15 @@ namespace Apache.Qpid.Channel
 
         private void ApplyConfiguration(string configurationName)
         {
-            AmqpBindingCollectionElement section = (AmqpBindingCollectionElement)ConfigurationManager.GetSection(AmqpConstants.AmqpBindingSectionName);
+            BindingsSection wcfBindings = (BindingsSection)ConfigurationManager.GetSection("system.serviceModel/bindings");
+            // wcfBindings contains system defined bindings and bindingExtensions
+
+            AmqpBindingCollectionElement section = (AmqpBindingCollectionElement)wcfBindings["amqpBinding"];
+            if (section == null)
+            {
+                throw new ConfigurationErrorsException("Missing \"amqpBinding\" configuration section.");
+            }
+
             AmqpBindingConfigurationElement element = section.Bindings[configurationName];
             if (element == null)
             {

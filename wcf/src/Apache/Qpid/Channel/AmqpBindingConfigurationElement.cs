@@ -26,6 +26,7 @@ namespace Apache.Qpid.Channel
     using System.ServiceModel;
     using System.ServiceModel.Channels;
     using System.ServiceModel.Configuration;
+    using System.Threading;
     using Apache.Qpid.AmqpTypes;
 
     public class AmqpBindingConfigurationElement : StandardBindingElement
@@ -97,6 +98,13 @@ namespace Apache.Qpid.Channel
             }
         }
 
+        [ConfigurationProperty(AmqpConfigurationStrings.Security)]
+        public AmqpSecurityElement Security
+        {
+            get { return (AmqpSecurityElement)base[AmqpConfigurationStrings.Security]; }
+            set { base[AmqpConfigurationStrings.Security] = value; }
+        }
+
         protected override ConfigurationPropertyCollection Properties
         {
             get
@@ -109,6 +117,7 @@ namespace Apache.Qpid.Channel
                 properties.Add(new ConfigurationProperty(AmqpConfigurationStrings.TransferMode,
                     typeof(TransferMode), AmqpDefaults.TransferMode, null, null, ConfigurationPropertyOptions.None));
                 properties.Add(new ConfigurationProperty("brokers", typeof(BrokerCollection), null));
+                properties.Add(new ConfigurationProperty(AmqpConfigurationStrings.Security, typeof(AmqpSecurityElement), null));
                 return properties;
             }
         }
@@ -122,6 +131,40 @@ namespace Apache.Qpid.Channel
             this.TransferMode = amqpBinding.TransferMode;
             this.Shared = amqpBinding.Shared;
             this.PrefetchLimit = amqpBinding.PrefetchLimit;
+
+            if (!amqpBinding.SecurityEnabled)
+            {
+                this.Security = null;
+            }
+            else
+            {
+                if (this.Security == null)
+                {
+                    this.Security = new AmqpSecurityElement();
+                }
+
+                AmqpTransportSecurity sec = amqpBinding.Security.Transport;
+                this.Security.Mode = AmqpSecurityMode.Transport;
+                if (this.Security.Transport == null)
+                {
+                    this.Security.Transport = new AmqpTransportSecurityElement();
+                }
+
+                this.Security.Transport.CredentialType = sec.CredentialType;
+                this.Security.Transport.IgnoreEndpointCredentials = sec.IgnoreEndpointClientCredentials;
+                this.Security.Transport.UseSSL = sec.UseSSL;
+                if (sec.DefaultCredential == null)
+                {
+
+                    this.Security.Transport.DefaultCredential = null;
+                }
+                else
+                {
+                    this.Security.Transport.DefaultCredential = new AmqpCredentialElement();
+                    this.Security.Transport.DefaultCredential.UserName = sec.DefaultCredential.UserName;
+                    this.Security.Transport.DefaultCredential.Password = sec.DefaultCredential.Password;
+                }
+            }
 
             AmqpProperties props = amqpBinding.DefaultMessageProperties;
         }
@@ -144,7 +187,39 @@ namespace Apache.Qpid.Channel
             amqpBinding.TransferMode = this.TransferMode;
             amqpBinding.Shared = this.Shared;
             amqpBinding.PrefetchLimit = this.PrefetchLimit;
+
+            AmqpSecurityMode mode = AmqpSecurityMode.None;
+            if (this.Security != null)
+            {
+                mode = this.Security.Mode;
+            }
+
+            if (mode == AmqpSecurityMode.None)
+            {
+                if (amqpBinding.SecurityEnabled)
+                {
+                    amqpBinding.Security.Mode = AmqpSecurityMode.None;
+                }
+            }
+            else
+            {
+                amqpBinding.Security.Mode = AmqpSecurityMode.Transport;
+                amqpBinding.Security.Transport.CredentialType = this.Security.Transport.CredentialType;
+                amqpBinding.Security.Transport.IgnoreEndpointClientCredentials = this.Security.Transport.IgnoreEndpointCredentials;
+                amqpBinding.Security.Transport.UseSSL = this.Security.Transport.UseSSL;
+                if (this.Security.Transport.DefaultCredential != null)
+                {
+                    amqpBinding.Security.Transport.DefaultCredential = new AmqpCredential(
+                        this.Security.Transport.DefaultCredential.UserName,
+                        this.Security.Transport.DefaultCredential.Password);
+                }
+                else
+                {
+                    amqpBinding.Security.Transport.DefaultCredential = null;
+                }
+            }
         }
+    
 
         protected override void PostDeserialize()
         {

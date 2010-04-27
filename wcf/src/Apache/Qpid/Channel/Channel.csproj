@@ -67,6 +67,7 @@ under the License.
     <Compile Include="AmqpCredential.cs" />
     <Compile Include="AmqpCredentialType.cs" />
     <Compile Include="AmqpSecurity.cs" />
+    <Compile Include="AmqpSecurityElement.cs" />
     <Compile Include="AmqpSecurityMode.cs" />
     <Compile Include="AmqpChannelFactory.cs" />
     <Compile Include="AmqpChannelHelpers.cs" />
