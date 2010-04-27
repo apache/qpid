@@ -26,12 +26,22 @@ namespace acl {
 
 AclData::AclData():decisionMode(qpid::acl::DENY),transferAcl(false),aclSource("UNKNOWN")
 {
-    actionList.resize(qpid::acl::ACTIONSIZE);
+	for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++){
+	    actionList[cnt]=0;
+	}
+
 }
 
 void AclData::clear ()
 {
-    actionList.clear();	
+    for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++){
+	    if (actionList[cnt]){
+		    for (unsigned int cnt1=0; cnt1< qpid::acl::OBJECTSIZE; cnt1++)
+			    delete actionList[cnt][cnt1]; 
+		}
+		delete[] actionList[cnt];
+	}
+	
 }
 
 bool AclData::matchProp(const std::string & src, const std::string& src1)
@@ -52,21 +62,21 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 		 << " with params " << AclHelper::propertyMapToString(params));
 
 	AclResult aclresult = decisionMode;
-	if (!actionList[action].empty() &&  !actionList[action][objType].empty()) {
-		AclData::ActObjItr itrRule = actionList[action][objType].find(id);
-		if (itrRule == actionList[action][objType].end())
-			itrRule = actionList[action][objType].find("*");
+	if (actionList[action] && actionList[action][objType]) {
+		AclData::actObjItr itrRule = actionList[action][objType]->find(id);
+		if (itrRule == actionList[action][objType]->end())
+			itrRule = actionList[action][objType]->find("*");
 
-		if (itrRule != actionList[action][objType].end()) {
+		if (itrRule != actionList[action][objType]->end()) {
 
 			QPID_LOG(debug, "ACL: checking the following rules for : " << itrRule->first );
 
 			//loop the vector
-			for (RuleSetItr i = itrRule->second.begin(); i < itrRule->second.end(); i++) {
+			for (ruleSetItr i = itrRule->second.begin(); i < itrRule->second.end(); i++) {
 				QPID_LOG(debug, "ACL: checking rule " <<  i->toString());
 				// loop the names looking for match
 				bool match = true;
-				for (PropertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++) {
+				for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++) {
 					//match name is exists first
 					if (pMItr->first == acl::PROP_NAME) {
 						if (matchProp(pMItr->second, name)){
@@ -78,7 +88,7 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 								 << pMItr->second << "' given in the rule");
 						}
 					} else if (params) { //match pMItr against params
-						PropertyMapItr paramItr = params->find(pMItr->first);
+						propertyMapItr paramItr = params->find(pMItr->first);
 						if (paramItr == params->end()) {
 							match = false;
 							QPID_LOG(debug, "ACL: the given parameter map in lookup doesn't contain the property '"
@@ -162,24 +172,24 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 		 << " with routing key " << RoutingKey);
 
         AclResult aclresult = decisionMode;
-
-	if (!actionList[action].empty() &&  !actionList[action][objType].empty()) {
-	          AclData::ActObjItr itrRule = actionList[action][objType].find(id);
+	
+	if (actionList[action] && actionList[action][objType]){
+	          AclData::actObjItr itrRule = actionList[action][objType]->find(id);
 		  
-                  if (itrRule == actionList[action][objType].end())
-		       itrRule = actionList[action][objType].find("*");
+                  if (itrRule == actionList[action][objType]->end())
+		       itrRule = actionList[action][objType]->find("*");
 
-		  if (itrRule != actionList[action][objType].end() ) {
+		  if (itrRule != actionList[action][objType]->end() ) {
 			   
                         QPID_LOG(debug, "ACL: checking the following rules for : " << itrRule->first );
     
 			   //loop the vector
-    		        for (RuleSetItr i=itrRule->second.begin(); i<itrRule->second.end(); i++) {
+    		        for (ruleSetItr i=itrRule->second.begin(); i<itrRule->second.end(); i++) {
 				QPID_LOG(debug, "ACL: checking rule " <<  i->toString());
 	                   
 					// loop the names looking for match
 					bool match =true;
-					for (PropertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++)
+					for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++)
 					{
                                                 //match name is exists first
 						if (pMItr->first == acl::PROP_NAME){

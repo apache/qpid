@@ -32,42 +32,38 @@ class AclData {
 
 public:
 
-   typedef std::map<qpid::acl::Property, std::string> PropertyMap;
-   typedef PropertyMap::const_iterator PropertyMapItr;
-   struct Rule {
+   typedef std::map<qpid::acl::Property, std::string> propertyMap;
+   typedef propertyMap::const_iterator propertyMapItr;
+   struct rule {
 	  
 	   bool log;
 	   bool logOnly;  // this is a rule is to log only
 	   
 	   // key value map
       //??
-      PropertyMap props;
+      propertyMap props;
 	  
 	  
-	  Rule (PropertyMap& p):log(false),logOnly(false),props(p) {};
+	  rule (propertyMap& p):log(false),logOnly(false),props(p) {};
 
 	  std::string toString () const {
 	  	std::ostringstream ruleStr;
 	  	ruleStr << "[log=" << log << ", logOnly=" << logOnly << " props{";
-	  	for (PropertyMapItr pMItr = props.begin(); pMItr != props.end(); pMItr++) {
+	  	for (propertyMapItr pMItr = props.begin(); pMItr != props.end(); pMItr++) {
 	  		ruleStr << " " << AclHelper::getPropertyStr((Property) pMItr-> first) << "=" << pMItr->second;
 	  	}
 	  	ruleStr << " }]";
 	  	return ruleStr.str();
-	  }      
+	  }
    };
-
-   typedef std::vector<Rule> RuleSet;
-   typedef RuleSet::const_iterator RuleSetItr;
-   typedef std::map<std::string, RuleSet > ActionObject; // user 
-   typedef ActionObject::iterator ActObjItr;
-   typedef std::vector<ActionObject> AclAction;  
-   typedef std::vector<AclAction> ActionList;   
-
-   // vector<action> -> vector<objects> -> map<user -> vector<Rule> > -> map <AclProperty -> string>
-
-   ActionList actionList; 
-
+   typedef  std::vector<rule> ruleSet;
+   typedef  ruleSet::const_iterator ruleSetItr;
+   typedef  std::map<std::string, ruleSet > actionObject; // user 
+   typedef  actionObject::iterator actObjItr;
+   typedef  actionObject* aclAction;
+  
+   // Action*[] -> Object*[] -> map<user -> set<Rule> >
+   aclAction* actionList[qpid::acl::ACTIONSIZE];
    qpid::acl::AclResult decisionMode;  // determines if the rule set is a deny or allow mode. 
    bool transferAcl;
    std::string aclSource; 
