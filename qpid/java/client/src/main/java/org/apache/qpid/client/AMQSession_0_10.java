@@ -36,7 +36,6 @@ import java.util.UUID;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
-import javax.jms.MapMessage;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
@@ -48,11 +47,11 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
-import org.apache.qpid.client.message.AMQPEncodedMapMessage;
 import org.apache.qpid.client.message.FiledTableSupport;
-import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
+import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
+import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -76,25 +75,6 @@ import org.apache.qpid.transport.SessionListener;
 import org.apache.qpid.util.Serial;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.qpid.transport.Option.*;
-
-import javax.jms.*;
-import javax.jms.IllegalStateException;
-
-import java.lang.ref.WeakReference;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.UUID;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import org.apache.qpid.client.message.AMQMessageDelegateFactory;
-import org.apache.qpid.client.messaging.address.Node;
-import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
-import org.apache.qpid.client.messaging.address.Node.QueueNode;
 
 /**
  * This is a 0.10 Session
