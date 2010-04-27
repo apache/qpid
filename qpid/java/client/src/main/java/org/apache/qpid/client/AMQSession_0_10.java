@@ -24,6 +24,7 @@ import static org.apache.qpid.transport.Option.UNRELIABLE;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1119,6 +1120,18 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return match;
     }
 
+    /**
+     * 1. Try to resolve the address type (queue or exchange)
+     * 2. if type == queue, 
+     *       2.1 verify queue exists or create if create == true
+     *       2.2 If not throw exception
+     *       
+     * 3. if type == exchange,
+     *       3.1 verify exchange exists or create if create == true
+     *       3.2 if not throw exception
+     *       3.3 if exchange exists (or created) create subscription queue.
+     */
+    
     @SuppressWarnings("deprecation")
     public void handleAddressBasedDestination(AMQDestination dest, 
                                               boolean isConsumer,
@@ -1159,7 +1172,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 {                    
                     setLegacyFiledsForTopicType(dest);
                     verifySubject(dest);
-                    createSubscriptionQueue(dest);
+                    if (isConsumer) {createSubscriptionQueue(dest);}
                     break;
                 }
                 else if(createNode)
@@ -1171,7 +1184,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                             dest.getTargetNode().getAlternateExchange(),
                             dest.getTargetNode().getDeclareArgs(),
                             false);        
-                    createSubscriptionQueue(dest);
+                    if (isConsumer) {createSubscriptionQueue(dest);}
                     break;
                 }
             }
@@ -1232,29 +1245,18 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     
     private void createSubscriptionQueue(AMQDestination dest) throws AMQException
     {
-        if (dest.getSourceNode() != null)
+        QueueNode node = (QueueNode)dest.getSourceNode();  // source node is never null
+        if (dest.getQueueName() == null || !isQueueExist(dest,node,true))
         {
-            QueueNode node = (QueueNode)dest.getSourceNode();
-            if (dest.getQueueName() == null || !isQueueExist(dest,node,true))
-            {
-                // can name : my-queue be used in x-declare?
-                // if so set it to dest queue name
-                // if (dest.getQueueName() == null) { dest.setName(node.getName()) }
-                send0_10QueueDeclare(dest,null,false,false);
-            }
-            node.addBinding(new Binding(dest.getAddressName(),
-                                        dest.getQueueName(),// should have one by now
-                                        dest.getSubject(),
-                                        node.getDeclareArgs()));
-        }
-        else
-        {
+            // can name : my-queue be used in x-declare?
+            // if so set it to dest queue name
+            // if (dest.getQueueName() == null) { dest.setName(node.getName()) }
             send0_10QueueDeclare(dest,null,false,false);
-            dest.getTargetNode().addBinding(new Binding(dest.getAddressName(),
-                                                        null,
-                                                        dest.getSubject(),
-                                                        null));
-        }        
+        }
+        node.addBinding(new Binding(dest.getAddressName(),
+                                    dest.getQueueName(),// should have one by now
+                                    dest.getSubject(),
+                                    Collections.<String,Object>emptyMap()));
     }
     
     private void setLegacyFiledsForQueueType(AMQDestination dest)
