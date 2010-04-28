@@ -771,11 +771,16 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
             dequeued(msg);
         }
     }
-    if ((msg.payload->isPersistent() || msg.payload->checkContentReleasable()) && store) {
-        msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
-        boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg.payload);
-        store->dequeue(ctxt, pmsg, *this);
-        return true;
+    // This check prevents messages which have been forced persistent on one queue from dequeuing
+    // from another on which no forcing has taken place and thus causing a store error.
+    bool fp = msg.payload->isForcedPersistent();
+    if (!fp || (fp && msg.payload->isStoredOnQueue(shared_from_this()))) {
+        if ((msg.payload->isPersistent() || msg.payload->checkContentReleasable()) && store) {
+            msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
+            boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg.payload);
+            store->dequeue(ctxt, pmsg, *this);
+            return true;
+        }
     }
     return false;
 }
