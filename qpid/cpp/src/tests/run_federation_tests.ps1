@@ -73,7 +73,7 @@ trap {
 
 &start_brokers
 "Running federation tests using brokers on ports $env:LOCAL_PORT $env:REMOTE_PORT"
-$env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH;$QMF_LIB"
+$env:PYTHONPATH="$srcdir;$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH;$QMF_LIB"
 $tests = "*"
 Invoke-Expression "python $PYTHON_DIR/qpid-python-test -m federation -b localhost:$env:LOCAL_PORT -Dremote-port=$env:REMOTE_PORT $tests" | Out-Default
 $RETCODE=$LASTEXITCODE
