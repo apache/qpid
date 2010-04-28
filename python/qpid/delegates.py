@@ -58,10 +58,7 @@ class Delegate:
   def connection_close(self, ch, close):
     self.connection.close_code = (close.reply_code, close.reply_text)
     ch.connection_close_ok()
-    self.connection.sock.close()
-    if not self.connection.opened:
-      self.connection.failed = True
-      notify(self.connection.condition)
+    raise Closed(close.reply_text)
 
   def connection_close_ok(self, ch, close_ok):
     self.connection.opened = False
