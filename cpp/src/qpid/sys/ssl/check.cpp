@@ -30,17 +30,6 @@ namespace qpid {
 namespace sys {
 namespace ssl {
 
-const std::string SSL_ERROR_BAD_CERT_DOMAIN_STR = 
-    "Unable to communicate securely with peer: requested domain name does not match the server's certificate.";
-const std::string SSL_ERROR_BAD_CERT_ALERT_STR = "SSL peer cannot verify your certificate.";
-const std::string SEC_ERROR_BAD_DATABASE_STR = "Security library: bad database.";
-const std::string SSL_ERROR_NO_CERTIFICATE_STR = "Unable to find the certificate or key necessary for authentication.";
-const std::string PR_DIRECTORY_LOOKUP_ERROR_STR = "A directory lookup on a network address has failed";
-const std::string PR_CONNECT_RESET_ERROR_STR = "TCP connection reset by peer";
-const std::string PR_END_OF_FILE_ERROR_STR = "Encountered end of file";
-const std::string SSL_ERROR_UNKNOWN = "NSS error";
-const std::string NSPR_ERROR_UNKNOWN = "NSPR error";
-
 ErrorString::ErrorString() : code(PR_GetError()), buffer(new char[PR_GetErrorTextLength()]), used(PR_GetErrorText(buffer)) {}    
 
 ErrorString::~ErrorString() 
@@ -65,14 +54,22 @@ std::string getErrorString(int code)
 {
     std::string msg;
     switch (code) {
-      case SSL_ERROR_BAD_CERT_DOMAIN: msg = SSL_ERROR_BAD_CERT_DOMAIN_STR; break;
-      case SSL_ERROR_BAD_CERT_ALERT: msg = SSL_ERROR_BAD_CERT_ALERT_STR; break;
-      case SEC_ERROR_BAD_DATABASE: msg = SEC_ERROR_BAD_DATABASE_STR; break;
-      case SSL_ERROR_NO_CERTIFICATE: msg = SSL_ERROR_NO_CERTIFICATE_STR; break;
-      case PR_DIRECTORY_LOOKUP_ERROR: msg = PR_DIRECTORY_LOOKUP_ERROR_STR; break;
-      case PR_CONNECT_RESET_ERROR: msg = PR_CONNECT_RESET_ERROR_STR; break;
-      case PR_END_OF_FILE_ERROR: msg = PR_END_OF_FILE_ERROR_STR; break;
-      default: msg = (code < -6000) ? SSL_ERROR_UNKNOWN : NSPR_ERROR_UNKNOWN; break;
+      case SSL_ERROR_EXPORT_ONLY_SERVER: msg =  "Unable to communicate securely. Peer does not support high-grade encryption."; break;
+      case SSL_ERROR_US_ONLY_SERVER: msg = "Unable to communicate securely. Peer requires high-grade encryption which is not supported."; break;
+      case SSL_ERROR_NO_CYPHER_OVERLAP: msg = "Cannot communicate securely with peer: no common encryption algorithm(s)."; break;
+      case SSL_ERROR_NO_CERTIFICATE: msg = "Unable to find the certificate or key necessary for authentication."; break;
+      case SSL_ERROR_BAD_CERTIFICATE: msg = "Unable to communicate securely with peer: peers's certificate was rejected."; break;
+      case SSL_ERROR_UNSUPPORTED_CERTIFICATE_TYPE: msg = "Unsupported certificate type."; break;
+      case SSL_ERROR_WRONG_CERTIFICATE: msg = "Client authentication failed: private key in key database does not correspond to public key in certificate database."; break;
+      case SSL_ERROR_BAD_CERT_DOMAIN: msg = "Unable to communicate securely with peer: requested domain name does not match the server's certificate."; break;
+      case SSL_ERROR_BAD_CERT_ALERT: msg = "SSL peer cannot verify your certificate."; break;
+      case SSL_ERROR_REVOKED_CERT_ALERT: msg = "SSL peer rejected your certificate as revoked."; break;
+      case SSL_ERROR_EXPIRED_CERT_ALERT: msg = "SSL peer rejected your certificate as expired."; break;
+
+      case PR_DIRECTORY_LOOKUP_ERROR: msg = "A directory lookup on a network address has failed"; break;
+      case PR_CONNECT_RESET_ERROR: msg = "TCP connection reset by peer"; break;
+      case PR_END_OF_FILE_ERROR: msg = "Encountered end of file"; break;
+      default: msg = (code < -6000) ? "NSS error" : "NSPR error"; break;
     }
     return str(format("%1% [%2%]") % msg % code);
 }
