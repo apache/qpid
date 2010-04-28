@@ -32,6 +32,8 @@ namespace qpid {
 namespace sys {
 namespace ssl {
 
+std::string getErrorString(int code);
+
 class ErrorString
 {
   public:

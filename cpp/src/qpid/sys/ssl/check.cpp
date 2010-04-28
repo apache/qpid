@@ -35,7 +35,11 @@ const std::string SSL_ERROR_BAD_CERT_DOMAIN_STR =
 const std::string SSL_ERROR_BAD_CERT_ALERT_STR = "SSL peer cannot verify your certificate.";
 const std::string SEC_ERROR_BAD_DATABASE_STR = "Security library: bad database.";
 const std::string SSL_ERROR_NO_CERTIFICATE_STR = "Unable to find the certificate or key necessary for authentication.";
-const std::string SSL_ERROR_UNKNOWN = "Unknown NSS error code.";
+const std::string PR_DIRECTORY_LOOKUP_ERROR_STR = "A directory lookup on a network address has failed";
+const std::string PR_CONNECT_RESET_ERROR_STR = "TCP connection reset by peer";
+const std::string PR_END_OF_FILE_ERROR_STR = "Encountered end of file";
+const std::string SSL_ERROR_UNKNOWN = "NSS error";
+const std::string NSPR_ERROR_UNKNOWN = "NSPR error";
 
 ErrorString::ErrorString() : code(PR_GetError()), buffer(new char[PR_GetErrorTextLength()]), used(PR_GetErrorText(buffer)) {}    
 
@@ -51,13 +55,24 @@ std::string ErrorString::getString() const
         //seems most of the NSPR/NSS errors don't have text set for
         //them, add a few specific ones in here. (TODO: more complete
         //list?):
-        switch (code) {
-          case SSL_ERROR_BAD_CERT_DOMAIN: msg = SSL_ERROR_BAD_CERT_DOMAIN_STR; break;
-          case SSL_ERROR_BAD_CERT_ALERT: msg = SSL_ERROR_BAD_CERT_ALERT_STR; break;
-          case SEC_ERROR_BAD_DATABASE: msg = SEC_ERROR_BAD_DATABASE_STR; break;
-          case SSL_ERROR_NO_CERTIFICATE: msg = SSL_ERROR_NO_CERTIFICATE_STR; break;
-          default: msg = SSL_ERROR_UNKNOWN; break;
-        }
+        return getErrorString(code);
+    } else {
+        return str(format("%1% [%2%]") % msg % code);
+    }
+}
+
+std::string getErrorString(int code)
+{
+    std::string msg;
+    switch (code) {
+      case SSL_ERROR_BAD_CERT_DOMAIN: msg = SSL_ERROR_BAD_CERT_DOMAIN_STR; break;
+      case SSL_ERROR_BAD_CERT_ALERT: msg = SSL_ERROR_BAD_CERT_ALERT_STR; break;
+      case SEC_ERROR_BAD_DATABASE: msg = SEC_ERROR_BAD_DATABASE_STR; break;
+      case SSL_ERROR_NO_CERTIFICATE: msg = SSL_ERROR_NO_CERTIFICATE_STR; break;
+      case PR_DIRECTORY_LOOKUP_ERROR: msg = PR_DIRECTORY_LOOKUP_ERROR_STR; break;
+      case PR_CONNECT_RESET_ERROR: msg = PR_CONNECT_RESET_ERROR_STR; break;
+      case PR_END_OF_FILE_ERROR: msg = PR_END_OF_FILE_ERROR_STR; break;
+      default: msg = (code < -6000) ? SSL_ERROR_UNKNOWN : NSPR_ERROR_UNKNOWN; break;
     }
     return str(format("%1% [%2%]") % msg % code);
 }

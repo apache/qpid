@@ -21,6 +21,7 @@
 
 #include "qpid/sys/ssl/SslIo.h"
 #include "qpid/sys/ssl/SslSocket.h"
+#include "qpid/sys/ssl/check.h"
 
 #include "qpid/sys/Time.h"
 #include "qpid/sys/posix/check.h"
@@ -312,7 +313,7 @@ void SslIO::readable(DispatchHandle& h) {
                     break;
                 } else {
                     // Report error then just treat as a socket disconnect
-                    QPID_LOG(error, "Error reading socket: " << qpid::sys::strError(rc) << "(" << rc << ")" );
+                    QPID_LOG(error, "Error reading socket: " << getErrorString(PR_GetError()));
                     eofCallback(*this);
                     h.unwatchRead();
                     break;
@@ -383,7 +384,9 @@ void SslIO::writeable(DispatchHandle& h) {
                     // we can carry on watching for writes
                     break;
                 } else {
-                    QPID_POSIX_CHECK(rc);
+                    QPID_LOG(error, "Error writing to socket: " << getErrorString(PR_GetError()));
+                    h.unwatchWrite();
+                    break;
                 }
             }
         } else {

@@ -179,6 +179,7 @@ void SslSocket::connect(const std::string& host, uint16_t port) const
         throw Exception(QPID_MSG("Could not resolve address for host."));
     }
     PR_CHECK(PR_Connect(socket, &address, PR_INTERVAL_NO_TIMEOUT));
+    NSS_CHECK(SSL_ForceHandshake(socket));
 }
 
 void SslSocket::close() const
