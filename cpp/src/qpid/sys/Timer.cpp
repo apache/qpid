@@ -116,21 +116,28 @@ void Timer::run()
             } else if(Duration(t->nextFireTime, start) >= 0) {
                 Monitor::ScopedUnlock u(monitor);
                 fire(t);
-                // Warn on callback overrun
+                // Warn if callback overran next timer's start.
                 AbsTime end(AbsTime::now());
-                Duration overrun(tasks.top()->nextFireTime, end);
+                Duration overrun (0);
+                if (!tasks.empty()) {
+                    overrun = Duration(tasks.top()->nextFireTime, end);
+                }
                 if (delay > late) {
                     if (overrun > overran) {
                         QPID_LOG(warning,
-                                 "Timer woken up " << delay / TIME_MSEC << "ms late, "
-                                 "overrunning by " << overrun / TIME_MSEC << "ms [taking "
-                                 << Duration(start, end) << "]");
+                                 "Timer woken up " << delay / TIME_MSEC <<
+                                 "ms late, overrunning by " <<
+                                 overrun / TIME_MSEC << "ms [taking " <<
+                                 Duration(start, end) << "]");
                     } else {
-                        QPID_LOG(warning, "Timer woken up " << delay / TIME_MSEC << "ms late");
+                        QPID_LOG(warning,
+                                 "Timer woken up " << delay / TIME_MSEC <<
+                                 "ms late");
                     }
                 } else if (overrun > overran) {
                     QPID_LOG(warning,
-                             "Timer callback overran by " << overrun / TIME_MSEC <<
+                             "Timer callback overran by " <<
+                             overrun / TIME_MSEC <<
                              "ms [taking " << Duration(start, end) << "]");
                 }
                 continue;
@@ -142,7 +149,8 @@ void Timer::run()
                 tasks.push(t);
             }
             }
-            monitor.wait(tasks.top()->sortTime);
+            if (!tasks.empty())
+                monitor.wait(tasks.top()->sortTime);
         }
     }
 }
