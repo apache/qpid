@@ -676,6 +676,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResult.cpp			\
+  qpid/client/LoadPlugins.h			\
   qpid/client/LoadPlugins.cpp			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/LocalQueueImpl.cpp		\
