@@ -125,7 +125,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private Session _qpidSession;
 
     /**
-     * The latest qpid Exception that has been reaised.
+     * The latest qpid Exception that has been raised.
      */
     private Object _currentExceptionLock = new Object();
     private SessionException _currentException;
@@ -151,7 +151,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * @param con                     The connection on which to create the session.
      * @param channelId               The unique identifier for the session.
      * @param transacted              Indicates whether or not the session is transactional.
-     * @param acknowledgeMode         The acknoledgement mode for the session.
+     * @param acknowledgeMode         The acknowledgement mode for the session.
      * @param messageFactoryRegistry  The message factory factory for the session.
      * @param defaultPrefetchHighMark The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLowMark  The number of prefetched messages at which to resume the session.
@@ -185,7 +185,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * @param con                 The connection on which to create the session.
      * @param channelId           The unique identifier for the session.
      * @param transacted          Indicates whether or not the session is transactional.
-     * @param acknowledgeMode     The acknoledgement mode for the session.
+     * @param acknowledgeMode     The acknowledgement mode for the session.
      * @param defaultPrefetchHigh The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLow  The number of prefetched messages at which to resume the session.
      * @param qpidConnection      The connection
@@ -321,7 +321,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         if (destination.getDestSyntax() == DestSyntax.BURL)
         {
             Map args = FiledTableSupport.convertToMap(arguments);
-            // this is there only becasue the broker may expect a value for x-match
+            // this is there only because the broker may expect a value for x-match
             if( ! args.containsKey("x-match") )
             {
                 args.put("x-match", "any");
@@ -552,7 +552,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     }
 
     /**
-     * This method is invoked when a consumer is creted
+     * This method is invoked when a consumer is created
      * Registers the consumer with the broker
      */
     public void sendConsume(BasicMessageConsumer_0_10 consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler,
@@ -589,7 +589,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         getQpidSession().messageFlow(consumerTag, MessageCreditUnit.BYTE, 0xFFFFFFFF,
                                      Option.UNRELIABLE);
         // We need to sync so that we get notify of an error.
-        // only if not immediat prefetch
+        // only if not immediate prefetch
         if(prefetch() && (isStarted() || _immediatePrefetch))
         {
             // set the flow
@@ -684,13 +684,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             if (noLocal)
             {            
                 arguments.put("no-local", true);
-            }
-            
-            /*if (amqd.getDestSyntax() == DestSyntax.ADDR && amqd.getQueueOptions() != null)
-            {
-                arguments.putAll(amqd.getta);
-            }*/
-            
+            } 
+           
             getQpidSession().queueDeclare(queueName.toString(), "" , arguments,
                                           amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
                                           amqd.isDurable() ? Option.DURABLE : Option.NONE,
