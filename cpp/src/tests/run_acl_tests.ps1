@@ -41,8 +41,10 @@ Function start_broker($acl_options)
     "Cannot locate qpidd.exe"
     exit 1
   }
-  $BROKER_EXE = $prog
-  Remove-Item qpidd.port
+  $Global:BROKER_EXE = $prog
+  if (Test-Path qpidd.port) {
+    Remove-Item qpidd.port
+  }
   $cmdline = "$prog --auth=no --no-module-dir --port=0 --log-to-file qpidd.log $acl_options | foreach { set-content qpidd.port `$_ }"
   $cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
   . $srcdir\background.ps1 $cmdblock
@@ -61,13 +63,12 @@ Function start_broker($acl_options)
 
 Function stop_broker
 {
-  "Stopping $BROKER_EXE"
-  Invoke-Expression "$BROKER_EXE --no-module-dir -q --port $env:BROKER_PORT" | Write-Output
+  "Stopping $Global:BROKER_EXE"
+  Invoke-Expression "$Global:BROKER_EXE --no-module-dir -q --port $env:BROKER_PORT" | Write-Output
   Remove-Item qpidd.port
 }
 
 $DATA_DIR = [IO.Directory]::GetCurrentDirectory() + "\data_dir"
-"DATA_DIR is $DATA_DIR"
 Remove-Item $DATA_DIR -recurse
 New-Item $DATA_DIR -type directory
 Copy-Item $srcdir\policy.acl $DATA_DIR
