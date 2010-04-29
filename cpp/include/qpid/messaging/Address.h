@@ -34,7 +34,7 @@ namespace messaging {
 
 class AddressImpl;
 
-/**
+/**   \ingroup messaging 
  * Represents an address to which messages can be sent and from which
  * messages can be received. Often a simple name is sufficient for
  * this, however this can be augmented with a subject pattern and

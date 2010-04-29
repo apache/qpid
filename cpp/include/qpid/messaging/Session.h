@@ -42,7 +42,7 @@ class Receiver;
 class SessionImpl;
 class Subscription;
 
-/**
+/** \ingroup messaging 
  * A session represents a distinct 'conversation' which can involve
  * sending and receiving messages to and from different addresses.
  */
