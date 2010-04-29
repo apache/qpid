@@ -29,7 +29,7 @@ namespace messaging {
 
 template <class> class PrivateImplRef;
 
-/**
+/** \ingroup messaging 
  * A handle is like a pointer: refers to an underlying implementation object.
  * Copying the handle does not copy the object.
  *

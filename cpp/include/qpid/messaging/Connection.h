@@ -36,12 +36,16 @@ template <class> class PrivateImplRef;
 class ConnectionImpl;
 class Session;
 
+/**  \ingroup messaging 
+ * A connection represents a network connection to a remote endpoint.
+ */
+
 class Connection : public qpid::messaging::Handle<ConnectionImpl>
 {
   public:
     QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl);
     QPID_CLIENT_EXTERN Connection(const Connection&);
-    /**
+    /**  
      * Current implementation supports the following options:
      * 
      *     username

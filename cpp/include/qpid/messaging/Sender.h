@@ -35,7 +35,7 @@ template <class> class PrivateImplRef;
 class Message;
 class SenderImpl;
 class Session;
-/**
+/**   \ingroup messaging 
  * Interface through which messages are sent.
  */
 class Sender : public qpid::messaging::Handle<SenderImpl>

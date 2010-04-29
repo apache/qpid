@@ -29,6 +29,9 @@
 namespace qpid {
 namespace messaging {
 
+/** \ingroup messaging 
+ */
+
 struct MessagingException : public qpid::types::Exception 
 {
     QPID_CLIENT_EXTERN MessagingException(const std::string& msg);
