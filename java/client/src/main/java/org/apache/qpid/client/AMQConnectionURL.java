@@ -275,6 +275,15 @@ public class AMQConnectionURL implements ConnectionURL
             sb.append(URLHelper.printOptions(_failoverOptions));
             sb.append("'");
         }
+        
+        for (String key : _options.keySet())
+        {
+            if (!key.equals(OPTIONS_FAILOVER) || !key.equals(OPTIONS_BROKERLIST))
+            {
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR).append(key).append("='");
+                sb.append(_options.get(key)).append("'");
+            }
+        }
 
         return sb.toString();
     }
