@@ -588,9 +588,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         getQpidSession().messageFlow(consumerTag, MessageCreditUnit.BYTE, 0xFFFFFFFF,
                                      Option.UNRELIABLE);
-        // We need to sync so that we get notify of an error.
-        // only if not immediate prefetch
-        if(prefetch() && (isStarted() || _immediatePrefetch))
+        
+        // If the session is suspended credits should not be set as it will also
+        // set credits when the the session is unsuspended, resulting in too many
+        // messages than required.
+        if(prefetch() && !isSuspended() && (isStarted() || _immediatePrefetch))
         {
             // set the flow
             getQpidSession().messageFlow(consumerTag,
