@@ -36,7 +36,7 @@ class Message;
 class ReceiverImpl;
 class Session;
 
-/**
+/**   \ingroup messaging 
  * Interface through which messages are received.
  */
 class Receiver : public qpid::messaging::Handle<ReceiverImpl>

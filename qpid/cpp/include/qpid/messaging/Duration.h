@@ -29,7 +29,7 @@
 namespace qpid {
 namespace messaging {
 
-/**
+/**   \ingroup messaging 
  * A duration is a time in milliseconds.
  */
 class Duration

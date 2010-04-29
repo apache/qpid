@@ -36,7 +36,7 @@ class Address;
 class Codec;
 struct MessageImpl;
 
-/**
+/**   \ingroup messaging 
  * Representation of a message.
  */
 class Message
