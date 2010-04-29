@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -84,7 +84,7 @@ Timer::Timer() :
     start();
 }
 
-Timer::~Timer() 
+Timer::~Timer()
 {
     stop();
 }
@@ -114,8 +114,10 @@ void Timer::run()
                 }
                 continue;
             } else if(Duration(t->nextFireTime, start) >= 0) {
+                {
                 Monitor::ScopedUnlock u(monitor);
                 fire(t);
+                }
                 // Warn if callback overran next timer's start.
                 AbsTime end(AbsTime::now());
                 Duration overrun (0);
@@ -149,8 +151,8 @@ void Timer::run()
                 tasks.push(t);
             }
             }
-            if (!tasks.empty())
-                monitor.wait(tasks.top()->sortTime);
+            assert(!tasks.empty());
+            monitor.wait(tasks.top()->sortTime);
         }
     }
 }
