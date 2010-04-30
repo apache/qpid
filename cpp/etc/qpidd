@@ -48,17 +48,31 @@ fi
 
 RETVAL=0
 
+#ensure binary is present and executable
+if [[ !(-x /usr/sbin/$prog) ]] ; then
+    echo "/usr/sbin/$prog not found or not executable" 
+    exit 5
+fi
+
+#ensure user has sufficient permissions
+runuser -s /bin/sh qpidd -c "echo x > /dev/null" 2> /dev/null || RETVAL=4
+if [ $RETVAL = 4 ]; then
+    echo "user had insufficient privilege";
+    exit $RETVAL
+fi
+
 start() {
-	echo -n $"Starting Qpid AMQP daemon: "
-	daemon --pidfile $pidfile --check $prog --user qpidd /usr/sbin/$prog --daemon --pid-dir /var/run/qpidd --data-dir /var/lib/qpidd $QPIDD_OPTIONS
+        [[ $QPID_DATA_DIR ]] || QPID_DATA_DIR=/var/lib/qpidd
+        echo -n $"Starting Qpid AMQP daemon: "
+	daemon --pidfile $pidfile --check $prog --user qpidd /usr/sbin/$prog --data-dir $QPID_DATA_DIR --daemon $QPIDD_OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch $lockfile
 	if [ $RETVAL = 0 ]; then
 	    touch $pidfile
 	    chown qpidd.qpidd $pidfile
-	    [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
-	    runuser -s /bin/sh qpidd -c "/usr/sbin/$prog --check --pid-dir /var/run/qpidd > $pidfile"
+            [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
+	    runuser -s /bin/sh qpidd -c "/usr/sbin/$prog --check > $pidfile"
 	fi
 	return $RETVAL
 }
@@ -97,8 +111,8 @@ case "$1" in
 	[ -e $lockfile ] && restart || :
 	;;
   *)
-	echo 1>&2 $"Usage: $0 {start|stop|restart|condrestart|status}"
-	exit 1
+	echo 1>&2 $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|force-reload}"
+	exit 2
 esac
 
 exit $RETVAL
