@@ -127,6 +127,7 @@ namespace engine {
         deque<AgentEventImpl::Ptr> eventQueue;
         deque<MessageImpl::Ptr> xmtQueue;
         map<uint32_t, AgentQueryContext::Ptr> contextMap;
+        bool      attachComplete;
 
         static const char* QMF_EXCHANGE;
         static const char* DIR_EXCHANGE;
@@ -235,7 +236,7 @@ AgentImpl::AgentImpl(char* _label, bool i) :
     label(_label), queueName("qmfa-"), internalStore(i), nextTransientId(1),
     requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0),
-    bootSequence(1), nextObjectId(1), nextContextNum(1)
+    bootSequence(1), nextObjectId(1), nextContextNum(1), attachComplete(false)
 {
     queueName += label;
 }
@@ -425,35 +426,53 @@ void AgentImpl::queryComplete(uint32_t sequence)
 void AgentImpl::registerClass(SchemaObjectClass* cls)
 {
     Mutex::ScopedLock _lock(lock);
+    bool newPackage = false;
 
     map<string, ClassMaps>::iterator iter = packages.find(cls->getClassKey()->getPackageName());
     if (iter == packages.end()) {
         packages[cls->getClassKey()->getPackageName()] = ClassMaps();
         iter = packages.find(cls->getClassKey()->getPackageName());
-        // TODO: Indicate this package if connected
+        newPackage = true;
     }
 
     AgentClassKey key(cls->getClassKey()->getClassName(), cls->getClassKey()->getHash());
     iter->second.objectClasses[key] = cls;
 
-    // TODO: Indicate this schema if connected.
+    // Indicate this new schema if connected.
+
+    if (attachComplete) {
+
+        if (newPackage) {
+            sendPackageIndicationLH(iter->first);
+        }
+        sendClassIndicationLH(CLASS_OBJECT, iter->first, key);
+    }
 }
 
 void AgentImpl::registerClass(SchemaEventClass* cls)
 {
     Mutex::ScopedLock _lock(lock);
+    bool newPackage = false;
 
     map<string, ClassMaps>::iterator iter = packages.find(cls->getClassKey()->getPackageName());
     if (iter == packages.end()) {
         packages[cls->getClassKey()->getPackageName()] = ClassMaps();
         iter = packages.find(cls->getClassKey()->getPackageName());
-        // TODO: Indicate this package if connected
+        newPackage = true;
     }
 
     AgentClassKey key(cls->getClassKey()->getClassName(), cls->getClassKey()->getHash());
     iter->second.eventClasses[key] = cls;
 
-    // TODO: Indicate this schema if connected.
+    // Indicate this new schema if connected.
+
+    if (attachComplete) {
+
+        if (newPackage) {
+            sendPackageIndicationLH(iter->first);
+        }
+        sendClassIndicationLH(CLASS_EVENT, iter->first, key);
+    }
 }
 
 const ObjectId* AgentImpl::addObject(Object&, uint64_t)
@@ -662,6 +681,8 @@ void AgentImpl::handleAttachResponse(Buffer& inBuffer)
              cIter != cMap.eventClasses.end(); cIter++)
             sendClassIndicationLH(CLASS_EVENT, pIter->first, cIter->first);
     }
+
+    attachComplete = true;
 }
 
 void AgentImpl::handlePackageRequest(Buffer&)
