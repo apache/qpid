@@ -24,14 +24,15 @@
   -->
 
 <chapter id="client-api-tutorial">
-  <title>Using Qpid for Messaging</title>
+  <title>Programming in Apache Qpid</title>
+  <subtitle>Cross-Platform AMQP Messaging in Java JMS, .NET, C++, and Python</subtitle>
 
   <section>
     <title>Supported APIs</title>
     
     <para>Apache Qpid is a reliable, asynchronous messaging system that
       supports the AMQP messaging protocol in several common programming
-      languages.   
+      languages. Qpid is supported on most common platforms.
     </para>
 
     <itemizedlist>
@@ -51,21 +52,22 @@
       </listitem>
       <listitem>
         <para>
-          For Python and C++, Qpid defines its own
-          messaging API which is conceptually similar in each supported
-          language.
+          For Python and C++, Qpid defines its own messaging API, the
+          <firstterm>Qpid Messaging API</firstterm>, which is
+          conceptually similar in each supported language.
         </para>
       </listitem>
       <listitem>
         <para>
           Support for this API in Ruby will be added
-          soon<footnote><para>Ruby currently uses an API that is closely tied
-              to the AMQP version.</para></footnote>.
+          soon
+	  <footnote><para>Ruby currently uses an API that is closely
+	  tied to the AMQP version.</para></footnote>.
         </para>
       </listitem>
     </itemizedlist>
   </section>
-   
+
   <section>
     <title>Using the Qpid Messaging API</title>
 
@@ -380,8 +382,8 @@ Message(properties={spout-id:7da2d27d-93e6-4803-8a61-536d87b8d93f:0}, content=''
         </screen>
 
         <para>You can run <command>drain</command> in several separate
-          windows; each will create a subscription for the exchange, and
-          each will receive all messages sent to the exchange.</para>
+          windows; each creates a subscription for the exchange, and
+          each receives all messages sent to the exchange.</para>
 
       </example>
 
@@ -451,7 +453,7 @@ options ::=  { <key> : <value>, ... }
       <example>
         <title>Using subjects</title>
 
-        <para>In this example we will show how subjects affect message
+        <para>In this example we show how subjects affect message
         flow.</para>
 
         <para>First, let's use <command>qpid-config</command> to create a topic exchange.</para>
@@ -460,7 +462,7 @@ options ::=  { <key> : <value>, ... }
 $ qpid-config add exchange topic news-service
         </screen>
 
-        <para>Now we will use drain to receive messages from <literal>news-service</literal> that match the subject <literal>sports</literal>.</para>
+        <para>Now we use drain to receive messages from <literal>news-service</literal> that match the subject <literal>sports</literal>.</para>
         <para><emphasis>First Window:</emphasis></para>
         <screen>
 $ ./drain -a news-service/sports -t 30
@@ -474,10 +476,9 @@ $ ./spout -a news-service/sports
 $ ./spout -a news-service/news
         </screen>
 
-        <para>Now look at the first window, and you will see the
-          message with the subject <literal>sports</literal> has been
-          received, but not the message with the subject
-          <literal>news</literal>:</para>
+        <para>Now look at the first window, the message with the
+        subject <literal>sports</literal> has been received, but not
+        the message with the subject <literal>news</literal>:</para>
 
         <screen>
 Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea998291:0}, content='')
@@ -885,7 +886,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        True, False
 	      </entry>
 	      <entry>
-                Indicates whether the node will survive a loss of
+                Indicates whether the node survives a loss of
                 volatile storage e.g. if the broker is restarted.
 	      </entry>
 	    </row>
@@ -909,25 +910,29 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        x-bindings
 	      </entry>
 	      <entry>
-	        A nested list each of whose entries is a map that may
-	        contain fields (queue, exchange, key and arguments)
-	        describing an AMQP 0-10 binding, using the following format:
+	        A nested list in which each binding is represented by
+	        a map. The entries of the map for a binding contain
+	        the fields that describe an AMQP 0-10 binding. Here is
+	        the format for x-bindings:
 <programlisting><![CDATA[
-{
- exchange: <exchange>,
- queue: <queue>,
- key: <key>,
- arguments: <arguments>
-}
+[
+ {
+  exchange: <exchange>,
+  queue: <queue>,
+  key: <key>,
+  arguments: { <key_1>: <value_1>, ..., <key_n>: <value_n> }
+ },
+ ...
+]
 ]]></programlisting>
 
 	      </entry>
 	      <entry>
                 In conjunction with the create option, each of these
-	        bindings will be established as the address is
-	        resolved. In conjunction with the assert option, the
-	        existence of each of these bindings will be verified
-	        during resolution. Again, these are protocol specific.
+                bindings is established as the address is resolved. In
+                conjunction with the assert option, the existence of
+                each of these bindings is verified during
+                resolution. Again, these are protocol specific.
 	      </entry>
 	    </row>
           </tbody>
@@ -963,7 +968,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        True, False
 	      </entry>
 	      <entry>
-                Indicates whether the link will survive a loss of
+                Indicates whether the link survives a loss of
                 volatile storage e.g. if the broker is restarted.
 	      </entry>
 	    </row>
@@ -1003,7 +1008,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        describing an AMQP 0-10 binding.
 	      </entry>
 	      <entry>
-                These bindings will be established during resolution
+                These bindings are established during resolution
                 independent of the create option. They are considered
                 logically part of the linking process rather than of
                 node creation.
@@ -1094,10 +1099,10 @@ options := map
       <title>Create, Delete, and Assert Policies</title>
       <para>The create, delete, and assert policies specify who should
       perfom the associated action:</para>
-      <listitem><para><emphasis>always</emphasis>: the action will be performed by any messaging client</para></listitem>
-      <listitem><para><emphasis>sender</emphasis>: the action will only be performed by a sender</para></listitem>
-      <listitem><para><emphasis>receiver</emphasis>: the action will only be performed by a receiver</para></listitem>
-      <listitem><para><emphasis>never</emphasis>: the action will never be performed (this is the default)</para></listitem>
+      <listitem><para><emphasis>always</emphasis>: the action is performed by any messaging client</para></listitem>
+      <listitem><para><emphasis>sender</emphasis>: the action is only performed by a sender</para></listitem>
+      <listitem><para><emphasis>receiver</emphasis>: the action is only performed by a receiver</para></listitem>
+      <listitem><para><emphasis>never</emphasis>: the action is never performed (this is the default)</para></listitem>
     </itemizedlist>
 
     <itemizedlist>
@@ -1114,18 +1119,70 @@ options := map
 </section>
 
     <section>
+      <title>Logging</title>
+      <para>The Qpidd broker and C++ clients can both use environment
+      variables to enable logging. Use QPID_LOG_ENABLE to set the
+      level of logging you are interested in (trace, debug, info,
+      notice, warning, error, or critical):</para>
+
+<screen>
+$ export QPID_LOG_ENABLE="warning+"
+</screen>
+
+      <para>The Qpidd broker and C++ clients use QPID_LOG_OUTPUT to
+      determine where logging output should be sent. This is either a
+      file name or the special values stderr, stdout, or syslog:</para>
+
+<screen>
+export QPID_LOG_TO_FILE="/tmp/myclient.out"
+</screen>
+
+    </section>
+
+
+    
+<section>
       <title>Reconnect and Failover</title>
       <para>Connections in the Qpid Messaging API support automatic
-      reconnection. The following table lists some of the connection
-      properties that control this. See the reference documentation
-      for details on how to set these on connections fro each
-      langauge.</para>
+      reconnect if a connection is lost. This is done using connection
+      options. The following example shows how to use connection options in C++ and Python.</para>
+
+      <example>
+	<title>Specifying Connection Options in C++ and Python</title>
+
+	<para>In C++, these options are set using <function>Connection::setOption()</function>:</para>
+
+      <programlisting><![CDATA[
+Connection connection(broker);
+connection.setOption("reconnect", true);
+try {
+    connection.open();
+    !!! SNIP !!!
+      ]]></programlisting>
+
+	<para>In Python, these options are set using named arguments in
+      the <function>Connection</function> constructor:</para>
+
+      <programlisting><![CDATA[
+connection = Connection("localhost:5672", reconnect=True)
+try:
+  connection.open()
+  !!! SNIP !!!
+      ]]></programlisting>
+
+      <para>See the reference documentation for details on how to set
+      these on connections for each language.</para>
+      </example>
+
+      <para>The following table lists the connection options that can
+      be used.</para>
+
       <table>
-        <title>Connection properties</title>
+        <title>Connection Options</title>
         <tgroup cols="3">
           <thead>
 	    <row>
-	      <entry>property</entry>
+	      <entry>option</entry>
 	      <entry>value</entry>
 	      <entry>semantics</entry>
 	    </row>
@@ -1202,6 +1259,307 @@ options := map
       </table>
     </section>
 
+    <section>
+      <title>Receiving Messages from Multiple Sources</title>
+
+      <para>A receiver can only read from one source, but many
+      programs need to be able to read messages from many sources,
+      preserving the original sequence of the messages. In the Qpid
+      Messaging API, a program can ask a session for the <quote>next
+      receiver</quote>; that is, the receiver that is responsible for
+      the next available message. The following example shows how this
+      is done in C++ and Python.</para>
+
+      <example>
+	<title>Receiving Messages from Multiple Sources</title>
+
+	<para>C++:</para>
+
+	<programlisting><![CDATA[
+Receiver receiver1 = session.createReceiver(address1);
+Receiver receiver2 = session.createReceiver(address2);
+
+Message message =  session.nextReceiver().fetch();
+session.acknowledge(); // acknowledge message receipt
+std::cout << message.getContent() << std::endl;
+]]>	  </programlisting>
+
+	<para>Python:</para>
+	<programlisting><![CDATA[
+receiver1 = session.receiver(address1)
+receiver2 = session.receiver(address)
+message = session.next_receiver().fetch()
+print message.content
+]]>	  </programlisting>
+      </example>
+    </section>
+
+    <section>
+      <title>Request / Response</title>
+      <para>Request / Response applications use the reply-to property,
+      described in <xref
+      linkend="table-amqp0-10-message-properties"/>, to allow a server
+      to respond to the client that sent a message. A server sets up a
+      service queue, with a name known to clients. A client creates a
+      private queue for the server's response, creates a message for a
+      request, sets the request's reply-to property to the address of
+      the client's response queue, and sends the request to the
+      service queue. The server sends the response to the address
+      specified in the request's reply-to property.
+      </para>
+      <example>
+	<title>Request / Response Applications in C++</title>
+
+	<para>This example shows the C++ code for a client and server
+	that use the request / response pattern.</para>
+
+	<para>The server creates a service queue and waits for a
+	message to arrive. If it receives a message, it sends a
+	message back to the sender.</para>
+
+	<programlisting><![CDATA[Receiver receiver = session.createReceiver("service_queue; {create: always}");
+
+Message request = receiver.fetch();
+const Address&amp; address = request.getReplyTo(); // Get "reply-to" from request ...
+if (address) {
+  Sender sender = session.createSender(address); // ... send response to "reply-to"
+  Message response("pong!");
+  sender.send(response);
+  session.acknowledge();
+}
+     ]]></programlisting>
+
+	<para>The client creates a sender for the service queue, and
+	also creates a response queue that is deleted when the
+	client closes the receiver for the response queue. In the C++
+	client, if the address starts with the character
+	<literal>#</literal>, it is given a unique name.</para>
+
+	<programlisting><![CDATA[
+Sender sender = session.createSender("service_queue");
+
+Address responseQueue("#response-queue; {create:always, delete:always}");
+Receiver receiver = session.createReceiver(responseQueue);
+
+Message request;
+request.setReplyTo(responseQueue);
+request.setContent("ping");
+sender.send(request);
+Message response = receiver.fetch();
+std::cout << request.getContent() << " -> " << response.getContent() << std::endl;
+]]>	  </programlisting>
+
+	<para>The client sends the string <literal>ping</literal> to
+	the server. The server sends the response
+	<literal>pong</literal> back to the same client, using the
+	<varname>replyTo</varname> property.</para>
+
+      </example>
+<!--
+      <example>
+	<title>Request / Response Applications in Python</title>
+	<programlisting>### TODO</programlisting>
+      </example>
+-->
+    </section>
+
+
+<!-- ### TODO: 
+1. Debug the program - is it me or is it the broker?
+2. C++ version
+3. Version that uses properties
+-->
+    <section>
+      <title>XML Exchange</title>
+      <para>The XML Exchange is an AMQP 0-10 custom exchange provided by the Apache Qpid C++ broker. It allows messages to be filtered using XQuery; queries can address either message properties or XML content in the body of the message.</para>
+
+      <para>An instance of the XML Exchange must be added before it can be used:</para>
+
+      <programlisting>
+$ qpid-config add exchange xml xml
+      </programlisting>
+
+
+      <para>Here is a Python program that shows how to use the XML Exchange:</para>
+
+      <note>
+	<para>This program does not work. Not sure if the bug is in my code or the broker.</para>
+      </note>
+
+
+      <example>
+	<title>Using the XML Exchange in Python</title>
+	<programlisting><![CDATA[import sys
+from qpid.messaging import *
+
+broker =  "localhost:5672"
+query = """
+   let $w := ./weather
+   return $w/station = 'Raleigh-Durham International Airport (KRDU)'
+      and $w/temperature_f > 50
+      and $w/temperature_f - $w/dewpoint > 5
+      and $w/wind_speed_mph > 7
+      and $w/wind_speed_mph < 20
+"""
+
+address = "subscription; {create: always, delete:always, link: { x-bindings: [{ exchange: xml, queue: subscription, key: xml, arguments: { xquery: %r} }] } }" % query
+
+connection = Connection(broker)
+
+try:
+  connection.open()
+  session = connection.session()
+
+  sender = session.sender("xml")
+  receiver = session.receiver(address)
+
+  sender.send(Message("<weather><station>Raleigh-Durham International Airport (KRDU)</station><wind_speed_mph>16</wind_speed_mph><temperature_f>70</temperature_f><dewpoint>35</dewpoint></weather>"));
+
+  message = receiver.fetch(timeout=1)
+  print message.content
+  session.acknowledge()
+
+except MessagingError,m:
+  print m
+finally:
+  connection.close()
+      ]]></programlisting>
+      </example>
+    </section>
+
+    <section>
+      <title>Performance</title>
+      <para>
+         Clients can often be made significantly faster by batching acknowledgements and setting the capacity of receivers to allow prefetch. 	
+      </para>
+      <section>
+	<title>Batching Acknowledgements</title>
+
+	<para>Many of the simple examples we have shown retrieve a message and immediately acknowledge it. Because each acknowledgement results in network traffic, you can dramatically increase performance by acknowledging messages in batches. For instance, an application can read a number of related messages, then acknowledge the entire batch, or an application can acknowledge after a certain number of messages have been received or a certain time period has elapsed. Messages are not removed from the broker until they are acknowledged, so guaranteed delivery is still available when batching acknowledgements.</para>
+      </section>
+
+
+      <section>
+	<title>Prefetch</title>   
+
+	<para>By default, a receiver retrieves the next message from the server, one message at a time, which provides intuitive results when writing and debugging programs, but does not provide optimum performance. To create an input buffer, set the capacity of the receiver to the size of the desired input buffer; for many applications, a capacity of 100 performs well. </para>
+
+<!--
+###	sender: capacity of replay buffer (not yet acknowledged messages), these are resent with failover
+-->
+
+	<example>
+	  <title>Prefetch</title>
+	  
+	  <para>C++</para>
+	  <programlisting>
+Receiver receiver = session.createReceiver(address);
+receiver.setCapacity(100);
+Message message = receiver.fetch();
+	  </programlisting>
+<!--
+	  <para>Python</para>
+	  <programlisting>
+	  </programlisting>
+-->
+  
+	</example>
+      </section>
+
+    </section>
+
+    <section>
+      <title>Reliability</title>
+
+      <section>
+	<title>Guaranteed Delivery</title>
+
+	<para>If a queue is durable, the queue survives a messaging
+	broker crash, as well as any durable messages that have been
+	placed on the queue. These messages will be delivered when the
+	messaging broker is restarted. Delivery is guaranteed if and
+	only if both the message and the queue are durable. Guaranteed
+	delivery requires a persistence module, such as the one
+	available from <ulink
+	url="http://QpidComponents.org">QpidComponents.org</ulink>.</para>
+
+	<example>
+	  <title>Guaranteed Delivery</title>
+
+	  <para>C++:</para>
+
+	  <programlisting><![CDATA[
+Sender sender = session.createSender("durable-queue");
+
+Message message("Hello world!");
+message.setDurable(1);
+
+sender.send(Message("Hello world!"));
+]]></programlisting>
+	</example>
+<!--
+	  <para>Python:</para>
+-->
+<!--	</example>
+
+	<section>
+	  <title>Cluster Failover </title>
+	</section>
+-->
+
+      </section>
+
+    </section>
+
+<!--
+    <section>
+      <title>Security</title>
+##########
+    </section>
+-->
+
+    <section>
+      <title>Transactions</title>
+      <para>In AMQP, transactions cover the semantics of enqueues and
+      dequeues.</para>
+
+      <para>When sending messages, a transaction tracks enqueues
+      without actually delivering the messages, a commit places
+      messages on their queues, and a rollback discards the
+      enqueues.</para>
+
+      <para>When receiving messages, a transaction tracks dequeues
+      without actually removing acknowledged messages, a commit
+      removes all acknowledged messages, and a rollback discards
+      acknowledgements. A rollback does not release the message, it
+      must be explicitly released to return it to the queue.</para>
+
+      <example>
+	<title>Transactions</title>
+	<para>C++:</para>
+	<programlisting><![CDATA[
+Connection connection(broker);
+Session session =  connection.createTransactionalSession();
+...
+if (smellsOk())
+   session.commit();
+else 
+   session.rollback();
+   ]]></programlisting>
+<!--
+	<para>Python</para>
+	<programlisting><![CDATA[
+### TODO
+   ]]></programlisting>
+-->
+      </example>
+
+    </section>
+
+
+
+
+
   <section id="section-amqp0-10-mapping">
     <title>The AMQP 0-10 mapping</title>
 
@@ -1261,20 +1619,19 @@ options := map
           <para>
             For a topic exchange, if no subject is specified and no
             x-bindings are defined for the link, the subscription
-            queue will by be bound using a wildcard matching any
-            routing key (thus satisfying the expectation that any
-            message sent to that address will be received from it). If
-            a subject is specified in the source address however, it
-            will be used for the binding key (this means that the
-            subject in the source address may be a binding pattern
-            incuding wildcards).
+            queue is bound using a wildcard matching any routing key
+            (thus satisfying the expectation that any message sent to
+            that address will be received from it). If a subject is
+            specified in the source address however, it is used for
+            the binding key (this means that the subject in the source
+            address may be a binding pattern including wildcards).
           </para>
         </listitem>
         <listitem>
           <para>
             For a fanout exchange the binding key is irrelevant to
             matching. A receiver created from a source address that
-            resolves to a fanout exchange will receive all messages
+            resolves to a fanout exchange receives all messages
             sent to that exchange regardless of any subject the source
             address may contain. An x-bindings element in the link
             properties should be used if there is any need to set the
@@ -1287,22 +1644,22 @@ options := map
             either contain a subject or must include a value for the
             x-bindings option in the link properties. This is because
             there is no way to receive all messages sent to an
-            exchange of that type. The subject specified will be used
-            as the binding key (this means it must match the message
+            exchange of that type. The subject specified is used as
+            the binding key (this means it must match the message
             subject exactly).
           </para>
         </listitem>
         <listitem>
           <para>
             For a headers exchange, if no subject is specified the
-            binding arguments will simply contain an x-match entry an
-            no other entries, causing all messages to match. If a
-            subject is specified then the binding arguments will
-            contain an x-match entry set to all and an entry for
-            qpid.subject whose value is the subject in the source
-            address (this means the subject in the source address must
-            match the message subject exactly). For more control the
-            x-bindings element in the link properties must be used.
+            binding arguments simply contain an x-match entry and no
+            other entries, causing all messages to match. If a subject
+            is specified then the binding arguments contain an x-match
+            entry set to all and an entry for qpid.subject whose value
+            is the subject in the source address (this means the
+            subject in the source address must match the message
+            subject exactly). For more control the x-bindings element
+            in the link properties must be used.
           </para>
         </listitem>
         <listitem>
@@ -1311,15 +1668,16 @@ options := map
             exchange is not a standard AMQP exchange type. It is a
             Qpid extension and is currently only supported by the C++
             broker.</para></footnote> if a subject is specified it is
-            used as the binding key and an XQuery is defined that will
-            match any message with that value for qpid.subject. Again
-            this means that only messages whose subject exactly match
-            that specified in the source address will be received. For
-            more control the x-bindings element in the link properties
-            must be used. A source address that resolves to the XML
-            exchange must contain either a subject or an x-bindings
-            element in the link properties as there is no way at
-            present to receive any message regardless of routing key.
+            used as the binding key and an XQuery is defined that
+            matches any message with that value for
+            qpid.subject. Again this means that only messages whose
+            subject exactly match that specified in the source address
+            are received. For more control the x-bindings element in
+            the link properties must be used. A source address that
+            resolves to the XML exchange must contain either a subject
+            or an x-bindings element in the link properties as there
+            is no way at present to receive any message regardless of
+            routing key.
           </para>
         </listitem>
       </itemizedlist>
@@ -1342,7 +1700,7 @@ options := map
         <varname>dp</varname> refers to an AMQP 0-10
         <varname>delivery-properties</varname> struct.</para>
 
-      <table>
+      <table id="table-amqp0-10-message-properties">
         <title>Mapping to AMQP 0-10 Message Properties</title>
         <tgroup cols="3">
           <thead>
@@ -1405,7 +1763,7 @@ options := map
       linkend="section-addresses"/> to identify sources and
       targets. This program uses a JNDI file that defines a connection
       factory for the broker we are using, and the address of the
-      topic exchange node that we will bind the sender and receiver
+      topic exchange node that we bind the sender and receiver
       to. (The syntax of a ConnectionURL is given in <xref
       linkend="QpidJNDI"/>.)</para>
 
@@ -1486,9 +1844,7 @@ public class Hello {
 
 
       <para>
-	Apache Qpid defines JNDI properties that can be used to
-	specify the parameters for a connection. Here is a typical
-	JNDI properties file:
+	Apache Qpid defines JNDI properties that can be used to specify JMS Connections and Destinations. Here is a typical JNDI properties file:
       </para>
 
       <example>
@@ -1533,7 +1889,7 @@ destination.topicExchange = amq.topic
 	        </entry>
 	        <entry>
 		  <para>
-		    The Connection URL that the connection factory will use to perform connections.
+		    The Connection URL that the connection factory uses to perform connections.
 		  </para>
 	        </entry>
 	      </row>
@@ -1748,7 +2104,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 	        </entry>
 	        <entry>
 		  If <literal>ssl='true'</literal>, only encrypted
-		  connections will be accepted.
+		  connections are accepted.
 	        </entry>
 	      </row>
 	      <row>
@@ -1850,7 +2206,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 		  ssl_cert_alias
 	        </entry>
 	        <entry>
-		  
+
 	        </entry>
 	        <entry>
 	        </entry>
@@ -1922,6 +2278,108 @@ amqp://guest:guest@test/test?sync_ack='true'
       </table>
       
     </section>
+
+    <section>
+      <title>Java JMS Selector Syntax</title>
+      <para>The AMQP Java JMS Messaging Client supports the following syntax for JMS selectors.</para>
+
+
+      <formalpara><title>Comments:</title>
+      <para>
+      <programlisting><![CDATA[LINE_COMMENT: "--" (~["\n","\r"])* EOL
+EOL: "\n"|"\r"|"\r\n"
+BLOCK_COMMENT: "/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/"
+]]></programlisting>
+      </para>
+      </formalpara>
+
+      <formalpara><title>Reserved Words (case insensitive)</title>
+      <para>
+      <programlisting><![CDATA[NOT:     "NOT"
+AND:     "AND"
+OR:      "OR"
+BETWEEN: "BETWEEN"
+LIKE:    "LIKE"
+ESCAPE:  "ESCAPE"
+IN:      "IN"
+IS:      "IS"
+TRUE:    "TRUE"
+FALSE:   "FALSE"
+NULL:    "NULL"
+]]></programlisting>
+      </para>
+      </formalpara>
+
+      <formalpara><title>Literals (case insensitive)</title>
+      <para>
+      <programlisting><![CDATA[DECIMAL_LITERAL:        ["1"-"9"] (["0"-"9"])* (["l","L"])?
+HEX_LITERAL:            "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+
+OCTAL_LITERAL:          "0" (["0"-"7"])*
+FLOATING_POINT_LITERAL: ( 
+ (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? // eg: 5.5 or 5. or 5.5E10 or 5.E10
+  | "." (["0"-"9"])+ (<EXPONENT>)?           // eg: .5 or .5E10
+  | (["0"-"9"])+ <EXPONENT>                  // eg: 5E10
+)                 
+EXPONENT:               "E" (["+","-"])? (["0"-"9"])+
+STRING_LITERAL:         "'" ( ("''") | ~["'"] )*  "'"
+]]></programlisting>
+      </para>
+      </formalpara>
+
+
+      <formalpara><title>Identifiers (case insensitive)</title>
+      <para>
+      <programlisting><![CDATA[ID : ["a"-"z", "_", "$"] (["a"-"z","0"-"9","_", "$"])*
+QUOTED_ID : "\"" ( ("\"\"") | ~["\""] )*  "\""
+]]></programlisting>
+      </para>
+      </formalpara>
+
+
+      <formalpara><title>Grammar</title>
+      <para>
+      <programlisting><![CDATA[JmsSelector        := orExpression
+orExpression       := ( andExpression ( <OR> andExpression )* )
+andExpression      := ( equalityExpression ( <AND> equalityExpression )* )
+equalityExpression := ( comparisonExpression (   "=" comparisonExpression
+                                                 | "<>" comparisonExpression
+                                                 | <IS> <NULL>
+                                                 | <IS> <NOT> <NULL> )* )
+comparisonExpression := 
+    ( addExpression 
+      (   ">" addExpression
+        | ">=" addExpression
+        | "<" addExpression
+        | "<=" addExpression
+        | <LIKE> stringLitteral ( <ESCAPE> stringLitteral )?
+        | <NOT> <LIKE> <STRING_LITERAL> ( <ESCAPE> <STRING_LITERAL> )?
+        | <BETWEEN> addExpression <AND> addExpression
+        | <NOT> <BETWEEN> addExpression <AND> addExpression
+        | <IN> "(" <STRING_LITERAL> ( "," <STRING_LITERAL> )* ")"
+        | <NOT> <IN> "(" <STRING_LITERAL> ( "," <STRING_LITERAL> )* ")" 
+      )*  
+    )
+
+addExpression := multExpr ( ( "+" multExpr | "-" multExpr ) )*
+multExpr      := unaryExpr ( "*" unaryExpr | "/" unaryExpr | "%" unaryExpr )*
+unaryExpr     := ( "+" unaryExpr | "-" unaryExpr | <NOT> unaryExpr | primaryExpr )
+primaryExpr   := ( literal | variable | "(" orExpression ")" )
+literal       := (   <STRING_LITERAL>
+                   | <DECIMAL_LITERAL>
+                   | <HEX_LITERAL>
+                   | <OCTAL_LITERAL>
+                   | <FLOATING_POINT_LITERAL>
+                   | <TRUE>
+                   | <FALSE>
+                   | <NULL> 
+                 )
+
+variable             := ( <ID> | <QUOTED_ID> )]]></programlisting>
+      </para>
+      </formalpara>
+
+    </section>
+
   </section>    
 </chapter>
 
