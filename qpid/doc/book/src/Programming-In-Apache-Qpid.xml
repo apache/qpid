@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 ]>
 
 <!--
@@ -23,7 +23,7 @@
    
   -->
 
-<chapter id="client-api-tutorial">
+<article id="client-api-tutorial">
   <title>Programming in Apache Qpid</title>
   <subtitle>Cross-Platform AMQP Messaging in Java JMS, .NET, C++, and Python</subtitle>
 
@@ -60,9 +60,8 @@
       <listitem>
         <para>
           Support for this API in Ruby will be added
-          soon
-	  <footnote><para>Ruby currently uses an API that is closely
-	  tied to the AMQP version.</para></footnote>.
+          soon (Ruby currently uses an API that is closely
+	  tied to the AMQP version).
         </para>
       </listitem>
     </itemizedlist>
@@ -1389,9 +1388,9 @@ $ qpid-config add exchange xml xml
 
       <programlisting><![CDATA[
 xml; {
-   link: { 
-     x-bindings: [{ exchange: xml, key: weather, arguments: { xquery: "./weather"} }] 
-    } 
+ link: { 
+  x-bindings: [{ exchange:xml, key:weather, arguments:{xquery:"./weather"} }] 
+ } 
 }
   ]]></programlisting>
 
@@ -2481,7 +2480,7 @@ variable             := ( <ID> | <QUOTED_ID> )]]></programlisting>
     </section>
 
   </section>    
-</chapter>
+</article>
 
 <!--
    - client code remains exactly the same, but routing behavior
