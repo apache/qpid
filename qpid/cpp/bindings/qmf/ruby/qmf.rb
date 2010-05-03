@@ -189,15 +189,29 @@ module Qmf
       raise "Invalid attribute '#{key}'" unless good
     end
 
+    def get_attr(key)
+      _v = @impl.getAttr(key)
+      if _v.isString()
+        return _v.asString()
+      elsif _v.isUint()
+        return _v.asUint()
+      elsif _v.isBool()
+        return _v.asBool()
+      else
+          raise Exception("Argument error: value for attribute '#{key}' has unsupported type: #{_v.getType()}")
+      end
+    end
+
+
     def method_missing(name_in, *args)
       name = name_in.to_s
       if name[name.length - 1] == 61
         attr = name[0..name.length - 2]
         set_attr(attr, args[0])
         return
+      else
+        return get_attr(name)
       end
-
-      super.method_missing(name_in, args)
     end
   end
 
