@@ -388,6 +388,7 @@ class Broker(Popen):
     def store_state(self):
         uuids = open(os.path.join(self.datadir, "cluster", "store.status")).readlines()
         null_uuid="00000000-0000-0000-0000-000000000000\n"
+        if len(uuids) < 2: return "unknown" # we looked while the file was being updated.
         if uuids[0] == null_uuid: return "empty"
         if uuids[1] == null_uuid: return "dirty"
         return "clean"
