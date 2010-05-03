@@ -213,27 +213,26 @@ public class AMQConnectionTest extends QpidTestCase
             // Send 3 messages
             for (int i = 0; i < 3; i++)
             {
-                producer.send(producerSession.createTextMessage(new Integer(i).toString()));
+                producer.send(producerSession.createTextMessage("test"));
             }
+            
             Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
             MessageConsumer consumerB = consSessB.createConsumer(_queue);
 
             Message msg;
-            // Check that one consumer has 2 messages
+            // Check that consumer A has 2 messages
             for (int i = 0; i < 2; i++)
             {
                 msg = consumerA.receive(1500);
-                assertNotNull(msg);
-                assertEquals(new Integer(i).toString(), ((TextMessage) msg).getText());
+                assertNotNull("Consumer A should receive 2 messages",msg);                
             }
             
             msg = consumerA.receive(1500);
-            assertNull(msg);
+            assertNull("Consumer A should not have received a 3rd message",msg);
             
-            // Check that other consumer has last message
+            // Check that consumer B has the last message
             msg = consumerB.receive(1500);
-            assertNotNull(msg);
-            assertEquals(new Integer(2).toString(), ((TextMessage) msg).getText());
+            assertNotNull("Consumer B should have received the message",msg);
         }
         finally
         {
