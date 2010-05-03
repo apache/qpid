@@ -914,6 +914,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        a map. The entries of the map for a binding contain
 	        the fields that describe an AMQP 0-10 binding. Here is
 	        the format for x-bindings:
+
 <programlisting><![CDATA[
 [
  {
@@ -925,7 +926,6 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
  ...
 ]
 ]]></programlisting>
-
 	      </entry>
 	      <entry>
                 In conjunction with the create option, each of these
@@ -1371,6 +1371,7 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
 -->
     <section>
       <title>XML Exchange</title>
+
       <para>The XML Exchange is an AMQP 0-10 custom exchange provided by the Apache Qpid C++ broker. It allows messages to be filtered using XQuery; queries can address either message properties or XML content in the body of the message.</para>
 
       <para>An instance of the XML Exchange must be added before it can be used:</para>
@@ -1379,52 +1380,115 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
 $ qpid-config add exchange xml xml
       </programlisting>
 
+      <para>When using the XML exchange, a sender's address string must provide a subject, e.g. <literal>xml/weather</literal>.</para>
 
-      <para>Here is a Python program that shows how to use the XML Exchange:</para>
+      <para>If a receiver that is using the XML exchange also provides a subject, it receives messages if the subject exactly matches a message's subject.</para>
 
-      <note>
-	<para>This program does not work. Not sure if the bug is in my code or the broker.</para>
-      </note>
+
+      <para>When using the XML Exchange, a receiver normally provides an XQuery as an x-binding argument. If the query contains a context item (a path starting with <quote>.</quote>), then it is applied to the content of the message, which must be well-formed XML. For instance, <literal>./weather</literal> is a valid XQuery, which matches any message in which the root element is named <literal>weather</literal>. Here is an address string that contains this query:</para>
+
+      <programlisting><![CDATA[
+xml; {
+   link: { 
+     x-bindings: [{ exchange: xml, key: weather, arguments: { xquery: "./weather"} }] 
+    } 
+}
+  ]]></programlisting>
+
+      <para>Note that each x-binding is created in addition to any other bindings that may exist, and each x-binding must include the exchange name, the key, and the xquery. If you specify the subject in the address string (e.g. <literal>xml/weather; link ...</literal>), it creates a binding that is used in addition to the x-bindings; the binding created for the subject matches any message whose subject is <literal>weather</literal>, the binding created for the x-binding matches any message that satisfies the query, i.e. any message with a root element named <literal>weather</literal>.
+      </para>
+
+
+      <para>The XML Exchange can also be used to query message properties by declaring an external variable with the same name as each property that is to be queried. The following XQuery queries the <literal>control</literal> property, as well as the content of the message:</para>
+
+      <programlisting><![CDATA[
+declare variable $control external;
+./message/id mod 2 = 1 or $control = 'end'
+]]></programlisting>
+
+      <para>If the XQuery addresses message content, and the message is not well-formed XML, the message will not be received. If the XQuery does not query message content, the message need not contain XML.</para>
 
 
       <example>
-	<title>Using the XML Exchange in Python</title>
-	<programlisting><![CDATA[import sys
-from qpid.messaging import *
+	<title>Using the XML Exchange with <command>drain</command></title>
 
-broker =  "localhost:5672"
-query = """
+	<para>The following shows the arguments used with <command>drain</command> to retrieve messages whose root element is named <literal>weather</literal>:</para>
+
+	<programlisting><![CDATA[
+$ ./drain -a "xml; {link:{x-bindings: [{exchange: xml, key:"weather", 
+arguments:{xquery:\"./weather\"}}]}}" -f 
+ ]]></programlisting> 
+      </example>
+
+      <example>
+	<title>Using the XML Exchange with C++</title>
+
+	<para>In C++, it is convenient to place an XQuery in a string, and use a <classname>stringstream</classname> to add the query to the template for an address string that specifies an x-binding.</para>
+
+	<programlisting><![CDATA[
+std::string query = 
+  "let $w := ./weather "
+  "return $w/station = 'Raleigh-Durham International Airport (KRDU)' "
+  "   and $w/temperature_f > 50"
+  "   and $w/temperature_f - $w/dewpoint > 5"
+  "   and $w/wind_speed_mph > 7"
+  "   and $w/wind_speed_mph < 20";
+
+stringstream address;
+
+address << "xml; {"
+  " link: { "
+  "  x-bindings: [{ exchange: xml, key: weather, arguments: { xquery:\"" 
+     << query 
+     << "\"} }] "
+  " } "
+  "}";
+
+
+Receiver receiver = session.createReceiver(address.str());
+Message response = receiver.fetch();
+session.acknowledge();
+std::cout << response.getContent() << std::endl;
+
+      ]]></programlisting>
+      </example>
+
+
+      <example>
+	<title>Using the XML Exchange with Python</title>
+
+	<para>In Python, it is often convenient to place the query in
+	a separate string, and use the repr() value of the query
+	string in an address template string.</para>
+
+	<programlisting><![CDATA[
+# Set up the receiver
+  query = """
    let $w := ./weather
    return $w/station = 'Raleigh-Durham International Airport (KRDU)'
       and $w/temperature_f > 50
       and $w/temperature_f - $w/dewpoint > 5
       and $w/wind_speed_mph > 7
-      and $w/wind_speed_mph < 20
-"""
+      and $w/wind_speed_mph < 20   """
 
-address = "subscription; {create: always, delete:always, link: { x-bindings: [{ exchange: xml, queue: subscription, key: xml, arguments: { xquery: %r} }] } }" % query
+  address = """
+    xml; {
+       link: { 
+         x-bindings: [{ exchange: xml, key: weather, arguments: { xquery: %r} }] 
+       } 
+    }
+    """ % query
 
-connection = Connection(broker)
-
-try:
-  connection.open()
-  session = connection.session()
-
-  sender = session.sender("xml")
   receiver = session.receiver(address)
 
-  sender.send(Message("<weather><station>Raleigh-Durham International Airport (KRDU)</station><wind_speed_mph>16</wind_speed_mph><temperature_f>70</temperature_f><dewpoint>35</dewpoint></weather>"));
+# Retrieve matching message from the receiver and print it
 
   message = receiver.fetch(timeout=1)
   print message.content
   session.acknowledge()
-
-except MessagingError,m:
-  print m
-finally:
-  connection.close()
-      ]]></programlisting>
+	]]></programlisting>
       </example>
+
     </section>
 
     <section>
@@ -1993,13 +2057,47 @@ destination.topicExchange = amq.topic
 	      </row>
 	      <row>
 	        <entry>
-		  sync_persistence
+		  sync_publish
 	        </entry>
 	        <entry>
-		  false
+           {'persistent' | 'all'}
 	        </entry>
 	        <entry>
-		  When true, a sync command is sent after every persistent message to guarantee that it has been received.
+          A sync command is sent after every persistent message to guarantee that it has been received; if the value is 'persistent', this is done only for persistent messages.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  sync_ack
+	        </entry>
+	        <entry>
+           Boolean
+	        </entry>
+	        <entry>
+          A sync command is sent after every acknowledgement to guarantee that it has been received.
+	        </entry>
+	      </row>
+          <row>
+	        <entry>
+		  use_legacy_map_msg_format
+	        </entry>
+	        <entry>
+          Boolean
+	        </entry>
+	        <entry>
+          If you are using JMS Map messages and deploying a new client with any JMS client older than 0.7 release, you must set this to true to ensure the older clients can understand the map message encoding.
+	        </entry>
+	      </row>
+          <row>
+	        <entry>
+		  failover
+	        </entry>
+	        <entry>
+           {'roundrobin' | 'failover_exchange'}
+	        </entry>
+	        <entry>
+          If roundrobin is selected it will try each broker given in the broker list.
+          If failover_exchange is selected it connects to the initial broker given in the broker URL and will receive membership updates via the failover exchange.
 	        </entry>
 	      </row>
 	    </tbody>
@@ -2091,8 +2189,10 @@ amqp://guest:guest@test/test?sync_ack='true'
 		  sasl_encryption
 	        </entry>
 	        <entry>
+          Boolean  
 	        </entry>
 	        <entry>
+          If <literal>sasl_encryption='true'</literal>, the JMS client attempts to negotiate a security layer with the broker using GSSAPI to encrypt the connection. Note that for this to happen, GSSAPI must be selected as the sasl_mech.
 	        </entry>
 	      </row>
 	      <row>
@@ -2103,8 +2203,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 		  Boolean
 	        </entry>
 	        <entry>
-		  If <literal>ssl='true'</literal>, only encrypted
-		  connections are accepted.
+		  If <literal>ssl='true'</literal>, the JMS client will encrypt the connection using SSL.
 	        </entry>
 	      </row>
 	      <row>
@@ -2209,6 +2308,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 
 	        </entry>
 	        <entry>
+          If multiple certificates are present in the keystore, the alias will be used to extract the correct certificate.
 	        </entry>
 	      </row>
 	    </tbody>
