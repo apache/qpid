@@ -566,7 +566,18 @@ except IOError, e:
     print e
     sys.exit(1)
 except Exception,e:
-    print "Failed: %s: %s" % (e.__class__.__name__, e)
-    sys.exit(1)
-
-bm.Disconnect()
+    if e.__class__.__name__ != "Timeout":
+        # ignore Timeout exception, handle in the loop below
+        print "Failed: %s: %s" % (e.__class__.__name__, e)
+        sys.exit(1)
+ 
+while True:
+    # some commands take longer than the default amqp timeout to complete,
+    # so attempt to disconnect until successful, ignoring Timeouts
+    try:
+        bm.Disconnect()
+        break
+    except Exception, e:
+        if e.__class__.__name__ != "Timeout":
+            print "Failed: %s: %s" % (e.__class__.__name__, e)
+            sys.exit(1)
