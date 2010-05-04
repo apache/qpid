@@ -12,3 +12,7 @@ org.apache.qpid.test.client.message.JMSDestinationTest#testGetDestinationWithCus
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgs
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgsAckOnEarlier
 org.apache.qpid.test.unit.ack.RecoverTest#testAcknowledgePerConsumer
+
+// related to QPID-2471. These are new test cases and fail with the Java broker.
+org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithAsyncConsumer
+org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
