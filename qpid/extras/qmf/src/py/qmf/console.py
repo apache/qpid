@@ -1766,6 +1766,8 @@ class ManagedConnection(Thread):
 
   def __init__(self, broker):
     Thread.__init__(self)
+    self.daemon = True
+    self.name = "Connection for broker: %s:%d" % (broker.host, broker.port)
     self.broker = broker
     self.cv = Condition()
     self.canceled = False
