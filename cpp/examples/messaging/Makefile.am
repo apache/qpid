@@ -18,31 +18,22 @@
 #
 examplesdir=$(pkgdatadir)/examples/messaging
 
-MAKELDFLAGS=$(CLIENTFLAGS)
-include $(top_srcdir)/examples/makedist.mk
+# Settings to build the examples in automake
+AM_CXXFLAGS = $(WARNING_CFLAGS)
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
+CLIENT_LIB=$(top_builddir)/src/libqpidclient.la
+CLIENTFLAGS=-lqpidclient
 
-noinst_PROGRAMS=drain spout queue_sender queue_receiver topic_sender topic_receiver client server map_sender map_receiver hello_world
+noinst_PROGRAMS=drain spout client server map_sender map_receiver hello_world
 
 hello_world_SOURCES=hello_world.cpp
 hello_world_LDADD=$(CLIENT_LIB)
 
-drain_SOURCES=drain.cpp
+drain_SOURCES=drain.cpp OptionParser.h OptionParser.cpp
 drain_LDADD=$(CLIENT_LIB)
 
-spout_SOURCES=spout.cpp
+spout_SOURCES=spout.cpp OptionParser.h OptionParser.cpp
 spout_LDADD=$(CLIENT_LIB)
-
-queue_sender_SOURCES=queue_sender.cpp
-queue_sender_LDADD=$(CLIENT_LIB)
-
-queue_receiver_SOURCES=queue_receiver.cpp
-queue_receiver_LDADD=$(CLIENT_LIB)
-
-topic_sender_SOURCES=topic_sender.cpp
-topic_sender_LDADD=$(CLIENT_LIB)
-
-topic_receiver_SOURCES=topic_receiver.cpp
-topic_receiver_LDADD=$(CLIENT_LIB)
 
 client_SOURCES=client.cpp
 client_LDADD=$(CLIENT_LIB)
@@ -56,15 +47,24 @@ map_sender_LDADD=$(CLIENT_LIB)
 map_receiver_SOURCES=map_receiver.cpp
 map_receiver_LDADD=$(CLIENT_LIB)
 
+examples_DATA=                 \
+	hello_world.cpp	       \
+	drain.cpp              \
+	spout.cpp              \
+	OptionParser.cpp       \
+	OptionParser.h         \
+	client.cpp             \
+	server.cpp             \
+	map_sender.cpp         \
+	map_receiver.cpp       \
+        extra_dist/Makefile
+
 EXTRA_DIST=                  \
+	$(examples_DATA)     \
 	CMakeLists.txt \
 	messaging_client.vcproj \
 	messaging_drain.vcproj \
 	messaging_map_receiver.vcproj \
 	messaging_map_sender.vcproj \
-	messaging_queue_receiver.vcproj \
-	messaging_queue_sender.vcproj \
 	messaging_server.vcproj \
-	messaging_spout.vcproj \
-	messaging_topic_receiver.vcproj \
-	messaging_topic_sender.vcproj
+	messaging_spout.vcproj
