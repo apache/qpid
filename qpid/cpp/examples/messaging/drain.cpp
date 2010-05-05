@@ -23,76 +23,56 @@
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
-#include <qpid/Exception.h>
-#include <qpid/Options.h>
-#include <qpid/log/Logger.h>
-#include <qpid/log/Options.h>
 
 #include <iostream>
+
+#include "OptionParser.h"
 
 using namespace qpid::messaging;
 using namespace qpid::types;
 
-struct Options : public qpid::Options
+struct Options : OptionParser
 {
-    bool help;
     std::string url;
     std::string address;
     std::string connectionOptions;
-    int64_t timeout;
+    int timeout;
     bool forever;
-    qpid::log::Options log;
 
-    Options(const std::string& argv0=std::string())
-        : qpid::Options("Options"),
-          help(false),
-          url("amqp:tcp:127.0.0.1"),
+    Options()
+        : OptionParser("Usage: drain [OPTIONS] ADDRESS", "Drains messages from the specified address"),
+          url("127.0.0.1"),
           timeout(0),
-          forever(false),
-          log(argv0)
+          forever(false)
     {
-        addOptions()
-            ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
-            ("address,a", qpid::optValue(address, "ADDRESS"), "address to drain from")
-            ("timeout,t", qpid::optValue(timeout, "TIMEOUT"), "timeout in seconds to wait before exiting")
-            ("forever,f", qpid::optValue(forever), "ignore timeout and wait forever")
-            ("connection-options", qpid::optValue(connectionOptions,"OPTIONS"), "connection options string in the form {name1=value1, name2=value2}")
-            ("help", qpid::optValue(help), "print this usage statement");
-        add(log);
+        add("broker,b", url, "url of broker to connect to");
+        add("timeout,t", timeout, "timeout in seconds to wait before exiting");
+        add("forever,f", forever, "ignore timeout and wait forever");
+        add("connection-options", connectionOptions, "connection options string in the form {name1=value1, name2=value2}");
     }
 
     Duration getTimeout()
     {
         if (forever) return Duration::FOREVER;
         else return timeout*Duration::SECOND;
-
     }
-    bool parse(int argc, char** argv)
+    
+    bool checkAddress()
     {
-        try {
-            qpid::Options::parse(argc, argv);
-            if (address.empty()) throw qpid::Exception("Address must be specified!");
-            qpid::log::Logger::instance().configure(log);
-            if (help) {
-                std::ostringstream msg;
-                std::cout << msg << *this << std::endl << std::endl 
-                          << "Drains messages from the specified address" << std::endl;
-                return false;
-            } else {
-                return true;
-            }
-        } catch (const std::exception& e) {
-            std::cerr << *this << std::endl << std::endl << e.what() << std::endl;
+        if (getArguments().empty()) {
+            error("Address is required");
             return false;
+        } else {
+            address = getArguments()[0];
+            return true;
         }
     }
 };
 
-
 int main(int argc, char** argv)
 {
-    Options options(argv[0]);
-    if (options.parse(argc, argv)) {
+    Options options;
+    if (options.parse(argc, argv) && options.checkAddress()) {
         Connection connection(options.url, options.connectionOptions);
         try {
             connection.open();

@@ -19,14 +19,26 @@
 
 # drain and spout have explicit Boost.program_options usage in them, so be
 # sure that lib is linked in.
-add_example(messaging drain ${Boost_PROGRAM_OPTIONS_LIBRARY})
-add_example(messaging spout ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
-add_example(messaging queue_receiver)
-add_example(messaging queue_sender)
+macro(add_messaging_example example)
+  add_executable(${example} ${example}.cpp OptionParser.cpp)
+  set_target_properties(${example} PROPERTIES OUTPUT_NAME ${example})
+  target_link_libraries(${example} qpidclient ${_boost_libs_needed})
+  # For installs, don't install the built example; that would be pointless.
+  # Install the things a user needs to build the example on-site.
+  install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${example}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.h ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.cpp
+           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
+           COMPONENT ${QPID_COMPONENT_EXAMPLES})
+  if (MSVC)
+    install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/messaging_${example}.vcproj
+             DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
+             COMPONENT ${QPID_COMPONENT_EXAMPLES})
+  endif (MSVC)
 
-add_example(messaging topic_receiver)
-add_example(messaging topic_sender)
+endmacro(add_messaging_example)
+
+add_messaging_example(drain)
+add_messaging_example(spout)
 
 add_example(messaging map_receiver)
 add_example(messaging map_sender)
