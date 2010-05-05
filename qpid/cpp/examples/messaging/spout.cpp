@@ -160,7 +160,6 @@ int main(int argc, char** argv)
                 spoutid << id << ":" << count;
                 message.getProperties()["spout-id"] = spoutid.str();
                 sender.send(message);
-                std::cout << "Sent " << (count+1) << " of " << options.count << " messages" <<std::endl; 
             }
             connection.close();
             return 0;
