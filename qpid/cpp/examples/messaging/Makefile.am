@@ -24,10 +24,13 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 CLIENT_LIB=$(top_builddir)/src/libqpidclient.la
 CLIENTFLAGS=-lqpidclient
 
-noinst_PROGRAMS=drain spout client server map_sender map_receiver hello_world
+noinst_PROGRAMS=drain spout client server map_sender map_receiver hello_world hello_xml
 
 hello_world_SOURCES=hello_world.cpp
 hello_world_LDADD=$(CLIENT_LIB)
+
+hello_xml_SOURCES=hello_xml.cpp
+hello_xml_LDADD=$(CLIENT_LIB)
 
 drain_SOURCES=drain.cpp OptionParser.h OptionParser.cpp
 drain_LDADD=$(CLIENT_LIB)
@@ -49,6 +52,7 @@ map_receiver_LDADD=$(CLIENT_LIB)
 
 examples_DATA=                 \
 	hello_world.cpp	       \
+	hello_xml.cpp	       \
 	drain.cpp              \
 	spout.cpp              \
 	OptionParser.cpp       \
