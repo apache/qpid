@@ -305,8 +305,8 @@ finally:
 
         <screen>
 $ qpid-config add queue hello-world
-$ ./spout -a hello-world
-$ ./drain -a hello-world
+$ ./spout hello-world
+$ ./drain hello-world
 
 Message(properties={spout-id:c877e622-d57b-4df2-bf3e-6014c68da0ea:0}, content='')
         </screen>
@@ -319,7 +319,7 @@ Message(properties={spout-id:c877e622-d57b-4df2-bf3e-6014c68da0ea:0}, content=''
 	<command>drain</command> one more time, no messages will be retrieved.</para>
 
         <screen>
-$ ./drain -a hello-world
+$ ./drain hello-world
 $
 	</screen>
 
@@ -342,8 +342,8 @@ $ qpid-config add exchange topic hello-world
 	<para>Now run <command>drain</command> and <command>spout</command> the same way we did in the previous example:</para>
 
 	<screen>
-$ ./spout -a hello-world
-$ ./drain -a hello-world
+$ ./spout hello-world
+$ ./drain hello-world
 $
         </screen>
 
@@ -362,14 +362,14 @@ $
         <para><emphasis>First Window:</emphasis></para>
 
         <screen>
-$ ./drain -a hello-word -t 30
+$ ./drain -t 30 hello-word
         </screen>
         
 
         <para><emphasis>Second Window:</emphasis></para>
 
         <screen>
-$ ./spout -a hello-word
+$ ./spout hello-word
         </screen>
 
         <para>Once <command>spout</command> has sent a message, return
@@ -464,15 +464,15 @@ $ qpid-config add exchange topic news-service
         <para>Now we use drain to receive messages from <literal>news-service</literal> that match the subject <literal>sports</literal>.</para>
         <para><emphasis>First Window:</emphasis></para>
         <screen>
-$ ./drain -a news-service/sports -t 30
+$ ./drain -t 30 news-service/sports
         </screen>
 
         <para>In a second window, let's send messages to <literal>news-service</literal> using two different subjects:</para>
 
         <para><emphasis>Second Window:</emphasis></para>
         <screen>
-$ ./spout -a news-service/sports
-$ ./spout -a news-service/news
+$ ./spout news-service/sports
+$ ./spout news-service/news
         </screen>
 
         <para>Now look at the first window, the message with the
@@ -527,7 +527,7 @@ Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea
 	    <para><emphasis>First Window:</emphasis></para>
 	
 	    <screen>
-$ ./drain -a news-service/*.news -t 30
+$ ./drain -t 30 news-service/*.news
 	    </screen>
 
 	    <para>Now let's send messages using several different
@@ -536,10 +536,10 @@ $ ./drain -a news-service/*.news -t 30
 	    <para><emphasis>Second Window:</emphasis></para>
 
 	    <screen>
-$ ./spout -a news-service/usa.news
-$ ./spout -a news-service/usa.sports
-$ ./spout -a news-service/europe.sports
-$ ./spout -a news-service/europe.news
+$ ./spout news-service/usa.news
+$ ./spout news-service/usa.sports
+$ ./spout news-service/europe.sports
+$ ./spout news-service/europe.news
 	    </screen>
 
 	    <para>In the first window, the messages with
@@ -559,7 +559,7 @@ Message(properties={qpid.subject:europe.news, spout-id:f72815aa-7be4-4944-99fd-c
 	    <para><emphasis>First Window:</emphasis></para>
 
 	    <screen>
-$ ./drain -a news-service/#.news -t 30
+$ ./drain -t 30 news-service/#.news
 	    </screen>
 
 	    <para>In the second window, let's send messages using a
@@ -568,12 +568,12 @@ $ ./drain -a news-service/#.news -t 30
 	    <para><emphasis>Second Window:</emphasis></para>
 
 	    <screen>
-$ ./spout -a news-service/news
-$ ./spout -a news-service/sports
-$ ./spout -a news-service/usa.news
-$ ./spout -a news-service/usa.sports
-$ ./spout -a news-service/usa.faux.news
-$ ./spout -a news-service/usa.faux.sports
+$ ./spout news-service/news
+$ ./spout news-service/sports
+$ ./spout news-service/usa.news
+$ ./spout news-service/usa.sports
+$ ./spout news-service/usa.faux.news
+$ ./spout news-service/usa.faux.sports
 	    </screen>
 
         <para>In the first window, messages with
@@ -666,8 +666,8 @@ $ qpid-config add exchange topic my-topic
 	</para>
 
 	<screen>
-$ ./drain -a 'my-queue; {assert: always, node:{ type: queue }}'
-$ ./drain -a 'my-queue; {assert: always, node:{ type: topic }}'
+$ ./drain 'my-queue; {assert: always, node:{ type: queue }}'
+$ ./drain 'my-queue; {assert: always, node:{ type: topic }}'
 2010-04-20 17:30:46 warning Exception received from broker: not-found: not-found: Exchange not found: my-queue (../../src/qpid/broker/ExchangeRegistry.cpp:92) [caused by 2 \x07:\x01]
 Exchange my-queue does not exist
 	</screen>
@@ -683,8 +683,8 @@ Exchange my-queue does not exist
 	</para>
 
 	<screen>
-$ ./drain -a 'my-topic; {assert: always, node:{ type: topic }}'
-$ ./drain -a 'my-topic; {assert: always, node:{ type: queue }}'
+$ ./drain 'my-topic; {assert: always, node:{ type: topic }}'
+$ ./drain 'my-topic; {assert: always, node:{ type: queue }}'
 2010-04-20 17:31:01 warning Exception received from broker: not-found: not-found: Queue not found: my-topic (../../src/qpid/broker/SessionAdapter.cpp:754) [caused by 1 \x08:\x01]
 Queue my-topic does not exist
 	</screen>
@@ -698,7 +698,7 @@ Queue my-topic does not exist
 	<title>Creating a Queue Automatically</title>
 
 	<para><emphasis>First Window:</emphasis></para>
-	<screen>$ ./drain -a "xoxox ; {create: always}" -t 30</screen>
+	<screen>$ ./drain -t 30 "xoxox ; {create: always}"</screen>
 
 	<para>In previous examples, we created the queue before
 	listening for messages on it. Using <literal>create:
@@ -706,7 +706,7 @@ Queue my-topic does not exist
 	does not exist. Now we can send messages to this queue:</para>
 
 	<para><emphasis>Second Window:</emphasis></para>
-	<screen>$ ./spout -a "xoxox ; {create: always}"</screen>
+	<screen>$ ./spout "xoxox ; {create: always}"</screen>
 	
 	<para>Returning to the first window, we see that <command>drain</command> has received this message:</para>
 
@@ -732,14 +732,14 @@ Queue my-topic does not exist
           queue:
         </para>
         <screen>
-$ ./spout -a my-queue --content one
-$ ./spout -a my-queue --content two
-$ ./spout -a my-queue --content three
+$ ./spout my-queue --content one
+$ ./spout my-queue --content two
+$ ./spout my-queue --content three
         </screen>
         
         <para>Now we use drain to get those messages, using the browse option:</para>
         <screen>
-$ ./drain -a 'my-queue; {mode: browse}'
+$ ./drain 'my-queue; {mode: browse}'
 Message(properties={spout-id:fbb93f30-0e82-4b6d-8c1d-be60eb132530:0}, content='one')
 Message(properties={spout-id:ab9e7c31-19b0-4455-8976-34abe83edc5f:0}, content='two')
 Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='three')
@@ -747,7 +747,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
         
         <para>We can confirm the messages are still on the queue by repeating the drain:</para>
         <screen>
-$ ./drain -a 'my-queue; {mode: browse}'
+$ ./drain 'my-queue; {mode: browse}'
 Message(properties={spout-id:fbb93f30-0e82-4b6d-8c1d-be60eb132530:0}, content='one')
 Message(properties={spout-id:ab9e7c31-19b0-4455-8976-34abe83edc5f:0}, content='two')
 Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='three')
@@ -1414,8 +1414,8 @@ declare variable $control external;
 	<para>The following shows the arguments used with <command>drain</command> to retrieve messages whose root element is named <literal>weather</literal>:</para>
 
 	<programlisting><![CDATA[
-$ ./drain -a "xml; {link:{x-bindings: [{exchange: xml, key:"weather", 
-arguments:{xquery:\"./weather\"}}]}}" -f 
+$ ./drain -f "xml; {link:{x-bindings: [{exchange: xml, key:"weather", 
+arguments:{xquery:\"./weather\"}}]}}"
  ]]></programlisting> 
       </example>
 

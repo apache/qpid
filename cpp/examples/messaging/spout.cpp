@@ -25,16 +25,13 @@
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/types/Variant.h>
-#include <qpid/Exception.h>
-#include <qpid/Options.h>
-#include <qpid/log/Logger.h>
-#include <qpid/log/Options.h>
 #include <qpid/sys/Time.h>
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 
-#include <boost/format.hpp>
+#include "OptionParser.h"
 
 using namespace qpid::messaging;
 using namespace qpid::types;
@@ -44,62 +41,34 @@ using qpid::sys::TIME_INFINITE;
 
 typedef std::vector<std::string> string_vector;
 
-struct Options : public qpid::Options
+struct Options : OptionParser
 {
-    bool help;
     std::string url;
     std::string address;
-    int64_t timeout;
-    uint count;
+    int timeout;
+    int count;
     std::string id;
     std::string replyto;
     string_vector properties;
     string_vector entries;
     std::string content;
     std::string connectionOptions;
-    qpid::log::Options log;
 
-    Options(const std::string& argv0=std::string())
-        : qpid::Options("Options"),
-          help(false),
-          url("amqp:tcp:127.0.0.1"),
-          timeout(TIME_INFINITE),
-          count(1),
-          log(argv0)
+    Options()
+        : OptionParser("Usage: spout [OPTIONS] ADDRESS", "Send messages to the specified address"),
+          url("127.0.0.1"),
+          timeout(0),
+          count(1)
     {
-        addOptions()
-            ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
-            ("address,a", qpid::optValue(address, "ADDRESS"), "address to drain from")
-            ("timeout,t", qpid::optValue(timeout, "TIMEOUT"), "exit after the specified time")
-            ("count,c", qpid::optValue(count, "COUNT"), "stop after count messages have been sent, zero disables")
-            ("id,i", qpid::optValue(id, "ID"), "use the supplied id instead of generating one")
-            ("reply-to", qpid::optValue(replyto, "REPLY-TO"), "specify reply-to address")
-            ("property,P", qpid::optValue(properties, "NAME=VALUE"), "specify message property")
-            ("map,M", qpid::optValue(entries, "NAME=VALUE"), "specify entry for map content")
-            ("content", qpid::optValue(content, "CONTENT"), "specify textual content")
-            ("connection-options", qpid::optValue(connectionOptions,"OPTIONS"), "connection options string in the form {name1=value1, name2=value2}")
-            ("help", qpid::optValue(help), "print this usage statement");
-        add(log);
-    }
-
-    bool parse(int argc, char** argv)
-    {
-        try {
-            qpid::Options::parse(argc, argv);
-            if (address.empty()) throw qpid::Exception("Address must be specified!");
-            qpid::log::Logger::instance().configure(log);
-            if (help) {
-                std::ostringstream msg;
-                std::cout << msg << *this << std::endl << std::endl 
-                          << "Drains messages from the specified address" << std::endl;
-                return false;
-            } else {
-                return true;
-            }
-        } catch (const std::exception& e) {
-            std::cerr << *this << std::endl << std::endl << e.what() << std::endl;
-            return false;
-        }
+        add("broker,b", url, "url of broker to connect to");
+        add("timeout,t", timeout, "exit after the specified time");
+        add("count,c", count, "stop after count messages have been sent, zero disables");
+        add("id,i", id, "use the supplied id instead of generating one");
+        add("reply-to", replyto, "specify reply-to address");
+        add("property,P", properties, "specify message property");
+        add("map,M", entries, "specify entry for map content");
+        add("content", content, "specify textual content");
+        add("connection-options", connectionOptions, "connection options string in the form {name1=value1, name2=value2}");
     }
 
     static bool nameval(const std::string& in, std::string& name, std::string& value)
@@ -149,13 +118,24 @@ struct Options : public qpid::Options
             }
         }
     }
+
+    bool checkAddress()
+    {
+        if (getArguments().empty()) {
+            error("Address is required");
+            return false;
+        } else {
+            address = getArguments()[0];
+            return true;
+        }
+    }
 };
 
 
 int main(int argc, char** argv)
 {
-    Options options(argv[0]);
-    if (options.parse(argc, argv)) {        
+    Options options;
+    if (options.parse(argc, argv) && options.checkAddress()) {
         Connection connection(options.url, options.connectionOptions);
         try {
             connection.open();
@@ -172,12 +152,15 @@ int main(int argc, char** argv)
                 message.setContent(options.content);
                 message.setContentType("text/plain");
             }
-            AbsTime end(now(), options.timeout);
-            for (uint count = 0; (count < options.count || options.count == 0) && end > now(); count++) {
+            AbsTime end(now(), options.timeout * qpid::sys::TIME_SEC);
+            for (int count = 0; (count < options.count || options.count == 0) && (options.timeout == 0 || end > now()); count++) {
                 if (!options.replyto.empty()) message.setReplyTo(Address(options.replyto));
                 std::string id = options.id.empty() ? Uuid(true).str() : options.id;
-                message.getProperties()["spout-id"] = (boost::format("%1%:%2%") % id % count).str();
+                std::stringstream spoutid;
+                spoutid << id << ":" << count;
+                message.getProperties()["spout-id"] = spoutid.str();
                 sender.send(message);
+                std::cout << "Sent " << (count+1) << " of " << options.count << " messages" <<std::endl; 
             }
             connection.close();
             return 0;
