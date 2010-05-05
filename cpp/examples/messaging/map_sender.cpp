@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
         Variant::Map content;
         content["id"] = 987654321;
         content["name"] = "Widget";
-        content["price"] = 0.99;//bad use of floating point number, just an example!
+        content["percent"] = 0.99;
         Variant::List colours;
         colours.push_back(Variant("red"));
         colours.push_back(Variant("green"));
