@@ -299,6 +299,9 @@ public class QueueEntryImpl implements QueueEntry
         if(delete())
         {
             getMessage().decrementReference(storeContext);
+            
+            //Ensure we can't hang on to the message;
+            _message = null;
         }
     }
 
@@ -387,9 +390,6 @@ public class QueueEntryImpl implements QueueEntry
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
             _queueEntryList.advanceHead();            
-            
-            //Ensure we can't hang on to the message;
-            _message = null;
             
             return true;
         }
