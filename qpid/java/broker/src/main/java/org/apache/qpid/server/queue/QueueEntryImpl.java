@@ -42,7 +42,7 @@ public class QueueEntryImpl implements QueueEntry
 
     private final SimpleQueueEntryList _queueEntryList;
 
-    private final AMQMessage _message;
+    private AMQMessage _message;
 
     private Set<Subscription> _rejectedBy = null;
 
@@ -387,6 +387,10 @@ public class QueueEntryImpl implements QueueEntry
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
             _queueEntryList.advanceHead();            
+            
+            //Ensure we can't hang on to the message;
+            _message = null;
+            
             return true;
         }
         else
