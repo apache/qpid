@@ -127,7 +127,7 @@ const std::string FANOUT_EXCHANGE("fanout");
 const std::string DIRECT_EXCHANGE("direct");
 const std::string HEADERS_EXCHANGE("headers");
 const std::string XML_EXCHANGE("xml");
-const std::string WILDCARD_ANY("*");
+const std::string WILDCARD_ANY("#");
 
 const Verifier verifier;
 }
@@ -529,8 +529,12 @@ void Subscription::bindAll()
         Binding b(name, queue, "match-all");
         b.arguments.setString("x-match", "all");
         bindings.push_back(b);
-    } else { //E.g. direct and xml
-        throw ResolutionError(QPID_MSG("Cannot create binding to match all messages for exchange of type " << actualType));
+    } else if (actualType == XML_EXCHANGE) {
+        Binding b(name, queue, EMPTY_STRING);
+        b.arguments.setString("xquery", "true()");
+        bindings.push_back(b);
+    } else { 
+        add(name, EMPTY_STRING);
     }
 }
 

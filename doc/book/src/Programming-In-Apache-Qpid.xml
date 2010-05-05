@@ -1703,13 +1703,9 @@ else
         </listitem>
         <listitem>
           <para>
-            A source address that resolves to a direct exchange must
-            either contain a subject or must include a value for the
-            x-bindings option in the link properties. This is because
-            there is no way to receive all messages sent to an
-            exchange of that type. The subject specified is used as
-            the binding key (this means it must match the message
-            subject exactly).
+            For a direct exchange, the subject is used as the binding
+            key. If no subject is specified an empty string is used as
+            the binding key.
           </para>
         </listitem>
         <listitem>
@@ -1735,12 +1731,15 @@ else
             matches any message with that value for
             qpid.subject. Again this means that only messages whose
             subject exactly match that specified in the source address
-            are received. For more control the x-bindings element in
-            the link properties must be used. A source address that
-            resolves to the XML exchange must contain either a subject
-            or an x-bindings element in the link properties as there
-            is no way at present to receive any message regardless of
-            routing key.
+            are received. If no subject is specified then the empty
+            string is used as the binding key with an xquery that will
+            match any message (this means that only messages with an
+            empty string as the routing key will be received). For more
+            control the x-bindings element in the link properties must
+            be used. A source address that resolves to the XML
+            exchange must contain either a subject or an x-bindings
+            element in the link properties as there is no way at
+            present to receive any message regardless of routing key.
           </para>
         </listitem>
       </itemizedlist>
