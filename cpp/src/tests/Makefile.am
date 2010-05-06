@@ -370,7 +370,7 @@ EXTRA_DIST+=						\
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
 
-check: python_prep
+check: python_prep test_env.sh
 
 PYTHON_SRC_DIR=$(abs_srcdir)/../../../python
 PYTHON_BLD_DIR=$(abs_builddir)/python
