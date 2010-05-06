@@ -965,7 +965,7 @@ void Cluster::memberUpdate(Lock& l) {
         // Mark store clean if I am the only broker, dirty otherwise.
         if (size == 1 ) {
             if (store.getState() != STORE_STATE_CLEAN_STORE) {
-                QPID_LOG(notice, "Sole member of cluster, marking store clean.");
+                QPID_LOG(notice, *this << "Sole member of cluster, marking store clean.");
                 store.clean(Uuid(true));
             }
         }

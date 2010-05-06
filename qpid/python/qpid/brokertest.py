@@ -94,12 +94,12 @@ def retry(function, timeout=5, delay=.01):
     """Call function until it returns True or timeout expires.
     Double the delay for each retry. Return True if function
     returns true, False if timeout expires."""
-    elapsed = 0
     while not function():
-        elapsed += delay
-        if elapsed > timeout: return False
-        delay *= 2
+        if delay > timeout: delay = timeout
         time.sleep(delay)
+        timeout -= delay
+        if timeout <= 0: return False
+        delay *= 2
     return True
 
 class Popen(popen2.Popen3):
