@@ -248,7 +248,7 @@ QPID_AUTO_TEST_CASE(testAcl) {
 
     { 
         ScopedSuppressLogging sl;
-        BOOST_CHECK_THROW(foo.session.queueDeclare("bar", arg::durable=durableFlag), framing::NotAllowedException);
+        BOOST_CHECK_THROW(foo.session.queueDeclare("bar", arg::durable=durableFlag), framing::UnauthorizedAccessException);
     }
     BOOST_CHECK(c0.session.queueQuery("bar").getQueue().empty());
     BOOST_CHECK(c1.session.queueQuery("bar").getQueue().empty());
@@ -257,7 +257,7 @@ QPID_AUTO_TEST_CASE(testAcl) {
     Client c2(aclSettings(cluster[2], "c2"), "c2");
     { 
         ScopedSuppressLogging sl;
-        BOOST_CHECK_THROW(foo.session.queueDeclare("bar", arg::durable=durableFlag), framing::NotAllowedException);
+        BOOST_CHECK_THROW(foo.session.queueDeclare("bar", arg::durable=durableFlag), framing::UnauthorizedAccessException);
     }
     BOOST_CHECK(c2.session.queueQuery("bar").getQueue().empty());
 }

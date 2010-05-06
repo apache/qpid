@@ -34,7 +34,7 @@
 using namespace qpid::broker;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
-using qpid::framing::NotAllowedException;
+using qpid::framing::UnauthorizedAccessException;
 using qpid::framing::connection::CLOSE_CODE_CONNECTION_FORCED;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
@@ -180,7 +180,7 @@ void Link::checkClosePermission()
     AclModule* acl = getBroker()->getAcl();
     std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
     if (acl && !acl->authorise(userID,acl::ACT_DELETE,acl::OBJ_LINK,"")){
-        throw NotAllowedException("ACL denied delete link request");
+        throw UnauthorizedAccessException("ACL denied delete link request");
     }
 }
 
