@@ -98,7 +98,7 @@ public class NonTransactionalContext implements TransactionalContext
         //required by the 'immediate' flag:
         if(entry.immediateAndNotDelivered())
         {
-            _returnMessages.add(new NoConsumersException(entry.getMessage()));
+            _returnMessages.add(new NoConsumersException(message));
         }
 
     }
@@ -180,17 +180,17 @@ public class NonTransactionalContext implements TransactionalContext
                 beginTranIfNecessary();
             }
 
-            //Message has been ack so discard it. This will dequeue and decrement the reference.
-            msg.discard(_storeContext);
-
             unacknowledgedMessageMap.remove(deliveryTag);
-
 
             if (debug)
             {
                 _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +
                            msg.getMessage().getMessageId());
             }
+
+            //Message has been ack so discard it. This will dequeue and decrement the reference.
+            msg.discard(_storeContext);
+
         }
         if(_inTran)
         {

@@ -43,6 +43,8 @@ public class QueueEntryImpl implements QueueEntry
     private final SimpleQueueEntryList _queueEntryList;
 
     private AMQMessage _message;
+    
+    private boolean _immediateAndNotDelivered = false;
 
     private Set<Subscription> _rejectedBy = null;
 
@@ -119,17 +121,14 @@ public class QueueEntryImpl implements QueueEntry
 
     public long getSize()
     {
-        return getMessage().getSize();
-    }
-
-    public boolean getDeliveredToConsumer()
-    {
-        return getMessage().getDeliveredToConsumer();
+        AMQMessage message = getMessage();
+        return message == null ? 0 : message.getSize();
     }
 
     public boolean expired() throws AMQException
     {
-        return getMessage().expired(getQueue());
+        AMQMessage message = getMessage();
+        return message == null ? false : message.expired(getQueue());
     }
 
     public boolean isAcquired()
@@ -167,13 +166,16 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean acquiredBySubscription()
     {
-
         return (_state instanceof SubscriptionAcquiredState);
     }
 
     public void setDeliveredToSubscription()
     {
-        getMessage().setDeliveredToConsumer();
+        AMQMessage message = getMessage();
+        if (message != null)
+        {
+            message.setDeliveredToConsumer();
+        }
     }
 
     public void release()
@@ -197,12 +199,17 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean immediateAndNotDelivered() 
     {
-        return getMessage().immediateAndNotDelivered();
+        AMQMessage message = getMessage();
+        return message == null ? _immediateAndNotDelivered : message.immediateAndNotDelivered();
     }
 
     public void setRedelivered(boolean b)
     {
-        getMessage().setRedelivered(b);
+        AMQMessage message = getMessage();
+        if(message != null)
+        {
+            message.setRedelivered(b);
+        }
     }
 
     public Subscription getDeliveredSubscription()
@@ -298,10 +305,16 @@ public class QueueEntryImpl implements QueueEntry
     {
         if(delete())
         {
-            getMessage().decrementReference(storeContext);
-            
-            //Ensure we can't hang on to the message;
-            _message = null;
+            AMQMessage msg = getMessage();
+            if(msg != null)
+            {
+                getMessage().decrementReference(storeContext);
+
+                _immediateAndNotDelivered = _message.immediateAndNotDelivered();
+
+                //Ensure we can't hang on to the message, release the ref;
+                _message = null;
+            }
         }
     }
 

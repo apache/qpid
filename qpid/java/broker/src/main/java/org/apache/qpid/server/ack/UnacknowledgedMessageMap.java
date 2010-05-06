@@ -74,8 +74,6 @@ public interface UnacknowledgedMessageMap
      * @return a set of delivery tags
      */
     Set<Long> getDeliveryTags();
-
-    public long getUnacknowledgeBytes();
 }
 
 
