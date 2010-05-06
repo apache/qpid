@@ -21,6 +21,10 @@
 # 
 #
 
-kill -CONT $1
-kill -9 $1
-rm /tmp/broker.log
+# The entire broker command is passed as an argument.
+
+waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; }
+
+sh $BROKER_CMD --log-to-file /tmp/broker.log &
+waitfor /tmp/broker.log $BROKER_READY
+
