@@ -24,3 +24,5 @@ org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testAcknowledge
 // related to QPID-2471. These are new test cases and fail with the Java broker.
 org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithAsyncConsumer
 org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithAsyncConsumer
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithSyncConsumer
