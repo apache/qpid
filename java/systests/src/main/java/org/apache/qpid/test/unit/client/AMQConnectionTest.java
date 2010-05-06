@@ -20,6 +20,16 @@
  */
 package org.apache.qpid.test.unit.client;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.jms.Connection;
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -37,6 +47,8 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AMQConnectionTest extends QpidTestCase
 {
@@ -45,6 +57,7 @@ public class AMQConnectionTest extends QpidTestCase
     private static AMQQueue _queue;
     private static QueueSession _queueSession;
     private static TopicSession _topicSession;
+    protected static final Logger _logger = LoggerFactory.getLogger(AMQConnectionTest.class);
 
     protected void setUp() throws Exception
     {
@@ -260,6 +273,98 @@ public class AMQConnectionTest extends QpidTestCase
                 _connection.deregisterSession(id);
             }
         }
+    }
+    
+    /**
+     * Test Strategy : Kill -STOP the broker and see
+     * if the client terminates the connection with a
+     * read timeout.
+     * The broker process is cleaned up in the test itself
+     * and avoids using process.waitFor() as it hangs. 
+     */
+    public void testHeartBeat() throws Exception
+    {
+       boolean windows = 
+            ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
+ 
+       if (!isCppBroker() || windows)
+       {
+           return;
+       }
+       
+       Process process = null;
+       int port = getPort(0);
+       try
+       {
+           _connection.close();
+           System.setProperty("qpid.heartbeat", "1");           
+           Connection con = getConnection();
+           final AtomicBoolean lock = new AtomicBoolean(false);
+           
+           String cmd = "/usr/bin/pgrep -f " + port;
+           process = Runtime.getRuntime().exec("/bin/bash");
+           LineNumberReader reader = new LineNumberReader(new InputStreamReader(process.getInputStream()));
+           PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(process.getOutputStream())), true); 
+           out.println(cmd); 
+           String pid = reader.readLine();
+           try
+           {
+               Integer.parseInt(pid);
+           }
+           catch (NumberFormatException e) 
+           {
+               // Error! try to read further to gather the error msg.
+               String line;
+               _logger.debug(pid);
+               while ((line = reader.readLine()) != null )
+               {
+                   _logger.debug(line);
+               }
+               throw new Exception( "Unable to get the brokers pid " + pid);
+           }
+           _logger.debug("pid : " + pid);
+           
+           con.setExceptionListener(new ExceptionListener(){
+               
+               public void onException(JMSException e)
+               {
+                   synchronized(lock) {
+                       lock.set(true);
+                       lock.notifyAll();
+                  }
+               }           
+           });   
+
+           out.println("kill -STOP " + pid);           
+           
+           synchronized(lock){
+               lock.wait(2500);
+           }
+           out.close();
+           reader.close();
+           assertTrue("Client did not terminate the connection, check log for details",lock.get());
+       }
+       catch(Exception e)
+       {
+           throw e;
+       }
+       finally
+       {
+           System.setProperty("qpid.heartbeat", "");
+           if (process != null)
+           {
+               process.destroy();
+           }
+           
+           Runtime.getRuntime().exec(System.getProperty("broker.kill"));
+           
+           Process brokerProcess = _brokers.remove(port);
+           if (process != null)
+           {
+               brokerProcess.destroy();
+           }
+           cleanBroker();
+       }
     }
     
     public static junit.framework.Test suite()

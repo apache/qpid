@@ -201,7 +201,7 @@ public class QpidTestCase extends TestCase
 
     protected PrintStream _brokerOutputStream;
 
-    private Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
+    protected Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
 
     private InitialContext _initialContext;
     protected AMQConnectionFactory _connectionFactory;
@@ -453,7 +453,7 @@ public class QpidTestCase extends TestCase
         return getPort(0);
     }
 
-    private int getPort(int port)
+    protected int getPort(int port)
     {
         if (_broker.equals(VM))
         {
