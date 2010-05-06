@@ -469,7 +469,7 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    private String getBrokerCommand(int port) throws MalformedURLException
+    protected String getBrokerCommand(int port) throws MalformedURLException
     {
         return _broker
                 .replace("@PORT", "" + port)

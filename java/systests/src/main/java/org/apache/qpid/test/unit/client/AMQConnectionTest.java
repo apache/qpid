@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
@@ -294,11 +295,33 @@ public class AMQConnectionTest extends QpidTestCase
        
        Process process = null;
        int port = getPort(0);
+       String pid = null;
        try
        {
+           // close the connection and shutdown the broker started by QpidTest
            _connection.close();
-           System.setProperty("qpid.heartbeat", "1");           
-           Connection con = getConnection();
+           stopBroker(port);
+           
+           System.setProperty("qpid.heartbeat", "1");
+           
+           // in case this broker gets stuck, atleast the rest of the tests will not fail.
+           port = port + 200;
+           String startCmd = getBrokerCommand(port);
+           
+           // start a broker using a script
+           ProcessBuilder pb = new ProcessBuilder(System.getProperty("broker.start"));
+           pb.redirectErrorStream(true);
+
+           Map<String, String> env = pb.environment();
+           env.put("BROKER_CMD",startCmd);
+           env.put("BROKER_READY",System.getProperty(BROKER_READY));
+           
+           Process startScript = pb.start();
+           startScript.waitFor();
+           startScript.destroy();
+           
+           Connection con = 
+               new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:" + port + "'");
            final AtomicBoolean lock = new AtomicBoolean(false);
            
            String cmd = "/usr/bin/pgrep -f " + port;
@@ -306,7 +329,7 @@ public class AMQConnectionTest extends QpidTestCase
            LineNumberReader reader = new LineNumberReader(new InputStreamReader(process.getInputStream()));
            PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(process.getOutputStream())), true); 
            out.println(cmd); 
-           String pid = reader.readLine();
+           pid = reader.readLine();
            try
            {
                Integer.parseInt(pid);
@@ -351,18 +374,15 @@ public class AMQConnectionTest extends QpidTestCase
        finally
        {
            System.setProperty("qpid.heartbeat", "");
+           
            if (process != null)
            {
                process.destroy();
            }
            
-           Runtime.getRuntime().exec(System.getProperty("broker.kill"));
-           
-           Process brokerProcess = _brokers.remove(port);
-           if (process != null)
-           {
-               brokerProcess.destroy();
-           }
+           Process killScript = Runtime.getRuntime().exec(System.getProperty("broker.kill") + " " + pid);
+           killScript.waitFor();
+           killScript.destroy();
            cleanBroker();
        }
     }
