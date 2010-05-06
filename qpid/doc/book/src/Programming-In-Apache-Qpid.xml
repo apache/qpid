@@ -1117,12 +1117,15 @@ options := map
 
 </section>
 
-    <section>
+<section>
       <title>Logging</title>
-      <para>The Qpidd broker and C++ clients can both use environment
-      variables to enable logging. Use QPID_LOG_ENABLE to set the
-      level of logging you are interested in (trace, debug, info,
-      notice, warning, error, or critical):</para>
+###########
+      <section>
+	<title>Logging in C++</title>
+	<para>The Qpidd broker and C++ clients can both use environment
+	variables to enable logging. Use QPID_LOG_ENABLE to set the
+	level of logging you are interested in (trace, debug, info,
+	notice, warning, error, or critical):</para>
 
 <screen>
 $ export QPID_LOG_ENABLE="warning+"
@@ -1136,8 +1139,29 @@ $ export QPID_LOG_ENABLE="warning+"
 export QPID_LOG_TO_FILE="/tmp/myclient.out"
 </screen>
 
-    </section>
-
+      </section>
+	
+	<section>
+		<title>Logging in Python</title>
+		<para>
+			The Python client library supports logging using the standard Python logging module. The easiest way to do logging is to use the <command>basicConfig()</command>, which reports all warnings and errors:
+		</para>
+		
+<programlisting>from logging import basicConfig
+basicConfig()
+</programlisting>
+		<para>
+			Qpidd also provides a convenience method that makes it easy to specify the level of logging desired. For instance, the following code enables logging at the <command>DEBUG</command> level:
+		</para>
+		
+<programlisting>from qpid.log import enable, DEBUG
+enable("qpid.messaging.io", DEBUG)
+</programlisting>
+		<para>
+			For more information on Python logging, see <ulink url="http://docs.python.org/lib/node425.html">http://docs.python.org/lib/node425.html</ulink>. For more information on Qpid logging, use <command>$ pydoc qpid.log</command>.
+		</para>
+	</section>
+</section>
 
     
 <section>
@@ -1361,13 +1385,183 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
       </example>
 -->
     </section>
+    <section id="section-Maps">
+      <title>Maps in Messages</title>
+      
+      <para>Many messaging applications need to exchange data across
+      languages and platforms, using the native datatypes of each
+      programming language. AMQP provides a set of portable datatypes,
+      but does not directly support a set of named type/value
+      pairs. Java JMS provides the <classname>MapMessage</classname>
+      interface, which allows sets of named type/value pairs, but does
+      not provide a set of portable datatypes. The Qpid Messaging API
+      supports maps, analogous to Java JMS
+      <classname>MapMessage</classname>, using the datatypes that are
+      most convenient in each language. For simple datatypes, it
+      simply uses the equivalent datatype in each language. For
+      complex datatypes, it follows the conventions of each language.
+      </para>
 
 
-<!-- ### TODO: 
-1. Debug the program - is it me or is it the broker?
-2. C++ version
-3. Version that uses properties
--->
+      <section id="section-Python-Maps">
+	<title>Qpid Maps in Python</title>
+
+	<para>In Python, Qpid supports the <classname>dict</classname> and <classname>list</classname> types directly in message content.</para>
+
+	<example>
+	  <title>Sending Qpid Maps in Python</title>
+	  <programlisting><![CDATA[
+from qpid.messaging import *
+
+try:
+    connection = Connection.open(host="localhost",port=5672)
+    session = connection.session()
+    sender = session.sender("message_queue; {create: always}")
+
+    content = {'Id' : 987654321, 'name' : 'Widget', 'percent' : 0.99}
+    content['colours'] = ['red', 'green', 'white']
+    content['dimensions'] = {'length' : 10.2, 'width' : 5.1,'depth' : 2.0};
+    content['parts'] = [ [1,2,5], [8,2,5] ]
+    content['specs'] = {'colors' : content['colours'], 
+                        'dimensions' : content['dimensions'], 
+                        'parts' : content['parts'] }
+
+    msg = Message(content=content)
+    sender.send(msg)
+except SendError, e:
+    print e
+
+connection.close()
+    ]]>   </programlisting>
+	</example>
+
+
+      <para>The following table shows the datatypes that can be sent in a Python map message,
+ and the corresponding datatypes that will be received by clients in <xref linkend="table-cpp-Maps"/> or <xref linkend="table-Java-Maps"/>.</para>
+      
+
+	<table id="table-Python-Maps">
+	<title>Python Datatypes in Maps</title>
+	<tgroup cols="3">
+	  <thead>
+	    <row>
+	      <entry>Python Datatype</entry>
+	      <entry>&rarr; C++</entry>
+	      <entry>&rarr; Java</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+   	    <row><entry>bool</entry><entry>bool</entry><entry>boolean</entry></row>
+	    <row><entry>integer</entry><entry>integer</entry><entry>long</entry></row>
+	    <row><entry>short</entry><entry>integer</entry><entry>short</entry></row>
+	    <row><entry>long</entry><entry>long</entry><entry>long</entry></row>
+	    <row><entry>float</entry><entry>float</entry><entry>float</entry></row>
+	    <row><entry>float</entry><entry>double</entry><entry>double</entry></row>
+	    <row><entry>string</entry><entry>unicode</entry><entry>java.lang.String</entry></row>
+	    <row><entry>uuid</entry><entry>qpid::types::Uuid</entry><entry>java.util.UUID</entry></row>
+	    <row><entry>dict</entry><entry>Variant::Map</entry><entry>java.util.Map</entry></row>
+	    <row><entry>list</entry><entry>Variant::List</entry><entry>java.util.List</entry></row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      </section>
+
+
+
+
+      <section id="section-cpp-Maps">
+	<title>### C++ ###</title>
+
+	<para>The following table shows the datatypes that can be sent
+	in a C++ map message, and the corresponding datatypes that
+	will be received by clients in <xref
+	linkend="table-Python-Maps"/> #### or <xref
+	linkend="table-Java-Maps"/>.</para>
+      
+	<example>
+	  <title></title>
+	<programlisting><![CDATA[
+using namespace qpid::types;
+
+// !!! SNIP !!!
+
+Message message;
+Variant::Map content;
+content["id"] = 987654321;
+content["name"] = "Widget";
+content["percent"] = 0.99;
+Variant::List colours;
+colours.push_back(Variant("red"));
+colours.push_back(Variant("green"));
+colours.push_back(Variant("white"));
+content["colours"] = colours;
+
+Variant::Map dimensions;
+dimensions["length"] = 10.2;
+dimensions["width"] = 5.1;
+dimensions["depth"] = 2.0;
+content["dimensions"]= dimensions; 
+
+Variant::List part1;
+part1.push_back(Variant(1));
+part1.push_back(Variant(2));
+part1.push_back(Variant(5));
+ 
+Variant::List part2;
+part2.push_back(Variant(8));
+part2.push_back(Variant(2));
+part2.push_back(Variant(5));
+ 
+Variant::List parts;
+parts.push_back(part1);
+parts.push_back(part2);
+content["parts"]= parts; 
+
+Variant::Map specs;
+specs["colours"] = colours; 
+specs["dimensions"] = dimensions; 
+specs["parts"] = parts; 
+content["specs"] = specs;
+
+encode(content, message);
+sender.send(message, true);
+]]>     </programlisting>
+	</example>
+
+	<table  id="table-cpp-Maps">
+	<title>C++ Datatypes in Maps</title>
+	<tgroup cols="3">
+	  <thead>
+	    <row>
+	      <entry>C++ Datatype</entry>
+	      <entry>&rarr; Python</entry>
+	      <entry>&rarr; Java</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+   	    <row><entry>bool</entry><entry>bool</entry><entry>boolean</entry></row>
+  	    <row><entry>unsigned char</entry><entry>string</entry><entry>char</entry></row>
+	    <row><entry>unsigned short int</entry><entry>integer</entry><entry>short</entry></row>
+	    <row><entry>unsigned int</entry><entry>integer</entry><entry>integer</entry></row>
+	    <row><entry>unsigned long</entry><entry>integer</entry><entry>long</entry></row>
+	    <row><entry>char</entry><entry>string</entry><entry>char</entry></row>
+	    <row><entry>short</entry><entry>integer</entry><entry>short</entry></row>
+	    <row><entry>int</entry><entry>integer</entry><entry>integer</entry></row>
+	    <row><entry>long</entry><entry>long</entry><entry>long</entry></row>
+	    <row><entry>float</entry><entry>float</entry><entry>float</entry></row>
+	    <row><entry>double, long double</entry><entry>float</entry><entry>double</entry></row>
+	    <row><entry>string</entry><entry>unicode</entry><entry>java.lang.String</entry></row>
+	    <row><entry>qpid::types::Uuid</entry><entry>uuid</entry><entry>java.util.UUID</entry></row>
+	    <row><entry>Variant::Map</entry><entry>dict</entry><entry>java.util.Map</entry></row>
+	    <row><entry>Variant::List</entry><entry>list</entry><entry>java.util.List</entry></row>
+	  </tbody>
+	</tgroup>
+      </table>
+      </section>
+
+      
+    </section>
     <section>
       <title>XML Exchange</title>
 
@@ -2375,6 +2569,98 @@ amqp://guest:guest@test/test?sync_ack='true'
         </tgroup>
       </table>
       
+    </section>
+
+    <section id="section-JMS-MapMessage">
+      <title>JMS MapMessage Types</title>
+
+      <para>Qpid supports the Java JMS <classname>MapMessage</classname> interface, which provides support for maps in messages.</para>
+
+<!-- #### Mention interop, cross-ref -->
+
+      <example>
+	<title>Map Messages in Java JMS</title>
+      <programlisting><![CDATA[
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.MapMessage;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
+import org.apache.qpid.client.AMQAnyDestination;
+import org.apache.qpid.client.AMQConnection;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
+
+// !!! SNIP !!!
+
+MessageProducer producer = session.createProducer(queue);
+
+MapMessage m = session.createMapMessage();
+m.setIntProperty("Id", 987654321);
+m.setStringProperty("name", "Widget");
+m.setDoubleProperty("price", 0.99);
+
+List<String> colors = new ArrayList<String>();
+colors.add("red");
+colors.add("green");
+colors.add("white");        
+m.setObject("colours", colors);
+
+Map<String,Double> dimensions = new HashMap<String,Double>();
+dimensions.put("length",10.2);
+dimensions.put("width",5.1);
+dimensions.put("depth",2.0);
+m.setObject("dimensions",dimensions);
+
+List<List<Integer>> parts = new ArrayList<List<Integer>>();
+parts.add(Arrays.asList(new Integer[] {1,2,5}));
+parts.add(Arrays.asList(new Integer[] {8,2,5}));
+m.setObject("parts", parts);
+
+Map<String,Object> specs = new HashMap<String,Object>();
+specs.put("colours", colors);
+specs.put("dimensions", dimensions);
+specs.put("parts", parts);
+m.setObject("specs",specs);
+
+producer.send(m);
+      ]]></programlisting>
+
+      <para>The following table shows the datatypes that can be sent in a <classname>MapMessage</classname>, and the corresponding datatypes that will be received by clients in <xref linkend="table-cpp-Maps"/> or <xref linkend="table-Python-Maps"/>.</para>
+      </example>
+      
+      <table id="table-Java-Maps">
+	<title>Java Datatypes in Maps</title>
+	<tgroup cols="3">
+	  <thead>
+	    <row>
+	      <entry>Java Datatype</entry>
+	      <entry>&rarr; Python</entry>
+	      <entry>&rarr; C++</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+   	    <row><entry>boolean</entry><entry>bool</entry><entry>bool</entry></row>
+	    <row><entry>char</entry><entry>string<footnote><para>The Python string will contain one Unicode character</para></footnote></entry><entry>int??? Java char is 16-bit</entry></row>
+	    <row><entry>short</entry><entry>integer</entry><entry>short</entry></row>
+	    <row><entry>integer</entry><entry>integer</entry><entry>int</entry></row>
+	    <row><entry>long</entry><entry>long integer</entry><entry>long</entry></row>
+	    <row><entry>float</entry><entry>float</entry><entry>float</entry></row>
+	    <row><entry>double</entry><entry>float</entry><entry>double, long double</entry></row>
+	    <row><entry>java.lang.String</entry><entry>unicode</entry><entry>std::string</entry></row>
+	    <row><entry>java.util.UUID</entry><entry>uuid</entry><entry>qpid::types::Uuid</entry></row>
+	    <row><entry>java.util.Map</entry><entry>dict</entry><entry>Variant::Map</entry></row>
+	    <row><entry>java.util.List</entry><entry>list</entry><entry>Variant::List</entry></row>
+	  </tbody>
+	</tgroup>
+      </table>
+
     </section>
 
     <section>
