@@ -396,7 +396,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             heartbeat = Integer.getInteger(ClientProperties.HEARTBEAT,ClientProperties.HEARTBEAT_DEFAULT);
         } 
-        return 0;
+        return heartbeat;
     }
     
     protected org.apache.qpid.transport.Connection getQpidConnection()
