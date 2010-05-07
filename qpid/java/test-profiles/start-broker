@@ -23,7 +23,14 @@
 
 # The entire broker command is passed as an argument.
 
-waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; }
+waitfor() {
+  until grep -a -l "$2" $1 >/dev/null 2>&1
+  do
+    if [ $count == 10 ]; then return; fi;
+    sleep 1 ; 
+    count=`expr $count + 1`;
+  done
+ }
 
 sh $BROKER_CMD --log-to-file /tmp/broker.log &
 waitfor /tmp/broker.log $BROKER_READY
