@@ -27,6 +27,7 @@ import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -74,6 +75,8 @@ public interface IApplicationRegistry
     ACLManager getAccessManager() throws ConfigurationException;
 
     PluginManager getPluginManager();
+
+    ConfigurationManager getConfigurationManager();
 
     RootMessageLogger getRootMessageLogger();
 

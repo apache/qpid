@@ -20,97 +20,118 @@
  */
 package org.apache.qpid.server.configuration;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.configuration.plugin.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugin.ConfigurationPluginFactory;
 
-public class VirtualHostConfiguration
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+
+public class VirtualHostConfiguration extends ConfigurationPlugin
 {
-	private Configuration _config;
-	private String _name;
-	private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
-	private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private Configuration _config;
+    private String _name;
+    private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
+    private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
 
-	public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
-	{
-		_config = config;
-		_name = name;
-		Iterator i = _config.getList("queues.queue.name").iterator();
-		
-		while (i.hasNext())
-		{
-			String queueName = (String) i.next();
-			CompositeConfiguration mungedConf = new CompositeConfiguration();
-			mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
-			mungedConf.addConfiguration(_config.subset("queues"));
-			_queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
-        }
-
-		i = _config.getList("exchanges.exchange.name").iterator();
-		int count = 0;
-		while (i.hasNext())
-        {
-			CompositeConfiguration mungedConf = new CompositeConfiguration();
-			mungedConf.addConfiguration(config.subset("exchanges.exchange(" + count++ + ")"));
-			mungedConf.addConfiguration(_config.subset("exchanges"));
-			String exchName = (String) i.next();
-			_exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
-        }
-
+    public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
+    {
+        _config = config;
+        _name = name;
+        setConfiguration(config);
     }
 
-	public String getName()
-	{
+    /**
+     * Apply the given configuration to this VirtualHostConfiguration
+     *
+     * @param config the config to apply
+     * @throws ConfigurationException if a problem occurs with configuration
+     */
+    public void setConfiguration(Configuration config) throws ConfigurationException
+    {
+        super.setConfiguration("virtualhosts.virtualhost",config);
+
+        Iterator i = _config.getList("queues.queue.name").iterator();
+
+        while (i.hasNext())
+        {
+            String queueName = (String) i.next();
+            CompositeConfiguration mungedConf = new CompositeConfiguration();
+            mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
+            mungedConf.addConfiguration(_config.subset("queues"));
+            _queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
+        }
+
+        i = _config.getList("exchanges.exchange.name").iterator();
+        int count = 0;
+        while (i.hasNext())
+        {
+            CompositeConfiguration mungedConf = new CompositeConfiguration();
+            mungedConf.addConfiguration(config.subset("exchanges.exchange(" + count++ + ")"));
+            mungedConf.addConfiguration(_config.subset("exchanges"));
+            String exchName = (String) i.next();
+            _exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
+        }
+    }
+
+    public String getName()
+    {
         return _name;
     }
 
-	public long getHousekeepingExpiredMessageCheckPeriod()
-	{
-		return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
-	}
+    public long getHousekeepingExpiredMessageCheckPeriod()
+    {
+        return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
+    }
 
-	public String getAuthenticationDatabase()
-	{
-		return _config.getString("security.authentication.name");
-	}
-	
-	public List getCustomExchanges()
-	{
-		return _config.getList("custom-exchanges.class-name");
-	}
-	
-	public SecurityConfiguration getSecurityConfiguration()
-	{
-		return new SecurityConfiguration(_config.subset("security"));
-	}
+    public String getAuthenticationDatabase()
+    {
+        return _config.getString("security.authentication.name");
+    }
 
-	public Configuration getStoreConfiguration()
-	{
-		return _config.subset("store");
-	}
+    public List getCustomExchanges()
+    {
+        return _config.getList("custom-exchanges.class-name");
+    }
 
-	public String getMessageStoreClass()
-	{
-		return _config.getString("store.class", MemoryMessageStore.class.getName());
-	}
+    public SecurityConfiguration getSecurityConfiguration()
+    {
+        return new SecurityConfiguration(_config.subset("security"));
+    }
 
-	public List getExchanges()
-	{
-		return _config.getList("exchanges.exchange.name");
-	}
+    public Configuration getStoreConfiguration()
+    {
+        return _config.subset("store");
+    }
 
-	public String[] getQueueNames()
-	{
-		return _queues.keySet().toArray(new String[_queues.size()]);
-	}
+    public String getMessageStoreClass()
+    {
+        return _config.getString("store.class", MemoryMessageStore.class.getName());
+    }
+
+    public void setMessageStoreClass(String storeClass)
+    {
+        _config.setProperty("store.class", storeClass);
+    }
+
+    public List getExchanges()
+    {
+        return _config.getList("exchanges.exchange.name");
+    }
+
+    public String[] getQueueNames()
+    {
+        return _queues.keySet().toArray(new String[_queues.size()]);
+    }
 
     public ExchangeConfiguration getExchangeConfiguration(String exchangeName)
     {
@@ -121,13 +142,21 @@ public class VirtualHostConfiguration
     {
         // We might be asked for the config for a queue we don't know about,
         // such as one that's been dynamically created. Those get the defaults by default.
-        if (_queues.containsKey(queueName)) 
+        if (_queues.containsKey(queueName))
         {
             return _queues.get(queueName);
-        } 
+        }
         else
         {
-            return new QueueConfiguration(queueName, new PropertiesConfiguration(), this);
+            try
+            {
+                return new QueueConfiguration(queueName, new PropertiesConfiguration(), this);
+            }
+            catch (ConfigurationException e)
+            {
+                // The configuration is empty so there can't be an error.
+                return null;
+            }
         }
     }
 
@@ -140,7 +169,7 @@ public class VirtualHostConfiguration
     {
         return _config.getLong("queues.minimumMemoryUsage", 0);
     }
-    
+
     public int getMaximumMessageAge()
     {
         return _config.getInt("queues.maximumMessageAge", 0);
@@ -166,7 +195,6 @@ public class VirtualHostConfiguration
         return _config.getLong("queues.minimumAlertRepeatGap", 0);
     }
 
-
     public long getCapacity()
     {
         return _config.getLong("queues.capacity", 0l);
@@ -177,4 +205,10 @@ public class VirtualHostConfiguration
         return _config.getLong("queues.flowResumeCapacity", getCapacity());
     }
 
+    public String[] getElementsProcessed()
+    {
+        return new String[]{"queues", "exchanges", "custom-exchanges",
+                            "security", "store", "housekeeping"};
+
+    }
 }

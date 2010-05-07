@@ -272,5 +272,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void configure(QueueConfiguration config);
 
+    QueueConfiguration getConfiguration();
+
     ManagedObject getManagedObject();
 }

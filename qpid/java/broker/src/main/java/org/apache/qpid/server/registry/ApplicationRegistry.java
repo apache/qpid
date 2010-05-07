@@ -22,22 +22,30 @@ package org.apache.qpid.server.registry;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-
+import org.apache.qpid.AMQException;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.SystemConfig;
 import org.apache.qpid.server.configuration.SystemConfigImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -82,6 +90,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected PluginManager _pluginManager;
 
+    protected ConfigurationManager _configurationManager;
+
     protected RootMessageLogger _rootMessageLogger;
 
     protected UUID _brokerId = UUID.randomUUID();
@@ -91,6 +101,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private BrokerConfig _broker;
 
     private ConfigStore _configStore;
+
+    protected String _registryName;
 
     static
     {
@@ -114,7 +126,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         if (instance != null)
         {
-            _logger.info("Initialising Application Registry:" + instanceID);
+            _logger.info("Initialising Application Registry(" + instance + "):" + instanceID);
             _instanceMap.put(instanceID, instance);
 
             final ConfigStore store = ConfigStore.newInstance();
@@ -170,9 +182,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _instanceMap.containsKey(instanceID);
     }
 
-    /**
-     * Method to cleanly shutdown the default registry running in this JVM
-     */
+    /** Method to cleanly shutdown the default registry running in this JVM */
     public static void remove()
     {
         remove(DEFAULT_INSTANCE);
@@ -223,6 +233,82 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         _configuration = configuration;
     }
 
+    public void configure() throws ConfigurationException
+    {
+        _logger.error("Configure AR");
+
+        _configurationManager = new ConfigurationManager();
+
+        try
+        {
+            _pluginManager = new PluginManager(_configuration.getPluginDirectory());
+        }
+        catch (Exception e)
+        {
+            throw new ConfigurationException(e);
+        }
+
+        _configuration.configure();
+    }
+
+    public void initialise(int instanceID) throws Exception
+    {
+        _logger.error("Creating RML:" + this);
+        _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
+                                                       new Log4jMessageLogger());
+        _logger.error("Created RML:" + _rootMessageLogger + ":" + this);
+        _registryName = String.valueOf(instanceID);
+
+        // Set the Actor for current log messages
+        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
+
+        _logger.error("Init AR:" + this);
+        configure();
+        _logger.error("Configured AR:" + this);
+
+        _qmfService = new QMFService(getConfigStore(), this);
+
+        CurrentActor.get().message(BrokerMessages.BRK_STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+
+        initialiseManagedObjectRegistry();
+
+        _virtualHostRegistry = new VirtualHostRegistry(this);
+
+        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
+
+        createDatabaseManager(_configuration);
+
+        _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
+
+        _databaseManager.initialiseManagement(_configuration);
+
+        _managedObjectRegistry.start();
+
+        initialiseVirtualHosts();
+
+        // Startup complete pop the current actor
+        CurrentActor.remove();
+    }
+
+    protected void createDatabaseManager(ServerConfiguration configuration) throws Exception
+    {
+        _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
+    }
+
+    protected void initialiseVirtualHosts() throws Exception
+    {
+        for (String name : _configuration.getVirtualHosts())
+        {
+            createVirtualHost(_configuration.getVirtualHostConfig(name));
+        }
+        getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
+    }
+
+    protected void initialiseManagedObjectRegistry() throws AMQException
+    {
+        _managedObjectRegistry = new NoopManagedObjectRegistry();
+    }
+
     public static IApplicationRegistry getInstance()
     {
         return getInstance(DEFAULT_INSTANCE);
@@ -239,6 +325,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 try
                 {
                     _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + _APPLICATION_REGISTRY + " : Instance:" + instanceID);
+                    new Exception().printStackTrace(System.out);
+                    new Exception().printStackTrace(System.err);
                     IApplicationRegistry registry = (IApplicationRegistry) Class.forName(_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
                     ApplicationRegistry.initialise(registry, instanceID);
                     _logger.info("Initialised Application Registry:" + instanceID);
@@ -262,38 +350,69 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Shutting down ApplicationRegistry:"+this);
+            _logger.info("Shutting down ApplicationRegistry:" + this);
         }
 
-        //Stop incomming connections
-        unbind();
-
-        //Shutdown virtualhosts
-        for (VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
+        try
         {
-            virtualHost.close();
+            //Stop incoming connections
+            unbind();
         }
-
-        // Replace above with this
-//        _virtualHostRegistry.close();
-
-//        _accessManager.close();
-
-//        _databaseManager.close();
-
-        _authenticationManager.close();
-
-//        _databaseManager.close();
-
-        // close the rmi registry(if any) started for management
-        if (_managedObjectRegistry != null)
+        finally
         {
-            _managedObjectRegistry.close();
+            try
+            {
+//                Replace with this
+//                _virtualHostRegistry.close();
+
+                //Shutdown virtualhosts
+                for (VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
+                {
+                    virtualHost.close();
+                }
+            }
+            finally
+            {
+//                _accessManager.close();
+//
+//                _databaseManager.close();
+
+                try
+                {
+                    _authenticationManager.close();
+                }
+                finally
+                {
+                    try
+                    {
+                        // close the rmi registry(if any) started for management
+                        if (_managedObjectRegistry != null)
+                        {
+                            _managedObjectRegistry.close();
+                        }
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            _qmfService.close();
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                _pluginManager.close();
+                            }
+                            finally
+                            {
+                                CurrentActor.get().message(BrokerMessages.BRK_STOPPED());
+                            }
+                        }
+                    }
+
+                }
+            }
         }
-
-//        _pluginManager.close();
-
-        CurrentActor.get().message(BrokerMessages.BRK_STOPPED());
     }
 
     private void unbind()
@@ -355,6 +474,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public PluginManager getPluginManager()
     {
         return _pluginManager;
+    }
+
+    public ConfigurationManager getConfigurationManager()
+    {
+        return _configurationManager;
     }
 
     public RootMessageLogger getRootMessageLogger()
