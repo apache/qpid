@@ -32,13 +32,11 @@ public class Activator implements BundleActivator
     public void start(BundleContext ctx) throws Exception
     {
         _context = ctx;
-         ctx.registerService(ServerConfiguration.class.getName(), ApplicationRegistry.getInstance().getConfiguration(), null);
-         
+         ctx.registerService(ServerConfiguration.class.getName(), ApplicationRegistry.getInstance().getConfiguration(), null);         
     }
 
     public void stop(BundleContext ctx) throws Exception
-    {
-        start(null);
+    {        
     }
 
     public BundleContext getContext()
