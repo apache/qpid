@@ -565,4 +565,11 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         return (ServerConnection) getConnection();
     }
 
+    public String getClientID()
+    {
+        //fixme this will only work for 0-10 connections
+        // In 0-8 there is an explicit ClientID property that is != Principal.
+        return getPrincipal().getName();
+    }
+
 }

@@ -85,6 +85,26 @@ public class ModelTest extends QpidTestCase
     }
 
     /**
+     * Test that an exclusive transient queue can be created via AMQP.
+     *
+     * @throws Exception On unexpected error
+     */
+    public void testExclusiveQueueCreationTransientViaAMQP() throws Exception
+    {
+        Connection connection = getConnection();
+
+        String queueName = getTestQueueName();
+        boolean durable = false;
+        boolean autoDelete = false;
+        boolean exclusive = true;
+
+        createViaAMQPandValidateViaJMX(connection, queueName, durable,
+                                       autoDelete, exclusive);
+    }
+
+
+
+    /**
      * Test that a transient queue can be created via AMQP.
      *
      * @throws Exception On unexpected error
@@ -96,10 +116,34 @@ public class ModelTest extends QpidTestCase
         String queueName = getTestQueueName();
         boolean durable = false;
         boolean autoDelete = false;
-        boolean exclusive = false;
+        boolean exclusive = true;
 
         createViaAMQPandValidateViaJMX(connection, queueName, durable,
                                        autoDelete, exclusive);
+    }
+
+    /**
+     * Test that a durable exclusive queue can be created via AMQP.
+     *
+     * @throws Exception On unexpected error
+     */
+
+    public void testExclusiveQueueCreationDurableViaAMQP() throws Exception
+    {
+        Connection connection = getConnection();
+
+        String queueName = getTestQueueName();
+        boolean durable = true;
+        boolean autoDelete = false;
+        boolean exclusive = true;
+
+        createViaAMQPandValidateViaJMX(connection, queueName, durable,
+                                       autoDelete, exclusive);
+
+        // Clean up
+        ManagedBroker managedBroker =
+                _jmxUtils.getManagedBroker(VIRTUALHOST_NAME);
+        managedBroker.deleteQueue(queueName);
     }
 
     /**
@@ -125,6 +169,7 @@ public class ModelTest extends QpidTestCase
                 _jmxUtils.getManagedBroker(VIRTUALHOST_NAME);
         managedBroker.deleteQueue(queueName);
     }
+
 
     /**
      * Test that a transient queue can be created via JMX.
@@ -246,7 +291,7 @@ public class ModelTest extends QpidTestCase
         session.createQueue(new AMQShortString(queueName),
                             autoDelete, durable, exclusive);
 
-        validateQueueViaJMX(queueName, ((AMQConnection) connection).getUsername(), durable, autoDelete);
+        validateQueueViaJMX(queueName, exclusive ? connection.getClientID() : null, durable, autoDelete);
     }
 
     /**
