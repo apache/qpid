@@ -518,6 +518,11 @@ public class MockAMQQueue implements AMQQueue
 
     }
 
+    public QueueConfiguration getConfiguration()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public PrincipalHolder getPrincipalHolder()
     {
         return _principalHolder;
