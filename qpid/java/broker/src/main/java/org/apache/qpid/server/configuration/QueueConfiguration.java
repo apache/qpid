@@ -26,7 +26,7 @@ import java.util.HashMap;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 public class QueueConfiguration extends ConfigurationPlugin
 {
