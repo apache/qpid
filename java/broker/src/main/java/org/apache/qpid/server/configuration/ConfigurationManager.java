@@ -23,8 +23,8 @@ package org.apache.qpid.server.configuration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPluginFactory;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.Map;

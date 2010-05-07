@@ -5,9 +5,9 @@ Bundle-SymbolicName: qpid_slow_consumer_detection;singleton:=true
 Bundle-Version: 1.0.0
 Bundle-Activator: org.apache.qpid.server.virtualhost.plugins.Activator
 Import-Package: org.osgi.framework,
- org.apache.qpid.server.configuration.plugin,
+ org.apache.qpid.server.configuration.plugins,
  org.apache.qpid.server.configuration,
- org.apache.qpid.server.virtualhost.plugin,
+ org.apache.qpid.server.virtualhost.plugins,
  org.apache.qpid.server.virtualhost,
  org.apache.qpid.server.queue,
  org.apache.qpid.server.registry,

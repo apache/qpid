@@ -26,8 +26,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPluginFactory;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 import java.util.HashMap;
 import java.util.Iterator;

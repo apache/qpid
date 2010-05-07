@@ -18,23 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin;
+package org.apache.qpid.server.virtualhost.plugins;
 
-public interface VirtualHostPlugin extends Runnable
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+public interface VirtualHostPluginFactory
 {
-    public void run();
-
-    /**
-     * Long value representing the delay between repeats
-     *
-     * @return
-     */
-    public long getDelay();
-
-    /**
-     * Option to specify what the delay value represents
-     * @see java.util.concurrent.TimeUnit for valid value.
-     * @return
-     */
-    public String getTimeUnit();
+    public VirtualHostPlugin newInstance(VirtualHost vhost);
 }

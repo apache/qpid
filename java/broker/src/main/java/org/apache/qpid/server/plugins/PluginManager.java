@@ -24,7 +24,7 @@ import org.apache.felix.framework.Felix;
 import org.apache.felix.framework.cache.BundleCache;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.framework.util.StringMap;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPluginFactory;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLPluginFactory;
@@ -33,7 +33,7 @@ import org.apache.qpid.server.security.access.plugins.DenyAll;
 import org.apache.qpid.server.security.access.plugins.LegacyAccessPlugin;
 import org.apache.qpid.server.security.access.plugins.SimpleXML;
 import org.apache.qpid.server.security.access.plugins.network.FirewallPlugin;
-import org.apache.qpid.server.virtualhost.plugin.VirtualHostPluginFactory;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleException;
 import org.osgi.util.tracker.ServiceTracker;
@@ -84,12 +84,12 @@ public class PluginManager
                       "org.apache.qpid.server.management; version=0.7," +
                       "org.apache.qpid.server.protocol; version=0.7," +
                       "org.apache.qpid.server.virtualhost; version=0.7," +
-                      "org.apache.qpid.server.virtualhost.plugin; version=0.7," +
+                      "org.apache.qpid.server.virtualhost.plugins; version=0.7," +
                       "org.apache.qpid.server.registry; version=0.7," +
                       "org.apache.qpid.server.queue; version=0.7," +
                       "org.apache.qpid.server.binding; version=0.7," +
                       "org.apache.qpid.server.configuration; version=0.7," +
-                      "org.apache.qpid.server.configuration.plugin; version=0.7," +
+                      "org.apache.qpid.server.configuration.plugins; version=0.7," +
                       "org.apache.qpid.server.configuration.management; version=0.7," +
                       "org.apache.qpid.server.persistent; version=0.7," +
                       "org.apache.qpid.server.plugins; version=0.7," +
