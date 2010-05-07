@@ -501,7 +501,14 @@ public class QpidTestCase extends TestCase
             }
             catch (Exception e)
             {
-                registry.close();
+                try
+                {
+                    registry.close();
+                }
+                catch (Exception closeE)
+                {
+                    closeE.printStackTrace();
+                }
                 throw e;
             }
             TransportConnection.createVMBroker(port);
@@ -754,6 +761,8 @@ public class QpidTestCase extends TestCase
         saveTestVirtualhosts();
 
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        // Don't need to configuration.configure() here as we are just pulling
+        // values directly by String.
         return configuration.getConfig().getString(property);
     }
 
