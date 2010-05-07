@@ -42,6 +42,11 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.BytesMessage;
+import javax.jms.MapMessage;
+import javax.jms.TextMessage;
+import javax.jms.ObjectMessage;
+import javax.jms.StreamMessage;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
@@ -91,6 +96,8 @@ public class QpidTestCase extends TestCase
     private XMLConfiguration _testVirtualhosts = new XMLConfiguration();
 
     protected static final String INDEX = "index";
+    protected static final String CONTENT = "content";
+
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -215,6 +222,22 @@ public class QpidTestCase extends TestCase
     
     /** Map to hold test defined environment properties */
     private Map<String, String> _env;
+
+    /** Ensure our messages have some sort of size */
+    protected static final int DEFAULT_MESSAGE_SIZE = 1024;
+    
+    /** Size to create our message*/
+    private int _messageSize = DEFAULT_MESSAGE_SIZE;
+    /** Type of message*/
+    protected enum MessageType
+    {
+        BYTES,
+        MAP,
+        OBJECT,
+        STREAM,
+        TEXT
+    }
+    private MessageType _messageType  = MessageType.TEXT;
 
     public QpidTestCase(String name)
     {
@@ -1264,11 +1287,55 @@ public class QpidTestCase extends TestCase
 
     public Message createNextMessage(Session session, int msgCount) throws JMSException
     {
-        Message message = session.createMessage();
+        Message message = createMessage(session, _messageSize);
         message.setIntProperty(INDEX, msgCount);
 
         return message;
 
+    }
+
+    public Message createMessage(Session session, int messageSize) throws JMSException
+    {
+        String payload = new String(new byte[messageSize]);
+
+        Message message;
+
+        switch (_messageType)
+        {
+            case BYTES:
+                message = session.createBytesMessage();
+                ((BytesMessage) message).writeUTF(payload);
+                break;
+            case MAP:
+                message = session.createMapMessage();
+                ((MapMessage) message).setString(CONTENT, payload);
+                break;
+            default: // To keep the compiler happy
+            case TEXT:
+                message = session.createTextMessage();
+                ((TextMessage) message).setText(payload);
+                break;
+            case OBJECT:
+                message = session.createObjectMessage();
+                ((ObjectMessage) message).setObject(payload);
+                break;
+            case STREAM:
+                message = session.createStreamMessage();
+                ((StreamMessage) message).writeString(payload);
+                break;
+        }
+
+        return message;
+    }
+
+    protected int getMessageSize()
+    {
+        return _messageSize;
+    }
+
+    protected void setMessageSize(int byteSize)
+    {
+        _messageSize = byteSize;
     }
 
     public ConnectionURL getConnectionURL() throws NamingException
