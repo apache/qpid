@@ -2680,7 +2680,7 @@ producer.send(m);
 	    <row><entry>double</entry><entry>float</entry><entry>double</entry></row>
 	    <row><entry>java.lang.String</entry><entry>unicode</entry><entry>std::string</entry></row>
 	    <row><entry>java.util.UUID</entry><entry>uuid</entry><entry>qpid::types::Uuid</entry></row>
-	    <row><entry>java.util.Map</entry><entry>dict</entry><entry>Variant::Map</entry></row>
+	    <row><entry>java.util.Map<footnote><para>In Qpid, maps can nest. This goes beyond the functionality required by the JMS specification.</para></footnote></entry><entry>dict</entry><entry>Variant::Map</entry></row>
 	    <row><entry>java.util.List</entry><entry>list</entry><entry>Variant::List</entry></row>
 	  </tbody>
 	</tgroup>
