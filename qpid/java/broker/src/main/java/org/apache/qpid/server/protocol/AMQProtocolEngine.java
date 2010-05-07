@@ -62,7 +62,6 @@ import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Sender;
 
 import javax.management.JMException;
-import javax.management.MBeanException;
 import javax.security.sasl.SaslServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -502,7 +501,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return channel;
     }
 
-    public AMQChannel getChannel(int channelId) throws AMQException
+    public AMQChannel getChannel(int channelId)
     {
         final AMQChannel channel =
                 ((channelId & CHANNEL_CACHE_SIZE) == channelId) ? _cachedChannels[channelId] : _channelMap.get(channelId);
@@ -1231,4 +1230,20 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             }
         }
     }
+
+
+    public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
+    {
+
+        closeChannel((Integer)session.getID());
+
+        MethodRegistry methodRegistry = getMethodRegistry();
+        ChannelCloseBody responseBody =
+                methodRegistry.createChannelCloseBody(
+                        cause.getCode(),
+                        new AMQShortString(message),
+                        0,0);
+
+        writeFrame(responseBody.generateFrame((Integer)session.getID()));       
+    }       
 }

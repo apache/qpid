@@ -36,6 +36,7 @@ import org.apache.qpid.server.flow.*;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.*;
@@ -813,7 +814,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         if(method.getExclusive())
                         {
                             queue.setPrincipalHolder((ServerSession)session);
-                            queue.setExclusiveOwner(session);
+                            queue.setExclusiveOwningSession((AMQSessionModel) session);
                         }
                         else if(method.getAutoDelete())
                         {

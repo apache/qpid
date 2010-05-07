@@ -34,6 +34,7 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -59,8 +60,8 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
     public void methodReceived(AMQStateManager stateManager, QueueBindBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHost virtualHost = session.getVirtualHost();
+        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
+        VirtualHost virtualHost = protocolConnection.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
@@ -70,7 +71,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
         if (body.getQueue() == null)
         {
-            AMQChannel channel = session.getChannel(channelId);
+            AMQChannel channel = protocolConnection.getChannel(channelId);
 
             if (channel == null)
             {
@@ -114,15 +115,19 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
 
             //Perform ACLs
-            if (!virtualHost.getAccessManager().authoriseBind(session, exch,
+            if (!virtualHost.getAccessManager().authoriseBind(protocolConnection, exch,
                     queue, routingKey))
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
             }
-            else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
+            else if (queue.isExclusive() && !queue.isDurable())
             {
-                throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                  "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                AMQSessionModel session = queue.getExclusiveOwningSession();
+                if (session == null || session.getConnectionModel() != protocolConnection)
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                      "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                }
             }
 
             if (!exch.isBound(routingKey, body.getArguments(), queue))
@@ -153,9 +158,9 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         if (!body.getNowait())
         {
-            MethodRegistry methodRegistry = session.getMethodRegistry();
+            MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
             AMQMethodBody responseBody = methodRegistry.createQueueBindOkBody();
-            session.writeFrame(responseBody.generateFrame(channelId));
+            protocolConnection.writeFrame(responseBody.generateFrame(channelId));
 
         }
     }

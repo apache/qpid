@@ -39,6 +39,7 @@ import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -62,12 +63,12 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
 
     public void methodReceived(AMQStateManager stateManager, BasicGetBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
 
 
-        VirtualHost vHost = session.getVirtualHost();
+        VirtualHost vHost = protocolConnection.getVirtualHost();
 
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = protocolConnection.getChannel(channelId);
         if (channel == null)
         {
             throw body.getChannelNotFoundException(channelId);
@@ -93,24 +94,28 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             {
 
                 //Perform ACLs
-                if (!vHost.getAccessManager().authoriseConsume(session, body.getNoAck(), queue))
+                if (!vHost.getAccessManager().authoriseConsume(protocolConnection, body.getNoAck(), queue))
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
                 }
-                else if (queue.isExclusive() && queue.getExclusiveOwner() != session)
+                else if (queue.isExclusive())
                 {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue is exclusive, but not created on this Connection.");
+                    AMQSessionModel session = queue.getExclusiveOwningSession();
+                    if (session == null || session.getConnectionModel() != protocolConnection)
+                    {
+                        throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                          "Queue is exclusive, but not created on this Connection.");
+                    }
                 }
 
-                if (!performGet(queue,session, channel, !body.getNoAck()))
+                if (!performGet(queue,protocolConnection, channel, !body.getNoAck()))
                 {
-                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                     // TODO - set clusterId
                     BasicGetEmptyBody responseBody = methodRegistry.createBasicGetEmptyBody(null);
 
 
-                    session.writeFrame(responseBody.generateFrame(channelId));
+                    protocolConnection.writeFrame(responseBody.generateFrame(channelId));
                 }
             }
         }

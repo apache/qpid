@@ -22,10 +22,23 @@ package org.apache.qpid.server.transport;
 
 import org.apache.qpid.server.configuration.ConnectionConfig;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.ConnectionCloseCode;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.SessionDetachCode;
+import org.apache.qpid.transport.SessionDetach;
+import org.apache.qpid.transport.Binary;
+import org.apache.qpid.transport.SessionDetached;
+import org.apache.qpid.transport.SessionException;
+import org.apache.qpid.transport.ExecutionException;
+import org.apache.qpid.transport.ExecutionErrorCode;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.AMQException;
 
-public class ServerConnection extends Connection
+public class ServerConnection extends Connection implements AMQConnectionModel
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
@@ -88,4 +101,15 @@ public class ServerConnection extends Connection
     {
         _onOpenTask = task;
     }
+
+    public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
+    {
+        ExecutionException ex = new ExecutionException();
+        ex.setErrorCode(ExecutionErrorCode.RESOURCE_LIMIT_EXCEEDED);
+        ex.setDescription(message);
+        ((ServerSession)session).invoke(ex);
+
+        ((ServerSession)session).close();
+    }
+   
 }

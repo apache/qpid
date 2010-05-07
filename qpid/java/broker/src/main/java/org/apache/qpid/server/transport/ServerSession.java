@@ -39,6 +39,8 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.MessageTransfer;
@@ -63,7 +65,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class ServerSession extends Session implements PrincipalHolder, SessionConfig
+public class ServerSession extends Session implements PrincipalHolder, SessionConfig, AMQSessionModel
 {
     private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
 
@@ -310,7 +312,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         }
     }
 
-    public void removeDispositionListener(Method method)
+    public void removeDispositionListener(Method method)                               
     {
         _messageDispositionListenerMap.remove(method.getId());
     }
@@ -552,4 +554,15 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     {
         close();
     }
+
+    public Object getID()
+    {
+       return getName();
+    }
+
+    public AMQConnectionModel getConnectionModel()
+    {
+        return (ServerConnection) getConnection();
+    }
+
 }
