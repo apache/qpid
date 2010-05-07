@@ -90,6 +90,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.configure();
         List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
         //Validate each vhost logs a creation
@@ -154,6 +155,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.configure();
         List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
         //Validate each vhost logs a creation

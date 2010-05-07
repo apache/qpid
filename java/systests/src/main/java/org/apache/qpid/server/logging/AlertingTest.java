@@ -111,8 +111,10 @@ public class AlertingTest extends AbstractTestLogging
             message.append("Server configuration overrides in use:\n");
             message.append(FileUtils.readFileAsString(getTestConfigFile()));
 
-            message.append("\nVirtualhost maxMessageCount:\n");                        
-            message.append(new ServerConfiguration(_configFile).getVirtualHostConfig(VIRTUALHOST).getMaximumMessageCount());
+            message.append("\nVirtualhost maxMessageCount:\n");
+            ServerConfiguration config = new ServerConfiguration(_configFile);
+            config.configure();;
+            message.append(config.getVirtualHostConfig(VIRTUALHOST).getMaximumMessageCount());
 
             fail(message.toString());
         }

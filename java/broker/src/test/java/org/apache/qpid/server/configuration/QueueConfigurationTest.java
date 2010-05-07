@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 public class QueueConfigurationTest extends TestCase
@@ -48,7 +49,7 @@ public class QueueConfigurationTest extends TestCase
         
     }
 
-    public void testGetMaximumMessageAge()
+    public void testGetMaximumMessageAge() throws ConfigurationException
     {
         // Check default value
         QueueConfiguration qConf = new QueueConfiguration("test", _env, _emptyConf);        
@@ -65,7 +66,7 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMaximumMessageAge());
     }
 
-    public void testGetMaximumQueueDepth()
+    public void testGetMaximumQueueDepth() throws ConfigurationException
     {
         // Check default value
         QueueConfiguration qConf = new QueueConfiguration("test", _env, _emptyConf);        
@@ -82,7 +83,7 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMaximumQueueDepth());
     }
 
-    public void testGetMaximumMessageSize()
+    public void testGetMaximumMessageSize() throws ConfigurationException
     {
         // Check default value
         QueueConfiguration qConf = new QueueConfiguration("test", _env, _emptyConf);        
@@ -99,7 +100,7 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMaximumMessageSize());
     }
 
-    public void testGetMaximumMessageCount()
+    public void testGetMaximumMessageCount() throws ConfigurationException
     {
        // Check default value
         QueueConfiguration qConf = new QueueConfiguration("test", _env, _emptyConf);        
@@ -116,7 +117,7 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMaximumMessageCount());
     }
 
-    public void testGetMinimumAlertRepeatGap()
+    public void testGetMinimumAlertRepeatGap() throws ConfigurationException
     {
         // Check default value
         QueueConfiguration qConf = new QueueConfiguration("test", _env, _emptyConf);        
