@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 ]>
 
 <!--
@@ -23,12 +23,12 @@
    
   -->
 
-<article id="client-api-tutorial">
+<book id="client-api-tutorial">
   <title>Programming in Apache Qpid</title>
   <subtitle>Cross-Platform AMQP Messaging in Java JMS, .NET, C++, and Python</subtitle>
 
-  <section>
-    <title>Supported APIs</title>
+  <chapter>
+    <title>Introduction</title>
     
     <para>Apache Qpid is a reliable, asynchronous messaging system that
       supports the AMQP messaging protocol in several common programming
@@ -65,9 +65,9 @@
         </para>
       </listitem>
     </itemizedlist>
-  </section>
+  </chapter>
 
-  <section>
+  <chapter>
     <title>Using the Qpid Messaging API</title>
 
     <para>The Qpid Messaging API is quite simple, consisting of only a
@@ -232,7 +232,7 @@ finally:
 
       <para>An address resolves to a <firstterm>node</firstterm>. The
       Qpid Messaging API recognises two kinds of nodes,
-      <firstterm>queues</firstterm> and <firstterm>topics</firstterm>.
+      <firstterm>queues</firstterm> and <firstterm>topics</firstterm>
 
 	   <footnote><para>The terms <emphasis>queue</emphasis> and
 	   <emphasis>topic</emphasis> here were chosen to align with
@@ -758,10 +758,13 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
          TODO: Add some reliability option examples
         -->
 
-      <table>
+      <table pgwide="1">
         <title>Address String Options</title>
         <tgroup cols="3">
           <thead>
+	    <colspec colnum="1" colwidth="1*"/>
+	    <colspec colnum="2" colwidth="3*"/>
+	    <colspec colnum="3" colwidth="3*"/>
 	    <row>
 	      <entry>option</entry>
 	      <entry>value</entry>
@@ -856,10 +859,13 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
       </table>
 
 
-      <table id="table-node-properties">
+      <table id="table-node-properties" pgwide="1">
         <title>Node Properties</title>
         <tgroup cols="3">
           <thead>
+	    <colspec colnum="1" colwidth="1*"/>
+	    <colspec colnum="2" colwidth="3*"/>
+	    <colspec colnum="3" colwidth="3*"/>
 	    <row>
 	      <entry>property</entry>
 	      <entry>value</entry>
@@ -920,7 +926,10 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
   exchange: <exchange>,
   queue: <queue>,
   key: <key>,
-  arguments: { <key_1>: <value_1>, ..., <key_n>: <value_n> }
+  arguments: { 
+    <key_1>: <value_1>, 
+    ..., 
+    <key_n>: <value_n> }
  },
  ...
 ]
@@ -938,10 +947,13 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
         </tgroup>
       </table>
 
-      <table id="table-link-properties">
+      <table id="table-link-properties" pgwide="1">
         <title>Link Properties</title>
         <tgroup cols="3">
           <thead>
+	    <colspec colnum="1" colwidth="1*"/>
+	    <colspec colnum="2" colwidth="3*"/>
+	    <colspec colnum="3" colwidth="3*"/>
 	    <row>
 	      <entry>option</entry>
 	      <entry>value</entry>
@@ -1119,7 +1131,7 @@ options := map
 
 <section>
       <title>Logging</title>
-###########
+
       <section>
 	<title>Logging in C++</title>
 	<para>The Qpidd broker and C++ clients can both use environment
@@ -1200,10 +1212,13 @@ try:
       <para>The following table lists the connection options that can
       be used.</para>
 
-      <table>
+      <table pgwide="1">
         <title>Connection Options</title>
         <tgroup cols="3">
           <thead>
+	    <colspec colnum="1" colwidth="1*"/>
+	    <colspec colnum="2" colwidth="1*"/>
+	    <colspec colnum="3" colwidth="3*"/>
 	    <row>
 	      <entry>option</entry>
 	      <entry>value</entry>
@@ -1386,7 +1401,7 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
 -->
     </section>
     <section id="section-Maps">
-      <title>Maps in Messages</title>
+      <title>Maps in Message Content</title>
       
       <para>Many messaging applications need to exchange data across
       languages and platforms, using the native datatypes of each
@@ -1394,53 +1409,51 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
       but does not directly support a set of named type/value
       pairs. Java JMS provides the <classname>MapMessage</classname>
       interface, which allows sets of named type/value pairs, but does
-      not provide a set of portable datatypes. The Qpid Messaging API
-      supports maps, analogous to Java JMS
-      <classname>MapMessage</classname>, using the datatypes that are
-      most convenient in each language. For simple datatypes, it
-      simply uses the equivalent datatype in each language. For
-      complex datatypes, it follows the conventions of each language.
+      not provide a set of portable datatypes.</para> 
+
+      <para>The Qpid Messaging API supports maps in message
+      content. Unlike JMS, any message can contain maps. These maps
+      are supported in each language using the conventions of the
+      language. In Java, we implement the
+      <classname>MapMessage</classname> interface; in Python, we
+      support <classname>dict</classname> and
+      <classname>list</classname> in message content; in C++, we
+      provide the <classname>Variant::Map</classname> and
+      <classname>Variant::List</classname> classes to represent maps
+      and lists. In all languages, messages are encoded using AMQP's
+      portable datatypes.
       </para>
 
 
       <section id="section-Python-Maps">
 	<title>Qpid Maps in Python</title>
 
-	<para>In Python, Qpid supports the <classname>dict</classname> and <classname>list</classname> types directly in message content.</para>
+	<para>In Python, Qpid supports the <classname>dict</classname> and <classname>list</classname> types directly in message content. The following code shows how to send these structures in a message:</para>
 
 	<example>
 	  <title>Sending Qpid Maps in Python</title>
 	  <programlisting><![CDATA[
 from qpid.messaging import *
+# !!! SNIP !!!
 
-try:
-    connection = Connection.open(host="localhost",port=5672)
-    session = connection.session()
-    sender = session.sender("message_queue; {create: always}")
-
-    content = {'Id' : 987654321, 'name' : 'Widget', 'percent' : 0.99}
-    content['colours'] = ['red', 'green', 'white']
-    content['dimensions'] = {'length' : 10.2, 'width' : 5.1,'depth' : 2.0};
-    content['parts'] = [ [1,2,5], [8,2,5] ]
-    content['specs'] = {'colors' : content['colours'], 
-                        'dimensions' : content['dimensions'], 
-                        'parts' : content['parts'] }
-
-    msg = Message(content=content)
-    sender.send(msg)
-except SendError, e:
-    print e
-
-connection.close()
+content = {'Id' : 987654321, 'name' : 'Widget', 'percent' : 0.99}
+content['colours'] = ['red', 'green', 'white']
+content['dimensions'] = {'length' : 10.2, 'width' : 5.1,'depth' : 2.0};
+content['parts'] = [ [1,2,5], [8,2,5] ]
+content['specs'] = {'colors' : content['colours'], 
+                    'dimensions' : content['dimensions'], 
+                    'parts' : content['parts'] }
+message = Message(content=content)
+sender.send(message)
     ]]>   </programlisting>
 	</example>
 
 
       <para>The following table shows the datatypes that can be sent in a Python map message,
- and the corresponding datatypes that will be received by clients in <xref linkend="table-cpp-Maps"/> or <xref linkend="table-Java-Maps"/>.</para>
+ and the corresponding datatypes that will be received by clients in Java or C++.</para>
       
 
-	<table id="table-Python-Maps">
+	<table id="table-Python-Maps" >
 	<title>Python Datatypes in Maps</title>
 	<tgroup cols="3">
 	  <thead>
@@ -1471,16 +1484,17 @@ connection.close()
 
 
       <section id="section-cpp-Maps">
-	<title>### C++ ###</title>
+	<title>Qpid Maps in C++</title>
 
-	<para>The following table shows the datatypes that can be sent
-	in a C++ map message, and the corresponding datatypes that
-	will be received by clients in <xref
-	linkend="table-Python-Maps"/> #### or <xref
-	linkend="table-Java-Maps"/>.</para>
-      
+
+	<para>In C++, Qpid defines the the
+	<classname>Variant::Map</classname> and
+	<classname>Variant::List</classname> types, which can be
+	encoded into message content. The following code shows how to
+	send these structures in a message:</para>
+
 	<example>
-	  <title></title>
+	  <title>Sending Qpid Maps in C++</title>
 	<programlisting><![CDATA[
 using namespace qpid::types;
 
@@ -1529,6 +1543,10 @@ sender.send(message, true);
 ]]>     </programlisting>
 	</example>
 
+	<para>The following table shows the datatypes that can be sent
+	in a C++ map message, and the corresponding datatypes that
+	will be received by clients in Java and Python.</para>
+      
 	<table  id="table-cpp-Maps">
 	<title>C++ Datatypes in Maps</title>
 	<tgroup cols="3">
@@ -1956,10 +1974,13 @@ else
         <varname>dp</varname> refers to an AMQP 0-10
         <varname>delivery-properties</varname> struct.</para>
 
-      <table id="table-amqp0-10-message-properties">
+      <table id="table-amqp0-10-message-properties" pgwide="1">
         <title>Mapping to AMQP 0-10 Message Properties</title>
         <tgroup cols="3">
           <thead>
+	    <colspec colnum="1" colname="Python API" colwidth="3*"/>
+	    <colspec colnum="2" colname="C++ API" colwidth="3*"/>
+	    <colspec colnum="3" colname="AMPQ 0-10 Property" colwidth="6*"/>
 	    <row>
 	      <entry>Python API</entry>
 	      <entry>C++ API</entry>
@@ -2004,10 +2025,10 @@ else
       </table>
       
     </section>
-  </section>
+  </chapter>
 
 
-  <section id="QpidJMS">
+  <chapter id="QpidJMS">
     <title>Using the Qpid JMS client</title>
     <section>
       <title>A Simple Messaging Program in Java JMS</title>
@@ -2208,7 +2229,7 @@ destination.topicExchange = amq.topic
         <para>
 	  Apache Qpid supports the following properties in Connection URLs:
         </para>
-        <table>
+        <table pgwide="1">
 	  <title>Connection URL Properties</title>
 	  <tgroup cols="3">
 	    <thead>
@@ -2329,7 +2350,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 
 	<para>The following broker list options are supported.</para>
 
-        <table>
+        <table pgwide="1">
 	  <title>Broker List Options</title>
 	  <tgroup cols="3">
 	    <thead>
@@ -2521,7 +2542,7 @@ amqp://guest:guest@test/test?sync_ack='true'
         <varname>dp</varname> refers to an AMQP 0-10
         <varname>delivery-properties</varname> struct.</para>
 
-      <table>
+      <table >
         <title>Java JMS Mapping to AMQP 0-10 Message Properties</title>
         <tgroup cols="2">
           <thead>
@@ -2574,12 +2595,10 @@ amqp://guest:guest@test/test?sync_ack='true'
     <section id="section-JMS-MapMessage">
       <title>JMS MapMessage Types</title>
 
-      <para>Qpid supports the Java JMS <classname>MapMessage</classname> interface, which provides support for maps in messages.</para>
-
-<!-- #### Mention interop, cross-ref -->
+      <para>Qpid supports the Java JMS <classname>MapMessage</classname> interface, which provides support for maps in messages. The following code shows how to send a <classname>MapMessage</classname> in Java JMS.</para>
 
       <example>
-	<title>Map Messages in Java JMS</title>
+	<title>Sending a Java JMS MapMessage</title>
       <programlisting><![CDATA[
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -2631,9 +2650,9 @@ m.setObject("specs",specs);
 
 producer.send(m);
       ]]></programlisting>
-
-      <para>The following table shows the datatypes that can be sent in a <classname>MapMessage</classname>, and the corresponding datatypes that will be received by clients in <xref linkend="table-cpp-Maps"/> or <xref linkend="table-Python-Maps"/>.</para>
       </example>
+
+      <para>The following table shows the datatypes that can be sent in a <classname>MapMessage</classname>, and the corresponding datatypes that will be received by clients in Python or C++.</para>
       
       <table id="table-Java-Maps">
 	<title>Java Datatypes in Maps</title>
@@ -2764,8 +2783,8 @@ variable             := ( <ID> | <QUOTED_ID> )]]></programlisting>
 
     </section>
 
-  </section>    
-</article>
+  </chapter>
+</book>
 
 <!--
    - client code remains exactly the same, but routing behavior
