@@ -1589,7 +1589,7 @@ sender.send(message, true);
         <section>
       <title>Performance</title>
       <para>
-         Clients can often be made significantly faster by batching acknowledgements and setting the capacity of receivers to allow prefetch. 	
+         Clients can often be made significantly faster by batching acknowledgements and setting the capacity of receivers to allow prefetch. The size of a sender's replay buffer can also affect performance.
       </para>
       <section>
 	<title>Batching Acknowledgements</title>
@@ -1625,7 +1625,33 @@ Message message = receiver.fetch();
 	</example>
       </section>
 
+      <section>
+	<title>Sizing the Replay Buffer</title>
+
+	<para>In order to guarantee delivery, a sender automatically
+	keeps messages in a replay buffer until the messaging broker
+	acknowledges that they have been received. The replay buffer
+	is held in memory, and is never paged to disk. For most
+	applications, the default size of the replay buffer works
+	well. A large replay buffer requires more memory, a small
+	buffer can slow down the client because it can not send new
+	messages if the replay buffer is full, and must wait for
+	existing sends to be acknowledged.</para>
+
+	<example>
+	  <title>Sizing the Replay Buffer</title>
+	  <para>C++</para>
+ 
+	  <programlisting>
+Sender sender = session.createSender(address);
+sender.setCapacity(100);
+	  </programlisting>
+	</example>
+	  
+      </section>
+
     </section>
+
 
     <section>
       <title>Reliability</title>
@@ -1655,27 +1681,24 @@ message.setDurable(1);
 
 sender.send(Message("Hello world!"));
 ]]></programlisting>
-	</example>
 <!--
 	  <para>Python:</para>
 -->
-<!--	</example>
+	</example>
 
 	<section>
-	  <title>Cluster Failover </title>
+	  <title>Cluster Failover #### </title>
 	</section>
--->
 
       </section>
 
     </section>
 
-<!--
     <section>
-      <title>Security</title>
-##########
+      <title>Security ####</title>
+
     </section>
--->
+
 
     <section>
       <title>Transactions</title>
