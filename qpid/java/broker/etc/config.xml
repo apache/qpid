@@ -23,6 +23,8 @@
     <prefix>${QPID_HOME}</prefix>
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
+
+    <plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>
     
     <connector>
         <!-- To enable SSL edit the keystorePath and keystorePassword

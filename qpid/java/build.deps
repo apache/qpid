@@ -68,7 +68,7 @@ ${muse-wsx-api} ${muse-wsx-impl} ${wsdl4j} ${xercesImpl} ${xml-apis} ${jetty} ${
 jsp.libs = ${jsp-api} ${jsp-impl} ${core-lib}
 
 osgi-core=lib/org.osgi.core-1.0.0.jar
-felix-framework=lib/org.apache.felix.framework-1.0.0.jar
+felix-framework=lib/org.apache.felix.framework-2.0.5.jar
 
 geronimo-servlet=lib/geronimo-servlet_2.5_spec-1.2.jar
 felix.libs=${osgi-core} ${felix-framework}
