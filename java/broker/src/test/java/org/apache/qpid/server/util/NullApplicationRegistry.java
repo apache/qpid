@@ -23,85 +23,84 @@ package org.apache.qpid.server.util;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
-import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
+    // Private Exception to track tests that cause Log Actor to become unset.
+    private Exception _startup;
+
     public NullApplicationRegistry() throws ConfigurationException
     {
-        super(new ServerConfiguration(new PropertiesConfiguration()));
+        this(new ServerConfiguration(new PropertiesConfiguration()));
+        _logger.error("Creating NAR:"+this);
     }
 
+    public NullApplicationRegistry(ServerConfiguration config) throws ConfigurationException
+    {
+        super(config);
+
+        addTestVhost();
+
+        _logger.error("Creating NAR with config:"+this);
+    }
+
+    private void addTestVhost() throws ConfigurationException
+    {
+        if (_configuration.getVirtualHostConfig("test") == null)
+        {
+            PropertiesConfiguration vhostProps = new PropertiesConfiguration();
+            VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
+            _configuration.setVirtualHostConfig(hostConfig);
+            _configuration.setDefaultVirtualHost("test");
+        }
+    }
+
+
+    @Override
     public void initialise(int instanceID) throws Exception
     {
-        _logger.info("Initialising NullApplicationRegistry");
-
-        _rootMessageLogger = new RootMessageLoggerImpl(_configuration, new Log4jMessageLogger());
-
-        //We should use a Test Actor Here not the Broker Actor
-        CurrentActor.set(new TestLogActor(_rootMessageLogger));
+        _logger.info("Initialising NullApplicationRegistry(" + this + ")");
 
         _configuration.setHousekeepingExpiredMessageCheckPeriod(200);
 
-        Properties users = new Properties();
+        super.initialise(instanceID);
 
-        users.put("guest", "guest");
-
-        _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
-
-        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager, AllowAll.FACTORY);
-
-        _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
-
-        _managedObjectRegistry = new NoopManagedObjectRegistry();
-        _virtualHostRegistry = new VirtualHostRegistry(this);
-        _qmfService = new QMFService(getConfigStore(),this);
-
-        PropertiesConfiguration vhostProps = new PropertiesConfiguration();
-        VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
-        VirtualHost dummyHost = ApplicationRegistry.getInstance().createVirtualHost(hostConfig);
-        _virtualHostRegistry.setDefaultVirtualHostName("test");
-        _pluginManager = new PluginManager("");
-        _startup = new Exception("NAR");
-
+        // Tests don't correctly setup logging
+        CurrentActor.set(new TestLogActor(_rootMessageLogger));
+        _startup = new Exception("NAR Test didn't correctly setup Log Actors");
     }
-       private Exception _startup;
-    public Collection<String> getVirtualHostNames()
+
+    /**
+     * Create a user data base with just a single user guest with pwd guest.
+     * @param configuration This is ignored here as it will be empty.
+     */
+    @Override
+    protected void createDatabaseManager(ServerConfiguration configuration)
     {
-        String[] hosts = {"test"};
-        return Arrays.asList(hosts);
+        Properties users = new Properties();
+        users.put("guest", "guest");
+        _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
     }
+
 
     @Override
     public void close() throws Exception
-    {
-        CurrentActor.set(new BrokerActor(_rootMessageLogger));
-
+    {        
         try
         {
+            _logger.error("Closing NAR:"+this);            
+            CurrentActor.set(new BrokerActor(_rootMessageLogger));
             super.close();
-            _qmfService.close();
         }
         finally
         {

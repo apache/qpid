@@ -20,6 +20,25 @@
 
 package org.apache.qpid.server.configuration;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConfigurationFactory;
+import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.configuration.plugin.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugin.ConfigurationPluginFactory;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.transport.NetworkDriverConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,46 +48,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConfigurationFactory;
-import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
-public class ServerConfiguration implements SignalHandler
+public class ServerConfiguration extends ConfigurationPlugin implements SignalHandler
 {
-
-    private Configuration _config;
-
     // Default Configuration values
     public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
     public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
     public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
     public static final String DEFAULT_STATUS_UPDATES = "on";
     public static final String SECURITY_CONFIG_RELOADED = "SECURITY CONFIGURATION RELOADED";
-    
+
     public static final int DEFAULT_FRAME_SIZE = 65536;
     public static final int DEFAULT_PORT = 5672;
     public static final int DEFAULT_SSL_PORT = 8672;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT = 8999;
 
-    private static int _jmxPort = DEFAULT_JMXPORT;
-
     private Map<String, VirtualHostConfiguration> _virtualHosts = new HashMap<String, VirtualHostConfiguration>();
-    private SecurityConfiguration _securityConfiguration = null;
 
     private File _configFile;
     private File _vhostsFile;
@@ -117,6 +112,23 @@ public class ServerConfiguration implements SignalHandler
         envVarMap.put("QPID_STATUS-UPDATES", "status-updates");
     }
 
+    /**
+     * Loads the given file and sets up the HUP signal handler.
+     *
+     * This will load the file and present the root level properties but will
+     * not perform any virtualhost configuration.
+     *
+     * To perform this configure() must be called.
+     *
+     * This has been made a two step process to allow the Plugin Manager and
+     * Configuration Manager to be initialised in the Application Registry.
+     *
+     * If using this ServerConfiguration via an ApplicationRegistry there is no
+     * need to explictly call configure() as this is done via the AR.initialise()
+     *
+     * @param configurationURL
+     * @throws org.apache.commons.configuration.ConfigurationException
+     */
     public ServerConfiguration(File configurationURL) throws ConfigurationException
     {
         this(parseConfig(configurationURL));
@@ -132,15 +144,52 @@ public class ServerConfiguration implements SignalHandler
         }
     }
 
-    public ServerConfiguration(Configuration conf) throws ConfigurationException
+    /**
+     * Wraps the given Commons Configuration as a ServerConfiguration.
+     *
+     * Mainly used during testing and in locations where configuration is not
+     * desired but the interface requires configuration.
+     *
+     * If the given configuration has VirtualHost configuration then configure()
+     * must be called to perform the required setup.
+     *
+     * This has been made a two step process to allow the Plugin Manager and
+     * Configuration Manager to be initialised in the Application Registry.
+     *
+     * If using this ServerConfiguration via an ApplicationRegistry there is no 
+     * need to explictly call configure() as this is done via the AR.initialise()
+     *
+     * @param conf
+     */
+    public ServerConfiguration(Configuration conf)
     {
-        setConfig(conf);
+        _configuration = conf;        
+    }
 
-        _jmxPort = getConfig().getInt("management.jmxport", 8999);
-        _securityConfiguration = new SecurityConfiguration(conf.subset("security"));
+    /**
+     * Processes this configuration and setups any VirtualHosts defined in the
+     * configuration.
+     *
+     * This has been separated from the constructor to allow the PluginManager
+     * time to be created and provide plugins to the ConfigurationManager for
+     * processing here.
+     *
+     * Called by ApplicationRegistry.initialise();
+     *
+     * NOTE: A DEFAULT ApplicationRegistry must exist when using this method
+     * or a new ApplicationRegistry will be created. 
+     *
+     * @throws ConfigurationException
+     */
+    public void configure() throws ConfigurationException
+    {
 
-        setupVirtualHosts(conf);
+        setupVirtualHosts(_configuration);
+    }
 
+    public String[] getElementsProcessed()
+    {
+        return new String[]{""};
     }
 
     /*
@@ -148,30 +197,30 @@ public class ServerConfiguration implements SignalHandler
      * both, as a fix for QPID-2360 and QPID-2361.
      */
     @SuppressWarnings("unchecked")
-	private void setupVirtualHosts(Configuration conf) throws ConfigurationException
+    private void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
         List<String> vhostFiles = conf.getList("virtualhosts");
         Configuration vhostConfig = conf.subset("virtualhosts");
 
-    	// Only one configuration mechanism allowed
+        // Only one configuration mechanism allowed
         if (!vhostFiles.isEmpty() && !vhostConfig.subset("virtualhost").isEmpty())
         {
-        	throw new ConfigurationException("Only one of external or embedded virtualhosts configuration allowed.");
-        } 
-        
+            throw new ConfigurationException("Only one of external or embedded virtualhosts configuration allowed.");
+        }
+
         // We can only have one vhosts XML file included
-    	if (vhostFiles.size() > 1)
-    	{
-    		throw new ConfigurationException("Only one external virtualhosts configuration file allowed, multiple filenames found.");
-    	}
-        
+        if (vhostFiles.size() > 1)
+        {
+            throw new ConfigurationException("Only one external virtualhosts configuration file allowed, multiple filenames found.");
+        }
+
         // Virtualhost configuration object
         Configuration vhostConfiguration = new HierarchicalConfiguration();
-        
-    	// Load from embedded configuration if possible
+
+        // Load from embedded configuration if possible
         if (!vhostConfig.subset("virtualhost").isEmpty())
         {
-    		vhostConfiguration = vhostConfig;
+            vhostConfiguration = vhostConfig;
         }
         else
         {
@@ -181,19 +230,19 @@ public class ServerConfiguration implements SignalHandler
 	            // Open the vhosts XML file and copy values from it to our config
                 _vhostsFile = new File(fileName);
 	        	vhostConfiguration = parseConfig(new File(fileName));
-                
+
                 // save the default virtualhost name
                 String defaultVirtualHost = vhostConfiguration.getString("default");
-                _config.setProperty("virtualhosts.default", defaultVirtualHost);
-	        }
+                _configuration.setProperty("virtualhosts.default", defaultVirtualHost);
+            }
         }
-        
+
         // Now extract the virtual host names from the configuration object
-    	List hosts = vhostConfiguration.getList("virtualhost.name");
+        List hosts = vhostConfiguration.getList("virtualhost.name");
         for (int j = 0; j < hosts.size(); j++)
         {
             String name = (String) hosts.get(j);
-            
+
             // Add the virtual hosts to the server configuration
             VirtualHostConfiguration virtualhost = new VirtualHostConfiguration(name, vhostConfiguration.subset("virtualhost." + name));
             _virtualHosts.put(virtualhost.getName(), virtualhost);
@@ -217,7 +266,7 @@ public class ServerConfiguration implements SignalHandler
         ConfigurationFactory factory = new ConfigurationFactory();
         factory.setConfigurationFileName(file.getAbsolutePath());
         Configuration conf = factory.getConfiguration();
-    	
+
         Iterator<?> keys = conf.getKeys();
         if (!keys.hasNext())
         {
@@ -232,6 +281,7 @@ public class ServerConfiguration implements SignalHandler
 
     /**
      * Check the configuration file to see if status updates are enabled.
+     *
      * @return true if status updates are enabled
      */
     public boolean getStatusUpdatesEnabled()
@@ -244,6 +294,7 @@ public class ServerConfiguration implements SignalHandler
 
     /**
      * The currently defined {@see Locale} for this broker
+     *
      * @return the configuration defined locale
      */
     public Locale getLocale()
@@ -331,7 +382,7 @@ public class ServerConfiguration implements SignalHandler
         }
         catch (ConfigurationException e)
         {
-             _log.error("Could not reload configuration file security sections", e);
+            _log.error("Could not reload configuration file security sections", e);
         }
     }
 
@@ -340,9 +391,9 @@ public class ServerConfiguration implements SignalHandler
         if (_configFile != null)
         {
             Configuration newConfig = parseConfig(_configFile);
-            
-            _securityConfiguration = new SecurityConfiguration(newConfig.subset("security"));
-         
+
+            setConfiguration("", newConfig);
+
             // Reload virtualhosts from correct location
             Configuration newVhosts;
             if (_vhostsFile == null)
@@ -353,28 +404,18 @@ public class ServerConfiguration implements SignalHandler
             {
                 newVhosts = parseConfig(_vhostsFile);
             }
-            
+
             VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
             for (String hostname : _virtualHosts.keySet())
             {
                 VirtualHost vhost = vhostRegistry.getVirtualHost(hostname);
                 SecurityConfiguration hostSecurityConfig = new SecurityConfiguration(newVhosts.subset("virtualhost."+hostname+".security"));
-                vhost.getAccessManager().configureGlobalPlugins(_securityConfiguration);
+                vhost.getAccessManager().configureGlobalPlugins(getSecurityConfiguration());
                 vhost.getAccessManager().configureHostPlugins(hostSecurityConfig);
             }
-            
+
             _log.warn(SECURITY_CONFIG_RELOADED);
         }
-    }
-
-    public void setConfig(Configuration _config)
-    {
-        this._config = _config;
-    }
-
-    public Configuration getConfig()
-    {
-        return _config;
     }
 
     public String getQpidWork()
@@ -384,19 +425,19 @@ public class ServerConfiguration implements SignalHandler
 
     public void setJMXManagementPort(int mport)
     {
-        _jmxPort = mport;
+        getConfig().setProperty("management.jmxport", mport);
     }
 
     public int getJMXManagementPort()
     {
-        return _jmxPort;
+        return getConfig().getInt("management.jmxport", DEFAULT_JMXPORT);
     }
-    
+
     public boolean getUseCustomRMISocketFactory()
     {
         return getConfig().getBoolean(MGMT_CUSTOM_REGISTRY_SOCKET, true);
     }
-    
+
     public void setUseCustomRMISocketFactory(boolean bool)
     {
         getConfig().setProperty(MGMT_CUSTOM_REGISTRY_SOCKET, bool);
@@ -420,6 +461,11 @@ public class ServerConfiguration implements SignalHandler
     public VirtualHostConfiguration getVirtualHostConfig(String name)
     {
         return _virtualHosts.get(name);
+    }
+
+    public void setVirtualHostConfig(VirtualHostConfiguration config)
+    {
+        _virtualHosts.put(config.getName(), config);
     }
 
     public List<String> getPrincipalDatabaseNames()
@@ -506,7 +552,7 @@ public class ServerConfiguration implements SignalHandler
 
     public SecurityConfiguration getSecurityConfiguration()
     {
-        return _securityConfiguration;
+        return new SecurityConfiguration(_configuration.subset("security"));
     }
 
     public boolean getQueueAutoRegister()
@@ -604,7 +650,6 @@ public class ServerConfiguration implements SignalHandler
         return getConfig().getList("connector.non08port", Collections.EMPTY_LIST);
     }
 
-
     public String getBind()
     {
         return getConfig().getString("connector.bind", "wildcard");
@@ -685,6 +730,11 @@ public class ServerConfiguration implements SignalHandler
         return getConfig().getString("virtualhosts.default");
     }
 
+    public void setDefaultVirtualHost(String vhost)
+    {
+         getConfig().setProperty("virtualhosts.default", vhost);
+    }    
+
     public void setHousekeepingExpiredMessageCheckPeriod(long value)
     {
         getConfig().setProperty("housekeeping.expiredMessageCheckPeriod", value);
@@ -693,8 +743,8 @@ public class ServerConfiguration implements SignalHandler
     public long getHousekeepingCheckPeriod()
     {
         return getConfig().getLong("housekeeping.checkPeriod",
-                   getConfig().getLong("housekeeping.expiredMessageCheckPeriod",
-                           DEFAULT_HOUSEKEEPING_PERIOD));
+                                   getConfig().getLong("housekeeping.expiredMessageCheckPeriod",
+                                                       DEFAULT_HOUSEKEEPING_PERIOD));
     }
 
     public NetworkDriverConfiguration getNetworkConfiguration()
