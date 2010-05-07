@@ -28,6 +28,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.virtualhost.plugin.VirtualHostPluginFactory;
+import org.apache.qpid.server.virtualhost.plugin.VirtualHostPlugin;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -72,8 +74,10 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class VirtualHostImpl implements Accessable, VirtualHost
 {
@@ -319,6 +323,54 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                 public void run()
                 {
                     _connectionRegistry.expireClosedChannels();
+                }
+            }
+
+            Map<String, VirtualHostPluginFactory> plugins =
+                    ApplicationRegistry.getInstance().
+                            getPluginManager().getVirtualHostPlugins();
+
+            if (plugins != null)
+            {
+                ScheduledThreadPoolExecutor vhostTasks = new ScheduledThreadPoolExecutor(plugins.size());
+
+                for (String pluginName : plugins.keySet())
+                {
+                    try
+                    {
+                        VirtualHostPlugin plugin = plugins.get(pluginName).newInstance(this);
+
+                        TimeUnit units = TimeUnit.MILLISECONDS;
+
+                        if (plugin.getTimeUnit() != null)
+                        {
+                            try
+                            {
+                                units = TimeUnit.valueOf(plugin.getTimeUnit());
+                            }
+                            catch (IllegalArgumentException iae)
+                            {
+                                _logger.warn("Plugin:" + pluginName +
+                                             " provided an illegal TimeUnit value:"
+                                             + plugin.getTimeUnit());
+                                // Warn and use default of millseconds
+                                // Should not occur in a well behaved plugin
+                            }
+                        }
+
+                        vhostTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
+                                                       plugin.getDelay(), units);
+
+                        _logger.info("Loaded VirtualHostPlugin:" + plugin);
+                    }
+                    catch (IllegalArgumentException iae)
+                    {
+                        _logger.warn("VirtualHostPlugin:" + pluginName + " has not been configured for this virtualhost(" + getName() + ")");
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.error("Unable to load VirtualHostPlugin:" + pluginName + " due to:" + e.getMessage(), e);
+                    }
                 }
             }
         }
