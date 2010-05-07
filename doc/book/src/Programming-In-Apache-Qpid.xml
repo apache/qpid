@@ -881,6 +881,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	        topic, queue
 	      </entry>
 	      <entry>
+		Indicates the type of the node.
 	      </entry>
 	    </row>
 	    <row>
