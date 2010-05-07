@@ -23,70 +23,21 @@ package org.apache.qpid.server.registry;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.io.File;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
-    private String _registryName;
-
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
         super(new ServerConfiguration(configurationURL));
     }
 
-    public void initialise(int instanceID) throws Exception
-    {
-        _qmfService = new QMFService(getConfigStore(), this);
-
-
-        _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
-                                                       new Log4jMessageLogger());
-
-        _registryName = String.valueOf(instanceID);
-
-        // Set the Actor for current log messages
-        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
-
-        CurrentActor.get().message(BrokerMessages.BRK_STARTUP(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));
-
-        initialiseManagedObjectRegistry();
-
-        _virtualHostRegistry = new VirtualHostRegistry(this);
-
-        _pluginManager = new PluginManager(_configuration.getPluginDirectory());
-
-        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
-
-        _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
-
-        _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
-
-        _databaseManager.initialiseManagement(_configuration);
-
-
-        _managedObjectRegistry.start();
-
-        initialiseVirtualHosts();
-
-        // Startup complete pop the current actor
-        CurrentActor.remove();
-    }
 
     @Override
     public void close() throws Exception
@@ -104,16 +55,9 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         }
     }
 
-    private void initialiseVirtualHosts() throws Exception
-    {
-        for (String name : _configuration.getVirtualHosts())
-        {
-            createVirtualHost(_configuration.getVirtualHostConfig(name));
-        }
-        getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
-    }
 
-    private void initialiseManagedObjectRegistry() throws AMQException
+    @Override
+    protected void initialiseManagedObjectRegistry() throws AMQException
     {
         if (_configuration.getManagementEnabled())
         {
@@ -124,4 +68,5 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
             _managedObjectRegistry = new NoopManagedObjectRegistry();
         }
     }
+
 }

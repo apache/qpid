@@ -186,7 +186,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
-
+    private QueueConfiguration _queueConfiguration;
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost, Map<String,Object> arguments)
     {
@@ -2069,7 +2069,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
             _capacity = config.getCapacity();
             _flowResumeCapacity = config.getFlowResumeCapacity();
+
+            _queueConfiguration = config;
         }
+    }
+
+
+    public QueueConfiguration getConfiguration()
+    {
+        return _queueConfiguration;
     }
 
     public String getResourceName()

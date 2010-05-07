@@ -21,21 +21,48 @@
 package org.apache.qpid.server.configuration;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.plugin.ConfigurationPlugin;
 
-public class QueueConfiguration
+public class QueueConfiguration extends ConfigurationPlugin
 {
-    
+
     private Configuration _config;
     private String _name;
     private VirtualHostConfiguration _vHostConfig;
 
-    public QueueConfiguration(String name, Configuration config, VirtualHostConfiguration virtualHostConfiguration)
+    public QueueConfiguration(String name, Configuration config, VirtualHostConfiguration virtualHostConfiguration) throws ConfigurationException
     {
         _vHostConfig = virtualHostConfiguration;
         _config = config;
         _name = name;
+
+        setConfiguration("virtualhosts.virtualhost.queues.queue", config);
+    }
+
+    public String[] getElementsProcessed()
+    {
+        return new String[]{"maximumMessageSize",
+                            "maximumQueueDepth",
+                            "maximumMessageCount",
+                            "maximumMessageAge",
+                            "minimumAlertRepeatGap",
+                            "durable",
+                            "exchange",
+                            "queue",
+                            "autodelete",
+                            "priority",
+                            "priorities",
+                            "routingKey",
+                            "capacity",
+                            "flowResumeCapacity",
+                            "lvq",
+                            "lvqKey"
+        };
     }
 
     public VirtualHostConfiguration getVirtualHostConfiguration()
