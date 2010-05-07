@@ -90,7 +90,7 @@ def error_line(filename):
     except: return ""
     return result
 
-def retry(function, timeout=5, delay=.01):
+def retry(function, timeout=10, delay=.01):
     """Call function until it returns True or timeout expires.
     Double the delay for each retry. Return True if function
     returns true, False if timeout expires."""
