@@ -960,7 +960,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         final QueueRegistry registry = virtualHost.getQueueRegistry();
 
-        String owner = body.getExclusive() ? session.getPrincipal().getName() : null;
+        String owner = body.getExclusive() ? session.getClientID() : null;
 
         final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(), virtualHost,
                                                                   body.getArguments());
