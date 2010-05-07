@@ -23,6 +23,8 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfig;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -68,8 +70,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     PrincipalHolder getPrincipalHolder();
     void setPrincipalHolder(PrincipalHolder principalHolder);
 
-    void setExclusiveOwner(Object owner);
-    Object getExclusiveOwner();
+    void setExclusiveOwningSession(AMQSessionModel owner);
+    AMQSessionModel getExclusiveOwningSession();
 
     VirtualHost getVirtualHost();
 

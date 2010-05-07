@@ -37,7 +37,7 @@ import java.security.Principal;
 import java.util.List;
 
 
-public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, PrincipalHolder
+public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, PrincipalHolder, AMQConnectionModel
 {
     long getSessionID();
 
@@ -109,7 +109,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
      *
      * @return null if no channel exists, the channel otherwise
      */
-    AMQChannel getChannel(int channelId) throws AMQException;
+    AMQChannel getChannel(int channelId);
 
     /**
      * Associate a channel with this session.

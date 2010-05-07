@@ -26,6 +26,7 @@ import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -58,15 +59,15 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
 
     public void methodReceived(AMQStateManager stateManager, QueueDeleteBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHost virtualHost = session.getVirtualHost();
+        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
+        VirtualHost virtualHost = protocolConnection.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
         AMQQueue queue;
         if (body.getQueue() == null)
         {
-            AMQChannel channel = session.getChannel(channelId);
+            AMQChannel channel = protocolConnection.getChannel(channelId);
 
             if (channel == null)
             {
@@ -103,12 +104,13 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
             else
             {
 
+                AMQSessionModel session = queue.getExclusiveOwningSession();
                 //Perform ACLs
-                if (!virtualHost.getAccessManager().authoriseDelete(session, queue))
+                if (!virtualHost.getAccessManager().authoriseDelete(protocolConnection, queue))
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
                 }
-                else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
+                else if (queue.isExclusive() && !queue.isDurable() && (session == null || session.getConnectionModel() != protocolConnection))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
@@ -121,9 +123,9 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                     store.removeQueue(queue);
                 }
 
-                MethodRegistry methodRegistry = session.getMethodRegistry();
+                MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                 QueueDeleteOkBody responseBody = methodRegistry.createQueueDeleteOkBody(purged);
-                session.writeFrame(responseBody.generateFrame(channelId));
+                protocolConnection.writeFrame(responseBody.generateFrame(channelId));
             }
         }
     }

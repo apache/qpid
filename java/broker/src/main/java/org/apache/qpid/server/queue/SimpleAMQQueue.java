@@ -7,6 +7,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
@@ -83,7 +85,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private PrincipalHolder _prinicpalHolder;
 
-    private Object _exclusiveOwner;
+    private AMQSessionModel _exclusiveOwner;
 
 
     private final boolean _durable;
@@ -2045,12 +2047,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return ids;
     }
 
-    public Object getExclusiveOwner()
+    public AMQSessionModel getExclusiveOwningSession()
     {
         return _exclusiveOwner;
     }
 
-    public void setExclusiveOwner(Object exclusiveOwner)
+    public void setExclusiveOwningSession(AMQSessionModel exclusiveOwner)
     {
         _exclusiveOwner = exclusiveOwner;
     }

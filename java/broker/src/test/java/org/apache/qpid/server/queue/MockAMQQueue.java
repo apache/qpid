@@ -30,6 +30,7 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.AMQException;
@@ -47,7 +48,7 @@ public class MockAMQQueue implements AMQQueue
 
     private PrincipalHolder _principalHolder;
 
-    private Object _exclusiveOwner;
+    private AMQSessionModel _exclusiveOwner;
 
     public MockAMQQueue(String name)
     {
@@ -527,12 +528,12 @@ public class MockAMQQueue implements AMQQueue
         _principalHolder = principalHolder;
     }
 
-    public Object getExclusiveOwner()
+    public AMQSessionModel getExclusiveOwningSession()
     {
         return _exclusiveOwner;
     }
 
-    public void setExclusiveOwner(Object exclusiveOwner)
+    public void setExclusiveOwningSession(AMQSessionModel exclusiveOwner)
     {
         _exclusiveOwner = exclusiveOwner;
     }

@@ -27,6 +27,7 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -57,11 +58,11 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
 
     public void methodReceived(AMQStateManager stateManager, QueuePurgeBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHost virtualHost = session.getVirtualHost();
+        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
+        VirtualHost virtualHost = protocolConnection.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = protocolConnection.getChannel(channelId);
 
 
         AMQQueue queue;
@@ -98,13 +99,14 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         }
         else
         {
+                AMQSessionModel session = queue.getExclusiveOwningSession();
 
                 //Perform ACLs
-                if (!virtualHost.getAccessManager().authorisePurge(session, queue))
+                if (!virtualHost.getAccessManager().authorisePurge(protocolConnection, queue))
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-                }            
-                else if (queue.isExclusive() && queue.getExclusiveOwner() != session)
+                }
+                else if (queue.isExclusive() && (session == null || session.getConnectionModel() != protocolConnection))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Queue is exclusive, but not created on this Connection.");
@@ -116,10 +118,10 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
                 if(!body.getNowait())
                 {
 
-                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createQueuePurgeOkBody(purged);
-                    session.writeFrame(responseBody.generateFrame(channelId));
-                    
+                    protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+
                 }
         }
     }
