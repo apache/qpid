@@ -23,8 +23,8 @@ package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.plugin.VirtualHostPlugin;
-import org.apache.qpid.server.virtualhost.plugin.VirtualHostPluginFactory;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
 class SlowConsumerDetection implements VirtualHostPlugin
 {

@@ -202,7 +202,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             {
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Shuting down ApplicationRegistry(" + instanceID + "):" + instance);
+                    _logger.info("Shutting down ApplicationRegistry(" + instanceID + "):" + instance);
                 }
                 instance.close();
                 instance.getBroker().getSystem().removeBroker(instance.getBroker());
@@ -235,7 +235,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void configure() throws ConfigurationException
     {
-        _logger.error("Configure AR");
 
         _configurationManager = new ConfigurationManager();
 
@@ -253,18 +252,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void initialise(int instanceID) throws Exception
     {
-        _logger.error("Creating RML:" + this);
         _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
                                                        new Log4jMessageLogger());
-        _logger.error("Created RML:" + _rootMessageLogger + ":" + this);
         _registryName = String.valueOf(instanceID);
 
         // Set the Actor for current log messages
         CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
 
-        _logger.error("Init AR:" + this);
         configure();
-        _logger.error("Configured AR:" + this);
 
         _qmfService = new QMFService(getConfigStore(), this);
 
@@ -325,8 +320,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 try
                 {
                     _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + _APPLICATION_REGISTRY + " : Instance:" + instanceID);
-                    new Exception().printStackTrace(System.out);
-                    new Exception().printStackTrace(System.err);
                     IApplicationRegistry registry = (IApplicationRegistry) Class.forName(_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
                     ApplicationRegistry.initialise(registry, instanceID);
                     _logger.info("Initialised Application Registry:" + instanceID);

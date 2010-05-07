@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
 
-import org.apache.qpid.server.configuration.plugin.ConfigurationPluginFactory;
-import org.apache.qpid.server.virtualhost.plugin.VirtualHostPluginFactory;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 

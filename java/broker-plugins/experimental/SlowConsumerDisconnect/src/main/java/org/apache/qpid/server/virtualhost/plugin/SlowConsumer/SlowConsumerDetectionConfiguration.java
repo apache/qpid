@@ -22,8 +22,8 @@ package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugin.ConfigurationPluginFactory;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
 import java.util.concurrent.TimeUnit;
 
