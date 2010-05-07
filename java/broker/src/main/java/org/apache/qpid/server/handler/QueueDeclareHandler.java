@@ -63,6 +63,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     public void methodReceived(AMQStateManager stateManager, QueueDeclareBody body, int channelId) throws AMQException
     {
         final AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
+        final AMQSessionModel session = protocolConnection.getChannel(channelId);
         VirtualHost virtualHost = protocolConnection.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
@@ -100,11 +101,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
             queue = queueRegistry.getQueue(queueName);
 
-            AMQSessionModel session = null;
+            AMQSessionModel owningSession = null;
 
             if (queue != null)
             {
-                session = queue.getExclusiveOwningSession();
+                owningSession = queue.getExclusiveOwningSession();
             }
 
             if (queue == null)
@@ -163,7 +164,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     }
                 }
             }
-            else if (queue.isExclusive() && !queue.isDurable() && (session == null || session.getConnectionModel() != protocolConnection))
+            else if (queue.isExclusive() && !queue.isDurable() && (owningSession == null || owningSession.getConnectionModel() != protocolConnection))
             {
                 throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                   "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
@@ -175,13 +176,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                                                   "Cannot re-declare queue '" + queue.getNameShortString() + "' with different exclusivity (was: "
                                                     + queue.isExclusive() + " requested " + body.getExclusive() + ")");
             }
-
-            else if (!body.getPassive() && body.getExclusive() && !(queue.isDurable() ? queue.getOwner().equals(protocolConnection.getPrincipal().getName()) : (session == null || session.getConnectionModel() != protocolConnection)))
+            else if (!body.getPassive() && body.getExclusive() && !(queue.isDurable() ? String.valueOf(queue.getOwner()).equals(session.getClientID()) : (owningSession == null || owningSession.getConnectionModel() == protocolConnection)))
             {
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue('" + queueName + "'), "
                                                                            + "as exclusive queue with same name "
                                                                            + "declared on another client ID('"
-                                                                           + queue.getOwner() + "')");
+                                                                           + queue.getOwner() + "') your clientID('" + session.getClientID() + "')");
 
             }
             else if(!body.getPassive() && queue.isAutoDelete() != body.getAutoDelete())

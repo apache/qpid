@@ -141,7 +141,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private final AtomicLong _txnRejects = new AtomicLong(0);
     private final AtomicLong _txnCount = new AtomicLong(0);
 
-    // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
     private AtomicBoolean _closing = new AtomicBoolean(false);
 
@@ -1068,6 +1067,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     public AMQConnectionModel getConnectionModel()
     {
         return _session;
+    }
+
+    public String getClientID()
+    {
+        return String.valueOf(_session.getContextKey());
     }
 
     private class MessageDeliveryAction implements ServerTransaction.Action

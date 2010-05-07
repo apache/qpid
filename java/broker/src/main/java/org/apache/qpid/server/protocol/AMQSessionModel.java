@@ -25,4 +25,6 @@ public interface AMQSessionModel
     Object getID();
 
     AMQConnectionModel getConnectionModel();
+
+    String getClientID();
 }
