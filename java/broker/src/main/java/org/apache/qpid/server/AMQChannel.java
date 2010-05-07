@@ -56,6 +56,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
@@ -86,7 +88,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AMQChannel implements SessionConfig
+public class AMQChannel implements SessionConfig, AMQSessionModel
 {
     public static final int DEFAULT_PREFETCH = 5000;
 
@@ -1056,6 +1058,16 @@ public class AMQChannel implements SessionConfig
 
         return (!MSG_AUTH || _session.getPrincipal().getName().equals(userID == null? "" : userID.toString()));
 
+    }
+
+    public Object getID()
+    {
+        return _channelId;
+    }
+
+    public AMQConnectionModel getConnectionModel()
+    {
+        return _session;
     }
 
     private class MessageDeliveryAction implements ServerTransaction.Action

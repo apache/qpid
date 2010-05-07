@@ -26,6 +26,7 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -48,14 +49,14 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
     public void methodReceived(AMQStateManager stateManager, BasicConsumeBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
 
 
 
 
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = protocolConnection.getChannel(channelId);
 
-        VirtualHost vHost = session.getVirtualHost();
+        VirtualHost vHost = protocolConnection.getVirtualHost();
 
         if (channel == null)
         {
@@ -96,16 +97,20 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 final AMQShortString consumerTagName;
 
                 // Check authz
-                if (!vHost.getAccessManager().authoriseConsume(session,
+                if (!vHost.getAccessManager().authoriseConsume(protocolConnection,
                         body.getExclusive(), body.getNoAck(),
                         body.getNoLocal(), body.getNowait(), queue))
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
                 }
-                else if (queue.isExclusive() && !queue.isDurable() && queue.getExclusiveOwner() != session)
+                else if (queue.isExclusive() && !queue.isDurable())
                 {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                    AMQSessionModel session = queue.getExclusiveOwningSession();
+                    if (session == null || session.getConnectionModel() != protocolConnection)
+                    {
+                        throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                                          "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
+                    }
                 }
 
                 if (body.getConsumerTag() != null)
@@ -126,9 +131,9 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                                                                               body.getArguments(), body.getNoLocal(), body.getExclusive());
                         if (!body.getNowait())
                         {
-                            MethodRegistry methodRegistry = session.getMethodRegistry();
+                            MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                             AMQMethodBody responseBody = methodRegistry.createBasicConsumeOkBody(consumerTag);
-                            session.writeFrame(responseBody.generateFrame(channelId));
+                            protocolConnection.writeFrame(responseBody.generateFrame(channelId));
 
                         }
                     }
@@ -136,12 +141,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     {
                         AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.getConsumerTag() + "'");
 
-                        MethodRegistry methodRegistry = session.getMethodRegistry();
+                        MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                         AMQMethodBody responseBody = methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
                                                                  msg,               // replytext
                                                                  body.getClazz(),
                                                                  body.getMethod());
-                        session.writeFrame(responseBody.generateFrame(0));
+                        protocolConnection.writeFrame(responseBody.generateFrame(0));
                     }
 
                 }
@@ -149,12 +154,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 {
                     _logger.debug("Closing connection due to invalid selector");
 
-                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createChannelCloseBody(AMQConstant.INVALID_ARGUMENT.getCode(),
                                                                                        new AMQShortString(ise.getMessage()),
                                                                                        body.getClazz(),
                                                                                        body.getMethod());
-                    session.writeFrame(responseBody.generateFrame(channelId));
+                    protocolConnection.writeFrame(responseBody.generateFrame(channelId));
 
 
                 }
