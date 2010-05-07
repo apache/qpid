@@ -18,11 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
+package org.apache.qpid.slowconsumerdetection.policies;
 
-import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
+import org.apache.qpid.server.plugins.PluginFactory;
 
-public interface SlowConsumerPolicyPlugin
+public interface SlowConsumerPolicyPluginFactory extends PluginFactory
 {
-    public void performPolicy(AMQQueue Queue);
+
+    public SlowConsumerPolicyPlugin newInstance(SlowConsumerDetectionPolicyConfiguration configuration);
 }

@@ -18,13 +18,16 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
+package org.apache.qpid.server.virtualhost.plugin;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
+import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 
 class SlowConsumerDetection implements VirtualHostPlugin
 {
