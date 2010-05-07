@@ -70,6 +70,7 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         {
             // Load VirtualHost list from file. 
             ServerConfiguration configuration = new ServerConfiguration(_configFile);
+            configuration.configure();
             List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
             assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
@@ -123,6 +124,7 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         {
             // Load VirtualHost list from file. 
             ServerConfiguration configuration = new ServerConfiguration(_configFile);
+            configuration.configure();
             List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
             assertEquals("Each vhost did not close their store.", vhosts.size(), results.size());

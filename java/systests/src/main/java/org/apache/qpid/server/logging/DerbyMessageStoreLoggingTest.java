@@ -59,6 +59,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         // Load the default configuration file to get the list of defined vhosts
         ServerConfiguration configuration = new ServerConfiguration(new File(_configFile.getParent() + "/config.xml"));
+        configuration.configure();
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         // Make them all persistent i.e. Use DerbyMessageStore and
@@ -99,6 +100,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.configure();
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
@@ -162,6 +164,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.configure();
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
@@ -229,6 +232,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.configure();
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
@@ -295,6 +299,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.configure();
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
@@ -360,6 +365,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.configure();
         List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
@@ -502,6 +508,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
             // Load VirtualHost list from file.
             ServerConfiguration configuration = new ServerConfiguration(_configFile);
+            configuration.configure();
             List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
             //Validate each vhost logs a creation
