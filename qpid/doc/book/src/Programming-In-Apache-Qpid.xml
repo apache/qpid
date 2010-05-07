@@ -1472,7 +1472,7 @@ sender.send(message)
 	  </thead>
 	  <tbody>
    	    <row><entry>bool</entry><entry>bool</entry><entry>boolean</entry></row>
-	    <row><entry>integer</entry><entry>long</entry><entry>long</entry></row>
+	    <row><entry>int</entry><entry>long</entry><entry>long</entry></row>
 	    <row><entry>long</entry><entry>long</entry><entry>long</entry></row>
 	    <row><entry>float</entry><entry>double</entry><entry>double</entry></row>
 	    <row><entry>unicode</entry><entry>string</entry><entry>java.lang.String</entry></row>
@@ -1565,13 +1565,13 @@ sender.send(message, true);
 	  <tbody>
    	    <row><entry>bool</entry><entry>bool</entry><entry>boolean</entry></row>
   	    <row><entry>unsigned char</entry><entry>unicode</entry><entry>char</entry></row>
-	    <row><entry>unsigned short int</entry><entry>integer | long</entry><entry>short</entry></row>
-	    <row><entry>unsigned int</entry><entry>integer | long</entry><entry>integer</entry></row>
-	    <row><entry>unsigned long</entry><entry>integer | long</entry><entry>long</entry></row>
+	    <row><entry>unsigned short int</entry><entry>int | long</entry><entry>short</entry></row>
+	    <row><entry>unsigned int</entry><entry>int | long</entry><entry>int</entry></row>
+	    <row><entry>unsigned long</entry><entry>int | long</entry><entry>long</entry></row>
 	    <row><entry>char</entry><entry>unicode</entry><entry>char</entry></row>
-	    <row><entry>short</entry><entry>integer | long</entry><entry>short</entry></row>
-	    <row><entry>int</entry><entry>integer | long</entry><entry>integer</entry></row>
-	    <row><entry>long</entry><entry>integer | long</entry><entry>long</entry></row>
+	    <row><entry>short</entry><entry>int | long</entry><entry>short</entry></row>
+	    <row><entry>int</entry><entry>int | long</entry><entry>int</entry></row>
+	    <row><entry>long</entry><entry>int | long</entry><entry>long</entry></row>
 	    <row><entry>float</entry><entry>float</entry><entry>float</entry></row>
 	    <row><entry>double</entry><entry>float</entry><entry>double</entry></row>
 	    <row><entry>string</entry><entry>unicode</entry><entry>java.lang.String</entry></row>
@@ -2673,9 +2673,9 @@ producer.send(m);
 	  <tbody>
    	    <row><entry>boolean</entry><entry>bool</entry><entry>bool</entry></row>
 	    <row><entry>char</entry><entry>unicode<footnote><para>The Python string will contain one Unicode character</para></footnote></entry><entry>int</entry></row>
-	    <row><entry>short</entry><entry>integer | long</entry><entry>short</entry></row>
-	    <row><entry>integer</entry><entry>integer | long</entry><entry>int</entry></row>
-	    <row><entry>long</entry><entry>integer | long</entry><entry>long</entry></row>
+	    <row><entry>short</entry><entry>int | long</entry><entry>short</entry></row>
+	    <row><entry>int</entry><entry>int | long</entry><entry>int</entry></row>
+	    <row><entry>long</entry><entry>int | long</entry><entry>long</entry></row>
 	    <row><entry>float</entry><entry>float</entry><entry>float</entry></row>
 	    <row><entry>double</entry><entry>float</entry><entry>double</entry></row>
 	    <row><entry>java.lang.String</entry><entry>unicode</entry><entry>std::string</entry></row>
