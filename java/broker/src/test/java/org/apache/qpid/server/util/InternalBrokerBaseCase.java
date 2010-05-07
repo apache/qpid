@@ -86,9 +86,21 @@ public class InternalBrokerBaseCase extends TestCase
 
     public void tearDown() throws Exception
     {
-        CurrentActor.remove();
-        ApplicationRegistry.remove();
-        super.tearDown();
+        try
+        {
+            CurrentActor.remove();
+        }
+        finally
+        {
+            try
+            {
+                ApplicationRegistry.remove();
+            }
+            finally
+            {
+                super.tearDown();
+            }
+        }
     }
 
     protected void checkStoreContents(int messageCount)
