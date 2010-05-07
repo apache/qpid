@@ -55,7 +55,6 @@ private:
     PollableCondition& parent;
     boost::shared_ptr<sys::Poller> poller;
     LONG isSet;
-    LONG armed;
 };
 
 PollableConditionPrivate::PollableConditionPrivate(const sys::PollableCondition::Callback& cb,
@@ -63,7 +62,7 @@ PollableConditionPrivate::PollableConditionPrivate(const sys::PollableCondition:
                                                    const boost::shared_ptr<sys::Poller>& poller)
   : IOHandle(new sys::IOHandlePrivate(INVALID_SOCKET,
                                       boost::bind(&PollableConditionPrivate::dispatch, this, _1))),
-    cb(cb), parent(parent), poller(poller), isSet(0), armed(0)
+    cb(cb), parent(parent), poller(poller), isSet(0)
 {
 }
 
@@ -73,9 +72,6 @@ PollableConditionPrivate::~PollableConditionPrivate()
 
 void PollableConditionPrivate::poke()
 {
-    if (!armed)
-        return;
-
     // monitorHandle will queue a completion for the IOCP; when it's handled, a
     // poller thread will call back to dispatch() below.
     PollerHandle ph(*this);
@@ -86,6 +82,8 @@ void PollableConditionPrivate::dispatch(windows::AsynchIoResult *result)
 {
     delete result;       // Poller::monitorHandle() allocates this
     cb(parent);
+    if (isSet)
+        poke();
 }
 
   /* PollableCondition */
