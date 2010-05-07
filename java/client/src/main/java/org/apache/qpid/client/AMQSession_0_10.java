@@ -165,7 +165,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         super(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetchHighMark,
               defaultPrefetchLowMark);
         _qpidConnection = qpidConnection;
-        _qpidSession = _qpidConnection.createSession(1);
+        _qpidSession = _qpidConnection.createSession(0);
         _qpidSession.setSessionListener(this);
         if (_transacted)
         {
