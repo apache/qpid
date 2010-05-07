@@ -2673,9 +2673,9 @@ producer.send(m);
 	  <tbody>
    	    <row><entry>boolean</entry><entry>bool</entry><entry>bool</entry></row>
 	    <row><entry>char</entry><entry>unicode<footnote><para>The Python string will contain one Unicode character</para></footnote></entry><entry>int</entry></row>
-	    <row><entry>short</entry><entry>integer</entry><entry>short</entry></row>
-	    <row><entry>integer</entry><entry>integer</entry><entry>int</entry></row>
-	    <row><entry>long</entry><entry>integer</entry><entry>long</entry></row>
+	    <row><entry>short</entry><entry>integer | long</entry><entry>short</entry></row>
+	    <row><entry>integer</entry><entry>integer | long</entry><entry>int</entry></row>
+	    <row><entry>long</entry><entry>integer | long</entry><entry>long</entry></row>
 	    <row><entry>float</entry><entry>float</entry><entry>float</entry></row>
 	    <row><entry>double</entry><entry>float</entry><entry>double</entry></row>
 	    <row><entry>java.lang.String</entry><entry>unicode</entry><entry>std::string</entry></row>
