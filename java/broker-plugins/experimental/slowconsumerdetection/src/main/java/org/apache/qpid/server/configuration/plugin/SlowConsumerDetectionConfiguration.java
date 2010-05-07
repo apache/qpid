@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
+package org.apache.qpid.server.configuration.plugin;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;

@@ -18,10 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
+package org.apache.qpid.server.virtualhost.plugin;
 
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.virtualhost.plugin.policies.TopicDeletePolicy;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
+import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 

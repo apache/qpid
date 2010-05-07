@@ -18,15 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin.SlowConsumer;
+package org.apache.qpid.server.virtualhost.plugin.policies;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
+import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 
 public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
 {
