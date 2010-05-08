@@ -588,8 +588,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         getQpidSession().messageFlow(consumerTag, MessageCreditUnit.BYTE, 0xFFFFFFFF,
                                      Option.UNRELIABLE);
-        
-        if(prefetch() && (isStarted() || _immediatePrefetch))
+                
+        if(prefetch() && _dispatcher != null && (isStarted() || _immediatePrefetch))
         {
             // set the flow
             getQpidSession().messageFlow(consumerTag,
