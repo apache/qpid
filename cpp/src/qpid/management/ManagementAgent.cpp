@@ -2130,7 +2130,7 @@ size_t ManagementAgent::validateEventSchema(Buffer& inBuffer)
         inBuffer.getShortString(text);
         inBuffer.getBin128(hash);
         
-        uint8_t superType = inBuffer.getOctet();
+        uint8_t superType = 0; //inBuffer.getOctet();
 
         uint16_t argCount = inBuffer.getShort();
 
