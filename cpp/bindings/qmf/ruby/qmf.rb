@@ -979,6 +979,18 @@ module Qmf
     def name
       @impl.getClassKey.getClassName
     end
+
+    def class_key
+      SchemaClassKey.new(@impl.getClassKey)
+    end
+
+    def package_name
+      @impl.getClassKey.getPackageName
+    end
+
+    def class_name
+      @impl.getClassKey.getClassName
+    end
   end
 
   ##==============================================================================
