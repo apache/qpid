@@ -1054,6 +1054,17 @@ class SchemaEventClass:
     def name(self):
         return self.impl.getClassKey().getClassName()
 
+    def class_key(self):
+        return SchemaClassKey(self.impl.getClassKey())
+
+
+    def package_name(self):
+        return self.impl.getClassKey().getPackageName()
+
+
+    def class_name(self):
+        return self.impl.getClassKey().getClassName()
+
 
   ##==============================================================================
   ## CONSOLE
