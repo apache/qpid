@@ -119,6 +119,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             MessageFormatException mfe = new MessageFormatException("Message not serializable: " + e);
             mfe.setLinkedException(e);
+            mfe.initCause(e);
             throw mfe;
         }
 
@@ -143,12 +144,14 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             MessageFormatException mfe = new MessageFormatException("Could not deserialize message: " + e);
             mfe.setLinkedException(e);
+            mfe.initCause(e);
             throw mfe;
         }
         catch (ClassNotFoundException e)
         {
             MessageFormatException mfe = new MessageFormatException("Could not deserialize message: " + e);
             mfe.setLinkedException(e);
+            mfe.initCause(e);
             throw mfe;
         }
         finally

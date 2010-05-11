@@ -49,17 +49,19 @@ public class JMSAMQException extends JMSException
         if (cause != null)
         {
             setLinkedException(cause);
+            initCause(cause);
         }
     }
 
     /**
-     * @param s The underlying exception.
+     * @param cause The underlying exception.
      *
      * @deprecated Use the other constructor and write a helpfull message. This one will be deleted.
      */
-    public JMSAMQException(AMQException s)
+    public JMSAMQException(AMQException cause)
     {
-        super(s.getMessage(), String.valueOf(s.getErrorCode()));
-        setLinkedException(s);
+        super(cause.getMessage(), String.valueOf(cause.getErrorCode()));
+        setLinkedException(cause);
+        initCause(cause);
     }
 }

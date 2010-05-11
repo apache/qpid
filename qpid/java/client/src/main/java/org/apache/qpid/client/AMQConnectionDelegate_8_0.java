@@ -168,6 +168,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                         {
                             JMSException jmse = new JMSException("Error creating session: " + e);
                             jmse.setLinkedException(e);
+                            jmse.initCause(e);
                             throw jmse;
                         }
                         finally

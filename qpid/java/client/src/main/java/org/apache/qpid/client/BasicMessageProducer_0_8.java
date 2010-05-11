@@ -162,9 +162,10 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         }
         catch (InterruptedException e)
         {
-            JMSException jmsEx = new JMSException("Interrupted while waiting for flow control to be removed");
-            jmsEx.setLinkedException(e);
-            throw jmsEx;
+            JMSException jmse = new JMSException("Interrupted while waiting for flow control to be removed");
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
 
         _protocolHandler.writeFrame(compositeFrame, wait);

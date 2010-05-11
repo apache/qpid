@@ -1077,6 +1077,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                         _logger.error("error:", e);
                         JMSException jmse = new JMSException("Error closing connection: " + e);
                         jmse.setLinkedException(e);
+                        jmse.initCause(e);
                         throw jmse;
                     }
                 }
@@ -1391,9 +1392,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             if (code != null)
             {
-                je =
-                        new JMSException(Integer.toString(code.getCode()), "Exception thrown against " + toString() + ": "
-                                                                           + cause);
+                je = new JMSException(Integer.toString(code.getCode()), "Exception thrown against " + toString() + ": " + cause);
             }
             else
             {
@@ -1416,6 +1415,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 je.setLinkedException((Exception) cause);
             }
+            
+            je.initCause(cause);
         }
 
         boolean closer = false;
