@@ -178,6 +178,11 @@ public class QueueEntryImpl implements QueueEntry
 
     public void release()
     {
+        Subscription subscription = getDeliveredSubscription();
+        if (subscription != null)
+        {
+            subscription.restoreCredit(this);
+        }
         _stateUpdater.set(this,AVAILABLE_STATE);
     }
 
