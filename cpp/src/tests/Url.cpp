@@ -37,36 +37,35 @@ QPID_AUTO_TEST_SUITE(UrlTestSuite)
 QPID_AUTO_TEST_CASE(TestParseTcp) {
     URL_CHECK_STR("amqp:tcp:host:42");
     URL_CHECK_STR("amqp:tcp:host-._~%ff%23:42"); // unreserved chars and pct encoded hex.
-
     // Check defaults
     BOOST_CHECK_EQUAL(Url("amqp:host:42").str(), "amqp:tcp:host:42");
     BOOST_CHECK_EQUAL(Url("amqp:tcp:host").str(), "amqp:tcp:host:5672");
+    BOOST_CHECK_EQUAL(Url("host").str(), "amqp:tcp:host:5672");
+}
 
+QPID_AUTO_TEST_CASE(TestParseInvalid) {
     //host is required:
     URL_CHECK_INVALID("amqp:tcp:");
     URL_CHECK_INVALID("amqp:");
     URL_CHECK_INVALID("amqp::42");
+    URL_CHECK_INVALID("");
 
-    URL_CHECK_INVALID("amqp::badHost!#$#");
-    URL_CHECK_INVALID("amqp::host:badPort");
+    // Port must be numeric
+    URL_CHECK_INVALID("host:badPort");
 }
 
-QPID_AUTO_TEST_CASE(TestParseExample) {
-    URL_CHECK_STR("amqp:example:x");
-    URL_CHECK_INVALID("amqp:example:badExample");
+QPID_AUTO_TEST_CASE(TestParseXyz) {
+    Url::addProtocol("xyz");
+    URL_CHECK_STR("amqp:xyz:host:123");
+    BOOST_CHECK_EQUAL(Url("xyz:host").str(), "amqp:xyz:host:5672");
 }
 
 QPID_AUTO_TEST_CASE(TestParseMultiAddress) {
-    URL_CHECK_STR("amqp:tcp:host:0,example:y,tcp:foo:0,example:1");
-    URL_CHECK_STR("amqp:example:z,tcp:foo:0");
+    Url::addProtocol("xyz");
+    URL_CHECK_STR("amqp:tcp:host:0,xyz:foo:123,tcp:foo:0,xyz:bar:1");
+    URL_CHECK_STR("amqp:xyz:foo:222,tcp:foo:0");
     URL_CHECK_INVALID("amqp:tcp:h:0,");
     URL_CHECK_INVALID(",amqp:tcp:h");
-}
-
-
-QPID_AUTO_TEST_CASE(TestInvalidAddress) {
-    URL_CHECK_INVALID("xxxx");
-    URL_CHECK_INVALID("");
 }
 
 QPID_AUTO_TEST_SUITE_END()

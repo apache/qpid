@@ -78,5 +78,11 @@ export QPID_NO_MODULE_DIR=1
 export QPID_LOAD_MODULE=$SSLCONNECTOR_LIB
 export QPID_SSL_CERT_DB=${CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
+# Test connection via connection settings
 ./perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary
 
+# Test connection with a URL
+URL=amqp:ssl:$TEST_HOSTNAME:$PORT 
+./qpid_send -b $URL --content-string=hello -a "foo;{create:always}"
+MSG=`./qpid_receive -b $URL -a "foo;{create:always}" --messages 1`
+test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }

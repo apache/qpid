@@ -78,7 +78,7 @@ BrokerEvent BrokerEventImpl::copy()
 BrokerProxyImpl::BrokerProxyImpl(BrokerProxy& pub, Console& _console) : publicObject(pub), console(_console)
 {
     stringstream qn;
-    qpid::TcpAddress addr;
+    qpid::Address addr;
 
     SystemInfo::getLocalHostname(addr);
     qn << "qmfc-" << SystemInfo::getProcessName() << "-" << addr << "-" << SystemInfo::getProcessId();

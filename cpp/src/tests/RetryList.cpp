@@ -33,7 +33,7 @@ struct RetryListFixture
 {
     RetryList list;
     std::vector<Url> urls;
-    std::vector<TcpAddress> expected;
+    std::vector<Address> expected;
 
     void addUrl(const std::string& s)
     {
@@ -42,15 +42,15 @@ struct RetryListFixture
 
     void addExpectation(const std::string& host, uint16_t port)
     {
-        expected.push_back(TcpAddress(host, port));
+        expected.push_back(Address("tcp", host, port));
     }
 
     void check()
     {
         list.reset(urls);
         for (int t = 0; t < 2; t++) {
-            TcpAddress next;
-            for (std::vector<TcpAddress>::const_iterator i = expected.begin(); i != expected.end(); ++i) {
+            Address next;
+            for (std::vector<Address>::const_iterator i = expected.begin(); i != expected.end(); ++i) {
                 BOOST_CHECK(list.next(next));
                 BOOST_CHECK_EQUAL(i->host, next.host);
                 BOOST_CHECK_EQUAL(i->port, next.port);

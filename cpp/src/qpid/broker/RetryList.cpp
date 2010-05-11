@@ -31,20 +31,16 @@ void RetryList::reset(const std::vector<Url>& u)
     urlIndex = addressIndex = 0;//reset indices
 }
                 
-bool RetryList::next(TcpAddress& address)
+bool RetryList::next(Address& address)
 {
     while (urlIndex < urls.size()) {
-        while (addressIndex < urls[urlIndex].size()) {
-            const TcpAddress* tcp = urls[urlIndex][addressIndex++].get<TcpAddress>();
-            if (tcp) {
-                address = *tcp;
-                return true;
-            }
+        if (addressIndex < urls[urlIndex].size()) {
+            address = urls[urlIndex][addressIndex++];
+            return true;
         }
         urlIndex++;
         addressIndex = 0;
     }
-                    
     urlIndex = addressIndex = 0;//reset indices
     return false;
 }

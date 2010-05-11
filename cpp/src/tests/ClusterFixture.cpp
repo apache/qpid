@@ -153,7 +153,7 @@ std::set<int> knownBrokerPorts(qpid::client::Connection& c, int n) {
     }
     std::set<int> s;
     for (std::vector<qpid::Url>::const_iterator i = urls.begin(); i != urls.end(); ++i)
-        s.insert((*i)[0].get<qpid::TcpAddress>()->port);
+        s.insert((*i)[0].port);
     return s;
 }
 

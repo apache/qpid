@@ -20,7 +20,7 @@
  */
 
 #include "qpid/client/Connector.h"
-
+#include "qpid/Url.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SecurityLayer.h"
@@ -61,6 +61,7 @@ void Connector::registerFactory(const std::string& proto, Factory* connectorFact
         QPID_LOG(error, "Tried to register protocol: " << proto << " more than once");
     }
     theProtocolRegistry()[proto] = connectorFactory;
+    Url::addProtocol(proto);
 }
 
 void Connector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>)

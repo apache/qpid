@@ -95,14 +95,14 @@ void LinkRegistry::periodicMaintenance ()
     reMappings.clear();
 }
 
-void LinkRegistry::changeAddress(const qpid::TcpAddress& oldAddress, const qpid::TcpAddress& newAddress)
+void LinkRegistry::changeAddress(const qpid::Address& oldAddress, const qpid::Address& newAddress)
 {
     //done on periodic maintenance thread; hold changes in separate
     //map to avoid modifying the link map that is iterated over
     reMappings[createKey(oldAddress)] = newAddress;
 }
 
-bool LinkRegistry::updateAddress(const std::string& oldKey, const qpid::TcpAddress& newAddress)
+bool LinkRegistry::updateAddress(const std::string& oldKey, const qpid::Address& newAddress)
 {
     std::string newKey = createKey(newAddress);
     if (links.find(newKey) != links.end()) {
@@ -133,9 +133,7 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(string&  host,
 
 {
     Mutex::ScopedLock   locker(lock);
-    stringstream        keystream;
-    keystream << host << ":" << port;
-    string key = string(keystream.str());
+    string key = createKey(host, port);
 
     LinkMap::iterator i = links.find(key);
     if (i == links.end())
@@ -168,12 +166,10 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
     Mutex::ScopedLock locker(lock);
     QPID_LOG(debug, "Bridge declared " << host << ": " << port << " from " << src << " to " << dest << " (" << key << ")");
 
-    stringstream      keystream;
-    keystream << host << ":" << port;
-    string linkKey = string(keystream.str());
-
-    keystream << "!" << src << "!" << dest << "!" << key;
-    string bridgeKey = string(keystream.str());
+    string linkKey = createKey(host, port);
+    stringstream keystream;
+    keystream << linkKey << "!" << src << "!" << dest << "!" << key;
+    string bridgeKey = keystream.str();
 
     LinkMap::iterator l = links.find(linkKey);
     if (l == links.end())
@@ -210,9 +206,7 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
 void LinkRegistry::destroy(const string& host, const uint16_t port)
 {
     Mutex::ScopedLock   locker(lock);
-    stringstream        keystream;
-    keystream << host << ":" << port;
-    string key = string(keystream.str());
+    string key = createKey(host, port);
 
     LinkMap::iterator i = links.find(key);
     if (i != links.end())
@@ -231,16 +225,15 @@ void LinkRegistry::destroy(const std::string& host,
                            const std::string& key)
 {
     Mutex::ScopedLock locker(lock);
-    stringstream      keystream;
-    keystream << host << ":" << port;
-    string linkKey = string(keystream.str());
+    string linkKey = createKey(host, port);
+    stringstream keystream;
+    keystream << linkKey << "!" << src << "!" << dest << "!" << key;
+    string bridgeKey = keystream.str();
 
     LinkMap::iterator l = links.find(linkKey);
     if (l == links.end())
         return;
 
-    keystream << "!" << src << "!" << dest << "!" << key;
-    string bridgeKey = string(keystream.str());
     BridgeMap::iterator b = bridges.find(bridgeKey);
     if (b == bridges.end())
         return;
@@ -328,11 +321,18 @@ std::string LinkRegistry::getAuthIdentity(const std::string& key)
 }
 
 
-std::string LinkRegistry::createKey(const qpid::TcpAddress& a)
-{
-    stringstream        keystream;
-    keystream << a.host << ":" << a.port;
-    return string(keystream.str());
+std::string LinkRegistry::createKey(const qpid::Address& a) {
+    // TODO aconway 2010-05-11: key should also include protocol/transport to
+    // be unique. Requires refactor of LinkRegistry interface.
+    return createKey(a.host, a.port);
+}
+
+std::string LinkRegistry::createKey(const std::string& host,  uint16_t port) {
+    // TODO aconway 2010-05-11: key should also include protocol/transport to
+    // be unique. Requires refactor of LinkRegistry interface.
+    stringstream keystream;
+    keystream << host << ":" << port;
+    return keystream.str();
 }
 
 void LinkRegistry::setPassive(bool p) 

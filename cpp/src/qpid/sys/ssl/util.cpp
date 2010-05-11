@@ -38,13 +38,15 @@ namespace qpid {
 namespace sys {
 namespace ssl {
 
+static const std::string LOCALHOST("127.0.0.1");
+
 std::string defaultCertName() 
 {
-    TcpAddress address;
+    Address address;
     if (SystemInfo::getLocalHostname(address)) {
         return address.host;
     } else {
-        return "localhost";
+        return LOCALHOST;
     }
 }
 

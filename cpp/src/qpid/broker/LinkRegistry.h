@@ -53,7 +53,7 @@ namespace broker {
 
         typedef std::map<std::string, boost::shared_ptr<Link> > LinkMap;
         typedef std::map<std::string, Bridge::shared_ptr> BridgeMap;
-        typedef std::map<std::string, TcpAddress> AddressMap;
+        typedef std::map<std::string, Address> AddressMap;
 
         LinkMap   links;
         LinkMap   linksToDestroy;
@@ -72,9 +72,10 @@ namespace broker {
         std::string realm;
 
         void periodicMaintenance ();
-        bool updateAddress(const std::string& oldKey, const TcpAddress& newAddress);
+        bool updateAddress(const std::string& oldKey, const Address& newAddress);
         boost::shared_ptr<Link> findLink(const std::string& key);
-        static std::string createKey(const TcpAddress& address);
+        static std::string createKey(const Address& address);
+        static std::string createKey(const std::string& host, uint16_t port);
 
     public:
         LinkRegistry (); // Only used in store tests
@@ -135,7 +136,7 @@ namespace broker {
         /**
          * Called by links failing over to new address
          */
-        void changeAddress(const TcpAddress& oldAddress, const TcpAddress& newAddress);
+        void changeAddress(const Address& oldAddress, const Address& newAddress);
         /**
          * Called to alter passive state. In passive state the links
          * and bridges managed by a link registry will be recorded and
