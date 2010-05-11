@@ -103,7 +103,7 @@ ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& optio
 {
     QPID_LOG(debug, "Created connection with " << options);
     setOptions(options);
-    urls.push_back(url);
+    urls.insert(urls.begin(), url);
 }
 
 void ConnectionImpl::setOptions(const Variant::Map& options)
@@ -125,10 +125,15 @@ void ConnectionImpl::setOptions(const Variant::Map& options)
 
 void ConnectionImpl::setOption(const std::string& name, const Variant& value)
 {
-    Variant::Map options;
-    options[name] = value;
-    setOptions(options);
-    QPID_LOG(debug, "Set " << name << " to " << value);
+    if (name == "url") {
+        if (urls.size()) urls[0] = value.asString();
+        else urls.insert(urls.begin(), value.asString());
+    } else {
+        Variant::Map options;
+        options[name] = value;
+        setOptions(options);
+        QPID_LOG(debug, "Set " << name << " to " << value);
+    }
 }
 
 void ConnectionImpl::close()
