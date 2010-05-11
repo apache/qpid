@@ -115,7 +115,7 @@ namespace qpid {
             void established();              // Called when connection is created
             void closed(int, std::string);   // Called when connection goes away
             void setConnection(Connection*); // Set pointer to the AMQP Connection
-            void reconnect(const TcpAddress&); //called by LinkRegistry
+            void reconnect(const Address&); //called by LinkRegistry
 
             string getAuthMechanism() { return authMechanism; }
             string getUsername()      { return username; }

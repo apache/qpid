@@ -50,7 +50,7 @@ long  SystemInfo::concurrency() {
 #endif
 }
 
-bool SystemInfo::getLocalHostname (TcpAddress &address) {
+bool SystemInfo::getLocalHostname (Address &address) {
     char name[HOST_NAME_MAX];
     if (::gethostname(name, sizeof(name)) != 0)
         return false;
@@ -59,6 +59,7 @@ bool SystemInfo::getLocalHostname (TcpAddress &address) {
 }
 
 static const string LOCALHOST("127.0.0.1");
+static const string TCP("tcp");
 
 void SystemInfo::getLocalIpAddresses (uint16_t port,
                                       std::vector<Address> &addrList) {
@@ -83,7 +84,7 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
             }
             string addr(dispName);
             if (addr != LOCALHOST) {
-                addrList.push_back(TcpAddress(addr, port));
+                addrList.push_back(Address(TCP, addr, port));
             }
             break;
         }
@@ -97,7 +98,7 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
     freeifaddrs(ifaddr);
 
     if (addrList.empty()) {
-        addrList.push_back(TcpAddress(LOCALHOST, port));
+        addrList.push_back(Address(TCP, LOCALHOST, port));
     }
 }
 

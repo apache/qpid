@@ -31,7 +31,7 @@ namespace client {
 ConnectionSettings::ConnectionSettings() :
     protocol("tcp"),
     host("localhost"), 
-    port(TcpAddress::DEFAULT_PORT),
+    port(5672),
     locale("en_US"),
     heartbeat(0),
     maxChannels(32767),

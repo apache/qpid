@@ -104,12 +104,11 @@ void FailoverManager::attempt(Connection& c, ConnectionSettings s, std::vector<U
     } else {
         for (std::vector<Url>::const_iterator i = urls.begin(); i != urls.end() && !c.isOpen(); ++i) {
             for (Url::const_iterator j = i->begin(); j != i->end() && !c.isOpen(); ++j) {
-                const TcpAddress* tcp = j->get<TcpAddress>();
-                if (tcp) {
-                    s.host = tcp->host;
-                    s.port = tcp->port;
-                    attempt(c, s);
-                }
+                const Address& addr = *j;
+                s.protocol = addr.protocol;
+                s.host = addr.host;
+                s.port = addr.port;
+                attempt(c, s);
             }
         }
     }

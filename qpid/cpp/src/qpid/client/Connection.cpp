@@ -71,19 +71,18 @@ void Connection::open(const Url& url, const ConnectionSettings& settings) {
         throw Exception(QPID_MSG("Attempt to open URL with no addresses."));
     Url::const_iterator i = url.begin();
     do {
-        const TcpAddress* tcp = i->get<TcpAddress>();
+        const Address& addr = *i;
         i++;
-        if (tcp) {
-            try {
-                ConnectionSettings cs(settings);
-                cs.host = tcp->host;
-                cs.port = tcp->port;
-                open(cs);
-                break;
-            }
-            catch (const Exception& /*e*/) {
-                if (i == url.end()) throw;
-            }
+        try {
+            ConnectionSettings cs(settings);
+            cs.protocol = addr.protocol;
+            cs.host = addr.host;
+            cs.port = addr.port;
+            open(cs);
+            break;
+        }
+        catch (const Exception& /*e*/) {
+            if (i == url.end()) throw;
         }
     } while (i != url.end());
 }

@@ -29,13 +29,11 @@
 
 namespace qpid {
 
-QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
-
 /** An AMQP URL contains a list of addresses */
 struct Url : public std::vector<Address> {
 
     /** Url with the hostname as returned by gethostname(2)  */
-    static Url getHostNameUrl(uint16_t port);
+    QPID_COMMON_EXTERN static Url getHostNameUrl(uint16_t port);
 
     /** Url with local IP address(es), may be more than one address
      * on a multi-homed host. */
@@ -65,21 +63,24 @@ struct Url : public std::vector<Address> {
     /** Throw Invalid if the URL does not contain any addresses. */
     QPID_COMMON_EXTERN void throwIfEmpty() const;
 
-    /** Replace contents with parsed URL as defined in
-     * https://wiki.108.redhat.com/jira/browse/AMQP-95
+    /** Replace contents with parsed url
      *@exception Invalid if the url is invalid.
      */
     QPID_COMMON_EXTERN void parse(const char* url);
     QPID_COMMON_EXTERN void parse(const std::string& url) { parse(url.c_str()); }
 
-    /** Replace contesnts with parsed URL as defined in
-     * https://wiki.108.redhat.com/jira/browse/AMQP-95
-     * url.empty() will be true if url is invalid.
-     */
+    /** Replace contesnts with parsed URL. Replace with empty URL if invalid. */
     void parseNoThrow(const char* url);
+
+    /** Add a protocol tag to be recognzed in URLs.
+     * Only for use by protcol plug-in initializers.
+     */
+    static void addProtocol(const std::string& tag);
 
   private:
     mutable std::string cache;  // cache string form for efficiency.
+    static std::vector<std::string> protocols;
+  friend class UrlParser;
 };
 
 inline bool operator==(const Url& a, const Url& b) { return a.str()==b.str(); }
