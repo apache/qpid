@@ -45,6 +45,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
   public:
     QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl);
     QPID_CLIENT_EXTERN Connection(const Connection&);
+    QPID_CLIENT_EXTERN Connection();
     /**  
      * Current implementation supports the following options:
      * 
