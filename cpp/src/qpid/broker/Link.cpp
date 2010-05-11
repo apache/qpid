@@ -307,11 +307,12 @@ void Link::maintenanceVisit ()
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
-void Link::reconnect(const qpid::TcpAddress& a)
+void Link::reconnect(const qpid::Address& a)
 {
     Mutex::ScopedLock mutex(lock);
     host = a.host;
     port = a.port;
+    transport = a.protocol;
     startConnectionLH();
     if (mgmtObject != 0) {
         stringstream errorString;
@@ -322,11 +323,10 @@ void Link::reconnect(const qpid::TcpAddress& a)
 
 bool Link::tryFailover()
 {
-    //TODO: urls only work for TCP at present, update when that has changed
-    TcpAddress next;
-    if (transport == Broker::TCP_TRANSPORT && urls.next(next) && 
-        (next.host != host || next.port != port)) {
-        links->changeAddress(TcpAddress(host, port), next);
+    Address next;
+    if (urls.next(next) && 
+        (next.host != host || next.port != port || next.protocol != transport)) {
+        links->changeAddress(Address(transport, host, port), next);
         QPID_LOG(debug, "Link failing over to " << host << ":" << port);
         return true;
     } else {

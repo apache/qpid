@@ -20,6 +20,7 @@
  */
 #include "MemberSet.h"
 #include <ostream>
+#include <iterator>
 #include <algorithm>
 
 namespace qpid {

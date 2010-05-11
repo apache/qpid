@@ -51,7 +51,7 @@ long  SystemInfo::concurrency() {
     return activeProcessors;
 }
 
-bool SystemInfo::getLocalHostname (TcpAddress &address) {
+bool SystemInfo::getLocalHostname (Address &address) {
     char name[HOST_NAME_MAX];
     if (::gethostname(name, sizeof(name)) != 0) {
         errno = WSAGetLastError();
@@ -61,10 +61,12 @@ bool SystemInfo::getLocalHostname (TcpAddress &address) {
     return true;
 }
 
+static const std::string LOCALHOST("127.0.0.1");
+static const std::string TCP("tcp");
+
 void SystemInfo::getLocalIpAddresses (uint16_t port,
                                       std::vector<Address> &addrList) {
     enum { MAX_URL_INTERFACES = 100 };
-    static const std::string LOCALHOST("127.0.0.1");
 
     SOCKET s = socket (PF_INET, SOCK_STREAM, 0);
     if (s != INVALID_SOCKET) {
@@ -84,7 +86,7 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
             if (interfaces[i].iiFlags & IFF_UP) {
                 std::string addr(inet_ntoa(interfaces[i].iiAddress.AddressIn.sin_addr));
                 if (addr != LOCALHOST)
-                    addrList.push_back(TcpAddress(addr, port));
+                    addrList.push_back(Address(TCP, addr, port));
             }
         }
         closesocket (s);

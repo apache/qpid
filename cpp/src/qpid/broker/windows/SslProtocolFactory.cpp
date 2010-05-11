@@ -52,7 +52,7 @@ struct SslServerOptions : qpid::Options
     SslServerOptions() : qpid::Options("SSL Options"),
                          certStore("My"), port(5671), clientAuth(false)
     {
-        qpid::TcpAddress me;
+        qpid::Address me;
         if (qpid::sys::SystemInfo::getLocalHostname(me))
             certName = me.host;
         else

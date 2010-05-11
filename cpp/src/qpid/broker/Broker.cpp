@@ -437,6 +437,7 @@ uint16_t Broker::getPort(const std::string& name) const  {
 
 void Broker::registerProtocolFactory(const std::string& name, ProtocolFactory::shared_ptr protocolFactory) {
     protocolFactories[name] = protocolFactory;
+    Url::addProtocol(name);
 }
 
 void Broker::accept() {
@@ -461,8 +462,8 @@ void Broker::connect(
     sys::ConnectionCodec::Factory* f)
 {
     url.throwIfEmpty();
-    const TcpAddress* addr=url[0].get<TcpAddress>();
-    connect(addr->host, addr->port, TCP_TRANSPORT, failed, f);
+    const Address& addr=url[0];
+    connect(addr.host, addr.port, addr.protocol, failed, f);
 }
 
 uint32_t Broker::queueMoveMessages(

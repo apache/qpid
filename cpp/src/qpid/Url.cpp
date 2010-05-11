@@ -21,6 +21,7 @@
 #include "qpid/Msg.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/StrError.h"
+#include "qpid/client/Connector.h"
 
 #include <boost/lexical_cast.hpp>
 
@@ -36,7 +37,7 @@ namespace qpid {
 Url::Invalid::Invalid(const string& s) : Exception(s) {}
 
 Url Url::getHostNameUrl(uint16_t port) {
-    TcpAddress address(std::string(), port);
+    Address address("tcp", std::string(), port);
     if (!sys::SystemInfo::getLocalHostname(address))
         throw Url::Invalid(QPID_MSG("Cannot get host name: " << qpid::sys::strError(errno)));
     return Url(address);
@@ -68,50 +69,55 @@ ostream& operator<<(ostream& os, const Url& url) {
     return os;
 }
 
+static const std::string TCP = "tcp";
+    
+/** Simple recursive-descent parser for this grammar:
+ url = ["amqp:"] protocol_addr *("," protocol_addr)
+ protocol_addr = [ protocol_tag ":" ] host [":" port]
+ protocol_tag = "tcp" / "rdma" / "ssl"
 
-/** Simple recursive-descent parser for url grammar in AMQP 0-10 spec:
-
-        amqp_url          = "amqp:" prot_addr_list
-        prot_addr_list    = [prot_addr ","]* prot_addr
-        prot_addr         = tcp_prot_addr | tls_prot_addr
-
-        tcp_prot_addr     = tcp_id tcp_addr
-        tcp_id            = "tcp:" | ""
-        tcp_addr          = [host [":" port] ]
-        host              = <as per http://www.ietf.org/rfc/rfc3986.txt>
-        port              = number]]>
 */
 class UrlParser {
   public:
     UrlParser(Url& u, const char* s) : url(u), text(s), end(s+strlen(s)), i(s) {}
-    bool parse() { return literal("amqp:") && list(&UrlParser::protAddr, &UrlParser::comma) && i == end; }
+    bool parse() {
+        literal("amqp:"); // Optional
+        return list(&UrlParser::protocolAddr, &UrlParser::comma) && i == end;
+    }
 
   private:
     typedef bool (UrlParser::*Rule)();
 
     bool comma() { return literal(","); }
 
-    //  NOTE: tcpAddr must be last since it is allowed to omit it's tcp: tag.
-    bool protAddr() { return exampleAddr() || tcpAddr(); }
-
-    bool tcpAddr() {
-        TcpAddress addr;
-        literal("tcp:");        // Don't check result, allowed to be absent.
-        return addIf(host(addr.host) && (literal(":") ? port(addr.port) : true), addr);
+    bool protocolAddr() {
+        Address addr(Address::TCP, "", Address::AMQP_PORT); // Set up defaults
+        protocolTag(addr.protocol);  // Optional
+        bool ok = (host(addr.host) &&
+                   (literal(":") ? port(addr.port) : true));
+        if (ok) url.push_back(addr);
+        return ok;
     }
-    
-    // Placeholder address type till we have multiple address types. Address is a single char.
-    bool exampleAddr () {
-        if (literal("example:") && i < end) {
-            ExampleAddress ex(*i++);
-            url.push_back(ex);
-            return true;
+
+    bool protocolTag(string& result) {
+        const char* j = std::find(i,end,':');
+        if (j != end) {
+            string tag(i,j);
+            if (std::find(Url::protocols.begin(), Url::protocols.end(), tag) !=
+                Url::protocols.end())
+            {
+                i = j+1;
+                result = tag;
+                return true;
+            }
         }
         return false;
     }
 
-    // FIXME aconway 2008-11-20: this does not implement http://www.ietf.org/rfc/rfc3986.txt.
-    // Works for DNS names and ipv4 literals but won't handle ipv6.
+    // TODO aconway 2008-11-20: this does not fully implement
+    // http://www.ietf.org/rfc/rfc3986.txt. Works for DNS names and
+    // ipv4 literals but won't handle ipv6.
+    // 
     bool host(string& h) {
         const char* start=i;
         while (unreserved() || pctEncoded())
@@ -129,8 +135,6 @@ class UrlParser {
     
     bool port(uint16_t& p) { return decimalInt(p); }
 
-    template <class AddrType> bool addIf(bool ok, const AddrType& addr) { if (ok) url.push_back(addr); return ok; }
-    
     template <class IntType> bool decimalInt(IntType& n) {
         const char* start = i;
         while (decDigit())
@@ -208,5 +212,9 @@ std::istream& operator>>(std::istream& is, Url& url) {
     url.parse(s);
     return is;
 }
+
+std::vector<std::string> Url::protocols;
+
+void Url::addProtocol(const std::string& tag) { protocols.push_back(tag); }
 
 } // namespace qpid

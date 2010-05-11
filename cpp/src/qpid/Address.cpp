@@ -17,6 +17,7 @@
  */
 
 #include "qpid/Address.h"
+#include "qpid/client/ConnectionSettings.h"
 
 #include <ostream>
 
@@ -24,35 +25,14 @@ using namespace std;
 
 namespace qpid {
 
-TcpAddress::TcpAddress(const std::string& h, uint16_t p): host(h), port(p) {}
+const string Address::TCP("tcp");
 
-struct AddressOstreamVisitor : public boost::static_visitor<ostream&> {
-    ostream& out;
-    AddressOstreamVisitor(ostream& o) : out(o) {}
-    template <class T> ostream& operator()(const T& data) { return out << data; }
-};
-
-ostream& operator<<(ostream& os, const Address& addr) {
-    AddressOstreamVisitor visitor(os);
-    return boost::apply_visitor(visitor, addr.value);
+ostream& operator<<(ostream& os, const Address& a) {
+    return os << a.protocol << ":" << a.host << ":" << a.port;
 }
 
-bool operator==(const TcpAddress& x, const TcpAddress& y) {
-    return y.host==x.host && y.port == x.port;
-}
-
-ostream& operator<<(ostream& os, const TcpAddress& a) {
-    return os << "tcp:" << a.host << ":" << a.port;
-}
-
-ExampleAddress::ExampleAddress(const char c) : data(c) {}
-
-bool operator==(const ExampleAddress& x, const ExampleAddress& y) {
-    return x.data == y.data;
-}
-
-ostream& operator<<(ostream& os, const ExampleAddress& ex) {
-    return os << "example:" << ex.data;
+bool operator==(const Address& x, const Address& y) {
+    return y.protocol==x.protocol && y.host==x.host && y.port == x.port;
 }
 
 } // namespace qpid
