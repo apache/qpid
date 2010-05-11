@@ -24,16 +24,22 @@ import org.apache.qpid.server.store.StoreContext;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.txn.TransactionalContext;
 
 public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 {
     private final Object _lock = new Object();
+
+    private long _unackedSize;
 
     private Map<Long, QueueEntry> _map;
 
@@ -84,9 +90,14 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
 
-            QueueEntry entry = _map.remove(deliveryTag);
+            QueueEntry message = _map.remove(deliveryTag);
+            if(message != null)
+            {
+                _unackedSize -= message.getMessage().getSize();
 
-            return entry;
+            }
+
+            return message;
         }
     }
 
@@ -108,6 +119,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.put(deliveryTag, message);
+            _unackedSize += message.getMessage().getSize();
             _lastDeliveryTag = deliveryTag;
         }
     }
@@ -118,6 +130,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         {
             Collection<QueueEntry> currentEntries = _map.values();
             _map = new LinkedHashMap<Long, QueueEntry>(_prefetchLimit);
+            _unackedSize = 0l;
             return currentEntries;
         }
     }
@@ -144,6 +157,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.clear();
+            _unackedSize = 0l;
         }
     }
 
@@ -168,6 +182,9 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 unacked.getValue().discard(storeContext);
 
                 it.remove();
+
+                _unackedSize -= unacked.getValue().getMessage().getSize();
+
 
                 if (unacked.getKey() == deliveryTag)
                 {
@@ -208,4 +225,8 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
+    public long getUnacknowledgeBytes()
+    {
+        return _unackedSize;
+    }
 }

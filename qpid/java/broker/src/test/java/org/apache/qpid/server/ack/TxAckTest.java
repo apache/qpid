@@ -123,7 +123,6 @@ public class TxAckTest extends TestCase
         private final List<Long> _unacked;
         private StoreContext _storeContext = new StoreContext();
 		private AMQQueue _queue;
-		private Map<QueueEntry, TestMessage> _messages;
 
         Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws Exception
         {
@@ -131,8 +130,6 @@ public class TxAckTest extends TestCase
                                                                           _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>()
             );
-
-            _messages = new HashMap<QueueEntry, TestMessage>();
 
             VirtualHost virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
 
@@ -174,9 +171,6 @@ public class TxAckTest extends TestCase
 
                 TestMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
                 _map.add(deliveryTag, _queue.enqueue(new StoreContext(), message));
-                QueueEntry entry = _map.get(deliveryTag);
-
-                _messages.put(entry, (TestMessage) entry.getMessage());
             }
             _acked = acked;
             _unacked = unacked;
@@ -193,7 +187,7 @@ public class TxAckTest extends TestCase
             {
                 QueueEntry u = _map.get(tag);
                 assertTrue("Message not found for tag " + tag, u != null);
-                _messages.get(u).assertCountEquals(expected);
+                ((TestMessage) u.getMessage()).assertCountEquals(expected);
             }
         }
 

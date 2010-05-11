@@ -137,6 +137,8 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     long getSize();
 
+    boolean getDeliveredToConsumer();
+
     boolean expired() throws AMQException;
 
     boolean isAcquired();

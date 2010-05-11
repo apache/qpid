@@ -452,7 +452,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             deliverAsync();
         }
 
-        _managedObject.checkForNotification(message);
+        _managedObject.checkForNotification(entry.getMessage());
 
         return entry;
     }
@@ -780,13 +780,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                AMQMessage message = entry.getMessage();
-                if(message == null)
-                {
-                    return false;
-                }
-                
-                final long messageId = message.getMessageId();
+                final long messageId = entry.getMessage().getMessageId();
                 return messageId >= fromMessageId && messageId <= toMessageId;
             }
 
@@ -805,13 +799,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                AMQMessage message = entry.getMessage();
-                if(message == null)
-                {
-                    return false;
-                }
-                
-                _complete = message.getMessageId() == messageId;
+                _complete = entry.getMessage().getMessageId() == messageId;
                 return _complete;
             }
 
@@ -883,13 +871,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                AMQMessage message = entry.getMessage();
-                if(message == null)
-                {
-                    return false;
-                }
-                
-                final long messageId = message.getMessageId();
+                final long messageId = entry.getMessage().getMessageId();
                 return (messageId >= fromMessageId)
                        && (messageId <= toMessageId)
                        && entry.acquire();
@@ -973,19 +955,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                AMQMessage message = entry.getMessage();
-                if(message == null)
-                {
-                    return false;
-                }
-                
-                final long messageId = message.getMessageId();
+                final long messageId = entry.getMessage().getMessageId();
                 if ((messageId >= fromMessageId)
                     && (messageId <= toMessageId))
                 {
                     if (!entry.isDeleted())
                     {
-                        return message.incrementReference();
+                        return entry.getMessage().incrementReference();
                     }
                 }
 
@@ -1006,10 +982,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             for (QueueEntry entry : entries)
             {
                 AMQMessage message = entry.getMessage();
-                if(message == null)
-                {
-                    continue;
-                }
 
                 if (message.isReferenced() && message.isPersistent())
                 {
@@ -1071,11 +1043,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             while (queueListIterator.advance())
             {
                 QueueEntry node = queueListIterator.getNode();
-                
-                if(node.isDeleted())
-                {
-                    continue;
-                }
 
                 final long messageId = node.getMessage().getMessageId();
 
