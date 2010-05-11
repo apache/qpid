@@ -118,7 +118,7 @@ void ReceiverImpl::init(qpid::client::AsyncSession s, AddressResolution& resolve
         parent->receiverCancelled(destination);        
     } else {
         source->subscribe(session, destination);
-        start();
+        startFlow();
     }
 }
 
