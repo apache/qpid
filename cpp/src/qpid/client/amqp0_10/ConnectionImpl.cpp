@@ -65,6 +65,7 @@ bool setIfFound< std::vector<std::string> >(const Variant::Map& map,
 {
     Variant::Map::const_iterator i = map.find(key);
     if (i != map.end()) {
+        value.clear();
         if (i->second.getType() == VAR_LIST) {
             convert(i->second.asList(), value);
         } else {
