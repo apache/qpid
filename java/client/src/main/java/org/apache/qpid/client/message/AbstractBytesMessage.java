@@ -102,6 +102,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         {
             JMSException jmse = new JMSException(e.toString());
             jmse.setLinkedException(e);
+            jmse.initCause(e);
             throw jmse;
         }
         

@@ -539,6 +539,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             if (manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED) && manager.getLastException() != null)
             {
                 ise.setLinkedException(manager.getLastException());
+                ise.initCause(ise.getLinkedException());
             }
 
             throw ise;
@@ -702,6 +703,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     {
                         JMSException jmse = new JMSException("Error closing session: " + e);
                         jmse.setLinkedException(e);
+                        jmse.initCause(e);
                         throw jmse;
                     }
                     // This is ignored because the channel is already marked as closed so the fail-over process will
@@ -1087,7 +1089,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 _logger.error("", urlse);
                 JMSException jmse = new JMSException(urlse.getReason());
                 jmse.setLinkedException(urlse);
-
+                jmse.initCause(urlse);
                 throw jmse;
             }
         }
@@ -1297,9 +1299,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (Exception e)
         {
-           JMSException ex = new JMSException("Cannot create temporary queue");
-           ex.setLinkedException(e);
-           throw ex;
+           JMSException jmse = new JMSException("Cannot create temporary queue");
+           jmse.setLinkedException(e);
+           jmse.initCause(e);
+           throw jmse;
         }
     }
 
@@ -1352,7 +1355,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 JMSException jmse = new JMSException(urlse.getReason());
                 jmse.setLinkedException(urlse);
-
+                jmse.initCause(urlse);
                 throw jmse;
             }
         }
@@ -1807,16 +1810,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         }
                         catch (AMQInvalidArgumentException ise)
                         {
-                            JMSException ex = new InvalidSelectorException(ise.getMessage());
-                            ex.setLinkedException(ise);
-                            throw ex;
+                            JMSException jmse = new InvalidSelectorException(ise.getMessage());
+                            jmse.setLinkedException(ise);
+                            jmse.initCause(ise);
+                            throw jmse;
                         }
                         catch (AMQInvalidRoutingKeyException e)
                         {
-                            JMSException ide =
-                                    new InvalidDestinationException("Invalid routing key:" + amqd.getRoutingKey().toString());
-                            ide.setLinkedException(e);
-                            throw ide;
+                            JMSException jmse = new InvalidDestinationException("Invalid routing key:" + amqd.getRoutingKey().toString());
+                            jmse.setLinkedException(e);
+                            jmse.initCause(e);
+                            throw jmse;
                         }
                         catch (AMQException e)
                         {
@@ -1826,8 +1830,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                             }
 
                             JMSException ex = new JMSException("Error registering consumer: " + e);
-
                             ex.setLinkedException(e);
+                            ex.initCause(e);
                             throw ex;
                         }
 

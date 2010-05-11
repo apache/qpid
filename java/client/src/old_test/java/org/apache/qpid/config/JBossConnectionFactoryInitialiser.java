@@ -63,11 +63,17 @@ public class JBossConnectionFactoryInitialiser implements ConnectionFactoryIniti
         }
         catch (NamingException e)
         {
-            throw new JMSException("Unable to lookup object: " + e);
+            JMSException jmse = new JMSException("Unable to lookup object: " + e);
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
         catch (Exception e)
         {
-            throw new JMSException("Error creating topic: " + e);
+            JMSException jmse = new JMSException("Error creating topic: " + e);
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
     }
 

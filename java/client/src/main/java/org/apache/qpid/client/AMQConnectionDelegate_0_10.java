@@ -265,6 +265,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             }
 
             JMSException ex = new JMSException(exc.getMessage(), code);
+            ex.setLinkedException(exc);
             ex.initCause(exc);
             listener.onException(ex);
         }

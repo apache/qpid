@@ -116,6 +116,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             // should never occur
             JMSException jmse = new JMSException("Unable to decode text data");
             jmse.setLinkedException(e);
+            jmse.initCause(e);
             throw jmse;
         }
     }
@@ -146,9 +147,10 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 }
                 catch (CharacterCodingException e)
                 {
-                    JMSException je = new JMSException("Could not decode string data: " + e);
-                    je.setLinkedException(e);
-                    throw je;
+                    JMSException jmse = new JMSException("Could not decode string data: " + e);
+                    jmse.setLinkedException(e);
+                    jmse.initCause(e);
+                    throw jmse;
                 }
             }
             else
@@ -159,9 +161,10 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 }
                 catch (CharacterCodingException e)
                 {
-                    JMSException je = new JMSException("Could not decode string data: " + e);
-                    je.setLinkedException(e);
-                    throw je;
+                    JMSException jmse = new JMSException("Could not decode string data: " + e);
+                    jmse.setLinkedException(e);
+                    jmse.initCause(e);
+                    throw jmse;
                 }
             }
             return _decodedValue;

@@ -154,6 +154,7 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
             {
                 JMSException jmsException = new JMSException(amqe.getMessage());
                 jmsException.setLinkedException(amqe);
+                jmsException.initCause(amqe);
                 _connectionException = jmsException;
             }
         }

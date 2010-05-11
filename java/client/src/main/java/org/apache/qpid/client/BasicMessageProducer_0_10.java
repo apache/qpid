@@ -210,11 +210,12 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             
             
         }
-        catch (RuntimeException rte)
+        catch (RuntimeException e)
         {
-            JMSException ex = new JMSException("Exception when sending message");
-            ex.initCause(rte);
-            throw ex;
+            JMSException jmse = new JMSException("Exception when sending message");
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
     }
 
