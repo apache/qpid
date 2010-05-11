@@ -70,12 +70,12 @@ struct Url : public std::vector<Address> {
     QPID_COMMON_EXTERN void parse(const std::string& url) { parse(url.c_str()); }
 
     /** Replace contesnts with parsed URL. Replace with empty URL if invalid. */
-    void parseNoThrow(const char* url);
+    QPID_COMMON_EXTERN void parseNoThrow(const char* url);
 
     /** Add a protocol tag to be recognzed in URLs.
      * Only for use by protcol plug-in initializers.
      */
-    static void addProtocol(const std::string& tag);
+    QPID_COMMON_EXTERN static void addProtocol(const std::string& tag);
 
   private:
     mutable std::string cache;  // cache string form for efficiency.
