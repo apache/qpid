@@ -402,6 +402,7 @@ public final class JMSHeaderAdapter
         {
             MessageFormatException mfe = new MessageFormatException("Only primatives are allowed object is:" + object.getClass());
             mfe.setLinkedException(aice);
+            mfe.initCause(aice);
             throw mfe;
         }
     }

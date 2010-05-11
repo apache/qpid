@@ -510,6 +510,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         if (o instanceof Throwable)
         {
             JMSException e = new JMSException("Message consumer forcibly closed due to error: " + o);
+            e.initCause((Throwable) o);
             if (o instanceof Exception)
             {
                 e.setLinkedException((Exception) o);

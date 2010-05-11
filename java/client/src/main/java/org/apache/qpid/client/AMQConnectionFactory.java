@@ -285,6 +285,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         {
             JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
             jmse.setLinkedException(e);
+            jmse.initCause(e);
             throw jmse;
         }
 
@@ -324,6 +325,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         {
             JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
             jmse.setLinkedException(e);
+            jmse.initCause(e);
             throw jmse;
         }
     }
@@ -461,6 +463,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         {
             JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
             jmse.setLinkedException(e);
+            jmse.initCause(e);
             throw jmse;
         }
     }

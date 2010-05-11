@@ -187,9 +187,10 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         }
         catch (CharacterCodingException e)
         {
-            JMSException je = new JMSException("Error decoding byte stream as a UTF8 string: " + e);
-            je.setLinkedException(e);
-            throw je;
+            JMSException jmse = new JMSException("Error decoding byte stream as a UTF8 string: " + e);
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
     }
 
@@ -308,9 +309,10 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         }
         catch (CharacterCodingException e)
         {
-            JMSException ex = new JMSException("Unable to encode string: " + e);
-            ex.setLinkedException(e);
-            throw ex;
+            JMSException jmse = new JMSException("Unable to encode string: " + e);
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
     }
 
