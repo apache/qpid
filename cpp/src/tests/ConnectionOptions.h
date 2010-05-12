@@ -39,7 +39,7 @@ struct  ConnectionOptions : public qpid::Options,
         addOptions()
             ("broker,b", optValue(host, "HOST"), "Broker host to connect to")
             ("port,p", optValue(port, "PORT"), "Broker port to connect to")
-            ("protocol,P", optValue(protocol, "tcp|rdma"), "Protocol to use for broker connection")
+            ("protocol,P", optValue(protocol, "tcp|ssl|rdma"), "Protocol to use for broker connection")
             ("virtualhost,v", optValue(virtualhost, "VHOST"), "virtual host")
             ("username", optValue(username, "USER"), "user name for broker log in.")
             ("password", optValue(password, "PASSWORD"), "password for broker log in.")
