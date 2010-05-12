@@ -168,8 +168,23 @@ class ACLTests(TestBase010):
         if (result.text.find("Non-continuation line must start with \"group\" or \"acl\"",0,len(result.text)) == -1):
             self.fail(result)
 
+    def test_llegal_extension_lines(self):
+        """
+        Test proper extention lines
+        """
+        aclf = ACLFile()        
+        aclf.write('group test1 joe@EXAMPLE.com \\ \n') # should be allowed
+        aclf.write('            jack@EXAMPLE.com \\ \n') # should be allowed
+        aclf.write('jill@TEST.COM \\ \n') # should be allowed
+        aclf.write('host/123.example.com@TEST.COM\n') # should be allowed
+        aclf.write('acl allow all all')
+        aclf.close()
+         
+        result = self.reload_acl()
+        if (result.text.find("ACL format error",0,len(result.text)) != -1):
+            self.fail(result)
 
-    def test_user_domain(self):
+    def test_user_realm(self):
         """
         Test a user defined without a realm
         Ex. group admin rajith
@@ -191,14 +206,22 @@ class ACLTests(TestBase010):
         """
         aclf = ACLFile()        
         aclf.write('group test1 joe@EXAMPLE.com\n') # should be allowed
-        aclf.write('group test2 jack-jill@EXAMPLE.com\n') # should be allowed
-        aclf.write('group test3 jack_jill@EXAMPLE.com\n') # should be allowed
+        aclf.write('group test2 jack_123-jill@EXAMPLE.com\n') # should be allowed
         aclf.write('group test4 host/somemachine.example.com@EXAMPLE.COM\n') # should be allowed
         aclf.write('acl allow all all')
         aclf.close()
          
         result = self.reload_acl()
         if (result.text.find("ACL format error",0,len(result.text)) != -1):
+            self.fail(result)
+
+        aclf = ACLFile()        
+        aclf.write('group test1 joe$H@EXAMPLE.com\n') # shouldn't be allowed
+        aclf.write('acl allow all all')
+        aclf.close() 
+
+        result = self.reload_acl()
+        if (result.text.find("Username \"joe$H@EXAMPLE.com\" contains illegal characters",0,len(result.text)) == -1):
             self.fail(result)
 
    #=====================================
