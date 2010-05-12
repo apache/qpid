@@ -117,36 +117,6 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             self.assertEqual(403,e.args[0].error_code)                
         
-
-    def test_group_and_user_with_same_name(self):
-        """
-        Test a group and user with same name
-        Ex. group admin admin 
-        """
-        aclf = ACLFile()
-        aclf.write('group bob@QPID bob@QPID\n')
-        aclf.write('acl deny bob@QPID bind exchange\n')
-        aclf.write('acl allow all all')
-        aclf.close()
-
-        result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
-            self.fail(result) 
-
-        session = self.get_session('bob','bob')
-        try:
-            session.queue_declare(queue="allow_queue")
-        except qpid.session.SessionException, e:
-            if (403 == e.args[0].error_code):
-                self.fail("ACL should allow queue create request");
-            self.fail("Error during queue create request");
-
-        try:
-            session.exchange_bind(exchange="amq.direct", queue="allow_queue", binding_key="routing_key")
-            self.fail("ACL should deny queue bind request");
-        except qpid.session.SessionException, e:
-            self.assertEqual(403,e.args[0].error_code)
-       
  
    #=====================================
    # ACL file format tests
@@ -185,23 +155,26 @@ class ACLTests(TestBase010):
         """
          
         aclf = ACLFile()
-        aclf.write('group admins bob@QPID \ ')
+        aclf.write('group admins bob@QPID \n')
         aclf.write('          \ \n')
         aclf.write('joe@QPID \n')
         aclf.write('acl allow all all')
         aclf.close()        
         
         result = self.reload_acl()       
-        if (result.text.find("contains illegal characters",0,len(result.text)) == -1):
+        if (result.text.find("contains an illegal extension",0,len(result.text)) == -1):
             self.fail(result)
+
+        if (result.text.find("Non-continuation line must start with \"group\" or \"acl\"",0,len(result.text)) == -1):
+            self.fail(result)
+
 
     def test_user_domain(self):
         """
         Test a user defined without a realm
         Ex. group admin rajith
         """
-        aclf = ACLFile()
-        aclf.write('group test joe@EXAMPLE.com\n') # should be allowed
+        aclf = ACLFile()        
         aclf.write('group admin bob\n') # shouldn't be allowed
         aclf.write('acl deny admin bind exchange\n')
         aclf.write('acl allow all all')
@@ -209,6 +182,23 @@ class ACLTests(TestBase010):
          
         result = self.reload_acl()
         if (result.text.find("Username 'bob' must contain a realm",0,len(result.text)) == -1):
+            self.fail(result)
+
+    def test_allowed_chars_for_username(self):
+        """
+        Test a user defined without a realm
+        Ex. group admin rajith
+        """
+        aclf = ACLFile()        
+        aclf.write('group test1 joe@EXAMPLE.com\n') # should be allowed
+        aclf.write('group test2 jack-jill@EXAMPLE.com\n') # should be allowed
+        aclf.write('group test3 jack_jill@EXAMPLE.com\n') # should be allowed
+        aclf.write('group test4 host/somemachine.example.com@EXAMPLE.COM\n') # should be allowed
+        aclf.write('acl allow all all')
+        aclf.close()
+         
+        result = self.reload_acl()
+        if (result.text.find("ACL format error",0,len(result.text)) != -1):
             self.fail(result)
 
    #=====================================
