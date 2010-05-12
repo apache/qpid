@@ -42,42 +42,42 @@ struct FailoverUpdatesImpl : qpid::sys::Runnable
     Session session;
     Receiver receiver;
     qpid::sys::Thread thread;
-    volatile bool quit;
 
-    FailoverUpdatesImpl(Connection& c) : connection(c), quit(false)
+    FailoverUpdatesImpl(Connection& c) : connection(c)
     {
         session = connection.createSession("failover-updates");
         receiver = session.createReceiver("amq.failover");
         thread = qpid::sys::Thread(*this);
     }
 
+    ~FailoverUpdatesImpl() {
+        receiver.close();
+        session.close();
+        thread.join();
+    }
+
     void run()
     {
         try {
             Message message;
-            while (!quit && receiver.fetch(message)) {
+            while (receiver.fetch(message)) {
                 connection.setOption("reconnect-urls", message.getProperties()["amq.failover"]);
                 QPID_LOG(debug, "Set reconnect-urls to " << message.getProperties()["amq.failover"]);
                 session.acknowledge();
             }
-        } catch (const qpid::TransportFailure& e) {
+        }
+        catch (const ClosedException&) {}
+        catch (const qpid::TransportFailure& e) {
             QPID_LOG(warning, "Failover updates stopped on loss of connection. " << e.what());
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             QPID_LOG(warning, "Failover updates stopped due to exception: " << e.what());
         }
-        receiver.close();
-        session.close();
-    }
-
-    void wait()
-    {
-        quit = true;
-        thread.join();
     }
 };
 
 FailoverUpdates::FailoverUpdates(Connection& connection) : impl(new FailoverUpdatesImpl(connection)) {}
-FailoverUpdates::~FailoverUpdates() { if (impl) { impl->wait(); delete impl; } }
+FailoverUpdates::~FailoverUpdates() { if (impl) { delete impl; } }
 FailoverUpdates::FailoverUpdates(const FailoverUpdates&) : impl(0) {}
 FailoverUpdates& FailoverUpdates::operator=(const FailoverUpdates&) { return *this; }
 
