@@ -297,13 +297,19 @@ int AclReader::read(const std::string& fn, boost::shared_ptr<AclData> d) {
 bool AclReader::processLine(char* line) {
     bool ret = false;
     std::vector<std::string> toks;
-
+  
     // Check for continuation
     char* contCharPtr = std::strrchr(line, '\\');
     bool cont = contCharPtr != 0;
     if (cont) *contCharPtr = 0;
 
     int numToks = tokenize(line, toks);
+    
+    if (cont && numToks == 0){
+      errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line \"" << lineNumber << "\" contains an illegal extension.";
+      return false;
+    }
+
     if (numToks && (toks[0].compare("group") == 0 || contFlag)) {
         ret = processGroupLine(toks, cont);
     } else if (numToks && toks[0].compare("acl") == 0) {
@@ -317,7 +323,8 @@ bool AclReader::processLine(char* line) {
         if (ws) {
             ret = true;
         } else {
-            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Non-continuation line must start with \"group\" or \"acl\".";
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber 
+                   << ", Non-continuation line must start with \"group\" or \"acl\".";
             ret = false;
         }
     }
@@ -341,32 +348,27 @@ int  AclReader::tokenize(char* line, std::vector<std::string>& toks) {
 // If cont is true, then groupName must be set to the continuation group name
 bool AclReader::processGroupLine(tokList& toks, const bool cont) {
     const unsigned toksSize = toks.size();
+    
     if (contFlag) {
         gmCitr citr = groups.find(groupName);
         for (unsigned i = 0; i < toksSize; i++) {
-            if (!checkName(toks[i])) {
-                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.";
-                return false;
-            }
             if (!isValidUserName(toks[i])) return false;
             addName(toks[i], citr->second);
         }
     } else {
         if (toksSize < (cont ? 2 : 3)) {
-            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Insufficient tokens for group definition.";
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber 
+                        << ", Insufficient tokens for group definition.";
             return false;
         }
-        if (!checkName(toks[1])) {
-            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Group name \"" << toks[1] << "\" contains illegal characters.";
+        if (!isValidGroupName(toks[1])) {
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                        << ", Group name \"" << toks[1] << "\" contains illegal characters.";
             return false;
         }
         gmCitr citr = addGroup(toks[1]);
         if (citr == groups.end()) return false;
         for (unsigned i = 2; i < toksSize; i++) {
-            if (!checkName(toks[i])) {
-                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.";
-                return false;
-            }
             if (!isValidUserName(toks[i])) return false;
             addName(toks[i], citr->second);
         }
@@ -378,7 +380,8 @@ bool AclReader::processGroupLine(tokList& toks, const bool cont) {
 AclReader::gmCitr AclReader::addGroup(const std::string& newGroupName) {
     gmCitr citr = groups.find(newGroupName);
     if (citr != groups.end()) {
-        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Duplicate group name \"" << newGroupName << "\".";
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                    << ", Duplicate group name \"" << newGroupName << "\".";
         return groups.end();
     }
     groupPair p(newGroupName, nameSetPtr(new nameSet));
@@ -431,7 +434,8 @@ void AclReader::printNames() const {
 bool AclReader::processAclLine(tokList& toks) {
     const unsigned toksSize = toks.size();
     if (toksSize < 4) {
-        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Insufficient tokens for acl definition.";
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                    << ", Insufficient tokens for acl definition.";
         return false;
     }
 
@@ -439,7 +443,8 @@ bool AclReader::processAclLine(tokList& toks) {
     try {
         res = AclHelper::getAclResult(toks[1]);
     } catch (...) {
-        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown ACL permission \"" << toks[1] << "\".";
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                    << ", Unknown ACL permission \"" << toks[1] << "\".";
         return false;
     }
 
@@ -449,7 +454,8 @@ bool AclReader::processAclLine(tokList& toks) {
     if (actionAllFlag) {
 
         if (userAllFlag && toksSize > 4) {
-            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Tokens found after action \"all\".";
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                        << ", Tokens found after action \"all\".";
             return false;
         }
         action = ACT_CONSUME; // dummy; compiler must initialize action for this code path
@@ -457,7 +463,8 @@ bool AclReader::processAclLine(tokList& toks) {
         try {
             action = AclHelper::getAction(toks[3]);
         } catch (...) {
-            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown action \"" << toks[3] << "\".";
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                        << ", Unknown action \"" << toks[3] << "\".";
             return false;
         }
     }
@@ -477,7 +484,8 @@ bool AclReader::processAclLine(tokList& toks) {
             try {
                 rule->setObjectType(AclHelper::getObjectType(toks[4]));
             } catch (...) {
-                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown object \"" << toks[4] << "\".";
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                            << ", Unknown object \"" << toks[4] << "\".";
                 return false;
             }
         }
@@ -487,14 +495,17 @@ bool AclReader::processAclLine(tokList& toks) {
         for (unsigned i=5; i<toksSize; i++) {
             nvPair propNvp = splitNameValuePair(toks[i]);
             if (propNvp.second.size() == 0) {
-                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Badly formed property name-value pair \"" << propNvp.first << "\". (Must be name=value)";
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX <<  "Line : " << lineNumber
+                            <<", Badly formed property name-value pair \"" 
+                            << propNvp.first << "\". (Must be name=value)";
                 return false;
             }
             Property prop;
             try {
                 prop = AclHelper::getProperty(propNvp.first);
             } catch (...) {
-                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown property \"" << propNvp.first << "\".";
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                            << ", Unknown property \"" << propNvp.first << "\".";
                 return false;
             }
             rule->addProperty(prop, propNvp.second);
@@ -509,7 +520,8 @@ bool AclReader::processAclLine(tokList& toks) {
 
     // If rule validates, add to rule list
     if (!rule->validate(validationMap)) {
-        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Invalid object/action/property combination.";
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                    << ", Invalid object/action/property combination.";
         return false;
     }
     rules.push_back(rule);
@@ -528,10 +540,10 @@ void AclReader::printRules() const {
 
 // Static function
 // Return true if the name is well-formed (ie contains legal characters)
-bool AclReader::checkName(const std::string& name) {
+bool AclReader::isValidGroupName(const std::string& name) {
     for (unsigned i=0; i<name.size(); i++) {
         const char ch = name.at(i);
-        if (!std::isalnum(ch) && ch != '-' && ch != '_' && ch != '@' && ch != '.') return false;
+        if (!std::isalnum(ch) && ch != '-' && ch != '_') return false;
     }
     return true;
 }
@@ -548,11 +560,20 @@ AclReader::nvPair AclReader::splitNameValuePair(const std::string& nvpString) {
 
 // Returns true if a username has the name@realm format
 bool AclReader::isValidUserName(const std::string& name){
-	size_t pos = name.find('@');
+    size_t pos = name.find('@');
 	if ( pos == std::string::npos || pos == name.length() -1){
-		errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Username '" << name << "' must contain a realm";
+		errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                    << ", Username '" << name << "' must contain a realm";
 		return false;
 	}
+    for (unsigned i=0; i<name.size(); i++) {
+        const char ch = name.at(i);
+        if (!std::isalnum(ch) && ch != '-' && ch != '_' && ch != '@' && ch != '.' && ch != '/'){
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber
+                        << ", Username \"" << name << "\" contains illegal characters.";
+            return false;
+        }
+    }
 	return true;
 }
 
