@@ -245,7 +245,6 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     poller(b.getPoller()),
     cpg(*this),
     name(settings.name),
-    myUrl(settings.url.empty() ? Url() : Url(settings.url)),
     self(cpg.self()),
     clusterId(true),
     expiryPolicy(new ExpiryPolicy(mcast, self, broker.getTimer())),
@@ -276,14 +275,6 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     timer = new ClusterTimer(*this);
     broker.setClusterTimer(std::auto_ptr<sys::Timer>(timer));
 
-    mAgent = broker.getManagementAgent();
-    if (mAgent != 0){
-        _qmf::Package  packageInit(mAgent);
-        mgmtObject = new _qmf::Cluster (mAgent, this, &broker,name,myUrl.str());
-        mAgent->addObject (mgmtObject);
-        mgmtObject->set_status("JOINING");
-    }
-
     // Failover exchange provides membership updates to clients.
     failoverExchange.reset(new FailoverExchange(this));
     broker.getExchanges().registerExchange(failoverExchange);
@@ -312,8 +303,10 @@ Cluster::~Cluster() {
 
 void Cluster::initialize() {
     if (settings.quorum) quorum.start(poller);
-    if (myUrl.empty())
+    if (settings.url.empty())
         myUrl = Url::getIpAddressesUrl(broker.getPort(broker::Broker::TCP_TRANSPORT));
+    else
+        myUrl = settings.url;
     broker.getKnownBrokers = boost::bind(&Cluster::getUrls, this);
     broker.setExpiryPolicy(expiryPolicy);
     dispatcher.start();
@@ -323,12 +316,22 @@ void Cluster::initialize() {
     deliverFrameQueue.start();
     mcast.start();
 
+    /// Create management object
+    mAgent = broker.getManagementAgent();
+    if (mAgent != 0){
+        _qmf::Package  packageInit(mAgent);
+        mgmtObject = new _qmf::Cluster (mAgent, this, &broker,name,myUrl.str());
+        mAgent->addObject (mgmtObject);
+        mgmtObject->set_status("JOINING");
+    }
+
     // Run initMapCompleted immediately to process the initial configuration.
     assert(state == INIT);
     initMapCompleted(*(Mutex::ScopedLock*)0); // Fake lock, single-threaded context.
 
     // Add finalizer last for exception safety.
     broker.addFinalizer(boost::bind(&Cluster::brokerShutdown, this));
+
 }
 
 // Called in connection thread to insert a client connection.
