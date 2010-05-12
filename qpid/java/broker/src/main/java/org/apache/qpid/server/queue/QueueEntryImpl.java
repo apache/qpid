@@ -391,25 +391,8 @@ public class QueueEntryImpl implements QueueEntry
 
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
-            //
-            // We can't advanceHead() before the 'if' as we need to check if we
-            // are at the head or not. If we are not at the head then we should
-            // try scavenge the list.
-            //
-            // An alternative would be to provide a remove(this) method on
-            // the queueEntryList, this would however be less efficient as it
-            // would require that we walk the queue to locate this before we
-            // could perform the removal.            
-            //
-            if (((QueueEntryImpl) _queueEntryList.getHead()).nextNode() != this)
-            {
-                _queueEntryList.advanceHead();
-                _queueEntryList.scavenge();
-            }
-            else
-            {
-                _queueEntryList.advanceHead();
-            }
+
+            _queueEntryList.advanceHead();
 
             return true;
         }
