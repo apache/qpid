@@ -142,35 +142,59 @@
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 
-#include <iostream>
+#include <iostream>]]>
 
 using namespace qpid::messaging;
 
 int main(int argc, char** argv) {
     std::string broker = argc > 1 ? argv[1] : "localhost:5672";
     std::string address = argc > 2 ? argv[2] : "amq.topic";
-    Connection connection(broker);
+    Connection connection(broker); 
     try {
-        connection.open();
-        Session session = connection.createSession();
+        connection.open();  <co id="hello-cpp-open" linkends="callout-cpp-open"/>
+        Session session = connection.createSession(); <co id="hello-cpp-session" linkends="callout-cpp-session"/>
 
-        Receiver receiver = session.createReceiver(address);
-        Sender sender = session.createSender(address);
+        Receiver receiver = session.createReceiver(address); <co id="hello-cpp-receiver" linkends="callout-cpp-receiver"/>
+        Sender sender = session.createSender(address); <co id="hello-cpp-sender" linkends="callout-cpp-sender"/>
 
         sender.send(Message("Hello world!"));
 
-        Message message = receiver.fetch(Duration::SECOND * 1);
-        std::cout << message.getContent() << std::endl;
-        session.acknowledge();
+        Message message = receiver.fetch(Duration::SECOND * 1); <co id="hello-cpp-fetch" linkends="callout-cpp-fetch"/>
+        <![CDATA[std::cout << message.getContent() << std::endl;]]>
+        session.acknowledge(); <co id="hello-cpp-acknowledge" linkends="callout-cpp-acknowledge"/>
         
-        connection.close();
+        connection.close(); <co id="hello-cpp-close" linkends="callout-cpp-close"/>
         return 0;
-    } catch(const std::exception& error) {
-        std::cerr << error.what() << std::endl;
+    } catch(const std::exception&amp; error) {
+        <![CDATA[std::cerr << error.what() << std::endl;]]>
         connection.close();
         return 1;   
     }
-}]]></programlisting>
+}</programlisting>
+
+      <calloutlist>
+	<callout id="callout-cpp-open" arearefs="hello-cpp-open">
+	  <para>Establishes the connection with the messaging broker.</para>
+	</callout>
+	<callout id="callout-cpp-session" arearefs="hello-cpp-session">
+	  <para>Creates a session object, which maintains the state of all interactions with the messaging broker, and manages senders and receivers.</para>
+	</callout>
+	<callout id="callout-cpp-receiver" arearefs="hello-cpp-receiver">
+	  <para>Creates a receiver that reads from the given address.</para>
+	</callout>
+	<callout id="callout-cpp-sender" arearefs="hello-cpp-sender">
+	  <para>Creates a sender that sends to the given address.</para>
+	</callout>
+	<callout id="callout-cpp-fetch" arearefs="hello-cpp-fetch">
+	  <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
+	</callout>
+	<callout id="callout-cpp-acknowledge" arearefs="hello-cpp-acknowledge">
+	  <para>Acknowledges messages that have been read. To guarantee delivery, a message remains on the messaging broker until it is acknowledged by a client. session.acknowledge() acknowledges all unacknowledged messages for the given session&mdash;this allows acknowledgements to be batched, which is  more efficient than acknowledging messages individually.</para>
+	</callout>
+	<callout id="callout-cpp-close" arearefs="hello-cpp-close">
+	  <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
+	</callout>
+      </calloutlist>
       </example>
 
 
@@ -190,28 +214,53 @@ import sys
 from qpid.messaging import *
 
 broker =  "localhost:5672" if len(sys.argv)<2 else sys.argv[1]
-address = "amq.topic" if len(sys.argv)<3 else sys.argv[2]
+address = "amq.topic" if len(sys.argv)<3 else sys.argv[2]]]>
 
 connection = Connection(broker)
 
 try:
-  connection.open()
-  session = connection.session()
+  connection.open()  <co id="hello-python-open" linkends="callout-python-open"/>
+  session = connection.session()   <co id="hello-python-session" linkends="callout-python-session"/>
 
-  sender = session.sender(address)
-  receiver = session.receiver(address)
+  sender = session.sender(address)  <co id="hello-python-sender" linkends="callout-python-sender"/>
+  receiver = session.receiver(address)  <co id="hello-python-receiver" linkends="callout-python-receiver"/>
 
   sender.send(Message("Hello world!"));
 
-  message = receiver.fetch(timeout=1)
+  message = receiver.fetch(timeout=1)  <co id="hello-python-fetch" linkends="callout-python-fetch"/>
   print message.content
-  session.acknowledge() # acknowledge message receipt
+  session.acknowledge() <co id="hello-python-acknowledge" linkends="callout-python-acknowledge"/>
 
 except MessagingError,m:
   print m
 finally:
-  connection.close()
-]]></programlisting>
+  connection.close()  <co id="hello-python-close" linkends="callout-python-close"/>
+</programlisting>
+
+	  <calloutlist>
+	    <callout id="callout-python-open" arearefs="hello-python-open">
+	      <para>Establishes the connection with the messaging broker.</para>
+	    </callout>
+	    <callout id="callout-python-session" arearefs="hello-python-session">
+	      <para>Creates a session object, which maintains the state of all interactions with the messaging broker, and manages senders and receivers.</para>
+	    </callout>
+	    <callout id="callout-python-receiver" arearefs="hello-python-receiver">
+	      <para>Creates a receiver that reads from the given address.</para>
+	    </callout>
+	    <callout id="callout-python-sender" arearefs="hello-python-sender">
+	      <para>Creates a sender that sends to the given address.</para>
+	    </callout>
+	    <callout id="callout-python-fetch" arearefs="hello-python-fetch">
+	      <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
+	    </callout>
+	    <callout id="callout-python-acknowledge" arearefs="hello-python-acknowledge">
+	      <para>Acknowledges messages that have been read. To guarantee delivery, a message remains on the messaging broker until it is acknowledged by a client. session.acknowledge() acknowledges all unacknowledged messages for the given session&mdash;this allows acknowledgements to be batched, which is  more efficient than acknowledging messages individually.</para>
+	    </callout>
+	    <callout id="callout-python-close" arearefs="hello-python-close">
+	      <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
+	    </callout>
+	  </calloutlist>
+
 	</example>
 
     </section>
@@ -2713,108 +2762,6 @@ producer.send(m);
       </table>
 
     </section>
-
-    <section>
-      <title>Java JMS Selector Syntax</title>
-      <para>The AMQP Java JMS Messaging Client supports the following syntax for JMS selectors.</para>
-
-
-      <formalpara><title>Comments:</title>
-      <para>
-      <programlisting><![CDATA[LINE_COMMENT: "--" (~["\n","\r"])* EOL
-EOL: "\n"|"\r"|"\r\n"
-BLOCK_COMMENT: "/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/"
-]]></programlisting>
-      </para>
-      </formalpara>
-
-      <formalpara><title>Reserved Words (case insensitive)</title>
-      <para>
-      <programlisting><![CDATA[NOT:     "NOT"
-AND:     "AND"
-OR:      "OR"
-BETWEEN: "BETWEEN"
-LIKE:    "LIKE"
-ESCAPE:  "ESCAPE"
-IN:      "IN"
-IS:      "IS"
-TRUE:    "TRUE"
-FALSE:   "FALSE"
-NULL:    "NULL"
-]]></programlisting>
-      </para>
-      </formalpara>
-
-      <formalpara><title>Literals (case insensitive)</title>
-      <para>
-      <programlisting><![CDATA[DECIMAL_LITERAL:        ["1"-"9"] (["0"-"9"])* (["l","L"])?
-HEX_LITERAL:            "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+
-OCTAL_LITERAL:          "0" (["0"-"7"])*
-FLOATING_POINT_LITERAL: ( 
- (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? // eg: 5.5 or 5. or 5.5E10 or 5.E10
-  | "." (["0"-"9"])+ (<EXPONENT>)?           // eg: .5 or .5E10
-  | (["0"-"9"])+ <EXPONENT>                  // eg: 5E10
-)                 
-EXPONENT:               "E" (["+","-"])? (["0"-"9"])+
-STRING_LITERAL:         "'" ( ("''") | ~["'"] )*  "'"
-]]></programlisting>
-      </para>
-      </formalpara>
-
-
-      <formalpara><title>Identifiers (case insensitive)</title>
-      <para>
-      <programlisting><![CDATA[ID : ["a"-"z", "_", "$"] (["a"-"z","0"-"9","_", "$"])*
-QUOTED_ID : "\"" ( ("\"\"") | ~["\""] )*  "\""
-]]></programlisting>
-      </para>
-      </formalpara>
-
-
-      <formalpara><title>Grammar</title>
-      <para>
-      <programlisting><![CDATA[JmsSelector        := orExpression
-orExpression       := ( andExpression ( <OR> andExpression )* )
-andExpression      := ( equalityExpression ( <AND> equalityExpression )* )
-equalityExpression := ( comparisonExpression (   "=" comparisonExpression
-                                                 | "<>" comparisonExpression
-                                                 | <IS> <NULL>
-                                                 | <IS> <NOT> <NULL> )* )
-comparisonExpression := 
-    ( addExpression 
-      (   ">" addExpression
-        | ">=" addExpression
-        | "<" addExpression
-        | "<=" addExpression
-        | <LIKE> stringLitteral ( <ESCAPE> stringLitteral )?
-        | <NOT> <LIKE> <STRING_LITERAL> ( <ESCAPE> <STRING_LITERAL> )?
-        | <BETWEEN> addExpression <AND> addExpression
-        | <NOT> <BETWEEN> addExpression <AND> addExpression
-        | <IN> "(" <STRING_LITERAL> ( "," <STRING_LITERAL> )* ")"
-        | <NOT> <IN> "(" <STRING_LITERAL> ( "," <STRING_LITERAL> )* ")" 
-      )*  
-    )
-
-addExpression := multExpr ( ( "+" multExpr | "-" multExpr ) )*
-multExpr      := unaryExpr ( "*" unaryExpr | "/" unaryExpr | "%" unaryExpr )*
-unaryExpr     := ( "+" unaryExpr | "-" unaryExpr | <NOT> unaryExpr | primaryExpr )
-primaryExpr   := ( literal | variable | "(" orExpression ")" )
-literal       := (   <STRING_LITERAL>
-                   | <DECIMAL_LITERAL>
-                   | <HEX_LITERAL>
-                   | <OCTAL_LITERAL>
-                   | <FLOATING_POINT_LITERAL>
-                   | <TRUE>
-                   | <FALSE>
-                   | <NULL> 
-                 )
-
-variable             := ( <ID> | <QUOTED_ID> )]]></programlisting>
-      </para>
-      </formalpara>
-
-    </section>
-
   </chapter>
 
   <chapter id="QpidWCF">
@@ -2839,70 +2786,71 @@ variable             := ( <ID> | <QUOTED_ID> )]]></programlisting>
 	<programlisting><![CDATA[
 namespace Apache.Qpid.Documentation.HelloService
 {
-    using System;
-    using System.ServiceModel;
-    using System.ServiceModel.Channels;
-    using System.Threading;
-    using Apache.Qpid.Channel;
+  using System;
+  using System.ServiceModel;
+  using System.ServiceModel.Channels;
+  using System.Threading;
+  using Apache.Qpid.Channel;
 
-    [ServiceContract]
-    public interface IHelloService
+  [ServiceContract]
+  public interface IHelloService
+  {
+    [OperationContract(IsOneWay = true, Action = "*")]
+    void SayHello(string greeting);
+  }
+
+  public class HelloService : IHelloService
+  {
+    private static int greetingCount;
+
+    public static int GreetingCount
     {
-        [OperationContract(IsOneWay = true, Action = "*")]
-        void SayHello(string greeting);
+      get { return greetingCount; }
     }
 
-    public class HelloService : IHelloService
+    public void SayHello(string greeting)
     {
-        private static int greetingCount;
+      Console.WriteLine("Service received: " + greeting);
+      greetingCount++;
+    }]]></programlisting>
 
-        public static int GreetingCount
+    <programlisting><![CDATA[
+    static void Main(string[] args)
+    {
+      try
+      {
+        AmqpBinding amqpBinding = new AmqpBinding();
+        amqpBinding.BrokerHost = "localhost";
+        amqpBinding.BrokerPort = 5672;
+
+        ServiceHost serviceHost = new ServiceHost(typeof(HelloService));
+        serviceHost.AddServiceEndpoint(typeof(IHelloService),
+          amqpBinding, "amqp:hello_service_node");
+        serviceHost.Open();
+
+        // Send the service a test greeting
+        Uri amqpClientUri=new Uri("amqp:amq.direct?routingkey=hello_service_node");
+        EndpointAddress clientEndpoint = new EndpointAddress(amqpClientUri);
+        ChannelFactory<IHelloService> channelFactory =
+          new ChannelFactory<IHelloService>(amqpBinding, clientEndpoint);
+        IHelloService clientProxy = channelFactory.CreateChannel();
+
+        clientProxy.SayHello("Greetings from WCF client");
+
+        // wait for service to process the greeting
+        while (HelloService.GreetingCount == 0)
         {
-            get { return greetingCount; }
+          Thread.Sleep(100);
         }
-
-        public void SayHello(string greeting)
-        {
-            Console.WriteLine("Service received: " + greeting);
-            greetingCount++;
-        }
-
-        static void Main(string[] args)
-        {
-            try
-            {
-                AmqpBinding amqpBinding = new AmqpBinding();
-                amqpBinding.BrokerHost = "localhost";
-                amqpBinding.BrokerPort = 5672;
-
-                ServiceHost serviceHost = new ServiceHost(typeof(HelloService));
-                serviceHost.AddServiceEndpoint(typeof(IHelloService),
-                    amqpBinding, "amqp:hello_service_node");
-                serviceHost.Open();
-
-                // Send the service a test greeting
-                Uri amqpClientUri = new Uri("amqp:amq.direct?routingkey=hello_service_node");
-                EndpointAddress clientEndpoint = new EndpointAddress(amqpClientUri);
-                ChannelFactory<IHelloService> channelFactory =
-                    new ChannelFactory<IHelloService>(amqpBinding, clientEndpoint);
-                IHelloService clientProxy = channelFactory.CreateChannel();
-
-                clientProxy.SayHello("Greetings from WCF client");
-
-                // wait for service to process the greeting
-                while (HelloService.GreetingCount == 0)
-                {
-                    Thread.Sleep(100);
-                }
-                channelFactory.Close();
-                serviceHost.Close();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Exception: {0}", e);
-            }
-        }
+        channelFactory.Close();
+        serviceHost.Close();
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine("Exception: {0}", e);
+      }
     }
+  }
 }
       ]]></programlisting>
       </example>
@@ -2931,89 +2879,89 @@ namespace Apache.Qpid.Documentation.HelloService
 	<programlisting><![CDATA[
 namespace Apache.Qpid.Samples.Channel.HelloWorld
 {
-    using System;
-    using System.ServiceModel;
-    using System.ServiceModel.Channels;
-    using System.ServiceModel.Description;
-    using System.Text;
-    using System.Xml;
-    using Apache.Qpid.Channel;
+  using System;
+  using System.ServiceModel;
+  using System.ServiceModel.Channels;
+  using System.ServiceModel.Description;
+  using System.Text;
+  using System.Xml;
+  using Apache.Qpid.Channel;
 
-    public class HelloWorld
-    {  
-        static void Main(string[] args)
-        {
-            String broker = "localhost";
-            int port = 5672;
-            String target = "amq.topic";
-            String source = "my_topic_node";
-
-            if (args.Length > 0)
-            {
-                broker = args[0];
-            }
-
-            if (args.Length > 1)
-            {
-                port = int.Parse(args[1]);
-            }
-
-            if (args.Length > 2)
-            {
-                target = args[2];
-            }
-
-            if (args.Length > 3)
-            {
-                source = args[3];
-            }
-
-            AmqpBinaryBinding binding = new AmqpBinaryBinding();
-            binding.BrokerHost = broker;
-            binding.BrokerPort = port;
-
-            IChannelFactory<IInputChannel> receiverFactory = binding.BuildChannelFactory<IInputChannel>();
-            receiverFactory.Open();
-            IInputChannel receiver = receiverFactory.CreateChannel(new EndpointAddress("amqp:" + source));
-            receiver.Open();
-
-            IChannelFactory<IOutputChannel> senderFactory = binding.BuildChannelFactory<IOutputChannel>();
-            senderFactory.Open();
-            IOutputChannel sender = senderFactory.CreateChannel(new EndpointAddress("amqp:" + target));
-            sender.Open();
-
-            sender.Send(Message.CreateMessage(MessageVersion.None, "", new HelloWorldBinaryBodyWriter()));
-
-            Message message = receiver.Receive();
-            XmlDictionaryReader reader = message.GetReaderAtBodyContents();
-            while (!reader.HasValue)
-            {
-                reader.Read();
-            }
-
-            byte[] binaryContent = reader.ReadContentAsBase64();
-            string text = Encoding.UTF8.GetString(binaryContent);
-
-            Console.WriteLine(text);
-
-            senderFactory.Close();
-            receiverFactory.Close();
-        }
-    }
-
-    public class HelloWorldBinaryBodyWriter : BodyWriter
+  public class HelloWorld
+  {  
+    static void Main(string[] args)
     {
-        public HelloWorldBinaryBodyWriter() : base (true) {}
+      String broker = "localhost";
+      int port = 5672;
+      String target = "amq.topic";
+      String source = "my_topic_node";
 
-        protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
-        {
-            byte[] binaryContent = Encoding.UTF8.GetBytes("Hello world!");
+      if (args.Length > 0)
+      {
+        broker = args[0];
+      }
 
-            // wrap the content:
-            writer.WriteStartElement("Binary");
-            writer.WriteBase64(binaryContent, 0, binaryContent.Length);
-        }
+      if (args.Length > 1)
+      {
+        port = int.Parse(args[1]);
+      }
+
+      if (args.Length > 2)
+      {
+        target = args[2];
+      }
+
+      if (args.Length > 3)
+      {
+        source = args[3];
+      }
+
+      AmqpBinaryBinding binding = new AmqpBinaryBinding();
+      binding.BrokerHost = broker;
+      binding.BrokerPort = port;
+
+      IChannelFactory<IInputChannel> receiverFactory = binding.BuildChannelFactory<IInputChannel>();
+      receiverFactory.Open();
+      IInputChannel receiver = receiverFactory.CreateChannel(new EndpointAddress("amqp:" + source));
+      receiver.Open();
+
+      IChannelFactory<IOutputChannel> senderFactory = binding.BuildChannelFactory<IOutputChannel>();
+      senderFactory.Open();
+      IOutputChannel sender = senderFactory.CreateChannel(new EndpointAddress("amqp:" + target));
+      sender.Open();
+
+      sender.Send(Message.CreateMessage(MessageVersion.None, "", new HelloWorldBinaryBodyWriter()));
+
+      Message message = receiver.Receive();
+      XmlDictionaryReader reader = message.GetReaderAtBodyContents();
+      while (!reader.HasValue)
+      {
+        reader.Read();
+      }
+
+      byte[] binaryContent = reader.ReadContentAsBase64();
+      string text = Encoding.UTF8.GetString(binaryContent);
+
+      Console.WriteLine(text);
+
+      senderFactory.Close();
+      receiverFactory.Close();
     }
+  }
+
+  public class HelloWorldBinaryBodyWriter : BodyWriter
+  {
+    public HelloWorldBinaryBodyWriter() : base (true) {}
+
+    protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
+    {
+      byte[] binaryContent = Encoding.UTF8.GetBytes("Hello world!");
+
+      // wrap the content:
+      writer.WriteStartElement("Binary");
+      writer.WriteBase64(binaryContent, 0, binaryContent.Length);
+    }
+  }
 }
 ]]></programlisting>
       </example>
@@ -3151,25 +3099,25 @@ namespace Apache.Qpid.Samples.Channel.HelloWorld
       <para>For example, on output:</para>
 
       <programlisting><![CDATA[
-        AmqpProperties props = new AmqpProperties();
-        props.Durable = true;
-        props.PropertyMap.Add("my_custom_header", new AmqpString("a custom value"));
-        Message msg = Message.CreateMessage(args);
-        msg.Properties.Add("AmqpProperties", amqpProperties);
-        outputChannel.Send(msg);
+AmqpProperties props = new AmqpProperties();
+props.Durable = true;
+props.PropertyMap.Add("my_custom_header", new AmqpString("a custom value"));
+Message msg = Message.CreateMessage(args);
+msg.Properties.Add("AmqpProperties", amqpProperties);
+outputChannel.Send(msg);
 ]]></programlisting>
 
       <para>On input the headers can be accessed from the Message or extracted
       from the operation context</para>
 
       <programlisting><![CDATA[
-    public void SayHello(string greeting)
-    {
-        AmqpProperties props = (AmqpProperties) OperationContext.
-            Current.IncomingMessageProperties["AmqpProperties"];
-        AmqpString extra = (AmqpString) props.PropertyMap["my_custom_header"];
-        Console.WriteLine("Service received: {0} and {1}", greeting, extra);
-    }
+public void SayHello(string greeting)
+{
+  AmqpProperties props = (AmqpProperties) OperationContext.
+  Current.IncomingMessageProperties["AmqpProperties"];
+  AmqpString extra = (AmqpString) props.PropertyMap["my_custom_header"];
+  Console.WriteLine("Service received: {0} and {1}", greeting, extra);
+}
 ]]></programlisting>
 
     </section>
@@ -3180,9 +3128,9 @@ namespace Apache.Qpid.Samples.Channel.HelloWorld
       <para>To engage TLS/SSL:</para>
 
       <programlisting><![CDATA[
-        binding.Security.Mode = AmqpSecurityMode.Transport;
-        binding.Security.Transport.UseSSL = true;
-        binding.BrokerPort = 5671;
+binding.Security.Mode = AmqpSecurityMode.Transport;
+binding.Security.Transport.UseSSL = true;
+binding.BrokerPort = 5671;
 ]]></programlisting>
 
       <para>Currently the WCF client only provides SASL PLAIN (i.e. username and
@@ -3197,12 +3145,12 @@ namespace Apache.Qpid.Samples.Channel.HelloWorld
       binding itself.  Here is a sample using ClientCredentials:</para>
 
       <programlisting><![CDATA[
-        ClientCredentials credentials = new ClientCredentials();
-        credentials.UserName.UserName = "guest";
-        credentials.UserName.Password = "guest";
-        bindingParameters = new BindingParameterCollection();
-        bindingParameters.Add(credentials);
-        readerFactory = binding.BuildChannelFactory<IInputChannel>(bindingParameters);
+ClientCredentials credentials = new ClientCredentials();
+credentials.UserName.UserName = "guest";
+credentials.UserName.Password = "guest";
+bindingParameters = new BindingParameterCollection();
+bindingParameters.Add(credentials);
+readerFactory = binding.BuildChannelFactory<IInputChannel>(bindingParameters);
 ]]></programlisting>
 
     </section>
@@ -3223,14 +3171,15 @@ namespace Apache.Qpid.Samples.Channel.HelloWorld
       <para>Server code:</para>
 
       <programlisting><![CDATA[
-    [OperationBehavior(TransactionScopeRequired = true,
-        TransactionAutoComplete = true)]
-    public void SayHello(string greeting)
-    {
-        // increment ExactlyOnceReceived counter on DB
+[OperationBehavior(TransactionScopeRequired = true,
+                   TransactionAutoComplete = true)]
 
-        // Success: transaction auto completes:
-    }
+public void SayHello(string greeting)
+{
+  // increment ExactlyOnceReceived counter on DB
+
+  // Success: transaction auto completes:
+}
 ]]></programlisting>
 
       <para>Because this operation involves two transaction resources, the
@@ -3247,21 +3196,20 @@ namespace Apache.Qpid.Samples.Channel.HelloWorld
       TransactionScope:</para>
 
       <programlisting><![CDATA[
-        AmqpProperties myDefaults = new AmqpProperties();
-        myDefaults.Durable = true;
-        amqpBinding.DefaultMessageProperties = myDefaults;
-        ChannelFactory<IHelloService> channelFactory =
-        new ChannelFactory<IHelloService>(amqpBinding, clientEndpoint);
-        IHelloService clientProxy = channelFactory.CreateChannel();
+AmqpProperties myDefaults = new AmqpProperties();
+myDefaults.Durable = true;
+amqpBinding.DefaultMessageProperties = myDefaults;
+ChannelFactory<IHelloService> channelFactory =
+new ChannelFactory<IHelloService>(amqpBinding, clientEndpoint);
+IHelloService clientProxy = channelFactory.CreateChannel();
 
-        using (TransactionScope ts = new TransactionScope())
-        {
-            AmqpProperties amqpProperties = new AmqpProperties();
-            clientProxy.SayHello("Greetings from WCF client");
-            // increment ExactlyOnceSent counter on DB
-    
-            ts.Complete();
-        }
+using (TransactionScope ts = new TransactionScope())
+{
+   AmqpProperties amqpProperties = new AmqpProperties();
+   clientProxy.SayHello("Greetings from WCF client");
+   // increment ExactlyOnceSent counter on DB
+   ts.Complete();
+}
 ]]></programlisting>
 
     </section>
