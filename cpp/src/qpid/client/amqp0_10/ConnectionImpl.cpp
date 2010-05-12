@@ -211,7 +211,11 @@ void ConnectionImpl::open()
 {
     qpid::sys::AbsTime start = qpid::sys::now();
     qpid::sys::ScopedLock<qpid::sys::Semaphore> l(semaphore);
-    if (!connection.isOpen()) connect(start);
+    try {
+        if (!connection.isOpen()) connect(start);
+    }
+    catch (const types::Exception&) { throw; }
+    catch (const qpid::Exception& e) { throw messaging::ConnectionError(e.what()); }
 }
 
 bool expired(const qpid::sys::AbsTime& start, int64_t timeout)
