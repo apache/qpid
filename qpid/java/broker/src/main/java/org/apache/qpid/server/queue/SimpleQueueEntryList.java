@@ -63,16 +63,15 @@ public class SimpleQueueEntryList implements QueueEntryList
         QueueEntryImpl next = _head.nextNode();
         QueueEntryImpl newNext = _head.getNext();
 
-        if (!_nextUpdater.compareAndSet(_head, next, newNext))
+        if (next == newNext)
         {
-            _scavenges.incrementAndGet();
+            if (_scavenges.incrementAndGet() > SCAVENGE_COUNT)
+            {
+                _scavenges.set(0L);
+                scavenge();
+            }
         }
 
-        if (_scavenges.get() > SCAVENGE_COUNT)
-        {
-            _scavenges.set(0L);
-            scavenge();
-        }
     }
 
     private void scavenge()
