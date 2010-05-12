@@ -109,7 +109,7 @@ class AclReader {
     void printRules() const; // debug aid
     bool isValidUserName(const std::string& name);
 
-    static bool checkName(const std::string& name);
+    static bool isValidGroupName(const std::string& name);
     static nvPair splitNameValuePair(const std::string& nvpString);
 };
 
