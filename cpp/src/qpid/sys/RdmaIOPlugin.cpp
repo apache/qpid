@@ -26,6 +26,7 @@
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/rdma/RdmaIO.h"
+#include "qpid/sys/rdma/rdma_exception.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/sys/SecuritySettings.h"
 

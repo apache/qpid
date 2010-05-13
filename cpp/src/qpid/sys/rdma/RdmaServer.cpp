@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/sys/rdma/RdmaIO.h"
+#include "qpid/sys/rdma/rdma_exception.h"
 
 #include <arpa/inet.h>
 
