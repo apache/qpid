@@ -96,8 +96,6 @@ class RdmaConnector : public Connector, public sys::Codec
 
     std::string identifier;
 
-    ConnectionImpl* impl;
-
     void connect(const std::string& host, int port);
     void close();
     void send(framing::AMQFrame& frame);
@@ -150,8 +148,7 @@ RdmaConnector::RdmaConnector(Poller::shared_ptr p,
       polling(false),
       shutdownHandler(0),
       aio(0),
-      poller(p),
-      impl(cimpl)
+      poller(p)
 {
     QPID_LOG(debug, "RdmaConnector created for " << version);
 }
@@ -247,7 +244,7 @@ const std::string& RdmaConnector::getIdentifier() const {
 void RdmaConnector::send(AMQFrame& frame) {
     bool notifyWrite = false;
     {
-        Mutex::ScopedLock l(lock);
+    Mutex::ScopedLock l(lock);
 	frames.push_back(frame);
 	//only ask to write if this is the end of a frameset or if we
 	//already have a buffers worth of data
@@ -259,7 +256,7 @@ void RdmaConnector::send(AMQFrame& frame) {
 	    notifyWrite = (currentSize >= maxFrameSize);
 	}
     }
-    if (notifyWrite) aio->notifyPendingWrite();
+    if (notifyWrite && polling) aio->notifyPendingWrite();
 }
 
 void RdmaConnector::handleClosed() {
@@ -270,6 +267,10 @@ void RdmaConnector::handleClosed() {
 // Called in IO thread. (write idle routine)
 // This is NOT only called in response to previously calling notifyPendingWrite
 void RdmaConnector::writebuff(Rdma::AsynchIO&) {
+    // It's possible to be disconnected and be writable
+    if (!polling)
+        return;
+
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
     if (codec->canEncode()) {
         std::auto_ptr<BufferBase> buffer = std::auto_ptr<BufferBase>(aio->getBuffer());
