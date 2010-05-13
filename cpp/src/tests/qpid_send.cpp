@@ -24,7 +24,7 @@
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
-#include <qpid/client/amqp0_10/FailoverUpdates.h>
+#include <qpid/messaging/FailoverUpdates.h>
 #include <qpid/sys/Time.h>
 #include <qpid/sys/Monitor.h>
 #include "TestOptions.h"
@@ -37,7 +37,7 @@
 using namespace std;
 using namespace qpid::messaging;
 using namespace qpid::types;
-using qpid::client::amqp0_10::FailoverUpdates;
+
 typedef std::vector<std::string> string_vector;
 
 namespace qpid {
