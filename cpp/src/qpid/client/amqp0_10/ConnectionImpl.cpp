@@ -109,6 +109,7 @@ ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& optio
 
 void ConnectionImpl::setOptions(const Variant::Map& options)
 {
+    sys::Mutex::ScopedLock l(lock);
     convert(options, settings);
     setIfFound(options, "reconnect", reconnect);
     setIfFound(options, "reconnect-timeout", timeout);
@@ -139,13 +140,14 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
 
 void ConnectionImpl::close()
 {
-    std::vector<std::string> names;
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        for (Sessions::const_iterator i = sessions.begin(); i != sessions.end(); ++i) names.push_back(i->first);
-    }
-    for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
-        getSession(*i).close();
+    while(true) {
+        messaging::Session session;
+        {
+            qpid::sys::Mutex::ScopedLock l(lock);
+            if (sessions.empty()) break;
+            session = sessions.begin()->second;
+        }
+        session.close();
     }
     detach();
 }
@@ -246,12 +248,7 @@ void ConnectionImpl::connect(const qpid::sys::AbsTime& started)
 
 bool ConnectionImpl::tryConnect()
 {
-    if (tryConnect(urls)) return resetSessions();
-    else return false;
-}
-
-bool ConnectionImpl::tryConnect(const std::vector<std::string>& urls)
-{
+    sys::Mutex::ScopedLock l(lock);
     for (std::vector<std::string>::const_iterator i = urls.begin(); i != urls.end(); ++i) {
         try {
             QPID_LOG(info, "Trying to connect to " << *i << "...");
@@ -264,7 +261,7 @@ bool ConnectionImpl::tryConnect(const std::vector<std::string>& urls)
                 connection.open(settings);
             }
             QPID_LOG(info, "Connected to " << *i);                
-            return true;
+            return resetSessions(l);
         } catch (const qpid::ConnectionException& e) {
             //TODO: need to fix timeout on
             //qpid::client::Connection::open() so that it throws
@@ -275,7 +272,7 @@ bool ConnectionImpl::tryConnect(const std::vector<std::string>& urls)
     return false;
 }
 
-bool ConnectionImpl::resetSessions()
+bool ConnectionImpl::resetSessions(const sys::Mutex::ScopedLock& )
 {
     try {
         qpid::sys::Mutex::ScopedLock l(lock);
