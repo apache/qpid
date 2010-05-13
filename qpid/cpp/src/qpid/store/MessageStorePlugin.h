@@ -278,7 +278,6 @@ class MessageStorePlugin :
 
 }; // class MessageStoreImpl
 
-} // namespace msgstore
-} // namespace mrg
+}} // namespace qpid::store
 
 #endif /* QPID_SERIALIZER_H */
