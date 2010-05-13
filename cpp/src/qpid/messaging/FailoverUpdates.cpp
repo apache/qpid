@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "qpid/client/amqp0_10/FailoverUpdates.h"
+#include "qpid/messaging/FailoverUpdates.h"
 #include "qpid/messaging/Connection.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/Receiver.h"
@@ -31,10 +31,7 @@
 #include <vector>
 
 namespace qpid {
-namespace client {
-namespace amqp0_10 {
-
-using namespace qpid::messaging;
+namespace messaging {
 
 struct FailoverUpdatesImpl : qpid::sys::Runnable
 {
@@ -83,4 +80,4 @@ FailoverUpdates::FailoverUpdates(const FailoverUpdates&) : impl(0) {}
 FailoverUpdates& FailoverUpdates::operator=(const FailoverUpdates&) { return *this; }
 
 
-}}} // namespace qpid::client::amqp0_10
+}} // namespace qpid::messaging

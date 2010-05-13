@@ -724,13 +724,13 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/SenderImpl.h			\
   qpid/messaging/ReceiverImpl.h			\
   qpid/messaging/SessionImpl.h			\
+  qpid/messaging/FailoverUpdates.cpp		\
   qpid/client/amqp0_10/AcceptTracker.h		\
   qpid/client/amqp0_10/AcceptTracker.cpp	\
   qpid/client/amqp0_10/AddressResolution.h	\
   qpid/client/amqp0_10/AddressResolution.cpp	\
   qpid/client/amqp0_10/ConnectionImpl.h	        \
   qpid/client/amqp0_10/ConnectionImpl.cpp	\
-  qpid/client/amqp0_10/FailoverUpdates.cpp	\
   qpid/client/amqp0_10/IncomingMessages.h	\
   qpid/client/amqp0_10/IncomingMessages.cpp	\
   qpid/client/amqp0_10/MessageSink.h		\
@@ -828,11 +828,11 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/Message.h 		\
   ../include/qpid/messaging/Receiver.h 	        \
   ../include/qpid/messaging/Sender.h 		\
-  ../include/qpid/messaging/Session.h 		\
+  ../include/qpid/messaging/Session.h		\
+  ../include/qpid/messaging/FailoverUpdates.h	\
   ../include/qpid/types/Exception.h	 	\
   ../include/qpid/types/Uuid.h	 		\
-  ../include/qpid/types/Variant.h 		\
-  ../include/qpid/client/amqp0_10/FailoverUpdates.h
+  ../include/qpid/types/Variant.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

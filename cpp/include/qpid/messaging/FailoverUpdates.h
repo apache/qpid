@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,24 +24,18 @@
 #include "qpid/client/ClientImportExport.h"
 
 namespace qpid {
-
 namespace messaging {
 class Connection;
-}
+class FailoverUpdatesImpl;
 
-namespace client {
-namespace amqp0_10 {
-
-struct FailoverUpdatesImpl;
 /**
- * A utility to listen for updates on cluster membership - published
- * via the amq.failover exchange - and update the list of known urls
- * for a connection accordingly.
+ * A utility to listen for updates on cluster membership and update
+ * the list of known urls for a connection accordingly.
  */
 class FailoverUpdates
 {
   public:
-    QPID_CLIENT_EXTERN FailoverUpdates(qpid::messaging::Connection& connection);
+    QPID_CLIENT_EXTERN FailoverUpdates(Connection& connection);
     QPID_CLIENT_EXTERN ~FailoverUpdates();
   private:
     FailoverUpdatesImpl* impl;
@@ -50,6 +44,6 @@ class FailoverUpdates
     FailoverUpdates(const FailoverUpdates&);
     FailoverUpdates& operator=(const FailoverUpdates&);
 };
-}}} // namespace qpid::client::amqp0_10
+}} // namespace qpid::messaging
 
 #endif  /*!QPID_CLIENT_AMQP0_10_FAILOVERUPDATES_H*/
