@@ -344,7 +344,7 @@ namespace Rdma {
             assert(id.get());
             ::rdma_cm_event* e;
             int rc = ::rdma_get_cm_event(id->channel, &e);
-            if (rc == -1 && errno == EAGAIN)
+            if (GETERR(rc) == EAGAIN)
                 return ConnectionEvent();
             CHECK(rc);
             return ConnectionEvent(e);
@@ -375,7 +375,13 @@ namespace Rdma {
 
         void disconnect() const {
             assert(id.get());
-            CHECK(::rdma_disconnect(id.get()));
+            int rc = ::rdma_disconnect(id.get());
+            // iWarp doesn't let you disconnect a disconnected connection
+            // but Infiniband can do so it's okay to call rdma_disconnect()
+            // in response to a disconnect event, but we may get an error
+            if (GETERR(rc) == EINVAL)
+	        return;
+            CHECK(rc);
         }
 
         // TODO: Currently you can only connect with the default connection parameters

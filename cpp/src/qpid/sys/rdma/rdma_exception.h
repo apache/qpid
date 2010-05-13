@@ -48,6 +48,10 @@ namespace Rdma {
             throw Rdma::Exception((rc == -1) ? errno : rc >0 ? rc : -rc);
     }
 
+    inline int GETERR(int rc) {
+        return (rc == -1) ? errno : rc > 0 ? rc : -rc;
+    }
+
     inline void CHECK_IBV(int rc) {
         if (rc != 0)
             throw Rdma::Exception(rc);
