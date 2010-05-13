@@ -81,8 +81,7 @@ class Ping : public Runnable {
             status = SUCCESS;
             lock.notifyAll();
         } catch (const exception& e) {
-            if (!opts.quiet)
-                cerr << "Unexpected exception: " << e.what() << endl;
+            cerr << "Unexpected exception: " << e.what() << endl;
             Mutex::ScopedLock l(lock);
             status = ERROR;
             lock.notifyAll();
@@ -112,12 +111,11 @@ int main(int argc, char** argv) {
         opts.parse(argc, argv);
         Ping ping;
         ping.start();
-        if (!ping.wait()) exit(1);
+        if (!ping.wait()) return 1;
         if (!opts.quiet) cout << "Success!" << endl;
         return 0;
     } catch (const exception& e) {
-        if (!opts.quiet)
-            cerr << "Unexpected exception: " << e.what()  << endl;
+        cerr << "Unexpected exception: " << e.what()  << endl;
         return 1;
     }
 }

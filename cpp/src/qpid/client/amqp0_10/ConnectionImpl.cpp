@@ -1,4 +1,4 @@
- /*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -29,6 +29,7 @@
 #include "qpid/Url.h"
 #include <boost/intrusive_ptr.hpp>
 #include <vector>
+#include <sstream>
 
 namespace qpid {
 namespace client {
@@ -53,15 +54,26 @@ template <class T> bool setIfFound(const Variant::Map& map, const std::string& k
         QPID_LOG(debug, "option " << key << " specified as " << i->second);
         return true;
     } else {
-        QPID_LOG(debug, "option " << key << " not specified");
         return false;
     }
 }
 
-template <> 
-bool setIfFound< std::vector<std::string> >(const Variant::Map& map,
-                                                   const std::string& key,
-                                                   std::vector<std::string>& value)
+namespace {
+std::string asString(const std::vector<std::string>& v) {
+    std::stringstream os;
+    os << "[";
+    for(std::vector<std::string>::const_iterator i = v.begin(); i != v.end(); ++i ) {
+        if (i != v.begin()) os << ", ";
+        os << *i;
+    }
+    os << "]";
+    return os.str();
+}
+}
+
+template <> bool setIfFound< std::vector<std::string> >(const Variant::Map& map,
+                                            const std::string& key,
+                                            std::vector<std::string>& value)
 {
     Variant::Map::const_iterator i = map.find(key);
     if (i != map.end()) {
@@ -71,6 +83,7 @@ bool setIfFound< std::vector<std::string> >(const Variant::Map& map,
         } else {
             value.push_back(i->second.asString());
         }
+        QPID_LOG(debug, "option " << key << " specified as " << asString(value));
         return true;
     } else {
         return false;
@@ -102,9 +115,9 @@ ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& optio
     minReconnectInterval(3), maxReconnectInterval(60),
     retries(0), reconnectOnLimitExceeded(true)
 {
-    QPID_LOG(debug, "Created connection with " << options);
     setOptions(options);
     urls.insert(urls.begin(), url);
+    QPID_LOG(debug, "Created connection " << url << " with " << options);
 }
 
 void ConnectionImpl::setOptions(const Variant::Map& options)
@@ -127,16 +140,11 @@ void ConnectionImpl::setOptions(const Variant::Map& options)
 
 void ConnectionImpl::setOption(const std::string& name, const Variant& value)
 {
-    if (name == "url") {
-        if (urls.size()) urls[0] = value.asString();
-        else urls.insert(urls.begin(), value.asString());
-    } else {
-        Variant::Map options;
-        options[name] = value;
-        setOptions(options);
-        QPID_LOG(debug, "Set " << name << " to " << value);
-    }
+    Variant::Map options;
+    options[name] = value;
+    setOptions(options);
 }
+
 
 void ConnectionImpl::close()
 {
@@ -246,6 +254,17 @@ void ConnectionImpl::connect(const qpid::sys::AbsTime& started)
     retries = 0;
 }
 
+void ConnectionImpl::mergeUrls(const std::vector<Url>& more, const sys::Mutex::ScopedLock&) {
+    if (more.size()) {
+        for (size_t i = 0; i < more.size(); ++i) {
+            if (std::find(urls.begin(), urls.end(), more[i].str()) == urls.end()) {
+                urls.push_back(more[i].str());
+            }
+        }
+        QPID_LOG(debug, "Added known-hosts, reconnect-urls=" << asString(urls));
+    }
+}
+
 bool ConnectionImpl::tryConnect()
 {
     sys::Mutex::ScopedLock l(lock);
@@ -260,13 +279,14 @@ bool ConnectionImpl::tryConnect()
                 SimpleUrlParser::parse(*i, settings);
                 connection.open(settings);
             }
-            QPID_LOG(info, "Connected to " << *i);                
+            QPID_LOG(info, "Connected to " << *i);
+            mergeUrls(connection.getInitialBrokers(), l);
             return resetSessions(l);
         } catch (const qpid::ConnectionException& e) {
             //TODO: need to fix timeout on
             //qpid::client::Connection::open() so that it throws
             //TransportFailure rather than a ConnectionException
-            QPID_LOG(info, "Failed to connect to " << *i << ": " << e.what());                
+            QPID_LOG(info, "Failed to connect to " << *i << ": " << e.what());
         }
     }
     return false;
