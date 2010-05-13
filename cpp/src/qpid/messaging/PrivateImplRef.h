@@ -29,9 +29,7 @@
 namespace qpid {
 namespace messaging {
 
-// FIXME aconway 2009-04-24: details!
-/** @file
- *
+/**
  * Helper class to implement a class with a private, reference counted
  * implementation and reference semantics.
  *
@@ -73,8 +71,10 @@ template <class T> class PrivateImplRef {
     typedef typename T::Impl Impl;
     typedef boost::intrusive_ptr<Impl> intrusive_ptr;
 
+    /** Get the implementation pointer from a handle */
     static intrusive_ptr get(const T& t) { return intrusive_ptr(t.impl); }
 
+    /** Set the implementation pointer in a handle */
     static void set(T& t, const intrusive_ptr& p) {
         if (t.impl == p) return;
         if (t.impl) boost::intrusive_ptr_release(t.impl);

@@ -27,6 +27,7 @@
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/amqp0_10/SessionImpl.h"
 #include "qpid/messaging/Duration.h"
+#include "qpid/sys/Mutex.h"
 #include <boost/intrusive_ptr.hpp>
 #include <memory>
 
@@ -65,6 +66,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     void received(qpid::messaging::Message& message);
     qpid::messaging::Session getSession() const;
   private:
+    mutable sys::Mutex lock;
     boost::intrusive_ptr<SessionImpl> parent;
     const std::string destination;
     const qpid::messaging::Address address;
@@ -77,15 +79,14 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     qpid::messaging::MessageListener* listener;
     uint32_t window;
 
-    void startFlow();
+    void startFlow(const sys::Mutex::ScopedLock&); // Dummy param, call with lock held
     //implementation of public facing methods
     bool fetchImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout);
     bool getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout);
     void closeImpl();
     void setCapacityImpl(uint32_t);
 
-    //functors for public facing methods (allows locking and retry
-    //logic to be centralised)
+    //functors for public facing methods.
     struct Command
     {
         ReceiverImpl& impl;
