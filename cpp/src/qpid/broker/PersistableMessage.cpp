@@ -52,7 +52,7 @@ void PersistableMessage::flush()
     }
     for (syncList::iterator i = copy.begin(); i != copy.end(); ++i) {
         PersistableQueue::shared_ptr q(i->lock());
-        if (q) {
+        if (q && q->isValid()) {
             store->flush(*q);
         }
     } 
