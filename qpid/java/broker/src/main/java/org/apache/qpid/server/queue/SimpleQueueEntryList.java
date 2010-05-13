@@ -46,7 +46,7 @@ public class SimpleQueueEntryList implements QueueEntryList
             (QueueEntryImpl.class, QueueEntryImpl.class, "_next");
 
     private AtomicLong _scavenges = new AtomicLong(0L);
-    private static final long SCAVENGE_COUNT = Integer.getInteger("qpid.queue.scavenge_count", 50);
+    private final long SCAVENGE_COUNT = Integer.getInteger("qpid.queue.scavenge_count", 50);
 
 
 
