@@ -20,45 +20,77 @@
  */
 #include "qpid/sys/rdma/rdma_factories.h"
 
+#include "qpid/sys/rdma/rdma_exception.h"
+
+
 namespace Rdma {
+    // Intentionally ignore return values for these functions
+    // - we can't do anything about then anyway
     void acker(::rdma_cm_event* e) throw () {
-        if (e)
-            // Intentionally ignore return value - we can't do anything about it here
-            (void) ::rdma_ack_cm_event(e);
+        if (e) (void) ::rdma_ack_cm_event(e);
     }
 
     void destroyEChannel(::rdma_event_channel* c) throw () {
-        if (c)
-            // Intentionally ignore return value - we can't do anything about it here
-            (void) ::rdma_destroy_event_channel(c);
+        if (c) (void) ::rdma_destroy_event_channel(c);
     }
 
     void destroyId(::rdma_cm_id* i) throw () {
-        if (i)
-            // Intentionally ignore return value - we can't do anything about it here
-            (void) ::rdma_destroy_id(i);
+        if (i) (void) ::rdma_destroy_id(i);
     }
 
     void deallocPd(::ibv_pd* p) throw () {
-        if (p)
-            // Intentionally ignore return value - we can't do anything about it here
-            (void) ::ibv_dealloc_pd(p);
+        if (p) (void) ::ibv_dealloc_pd(p);
     }
 
     void destroyCChannel(::ibv_comp_channel* c) throw () {
-        if (c)
-            // Intentionally ignore return value - we can't do anything about it here
-            (void) ::ibv_destroy_comp_channel(c);
+        if (c) (void) ::ibv_destroy_comp_channel(c);
     }
 
     void destroyCq(::ibv_cq* cq) throw () {
-        if (cq)
-            (void) ::ibv_destroy_cq(cq);
+        if (cq) (void) ::ibv_destroy_cq(cq);
     }
 
     void destroyQp(::ibv_qp* qp) throw () {
-        if (qp)
-            (void) ::ibv_destroy_qp(qp);
+        if (qp) (void) ::ibv_destroy_qp(qp);
     }
 
+    boost::shared_ptr< ::rdma_cm_id > mkId(::rdma_cm_id* i) {
+        return boost::shared_ptr< ::rdma_cm_id >(i, destroyId);
+    }
+    
+    boost::shared_ptr< ::rdma_cm_event > mkEvent(::rdma_cm_event* e) {
+        return boost::shared_ptr< ::rdma_cm_event >(e, acker);
+    }
+    
+    boost::shared_ptr< ::ibv_qp > mkQp(::ibv_qp* qp) {
+    	return boost::shared_ptr< ::ibv_qp > (qp, destroyQp);
+    }
+
+    boost::shared_ptr< ::rdma_event_channel > mkEChannel() {
+        ::rdma_event_channel* c = CHECK_NULL(::rdma_create_event_channel());
+        return boost::shared_ptr< ::rdma_event_channel >(c, destroyEChannel);
+    }
+
+    boost::shared_ptr< ::rdma_cm_id >
+    mkId(::rdma_event_channel* ec, void* context, ::rdma_port_space ps) {
+        ::rdma_cm_id* i;
+        CHECK(::rdma_create_id(ec, &i, context, ps));
+        return mkId(i);
+    }
+
+    boost::shared_ptr< ::ibv_pd > allocPd(::ibv_context* c) {
+        ::ibv_pd* pd = CHECK_NULL(ibv_alloc_pd(c));
+        return boost::shared_ptr< ::ibv_pd >(pd, deallocPd);
+    }
+
+    boost::shared_ptr< ::ibv_comp_channel > mkCChannel(::ibv_context* c) {
+        ::ibv_comp_channel* cc = CHECK_NULL(::ibv_create_comp_channel(c));
+        return boost::shared_ptr< ::ibv_comp_channel >(cc, destroyCChannel);
+    }
+
+    boost::shared_ptr< ::ibv_cq >
+    mkCq(::ibv_context* c, int cqe, void* context, ::ibv_comp_channel* cc) {
+        ::ibv_cq* cq = CHECK_NULL(ibv_create_cq(c, cqe, context, cc, 0));
+        return boost::shared_ptr< ::ibv_cq >(cq, destroyCq);
+    }
 }
