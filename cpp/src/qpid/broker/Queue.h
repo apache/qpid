@@ -341,6 +341,8 @@ namespace qpid {
              * has been recovered in the prepared state (dtx only)
              */
             void recoverPrepared(boost::intrusive_ptr<Message>& msg);
+
+            bool isValid();
         };
     }
 }

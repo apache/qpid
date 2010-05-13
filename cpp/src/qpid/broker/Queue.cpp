@@ -725,6 +725,7 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg,
         Messages dequeues;
         {
             Mutex::ScopedLock locker(messageLock);
+            if (deleted) return false;
             policy->tryEnqueue(msg);
             policy->getPendingDequeues(dequeues);
         }
@@ -766,7 +767,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 {
     {
         Mutex::ScopedLock locker(messageLock);
-        if (!isEnqueued(msg)) return false;
+        if (deleted || !isEnqueued(msg)) return false;
         if (!ctxt) { 
             dequeued(msg);
         }
@@ -892,6 +893,7 @@ void Queue::destroy()
             popAndDequeue();
         }
         alternateExchange->decAlternateUsers();
+        deleted = true;
     }
 
     if (store) {
@@ -1168,4 +1170,10 @@ void Queue::checkNotDeleted()
     if (deleted) {
         throw ResourceDeletedException(QPID_MSG("Queue " << getName() << " has been deleted."));
     }
+}
+
+bool Queue::isValid()
+{
+    Mutex::ScopedLock locker(messageLock);
+    return !deleted;
 }
