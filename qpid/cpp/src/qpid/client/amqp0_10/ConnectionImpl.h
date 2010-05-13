@@ -68,8 +68,8 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     void setOptions(const qpid::types::Variant::Map& options);
     void connect(const qpid::sys::AbsTime& started);
     bool tryConnect();
-    bool tryConnect(const std::vector<std::string>& urls);
-    bool resetSessions();
+    bool resetSessions(const sys::Mutex::ScopedLock&); // dummy parameter indicates call with lock held.
+
 };
 }}} // namespace qpid::client::amqp0_10
 

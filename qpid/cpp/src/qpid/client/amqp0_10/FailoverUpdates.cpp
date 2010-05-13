@@ -51,8 +51,9 @@ struct FailoverUpdatesImpl : qpid::sys::Runnable
     }
 
     ~FailoverUpdatesImpl() {
-        receiver.close();
-        session.close();
+        try {
+            session.close();
+        } catch(...) {}         // Squash exceptions in a destructor.
         thread.join();
     }
 

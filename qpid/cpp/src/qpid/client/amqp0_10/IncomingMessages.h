@@ -43,7 +43,7 @@ namespace client {
 namespace amqp0_10 {
 
 /**
- * 
+ * Queue of incoming messages.
  */
 class IncomingMessages
 {
@@ -83,6 +83,7 @@ class IncomingMessages
   private:
     typedef std::deque<FrameSetPtr> FrameSetQueue;
 
+    sys::Mutex lock;
     qpid::client::AsyncSession session;
     boost::shared_ptr< sys::BlockingQueue<FrameSetPtr> > incoming;
     FrameSetQueue received;

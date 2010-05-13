@@ -94,7 +94,6 @@ class SessionImpl : public qpid::messaging::SessionImpl
     template <class T> bool execute(T& f)
     {
         try {
-            qpid::sys::Mutex::ScopedLock l(lock);
             f();
             return true;
         } catch (const qpid::TransportFailure&) {
