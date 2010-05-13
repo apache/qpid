@@ -711,13 +711,14 @@ set (qpidclient_SOURCES
      qpid/messaging/SessionImpl.h
      qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
+     qpid/messaging/FailoverUpdates.h
+     qpid/messaging/FailoverUpdates.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h
      qpid/client/amqp0_10/AddressResolution.cpp
      qpid/client/amqp0_10/ConnectionImpl.h
      qpid/client/amqp0_10/ConnectionImpl.cpp
-     qpid/client/amqp0_10/FailoverUpdates.cpp
      qpid/client/amqp0_10/IncomingMessages.h
      qpid/client/amqp0_10/IncomingMessages.cpp
      qpid/client/amqp0_10/MessageSink.h

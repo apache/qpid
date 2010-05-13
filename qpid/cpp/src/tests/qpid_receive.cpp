@@ -25,10 +25,10 @@
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/messaging/Message.h>
+#include <qpid/messaging/FailoverUpdates.h>
 #include <qpid/Options.h>
 #include <qpid/log/Logger.h>
 #include <qpid/log/Options.h>
-#include <qpid/client/amqp0_10/FailoverUpdates.h>
 #include "TestOptions.h"
 #include "Statistics.h"
 
@@ -37,8 +37,6 @@
 
 using namespace qpid::messaging;
 using namespace qpid::types;
-using qpid::client::amqp0_10::FailoverUpdates;
-
 using namespace std;
 
 namespace qpid {
