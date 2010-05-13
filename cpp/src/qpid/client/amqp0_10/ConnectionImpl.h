@@ -28,8 +28,11 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Semaphore.h"
 #include <map>
+#include <vector>
 
 namespace qpid {
+class Url;
+
 namespace client {
 namespace amqp0_10 {
 
@@ -69,7 +72,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     void connect(const qpid::sys::AbsTime& started);
     bool tryConnect();
     bool resetSessions(const sys::Mutex::ScopedLock&); // dummy parameter indicates call with lock held.
-
+    void mergeUrls(const std::vector<Url>& more, const sys::Mutex::ScopedLock&);
 };
 }}} // namespace qpid::client::amqp0_10
 
