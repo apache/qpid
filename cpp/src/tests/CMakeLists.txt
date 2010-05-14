@@ -165,7 +165,7 @@ set_source_files_properties (ReplicationTest.cpp Shlib.cpp ${xml_tests}
                              "-DQPID_MODULE_SUFFIX=\\\"${CMAKE_SHARED_MODULE_SUFFIX}\\\" -DQPID_MODULE_PREFIX=\\\"${CMAKE_SHARED_MODULE_PREFIX}\\\"")
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
-                       qpidclient qpidbroker qmfconsole)
+                       qpidmessaging qpidbroker qmfconsole)
 remember_location(unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
@@ -260,16 +260,16 @@ target_link_libraries (receiver qpidclient)
 remember_location(receiver)
 
 add_executable (sender sender.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (sender qpidclient)
+target_link_libraries (sender qpidmessaging)
 #sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
 remember_location(sender)
 
 add_executable (qpid_receive qpid_receive.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid_receive qpidclient)
+target_link_libraries (qpid_receive qpidmessaging)
 remember_location(qpid_receive)
 
 add_executable (qpid_send qpid_send.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid_send qpidclient)
+target_link_libraries (qpid_send qpidmessaging)
 remember_location(qpid_send)
 
 # perftest and latencytest are generally useful so install them

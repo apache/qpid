@@ -26,6 +26,7 @@ abs_srcdir=@abs_srcdir@
 
 extra_libs = 
 lib_client = $(abs_builddir)/../libqpidclient.la
+lib_messaging = $(abs_builddir)/../libqpidmessaging.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
 lib_broker = $(abs_builddir)/../libqpidbroker.la
 lib_console = $(abs_builddir)/../libqmfconsole.la
@@ -64,7 +65,7 @@ tmodule_LTLIBRARIES=
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
-	$(lib_client) $(lib_broker) $(lib_console)
+	$(lib_messaging) $(lib_broker) $(lib_console)
 
 unit_test_SOURCES= unit_test.cpp unit_test.h \
 	MessagingSessionTests.cpp \
@@ -163,7 +164,7 @@ sender_SOURCES = \
   TestOptions.h \
   ConnectionOptions.h \
   Statistics.cpp
-sender_LDADD = $(lib_client)
+sender_LDADD = $(lib_messaging)
 
 qpidtest_PROGRAMS += qpid_receive
 qpid_receive_SOURCES = \
@@ -172,7 +173,7 @@ qpid_receive_SOURCES = \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
-qpid_receive_LDADD = $(lib_client)
+qpid_receive_LDADD = $(lib_messaging)
 
 qpidtest_PROGRAMS += qpid_send
 qpid_send_SOURCES = \
@@ -181,7 +182,7 @@ qpid_send_SOURCES = \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
-qpid_send_LDADD = $(lib_client)
+qpid_send_LDADD = $(lib_messaging)
 
 qpidtest_PROGRAMS+=perftest
 perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
@@ -304,7 +305,7 @@ qrsh_LDADD=$(lib_client)
 check_PROGRAMS+=qpid_stream
 qpid_stream_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_stream_SOURCES=qpid_stream.cpp
-qpid_stream_LDADD=$(lib_client) 
+qpid_stream_LDADD=$(lib_messaging) 
 
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \

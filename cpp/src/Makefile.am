@@ -186,7 +186,7 @@ libqpidcommon_la_SOURCES += $(poller) $(systeminfo)
 posix_broker_src = \
   qpid/broker/posix/BrokerDefaults.cpp
 
-lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
+lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
 
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
@@ -312,6 +312,7 @@ EXTRA_DIST +=\
   qpid/store
 
 libqpidcommon_la_LIBADD = \
+  libqpidtypes.la \
   -lboost_program_options \
   -lboost_filesystem \
   -luuid \
@@ -427,10 +428,6 @@ libqpidcommon_la_SOURCES +=			\
   qpid/memory.h					\
   qpid/pointer_to_other.h			\
   qpid/ptr_map.h				\
-  qpid/types/Exception.cpp			\
-  qpid/types/Uuid.cpp				\
-  qpid/types/Variant.cpp			\
-  qpid/amqp_0_10/Codecs.cpp			\
   qpid/sys/AggregateOutput.cpp			\
   qpid/sys/AggregateOutput.h			\
   qpid/sys/AsynchIO.h				\
@@ -489,6 +486,12 @@ libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.cpp
 libqpidcommon_la_LIBADD += -lsasl2
 endif
+
+libqpidtypes_la_SOURCES =			\
+  qpid/amqp_0_10/Codecs.cpp			\
+  qpid/types/Exception.cpp			\
+  qpid/types/Uuid.cpp				\
+  qpid/types/Variant.cpp
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
 
@@ -706,7 +709,11 @@ libqpidclient_la_SOURCES =			\
   qpid/client/SubscriptionManagerImpl.cpp	\
   qpid/client/SubscriptionManagerImpl.h		\
   qpid/client/TCPConnector.cpp			\
-  qpid/client/TCPConnector.h			\
+  qpid/client/TCPConnector.h
+
+libqpidmessaging_la_LIBADD = libqpidclient.la
+
+libqpidmessaging_la_SOURCES =			\
   qpid/messaging/Address.cpp			\
   qpid/messaging/AddressParser.h		\
   qpid/messaging/AddressParser.cpp		\
