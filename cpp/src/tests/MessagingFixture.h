@@ -182,7 +182,7 @@ struct MultiQueueFixture : MessagingFixture
 
 };
 
-std::vector<std::string> fetch(messaging::Receiver& receiver, int count, messaging::Duration timeout=messaging::Duration::SECOND*5)
+inline std::vector<std::string> fetch(messaging::Receiver& receiver, int count, messaging::Duration timeout=messaging::Duration::SECOND*5)
 {
     std::vector<std::string> data;
     messaging::Message message;
@@ -193,7 +193,7 @@ std::vector<std::string> fetch(messaging::Receiver& receiver, int count, messagi
 }
 
 
-void send(messaging::Sender& sender, uint count = 1, uint start = 1,
+inline void send(messaging::Sender& sender, uint count = 1, uint start = 1,
           const std::string& base = "Message")
 {
     for (uint i = start; i < start + count; ++i) {
@@ -201,7 +201,7 @@ void send(messaging::Sender& sender, uint count = 1, uint start = 1,
     }
 }
 
-void receive(messaging::Receiver& receiver, uint count = 1, uint start = 1,
+inline void receive(messaging::Receiver& receiver, uint count = 1, uint start = 1,
              const std::string& base = "Message",
              messaging::Duration timeout=messaging::Duration::SECOND*5)
 {

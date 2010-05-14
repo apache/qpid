@@ -44,4 +44,5 @@ uint32_t Receiver::getUnsettled() { return impl->getUnsettled(); }
 void Receiver::close() { impl->close(); }
 const std::string& Receiver::getName() const { return impl->getName(); }
 Session Receiver::getSession() const { return impl->getSession(); }
+bool Receiver::isClosed() const { return impl->isClosed(); }
 }} // namespace qpid::messaging

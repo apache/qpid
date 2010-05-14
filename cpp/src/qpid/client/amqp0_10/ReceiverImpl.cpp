@@ -193,6 +193,13 @@ void ReceiverImpl::closeImpl()
     }
 }
 
+bool ReceiverImpl::isClosed() const {
+    sys::Mutex::ScopedLock l(lock);
+    return state == CANCELLED;
+}
+
+
+
 void ReceiverImpl::setCapacityImpl(uint32_t c)
 {
     sys::Mutex::ScopedLock l(lock);
