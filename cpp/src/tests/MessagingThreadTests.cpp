@@ -54,13 +54,14 @@ struct ReceiveThread : public sys::Runnable {
     }
 };
 
+
 QPID_AUTO_TEST_CASE(testConcurrentSendReceive) {
-    QueueFixture fix;
-    Sender s = fix.session.createSender(fix.queue);
-    Receiver r = fix.session.createReceiver(fix.queue+";{link:{reliability:unreliable}}");
+    MessagingFixture fix;
+    Sender s = fix.session.createSender("concurrent;{create:always}");
+    Receiver r = fix.session.createReceiver("concurrent;{create:always,link:{reliability:unreliable}}");
     ReceiveThread rt(r);
     sys::Thread thread(rt);
-    const size_t COUNT=1000;
+    const size_t COUNT=100;
     for (size_t i = 0; i < COUNT; ++i) {
         s.send(Message());
     }
@@ -71,28 +72,35 @@ QPID_AUTO_TEST_CASE(testConcurrentSendReceive) {
 }
 
 QPID_AUTO_TEST_CASE(testCloseBusyReceiver) {
-    QueueFixture fix;
-    Receiver r = fix.session.createReceiver(fix.queue);
+    MessagingFixture fix;
+    Receiver r = fix.session.createReceiver("closeReceiver;{create:always}");
     ReceiveThread rt(r);
     sys::Thread thread(rt);
+    sys::usleep(1000);          // Give the receive thread time to block.
     r.close();
     thread.join();
     BOOST_CHECK_EQUAL(rt.error, string());
 
-    // Check that using a closed receiver gives the right result.
+    // Fetching on closed receiver should fail.
     Message m;
     BOOST_CHECK(!r.fetch(m, Duration(0)));
     BOOST_CHECK_THROW(r.fetch(Duration(0)), NoMessageAvailable);
 }
 
 QPID_AUTO_TEST_CASE(testCloseSessionBusyReceiver) {
-    QueueFixture fix;
-    Receiver r = fix.session.createReceiver(fix.queue);
+    MessagingFixture fix;
+    Receiver r = fix.session.createReceiver("closeSession;{create:always}");
     ReceiveThread rt(r);
     sys::Thread thread(rt);
+    sys::usleep(1000);          // Give the receive thread time to block.
     fix.session.close();
     thread.join();
     BOOST_CHECK_EQUAL(rt.error, string());
+
+    // Fetching on closed receiver should fail.
+    Message m;
+    BOOST_CHECK(!r.fetch(m, Duration(0)));
+    BOOST_CHECK_THROW(r.fetch(Duration(0)), NoMessageAvailable);
 }
 
 QPID_AUTO_TEST_SUITE_END()
