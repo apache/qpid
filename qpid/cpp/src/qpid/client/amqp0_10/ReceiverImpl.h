@@ -65,6 +65,8 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     uint32_t getUnsettled();
     void received(qpid::messaging::Message& message);
     qpid::messaging::Session getSession() const;
+    bool isClosed() const;
+
   private:
     mutable sys::Mutex lock;
     boost::intrusive_ptr<SessionImpl> parent;
