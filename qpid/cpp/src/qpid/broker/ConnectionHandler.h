@@ -40,6 +40,9 @@ namespace broker {
 class Connection;
 class SecureConnection;
 
+typedef boost::function<void ( std::string& )> UserIdCallback;
+
+
 class ConnectionHandler : public framing::FrameHandler
 {
     struct Handler : public framing::AMQP_AllOperations::ConnectionHandler
@@ -51,7 +54,7 @@ class ConnectionHandler : public framing::FrameHandler
         AclModule* acl;
         SecureConnection* secured;
 
-        Handler(Connection& connection, bool isClient);
+        Handler(Connection& connection, bool isClient, bool isShadow=false);
         ~Handler();
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
@@ -63,6 +66,14 @@ class ConnectionHandler : public framing::FrameHandler
                   const framing::Array& capabilities, bool insist);
         void close(uint16_t replyCode, const std::string& replyText);
         void closeOk();
+
+        UserIdCallback userIdCallback;
+        void setUserIdCallback ( UserIdCallback fn ) {
+                 userIdCallback = fn;
+             };
+
+
+        void callUserIdCallbacks ( );
 
 
         void start(const qpid::framing::FieldTable& serverProperties,
@@ -81,12 +92,17 @@ class ConnectionHandler : public framing::FrameHandler
         void redirect(const std::string& host, const framing::Array& knownHosts);
     };
     std::auto_ptr<Handler> handler;
+
+
   public:
-    ConnectionHandler(Connection& connection, bool isClient);
+    ConnectionHandler(Connection& connection, bool isClient, bool isShadow=false );
     void close(framing::connection::CloseCode code, const std::string& text);
     void heartbeat();
     void handle(framing::AMQFrame& frame);
     void setSecureConnection(SecureConnection* secured);
+    void setUserIdCallback ( UserIdCallback fn ) {
+      handler->setUserIdCallback ( fn );
+    }
 };
 
 

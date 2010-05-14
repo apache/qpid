@@ -41,8 +41,10 @@ using qpid::sys::SecuritySettings;
 using boost::format;
 using boost::str;
 
+
 namespace qpid {
 namespace broker {
+
 
 
 class NullAuthenticator : public SaslAuthenticator
@@ -61,6 +63,8 @@ public:
 };
 
 #if HAVE_SASL
+
+
 
 class CyrusAuthenticator : public SaslAuthenticator
 {
@@ -84,8 +88,7 @@ public:
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
 
-bool SaslAuthenticator::available(void)
-{
+bool SaslAuthenticator::available(void) {
     return true;
 }
 
@@ -109,8 +112,7 @@ void SaslAuthenticator::fini(void)
 
 typedef NullAuthenticator CyrusAuthenticator;
 
-bool SaslAuthenticator::available(void)
-{
+bool SaslAuthenticator::available(void) {
     return false;
 }
 
@@ -126,17 +128,19 @@ void SaslAuthenticator::fini(void)
 
 #endif
 
-std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c)
+std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c, bool isShadow )
 {
-    static bool needWarning = true;
     if (c.getBroker().getOptions().auth) {
-        return std::auto_ptr<SaslAuthenticator>(new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+        if ( isShadow )
+            return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+        else 
+            return std::auto_ptr<SaslAuthenticator>(new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     } else {
         QPID_LOG(debug, "SASL: No Authentication Performed");
-        needWarning = false;
         return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     }
 }
+
 
 NullAuthenticator::NullAuthenticator(Connection& c, bool e) : connection(c), client(c.getOutput()), 
                                                               realm(c.getBroker().getOptions().realm), encrypt(e) {}
@@ -199,7 +203,6 @@ std::auto_ptr<SecurityLayer> NullAuthenticator::getSecurityLayer(uint16_t)
 
 
 #if HAVE_SASL
-
 
 CyrusAuthenticator::CyrusAuthenticator(Connection& c, bool _encrypt) : 
     sasl_conn(0), connection(c), client(c.getOutput()), encrypt(_encrypt)
@@ -386,7 +389,7 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
             // authentication failure, when one is available
             throw ConnectionForcedException("Authenticated username unavailable");
         }
-        QPID_LOG(info, "SASL: Authentication succeeded for: " << uid);
+        QPID_LOG(info, connection.getMgmtId() << " SASL: Authentication succeeded for: " << uid);
 
         connection.setUserId(uid);
 
@@ -432,7 +435,6 @@ std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFr
     uint ssf = *(reinterpret_cast<const unsigned*>(value));
     std::auto_ptr<SecurityLayer> securityLayer;
     if (ssf) {
-        QPID_LOG(info, "Installing security layer,  SSF: "<< ssf);
         securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
     }
     return securityLayer;

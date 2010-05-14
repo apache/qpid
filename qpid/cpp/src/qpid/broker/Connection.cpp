@@ -39,6 +39,8 @@
 #include <iostream>
 #include <assert.h>
 
+
+
 using namespace qpid::sys;
 using namespace qpid::framing;
 using qpid::ptr_map_ptr;
@@ -77,7 +79,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
                        const qpid::sys::SecuritySettings& external, bool isLink_, uint64_t objectId, bool shadow_) :
     ConnectionState(out_, broker_),
     securitySettings(external),
-    adapter(*this, isLink_),
+    adapter(*this, isLink_, shadow_),
     isLink(isLink_),
     mgmtClosing(false),
     mgmtId(mgmtId_),
@@ -383,5 +385,8 @@ void Connection::restartTimeout()
     if (timeoutTimer)
         timeoutTimer->touch();
 }
+
+
+
 
 }}

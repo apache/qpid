@@ -83,11 +83,11 @@ void ConnectionHandler::setSecureConnection(SecureConnection* secured)
     handler->secured = secured;
 }
 
-ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  : handler(new Handler(connection, isClient)) {}
+ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient, bool isShadow)  : handler(new Handler(connection, isClient, isShadow)) {}
 
-ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
+ConnectionHandler::Handler::Handler(Connection& c, bool isClient, bool isShadow) :
     proxy(c.getOutput()),
-    connection(c), serverMode(!isClient), acl(0), secured(0)
+    connection(c), serverMode(!isClient), acl(0), secured(0), userIdCallback(0)
 {
     if (serverMode) {
 
@@ -98,7 +98,7 @@ ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
 
         properties.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
 
-        authenticator = SaslAuthenticator::createAuthenticator(c);
+        authenticator = SaslAuthenticator::createAuthenticator(c, isShadow);
         authenticator->getMechanisms(mechanisms);
 
         Array locales(0x95);
@@ -181,6 +181,14 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
     connection.setHeartbeatInterval(heartbeat);
 }
 
+void ConnectionHandler::Handler::callUserIdCallbacks ( ) {
+    string s;
+    if ( false == authenticator->getUsername(s) )
+        s = "none";
+    if ( userIdCallback )
+      userIdCallback ( s );
+}
+
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                                       const framing::Array& /*capabilities*/, bool /*insist*/)
 {
@@ -195,6 +203,8 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
         std::auto_ptr<SecurityLayer> sl = authenticator->getSecurityLayer(connection.getFrameMax());
         if (sl.get()) secured->activateSecurityLayer(sl);
     }
+
+    callUserIdCallbacks ( );
 }
 
 

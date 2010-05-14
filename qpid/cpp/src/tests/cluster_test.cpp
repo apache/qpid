@@ -54,6 +54,7 @@
 #include <algorithm>
 #include <iterator>
 
+
 using namespace std;
 using namespace qpid;
 using namespace qpid::cluster;

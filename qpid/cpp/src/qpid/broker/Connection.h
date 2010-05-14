@@ -63,6 +63,9 @@ class LinkRegistry;
 class SecureConnection;
 struct ConnectionTimeoutTask;
 
+typedef boost::function<void ( std::string& )> userIdCallback;
+
+
 class Connection : public sys::ConnectionInputHandler,
                    public ConnectionState,
                    public RefCounted
@@ -141,6 +144,10 @@ class Connection : public sys::ConnectionInputHandler,
     const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
     { 
         return securitySettings;
+    }
+
+    void setUserIdCallback ( UserIdCallback fn ) {
+        adapter.setUserIdCallback ( fn );
     }
 
   private:

@@ -263,5 +263,11 @@
     <control name="management-agents" code="0x37">
       <field name="data" type="vbin32"/>
     </control>
+
+    <!-- Announce the user ID on a secure connection -->
+    <control name="secureUserId" code="0x38">
+      <field name="secure-user-id" type="str16"/>
+    </control>
+
   </class>
 </amqp>

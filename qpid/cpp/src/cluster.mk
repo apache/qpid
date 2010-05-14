@@ -90,6 +90,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/MemberSet.h			\
   qpid/cluster/MemberSet.cpp			\
   qpid/cluster/types.h				\
+  qpid/cluster/SecureConnectionFactory.h        \
+  qpid/cluster/SecureConnectionFactory.cpp      \
   qpid/cluster/StoreStatus.h			\
   qpid/cluster/StoreStatus.cpp
 
