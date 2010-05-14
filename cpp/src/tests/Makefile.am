@@ -362,7 +362,7 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test qpidd.port $(unit_wrappers)
 # Not run under valgrind, too slow
 
 LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test stop_broker \
- run_failover_soak run_cluster_authentication_soak reliable_replication_test \
+ run_failover_soak reliable_replication_test \
  federated_cluster_test_with_node_failure
 
 EXTRA_DIST+=						\
@@ -371,7 +371,6 @@ EXTRA_DIST+=						\
 	multiq_perftest					\
 	topic_perftest					\
 	run_failover_soak				\
-	run_cluster_authentication_soak                 \
 	reliable_replication_test			\
 	federated_cluster_test_with_node_failure
 
