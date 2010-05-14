@@ -46,17 +46,17 @@ struct InvalidOptionString : public MessagingException
     QPID_CLIENT_EXTERN InvalidOptionString(const std::string& msg);
 };
 
-struct KeyError : MessagingException
+struct KeyError : public MessagingException
 {
     QPID_CLIENT_EXTERN KeyError(const std::string&);
 };
 
-struct LinkError : MessagingException
+struct LinkError : public MessagingException
 {
     QPID_CLIENT_EXTERN LinkError(const std::string&);
 };
 
-struct AddressError : LinkError
+struct AddressError : public LinkError
 {
     QPID_CLIENT_EXTERN AddressError(const std::string&);
 };
@@ -88,62 +88,62 @@ struct MalformedAddress : public AddressError
     QPID_CLIENT_EXTERN MalformedAddress(const std::string& msg);
 };
 
-struct ReceiverError : LinkError
+struct ReceiverError : public LinkError
 {
     QPID_CLIENT_EXTERN ReceiverError(const std::string&);
 };
 
-struct FetchError : ReceiverError
+struct FetchError : public ReceiverError
 {
     QPID_CLIENT_EXTERN FetchError(const std::string&);
 };
 
-struct NoMessageAvailable : FetchError
+struct NoMessageAvailable : public FetchError
 {
     QPID_CLIENT_EXTERN NoMessageAvailable();
 };
 
-struct SenderError : LinkError
+struct SenderError : public LinkError
 {
     QPID_CLIENT_EXTERN SenderError(const std::string&);
 };
 
-struct SendError : SenderError
+struct SendError : public SenderError
 {
     QPID_CLIENT_EXTERN SendError(const std::string&);
 };
 
-struct TargetCapacityExceeded : SendError
+struct TargetCapacityExceeded : public SendError
 {
     QPID_CLIENT_EXTERN TargetCapacityExceeded(const std::string&);
 };
 
-struct SessionError : MessagingException
+struct SessionError : public MessagingException
 {
     QPID_CLIENT_EXTERN SessionError(const std::string&);
 };
 
-struct TransactionError : SessionError
+struct TransactionError : public SessionError
 {
     QPID_CLIENT_EXTERN TransactionError(const std::string&);
 };
 
-struct TransactionAborted : TransactionError
+struct TransactionAborted : public TransactionError
 {
     QPID_CLIENT_EXTERN TransactionAborted(const std::string&);
 };
 
-struct UnauthorizedAccess : SessionError
+struct UnauthorizedAccess : public SessionError
 {
     QPID_CLIENT_EXTERN UnauthorizedAccess(const std::string&);
 };
 
-struct ConnectionError : MessagingException
+struct ConnectionError : public MessagingException
 {
     QPID_CLIENT_EXTERN ConnectionError(const std::string&);
 };
 
-struct TransportFailure : MessagingException
+struct TransportFailure : public MessagingException
 {
     QPID_CLIENT_EXTERN TransportFailure(const std::string&);
 };
