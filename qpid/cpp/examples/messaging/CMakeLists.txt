@@ -23,7 +23,7 @@
 macro(add_messaging_example example)
   add_executable(${example} ${example}.cpp OptionParser.cpp)
   set_target_properties(${example} PROPERTIES OUTPUT_NAME ${example})
-  target_link_libraries(${example} qpidclient ${_boost_libs_needed})
+  target_link_libraries(${example} qpidmessaging ${_boost_libs_needed})
   # For installs, don't install the built example; that would be pointless.
   # Install the things a user needs to build the example on-site.
   install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${example}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.h ${CMAKE_CURRENT_SOURCE_DIR}/OptionParser.cpp
@@ -40,8 +40,8 @@ endmacro(add_messaging_example)
 add_messaging_example(drain)
 add_messaging_example(spout)
 
-add_example(messaging map_receiver)
-add_example(messaging map_sender)
+add_messaging_example(map_receiver)
+add_messaging_example(map_sender)
 
-add_example(messaging client)
-add_example(messaging server)
+add_messaging_example(client)
+add_messaging_example(server)

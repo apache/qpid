@@ -21,8 +21,8 @@ examplesdir=$(pkgdatadir)/examples/messaging
 # Settings to build the examples in automake
 AM_CXXFLAGS = $(WARNING_CFLAGS)
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
-CLIENT_LIB=$(top_builddir)/src/libqpidclient.la
-CLIENTFLAGS=-lqpidclient
+CLIENT_LIB=$(top_builddir)/src/libqpidmessaging.la
+CLIENTFLAGS=-lqpidmessaging
 
 noinst_PROGRAMS=drain spout client server map_sender map_receiver hello_world hello_xml
 

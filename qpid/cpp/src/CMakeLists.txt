@@ -544,7 +544,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
     ${qpid_poller_module}
   )
-  set (qpidcommon_platform_LIBS
+  set (qpidcommon_platform_LIBS      
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     uuid
@@ -584,10 +584,6 @@ set (qpidcommon_SOURCES
      qpid/SessionId.cpp
      qpid/StringUtils.cpp
      qpid/Url.cpp
-     qpid/types/Exception.cpp
-     qpid/types/Uuid.cpp
-     qpid/types/Variant.cpp
-     qpid/amqp_0_10/Codecs.cpp
      qpid/amqp_0_10/SessionHandler.cpp
      qpid/framing/AccumulatedAck.cpp
      qpid/framing/AMQBody.cpp
@@ -638,6 +634,7 @@ if (CLOCK_GETTIME_IN_RT)
   set (qpidcommon_platform_LIBS ${qpidcommon_platform_LIBS} rt)
 endif (CLOCK_GETTIME_IN_RT)
 target_link_libraries (qpidcommon
+                       qpidtypes
                        ${qpidcommon_platform_LIBS}
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
@@ -695,6 +692,21 @@ set (qpidclient_SOURCES
      qpid/client/SubscriptionManager.cpp
      qpid/client/SubscriptionManagerImpl.cpp
      qpid/client/TCPConnector.cpp
+)
+
+
+add_library (qpidclient SHARED ${qpidclient_SOURCES})
+target_link_libraries (qpidclient qpidcommon ${qpidclient_platform_LIBS})
+set_target_properties (qpidclient PROPERTIES VERSION ${qpidc_version})
+install (TARGETS qpidclient
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_CLIENT})
+install (DIRECTORY ../include/qpid
+         DESTINATION ${QPID_INSTALL_INCLUDEDIR}
+         COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
+         PATTERN ".svn" EXCLUDE)
+
+set (qpidmessaging_SOURCES
      qpid/messaging/Address.cpp
      qpid/messaging/AddressParser.h
      qpid/messaging/AddressParser.cpp
@@ -735,16 +747,12 @@ set (qpidclient_SOURCES
      qpid/client/amqp0_10/SimpleUrlParser.cpp
 )
 
-add_library (qpidclient SHARED ${qpidclient_SOURCES})
-target_link_libraries (qpidclient qpidcommon ${qpidclient_platform_LIBS})
-set_target_properties (qpidclient PROPERTIES VERSION ${qpidc_version})
-install (TARGETS qpidclient
+add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
+target_link_libraries (qpidmessaging qpidclient)
+set_target_properties (qpidmessaging PROPERTIES VERSION ${qpidc_version})
+install (TARGETS qpidmessaging
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
-install (DIRECTORY ../include/qpid
-         DESTINATION ${QPID_INSTALL_INCLUDEDIR}
-         COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
-         PATTERN ".svn" EXCLUDE)
 
 # Released source artifacts from Apache have the generated headers included in
 # the source tree, not the binary tree. So don't attempt to grab them when
@@ -778,6 +786,19 @@ if (WIN32)
                  COMPONENT ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${DTC_PLUGIN_SOURCE})
 endif (WIN32)
+
+set (qpidtypes_SOURCES
+     qpid/types/Exception.cpp
+     qpid/types/Uuid.cpp
+     qpid/types/Variant.cpp
+     qpid/amqp_0_10/Codecs.cpp
+)
+add_library (qpidtypes SHARED ${qpidtypes_SOURCES})
+set_target_properties (qpidtypes PROPERTIES
+                       VERSION ${qpidc_version})
+install (TARGETS qpidtypes
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_COMMON})
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
