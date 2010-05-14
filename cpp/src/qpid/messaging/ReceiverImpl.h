@@ -45,6 +45,7 @@ class ReceiverImpl : public virtual qpid::RefCounted
     virtual void close() = 0;
     virtual const std::string& getName() const = 0;
     virtual Session getSession() const = 0;
+    virtual bool isClosed() const = 0;
 };
 }} // namespace qpid::messaging
 
