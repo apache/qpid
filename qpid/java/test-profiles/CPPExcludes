@@ -117,3 +117,18 @@ org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage
 
 org.apache.qpid.server.queue.ConflationQueueTest#*
 
+# Temporarily adding the following until the issues are sorted out.
+org.apache.qpid.test.unit.client.AMQConnectionTest
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
+
