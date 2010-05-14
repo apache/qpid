@@ -245,6 +245,11 @@ failover_soak_INCLUDES=$(PUBLIC_INCLUDES)
 failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
 failover_soak_LDADD=$(lib_client) $(lib_broker)
 
+check_PROGRAMS+=cluster_authentication_soak
+cluster_authentication_soak_INCLUDES=$(PUBLIC_INCLUDES)
+cluster_authentication_soak_SOURCES=cluster_authentication_soak.cpp  ForkedBroker.h ForkedBroker.cpp
+cluster_authentication_soak_LDADD=$(lib_client) $(lib_broker)
+
 check_PROGRAMS+=declare_queues
 declare_queues_INCLUDES=$(PUBLIC_INCLUDES)
 declare_queues_SOURCES=declare_queues.cpp  
@@ -355,7 +360,7 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test qpidd.port $(unit_wrappers)
 # Not run under valgrind, too slow
 
 LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test stop_broker \
- run_failover_soak reliable_replication_test \
+ run_failover_soak run_cluster_authentication_soak reliable_replication_test \
  federated_cluster_test_with_node_failure
 
 EXTRA_DIST+=						\
@@ -364,6 +369,7 @@ EXTRA_DIST+=						\
 	multiq_perftest					\
 	topic_perftest					\
 	run_failover_soak				\
+	run_cluster_authentication_soak                 \
 	reliable_replication_test			\
 	federated_cluster_test_with_node_failure
 

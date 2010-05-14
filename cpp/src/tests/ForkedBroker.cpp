@@ -139,6 +139,7 @@ void ForkedBroker::init(const Args& userArgs) {
         std::transform(args.begin(), args.end(), argv.begin(), boost::bind(&std::string::c_str, _1));
         argv.push_back(0);
         QPID_LOG(debug, "ForkedBroker exec " << prog << ": " << args);
+
         execv(prog, const_cast<char* const*>(&argv[0]));
         QPID_LOG(critical, "execv failed to start broker: prog=\"" << prog << "\"; args=\"" << args << "\"; errno=" << errno << " (" << std::strerror(errno) << ")");
         ::exit(1);

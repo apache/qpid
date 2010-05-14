@@ -21,16 +21,26 @@
 #ifndef _SaslAuthenticator_
 #define _SaslAuthenticator_
 
+
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/SecurityLayer.h"
 #include <memory>
+#include <vector>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace broker {
 
 class Connection;
+
+// Calls your fn with the user ID string, just 
+// after the security negotiation is complete.
+// Add your callback to the list with addUserIdCallback().
+typedef boost::function<void ( std::string& )> UserIdCallback;
+
 
 class SaslAuthenticator
 {
@@ -40,16 +50,23 @@ public:
     virtual void start(const std::string& mechanism, const std::string& response) = 0;
     virtual void step(const std::string& response) = 0;
     virtual void getUid(std::string&) {}
+    virtual bool getUsername(std::string&) { return false; };
     virtual void getError(std::string&) {}
     virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize) = 0;
 
+    virtual void setUserIdCallback ( UserIdCallback ) { }
     static bool available(void);
 
     // Initialize the SASL mechanism; throw if it fails.
     static void init(const std::string& saslName);
     static void fini(void);
 
-    static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection);
+    static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection, bool isShadow);
+
+    virtual void callUserIdCallbacks() { }
+
+private:
+    UserIdCallback userIdCallback;
 };
 
 }}
