@@ -43,8 +43,8 @@ class AMQFrame : public AMQDataBlock
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    QPID_COMMON_EXTERN AMQBody* getBody();
-    QPID_COMMON_EXTERN const AMQBody* getBody() const;
+    AMQBody* getBody() { return body.get(); }
+    const AMQBody* getBody() const { return body.get(); }
 
     AMQMethodBody* getMethod() { return getBody() ? getBody()->getMethod() : 0; }
     const AMQMethodBody* getMethod() const { return getBody() ? getBody()->getMethod() : 0; }
@@ -102,7 +102,6 @@ class AMQFrame : public AMQDataBlock
     bool eof : 1;
     bool bos : 1;
     bool eos : 1;
-    mutable uint32_t encodedSizeCache;
 };
 
 QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const AMQFrame&);
