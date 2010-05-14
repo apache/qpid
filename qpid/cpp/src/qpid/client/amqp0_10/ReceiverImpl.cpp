@@ -112,20 +112,15 @@ void ReceiverImpl::init(qpid::client::AsyncSession s, AddressResolution& resolve
 {
     sys::Mutex::ScopedLock l(lock);
     session = s;
+    if (state == CANCELLED) return;
     if (state == UNRESOLVED) {
         source = resolver.resolveSource(session, address);
         assert(source.get());
         state = STARTED;
     }
-    if (state == CANCELLED) {
-        source->cancel(session, destination);
-        parent->receiverCancelled(destination);        
-    } else {
-        source->subscribe(session, destination);
-        startFlow(l);
-    }
+    source->subscribe(session, destination);
+    startFlow(l);
 }
-
 
 const std::string& ReceiverImpl::getName() const {
     sys::Mutex::ScopedLock l(lock);
@@ -156,6 +151,10 @@ ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name,
 
 bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
 {
+    {
+        sys::Mutex::ScopedLock l(lock);
+        if (state == CANCELLED) return false;
+    }
     return parent->get(*this, message, timeout);
 }
 
@@ -163,7 +162,7 @@ bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging:
 {
     {
         sys::Mutex::ScopedLock l(lock);
-        if (state == CANCELLED) return false;//TODO: or should this be an error?
+        if (state == CANCELLED) return false;
 
         if (capacity == 0 || state != STARTED) {
             session.messageSetFlowMode(destination, FLOW_MODE_CREDIT);
@@ -174,6 +173,7 @@ bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging:
     if (getImpl(message, timeout)) {
         return true;
     } else {
+        if (state == CANCELLED) return false; // Might have been closed during get.
         sync(session).messageFlush(destination);
         {
             sys::Mutex::ScopedLock l(lock);
@@ -197,8 +197,6 @@ bool ReceiverImpl::isClosed() const {
     sys::Mutex::ScopedLock l(lock);
     return state == CANCELLED;
 }
-
-
 
 void ReceiverImpl::setCapacityImpl(uint32_t c)
 {
