@@ -29,6 +29,7 @@
 #include "UpdateReceiver.h"
 
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/SecureConnection.h"
 #include "qpid/broker/SemanticState.h"
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/sys/AtomicValue.h"
@@ -64,7 +65,7 @@ class Connection :
         
 {
   public:
-    
+
     /** Local connection. */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& mgmtId, MemberId, bool catchUp, bool isLink,
                const qpid::sys::SecuritySettings& external);
@@ -164,6 +165,7 @@ class Connection :
 
     void giveReadCredit(int credit);
     void announce(const std::string& mgmtId, uint32_t ssf, const std::string& authid, bool nodict);
+    void secureUserId(const std::string&);
     void abort();
     void deliverClose();
 
@@ -175,6 +177,13 @@ class Connection :
     void managementSetupState(uint64_t objectNum, uint16_t bootSequence);
 
     //uint32_t getSsf() const { return connectionCtor.external.ssf; }
+
+    void setSecureConnection ( broker::SecureConnection * sc );
+
+    // This is a callback, registered with the broker connection.
+    // It gives me the user ID, if one is negotiated through Sasl.
+    void mcastUserId ( std::string & );
+
 
   private:
     struct NullFrameHandler : public framing::FrameHandler {
@@ -237,8 +246,13 @@ class Connection :
     bool expectProtocolHeader;
     McastFrameHandler mcastFrameHandler;
     UpdateReceiver& updateIn;
+    qpid::broker::SecureConnection* secureConnection;
 
     static qpid::sys::AtomicValue<uint64_t> catchUpId;
+
+    mutable sys::Monitor connectionNegotiationMonitor;
+    bool mcastSentButNotReceived;
+    bool inConnectionNegotiation;
     
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };

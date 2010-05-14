@@ -21,6 +21,8 @@
 #include "qpid/cluster/ConnectionCodec.h"
 #include "qpid/cluster/ClusterSettings.h"
 
+#include "qpid/cluster/SecureConnectionFactory.h"
+
 #include "qpid/cluster/Cluster.h"
 #include "qpid/cluster/ConnectionCodec.h"
 #include "qpid/cluster/UpdateClient.h"
@@ -75,6 +77,8 @@ struct ClusterOptions : public Options {
     }
 };
 
+typedef boost::shared_ptr<sys::ConnectionCodec::Factory> CodecFactoryPtr;
+
 struct ClusterPlugin : public Plugin {
 
     ClusterSettings settings;
@@ -94,9 +98,10 @@ struct ClusterPlugin : public Plugin {
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
         cluster = new Cluster(settings, *broker);
-        broker->setConnectionFactory(
-            boost::shared_ptr<sys::ConnectionCodec::Factory>(
-                new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
+        CodecFactoryPtr simpleFactory(new broker::ConnectionFactory(*broker));
+        CodecFactoryPtr clusterFactory(new ConnectionCodec::Factory(simpleFactory, *cluster));
+        CodecFactoryPtr secureFactory(new SecureConnectionFactory(clusterFactory));
+        broker->setConnectionFactory(secureFactory);
     }
 
     void disallowManagementMethods(ManagementAgent* agent) {

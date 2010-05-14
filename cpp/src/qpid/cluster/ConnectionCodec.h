@@ -70,7 +70,7 @@ class ConnectionCodec : public sys::ConnectionCodec {
     void closed();
     bool isClosed() const;
     framing::ProtocolVersion getVersion() const;
-    
+    void setSecureConnection(broker::SecureConnection* sc) { interceptor->setSecureConnection(sc); }    
 
   private:
     amqp_0_10::Connection codec;
