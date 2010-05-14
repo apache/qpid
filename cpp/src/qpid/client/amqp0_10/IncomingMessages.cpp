@@ -186,22 +186,25 @@ bool IncomingMessages::process(Handler* handler, qpid::sys::Duration duration)
 {
     AbsTime deadline(AbsTime::now(), duration);
     FrameSet::shared_ptr content;
-    for (Duration timeout = duration; incoming->pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
-        if (content->isA<MessageTransferBody>()) {
-            MessageTransfer transfer(content, *this);
-            if (handler && handler->accept(transfer)) {
-                QPID_LOG(debug, "Delivered " << *content->getMethod());
-                return true;
+    try {
+        for (Duration timeout = duration; incoming->pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
+            if (content->isA<MessageTransferBody>()) {
+                MessageTransfer transfer(content, *this);
+                if (handler && handler->accept(transfer)) {
+                    QPID_LOG(debug, "Delivered " << *content->getMethod());
+                    return true;
+                } else {
+                    //received message for another destination, keep for later
+                    QPID_LOG(debug, "Pushed " << *content->getMethod() << " to received queue");
+                    sys::Mutex::ScopedLock l(lock);
+                    received.push_back(content);
+                }
             } else {
-                //received message for another destination, keep for later
-                QPID_LOG(debug, "Pushed " << *content->getMethod() << " to received queue");
-                sys::Mutex::ScopedLock l(lock);
-                received.push_back(content);
+                //TODO: handle other types of commands (e.g. message-accept, message-flow etc)
             }
-        } else {
-            //TODO: handle other types of commands (e.g. message-accept, message-flow etc)
         }
     }
+    catch (const qpid::ClosedException&) {} // Just return false if queue closed.
     return false;
 }
 
