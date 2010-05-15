@@ -60,7 +60,7 @@ public:
     };
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
-    virtual bool isValid() = 0;
+    virtual void flush() = 0;
     
     inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
     
