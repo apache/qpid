@@ -114,7 +114,7 @@ QPID_AUTO_TEST_CASE(testSyncProcessWithIncomplete)
     IncompleteMessageList list;
     SequenceNumber counter(1);
     MockStore store;
-    store.queue = Queue::shared_ptr(new Queue("mock-queue"));
+    store.queue = Queue::shared_ptr(new Queue("mock-queue", false, &store));
     //fill up list with messages
     for (int i = 0; i < 5; i++) {
         boost::intrusive_ptr<Message> msg(new Message(counter++));

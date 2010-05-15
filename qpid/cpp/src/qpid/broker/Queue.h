@@ -59,6 +59,8 @@ namespace qpid {
 
         using std::string;
 
+
+
         /**
          * The brokers representation of an amqp queue. Messages are
          * delivered to a queue from where they can be dispatched to
@@ -68,6 +70,25 @@ namespace qpid {
         class Queue : public boost::enable_shared_from_this<Queue>,
             public PersistableQueue, public management::Manageable {
 
+            struct UsageBarrier
+            {
+                Queue& parent;
+                uint count;
+                
+                UsageBarrier(Queue&);
+                bool acquire();
+                void release();
+                void destroy();
+            };
+            
+            struct ScopedUse
+            {
+                UsageBarrier& barrier;
+                const bool acquired;
+                ScopedUse(UsageBarrier& b) : barrier(b), acquired(barrier.acquire()) {}
+                ~ScopedUse() { if (acquired) barrier.release(); }
+            };
+            
             typedef std::deque<QueuedMessage> Messages;
             typedef std::map<string,boost::intrusive_ptr<Message> > LVQ;
             enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
@@ -90,7 +111,7 @@ namespace qpid {
             Messages pendingDequeues;//used to avoid dequeuing during recovery
             LVQ lvq;
             mutable qpid::sys::Mutex consumerLock;
-            mutable qpid::sys::Mutex messageLock;
+            mutable qpid::sys::Monitor messageLock;
             mutable qpid::sys::Mutex ownershipLock;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
@@ -108,6 +129,7 @@ namespace qpid {
             std::string seqNoKey;
             Broker* broker;
             bool deleted;
+            UsageBarrier barrier;
 
             void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -342,7 +364,7 @@ namespace qpid {
              */
             void recoverPrepared(boost::intrusive_ptr<Message>& msg);
 
-            bool isValid();
+            void flush();
         };
     }
 }
