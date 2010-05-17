@@ -5,6 +5,6 @@ broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=BRK-1004
 broker.stopped=Exception
 broker.config=${project.root}/build/etc/config-systests-derby.xml
-profile.excludes=JavaStandaloneExcludes CPPExcludes CPPTransientExcludes
+profile.excludes=JavaStandaloneExcludes JavaPersistentExcludes CPPExcludes CPPTransientExcludes
 broker.clean.between.tests=true
 broker.persistent=true
