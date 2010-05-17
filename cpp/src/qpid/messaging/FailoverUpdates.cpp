@@ -28,10 +28,12 @@
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
 #include "qpid/Url.h"
+#include "qpid/framing/Uuid.h"
 #include <vector>
 
 namespace qpid {
 namespace messaging {
+using framing::Uuid;
 
 struct FailoverUpdatesImpl : qpid::sys::Runnable
 {
@@ -42,7 +44,7 @@ struct FailoverUpdatesImpl : qpid::sys::Runnable
 
     FailoverUpdatesImpl(Connection& c) : connection(c)
     {
-        session = connection.createSession("failover-updates");
+        session = connection.createSession("failover-updates."+Uuid(true).str());
         receiver = session.createReceiver("amq.failover");
         thread = qpid::sys::Thread(*this);
     }
