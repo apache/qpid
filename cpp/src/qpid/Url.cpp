@@ -59,8 +59,11 @@ string Url::str() const {
 }
 
 ostream& operator<<(ostream& os, const Url& url) {
-    Url::const_iterator i = url.begin();
     os << "amqp:";
+    if (!url.getUser().empty()) os << url.getUser();
+    if (!url.getPass().empty()) os << "/" << url.getPass();
+    if (!(url.getUser().empty() && url.getPass().empty())) os << "@";
+    Url::const_iterator i = url.begin();
     if (i!=url.end()) {
         os << *i++;
         while (i != url.end()) 
@@ -72,21 +75,34 @@ ostream& operator<<(ostream& os, const Url& url) {
 static const std::string TCP = "tcp";
     
 /** Simple recursive-descent parser for this grammar:
- url = ["amqp:"] protocol_addr *("," protocol_addr)
- protocol_addr = [ protocol_tag ":" ] host [":" port]
- protocol_tag = "tcp" / "rdma" / "ssl"
-
+url = ["amqp:"][ user ["/" password] "@" ] protocol_addr *("," protocol_addr)
+protocol_addr = tcp_addr / rmda_addr / ssl_addr / .. others plug-in
+tcp_addr = ["tcp:"] host [":" port]
+rdma_addr = "rdma:" host [":" port]
+ssl_addr = "ssl:" host [":" port]
 */
 class UrlParser {
   public:
     UrlParser(Url& u, const char* s) : url(u), text(s), end(s+strlen(s)), i(s) {}
     bool parse() {
         literal("amqp:"); // Optional
+        userPass();       // Optional
         return list(&UrlParser::protocolAddr, &UrlParser::comma) && i == end;
     }
 
   private:
     typedef bool (UrlParser::*Rule)();
+
+    bool userPass() {
+        const char* at = std::find(i, end, '@');
+        if (at == end) return false;
+        const char* slash = std::find(i, at, '/');
+        url.setUser(string(i, slash));
+        const char* pass = (slash == at) ? slash : slash+1;
+        url.setPass(string(pass, at));
+        i = at+1;
+        return true;
+    }
 
     bool comma() { return literal(","); }
 
@@ -205,6 +221,11 @@ void Url::throwIfEmpty() const {
     if (empty())
         throw Url::Invalid("URL contains no addresses");
 }
+
+std::string Url::getUser() const { return user; }
+std::string Url::getPass() const { return pass; }
+void Url::setUser(const std::string& s) { user = s; }
+void Url::setPass(const std::string& s) { pass = s; }
 
 std::istream& operator>>(std::istream& is, Url& url) {
     std::string s;

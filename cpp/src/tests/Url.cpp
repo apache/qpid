@@ -68,6 +68,23 @@ QPID_AUTO_TEST_CASE(TestParseMultiAddress) {
     URL_CHECK_INVALID(",amqp:tcp:h");
 }
 
+QPID_AUTO_TEST_CASE(TestParseUserPass) {
+    URL_CHECK_STR("amqp:user/pass@tcp:host:123");
+    URL_CHECK_STR("amqp:user@tcp:host:123");
+    BOOST_CHECK_EQUAL(Url("user/pass@host").str(), "amqp:user/pass@tcp:host:5672");
+    BOOST_CHECK_EQUAL(Url("user@host").str(), "amqp:user@tcp:host:5672");
+
+    Url u("user/pass@host");
+    BOOST_CHECK_EQUAL(u.getUser(), "user");
+    BOOST_CHECK_EQUAL(u.getPass(), "pass");
+    Url v("foo@host");
+    BOOST_CHECK_EQUAL(v.getUser(), "foo");
+    BOOST_CHECK_EQUAL(v.getPass(), "");
+    u = v;
+    BOOST_CHECK_EQUAL(u.getUser(), "foo");
+    BOOST_CHECK_EQUAL(u.getPass(), "");
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

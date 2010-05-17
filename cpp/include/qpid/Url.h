@@ -56,7 +56,6 @@ struct Url : public std::vector<Address> {
     /** Parse url, throw Invalid if invalid. */
     explicit Url(const char* url) { parse(url); }
 
-    Url& operator=(const Url& u) { this->std::vector<Address>::operator=(u); cache=u.cache; return *this; }
     Url& operator=(const char* s) { parse(s); return *this; }
     Url& operator=(const std::string& s) { parse(s); return *this; }
 
@@ -77,9 +76,17 @@ struct Url : public std::vector<Address> {
      */
     QPID_COMMON_EXTERN static void addProtocol(const std::string& tag);
 
+    QPID_COMMON_EXTERN void setUser(const std::string&);
+    QPID_COMMON_EXTERN void setPass(const std::string&);
+    QPID_COMMON_EXTERN std::string getUser() const;
+    QPID_COMMON_EXTERN std::string getPass() const;
+
   private:
-    mutable std::string cache;  // cache string form for efficiency.
     static std::vector<std::string> protocols;
+
+    mutable std::string cache;  // cache string form for efficiency.
+    std::string user, pass;
+
   friend class UrlParser;
 };
 
