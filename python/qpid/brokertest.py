@@ -514,14 +514,20 @@ class NumberedSender(Thread):
     Thread to run a sender client and send numbered messages until stopped.
     """
 
-    def __init__(self, broker, max_depth=None):
+    def __init__(self, broker, max_depth=None, queue="test-queue"):
         """
         max_depth: enable flow control, ensure sent - received <= max_depth.
         Requires self.notify_received(n) to be called each time messages are received.
         """
         Thread.__init__(self)
         self.sender = broker.test.popen(
-            [broker.test.sender_exec, "--port", broker.port()], expect=EXPECT_RUNNING)
+            ["qpid_send",
+             "--broker", "localhost:%s"%broker.port(),
+             "--address", "%s;{create:always}"%queue,
+             "--failover-updates",
+             "--content-stdin"
+             ],
+            expect=EXPECT_RUNNING)
         self.condition = Condition()
         self.max = max_depth
         self.received = 0
@@ -567,15 +573,21 @@ class NumberedReceiver(Thread):
     Thread to run a receiver client and verify it receives
     sequentially numbered messages.
     """
-    def __init__(self, broker, sender = None):
+    def __init__(self, broker, sender = None, queue="test-queue"):
         """
         sender: enable flow control. Call sender.received(n) for each message received.
         """
         Thread.__init__(self)
         self.test = broker.test
         self.receiver = self.test.popen(
-            [self.test.receiver_exec, "--port", broker.port()],
-            expect=EXPECT_RUNNING, drain=False)
+            ["qpid_receive",
+             "--broker", "localhost:%s"%broker.port(),
+             "--address", "%s;{create:always}"%queue,
+             "--failover-updates",
+             "--forever"
+             ],
+            expect=EXPECT_RUNNING,
+            drain=False)
         self.lock = Lock()
         self.error = None
         self.sender = sender
