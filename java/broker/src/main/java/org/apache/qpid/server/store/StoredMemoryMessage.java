@@ -29,7 +29,7 @@ public class StoredMemoryMessage implements StoredMessage
     private final ByteBuffer _content;
     private final StorableMessageMetaData _metaData;
 
-    StoredMemoryMessage(long messageNumber, StorableMessageMetaData metaData)
+    public StoredMemoryMessage(long messageNumber, StorableMessageMetaData metaData)
     {
         _messageNumber = messageNumber;
         _metaData = metaData;
