@@ -205,14 +205,15 @@ qpid::messaging::Session ConnectionImpl::newSession(bool transactional, const st
 {
     std::string name = n.empty() ? Uuid(true).str() : n;
     qpid::messaging::Session impl(new SessionImpl(*this, transactional));
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        sessions[name] = impl;
-    }
-    try {
-        getImplPtr(impl)->setSession(connection.newSession(name));
-    } catch (const qpid::TransportFailure&) {
-        open();
+    while (true) {
+        try {
+            getImplPtr(impl)->setSession(connection.newSession(name));
+            qpid::sys::Mutex::ScopedLock l(lock);
+            sessions[name] = impl;
+            break;
+        } catch (const qpid::TransportFailure&) {
+            open();
+        }
     }
     return impl;
 }
