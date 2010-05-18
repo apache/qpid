@@ -230,8 +230,7 @@ public class AMQConnectionTest extends QpidTestCase
                 producer.send(producerSession.createTextMessage("test"));
             }
             
-            Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-            MessageConsumer consumerB = consSessB.createConsumer(_queue);
+            MessageConsumer consumerB = consSessA.createConsumer(_queue);
 
             Message msg;
             // Check that consumer A has 2 messages
