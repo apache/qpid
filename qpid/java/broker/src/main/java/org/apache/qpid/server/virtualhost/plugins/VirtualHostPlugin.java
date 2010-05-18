@@ -20,21 +20,43 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
-public interface VirtualHostPlugin extends Runnable
+import org.apache.log4j.Logger;
+
+public abstract class VirtualHostPlugin implements Runnable
 {
-    public void run();
+    Logger _logger = Logger.getLogger(this.getClass());
+
+    final public void run()
+    {
+        try
+        {
+           execute();
+        }
+        catch (Throwable e)
+        {
+           _logger.warn(this.getClass().getSimpleName()+" throw exception: " + e);
+        }
+    }
+
 
     /**
      * Long value representing the delay between repeats
      *
      * @return
      */
-    public long getDelay();
+    public abstract long getDelay();
 
     /**
      * Option to specify what the delay value represents
      * @see java.util.concurrent.TimeUnit for valid value.
      * @return
      */
-    public String getTimeUnit();
+    public abstract String getTimeUnit();
+
+    /**
+     * Execute the plugin.
+     */
+    public abstract void execute();
+
+
 }

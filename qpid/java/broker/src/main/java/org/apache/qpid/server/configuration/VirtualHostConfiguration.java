@@ -210,4 +210,9 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
                             "security", "store", "housekeeping"};
 
     }
+
+    public int getHouseKeepingThreadCount()
+    {
+        return _config.getInt("housekeeping.threadCount", Runtime.getRuntime().availableProcessors());
+    }
 }
