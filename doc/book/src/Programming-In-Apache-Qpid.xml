@@ -681,6 +681,17 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
 	    on the queue so other receivers can receive them.
           </para>
         </listitem>
+        <listitem>
+          <para>
+            Extension points that rely on the functionality of specific node types.
+	  </para>
+	  <para>
+	    For instance, the Qpid XML exchange can use XQuery to do
+	    content-based routing for XML messages, or to query
+	    message data using XQuery. Queries can be specified using
+	    options.
+          </para>
+        </listitem>
       </itemizedlist>
 
 
@@ -690,10 +701,11 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
         receives.
       </para>
       
-      
+      <section>
+	<title>assert</title>
       <para>
-	First, let's use the <literal>assert</literal> option to
-	ensure that the address resolves to a node of the required
+	In this section, we use the <literal>assert</literal> option
+	to ensure that the address resolves to a node of the required
 	type.
       </para>
 
@@ -743,16 +755,24 @@ Queue my-topic does not exist
       create the queue <literal>xoxox</literal> if it does not already
       exist:</para>
 
-      <example>
-	<title>Creating a Queue Automatically</title>
+      </section>
 
-	<para><emphasis>First Window:</emphasis></para>
-	<screen>$ ./drain -t 30 "xoxox ; {create: always}"</screen>
+      <section>
+	<title>create</title>
 
 	<para>In previous examples, we created the queue before
 	listening for messages on it. Using <literal>create:
 	always</literal>, the queue is automatically created if it
-	does not exist. Now we can send messages to this queue:</para>
+	does not exist.</para>
+
+	<example>
+	  <title>Creating a Queue Automatically</title>
+
+	<para><emphasis>First Window:</emphasis></para>
+	<screen>$ ./drain -t 30 "xoxox ; {create: always}"</screen>
+
+
+	<para>Now we can send messages to this queue:</para>
 
 	<para><emphasis>Second Window:</emphasis></para>
 	<screen>$ ./spout "xoxox ; {create: always}"</screen>
@@ -762,16 +782,16 @@ Queue my-topic does not exist
 	<screen>Message(properties={spout-id:1a1a3842-1a8b-4f88-8940-b4096e615a7d:0}, content='')</screen>
       </example>
 
-      <!--
-         TODO: Add some x-declare, x-subscribe, link, x-bindings examples
-        -->
+      </section>
 
-      <para>Other options specify message transfer semantics; for
-      instance, they may state whether messages should be consumed or
-      read in browsing mode, or specify reliability
-      characteristics. The following example uses the
-      <literal>browse</literal> option to receive messages without
-      removing them from a queue.</para>
+      <section>
+	<title>browse</title>
+	<para>Some options specify message transfer semantics; for
+	instance, they may state whether messages should be consumed or
+	read in browsing mode, or specify reliability
+	characteristics. The following example uses the
+	<literal>browse</literal> option to receive messages without
+	removing them from a queue.</para>
 
       <example>
         <title>Browsing a Queue</title>
@@ -802,10 +822,120 @@ Message(properties={spout-id:ab9e7c31-19b0-4455-8976-34abe83edc5f:0}, content='t
 Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='three')
         </screen>
       </example>
+      </section>
+
+      <section>
+	<title>x-bindings</title>
+
+	<para><literal>x-bindings</literal> allows an address string
+	to specify properties AMQP 0-10 bindings. For instance, the
+	XML Exchange is an AMQP 0-10 custom exchange provided by the
+	Apache Qpid C++ broker. It allows messages to be filtered
+	using XQuery; queries can address either message properties or
+	XML content in the body of the message. These queries can be
+	specified in addresses using x-bindings</para>
+
+
+	<para>An instance of the XML Exchange must be added before it
+	can be used:</para>
+
+	<programlisting>
+$ qpid-config add exchange xml xml
+	</programlisting>
+
+	<para>When using the XML Exchange, a receiver provides an
+	XQuery as an x-binding argument. If the query contains a
+	context item (a path starting with <quote>.</quote>), then it
+	is applied to the content of the message, which must be
+	well-formed XML. For instance, <literal>./weather</literal> is
+	a valid XQuery, which matches any message in which the root
+	element is named <literal>weather</literal>. Here is an
+	address string that contains this query:</para>
+
+      <programlisting><![CDATA[
+xml; {
+ link: { 
+  x-bindings: [{exchange:xml, key:weather, arguments:{xquery:"./weather"} }] 
+ } 
+}
+  ]]></programlisting>
+
+	<para>When using longer queries with <command>drain</command>,
+	it is often useful to place the query in a file, and use
+	<command>cat</command> in the command line. We do this in the
+	following example.</para>
+
+      <example>
+	<title>Using the XML Exchange</title>
+
+	<para>This example uses an x-binding that contains queries, which filter based on the content of XML messages. Here is an XQuery that we will use in this example:</para>
+
+	<programlisting>
+	  <![CDATA[
+let $w := ./weather 
+return $w/station = 'Raleigh-Durham International Airport (KRDU)' 
+   and $w/temperature_f > 50
+   and $w/temperature_f - $w/dewpoint > 5
+   and $w/wind_speed_mph > 7
+   and $w/wind_speed_mph < 20 ]]>
+	</programlisting>
+
+	<para>We can specify this query in an x-binding to listen to messages that meet the criteria specified by the query:</para>
+
+	<para><emphasis>First Window:</emphasis></para>
+      
+	<screen>
+$ ./drain -f "xml; {link:{x-bindings:[{key:'weather', 
+arguments:{xquery:\"$(cat rdu.xquery )\"}}]}}"
+	</screen>
+
+	<para>In another window, let's create an XML message that meets the criteria in the query, and place it in the file <filename>rdu.xml</filename>:</para>
+
+	<programlisting>
+<![CDATA[
+<weather>
+  <station>Raleigh-Durham International Airport (KRDU)</station>
+  <wind_speed_mph>16</wind_speed_mph>
+  <temperature_f>70</temperature_f>
+  <dewpoint>35</dewpoint>
+</weather>
+	]]></programlisting>
+
+        <para>Now let's use <command>spout</command> to send this message to the XML exchange:</para>
+
+	<para><emphasis>Second Window:</emphasis></para>
+	<screen>
+spout --content "$(cat rdu.xml)" xml/weather
+	</screen>
+
+	<para>Returning to the first window, we see that the message has been received:</para>
+	
+	<screen><![CDATA[$ ./drain -f "xml; {link:{x-bindings:[{exchange:'xml', key:'weather', arguments:{xquery:\"$(cat rdu.xquery )\"}}]}}"
+Message(properties={qpid.subject:weather, spout-id:31c431de-593f-4bec-a3dd-29717bd945d3:0}, 
+content='<weather>
+  <station>Raleigh-Durham International Airport (KRDU)</station>
+  <wind_speed_mph>16</wind_speed_mph>
+  <temperature_f>40</temperature_f>
+  <dewpoint>35</dewpoint>
+</weather>') ]]>
+	</screen>
+      </example>
+      </section>
+
+<!--
+	<para>When sending data using <command>cat</command> to provide arguments to <command>spout</command>, you can use <command>sed</command> to change the values that are sent:</para>
+
+	<screen>
+spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
+	</screen>
+-->
 
       <!--
          TODO: Add some reliability option examples
         -->
+
+      <section>
+	<title>Address String Options - Reference</title>
 
       <table pgwide="1">
         <title>Address String Options</title>
@@ -1018,7 +1148,17 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
 	      <entry>
 	        one of: unreliable, at-least-once, at-most-once, exactly-once
 	      </entry>
-	      <entry>
+	      <entry><!-- from https://issues.apache.org/jira/browse/QPID-2380 -->
+		Reliability indicates the level of reliability that
+		the sender or receiver.  <literal>unreliable</literal>
+		and <literal>at-most-once</literal> are currently
+		treated as synonyms, and allow messages to be lost if
+		a broker crashes or the connection to a broker is
+		lost. <literal>at-least-once</literal> guarantees that
+		a message is not lost, but duplicates may be
+		received. <literal>exactly-once</literal> guarantees
+		that a message is not lost, and is delivered precisely
+		once.
 	      </entry>
 	    </row>
 	    <row>
@@ -1080,7 +1220,7 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
       </table>
 
     </section>
-
+  </section>
 
   <section id="section-address-string-bnf">
     <title>Address String Grammar</title>
@@ -1229,127 +1369,6 @@ enable("qpid.messaging.io", DEBUG)
 </section>
 
     
-<section>
-      <title>Reconnect and Failover</title>
-      <para>Connections in the Qpid Messaging API support automatic
-      reconnect if a connection is lost. This is done using connection
-      options. The following example shows how to use connection options in C++ and Python.</para>
-
-      <example>
-	<title>Specifying Connection Options in C++ and Python</title>
-
-	<para>In C++, these options are set using <function>Connection::setOption()</function>:</para>
-
-      <programlisting><![CDATA[
-Connection connection(broker);
-connection.setOption("reconnect", true);
-try {
-    connection.open();
-    !!! SNIP !!!
-      ]]></programlisting>
-
-	<para>In Python, these options are set using named arguments in
-      the <function>Connection</function> constructor:</para>
-
-      <programlisting><![CDATA[
-connection = Connection("localhost:5672", reconnect=True)
-try:
-  connection.open()
-  !!! SNIP !!!
-      ]]></programlisting>
-
-      <para>See the reference documentation for details on how to set
-      these on connections for each language.</para>
-      </example>
-
-      <para>The following table lists the connection options that can
-      be used.</para>
-
-      <table pgwide="1">
-        <title>Connection Options</title>
-        <tgroup cols="3">
-          <thead>
-	    <colspec colnum="1" colwidth="1*"/>
-	    <colspec colnum="2" colwidth="1*"/>
-	    <colspec colnum="3" colwidth="3*"/>
-	    <row>
-	      <entry>option</entry>
-	      <entry>value</entry>
-	      <entry>semantics</entry>
-	    </row>
-          </thead>
-          <tbody>
-	    <row>
-	      <entry>
-	        reconnect
-	      </entry>
-	      <entry>
-	        True, False
-	      </entry>
-	      <entry>
-	        Transparently reconnect if the connection is lost.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_timeout
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Total number of seconds to continue reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_limit
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Maximum number of reconnection attempts before giving up and raising an exception.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_interval_min
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_interval_max
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Maximum reconnect interval.
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-	        reconnect_interval
-	      </entry>
-	      <entry>
-	        N
-	      </entry>
-	      <entry>
-	        Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
-	      </entry>
-	    </row>
-          </tbody>
-        </tgroup>
-      </table>
-    </section>
-
     <section>
       <title>Receiving Messages from Multiple Sources</title>
 
@@ -1705,7 +1724,127 @@ sender.setCapacity(100);
 
     <section>
       <title>Reliability</title>
+      <para>The Qpid Messaging API supports automatic reconnect, guaranteed delivery via persistent messages, reliability options in senders and receivers, and cluster failover. This section shows how programs can take advantage of these features.</para>
+      <section>
+	<title>Reconnect</title>
+	<para>Connections in the Qpid Messaging API support automatic
+	reconnect if a connection is lost. This is done using connection
+	options. The following example shows how to use connection options in C++ and Python.</para>
 
+	<example>
+	  <title>Specifying Connection Options in C++ and Python</title>
+
+	  <para>In C++, these options are set using <function>Connection::setOption()</function>:</para>
+
+	  <programlisting><![CDATA[
+Connection connection(broker);
+connection.setOption("reconnect", true);
+try {
+    connection.open();
+    !!! SNIP !!!
+    ]]></programlisting>
+
+	  <para>In Python, these options are set using named arguments in
+	  the <function>Connection</function> constructor:</para>
+
+	  <programlisting><![CDATA[
+connection = Connection("localhost:5672", reconnect=True)
+try:
+  connection.open()
+  !!! SNIP !!!
+  ]]></programlisting>
+
+	  <para>See the reference documentation for details on how to set
+	  these on connections for each language.</para>
+	</example>
+
+	<para>The following table lists the connection options that can
+	be used.</para>
+
+	<table pgwide="1">
+	  <title>Connection Options</title>
+	  <tgroup cols="3">
+	    <thead>
+	      <colspec colnum="1" colwidth="1*"/>
+	      <colspec colnum="2" colwidth="1*"/>
+	      <colspec colnum="3" colwidth="3*"/>
+	      <row>
+		<entry>option</entry>
+		<entry>value</entry>
+		<entry>semantics</entry>
+	      </row>
+	    </thead>
+	    <tbody>
+	      <row>
+		<entry>
+		  reconnect
+		</entry>
+		<entry>
+		  True, False
+		</entry>
+		<entry>
+		  Transparently reconnect if the connection is lost.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_timeout
+		</entry>
+		<entry>
+		  N
+		</entry>
+		<entry>
+		  Total number of seconds to continue reconnection attempts before giving up and raising an exception.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_limit
+		</entry>
+		<entry>
+		  N
+		</entry>
+		<entry>
+		  Maximum number of reconnection attempts before giving up and raising an exception.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_interval_min
+		</entry>
+		<entry>
+		  N
+		</entry>
+		<entry>
+		  Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_interval_max
+		</entry>
+		<entry>
+		  N
+		</entry>
+		<entry>
+		  Maximum reconnect interval.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_interval
+		</entry>
+		<entry>
+		  N
+		</entry>
+		<entry>
+		  Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+      </section>
       <section>
 	<title>Guaranteed Delivery</title>
 
@@ -1735,12 +1874,48 @@ sender.send(Message("Hello world!"));
 	  <para>Python:</para>
 -->
 	</example>
-<!--
-	<section>
-	  <title>Cluster Failover #### </title>
-	</section>
--->
 
+      </section>
+
+
+      <section>
+	<title>Reliability Options in Senders and Receivers</title>
+
+	<para>When creating a sender or a receiver, you can specify a reliability option in the address string. For instance, the following specifies <literal>at-least-once</literal> as the reliability mode for a sender:</para>
+
+	<programlisting>
+Sender = session.createSender("topic;{create:always,link:{reliability:at-least-once}}");
+	</programlisting>
+
+	<para>The modes <literal>unreliable</literal>, <literal>at-most-once</literal>, <literal>at-least-once</literal>, and <literal>exactly-once</literal> are supported. These modes govern the reliability of the connection between the client and the messaging broker.</para>
+
+	<para>The modes <literal>unreliable</literal> and <literal>at-most-once</literal> are currently synonyms. In a receiver, this mode means that messages received on an auto-delete subscription queue may be lost in the event of a broker failure. In a sender, this mode means that the sender can consider a message sent as soon as it is written to the wire, and need not wait for broker acknowledgement before considering the message sent.</para>
+
+	<para>The mode <literal>at-most-once</literal> ensures that messages are not lost, but duplicates of a message may occur. In a receiver, this mode ensures that messages are not lost in event of a broker failure. In a sender, this means that messages are kept in a replay buffer after they have been sent, and removed from this buffer only after the broker acknowledges receipt; if a broker failure occurs, messages in the replay buffer are resent upon reconnection. The mode <literal>exactly-once</literal> is similar to <literal>at-most-once</literal>, but eliminates duplicate messages.</para>
+
+	<!-- What is the default? ### -->
+
+      </section>
+
+      <section>
+	<title>Cluster Failover</title>
+
+	<para>The messaging broker can be run in clustering mode, which provides high reliability at-least-once messaging. If one broker in a cluster fails, clients can choose another broker in the cluster and continue their work.</para>
+
+	<para>In C++, the <classname>FailoverUpdates</classname> class keeps track of the brokers in a cluster, so a reconnect can select another broker in the cluster to connect to:</para>
+
+	<example>
+	  <title>Cluster Failover in C++</title>
+	    <programlisting><![CDATA[
+#include <qpid/messaging/FailoverUpdates.h>
+...
+Connection connection(broker);
+connection.setOption("reconnect", true);
+try {
+    connection.open();
+    std::auto_ptr<FailoverUpdates> updates(new FailoverUpdates(connection));]]>
+	</programlisting>
+	</example>
       </section>
 
     </section>
@@ -1794,129 +1969,7 @@ else
 
 
 
-  <section>
-      <title>XML Exchange</title>
-
-      <para>The XML Exchange is an AMQP 0-10 custom exchange provided by the Apache Qpid C++ broker. It allows messages to be filtered using XQuery; queries can address either message properties or XML content in the body of the message.</para>
-
-      <para>An instance of the XML Exchange must be added before it can be used:</para>
-
-      <programlisting>
-$ qpid-config add exchange xml xml
-      </programlisting>
-
-      <para>When using the XML exchange, a sender's address string must provide a subject, e.g. <literal>xml/weather</literal>.</para>
-
-      <para>If a receiver that is using the XML exchange also provides a subject, it receives messages if the subject exactly matches a message's subject.</para>
-
-
-      <para>When using the XML Exchange, a receiver normally provides an XQuery as an x-binding argument. If the query contains a context item (a path starting with <quote>.</quote>), then it is applied to the content of the message, which must be well-formed XML. For instance, <literal>./weather</literal> is a valid XQuery, which matches any message in which the root element is named <literal>weather</literal>. Here is an address string that contains this query:</para>
-
-      <programlisting><![CDATA[
-xml; {
- link: { 
-  x-bindings: [{ exchange:xml, key:weather, arguments:{xquery:"./weather"} }] 
- } 
-}
-  ]]></programlisting>
-
-      <para>Note that each x-binding is created in addition to any other bindings that may exist, and each x-binding must include the exchange name, the key, and the xquery. If you specify the subject in the address string (e.g. <literal>xml/weather; link ...</literal>), it creates a binding that is used in addition to the x-bindings; the binding created for the subject matches any message whose subject is <literal>weather</literal>, the binding created for the x-binding matches any message that satisfies the query, i.e. any message with a root element named <literal>weather</literal>.
-      </para>
-
-
-      <para>The XML Exchange can also be used to query message properties by declaring an external variable with the same name as each property that is to be queried. The following XQuery queries the <literal>control</literal> property, as well as the content of the message:</para>
-
-      <programlisting><![CDATA[
-declare variable $control external;
-./message/id mod 2 = 1 or $control = 'end'
-]]></programlisting>
-
-      <para>If the XQuery addresses message content, and the message is not well-formed XML, the message will not be received. If the XQuery does not query message content, the message need not contain XML.</para>
-
-
-      <example>
-	<title>Using the XML Exchange with <command>drain</command></title>
-
-	<para>The following shows the arguments used with <command>drain</command> to retrieve messages whose root element is named <literal>weather</literal>:</para>
-
-	<programlisting><![CDATA[
-$ ./drain -f "xml; {link:{x-bindings: [{exchange: xml, key:"weather", 
-arguments:{xquery:\"./weather\"}}]}}"
- ]]></programlisting> 
-      </example>
-
-      <example>
-	<title>Using the XML Exchange with C++</title>
-
-	<para>In C++, it is convenient to place an XQuery in a string, and use a <classname>stringstream</classname> to add the query to the template for an address string that specifies an x-binding.</para>
-
-	<programlisting><![CDATA[
-std::string query = 
-  "let $w := ./weather "
-  "return $w/station = 'Raleigh-Durham International Airport (KRDU)' "
-  "   and $w/temperature_f > 50"
-  "   and $w/temperature_f - $w/dewpoint > 5"
-  "   and $w/wind_speed_mph > 7"
-  "   and $w/wind_speed_mph < 20";
-
-stringstream address;
-
-address << "xml; {"
-  " link: { "
-  "  x-bindings: [{ exchange: xml, key: weather, arguments: { xquery:\"" 
-     << query 
-     << "\"} }] "
-  " } "
-  "}";
-
-
-Receiver receiver = session.createReceiver(address.str());
-Message response = receiver.fetch();
-session.acknowledge();
-std::cout << response.getContent() << std::endl;
-
-      ]]></programlisting>
-      </example>
-
-
-      <example>
-	<title>Using the XML Exchange with Python</title>
-
-	<para>In Python, it is often convenient to place the query in
-	a separate string, and use the repr() value of the query
-	string in an address template string.</para>
-
-	<programlisting><![CDATA[
-# Set up the receiver
-  query = """
-   let $w := ./weather
-   return $w/station = 'Raleigh-Durham International Airport (KRDU)'
-      and $w/temperature_f > 50
-      and $w/temperature_f - $w/dewpoint > 5
-      and $w/wind_speed_mph > 7
-      and $w/wind_speed_mph < 20   """
-
-  address = """
-    xml; {
-       link: { 
-         x-bindings: [{ exchange: xml, key: weather, arguments: { xquery: %r} }] 
-       } 
-    }
-    """ % query
-
-  receiver = session.receiver(address)
-
-# Retrieve matching message from the receiver and print it
-
-  message = receiver.fetch(timeout=1)
-  print message.content
-  session.acknowledge()
-	]]></programlisting>
-      </example>
-
-    </section>
-
-<section id="section-amqp0-10-mapping">
+  <section id="section-amqp0-10-mapping">
     <title>The AMQP 0-10 mapping</title>
 
     <para>
@@ -2119,9 +2172,9 @@ std::cout << response.getContent() << std::endl;
 
       <para>The Qpid JMS client uses Qpid Messaging API <xref
       linkend="section-addresses"/> to identify sources and
-      targets. This program uses a JNDI file that defines a connection
-      factory for the broker we are using, and the address of the
-      topic exchange node that we bind the sender and receiver
+      targets. This program uses a JNDI properties file that defines a
+      connection factory for the broker we are using, and the address
+      of the topic exchange node that we bind the sender and receiver
       to. (The syntax of a ConnectionURL is given in <xref
       linkend="QpidJNDI"/>.)</para>
 
@@ -2143,7 +2196,7 @@ destination.topicExchange = amq.topic
 
       <example>
 	<title>"Hello world!" in Java</title>
-	<programlisting lang="java"><![CDATA[
+	<programlisting lang="java">
 package org.apache.qpid.example.jmsexample.hello;
 
 import javax.jms.*;
@@ -2164,36 +2217,76 @@ public class Hello {
   private void runTest() {
     try {
       Properties properties = new Properties();
-      properties.load(this.getClass().getResourceAsStream("hello.properties"));
-      Context context = new InitialContext(properties);
+      properties.load(this.getClass().getResourceAsStream("hello.properties"));  <co id="hello-java-properties" linkends="callout-java-properties"/>
+      Context context = new InitialContext(properties);   <co id="hello-java-context" linkends="callout-java-context"/>
 
       ConnectionFactory connectionFactory 
-                    = (ConnectionFactory) context.lookup("qpidConnectionfactory");
-      Connection connection = connectionFactory.createConnection();
-      connection.start();
+          = (ConnectionFactory) context.lookup("qpidConnectionfactory"); <co id="hello-java-connection-factory" linkends="callout-java-connection-factory"/>
+      Connection connection = connectionFactory.createConnection();  <co id="hello-java-connection" linkends="callout-java-connection"/>
+      connection.start();  <co id="hello-java-start" linkends="callout-java-start"/>
 
-      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-      Destination destination = (Destination) context.lookup("topicExchange");
+      Session session=connection.createSession(false,Session.AUTO_ACKNOWLEDGE);<co id="hello-java-session" linkends="callout-java-session"/>
+      Destination destination = (Destination) context.lookup("topicExchange");  <co id="hello-java-destination" linkends="callout-java-destination"/>
 
-      MessageProducer messageProducer = session.createProducer(destination);
-      MessageConsumer messageConsumer = session.createConsumer(destination);
+      MessageProducer messageProducer = session.createProducer(destination);  <co id="hello-java-producer" linkends="callout-java-producer"/>
+      MessageConsumer messageConsumer = session.createConsumer(destination);  <co id="hello-java-consumer" linkends="callout-java-consumer"/>
 
       TextMessage message = session.createTextMessage("Hello world!");
       messageProducer.send(message);
 
-      message = (TextMessage)messageConsumer.receive();
+      message = (TextMessage)messageConsumer.receive();    <co id="hello-java-receive" linkends="callout-java-receive"/>
       System.out.println(message.getText());
 
-      connection.close();
-      context.close();
+      connection.close();  <co id="hello-java-close" linkends="callout-java-close"/>
+      context.close();   <co id="hello-java-jndi-close" linkends="callout-java-jndi-close"/>
     }
     catch (Exception exp) {
       exp.printStackTrace();
     }
   }
 }
-]]></programlisting>
+	</programlisting>
       </example>
+
+      <calloutlist>
+	<callout id="callout-java-properties" arearefs="hello-java-properties">
+	  <para>Loads the JNDI properties file, which specifies connection properties, queues, topics, and addressing options. See <xref linkend="QpidJNDI"/> for details.</para>
+	</callout>
+	<callout id="callout-java-context" arearefs="hello-java-context">
+	  <para>Creates the JNDI initial context.</para>
+	</callout>
+	<callout id="callout-java-connection-factory" arearefs="hello-java-connection-factory">
+	  <para>Creates a JMS connection factory for Qpid.</para>
+	</callout>
+	<callout id="callout-java-connection" arearefs="hello-java-connection">
+	  <para>Creates a JMS connection.</para>
+	</callout>
+	<callout id="callout-java-start" arearefs="hello-java-start">
+	  <para>Activates the connection.</para>
+	</callout>
+	<callout id="callout-java-session" arearefs="hello-java-session">
+	  <para>Creates a session. This session is not transactional (transactions='false'), and messages are automatically acknowledged.</para>
+	</callout>
+	<callout id="callout-java-destination" arearefs="hello-java-destination">
+	  <para>Creates a destination for the topic exchange, so senders and receivers can use it.</para>
+	</callout>
+	<callout id="callout-java-producer" arearefs="hello-java-producer">
+	  <para>Creates a producer that sends messages to the topic exchange.</para>
+	</callout>
+	<callout id="callout-java-consumer" arearefs="hello-java-consumer">
+	  <para>Creates a consumer that reads messages from the topic exchange.</para>
+	</callout>
+	<callout id="callout-java-receive" arearefs="hello-java-receive">
+	  <para>Reads the next available message.</para>
+	</callout>
+	<callout id="callout-java-close" arearefs="hello-java-close">
+	  <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
+	</callout>
+	<callout id="callout-java-jndi-close" arearefs="hello-java-jndi-close">
+	  <para>Closes the JNDI context.</para>
+	</callout>
+      </calloutlist>
+
 
     </section>
 
