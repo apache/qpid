@@ -24,6 +24,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQSession_0_10;
+import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -44,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  * Slow consumers should on a topic should expect to receive a
  * 506 : Resource Error if the hit a predefined threshold.
  */
-public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
+public class SlowConsumerTest extends QpidTestCase implements ExceptionListener, ConnectionListener
 {
     Destination _destination;
     private CountDownLatch _disconnectionLatch = new CountDownLatch(1);
@@ -55,6 +56,7 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
     private static final long DISCONNECTION_WAIT = 5;
     private Exception _publisherError = null;
     private JMSException _connectionException = null;
+    private static final long JOIN_WAIT = 5000;
 
     @Override
     public void setUp() throws Exception, ConfigurationException, NamingException
@@ -68,30 +70,43 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
                                  + getConnectionURL().getVirtualHost().substring(1) +
                                  ".slow-consumer-detection.timeunit", "SECONDS");
 
-        setConfigurationProperty("virtualhosts.virtualhost." +
-                                 getConnectionURL().getVirtualHost().substring(1) +
-                                 "queues.slow-consumer-detection." +
+        setConfigurationProperty("virtualhosts.virtualhost."
+                                 + getConnectionURL().getVirtualHost().substring(1) +
+                                 ".queues.slow-consumer-detection." +
                                  "policy[@name]", "TopicDelete");
+
+        setConfigurationProperty("virtualhosts.virtualhost."
+                                 + getConnectionURL().getVirtualHost().substring(1) +
+                                 ".queues.maximumMessageCount", "1");
+
+
 
         /**
          *  Queue Configuration
 
          <slow-consumer-detection>
          <!-- The depth before which the policy will be applied-->
-         <depth>4235264</depth>
+             <depth>4235264</depth>
 
-         <!-- The message age before which the policy will be applied-->
-         <messageAge>600000</messageAge>
+             <!-- The message age before which the policy will be applied-->
+             <messageAge>600000</messageAge>
 
-         <!-- The number of message before which the policy will be applied-->
-         <messageCount>50</messageCount>
+             <!-- The number of message before which the policy will be applied-->
+             <messageCount>50</messageCount>
 
-         <!-- Policies configuration -->
-         <policy name="TopicDelete">
-         <options>
-         <option name="delete-persistent" value="true"/>
-         </options>
-         </policy>
+             <!-- Policies configuration -->
+             <policy name="TopicDelete">
+                     <options>
+                         <option name="delete-persistent" value="true"/>
+                     </options>
+             </policy>
+
+             <policy>
+                 <name>TopicDelete"</name>
+                 <topicDelete>
+                     <delete-persistent/>
+                 </topicDelete>
+             </policy>         
          </slow-consumer-detection>
 
          */
@@ -105,8 +120,6 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
          </slow-consumer-detection>
 
          */
-
-        super.setUp();
     }
 
     public void exclusiveTransientQueue(int ackMode) throws Exception
@@ -167,8 +180,10 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
 
         System.err.println("Linked:" + linked);
 
-        _publisher.join();
+        _publisher.join(JOIN_WAIT);
 
+        assertFalse("Publisher still running", _publisher.isAlive());
+        
         //Validate publishing occurred ok
         if (_publisherError != null)
         {
@@ -205,6 +220,7 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
                     for (int count = 0; count < MAX_QUEUE_MESSAGE_COUNT; count++)
                     {
                         publisher.send(createNextMessage(session, count));
+                        session.commit();
                     }
                 }
                 catch (Exception e)
@@ -214,15 +230,22 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
                 }
             }
         });
+
+        _publisher.start();
     }
 
     public void testAutoAckTopicConsumerMessageCount() throws Exception
     {
         MAX_QUEUE_MESSAGE_COUNT = 10;
+
         setConfigurationProperty("virtualhosts.virtualhost." +
                                  getConnectionURL().getVirtualHost().substring(1) +
-                                 "queues.slow-consumer-detection" +
-                                 "messageCount", "9");
+                                 ".queues.slow-consumer-detection." +
+                                 "messageCount", String.valueOf(MAX_QUEUE_MESSAGE_COUNT - 1));
+
+        //Start the broker
+        super.setUp();
+
 
         setMessageSize(MESSAGE_SIZE);
 
@@ -233,6 +256,34 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener
     {
         _connectionException = e;
 
+        System.out.println("***** SCT Received Exception: "+e);
+        e.printStackTrace();
+
         _disconnectionLatch.countDown();
+    }
+
+    /// Connection Listener
+
+    public void bytesSent(long count)
+    {
+    }
+
+    public void bytesReceived(long count)
+    {
+    }
+
+    public boolean preFailover(boolean redirect)
+    {
+        // Prevent Failover
+        return false;
+    }
+
+    public boolean preResubscribe()
+    {
+        return false;
+    }
+
+    public void failoverComplete()
+    {
     }
 }
