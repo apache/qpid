@@ -627,6 +627,10 @@ set (qpidcommon_SOURCES
      qpid/sys/Runnable.cpp
      qpid/sys/Shlib.cpp
      qpid/sys/Timer.cpp
+     qpid/types/Exception.cpp
+     qpid/types/Uuid.cpp
+     qpid/types/Variant.cpp
+     qpid/amqp_0_10/Codecs.cpp
 )
 
 add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
@@ -634,7 +638,6 @@ if (CLOCK_GETTIME_IN_RT)
   set (qpidcommon_platform_LIBS ${qpidcommon_platform_LIBS} rt)
 endif (CLOCK_GETTIME_IN_RT)
 target_link_libraries (qpidcommon
-                       qpidtypes
                        ${qpidcommon_platform_LIBS}
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
@@ -785,19 +788,6 @@ if (WIN32)
                  COMPONENT ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${DTC_PLUGIN_SOURCE})
 endif (WIN32)
-
-set (qpidtypes_SOURCES
-     qpid/types/Exception.cpp
-     qpid/types/Uuid.cpp
-     qpid/types/Variant.cpp
-     qpid/amqp_0_10/Codecs.cpp
-)
-add_library (qpidtypes SHARED ${qpidtypes_SOURCES})
-set_target_properties (qpidtypes PROPERTIES
-                       VERSION ${qpidc_version})
-install (TARGETS qpidtypes
-         DESTINATION ${QPID_INSTALL_LIBDIR}
-         COMPONENT ${QPID_COMPONENT_COMMON})
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}

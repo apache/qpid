@@ -21,9 +21,13 @@
 # Cluster tests cmake fragment, to be included in CMakeLists.txt
 # 
 
-add_executable (failover_soak failover_soak.cpp cluster_authentication_soak cluster_authentication_soak.cpp ForkedBroker.cpp ${platform_test_additions})
-target_link_libraries (failover_soak cluster_authentication_soak qpidclient)
+add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp ${platform_test_additions})
+target_link_libraries (failover_soak qpidclient)
 remember_location(failover_soak)
+
+add_executable (cluster_authentication_soak cluster_authentication_soak.cpp ForkedBroker.cpp ${platform_test_additions})
+target_link_libraries (cluster_authentication_soak qpidclient)
+remember_location(cluster_authentication_soak)
 
 set (cluster_test_SOURCES
   cluster_test

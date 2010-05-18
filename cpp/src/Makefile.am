@@ -186,7 +186,7 @@ libqpidcommon_la_SOURCES += $(poller) $(systeminfo)
 posix_broker_src = \
   qpid/broker/posix/BrokerDefaults.cpp
 
-lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
+lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
 
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
@@ -312,7 +312,6 @@ EXTRA_DIST +=\
   qpid/store
 
 libqpidcommon_la_LIBADD = \
-  libqpidtypes.la \
   -lboost_program_options \
   -lboost_filesystem \
   -luuid \
@@ -479,19 +478,17 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Timer.h				\
   qpid/sys/Waitable.h				\
   qpid/sys/alloca.h				\
-  qpid/sys/uuid.h
+  qpid/sys/uuid.h			`	\
+  qpid/amqp_0_10/Codecs.cpp			\
+  qpid/types/Exception.cpp			\
+  qpid/types/Uuid.cpp				\
+  qpid/types/Variant.cpp
 
 if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.cpp
 libqpidcommon_la_LIBADD += -lsasl2
 endif
-
-libqpidtypes_la_SOURCES =			\
-  qpid/amqp_0_10/Codecs.cpp			\
-  qpid/types/Exception.cpp			\
-  qpid/types/Uuid.cpp				\
-  qpid/types/Variant.cpp
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
 
