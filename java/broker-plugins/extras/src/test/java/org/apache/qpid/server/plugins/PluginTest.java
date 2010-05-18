@@ -47,7 +47,7 @@ public class PluginTest extends TestCase
         properties.addProperty("plugin-directory", PLUGIN_DIRECTORY);
 
         ServerConfiguration config = new ServerConfiguration(properties);
-        // This Test requries an application Registry
+        // This Test requires an application Registry
         ApplicationRegistry.initialise(new TestApplicationRegistry(config));
         _registry = ApplicationRegistry.getInstance();
     }
@@ -59,7 +59,7 @@ public class PluginTest extends TestCase
     }
 
 
-    public void disabled_testLoadExchanges() throws Exception
+    public void testLoadExchanges() throws Exception
     {
         PluginManager manager = _registry.getPluginManager();
         Map<String, ExchangeType<?>> exchanges = manager.getExchanges();
