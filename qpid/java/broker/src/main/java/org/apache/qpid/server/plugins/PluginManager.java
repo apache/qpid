@@ -21,9 +21,9 @@ package org.apache.qpid.server.plugins;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.felix.framework.Felix;
-import org.apache.felix.framework.cache.BundleCache;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.framework.util.StringMap;
+import org.apache.felix.main.AutoProcessor;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.access.ACLPlugin;
@@ -120,11 +120,11 @@ public class PluginManager
 
         if (dir.isDirectory())
         {
-            for (String child : dir.list())
+            for (File child : dir.listFiles())
             {
-                if (child.endsWith("jar"))
+                if (child.getName().endsWith("jar"))
                 {
-                    pluginJars.append(String.format(" file:%s%s%s", plugindir, File.separator, child));
+                    pluginJars.append(String.format(" file:%s%s%s", plugindir, File.separator, child.getName()));
                 }
             }
         }
@@ -137,8 +137,8 @@ public class PluginManager
 //        configMap.put(FelixConstants.AUTO_START_PROP + ".1", pluginJars.toString());
 //        configMap.put(BundleCache.CACHE_PROFILE_DIR_PROP, plugindir);
 
-        configMap.put("felix.auto.start.1", pluginJars.toString());
-        configMap.put("felix.shutdown.hook","false");
+         configMap.put(AutoProcessor.AUTO_START_PROP + ".1", pluginJars.toString());
+
         configMap.put(FelixConstants.FRAMEWORK_STORAGE, plugindir);
 
 
@@ -154,6 +154,9 @@ public class PluginManager
 
             _felix.start();
 
+
+           AutoProcessor.process(configMap, _felix.getBundleContext());
+                                                         
             System.out.println("Started Plugin manager");
 
             _exchangeTracker = new ServiceTracker(_activator.getContext(), ExchangeType.class.getName(), null);
