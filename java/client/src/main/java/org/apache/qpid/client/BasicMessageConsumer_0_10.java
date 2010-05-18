@@ -19,6 +19,7 @@ package org.apache.qpid.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.FieldTable;
@@ -72,7 +73,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      */
     private final AtomicBoolean _syncReceive = new AtomicBoolean(false);
     private String _consumerTagString;
-
+    
+    private long capacity = 0;
+        
     //--- constructor
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
@@ -100,6 +103,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             }
         }
         _isStarted = connection.started();
+        
+        // Destination setting overrides connection defaults
+        if (destination.getDestSyntax() == DestSyntax.ADDR && 
+                destination.getSourceLink().getCapacity() > 0)
+        {
+            capacity = destination.getSourceLink().getCapacity();
+        }
+        else if (getSession().prefetch())
+        {
+            capacity = _0_10session.getAMQConnection().getMaxPrefetch();
+        }
+        
     }
 
 
@@ -146,7 +161,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         }
         if (messageOk)
         {
-            if (isMessageListenerSet() && ! getSession().prefetch())
+            if (isMessageListenerSet() && capacity == 0)
             {
                 _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
                                                           MessageCreditUnit.MESSAGE, 1,
@@ -245,7 +260,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             }
             // if we are syncrhonously waiting for a message
             // and messages are not prefetched we then need to request another one
-            if(! getSession().prefetch())
+            if(capacity == 0)
             {
                _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
                                                          MessageCreditUnit.MESSAGE, 1,
@@ -333,7 +348,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
-        if (messageListener != null && ! getSession().prefetch())
+        if (messageListener != null && capacity == 0)
         {
             _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
                                                       MessageCreditUnit.MESSAGE, 1,
@@ -372,11 +387,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      */
     public Object getMessageFromQueue(long l) throws InterruptedException
     {
-        if (! getSession().prefetch())
+        if (capacity == 0)
         {
             _syncReceive.set(true);
         }
-        if (_0_10session.isStarted() && ! getSession().prefetch() && _synchronousQueue.isEmpty())
+        if (_0_10session.isStarted() && capacity == 0 && _synchronousQueue.isEmpty())
         {
             _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
                                                       MessageCreditUnit.MESSAGE, 1,
@@ -385,23 +400,26 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         Object o = super.getMessageFromQueue(l);
         if (o == null && _0_10session.isStarted())
         {
+           
             _0_10session.getQpidSession().messageFlush
                 (getConsumerTagString(), Option.UNRELIABLE, Option.SYNC);
             _0_10session.getQpidSession().sync();
             _0_10session.getQpidSession().messageFlow
                 (getConsumerTagString(), MessageCreditUnit.BYTE,
                  0xFFFFFFFF, Option.UNRELIABLE);
-            if (getSession().prefetch())
+            
+            if (capacity > 0)
             {
                 _0_10session.getQpidSession().messageFlow
-                    (getConsumerTagString(), MessageCreditUnit.MESSAGE,
-                     _0_10session.getAMQConnection().getMaxPrefetch(),
-                     Option.UNRELIABLE);
+                                               (getConsumerTagString(),
+                                                MessageCreditUnit.MESSAGE,
+                                                capacity,
+                                                Option.UNRELIABLE);
             }
             _0_10session.syncDispatchQueue();
             o = super.getMessageFromQueue(-1);
         }
-        if (! getSession().prefetch())
+        if (capacity == 0)
         {
             _syncReceive.set(false);
         }

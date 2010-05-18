@@ -21,8 +21,12 @@ package org.apache.qpid.test.client.destination;
  */
 
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import javax.jms.Connection;
 import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
@@ -37,8 +41,6 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 public class AddressBasedDestinationTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(AddressBasedDestinationTest.class);
@@ -48,7 +50,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _connection = getConnection();
+        _connection = getConnection() ;
         _connection.start();
     }
     
@@ -211,6 +213,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
                                   "}, " +   
                                   "x-bindings: [{exchange : 'amq.direct', key : test}, " + 
                                                "{exchange : 'amq.fanout'}," +
+                                               "{exchange: 'amq.match', arguments: {x-match: any, dep: sales, loc: CA}}," +
                                                "{exchange : 'amq.topic', key : 'a.#'}" +
                                               "]," + 
                                      
@@ -236,7 +239,15 @@ public class AddressBasedDestinationTest extends QpidTestCase
         
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.topic", 
-                    dest.getAddressName(),"a.#", null));        
+                    dest.getAddressName(),"a.#", null));   
+        
+        Map<String,Object> args = new HashMap<String,Object>();
+        args.put("x-match","any");
+        args.put("dep","sales");
+        args.put("loc","CA");
+        assertTrue("Queue not bound as expected",(
+                (AMQSession_0_10)jmsSession).isQueueBound("amq.match", 
+                    dest.getAddressName(),null, args));
         
     }
     
@@ -273,8 +284,7 @@ public class AddressBasedDestinationTest extends QpidTestCase
         // The existence of the queue is implicitly tested here
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("my-exchange", 
-                    dest.getQueueName(),"hello", Collections.emptyMap()));        
-        
+                    dest.getQueueName(),"hello", Collections.<String, Object>emptyMap()));
     }
     
     public void testBindQueueWithArgs() throws Exception
@@ -329,6 +339,53 @@ public class AddressBasedDestinationTest extends QpidTestCase
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.match", 
                     dest.getAddressName(),null, a.getOptions()));
+    }
+    
+    /**
+     * Test goal: Verifies the capacity property in address string is handled properly.
+     * Test strategy:
+     * Creates a destination with capacity 10.
+     * Creates consumer with client ack.
+     * Sends 15 messages to the queue, tries to receive 10.
+     * Tries to receive the 11th message and checks if its null.
+     * 
+     * Since capacity is 10 and we haven't acked any messages, 
+     * we should not have received the 11th.
+     * 
+     * Acks the 10th message and verifies we receive the rest of the msgs.
+     */
+    public void testLinkCapacity() throws Exception
+    {
+        if (!isCppBroker())
+        {
+            _logger.info("Not C++ broker, exiting test");
+            return;
+        }
+        
+        Session jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        
+        String addr = "ADDR:my-queue; {create: always, link:{capacity: 10}}";
+        AMQDestination dest = new AMQAnyDestination(addr);
+        MessageConsumer cons = jmsSession.createConsumer(dest); 
+        MessageProducer prod = jmsSession.createProducer(dest);
+        
+        for (int i=0; i< 15; i++)
+        {
+            prod.send(jmsSession.createTextMessage("msg" + i) );
+        }
+        
+        for (int i=0; i< 9; i++)
+        {
+            cons.receive();
+        }
+        Message msg = cons.receive(RECEIVE_TIMEOUT);
+        assertNotNull("Should have received the 10th message",msg);        
+        assertNull("Shouldn't have received the 11th message as capacity is 10",cons.receive(RECEIVE_TIMEOUT));
+        msg.acknowledge();
+        for (int i=11; i<16; i++)
+        {
+            assertNotNull("Should have received the " + i + "th message as we acked the last 10",cons.receive(RECEIVE_TIMEOUT));
+        }
     }
     
     /*public void testBindQueueForXMLExchange() throws Exception
