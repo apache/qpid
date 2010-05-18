@@ -30,6 +30,7 @@
             </store>
 
             <housekeeping>
+                <threadCount>2</threadCount>
                 <expiredMessageCheckPeriod>20000</expiredMessageCheckPeriod>
             </housekeeping>
 

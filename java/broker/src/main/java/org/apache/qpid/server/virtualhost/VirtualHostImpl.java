@@ -332,7 +332,8 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
             if (plugins != null)
             {
-                ScheduledThreadPoolExecutor vhostTasks = new ScheduledThreadPoolExecutor(plugins.size());
+                ScheduledThreadPoolExecutor vhostTasks
+                        = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
 
                 for (String pluginName : plugins.keySet())
                 {
