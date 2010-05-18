@@ -40,6 +40,7 @@ import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.HouseKeepingTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.nio.ByteBuffer;
@@ -189,7 +190,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         }
         _virtualHost = host;
         _id = host.getConfigStore().createId();
-        _virtualHost.scheduleTask(_virtualHost.getBroker().getManagementPublishInterval(),_updateTask);
+        _virtualHost.scheduleHouseKeepingTask(_virtualHost.getBroker().getManagementPublishInterval(), new UpdateTask(_virtualHost));
         getConfigStore().addConfiguredObject(this);
         getQMFService().addListener(this);
     }
@@ -484,17 +485,17 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
 
 
-    private final TimerTask _updateTask = new UpdateTask();
-
-
-    private class UpdateTask extends TimerTask
+    private class UpdateTask extends HouseKeepingTask
     {
+        public UpdateTask(VirtualHost vhost)
+        {
+            super(vhost);
+        }
 
-        public void run()
+        public void execute()
         {
             publishAllConsole();
             publishAllSchema();
-
         }
 
     }

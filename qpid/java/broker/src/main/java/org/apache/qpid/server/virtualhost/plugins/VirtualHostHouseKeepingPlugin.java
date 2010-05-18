@@ -20,9 +20,30 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
+import org.apache.qpid.server.virtualhost.HouseKeepingTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public interface VirtualHostPluginFactory
+public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask
 {
-    public VirtualHostHouseKeepingPlugin newInstance(VirtualHost vhost);
+    public VirtualHostHouseKeepingPlugin(VirtualHost vhost)
+    {
+        super(vhost);
+    }
+
+    /**
+     * Long value representing the delay between repeats
+     *
+     * @return
+     */
+    public abstract long getDelay();
+
+    /**
+     * Option to specify what the delay value represents
+     *
+     * @return
+     *
+     * @see java.util.concurrent.TimeUnit for valid value.
+     */
+    public abstract String getTimeUnit();
+
 }

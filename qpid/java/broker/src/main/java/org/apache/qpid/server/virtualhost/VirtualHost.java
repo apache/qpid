@@ -37,8 +37,10 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.binding.BindingFactory;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.TimerTask;
+import java.util.concurrent.FutureTask;
 
 public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHostConfig
 {
@@ -70,8 +72,17 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     UUID getBrokerId();
 
-    void scheduleTask(long period, TimerTask task);
+    void scheduleHouseKeepingTask(long period, HouseKeepingTask task);
 
+    long getHouseKeepingTaskCount();
+
+    public long getHouseKeepingCompletedTaskCount();
+
+    int getHouseKeepingPoolSize();
+
+    void setHouseKeepingPoolSize(int newSize);    
+
+    int getHouseKeepingActiveCount();
 
     IApplicationRegistry getApplicationRegistry();
 

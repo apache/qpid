@@ -18,45 +18,41 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugins;
+package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
 
-public abstract class VirtualHostPlugin implements Runnable
+public abstract class HouseKeepingTask implements Runnable
 {
     Logger _logger = Logger.getLogger(this.getClass());
 
+    protected VirtualHost _virtualhost;
+
+    private String _name;
+
+    public HouseKeepingTask(VirtualHost vhost)
+    {
+        _virtualhost = vhost;
+        _name = _virtualhost.getName() + ":" + this.getClass().getSimpleName();
+    }
+
     final public void run()
     {
+        // Don't need to undo this as this is a thread pool thread so will
+        // always go through here before we do any real work.
+        Thread.currentThread().setName(_name);
         try
         {
-           execute();
+            execute();
         }
         catch (Throwable e)
         {
-           _logger.warn(this.getClass().getSimpleName()+" throw exception: " + e);
+            _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e);
         }
     }
 
 
-    /**
-     * Long value representing the delay between repeats
-     *
-     * @return
-     */
-    public abstract long getDelay();
-
-    /**
-     * Option to specify what the delay value represents
-     * @see java.util.concurrent.TimeUnit for valid value.
-     * @return
-     */
-    public abstract String getTimeUnit();
-
-    /**
-     * Execute the plugin.
-     */
+    /** Execute the plugin. */
     public abstract void execute();
-
 
 }
