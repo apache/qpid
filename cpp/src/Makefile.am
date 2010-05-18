@@ -478,7 +478,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Timer.h				\
   qpid/sys/Waitable.h				\
   qpid/sys/alloca.h				\
-  qpid/sys/uuid.h			`	\
+  qpid/sys/uuid.h				\
   qpid/amqp_0_10/Codecs.cpp			\
   qpid/types/Exception.cpp			\
   qpid/types/Uuid.cpp				\
