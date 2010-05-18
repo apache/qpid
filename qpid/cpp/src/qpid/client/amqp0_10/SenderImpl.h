@@ -58,6 +58,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     qpid::messaging::Session getSession() const;
 
   private:
+    mutable sys::Mutex lock;
     boost::intrusive_ptr<SessionImpl> parent;
     const std::string name;
     const qpid::messaging::Address address;
@@ -76,7 +77,9 @@ class SenderImpl : public qpid::messaging::SenderImpl
     const bool unreliable;
 
     uint32_t checkPendingSends(bool flush);
-    void replay();
+    // Dummy ScopedLock parameter means call with lock held
+    uint32_t checkPendingSends(bool flush, const sys::Mutex::ScopedLock&);
+    void replay(const sys::Mutex::ScopedLock&); 
     void waitForCapacity();
 
     //logic for application visible methods:
