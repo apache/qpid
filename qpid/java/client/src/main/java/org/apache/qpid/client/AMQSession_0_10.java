@@ -142,7 +142,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * USed to store the range of in tx messages
      */
     private RangeSet _txRangeSet = new RangeSet();
-    private int _txSize = 0;
+    private int _txSize = 0;    
     //--- constructors
 
     /**
@@ -560,6 +560,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             throws AMQException, FailoverException
     {
         boolean preAcquire;
+        
+        long capacity = getCapacity(consumer.getDestination());
+        
         try
         {
             preAcquire = ( ! consumer.isNoConsume()  &&
@@ -578,7 +581,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
         String consumerTag = ((BasicMessageConsumer_0_10)consumer).getConsumerTagString();
 
-        if (! prefetch())
+        if (capacity == 0)
         {
             getQpidSession().messageSetFlowMode(consumerTag, MessageFlowMode.CREDIT);
         }
@@ -589,12 +592,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         getQpidSession().messageFlow(consumerTag, MessageCreditUnit.BYTE, 0xFFFFFFFF,
                                      Option.UNRELIABLE);
                 
-        if(prefetch() && _dispatcher != null && (isStarted() || _immediatePrefetch))
+        if(capacity > 0 && _dispatcher != null && (isStarted() || _immediatePrefetch))
         {
             // set the flow
             getQpidSession().messageFlow(consumerTag,
                                          MessageCreditUnit.MESSAGE,
-                                         getAMQConnection().getMaxPrefetch(),
+                                         capacity,
                                          Option.UNRELIABLE);
         }
 
@@ -603,6 +606,21 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             getQpidSession().sync();
             getCurrentException();
         }
+    }
+    
+    private long getCapacity(AMQDestination destination)
+    {
+        long capacity = 0;
+        if (destination.getDestSyntax() == DestSyntax.ADDR && 
+                destination.getSourceLink().getCapacity() > 0)
+        {
+            capacity = destination.getSourceLink().getCapacity();
+        }
+        else if (prefetch())
+        {
+            capacity = getAMQConnection().getMaxPrefetch();
+        }
+        return capacity;
     }
 
     /**
@@ -744,7 +762,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 //only set if msg list is null
                 try
                 {
-                    if (! prefetch())
+                    long capacity = getCapacity(consumer.getDestination());
+                    
+                    if (capacity == 0)
                     {
                         if (consumer.getMessageListener() != null)
                         {
@@ -757,7 +777,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                     {
                         getQpidSession()
                             .messageFlow(consumerTag, MessageCreditUnit.MESSAGE,
-                                         getAMQConnection().getMaxPrefetch(),
+                                         capacity,
                                          Option.UNRELIABLE);
                     }
                     getQpidSession()
