@@ -50,6 +50,9 @@ namespace {
     bool disabled = false;
     ManagementAgent* agent = 0;
     int refCount = 0;
+
+    const string defaultVendorName("vendor");
+    const string defaultProductName("product");
 }
 
 ManagementAgent::Singleton::Singleton(bool disableManagement)
@@ -176,7 +179,7 @@ void ManagementAgentImpl::init(const qpid::client::ConnectionSettings& settings,
     storeData(true);
 
     if (attrMap.empty())
-        setName("vendor", "product");
+        setName(defaultVendorName, defaultProductName);
 
     initialized = true;
 }
@@ -361,11 +364,25 @@ void ManagementAgentImpl::retrieveData()
 void ManagementAgentImpl::sendHeartbeat()
 {
     static const string addr_exchange("qmf.default.topic");
-    static const string addr_key("agent.ind.heartbeat");
+    static const string addr_key_base("agent.ind.heartbeat");
 
     Variant::Map map;
     Variant::Map headers;
     string content;
+    std::stringstream addr_key;
+
+    addr_key << addr_key_base;
+
+    // append .<vendor>.<product> to address key if present.
+    Variant::Map::const_iterator v;
+    if ((v = attrMap.find("_vendor")) != attrMap.end() &&
+        v->second.getString() != defaultVendorName) {
+        addr_key << "." << v->second.getString();
+        if ((v = attrMap.find("_product")) != attrMap.end() &&
+            v->second.getString() != defaultProductName) {
+            addr_key << "." << v->second.getString();
+        }
+    }
 
     headers["method"] = "indication";
     headers["qmf.opcode"] = "_agent_heartbeat_indication";
@@ -377,7 +394,7 @@ void ManagementAgentImpl::sendHeartbeat()
     map["_values"].asMap()["epoch"] = bootSequence;
 
     MapCodec::encode(map, content);
-    connThreadBody.sendBuffer(content, "", headers, addr_exchange, addr_key);
+    connThreadBody.sendBuffer(content, "", headers, addr_exchange, addr_key.str());
 
     QPID_LOG(trace, "SENT AgentHeartbeat name=" << name_address);
 }
