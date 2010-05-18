@@ -303,7 +303,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         {
             try
             {
-
+                _currentMessage.getStoredMessage().flushToStore();
+                
                 final ArrayList<? extends BaseQueue> destinationQueues = _currentMessage.getDestinationQueues();
 
                 if(!checkMessageUserId(_currentMessage.getContentHeader()))
