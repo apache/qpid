@@ -1,3 +1,3 @@
 include=cpp
-profile.excludes=CPPTransientExcludes
+profile.excludes=CPPTransientExcludes CPPNoPrefetchExcludes
 max_prefetch=0
