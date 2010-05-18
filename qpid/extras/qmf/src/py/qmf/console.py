@@ -187,8 +187,6 @@ class Object(object):
           self._properties.append((prop, ObjectId(values[prop.name], agentName=agentName)))
         else:
           self._properties.append((prop, values[prop.name]))
-      else:
-        self._properties.append((prop, None))
     for stat in self._schema.getStatistics():
       if stat.name in values:
         self._statistics.append((stat, values[stat.name]))
@@ -315,6 +313,16 @@ class Object(object):
     for stat, value in self._statistics:
       if name == stat.name:
         return value
+
+    #
+    # Check to see if the name is in the schema.  If so, return None (i.e. this is a not-present attribute)
+    #
+    for prop in self._schema.getProperties():
+      if name == prop.name:
+        return None
+    for stat in self._schema.getStatistics():
+      if name == stat.name:
+        return None
     raise Exception("Type Object has no attribute '%s'" % name)
 
   def __setattr__(self, name, value):
