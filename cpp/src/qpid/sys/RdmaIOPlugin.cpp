@@ -74,6 +74,7 @@ class RdmaIOHandler : public OutputControl {
     void full(Rdma::AsynchIO& aio);
     void idle(Rdma::AsynchIO& aio);
     void error(Rdma::AsynchIO& aio);
+    void drained(Rdma::AsynchIO& aio);
 };
 
 RdmaIOHandler::RdmaIOHandler(Rdma::Connection::intrusive_ptr& c, qpid::sys::ConnectionCodec::Factory* f) :
@@ -89,12 +90,18 @@ void RdmaIOHandler::init(Rdma::AsynchIO* a) {
     aio = a;
 }
 
+namespace {
+    void deleteAsynchIO(Rdma::AsynchIO& aio) {
+        delete &aio;
+    }
+}
+
 RdmaIOHandler::~RdmaIOHandler() {
     if (codec)
         codec->closed();
     delete codec;
 
-    aio->deferDelete();
+    aio->stop(deleteAsynchIO);
 }
 
 void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
@@ -108,7 +115,7 @@ void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
 }
 
 void RdmaIOHandler::close() {
-    aio->queueWriteClose();
+    aio->drainWriteQueue(boost::bind(&RdmaIOHandler::drained, this, _1));
 }
 
 // TODO: Dummy implementation, need to fill this in for heartbeat timeout to work
@@ -133,7 +140,7 @@ void RdmaIOHandler::idle(Rdma::AsynchIO&) {
         aio->queueWrite(buff);
     }
     if (codec->isClosed())
-        aio->queueWriteClose();
+        aio->drainWriteQueue(boost::bind(&RdmaIOHandler::drained, this, _1));
 }
 
 void RdmaIOHandler::initProtocolOut() {
@@ -147,6 +154,9 @@ void RdmaIOHandler::initProtocolOut() {
 
 void RdmaIOHandler::error(Rdma::AsynchIO&) {
     close();
+}
+
+void RdmaIOHandler::drained(Rdma::AsynchIO&) {
 }
 
 void RdmaIOHandler::full(Rdma::AsynchIO&) {
@@ -176,7 +186,7 @@ void RdmaIOHandler::readbuff(Rdma::AsynchIO&, Rdma::Buffer* buff) {
     }catch(const std::exception& e){
         QPID_LOG(error, e.what());
         readError = true;
-        aio->queueWriteClose();
+        aio->drainWriteQueue(boost::bind(&RdmaIOHandler::drained, this, _1));
     }
 }
 
@@ -195,7 +205,7 @@ void RdmaIOHandler::initProtocolIn(Rdma::Buffer* buff) {
             // send valid version header & close connection.
             write(framing::ProtocolInitiation(framing::highestProtocolVersion));
             readError = true;
-            aio->queueWriteClose();
+            aio->drainWriteQueue(boost::bind(&RdmaIOHandler::drained, this, _1));
         }
     }
 }
