@@ -536,6 +536,12 @@ Poller::Event Poller::wait(Duration timeout) {
             // Check if this is an interrupt
             PollerPrivate::InterruptHandle& interruptHandle = impl->interruptHandle;
             if (dataPtr == &interruptHandle) {
+                // If we are shutting down we need to rearm the shutdown interrupt to
+                // ensure everyone still sees it. It's okay that this might be overridden
+                // below as we will be back here if it is.
+                if (impl->isShutdown) {
+                    impl->interruptAll();
+                }
                 PollerHandle* wrappedHandle = 0;
                 {
                 ScopedLock<Mutex> l(interruptHandle.impl->lock);
