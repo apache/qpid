@@ -21,6 +21,9 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.AbstractActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 
 public abstract class HouseKeepingTask implements Runnable
 {
@@ -30,10 +33,12 @@ public abstract class HouseKeepingTask implements Runnable
 
     private String _name;
 
+    private RootMessageLogger _rootLogger;
     public HouseKeepingTask(VirtualHost vhost)
     {
         _virtualhost = vhost;
         _name = _virtualhost.getName() + ":" + this.getClass().getSimpleName();
+        _rootLogger = CurrentActor.get().getRootMessageLogger();
     }
 
     final public void run()
@@ -41,13 +46,22 @@ public abstract class HouseKeepingTask implements Runnable
         // Don't need to undo this as this is a thread pool thread so will
         // always go through here before we do any real work.
         Thread.currentThread().setName(_name);
+        CurrentActor.set(new AbstractActor(_rootLogger)
+        {
+            @Override
+            public String getLogMessage()
+            {
+                return _name;
+            }
+        });
+
         try
         {
             execute();
         }
         catch (Throwable e)
         {
-            _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e);
+            _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e, e);
         }
     }
 
