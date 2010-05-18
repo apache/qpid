@@ -94,7 +94,7 @@ public abstract class ConfigurationPlugin
 
             //Trim any element properties
             elementNameIndex = element.indexOf("[");
-            if (elementNameIndex != -1)
+            if (elementNameIndex > 0)
             {
                 element = element.substring(0,elementNameIndex).trim();
             }
@@ -106,6 +106,18 @@ public abstract class ConfigurationPlugin
         //Remove the items we already expect in the configuration
         for (String tag : getElementsProcessed())
         {
+
+            // Work round the issue with Commons configuration.
+            // With an XMLConfiguration the key will be [@property]
+            // but with a CompositeConfiguration it will be @property].
+            // Hide this issue from our users so when/if we change the
+            // configuration they don't have to. 
+            int bracketIndex = tag.indexOf("[");
+            if (bracketIndex != -1)
+            {                
+                tag = tag.substring(bracketIndex + 1, tag.length());
+            }
+
             elements.remove(tag);
         }
 
@@ -116,7 +128,7 @@ public abstract class ConfigurationPlugin
                 _logger.info("Elements to lookup:" + path);
                 for (String tag : elements)
                 {
-                    _logger.info(tag);
+                    _logger.info("Tag:'"+tag+"'");
                 }
             }
         }
