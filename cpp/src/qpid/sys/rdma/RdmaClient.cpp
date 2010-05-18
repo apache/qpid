@@ -117,6 +117,10 @@ void idle(Poller::shared_ptr p, Rdma::AsynchIO& aio) {
     }
 }
 
+void drained(Rdma::AsynchIO&) {
+    cout << "Drained:\n";
+}
+
 void connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci, const Rdma::ConnectionParams& cp) {
     cout << "Connected\n";
     Rdma::QueuePair::intrusive_ptr q = ci->getQueuePair();

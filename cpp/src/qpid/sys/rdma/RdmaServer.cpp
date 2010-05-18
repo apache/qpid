@@ -86,10 +86,14 @@ void full(ConRec* cr, Rdma::AsynchIO&, Rdma::Buffer* buf) {
     cr->queuedWrites.push(buf);
 }
 
+void drained(Rdma::AsynchIO&) {
+    cout << "Drained:\n";
+}
+
 void disconnected(Rdma::Connection::intrusive_ptr& ci) {
     ConRec* cr = ci->getContext<ConRec>();
     cr->connection->disconnect();
-    cr->data->queueWriteClose();
+    cr->data->drainWriteQueue(drained);
     delete cr;
     cout << "Disconnected: " << cr << "\n";
 }
@@ -98,7 +102,7 @@ void connectionError(Rdma::Connection::intrusive_ptr& ci, Rdma::ErrorType) {
     ConRec* cr = ci->getContext<ConRec>();
     cr->connection->disconnect();
     if (cr) {
-        cr->data->queueWriteClose();
+        cr->data->drainWriteQueue(drained);
         delete cr;
     }
     cout << "Connection error: " << cr << "\n";
