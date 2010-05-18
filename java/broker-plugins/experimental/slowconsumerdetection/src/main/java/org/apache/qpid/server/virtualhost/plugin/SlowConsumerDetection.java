@@ -103,12 +103,26 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
      */
     private boolean checkQueueStatus(AMQQueue q, SlowConsumerDetectionQueueConfiguration config)
     {
+        if (config != null)
+        {
 
-        _logger.info("Retrieved Queue(" + q.getName() + ") Config:" + config);
 
-        return config != null &&
-               (q.getMessageCount() >= config.getMessageCount() ||
-                q.getQueueDepth() >= config.getDepth() ||
-                q.getOldestMessageArrivalTime() >= config.getMessageAge());
+            if ((config.getMessageCount() != 0 && q.getMessageCount() >= config.getMessageCount()) ||
+                    (config.getDepth() != 0 && q.getQueueDepth() >= config.getDepth()) ||
+                    (config.getMessageAge() != 0 && q.getOldestMessageArrivalTime() >= config.getMessageAge()))
+            {
+                
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Detected Slow Consumer on Queue(" + q.getName() + ")");
+                    _logger.info("Queue Count:" + q.getMessageCount() + ":" + config.getMessageCount());
+                    _logger.info("Queue Depth:" + q.getQueueDepth() + ":" + config.getDepth());
+                    _logger.info("Queue Arrival:" + q.getOldestMessageArrivalTime() + ":" + config.getMessageAge());
+                }
+
+                return true;
+            }
+        }
+        return false;
     }
 }

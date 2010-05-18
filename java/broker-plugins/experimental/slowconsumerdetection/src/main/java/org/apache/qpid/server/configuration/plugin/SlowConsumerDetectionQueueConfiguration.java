@@ -29,7 +29,10 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
 {
@@ -47,9 +50,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
         public String[] getParentPaths()
         {
             return new String[]{"virtualhosts.virtualhost.queues.slow-consumer-detection",
-                                "virtualhosts.virtualhost.queues.queue.slow-consumer-detection",
-                                "virtualhosts.virtualhost.topics.slow-consumer-detection",
-                                "virtualhosts.virtualhost.queues.topics.topic.slow-consumer-detection"};
+                                "virtualhosts.virtualhost.queues.queue.slow-consumer-detection"};
         }
 
     }
@@ -91,6 +92,21 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
         PluginManager pluginManager = ApplicationRegistry.getInstance().getPluginManager();
         Map<String, SlowConsumerPolicyPluginFactory> factories =
                 pluginManager.getPlugins(SlowConsumerPolicyPluginFactory.class);
+
+        Iterator<?> keys = policyConfig.getConfig().getKeys();
+
+        while (keys.hasNext())
+        {
+            String key = (String) keys.next();
+
+            _logger.debug("Policy Keys:" + key);
+
+        }
+
+        if (policyConfig == null)
+        {
+            throw new ConfigurationException("No Slow Consumer Policy specified at:" + path + ". Known Policies:" + factories.keySet());
+        }        
 
         if (_logger.isDebugEnabled())
         {
