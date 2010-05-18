@@ -21,8 +21,7 @@ module Qpid
   module Config
 
     def self.amqp_spec
-      dirs = [File::expand_path(File::join(File::dirname(__FILE__), "../../../specs")),
-              "/usr/share/amqp"]
+      dirs = [File::expand_path(File::join(File::dirname(__FILE__), "specs"))]
       dirs.each do |d|
         spec = File::join(d, "amqp.0-10-qpid-errata.xml")
         return spec if File::exists? spec
