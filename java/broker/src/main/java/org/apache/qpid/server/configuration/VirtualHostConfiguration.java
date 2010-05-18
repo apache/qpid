@@ -64,10 +64,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         while (i.hasNext())
         {
             String queueName = (String) i.next();
-            CompositeConfiguration mungedConf = new CompositeConfiguration();
-            mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
-            mungedConf.addConfiguration(_config.subset("queues"));
-            _queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
+            _queues.put(queueName, new QueueConfiguration(queueName, this));
         }
 
         i = _config.getList("exchanges.exchange.name").iterator();
@@ -149,7 +146,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         {
             try
             {
-                return new QueueConfiguration(queueName, new PropertiesConfiguration(), this);
+                return new QueueConfiguration(queueName, this);
             }
             catch (ConfigurationException e)
             {

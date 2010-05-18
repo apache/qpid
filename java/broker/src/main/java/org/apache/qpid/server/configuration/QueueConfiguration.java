@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
@@ -35,13 +36,17 @@ public class QueueConfiguration extends ConfigurationPlugin
     private String _name;
     private VirtualHostConfiguration _vHostConfig;
 
-    public QueueConfiguration(String name, Configuration config, VirtualHostConfiguration virtualHostConfiguration) throws ConfigurationException
+    public QueueConfiguration(String name, VirtualHostConfiguration virtualHostConfiguration) throws ConfigurationException
     {
         _vHostConfig = virtualHostConfiguration;
-        _config = config;
         _name = name;
 
-        setConfiguration("virtualhosts.virtualhost.queues.queue", config);
+        CompositeConfiguration mungedConf = new CompositeConfiguration();
+        mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues.queue." + name));
+        mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues"));
+        _config = mungedConf;
+
+        setConfiguration("virtualhosts.virtualhost.queues.queue", mungedConf);
     }
 
     public String[] getElementsProcessed()
