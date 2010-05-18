@@ -49,10 +49,10 @@ class Subscription;
 class Session : public qpid::messaging::Handle<SessionImpl>
 {
   public:
-    QPID_CLIENT_EXTERN Session(SessionImpl* impl = 0);
-    QPID_CLIENT_EXTERN Session(const Session&);
-    QPID_CLIENT_EXTERN ~Session();
-    QPID_CLIENT_EXTERN Session& operator=(const Session&);
+    QPID_MESSAGING_EXTERN Session(SessionImpl* impl = 0);
+    QPID_MESSAGING_EXTERN Session(const Session&);
+    QPID_MESSAGING_EXTERN ~Session();
+    QPID_MESSAGING_EXTERN Session& operator=(const Session&);
 
     /**
      * Closes a session and all associated senders and receivers. An
@@ -60,10 +60,10 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * goes out of scope. All a connections sessions can be closed by
      * a call to Connection::close().
      */
-    QPID_CLIENT_EXTERN void close();
+    QPID_MESSAGING_EXTERN void close();
 
-    QPID_CLIENT_EXTERN void commit();
-    QPID_CLIENT_EXTERN void rollback();
+    QPID_MESSAGING_EXTERN void commit();
+    QPID_MESSAGING_EXTERN void rollback();
 
     /**
      * Acknowledges all outstanding messages that have been received
@@ -72,19 +72,19 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * @param sync if true, blocks until the acknowledgement has been
      * processed by the server
      */
-    QPID_CLIENT_EXTERN void acknowledge(bool sync=false);
+    QPID_MESSAGING_EXTERN void acknowledge(bool sync=false);
     /**
      * Rejects the specified message. This will prevent the message
      * being redelivered. This must be called before the message is
      * acknowledged.
      */
-    QPID_CLIENT_EXTERN void reject(Message&);
+    QPID_MESSAGING_EXTERN void reject(Message&);
     /**
      * Releases the specified message. This will allow the broker to
      * redeliver the message. This must be called before the message
      * is acknowledged.
      */
-    QPID_CLIENT_EXTERN void release(Message&);
+    QPID_MESSAGING_EXTERN void release(Message&);
 
     /**
      * Request synchronisation with the server.
@@ -94,7 +94,7 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * call will request notifcation from the server but will return
      * before receiving it.
      */
-    QPID_CLIENT_EXTERN void sync(bool block=true);
+    QPID_MESSAGING_EXTERN void sync(bool block=true);
 
     /**
      * Returns the total number of messages received and waiting to be
@@ -102,13 +102,13 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * total number of available messages across all receivers on this
      * session.
      */
-    QPID_CLIENT_EXTERN uint32_t getReceivable();
+    QPID_MESSAGING_EXTERN uint32_t getReceivable();
     /**
      * Returns a count of the number of messages received this session
      * that have been acknowledged, but for which that acknowledgement
      * has not yet been confirmed as processed by the server.
      */
-    QPID_CLIENT_EXTERN uint32_t getUnsettledAcks();
+    QPID_MESSAGING_EXTERN uint32_t getUnsettledAcks();
     /**
      * Retrieves the receiver for the next available message. If there
      * are no available messages at present the call will block for up
@@ -117,7 +117,7 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * which case the passed in receiver reference will be set to the
      * receiver for that message or false if no message was available.
      */
-    QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, Duration timeout=Duration::FOREVER);
+    QPID_MESSAGING_EXTERN bool nextReceiver(Receiver&, Duration timeout=Duration::FOREVER);
     /**
      * Returns the receiver for the next available message. If there
      * are no available messages at present the call will block for up
@@ -126,40 +126,40 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * @exception Receiver::NoMessageAvailable if no message became
      * available in time.
      */
-    QPID_CLIENT_EXTERN Receiver nextReceiver(Duration timeout=Duration::FOREVER);
+    QPID_MESSAGING_EXTERN Receiver nextReceiver(Duration timeout=Duration::FOREVER);
     
     /**
      * Create a new sender through which messages can be sent to the
      * specified address.
      */
-    QPID_CLIENT_EXTERN Sender createSender(const Address& address);
-    QPID_CLIENT_EXTERN Sender createSender(const std::string& address);
+    QPID_MESSAGING_EXTERN Sender createSender(const Address& address);
+    QPID_MESSAGING_EXTERN Sender createSender(const std::string& address);
 
     /**
      * Create a new receiver through which messages can be received
      * from the specified address.
      */
-    QPID_CLIENT_EXTERN Receiver createReceiver(const Address& address);
-    QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address);
+    QPID_MESSAGING_EXTERN Receiver createReceiver(const Address& address);
+    QPID_MESSAGING_EXTERN Receiver createReceiver(const std::string& address);
 
     /**
      * Returns the sender with the specified name.
      *@exception KeyError if there is none for that name.
      */
-    QPID_CLIENT_EXTERN Sender getSender(const std::string& name) const;
+    QPID_MESSAGING_EXTERN Sender getSender(const std::string& name) const;
     /**
      * Returns the receiver with the specified name.
      *@exception KeyError if there is none for that name.
      */
-    QPID_CLIENT_EXTERN Receiver getReceiver(const std::string& name) const;
+    QPID_MESSAGING_EXTERN Receiver getReceiver(const std::string& name) const;
     /**
      * Returns a handle to the connection this session is associated
      * with.
      */
-    QPID_CLIENT_EXTERN Connection getConnection() const;
+    QPID_MESSAGING_EXTERN Connection getConnection() const;
 
-    QPID_CLIENT_EXTERN bool hasError();
-    QPID_CLIENT_EXTERN void checkError();
+    QPID_MESSAGING_EXTERN bool hasError();
+    QPID_MESSAGING_EXTERN void checkError();
 
   private:
   friend class qpid::messaging::PrivateImplRef<Session>;

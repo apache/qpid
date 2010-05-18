@@ -122,22 +122,22 @@ class AddressImpl;
 class Address
 {
   public:
-    QPID_CLIENT_EXTERN Address();
-    QPID_CLIENT_EXTERN Address(const std::string& address);
-    QPID_CLIENT_EXTERN Address(const std::string& name, const std::string& subject,
+    QPID_MESSAGING_EXTERN Address();
+    QPID_MESSAGING_EXTERN Address(const std::string& address);
+    QPID_MESSAGING_EXTERN Address(const std::string& name, const std::string& subject,
                                const qpid::types::Variant::Map& options, const std::string& type = "");
-    QPID_CLIENT_EXTERN Address(const Address& address);
-    QPID_CLIENT_EXTERN ~Address();
-    QPID_CLIENT_EXTERN Address& operator=(const Address&);
-    QPID_CLIENT_EXTERN const std::string& getName() const;
-    QPID_CLIENT_EXTERN void setName(const std::string&);
-    QPID_CLIENT_EXTERN const std::string& getSubject() const;
-    QPID_CLIENT_EXTERN void setSubject(const std::string&);
-    QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getOptions() const;
-    QPID_CLIENT_EXTERN qpid::types::Variant::Map& getOptions();
-    QPID_CLIENT_EXTERN void setOptions(const qpid::types::Variant::Map&);
+    QPID_MESSAGING_EXTERN Address(const Address& address);
+    QPID_MESSAGING_EXTERN ~Address();
+    QPID_MESSAGING_EXTERN Address& operator=(const Address&);
+    QPID_MESSAGING_EXTERN const std::string& getName() const;
+    QPID_MESSAGING_EXTERN void setName(const std::string&);
+    QPID_MESSAGING_EXTERN const std::string& getSubject() const;
+    QPID_MESSAGING_EXTERN void setSubject(const std::string&);
+    QPID_MESSAGING_EXTERN const qpid::types::Variant::Map& getOptions() const;
+    QPID_MESSAGING_EXTERN qpid::types::Variant::Map& getOptions();
+    QPID_MESSAGING_EXTERN void setOptions(const qpid::types::Variant::Map&);
 
-    QPID_CLIENT_EXTERN std::string getType() const;
+    QPID_MESSAGING_EXTERN std::string getType() const;
     /**
      * The type of and addressed node influences how receivers and
      * senders are constructed for it. It also affects how a reply-to
@@ -146,16 +146,16 @@ class Address
      * broker. The type can be explicitly set to prevent this if
      * needed.
      */
-    QPID_CLIENT_EXTERN void setType(const std::string&);
+    QPID_MESSAGING_EXTERN void setType(const std::string&);
 
-    QPID_CLIENT_EXTERN std::string str() const;
-    QPID_CLIENT_EXTERN operator bool() const;
-    QPID_CLIENT_EXTERN bool operator !() const;
+    QPID_MESSAGING_EXTERN std::string str() const;
+    QPID_MESSAGING_EXTERN operator bool() const;
+    QPID_MESSAGING_EXTERN bool operator !() const;
   private:
     AddressImpl* impl;
 };
 
-QPID_CLIENT_EXTERN std::ostream& operator<<(std::ostream& out, const Address& address);
+QPID_MESSAGING_EXTERN std::ostream& operator<<(std::ostream& out, const Address& address);
 
 }} // namespace qpid::messaging
 

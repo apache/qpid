@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/client/ClientImportExport.h"
+#include "qpid/messaging/ImportExport.h"
 
 namespace qpid {
 namespace messaging {
@@ -35,8 +35,8 @@ class FailoverUpdatesImpl;
 class FailoverUpdates
 {
   public:
-    QPID_CLIENT_EXTERN FailoverUpdates(Connection& connection);
-    QPID_CLIENT_EXTERN ~FailoverUpdates();
+    QPID_MESSAGING_EXTERN FailoverUpdates(Connection& connection);
+    QPID_MESSAGING_EXTERN ~FailoverUpdates();
   private:
     FailoverUpdatesImpl* impl;
 

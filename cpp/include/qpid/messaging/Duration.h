@@ -35,19 +35,19 @@ namespace messaging {
 class Duration
 {
   public:
-    QPID_CLIENT_EXTERN explicit Duration(uint64_t milliseconds);
-    QPID_CLIENT_EXTERN uint64_t getMilliseconds() const;
-    QPID_CLIENT_EXTERN static const Duration FOREVER;
-    QPID_CLIENT_EXTERN static const Duration IMMEDIATE;
-    QPID_CLIENT_EXTERN static const Duration SECOND;
-    QPID_CLIENT_EXTERN static const Duration MINUTE;
+    QPID_MESSAGING_EXTERN explicit Duration(uint64_t milliseconds);
+    QPID_MESSAGING_EXTERN uint64_t getMilliseconds() const;
+    QPID_MESSAGING_EXTERN static const Duration FOREVER;
+    QPID_MESSAGING_EXTERN static const Duration IMMEDIATE;
+    QPID_MESSAGING_EXTERN static const Duration SECOND;
+    QPID_MESSAGING_EXTERN static const Duration MINUTE;
   private:
     uint64_t milliseconds;
 };
 
-QPID_CLIENT_EXTERN Duration operator*(const Duration& duration,
+QPID_MESSAGING_EXTERN Duration operator*(const Duration& duration,
                                       uint64_t multiplier);
-QPID_CLIENT_EXTERN Duration operator*(uint64_t multiplier,
+QPID_MESSAGING_EXTERN Duration operator*(uint64_t multiplier,
                                       const Duration& duration);
 
 }} // namespace qpid::messaging
