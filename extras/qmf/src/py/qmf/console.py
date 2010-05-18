@@ -574,6 +574,7 @@ class Session:
       self.rcvHeartbeats = False
     self.v1BindingKeyList, self.v2BindingKeyList = self._bindingKeys()
     self.manageConnections = manageConnections
+    self.agent_filter = []  # (vendor, product, instance)
 
     if self.userBindings and not self.rcvObjects:
       raise Exception("userBindings can't be set unless rcvObjects is set and a console is provided")
@@ -802,15 +803,40 @@ class Session:
     """ """
     pass
 
+  def addAgentFilter(self, vendor, product=None):
+    """ Listen for heartbeat messages only for those agent(s) that match the
+    vendor and, optionally, the product strings.
+    """
+    key = "agent.ind.heartbeat." + vendor
+    if product is not None:
+      key += "." + product
+    key += ".#"
+
+    if key not in self.v2BindingKeyList:
+      self.v2BindingKeyList.append(key) 
+      self.agent_filter.append((vendor, product, None))
+
+    # be sure we don't ever filter the local broker
+    local_broker_key = "agent.ind.heartbeat.apache.org.qpidd"
+    if local_broker_key not in self.v2BindingKeyList:
+      self.v2BindingKeyList.append(local_broker_key)
+
+    # remove the wildcard key if present
+    try:
+      self.v2BindingKeyList.remove("agent.ind.heartbeat.#")
+    except:
+      pass
 
   def _bindingKeys(self):
+    """ The set of default key bindings."""
     v1KeyList = []
     v2KeyList = []
     v1KeyList.append("schema.#")
     v2KeyList.append("agent.ind.heartbeat.#")
     if self.rcvObjects and self.rcvEvents and self.rcvHeartbeats and not self.userBindings:
       v1KeyList.append("console.#")
-      v2KeyList.append("agent.#")
+      v2KeyList.append("agent.ind.data.#")
+      v2KeyList.append("agent.ind.event.#")
     else:
       if self.rcvObjects and not self.userBindings:
         v1KeyList.append("console.obj.#")

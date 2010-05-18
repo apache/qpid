@@ -801,7 +801,18 @@ void ManagementAgent::periodicProcessing (void)
     }
 
     if (qmf2Support) {
-        static const string addr_key("agent.ind.heartbeat");
+        std::stringstream addr_key;
+
+        addr_key << "agent.ind.heartbeat";
+
+        // append .<vendor>.<product> to address key if present.
+        Variant::Map::const_iterator v;
+        if ((v = attrMap.find("_vendor")) != attrMap.end()){
+            addr_key << "." << v->second.getString();
+            if ((v = attrMap.find("_product")) != attrMap.end()) {
+                addr_key << "." << v->second.getString();
+            }
+        }
 
         Variant::Map map;
         Variant::Map headers;
@@ -817,7 +828,7 @@ void ManagementAgent::periodicProcessing (void)
 
         string content;
         MapCodec::encode(map, content);
-        sendBufferLH(content, "", headers, "amqp/map", v2Topic, addr_key);
+        sendBufferLH(content, "", headers, "amqp/map", v2Topic, addr_key.str());
 
         QPID_LOG(trace, "SENT AgentHeartbeat name=" << name_address);
     }
