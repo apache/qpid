@@ -47,18 +47,13 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
         {
             return new String[]{
                     "virtualhosts.virtualhost.queues.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.topics.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.queues.topics.topic.slow-consumer-detection.policy"};
+                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy"};
         }
     }
 
     public String[] getElementsProcessed()
     {
-        // NOTE: the use of '@name]' rather than '[@name]' this appears to be
-        // a bug in commons configuration.
-        //fixme - Simple test case needs raised and JIRA raised on Commons
-        return new String[]{"@name]", "options"};
+        return new String[]{"[@name]", "options"};
     }
 
     public String getPolicyName()
