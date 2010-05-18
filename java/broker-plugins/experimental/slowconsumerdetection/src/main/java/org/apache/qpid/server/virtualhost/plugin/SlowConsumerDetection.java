@@ -25,20 +25,19 @@ import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfigur
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 
-class SlowConsumerDetection extends VirtualHostPlugin
+class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
 {
     Logger _logger = Logger.getLogger(SlowConsumerDetection.class);
-    private VirtualHost _virtualhost;
     private SlowConsumerDetectionConfiguration _config;
     private SlowConsumerPolicyPlugin _policy;
 
     public static class SlowConsumerFactory implements VirtualHostPluginFactory
     {
-        public VirtualHostPlugin newInstance(VirtualHost vhost)
+        public VirtualHostHouseKeepingPlugin newInstance(VirtualHost vhost)
         {
             return new SlowConsumerDetection(vhost);
         }
@@ -46,54 +45,42 @@ class SlowConsumerDetection extends VirtualHostPlugin
 
     public SlowConsumerDetection(VirtualHost vhost)
     {
-        _virtualhost = vhost;
+        super(vhost);
         _config = vhost.getConfiguration().getConfiguration(SlowConsumerDetectionConfiguration.class);
         if (_config == null)
         {
             throw new IllegalArgumentException("Plugin has not been configured");
         }
-
     }
 
     @Override
     public void execute()
     {
         _logger.info("Starting the SlowConsumersDetection job");
-        try
+        for (AMQQueue q : _virtualhost.getQueueRegistry().getQueues())
         {
-            for (AMQQueue q : _virtualhost.getQueueRegistry().getQueues())
+            _logger.debug("Checking consumer status for queue: "
+                          + q.getName());
+            try
             {
-                _logger.debug("Checking consumer status for queue: "
-                              + q.getName());
-                try
-                {
-                    SlowConsumerDetectionQueueConfiguration config =
-                            q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class);
+                SlowConsumerDetectionQueueConfiguration config =
+                        q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class);
 
-                    if (checkQueueStatus(q, config))
-                    {
-                        config.getPolicy().performPolicy(q);
-                    }
-                }
-                catch (Exception e)
+                if (checkQueueStatus(q, config))
                 {
-                    _logger.error("Exception in SlowConsumersDetection " +
-                                  "for queue: " +
-                                  q.getNameShortString().toString(), e);
-                    //Don't throw exceptions as this will stop the
-                    // house keeping task from running.
+                    config.getPolicy().performPolicy(q);
                 }
             }
-            _logger.info("SlowConsumersDetection job completed.");
+            catch (Exception e)
+            {
+                _logger.error("Exception in SlowConsumersDetection " +
+                              "for queue: " +
+                              q.getNameShortString().toString(), e);
+                //Don't throw exceptions as this will stop the
+                // house keeping task from running.
+            }
         }
-        catch (Exception e)
-        {
-            _logger.error("SlowConsumersDetection job failed: " + e.getMessage(), e);
-        }
-        catch (Error e)
-        {
-            _logger.error("SlowConsumersDetection job failed with error: " + e.getMessage(), e);
-        }
+        _logger.info("SlowConsumersDetection job completed.");
     }
 
     public long getDelay()

@@ -129,8 +129,87 @@ public class VirtualHostConfigurationTest extends TestCase
         assertEquals(3, bTest.getMaximumMessageAge());
 
         ApplicationRegistry.remove();
-
-
     }
+
+    /**
+     * Test that the house keeping pool sizes is correctly processed
+     *
+     * @throws Exception
+     */
+    public void testHouseKeepingThreadCount() throws Exception
+    {
+        int initialPoolSize = 10;
+
+        configXml.addProperty("virtualhost.testHouseKeepingThreadCount.name", "testHouseKeepingThreadCount");
+        configXml.addProperty("virtualhost.testHouseKeepingThreadCount.housekeeping.poolSize",
+                              initialPoolSize);
+
+        VirtualHostConfiguration config =
+                new VirtualHostConfiguration("testHouseKeepingThreadCount",
+                                             configXml.subset("virtualhost.testHouseKeepingThreadCount"));
+        VirtualHost vhost =
+                ApplicationRegistry.getInstance().createVirtualHost(config);
+
+        assertEquals("HouseKeeping PoolSize not set correctly.",
+                     initialPoolSize, vhost.getHouseKeepingPoolSize());
+
+        ApplicationRegistry.remove();
+    }
+
+    /**
+     * Test default house keeping tasks
+     *
+     * @throws Exception
+     */
+    public void testDefaultHouseKeepingTasks() throws Exception
+    {
+        configXml.addProperty("virtualhost.testDefaultHouseKeepingTasks.name", "testDefaultHouseKeepingTasks");
+        VirtualHostConfiguration config =
+                new VirtualHostConfiguration("testDefaultHouseKeepingTasks",
+                                             configXml.subset("virtualhost.testDefaultHouseKeepingTasks"));
+        VirtualHost vhost =
+                ApplicationRegistry.getInstance().createVirtualHost(config);
+
+        assertEquals("Default houseKeeping task count incorrect.", 2,
+                     vhost.getHouseKeepingTaskCount());
+
+        // Currently the two are tasks:
+        // ExpiredMessageTask from VirtualHost        
+        // UpdateTask from the QMF ManagementExchange
+
+
+        ApplicationRegistry.remove();
+    }
+
+    /**
+      * Test that we can dynamically change the thread pool size
+      *
+      * @throws Exception
+      */
+     public void testDynamicHouseKeepingPoolSizeChange() throws Exception
+     {
+         int initialPoolSize = 10;
+
+         configXml.addProperty("virtualhost.testDynamicHouseKeepingPoolSizeChange.name", "testDynamicHouseKeepingPoolSizeChange");
+         configXml.addProperty("virtualhost.testDynamicHouseKeepingPoolSizeChange.housekeeping.poolSize",
+                               initialPoolSize);
+
+         VirtualHostConfiguration config =
+                 new VirtualHostConfiguration("testHouseKeepingThreadCount",
+                                              configXml.subset("virtualhost.testDynamicHouseKeepingPoolSizeChange"));
+         VirtualHost vhost =
+                 ApplicationRegistry.getInstance().createVirtualHost(config);
+
+         assertEquals("HouseKeeping PoolSize not set correctly.",
+                      initialPoolSize, vhost.getHouseKeepingPoolSize());
+
+         vhost.setHouseKeepingPoolSize(1);
+
+         assertEquals("HouseKeeping PoolSize not correctly change.",
+                      1, vhost.getHouseKeepingPoolSize());
+
+         ApplicationRegistry.remove();
+     }
+
 
 }

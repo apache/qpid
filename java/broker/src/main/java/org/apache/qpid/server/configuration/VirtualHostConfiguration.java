@@ -213,6 +213,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public int getHouseKeepingThreadCount()
     {
-        return _config.getInt("housekeeping.threadCount", Runtime.getRuntime().availableProcessors());
+        return _config.getInt("housekeeping.poolSize", Runtime.getRuntime().availableProcessors());
     }
 }
