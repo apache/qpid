@@ -1980,6 +1980,7 @@ class Broker:
 
       self.replyName = "reply-%s" % self.amqpSessionId
       self.amqpSession = self.conn.session(self.amqpSessionId)
+      self.amqpSession.timeout = self.SYNC_TIME
       self.amqpSession.auto_sync = True
       self.amqpSession.queue_declare(queue=self.replyName, exclusive=True, auto_delete=True)
       self.amqpSession.exchange_bind(exchange="amq.direct",
