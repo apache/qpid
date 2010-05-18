@@ -1920,12 +1920,99 @@ try {
 
     </section>
 
-<!--
+
     <section>
-      <title>Security ####</title>
+      <title>Security</title>
+
+      <para>Qpid provides authentication, rule-based authorization, encryption, and digital signing.</para>
+
+      <para>Authentication is done using Simple Authentication and
+      Security Layer (SASL) to authenticate client connections to the
+      broker. SASL is a framework that supports a variety of
+      authentication methods. For secure applications, we suggest
+      CRAM-MD5, DIGEST-MD5, or GSSAPI (Kerberos). The ANONYMOUS method
+      is not secure. The PLAIN method is secure only when used
+      together with SSL.</para>
+
+      <para>To enable Kerberos in a client, set the <varname>sals-mechanism</varname> connection option to <literal>GSSAPI</literal>:</para>
+
+
+      <programlisting>
+Connection connection(broker);
+connection.setOption("sasl-mechanism", "GSSAPI");
+try {
+    connection.open();
+    ...
+      </programlisting>
+
+      <para>For Kerberos authentication, if the user running the
+      program is already authenticated, e.g. using
+      <command>kinit</command>, there is no need to supply a user name
+      or password. If you are using another form of authentication, or are not already authenticated with Kerberos, you can supply these as connection options:</para>
+
+      <programlisting>
+connection.setOption("username", "mick");
+connection.setOption("password", "pa$$word");
+      </programlisting>
+
+      <para>Encryption and signing are done using SSL (they can also be done using SASL, but SSL provides stronger encryption). To enable SSL, set the <varname>protocol</varname> connection option to <literal>ssl</literal>:</para>
+
+      <programlisting>
+connection.setOption("protocol", "ssl");
+      </programlisting>
+
+      <para>Use the following environment variables to configure the SSL client:</para>
+
+      <table>
+	<title>SSL Client Environment Variables for C++ clients</title>
+	<tgroup align="left" cols="2" colsep="1" rowsep="1">
+	  <colspec colname="c1"></colspec>
+	  <colspec colname="c2"></colspec>
+	  <thead>
+	    <row>
+	      <entry align="center" nameend="c2" namest="c1">
+		SSL Client Options for C++ clients
+	      </entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>
+		<command>SSL_USE_EXPORT_POLICY</command>
+	      </entry>
+	      <entry>
+		Use NSS export policy
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		<command>SSL_CERT_PASSWORD_FILE <replaceable>PATH</replaceable></command>
+	      </entry>
+	      <entry>
+		File containing password to use for accessing certificate database
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		<command>SSL_CERT_DB <replaceable>PATH</replaceable></command>
+	      </entry>
+	      <entry>
+		Path to directory containing certificate database
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>
+		<command>SSL_CERT_NAME <replaceable>NAME</replaceable></command>
+	      </entry>
+	      <entry>
+		Name of the certificate to use. When SSL client authentication is enabled, a certificate name should normally be provided.
+	      </entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
 
     </section>
--->
 
     <section>
       <title>Transactions</title>
