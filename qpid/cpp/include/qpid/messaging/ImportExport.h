@@ -21,13 +21,13 @@
  */
 
 #if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
-#if defined(CLIENT_EXPORT) || defined (qpidclient_EXPORTS)
-#define QPID_CLIENT_EXTERN __declspec(dllexport)
+#if defined(CLIENT_EXPORT) || defined (qpidmessaging_EXPORTS)
+#define QPID_MESSAGING_EXTERN __declspec(dllexport)
 #else
-#define QPID_CLIENT_EXTERN __declspec(dllimport)
+#define QPID_MESSAGING_EXTERN __declspec(dllimport)
 #endif
 #else
-#define QPID_CLIENT_EXTERN
+#define QPID_MESSAGING_EXTERN
 #endif
 
 #endif  /*!QPID_MESSAGING_IMPORTEXPORT_H*/

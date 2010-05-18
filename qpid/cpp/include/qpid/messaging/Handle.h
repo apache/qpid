@@ -40,26 +40,26 @@ template <class T> class Handle {
   public:
 
     /**@return true if handle is valid,  i.e. not null. */
-    QPID_CLIENT_EXTERN bool isValid() const { return impl; }
+    QPID_MESSAGING_EXTERN bool isValid() const { return impl; }
 
     /**@return true if handle is null. It is an error to call any function on a null handle. */
-    QPID_CLIENT_EXTERN bool isNull() const { return !impl; }
+    QPID_MESSAGING_EXTERN bool isNull() const { return !impl; }
 
     /** Conversion to bool supports idiom if (handle) { handle->... } */
-    QPID_CLIENT_EXTERN operator bool() const { return impl; }
+    QPID_MESSAGING_EXTERN operator bool() const { return impl; }
 
     /** Operator ! supports idiom if (!handle) { do_if_handle_is_null(); } */
-    QPID_CLIENT_EXTERN bool operator !() const { return !impl; }
+    QPID_MESSAGING_EXTERN bool operator !() const { return !impl; }
 
     void swap(Handle<T>& h) { T* t = h.impl; h.impl = impl; impl = t; }
 
   protected:
     typedef T Impl;
-    QPID_CLIENT_EXTERN Handle() :impl() {}
+    QPID_MESSAGING_EXTERN Handle() :impl() {}
 
     // Not implemented,subclasses must implement.
-    QPID_CLIENT_EXTERN Handle(const Handle&);
-    QPID_CLIENT_EXTERN Handle& operator=(const Handle&);
+    QPID_MESSAGING_EXTERN Handle(const Handle&);
+    QPID_MESSAGING_EXTERN Handle& operator=(const Handle&);
 
     Impl* impl;
 
