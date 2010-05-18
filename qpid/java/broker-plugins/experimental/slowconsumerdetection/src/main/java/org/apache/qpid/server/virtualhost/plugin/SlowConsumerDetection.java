@@ -29,7 +29,7 @@ import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 
-class SlowConsumerDetection implements VirtualHostPlugin
+class SlowConsumerDetection extends VirtualHostPlugin
 {
     Logger _logger = Logger.getLogger(SlowConsumerDetection.class);
     private VirtualHost _virtualhost;
@@ -55,7 +55,8 @@ class SlowConsumerDetection implements VirtualHostPlugin
 
     }
 
-    public void run()
+    @Override
+    public void execute()
     {
         _logger.info("Starting the SlowConsumersDetection job");
         try
