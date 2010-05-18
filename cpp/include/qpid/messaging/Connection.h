@@ -43,9 +43,9 @@ class Session;
 class Connection : public qpid::messaging::Handle<ConnectionImpl>
 {
   public:
-    QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl);
-    QPID_CLIENT_EXTERN Connection(const Connection&);
-    QPID_CLIENT_EXTERN Connection();
+    QPID_MESSAGING_EXTERN Connection(ConnectionImpl* impl);
+    QPID_MESSAGING_EXTERN Connection(const Connection&);
+    QPID_MESSAGING_EXTERN Connection();
     /**  
      * Current implementation supports the following options:
      * 
@@ -75,29 +75,29 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     doubled every failure until the value of max-retry-interval
      *     is reached.
      */
-    QPID_CLIENT_EXTERN Connection(const std::string& url, const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
+    QPID_MESSAGING_EXTERN Connection(const std::string& url, const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
     /**
      * Creates a connection using an option string of the form
      * {name=value,name2=value2...}, see above for options supported.
      * 
      * @exception InvalidOptionString if the string does not match the correct syntax
      */
-    QPID_CLIENT_EXTERN Connection(const std::string& url, const std::string& options);
-    QPID_CLIENT_EXTERN ~Connection();
-    QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
-    QPID_CLIENT_EXTERN void setOption(const std::string& name, const qpid::types::Variant& value);
-    QPID_CLIENT_EXTERN void open();
-    QPID_CLIENT_EXTERN bool isOpen();
+    QPID_MESSAGING_EXTERN Connection(const std::string& url, const std::string& options);
+    QPID_MESSAGING_EXTERN ~Connection();
+    QPID_MESSAGING_EXTERN Connection& operator=(const Connection&);
+    QPID_MESSAGING_EXTERN void setOption(const std::string& name, const qpid::types::Variant& value);
+    QPID_MESSAGING_EXTERN void open();
+    QPID_MESSAGING_EXTERN bool isOpen();
     /**
      * Closes a connection and all sessions associated with it. An
      * opened connection must be closed before the last handle is
      * allowed to go out of scope.
      */
-    QPID_CLIENT_EXTERN void close();
-    QPID_CLIENT_EXTERN Session createTransactionalSession(const std::string& name = std::string());
-    QPID_CLIENT_EXTERN Session createSession(const std::string& name = std::string());
+    QPID_MESSAGING_EXTERN void close();
+    QPID_MESSAGING_EXTERN Session createTransactionalSession(const std::string& name = std::string());
+    QPID_MESSAGING_EXTERN Session createSession(const std::string& name = std::string());
 
-    QPID_CLIENT_EXTERN Session getSession(const std::string& name) const;
+    QPID_MESSAGING_EXTERN Session getSession(const std::string& name) const;
   private:
   friend class qpid::messaging::PrivateImplRef<Connection>;
 

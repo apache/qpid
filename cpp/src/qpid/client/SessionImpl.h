@@ -83,8 +83,8 @@ public:
     void resume(boost::shared_ptr<ConnectionImpl>);
     void suspend();
 
-    void assertOpen() const;
-    bool hasError() const;
+    QPID_CLIENT_EXTERN void assertOpen() const;
+    QPID_CLIENT_EXTERN bool hasError() const;
 
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);

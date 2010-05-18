@@ -78,7 +78,7 @@ void SaslAuthenticator::fini(void)
     return;
 }
 
-std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c)
+std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c, bool)
 {
     if (c.getBroker().getOptions().auth) {
         return std::auto_ptr<SaslAuthenticator>(new SspiAuthenticator(c));

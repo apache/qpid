@@ -42,64 +42,64 @@ struct MessageImpl;
 class Message
 {
   public:
-    QPID_CLIENT_EXTERN Message(const std::string& bytes = std::string());
-    QPID_CLIENT_EXTERN Message(const char*, size_t);
-    QPID_CLIENT_EXTERN Message(const Message&);
-    QPID_CLIENT_EXTERN ~Message();
+    QPID_MESSAGING_EXTERN Message(const std::string& bytes = std::string());
+    QPID_MESSAGING_EXTERN Message(const char*, size_t);
+    QPID_MESSAGING_EXTERN Message(const Message&);
+    QPID_MESSAGING_EXTERN ~Message();
 
-    QPID_CLIENT_EXTERN Message& operator=(const Message&);
+    QPID_MESSAGING_EXTERN Message& operator=(const Message&);
 
-    QPID_CLIENT_EXTERN void setReplyTo(const Address&);
-    QPID_CLIENT_EXTERN const Address& getReplyTo() const;
+    QPID_MESSAGING_EXTERN void setReplyTo(const Address&);
+    QPID_MESSAGING_EXTERN const Address& getReplyTo() const;
 
-    QPID_CLIENT_EXTERN void setSubject(const std::string&);
-    QPID_CLIENT_EXTERN const std::string& getSubject() const;
+    QPID_MESSAGING_EXTERN void setSubject(const std::string&);
+    QPID_MESSAGING_EXTERN const std::string& getSubject() const;
 
-    QPID_CLIENT_EXTERN void setContentType(const std::string&);
-    QPID_CLIENT_EXTERN const std::string& getContentType() const;
+    QPID_MESSAGING_EXTERN void setContentType(const std::string&);
+    QPID_MESSAGING_EXTERN const std::string& getContentType() const;
 
-    QPID_CLIENT_EXTERN void setMessageId(const std::string&);
-    QPID_CLIENT_EXTERN const std::string& getMessageId() const;
+    QPID_MESSAGING_EXTERN void setMessageId(const std::string&);
+    QPID_MESSAGING_EXTERN const std::string& getMessageId() const;
 
-    QPID_CLIENT_EXTERN void setUserId(const std::string&);
-    QPID_CLIENT_EXTERN const std::string& getUserId() const;
+    QPID_MESSAGING_EXTERN void setUserId(const std::string&);
+    QPID_MESSAGING_EXTERN const std::string& getUserId() const;
 
-    QPID_CLIENT_EXTERN void setCorrelationId(const std::string&);
-    QPID_CLIENT_EXTERN const std::string& getCorrelationId() const;
+    QPID_MESSAGING_EXTERN void setCorrelationId(const std::string&);
+    QPID_MESSAGING_EXTERN const std::string& getCorrelationId() const;
 
-    QPID_CLIENT_EXTERN void setPriority(uint8_t);
-    QPID_CLIENT_EXTERN uint8_t getPriority() const;
+    QPID_MESSAGING_EXTERN void setPriority(uint8_t);
+    QPID_MESSAGING_EXTERN uint8_t getPriority() const;
 
     /**
      * Set the time to live for this message in milliseconds.
      */
-    QPID_CLIENT_EXTERN void setTtl(Duration ttl);
+    QPID_MESSAGING_EXTERN void setTtl(Duration ttl);
     /**
      *Get the time to live for this message in milliseconds.
      */
-    QPID_CLIENT_EXTERN Duration getTtl() const;
+    QPID_MESSAGING_EXTERN Duration getTtl() const;
 
-    QPID_CLIENT_EXTERN void setDurable(bool durable);
-    QPID_CLIENT_EXTERN bool getDurable() const;
+    QPID_MESSAGING_EXTERN void setDurable(bool durable);
+    QPID_MESSAGING_EXTERN bool getDurable() const;
 
-    QPID_CLIENT_EXTERN bool getRedelivered() const;
-    QPID_CLIENT_EXTERN void setRedelivered(bool);
+    QPID_MESSAGING_EXTERN bool getRedelivered() const;
+    QPID_MESSAGING_EXTERN void setRedelivered(bool);
 
-    QPID_CLIENT_EXTERN const qpid::types::Variant::Map& getProperties() const;
-    QPID_CLIENT_EXTERN qpid::types::Variant::Map& getProperties();
+    QPID_MESSAGING_EXTERN const qpid::types::Variant::Map& getProperties() const;
+    QPID_MESSAGING_EXTERN qpid::types::Variant::Map& getProperties();
 
-    QPID_CLIENT_EXTERN void setContent(const std::string&);
+    QPID_MESSAGING_EXTERN void setContent(const std::string&);
     /**
      * Note that chars are copied.
      */
-    QPID_CLIENT_EXTERN void setContent(const char* chars, size_t count);
+    QPID_MESSAGING_EXTERN void setContent(const char* chars, size_t count);
 
     /** Get the content as a std::string */
-    QPID_CLIENT_EXTERN std::string getContent() const;
+    QPID_MESSAGING_EXTERN std::string getContent() const;
     /** Get a const pointer to the start of the content data. */
-    QPID_CLIENT_EXTERN const char* getContentPtr() const;
+    QPID_MESSAGING_EXTERN const char* getContentPtr() const;
     /** Get the size of content in bytes. */
-    QPID_CLIENT_EXTERN size_t getContentSize() const;
+    QPID_MESSAGING_EXTERN size_t getContentSize() const;
   private:
     MessageImpl* impl;
     friend struct MessageImplAccess;
@@ -119,7 +119,7 @@ struct EncodingException : qpid::types::Exception
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-QPID_CLIENT_EXTERN void decode(const Message& message,
+QPID_MESSAGING_EXTERN void decode(const Message& message,
                                qpid::types::Variant::Map& map,
                                const std::string& encoding = std::string());
 /**
@@ -131,7 +131,7 @@ QPID_CLIENT_EXTERN void decode(const Message& message,
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-QPID_CLIENT_EXTERN void decode(const Message& message,
+QPID_MESSAGING_EXTERN void decode(const Message& message,
                                qpid::types::Variant::List& list,
                                const std::string& encoding = std::string());
 /**
@@ -143,7 +143,7 @@ QPID_CLIENT_EXTERN void decode(const Message& message,
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-QPID_CLIENT_EXTERN void encode(const qpid::types::Variant::Map& map,
+QPID_MESSAGING_EXTERN void encode(const qpid::types::Variant::Map& map,
                                Message& message,
                                const std::string& encoding = std::string());
 /**
@@ -155,7 +155,7 @@ QPID_CLIENT_EXTERN void encode(const qpid::types::Variant::Map& map,
  * any encoding specified by the content-type of the message
  * @exception EncodingException
  */
-QPID_CLIENT_EXTERN void encode(const qpid::types::Variant::List& list,
+QPID_MESSAGING_EXTERN void encode(const qpid::types::Variant::List& list,
                                Message& message,
                                const std::string& encoding = std::string());
 
