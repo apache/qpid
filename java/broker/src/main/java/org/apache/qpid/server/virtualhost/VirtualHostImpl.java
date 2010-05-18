@@ -29,7 +29,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -71,11 +71,12 @@ import javax.management.NotCompliantMBeanException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -103,7 +104,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
     private ACLManager _accessManager;
 
-    private final Timer _timer;
+    private final ScheduledThreadPoolExecutor _houseKeepingTasks;
     private final IApplicationRegistry _appRegistry;
     private VirtualHostConfiguration _configuration;
     private DurableConfigurationStore _durableConfigurationStore;
@@ -114,6 +115,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
     private final long _createTime = System.currentTimeMillis();
     private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
+    private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
     public void setAccessableName(String name)
     {
@@ -217,7 +219,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
         _connectionRegistry = new ConnectionRegistry(this);
 
-        _timer = new Timer("TimerThread-" + _name + ":", true);
+        _houseKeepingTasks = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
 
         _queueRegistry = new DefaultQueueRegistry(this);
 
@@ -290,33 +292,35 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
         if (period != 0L)
         {
-            class HouseKeepingTask extends TimerTask
+            class ExpiredMessagesTask extends HouseKeepingTask
             {
-                Logger _hkLogger = Logger.getLogger(HouseKeepingTask.class);
-                
-                public void run()
+                public ExpiredMessagesTask(VirtualHost vhost)
                 {
-                    _hkLogger.info("Starting the houseKeeping job");
+                    super(vhost);
+                }
+
+                public void execute()
+                {
                     for (AMQQueue q : _queueRegistry.getQueues())
                     {
-                        _hkLogger.debug("Checking message status for queue: "+q.getName().toString());
+                        _logger.debug("Checking message status for queue: "
+                                      + q.getName());
                         try
                         {
                             q.checkMessageStatus();
                         }
                         catch (Exception e)
                         {
-                            _hkLogger.error("Exception in housekeeping for queue: " + q.getNameShortString().toString(), e);
+                            _logger.error("Exception in housekeeping for queue: "
+                                          + q.getNameShortString().toString(), e);
                             //Don't throw exceptions as this will stop the
                             // house keeping task from running.
                         }
                     }
-                    _hkLogger.info("HouseKeeping job completed.");
                 }
             }
 
-            final TimerTask expiredMessagesTask = new HouseKeepingTask();
-            scheduleTask(period, expiredMessagesTask);
+            scheduleHouseKeepingTask(period, new ExpiredMessagesTask(this));
 
             class ForceChannelClosuresTask extends TimerTask
             {
@@ -332,14 +336,12 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
             if (plugins != null)
             {
-                ScheduledThreadPoolExecutor vhostTasks
-                        = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
-
                 for (String pluginName : plugins.keySet())
                 {
                     try
                     {
-                        VirtualHostPlugin plugin = plugins.get(pluginName).newInstance(this);
+                        VirtualHostHouseKeepingPlugin plugin =
+                                plugins.get(pluginName).newInstance(this);
 
                         TimeUnit units = TimeUnit.MILLISECONDS;
 
@@ -359,7 +361,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                             }
                         }
 
-                        vhostTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
+                        _houseKeepingTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
                                                        plugin.getDelay(), units);
 
                         _logger.info("Loaded VirtualHostPlugin:" + plugin);
@@ -377,9 +379,42 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         }
     }
 
-    public void scheduleTask(final long period, final TimerTask task)
+    /**
+     * Allow other broker components to register a HouseKeepingTask
+     *
+     * @param period How often this task should run, in ms.
+     * @param task The task to run.
+     */
+    public void scheduleHouseKeepingTask(long period, HouseKeepingTask task)
     {
-        _timer.scheduleAtFixedRate(task, period / 2, period);
+        _houseKeepingTasks.scheduleAtFixedRate(task, period / 2, period,
+                                               TimeUnit.MILLISECONDS);
+    }
+
+    public long getHouseKeepingTaskCount()
+    {
+        return _houseKeepingTasks.getTaskCount();
+    }
+
+    public long getHouseKeepingCompletedTaskCount()
+    {
+        return _houseKeepingTasks.getCompletedTaskCount();
+    }
+
+    public int getHouseKeepingPoolSize()
+    {
+        return _houseKeepingTasks.getCorePoolSize();
+    }
+
+    public void setHouseKeepingPoolSize(int newSize)
+    {
+        _houseKeepingTasks.setCorePoolSize(newSize);
+    }
+
+
+    public int getHouseKeepingActiveCount()
+    {
+        return _houseKeepingTasks.getActiveCount();
     }
 
 
@@ -588,9 +623,14 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         }
 
         //Stop Housekeeping
-        if (_timer != null)
+        if (_houseKeepingTasks != null)
         {
-            _timer.cancel();
+            _houseKeepingTasks.shutdown();
+
+            if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
+            {
+                _houseKeepingTasks.shutdownNow();
+            }
         }
 
         //Close MessageStore
