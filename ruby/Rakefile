@@ -88,8 +88,9 @@ end
 PKG_FILES = FileList[
   "LICENSE.txt", "NOTICE.txt",
   "Rakefile", "RELEASE_NOTES",
-  "lib/**/*.rb", "lib/*/spec_cache/*.rb*", "tests/**/*", "examples/**", "ext/**/*.[ch]",
-  "ext/**/MANIFEST", "ext/**/extconf.rb"
+  "lib/**/*.rb", "lib/**/*.xml", "lib/**/*.dtd", "lib/*/spec_cache/*.rb*",
+  "tests/**/*", "examples/**", "ext/**/*.[ch]", "ext/**/MANIFEST",
+  "ext/**/extconf.rb"
 ]
 
 DIST_FILES = FileList[
