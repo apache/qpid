@@ -25,7 +25,7 @@
 #include <string>
 
 namespace qpid {
-namespace client { class ConnectionSettings; }
+namespace client { struct ConnectionSettings; }
 
 
 /**
