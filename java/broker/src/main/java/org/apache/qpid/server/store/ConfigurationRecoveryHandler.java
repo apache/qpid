@@ -29,7 +29,7 @@ public interface ConfigurationRecoveryHandler
 
     public static interface QueueRecoveryHandler
     {
-        void queue(String queueName, String owner, FieldTable arguments);
+        void queue(String queueName, String owner, boolean exclusive, FieldTable arguments);
         ExchangeRecoveryHandler completeQueueRecovery();
     }
 

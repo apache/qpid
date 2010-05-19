@@ -678,8 +678,8 @@ public class Bridge implements BridgeConfig
                                                         isDurable(),
                                                         _link.getFederationTag(),
                                                         false,
-                                                        getVirtualHost(),
-                                                        options);
+                                                        false,
+                                                        getVirtualHost(), options);
 
             FlowCreditManager_0_10 creditManager = new WindowCreditManager(0xFFFFFFFF,getMessageWindowSize());
 

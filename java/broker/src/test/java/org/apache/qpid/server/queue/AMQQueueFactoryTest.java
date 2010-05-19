@@ -56,7 +56,7 @@ public class AMQQueueFactoryTest extends TestCase
 
 
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testPriorityQueue"), false, new AMQShortString("owner"), false,
-                                           _virtualHost, fieldTable);
+                                           false, _virtualHost, fieldTable);
 
         assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());
     }
@@ -65,7 +65,7 @@ public class AMQQueueFactoryTest extends TestCase
     public void testSimpleQueueRegistration()
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
-                                           _virtualHost, null);
+                                           false, _virtualHost, null);
         assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
     }
 }

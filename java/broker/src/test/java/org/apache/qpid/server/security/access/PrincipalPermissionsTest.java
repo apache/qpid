@@ -73,8 +73,8 @@ public class PrincipalPermissionsTest extends TestCase
         {
             _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
             _exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, _durable, _ticket, _autoDelete);
-            _queue = AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, _virtualHost, _arguments);
-            _temporaryQueue = AMQQueueFactory.createAMQQueueImpl(_tempQueueName, false, _owner , true, _virtualHost, _arguments);
+            _queue = AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, false, _virtualHost, _arguments);
+            _temporaryQueue = AMQQueueFactory.createAMQQueueImpl(_tempQueueName, false, _owner , true, false, _virtualHost, _arguments);
         }
         catch (Exception e)
         {
