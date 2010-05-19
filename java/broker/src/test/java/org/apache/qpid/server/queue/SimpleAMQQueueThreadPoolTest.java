@@ -40,7 +40,7 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
         {
             SimpleAMQQueue queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false,
                                                                                        new AMQShortString("owner"),
-                                                                                       false, test, null);
+                                                                                       false, false, test, null);
 
             assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
 

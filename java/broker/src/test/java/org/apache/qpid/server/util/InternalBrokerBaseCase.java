@@ -69,7 +69,7 @@ public class InternalBrokerBaseCase extends TestCase
 
         QUEUE_NAME = new AMQShortString("test");
         _queue = AMQQueueFactory.createAMQQueueImpl(QUEUE_NAME, false, new AMQShortString("testowner"),
-                                                    false, _virtualHost, null);
+                                                    false, false, _virtualHost, null);
 
         _virtualHost.getQueueRegistry().registerQueue(_queue);
 

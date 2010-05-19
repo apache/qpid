@@ -58,6 +58,7 @@ public class QueueConfiguration extends ConfigurationPlugin
                             "minimumAlertRepeatGap",
                             "durable",
                             "exchange",
+                            "exclusive",
                             "queue",
                             "autodelete",
                             "priority",
@@ -78,6 +79,11 @@ public class QueueConfiguration extends ConfigurationPlugin
     public boolean getDurable()
     {
         return _config.getBoolean("durable" ,false);
+    }
+    
+    public boolean getExclusive()
+    {
+        return _config.getBoolean("exclusive" ,false);
     }
 
     public boolean getAutoDelete()

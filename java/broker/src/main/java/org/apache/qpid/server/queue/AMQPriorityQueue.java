@@ -33,19 +33,21 @@ public class AMQPriorityQueue extends SimpleAMQQueue
                                final boolean durable,
                                final AMQShortString owner,
                                final boolean autoDelete,
-                               final VirtualHost virtualHost,
+                               boolean exclusive,
+                               final VirtualHost virtualHost, 
                                int priorities, Map<String, Object> arguments)
     {
-        super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities),arguments);
+        super(name, durable, owner, autoDelete, exclusive, virtualHost,new PriorityQueueList.Factory(priorities), arguments);
     }
 
     public AMQPriorityQueue(String queueName,
                             boolean durable,
                             String owner,
                             boolean autoDelete,
-                            VirtualHost virtualHost, int priorities, Map<String,Object> arguments)
+                            boolean exclusive, VirtualHost virtualHost, int priorities, Map<String,Object> arguments)
     {
-        this(queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner),autoDelete,virtualHost,priorities, arguments);
+        this(queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner),
+                autoDelete, exclusive,virtualHost, priorities, arguments);
     }
 
     public int getPriorities()

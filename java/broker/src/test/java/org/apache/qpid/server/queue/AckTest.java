@@ -78,8 +78,8 @@ public class AckTest extends TestCase
 
         _protocolSession.addChannel(_channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, _virtualHost,
-                                                    null);
+        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, false,
+                                                    _virtualHost, null);
     }
 
     protected void tearDown()

@@ -133,13 +133,16 @@ public class AMQQueueFactory
                                               boolean durable,
                                               AMQShortString owner,
                                               boolean autoDelete,
-                                              VirtualHost virtualHost, final FieldTable arguments)
+                                              boolean exclusive, 
+                                              VirtualHost virtualHost,
+                                              final FieldTable arguments)
     {
         return createAMQQueueImpl(name == null ? null : name.toString(),
                                   durable,
                                   owner == null ? null : owner.toString(),
                                   autoDelete,
-                                  virtualHost,
+                                  exclusive,
+                                  virtualHost, 
                                   FieldTable.convertToMap(arguments));
     }
 
@@ -148,6 +151,7 @@ public class AMQQueueFactory
                                               boolean durable,
                                               String owner,
                                               boolean autoDelete,
+                                              boolean exclusive,
                                               VirtualHost virtualHost, Map<String, Object> arguments)
     {
         int priorities = 1;
@@ -175,15 +179,15 @@ public class AMQQueueFactory
         AMQQueue q;
         if(conflationKey != null)
         {
-            q = new ConflationQueue(queueName, durable, owner, autoDelete, virtualHost, arguments, conflationKey);
+            q = new ConflationQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, conflationKey);
         }
         else if(priorities > 1)
         {
-            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, virtualHost, priorities, arguments);
+            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, priorities, arguments);
         }
         else
         {
-            q = new SimpleAMQQueue(queueName, durable, owner, autoDelete, virtualHost, arguments);
+            q = new SimpleAMQQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments);
         }
 
         //Register the new queue
@@ -212,6 +216,7 @@ public class AMQQueueFactory
 
         boolean durable = config.getDurable();
         boolean autodelete = config.getAutoDelete();
+        boolean exclusive = config.getExclusive();
         String owner = config.getOwner();
         Map<String,Object> arguments = null;
         if(config.isLVQ() || config.getLVQKey() != null)
@@ -241,7 +246,7 @@ public class AMQQueueFactory
             }
         }
 
-        AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);
+        AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, exclusive, host, arguments);
         q.configure(config);
         return q;
     }
