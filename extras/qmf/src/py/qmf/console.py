@@ -1746,6 +1746,11 @@ class ObjectId:
   def getAgentBank(self):
     return self.agentName
 
+  def getV2RoutingKey(self):
+    if self.agentName == '0':
+      return "broker"
+    return self.agentName
+
   def getObject(self):
     return self.objectName
 
