@@ -1,5 +1,2 @@
 //These tests require the MemoryMessageStore
 org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#*
-
-//QPID-2422 disable until queue exclusivity is persisted
-org.apache.qpid.test.unit.ct.DurableSubscriberTest#*
