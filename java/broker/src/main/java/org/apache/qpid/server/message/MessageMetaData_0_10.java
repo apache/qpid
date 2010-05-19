@@ -32,7 +32,7 @@ import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.BBDecoder;
 
 import java.nio.ByteBuffer;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 
 public class MessageMetaData_0_10 implements StorableMessageMetaData
 {
@@ -42,7 +42,7 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData
     private MessageTransferHeader _messageHeader;
     private long _arrivalTime;
     private int _bodySize;
-    private volatile WeakReference<ByteBuffer> _body;
+    private volatile SoftReference<ByteBuffer> _body;
 
     private static final int ENCODER_SIZE = 1 << 16;
 
@@ -89,7 +89,7 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData
             ByteBuffer body = ByteBuffer.allocate(_bodySize);
             body.put(xfrBody);
             body.flip();
-            _body = new WeakReference(body);
+            _body = new SoftReference<ByteBuffer>(body);
         }
 
 
@@ -212,7 +212,7 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData
 
     public void setBody(ByteBuffer body)
     {
-        _body = new WeakReference(body);
+        _body = new SoftReference<ByteBuffer>(body);
     }
 
     private static class MetaDataFactory implements MessageMetaDataType.Factory<MessageMetaData_0_10>

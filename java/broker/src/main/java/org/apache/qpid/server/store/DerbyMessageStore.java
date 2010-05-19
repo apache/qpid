@@ -36,7 +36,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.sql.Blob;
 import java.sql.Connection;
@@ -1408,7 +1408,7 @@ public class DerbyMessageStore implements MessageStore
     {
 
         private final long _messageId;
-        private volatile WeakReference<StorableMessageMetaData> _metaDataRef;
+        private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
         private Connection _conn;
 
         StoredDerbyMessage(long messageId, StorableMessageMetaData metaData)
@@ -1424,7 +1424,7 @@ public class DerbyMessageStore implements MessageStore
             {
                 _messageId = messageId;
 
-                _metaDataRef = new WeakReference(metaData);
+                _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
                 if(persist)
                 {
                     _conn = newConnection();
@@ -1451,7 +1451,7 @@ public class DerbyMessageStore implements MessageStore
                 {
                     throw new RuntimeException(e);
                 }
-                _metaDataRef = new WeakReference(metaData);
+                _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
             }
 
             return metaData;
