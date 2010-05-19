@@ -101,7 +101,7 @@ public class SimpleAMQQueueTest extends TestCase
         _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration(getClass().getName(), env), _store);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, _virtualHost, _arguments);
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class SimpleAMQQueueTest extends TestCase
     {
         _queue.stop();
         try {
-            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(null, false, _owner, false, _virtualHost, _arguments );
+            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(null, false, _owner, false, false, _virtualHost, _arguments );
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -125,7 +125,7 @@ public class SimpleAMQQueueTest extends TestCase
         }
 
         try {
-            _queue = new SimpleAMQQueue(_qname, false, _owner, false, null,Collections.EMPTY_MAP);
+            _queue = new SimpleAMQQueue(_qname, false, _owner, false, false,null, Collections.EMPTY_MAP);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -135,7 +135,7 @@ public class SimpleAMQQueueTest extends TestCase
         }
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false,
-                                                                _virtualHost, _arguments);
+                                                                false, _virtualHost, _arguments);
         assertNotNull("Queue was not created", _queue);
     }
 
@@ -251,7 +251,7 @@ public class SimpleAMQQueueTest extends TestCase
     public void testAutoDeleteQueue() throws Exception
     {
        _queue.stop();
-       _queue = new SimpleAMQQueue(_qname, false, null, true, _virtualHost, Collections.EMPTY_MAP);
+       _queue = new SimpleAMQQueue(_qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));

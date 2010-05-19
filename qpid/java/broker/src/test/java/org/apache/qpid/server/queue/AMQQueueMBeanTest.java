@@ -430,8 +430,8 @@ public class AMQQueueMBeanTest extends TestCase
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = _virtualHost.getMessageStore();
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _virtualHost,
-                                                    null);
+        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, false,
+                                                    _virtualHost, null);
         _queueMBean = new AMQQueueMBean(_queue);
 
         _protocolSession = new InternalTestProtocolSession(_virtualHost);

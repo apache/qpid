@@ -914,6 +914,7 @@ public class ServerSessionDelegate extends SessionDelegate
                                 public void doTask(ServerSession session)
                                 {
                                     q.setPrincipalHolder(null);
+                                    q.setExclusiveOwningSession(null);
                                 }
                             };
                             final ServerSession s = (ServerSession) session;
@@ -962,8 +963,8 @@ public class ServerSessionDelegate extends SessionDelegate
 
         String owner = body.getExclusive() ? session.getClientID() : null;
 
-        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(), virtualHost,
-                                                                  body.getArguments());
+        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(), 
+                                                                  body.getExclusive(), virtualHost, body.getArguments());
 
 
         if (body.getExclusive() && !body.getDurable())

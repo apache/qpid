@@ -482,8 +482,8 @@ public class MessageStoreTest extends TestCase
         //Ideally we would be able to use the QueueDeclareHandler here.
         try
         {
-            queue = AMQQueueFactory.createAMQQueueImpl(queueName, durable, queueOwner, false, _virtualHost,
-                                                       queueArguments);
+            queue = AMQQueueFactory.createAMQQueueImpl(queueName, durable, queueOwner, false, false,
+                                                       _virtualHost, queueArguments);
 
             validateQueueProperties(queue, usePriority);
 

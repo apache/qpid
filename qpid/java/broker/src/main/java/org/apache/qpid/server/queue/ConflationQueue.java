@@ -31,11 +31,12 @@ public class ConflationQueue extends SimpleAMQQueue
                               boolean durable,
                               String owner,
                               boolean autoDelete,
+                              boolean exclusive,
                               VirtualHost virtualHost,
                               Map<String, Object> args,
                               String conflationKey)
     {
-        super(name, durable, owner, autoDelete, virtualHost, new ConflationQueueList.Factory(conflationKey), args);
+        super(name, durable, owner, autoDelete, exclusive, virtualHost, new ConflationQueueList.Factory(conflationKey), args);
     }
 
 

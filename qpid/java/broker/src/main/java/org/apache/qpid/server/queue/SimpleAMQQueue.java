@@ -85,6 +85,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private PrincipalHolder _prinicpalHolder;
 
+    private boolean _exclusive = false;
     private AMQSessionModel _exclusiveOwner;
 
 
@@ -188,27 +189,28 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private long _createTime = System.currentTimeMillis();
     private QueueConfiguration _queueConfiguration;
 
-    protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost, Map<String,Object> arguments)
+
+
+    protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
     {
-        this(name, durable, owner, autoDelete, virtualHost, new SimpleQueueEntryList.Factory(),arguments);
+        this(name, durable, owner, autoDelete, exclusive, virtualHost,new SimpleQueueEntryList.Factory(), arguments);
     }
 
-    public SimpleAMQQueue(String queueName, boolean durable, String owner, boolean autoDelete, VirtualHost virtualHost, Map<String, Object> arguments)
+    public SimpleAMQQueue(String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String, Object> arguments)
     {
-        this(queueName, durable, owner,autoDelete,virtualHost,new SimpleQueueEntryList.Factory(),arguments);
+        this(queueName, durable, owner, autoDelete, exclusive, virtualHost, new SimpleQueueEntryList.Factory(), arguments);
     }
 
-    public SimpleAMQQueue(String queueName, boolean durable, String owner, boolean autoDelete, VirtualHost virtualHost, QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
+    public SimpleAMQQueue(String queueName, boolean durable, String owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, QueueEntryListFactory entryListFactory, Map<String, Object> arguments)
     {
-        this(queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner),autoDelete,virtualHost,entryListFactory, arguments);
+        this(queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner), autoDelete, exclusive, virtualHost, entryListFactory, arguments);
     }
-
-
 
     protected SimpleAMQQueue(AMQShortString name,
                              boolean durable,
                              AMQShortString owner,
                              boolean autoDelete,
+                             boolean exclusive,
                              VirtualHost virtualHost,
                              QueueEntryListFactory entryListFactory,
                              Map<String,Object> arguments)
@@ -229,6 +231,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         _durable = durable;
         _owner = owner;
         _autoDelete = autoDelete;
+        _exclusive = exclusive;
         _virtualHost = virtualHost;
         _entries = entryListFactory.createQueueEntryList(this);
         _arguments = arguments;
@@ -324,7 +327,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public boolean isExclusive()
     {
-        return _exclusiveOwner != null;
+        return _exclusive;
     }
 
     public Exchange getAlternateExchange()
@@ -2054,6 +2057,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void setExclusiveOwningSession(AMQSessionModel exclusiveOwner)
     {
+        _exclusive = true;
         _exclusiveOwner = exclusiveOwner;
     }
 

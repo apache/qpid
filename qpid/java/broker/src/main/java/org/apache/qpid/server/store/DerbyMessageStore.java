@@ -73,7 +73,7 @@ public class DerbyMessageStore implements MessageStore
     private static final String META_DATA_TABLE_NAME = "QPID_META_DATA";
     private static final String MESSAGE_CONTENT_TABLE_NAME = "QPID_MESSAGE_CONTENT";
 
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 3;
 
 
 
@@ -90,9 +90,9 @@ public class DerbyMessageStore implements MessageStore
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+DB_VERSION_TABLE_NAME+" ( version ) VALUES ( ? )";
 
     private static final String CREATE_EXCHANGE_TABLE = "CREATE TABLE "+EXCHANGE_TABLE_NAME+" ( name varchar(255) not null, type varchar(255) not null, autodelete SMALLINT not null, PRIMARY KEY ( name ) )";
-    private static final String CREATE_QUEUE_TABLE = "CREATE TABLE "+QUEUE_TABLE_NAME+" ( name varchar(255) not null, owner varchar(255), PRIMARY KEY ( name ) )";
+    private static final String CREATE_QUEUE_TABLE = "CREATE TABLE "+QUEUE_TABLE_NAME+" ( name varchar(255) not null, owner varchar(255), exclusive SMALLINT not null, arguments blob, PRIMARY KEY ( name ))";
     private static final String CREATE_BINDINGS_TABLE = "CREATE TABLE "+BINDINGS_TABLE_NAME+" ( exchange_name varchar(255) not null, queue_name varchar(255) not null, binding_key varchar(255) not null, arguments blob , PRIMARY KEY ( exchange_name, queue_name, binding_key ) )";
-    private static final String SELECT_FROM_QUEUE = "SELECT name, owner FROM " + QUEUE_TABLE_NAME;
+    private static final String SELECT_FROM_QUEUE = "SELECT name, owner, exclusive, arguments FROM " + QUEUE_TABLE_NAME;
     private static final String FIND_QUEUE = "SELECT name, owner FROM " + QUEUE_TABLE_NAME + " WHERE name = ?";
     private static final String SELECT_FROM_EXCHANGE = "SELECT name, type, autodelete FROM " + EXCHANGE_TABLE_NAME;
     private static final String SELECT_FROM_BINDINGS =
@@ -104,7 +104,7 @@ public class DerbyMessageStore implements MessageStore
     private static final String FIND_EXCHANGE = "SELECT name FROM " + EXCHANGE_TABLE_NAME + " WHERE name = ?";
     private static final String INSERT_INTO_BINDINGS = "INSERT INTO " + BINDINGS_TABLE_NAME + " ( exchange_name, queue_name, binding_key, arguments ) values ( ?, ?, ?, ? )";
     private static final String DELETE_FROM_BINDINGS = "DELETE FROM " + BINDINGS_TABLE_NAME + " WHERE exchange_name = ? AND queue_name = ? AND binding_key = ?";
-    private static final String INSERT_INTO_QUEUE = "INSERT INTO " + QUEUE_TABLE_NAME + " (name, owner) VALUES (?, ?)";
+    private static final String INSERT_INTO_QUEUE = "INSERT INTO " + QUEUE_TABLE_NAME + " (name, owner, exclusive, arguments) VALUES (?, ?, ?, ?)";
     private static final String DELETE_FROM_QUEUE = "DELETE FROM " + QUEUE_TABLE_NAME + " WHERE name = ?";
 
     private static final String CREATE_QUEUE_ENTRY_TABLE = "CREATE TABLE "+QUEUE_ENTRY_TABLE_NAME+" ( queue_name varchar(255) not null, message_id bigint not null, PRIMARY KEY (queue_name, message_id) )";
@@ -405,7 +405,23 @@ public class DerbyMessageStore implements MessageStore
         {
             String queueName = rs.getString(1);
             String owner = rs.getString(2);
-            qrh.queue(queueName, owner, null);
+            boolean exclusive = rs.getBoolean(3);
+            Blob argumentsAsBlob = rs.getBlob(4);
+
+            byte[] dataAsBytes = argumentsAsBlob.getBytes(1,(int) argumentsAsBlob.length());
+            FieldTable arguments;
+            if(dataAsBytes.length > 0)
+            {
+                org.apache.mina.common.ByteBuffer buffer = org.apache.mina.common.ByteBuffer.wrap(dataAsBytes);
+
+                arguments = new FieldTable(buffer,buffer.limit());                
+            }
+            else
+            {
+                arguments = null;
+            }
+
+            qrh.queue(queueName, owner, exclusive, arguments); 
 
             queues.add(queueName);
         }
@@ -817,7 +833,21 @@ public class DerbyMessageStore implements MessageStore
 
                     stmt.setString(1, queue.getNameShortString().toString());
                     stmt.setString(2, owner);
+                    stmt.setBoolean(3,queue.isExclusive());
 
+                    final byte[] underlying;
+                    if(arguments != null)
+                    {
+                        underlying = arguments.getDataAsBytes();
+                    }
+                    else
+                    {
+                        underlying = new byte[0];
+                    }
+                    
+                    ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
+                    stmt.setBinaryStream(4,bis,underlying.length);
+                    
                     stmt.execute();
 
                     stmt.close();

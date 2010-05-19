@@ -92,7 +92,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         return this;
     }
 
-    public void queue(String queueName, String owner, FieldTable arguments)
+    public void queue(String queueName, String owner, boolean exclusive, FieldTable arguments)
     {
         AMQShortString queueNameShortString = new AMQShortString(queueName);
 
@@ -100,8 +100,8 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
         if (q == null)
         {
-            q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
-                                                   arguments);
+            q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, exclusive,
+                                                   _virtualHost, arguments);
             _virtualHost.getQueueRegistry().registerQueue(q);
         }
 
