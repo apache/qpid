@@ -247,14 +247,16 @@ class Object(object):
 
   def getIndex(self):
     """ Return a string describing this object's primary key. """
+    if self._objectId.isV2:
+      return self._objectId.getObject()
     result = u""
-    for property, value in self._properties:
-      if property.index:
+    for prop, value in self._properties:
+      if prop.index:
         if result != u"":
           result += u":"
         try:
-          valstr = unicode(self._session._displayValue(value, property.type))
-        except:
+          valstr = unicode(self._session._displayValue(value, prop.type))
+        except Exception, e:
           valstr = u"<undecodable>"
         result += valstr
     return result
@@ -984,7 +986,10 @@ class Session:
       values = content["_values"]
       timestamp = values["timestamp"]
       interval = values["heartbeat_interval"]
-    except:
+      epoch = 0
+      if 'epoch' in values:
+        epoch = values['epoch']
+    except Exception,e:
       return
 
     ##
@@ -999,6 +1004,7 @@ class Session:
     agent = broker.getAgent(1, agentName)
     if agent == None:
       agent = Agent(broker, agentName, "QMFv2 Agent", True, interval)
+      agent.setEpoch(epoch)
       broker._addAgent(agentName, agent)
     else:
       agent.touch()
@@ -1233,7 +1239,7 @@ class Session:
         sendCodec = Codec()
         seq = self.seqMgr._reserve((method, False))
 
-        if objectId.isV2():
+        if objectId.isV2:
           #
           # Compose and send a QMFv2 method request
           #
@@ -1681,6 +1687,7 @@ class ObjectId:
   """ Object that represents QMF object identifiers """
   def __init__(self, constructor, first=0, second=0, agentName=None):
     if  constructor.__class__ == dict:
+      self.isV2 = True
       self.agentName = agentName
       self.agentEpoch = 0
       if '_agent_name' in constructor:  self.agentName = constructor['_agent_name']
@@ -1689,6 +1696,7 @@ class ObjectId:
         raise Exception("QMFv2 OBJECT_ID must have the '_object_name' field.")
       self.objectName = constructor['_object_name']
     else:
+      self.isV2 = None
       if not constructor:
         first = first
         second = second
@@ -1722,9 +1730,6 @@ class ObjectId:
   def __repr__(self):
     return "%d-%d-%d-%s-%s" % (self.getFlags(), self.getSequence(),
                                self.getBrokerBank(), self.getAgentBank(), self.getObject())
-
-  def isV2(self):
-    return not self.agentName.isdigit()
 
   def index(self):
     return self.__repr__()
@@ -2392,6 +2397,7 @@ class Agent:
     self.unsolicitedContext = RequestContext(self, self)
     self.lastSeenTime = time()
     self.closed = None
+    self.epoch = 0
 
 
   def _checkClosed(self):
@@ -2416,6 +2422,18 @@ class Agent:
 
   def touch(self):
     self.lastSeenTime = time()
+
+
+  def setEpoch(self, epoch):
+    self.epoch = epoch
+
+
+  def epochMismatch(self, epoch):
+    if epoch == 0 or self.epoch == 0:
+      return None
+    if epoch == self.epoch:
+      return None
+    return True
 
 
   def isOld(self):
