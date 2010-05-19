@@ -371,15 +371,24 @@ void ConnectionImpl::release() {
     bool isActive;
     {
         Mutex::ScopedLock l(lock);
-        released = true;
         isActive = connector && !shutdownComplete;
     }
     //If we are still active - i.e. associated with an IO thread -
     //then we cannot delete ourselves yet, but must wait for the
     //shutdown callback which we can trigger by calling
     //connector.close()
-    if (isActive) connector->close();
-    else delete this;
+    if (isActive) {
+        connector->close();
+        bool canDelete;
+        {
+            Mutex::ScopedLock l(lock);
+            released = true;
+            canDelete = shutdownComplete;
+        }
+        if (canDelete) delete this;
+    } else { 
+        delete this;
+    }
 }
 
 static const std::string CONN_CLOSED("Connection closed");
