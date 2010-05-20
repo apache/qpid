@@ -18,27 +18,25 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration.plugin;
+package org.apache.qpid.server.virtualhost.plugin.policies;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
-import java.util.List;
-
-public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
+public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
 {
 
-    public static class SlowConsumerDetectionPolicyConfigurationFactory
+    public static class TopicDeletePolicyConfigurationFactory
             implements ConfigurationPluginFactory
     {
         public ConfigurationPlugin newInstance(String path,
                                                Configuration config)
                 throws ConfigurationException
         {
-            SlowConsumerDetectionPolicyConfiguration slowConsumerConfig =
-                    new SlowConsumerDetectionPolicyConfiguration();
+            TopicDeletePolicyConfiguration slowConsumerConfig =
+                    new TopicDeletePolicyConfiguration();
             slowConsumerConfig.setConfiguration(path, config);
             return slowConsumerConfig;
         }
@@ -46,19 +44,19 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
         public String[] getParentPaths()
         {
             return new String[]{
-                    "virtualhosts.virtualhost.queues.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy"};
+                    "virtualhosts.virtualhost.queues.slow-consumer-detection.policy.topicDelete",
+                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy.topicDelete"};
         }
     }
 
     public String[] getElementsProcessed()
     {
-        return new String[]{"name"};
+        return new String[]{"delete-persistent"};
     }
 
-    public String getPolicyName()
+    public boolean deletePersistent()
     {
-        return _configuration.getString("name");
+        return _configuration.containsKey("delete-persistent");
     }
 
 }
