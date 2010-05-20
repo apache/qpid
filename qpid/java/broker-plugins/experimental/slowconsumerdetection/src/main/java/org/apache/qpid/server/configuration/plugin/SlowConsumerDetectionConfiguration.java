@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration.plugin;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConversionException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
@@ -44,6 +45,9 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
         }
     }
 
+    //Set Default time unit to seconds
+    TimeUnit _timeUnit = TimeUnit.SECONDS;
+
     public String[] getElementsProcessed()
     {
         return new String[]{"delay",
@@ -55,15 +59,59 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
         return _configuration.getLong("delay", 10);
     }
 
-    public String getTimeUnit()
+    public TimeUnit getTimeUnit()
     {
-        return _configuration.getString("timeunit", TimeUnit.SECONDS.toString());
+        return  _timeUnit;
     }
 
     @Override
     public void setConfiguration(String path, Configuration configuration) throws ConfigurationException
     {
         super.setConfiguration(path, configuration);
+
+        //Validate Configuration
+
+        try
+        {
+            long delay = _configuration.getLong("delay");
+            if (delay <= 0)
+            {
+                throw new ConfigurationException("Slow Consumer Detection Delay must be a Positive Long value.");
+            }
+        }
+        catch (Exception e)
+        {
+            Throwable last = e;
+
+            // Find the first cause
+            if (e instanceof ConversionException)
+            {
+                Throwable t = e.getCause();
+                while (t != null)
+                {
+                    last = t;
+                    t = last.getCause();
+                }
+            }
+
+            throw new ConfigurationException("Unable to configure Slow Consumer Detection invalid delay:"+ _configuration.getString("delay"), last);
+        }
+
+        String timeUnit = _configuration.getString("timeunit");
+
+
+        if (timeUnit != null)
+        {
+            try
+            {
+                _timeUnit = TimeUnit.valueOf(timeUnit.toUpperCase());
+            }
+            catch (IllegalArgumentException iae)
+            {
+                throw new ConfigurationException("Unable to configure Slow Consumer Detection invalid TimeUnit:" + timeUnit);            
+            }
+        }
+
 
         System.out.println("Configured SCDC");
         System.out.println("Delay:" + getDelay());

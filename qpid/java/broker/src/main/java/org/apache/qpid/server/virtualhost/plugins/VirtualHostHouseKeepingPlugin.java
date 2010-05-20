@@ -23,6 +23,8 @@ package org.apache.qpid.server.virtualhost.plugins;
 import org.apache.qpid.server.virtualhost.HouseKeepingTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.concurrent.TimeUnit;
+
 public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask
 {
     public VirtualHostHouseKeepingPlugin(VirtualHost vhost)
@@ -44,6 +46,6 @@ public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask
      *
      * @see java.util.concurrent.TimeUnit for valid value.
      */
-    public abstract String getTimeUnit();
+    public abstract TimeUnit getTimeUnit();
 
 }
