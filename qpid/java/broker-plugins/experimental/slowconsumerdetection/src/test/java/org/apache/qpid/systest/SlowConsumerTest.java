@@ -73,7 +73,7 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener,
         setConfigurationProperty("virtualhosts.virtualhost."
                                  + getConnectionURL().getVirtualHost().substring(1) +
                                  ".queues.slow-consumer-detection." +
-                                 "policy[@name]", "TopicDelete");
+                                 "policy.name", "TopicDelete");
 
         setConfigurationProperty("virtualhosts.virtualhost."
                                  + getConnectionURL().getVirtualHost().substring(1) +
@@ -85,7 +85,7 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener,
          *  Queue Configuration
 
          <slow-consumer-detection>
-         <!-- The depth before which the policy will be applied-->
+             <!-- The depth before which the policy will be applied-->
              <depth>4235264</depth>
 
              <!-- The message age before which the policy will be applied-->
@@ -96,7 +96,7 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener,
 
              <!-- Policies configuration -->
              <policy>
-                 <name>TopicDelete"</name>
+                 <name>TopicDelete</name>
                  <topicDelete>
                      <delete-persistent/>
                  </topicDelete>
@@ -107,10 +107,10 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener,
 
         /**
          *  Plugin Configuration
-         *
+
          <slow-consumer-detection>
-         <delay>1</delay>
-         <timeunit>MINUTES</timeunit>
+            <delay>1</delay>
+            <timeunit>MINUTES</timeunit>
          </slow-consumer-detection>
 
          */
