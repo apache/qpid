@@ -282,6 +282,8 @@ private:
     // Agent name and address
     qpid::types::Variant::Map attrMap;
     std::string       name_address;
+    std::string vendorNameKey;  // "." --> "_"
+    std::string productNameKey; // "." --> "_"
 
     // supported management protocol
     bool qmf1Support;
