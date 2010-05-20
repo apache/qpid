@@ -113,12 +113,6 @@ ManagementAgent::~ManagementAgent ()
             delete object;
         }
         managementObjects.clear();
-
-        while (!deletedManagementObjects.empty()) {
-            ManagementObject* object = deletedManagementObjects.back();
-            delete object;
-            deletedManagementObjects.pop_back();
-        }
     }
 }
 
@@ -260,17 +254,11 @@ ObjectId ManagementAgent::addObject(ManagementObject* object, uint64_t persistId
     object->setObjectId(objId);
 
     {
-        sys::Mutex::ScopedLock lock (addLock);
+        sys::Mutex::ScopedLock lock(addLock);
         ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
-        if (destIter != newManagementObjects.end()) {
-            if (destIter->second->isDeleted()) {
-                newDeletedManagementObjects.push_back(destIter->second);
-                newManagementObjects.erase(destIter);
-            } else {
-                QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
-                         " key=" << objId.getV2Key());
-                return objId;
-            }
+        while (destIter != newManagementObjects.end()) {
+            objId.disambiguate();
+            destIter = newManagementObjects.find(objId);
         }
         newManagementObjects[objId] = object;
     }
@@ -298,17 +286,11 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
     object->setObjectId(objId);
 
     {
-        sys::Mutex::ScopedLock lock (addLock);
+        sys::Mutex::ScopedLock lock(addLock);
         ManagementObjectMap::iterator destIter = newManagementObjects.find(objId);
-        if (destIter != newManagementObjects.end()) {
-            if (destIter->second->isDeleted()) {
-                newDeletedManagementObjects.push_back(destIter->second);
-                newManagementObjects.erase(destIter);
-            } else {
-                QPID_LOG(error, "ObjectId collision in addObject. class=" << object->getClassName() <<
-                         " key=" << objId.getV2Key());
-                return objId;
-            }
+        while (destIter != newManagementObjects.end()) {
+            objId.disambiguate();
+            destIter = newManagementObjects.find(objId);
         }
         newManagementObjects[objId] = object;
     }
@@ -550,30 +532,16 @@ void ManagementAgent::moveNewObjectsLH()
     for (ManagementObjectMap::iterator iter = newManagementObjects.begin ();
          iter != newManagementObjects.end ();
          iter++) {
-        bool skip = false;
-        ManagementObjectMap::iterator destIter = managementObjects.find(iter->first);
-        if (destIter != managementObjects.end()) {
-            // We have an objectId collision with an existing object.  If the old object
-            // is deleted, move it to the deleted list.
-            if (destIter->second->isDeleted()) {
-                deletedManagementObjects.push_back(destIter->second);
-                managementObjects.erase(destIter);
-            } else {
-                QPID_LOG(error, "ObjectId collision in moveNewObjects. class=" <<
-                         iter->second->getClassName() << " key=" << iter->first.getV2Key());
-                skip = true;
-            }
+        ObjectId oid = iter->first;
+        ManagementObjectMap::iterator destIter = managementObjects.find(oid);
+        while (destIter != managementObjects.end()) {
+            oid.disambiguate();
+            destIter = managementObjects.find(oid);
         }
 
-        if (!skip)
-            managementObjects[iter->first] = iter->second;
+        managementObjects[oid] = iter->second;
     }
     newManagementObjects.clear();
-
-    while (!newDeletedManagementObjects.empty()) {
-        deletedManagementObjects.push_back(newDeletedManagementObjects.back());
-        newDeletedManagementObjects.pop_back();
-    }
 }
 
 void ManagementAgent::periodicProcessing (void)
@@ -727,58 +695,7 @@ void ManagementAgent::periodicProcessing (void)
         managementObjects.erase(iter->first);
     }
 
-    // Publish the deletion of objects created by insert-collision
-    bool collisionDeletions = false;
-    for (ManagementObjectVector::iterator cdIter = deletedManagementObjects.begin();
-         cdIter != deletedManagementObjects.end(); cdIter++) {
-        collisionDeletions = true;
-        {
-            if (qmf1Support) {
-                Buffer msgBuffer(msgChars, BUFSIZE);
-                encodeHeader(msgBuffer, 'c');
-                sBuf.clear();
-                (*cdIter)->writeProperties(sBuf);
-                msgBuffer.putRawData(sBuf);
-                contentSize = BUFSIZE - msgBuffer.available ();
-                msgBuffer.reset ();
-                stringstream key;
-                key << "console.obj.1.0." << (*cdIter)->getPackageName() << "." << (*cdIter)->getClassName();
-                sendBufferLH(msgBuffer, contentSize, mExchange, key.str());
-                QPID_LOG(trace, "SEND ContentInd for deleted object to=" << key.str());
-            }
-
-            if (qmf2Support) {
-                Variant::List list_;
-                Variant::Map  map_;
-                Variant::Map  values;
-                Variant::Map  headers;
-
-                map_["_schema_id"] = mapEncodeSchemaId((*cdIter)->getPackageName(),
-                                                       (*cdIter)->getClassName(),
-                                                       "_data",
-                                                       (*cdIter)->getMd5Sum());
-                (*cdIter)->writeTimestamps(map_);
-                (*cdIter)->mapEncodeValues(values, true, false);
-                map_["_values"] = values;
-                list_.push_back(map_);
-
-                headers["method"] = "indication";
-                headers["qmf.opcode"] = "_data_indication";
-                headers["qmf.content"] = "_data";
-                headers["qmf.agent"] = name_address;
-
-                stringstream key;
-                key << "agent.ind.data." << (*cdIter)->getPackageName() << "." << (*cdIter)->getClassName();
-
-                string content;
-                ListCodec::encode(list_, content);
-                sendBufferLH(content, "", headers, "amqp/list", v2Topic, key.str());
-                QPID_LOG(trace, "SEND ContentInd for deleted object to=" << key.str());
-            }
-        }
-    }
-
-    if (!deleteList.empty() || collisionDeletions) {
+    if (!deleteList.empty()) {
         deleteList.clear();
         deleteOrphanedAgentsLH();
     }
