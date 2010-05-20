@@ -29,11 +29,12 @@ import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 
+import java.util.concurrent.TimeUnit;
+
 class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
 {
     Logger _logger = Logger.getLogger(SlowConsumerDetection.class);
     private SlowConsumerDetectionConfiguration _config;
-    private SlowConsumerPolicyPlugin _policy;
 
     public static class SlowConsumerFactory implements VirtualHostPluginFactory
     {
@@ -88,7 +89,7 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
         return _config.getDelay();
     }
 
-    public String getTimeUnit()
+    public TimeUnit getTimeUnit()
     {
         return _config.getTimeUnit();
     }
