@@ -29,10 +29,8 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
 {
@@ -93,23 +91,22 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
         Map<String, SlowConsumerPolicyPluginFactory> factories =
                 pluginManager.getPlugins(SlowConsumerPolicyPluginFactory.class);
 
-        Iterator<?> keys = policyConfig.getConfig().getKeys();
-
-        while (keys.hasNext())
-        {
-            String key = (String) keys.next();
-
-            _logger.debug("Policy Keys:" + key);
-
-        }
-
         if (policyConfig == null)
         {
             throw new ConfigurationException("No Slow Consumer Policy specified at:" + path + ". Known Policies:" + factories.keySet());
-        }        
+        }
 
         if (_logger.isDebugEnabled())
         {
+            Iterator<?> keys = policyConfig.getConfig().getKeys();
+
+            while (keys.hasNext())
+            {
+                String key = (String) keys.next();
+
+                _logger.debug("Policy Keys:" + key);
+            }
+
             _logger.debug("Configured SCDQC");
             _logger.debug("Age:" + getMessageAge());
             _logger.debug("Depth:" + getDepth());

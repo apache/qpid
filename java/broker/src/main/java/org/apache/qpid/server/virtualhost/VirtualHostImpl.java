@@ -343,26 +343,9 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                         VirtualHostHouseKeepingPlugin plugin =
                                 plugins.get(pluginName).newInstance(this);
 
-                        TimeUnit units = TimeUnit.MILLISECONDS;
-
-                        if (plugin.getTimeUnit() != null)
-                        {
-                            try
-                            {
-                                units = TimeUnit.valueOf(plugin.getTimeUnit());
-                            }
-                            catch (IllegalArgumentException iae)
-                            {
-                                _logger.warn("Plugin:" + pluginName +
-                                             " provided an illegal TimeUnit value:"
-                                             + plugin.getTimeUnit());
-                                // Warn and use default of millseconds
-                                // Should not occur in a well behaved plugin
-                            }
-                        }
 
                         _houseKeepingTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
-                                                       plugin.getDelay(), units);
+                                                       plugin.getDelay(), plugin.getTimeUnit());
 
                         _logger.info("Loaded VirtualHostPlugin:" + plugin);
                     }
