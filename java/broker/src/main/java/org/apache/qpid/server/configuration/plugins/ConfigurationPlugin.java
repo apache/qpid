@@ -146,7 +146,7 @@ public abstract class ConfigurationPlugin
 
             if (elementHandler == null)
             {
-                _logger.warn("Unused configuration element:" + configurationElement);
+                _logger.warn("Unused configuration element: '" + configurationElement+"'");
             }
             else
             {

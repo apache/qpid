@@ -25,6 +25,7 @@ import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyCo
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.virtualhost.plugin.policies.TopicDeletePolicy;
+import org.apache.qpid.server.virtualhost.plugin.policies.TopicDeletePolicyConfiguration;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 import org.osgi.framework.BundleActivator;
@@ -47,7 +48,9 @@ public class Activator implements BundleActivator
             ctx.registerService(ConfigurationPluginFactory.class.getName(), new SlowConsumerDetectionConfiguration.SlowConsumerDetectionConfigurationFactory(), null);
             ctx.registerService(ConfigurationPluginFactory.class.getName(), new SlowConsumerDetectionPolicyConfiguration.SlowConsumerDetectionPolicyConfigurationFactory(), null);
             ctx.registerService(VirtualHostPluginFactory.class.getName(), new SlowConsumerDetection.SlowConsumerFactory(), null);
-            ctx.registerService(SlowConsumerPolicyPluginFactory.class.getName(), new TopicDeletePolicy.DeletePolicyFactory(), null);
+
+            ctx.registerService(SlowConsumerPolicyPluginFactory.class.getName(), new TopicDeletePolicy.TopicDeletePolicyFactory(), null);
+            ctx.registerService(ConfigurationPluginFactory.class.getName(), new TopicDeletePolicyConfiguration.TopicDeletePolicyConfigurationFactory(), null);
         }
     }
 

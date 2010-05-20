@@ -34,14 +34,24 @@ import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFa
 public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
 {
     Logger _logger = Logger.getLogger(TopicDeletePolicy.class);
-    private SlowConsumerDetectionPolicyConfiguration _configuration;
+    private TopicDeletePolicyConfiguration _configuration;
 
-    public static class DeletePolicyFactory implements SlowConsumerPolicyPluginFactory
+    public static class TopicDeletePolicyFactory implements SlowConsumerPolicyPluginFactory
     {
 
         public SlowConsumerPolicyPlugin newInstance(SlowConsumerDetectionPolicyConfiguration configuration)
         {
-            return new TopicDeletePolicy(configuration);
+            TopicDeletePolicyConfiguration config =
+                    configuration.getConfiguration(TopicDeletePolicyConfiguration.class);
+            
+            if (config != null)
+            {
+                return new TopicDeletePolicy(config);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public String getPluginName()
@@ -50,13 +60,18 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         }
     }
 
-    public TopicDeletePolicy(SlowConsumerDetectionPolicyConfiguration config)
+    public TopicDeletePolicy(TopicDeletePolicyConfiguration config)
     {
         _configuration = config;
     }
 
     public void performPolicy(AMQQueue q)
     {
+        if (q == null)
+        {
+            return;
+        }
+
         AMQSessionModel owner = q.getExclusiveOwningSession();
 
         // Only process exclusive queues
@@ -66,22 +81,20 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         }
 
         //Only process Topics
-        if(!validateQueueIsATopic(q))
+        if (!validateQueueIsATopic(q))
         {
             return;
         }
 
         try
         {
+            // Close the consumer . this will cause autoDelete Queues to be purged
             owner.getConnectionModel().
                     closeSession(owner, AMQConstant.RESOURCE_ERROR,
                                  "Consuming to slow.");
 
-            String option = _configuration.getOption("delete-persistent");
-
-            boolean deletePersistent = option != null && Boolean.parseBoolean(option);
-
-            if (!q.isAutoDelete() && deletePersistent)
+            // Actively delete non autoDelete queues if deletePersistent is set
+            if (!q.isAutoDelete() && _configuration.deletePersistent())
             {
                 q.delete();
             }
@@ -99,6 +112,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
      * topic exchange.
      *
      * @param q the Queue
+     *
      * @return true iff Q is bound to a TopicExchange
      */
     private boolean validateQueueIsATopic(AMQQueue q)
