@@ -801,17 +801,85 @@ class Session:
     return request.result
 
 
-  def setEventFilter(self, **kwargs):
-    """ """
-    pass
+  def addEventFilter(self, **kwargs):
+    """Filter unsolicited events based on package and event name.
+    QMF v2 also can filter on vendor, product, and severity values.
+
+    By default, a console receives unsolicted events by binding to:
+
+        qpid.management/console.event.#  (v1)
+
+        qmf.default.topic/agent.ind.event.#  (v2)
+
+    A V1 event filter binding uses the pattern:
+
+        qpid.management/console.event.*.*[.<package>[.<event>]].#
+
+    A V2 event filter binding uses the pattern:
+
+        qmf.default.topic/agent.ind.event.<Vendor|*>.<Product|*>.<severity|*>.<package|*>.<event|*>.#
+    """
+    package = kwargs.get("package", "*")
+    event = kwargs.get("event", "*")
+    vendor = kwargs.get("vendor", "*")
+    product = kwargs.get("product", "*")
+    severity = kwargs.get("severity", "*")
+
+    if package is "*" and event is not "*":
+      raise Exception("'package' parameter required if 'event' parameter"
+                      " supplied")
+
+    # V1 key - can only filter on package (and event)
+    if package is not "*":
+      key = "console.event.*.*." + str(package)
+      if event is not "*":
+        key += "." + str(event)
+      key += ".#"
+
+      if key not in self.v1BindingKeyList:
+        self.v1BindingKeyList.append(key)
+        try:
+          # remove default wildcard binding
+          self.v1BindingKeyList.remove("console.event.#")
+        except:
+          pass
+
+    # V2 key - escape any "." in the filter strings
+
+    key = "agent.ind.event." + str(vendor).replace(".", "_") \
+        + "." + str(product).replace(".", "_") \
+        + "." + str(severity).replace(".", "_") \
+        + "." + str(package).replace(".", "_") \
+        + "." + str(event).replace(".", "_") + ".#"
+
+    if key not in self.v2BindingKeyList:
+      self.v2BindingKeyList.append(key)
+      try:
+        # remove default wildcard binding
+        self.v2BindingKeyList.remove("agent.ind.event.#")
+      except:
+        pass
 
   def addAgentFilter(self, vendor, product=None):
+    """Deprecate - use heartbeat filter instead"""
+    self.addHeartbeatFilter(vendor=vendor, product=product)
+
+  def addHeartbeatFilter(self, **kwargs):
     """ Listen for heartbeat messages only for those agent(s) that match the
     vendor and, optionally, the product strings.
     """
-    key = "agent.ind.heartbeat." + vendor
+    vendor = kwargs.get("vendor")
+    product = kwargs.get("product")
+    if vendor is None:
+      raise Exception("vendor parameter required!")
+
+    # V1 heartbeats do not have any agent identifier - we cannot
+    # filter them by agent.
+
+    # build the binding key - escape "."s...
+    key = "agent.ind.heartbeat." + str(vendor).replace(".", "_")
     if product is not None:
-      key += "." + product
+      key += "." + str(product).replace(".", "_")
     key += ".#"
 
     if key not in self.v2BindingKeyList:
@@ -830,7 +898,10 @@ class Session:
       pass
 
   def _bindingKeys(self):
-    """ The set of default key bindings."""
+    """ Construct the initial set of default key bindings.  These keys can be
+    overridden using the add{Event,Heartbeat}Filter() api calls _prior_ to
+    adding a broker with addBroker()
+    """
     v1KeyList = []
     v2KeyList = []
     v1KeyList.append("schema.#")
