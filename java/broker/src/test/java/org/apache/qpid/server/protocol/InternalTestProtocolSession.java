@@ -28,10 +28,13 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.transport.TestNetworkDriver;
@@ -195,5 +198,16 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         // Override as we don't have a real IOSession to close.
         //  The alternative is to fully implement the TestIOSession to return a CloseFuture from close();
         //  Then the AMQMinaProtocolSession can join on the returning future without a NPE.
+    }
+
+    public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
+    {
+        super.closeSession(session, cause, message);
+
+        //Simulate the Client responding with a CloseOK
+        // should really update the StateManger but we don't have access here
+        // changeState(AMQState.CONNECTION_CLOSED);
+        ((AMQChannel)session).getProtocolSession().closeSession();
+
     }
 }

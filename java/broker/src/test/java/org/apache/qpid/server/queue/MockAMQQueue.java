@@ -35,10 +35,12 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.AMQException;
 
+import javax.swing.*;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MockAMQQueue implements AMQQueue
 {
@@ -49,6 +51,9 @@ public class MockAMQQueue implements AMQQueue
     private PrincipalHolder _principalHolder;
 
     private AMQSessionModel _exclusiveOwner;
+    private AMQShortString _owner;
+    private List<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
+    private boolean _autoDelete;
 
     public MockAMQQueue(String name)
     {
@@ -66,17 +71,17 @@ public class MockAMQQueue implements AMQQueue
 
     public void addBinding(final Binding binding)
     {
-
+        _bindings.add(binding);
     }
 
     public void removeBinding(final Binding binding)
     {
-
+        _bindings.remove(binding);
     }
 
     public List<Binding> getBindings()
     {
-        return null;
+        return _bindings;
     }
 
     public int getBindingCount()
@@ -171,8 +176,14 @@ public class MockAMQQueue implements AMQQueue
 
     public boolean isAutoDelete()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return _autoDelete;
     }
+
+    public void setAutoDelete(boolean autodelete)
+    {
+        _autoDelete = autodelete;
+    }
+
 
     public AMQShortString getOwner()
     {
@@ -193,17 +204,6 @@ public class MockAMQQueue implements AMQQueue
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
-
-    public void bind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void unBind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
 
     public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
     {
@@ -271,8 +271,9 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public int delete() throws AMQException
-    {
-       return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    {        
+       _deleted = true;
+       return getMessageCount();
     }
 
     public void enqueue(ServerMessage message) throws AMQException

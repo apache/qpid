@@ -105,8 +105,6 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     {
         if (config != null)
         {
-
-
             if ((config.getMessageCount() != 0 && q.getMessageCount() >= config.getMessageCount()) ||
                     (config.getDepth() != 0 && q.getQueueDepth() >= config.getDepth()) ||
                     (config.getMessageAge() != 0 && q.getOldestMessageArrivalTime() >= config.getMessageAge()))

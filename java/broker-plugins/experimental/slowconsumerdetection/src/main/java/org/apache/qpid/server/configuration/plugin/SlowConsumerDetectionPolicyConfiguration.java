@@ -25,8 +25,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
-import java.util.List;
-
 public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
 {
 
@@ -59,6 +57,16 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
     public String getPolicyName()
     {
         return _configuration.getString("name");
+    }
+
+    public void setConfiguration(String path, Configuration configuration) throws ConfigurationException
+    {
+        super.setConfiguration(path,configuration);
+
+        if (getPolicyName() == null)
+        {
+            throw new ConfigurationException("No Slow consumer policy defined.");
+        }
     }
 
 }
