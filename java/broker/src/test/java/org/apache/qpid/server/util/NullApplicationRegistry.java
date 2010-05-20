@@ -94,7 +94,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
 
     @Override
-    public void close() throws Exception
+    public void close()
     {        
         try
         {

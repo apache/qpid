@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.connection;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.log4j.Logger;
+import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
@@ -29,16 +30,11 @@ import org.apache.qpid.protocol.AMQConstant;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 
-public class ConnectionRegistry implements IConnectionRegistry
+public class ConnectionRegistry implements IConnectionRegistry, Closeable
 {
     private List<AMQProtocolSession> _registry = new CopyOnWriteArrayList<AMQProtocolSession>();
 
-    private VirtualHost _virtualHost;
-
-    public ConnectionRegistry(VirtualHost virtualHost)
-    {
-        _virtualHost = virtualHost;
-    }
+    private Logger _logger = Logger.getLogger(ConnectionRegistry.class);
 
     public void initialise()
     {
@@ -54,17 +50,24 @@ public class ConnectionRegistry implements IConnectionRegistry
     }
 
     /** Close all of the currently open connections. */
-    public void close() throws AMQException
+    public void close()
     {
         while (!_registry.isEmpty())
         {
             AMQProtocolSession connection = _registry.get(0);
 
-            connection.closeConnection(0, new AMQConnectionException(AMQConstant.INTERNAL_ERROR, "Broker is shutting down",
-                                                                  0, 0,
-                                                                  connection.getProtocolOutputConverter().getProtocolMajorVersion(),
-                                                                  connection.getProtocolOutputConverter().getProtocolMinorVersion(),
-                                                                  (Throwable) null), true);
+            try
+            {
+                connection.closeConnection(0, new AMQConnectionException(AMQConstant.INTERNAL_ERROR, "Broker is shutting down",
+                                                                         0, 0,
+                                                                         connection.getProtocolOutputConverter().getProtocolMajorVersion(),
+                                                                         connection.getProtocolOutputConverter().getProtocolMinorVersion(),
+                                                                         (Throwable) null), true);
+            }
+            catch (AMQException e)
+            {
+                _logger.warn("Error closing connection:" + e.getMessage());
+            }
         }
     }
 

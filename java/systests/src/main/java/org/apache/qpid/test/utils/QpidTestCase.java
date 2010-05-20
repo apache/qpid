@@ -524,11 +524,12 @@ public class QpidTestCase extends TestCase
             }
             catch (Exception e)
             {
+                _logger.error("Broker initialise failed due to:",e);
                 try
                 {
                     registry.close();
                 }
-                catch (Exception closeE)
+                catch (Throwable closeE)
                 {
                     closeE.printStackTrace();
                 }

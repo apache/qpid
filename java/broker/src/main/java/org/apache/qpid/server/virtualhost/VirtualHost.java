@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.virtualhost;
 
+import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -42,7 +43,7 @@ import java.util.UUID;
 import java.util.TimerTask;
 import java.util.concurrent.FutureTask;
 
-public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHostConfig
+public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHostConfig, Closeable
 {
     IConnectionRegistry getConnectionRegistry();
 
@@ -66,7 +67,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     ACLManager getAccessManager();
 
-    void close() throws Exception;
+    void close();
 
     ManagedObject getManagedObject();
 

@@ -40,14 +40,13 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         //Set the Actor for Broker Shutdown
         CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
         try
         {
             super.close();
-            _qmfService.close();
         }
         finally
         {

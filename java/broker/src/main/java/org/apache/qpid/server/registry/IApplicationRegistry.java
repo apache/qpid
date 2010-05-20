@@ -53,9 +53,8 @@ public interface IApplicationRegistry
 
     /**
      * Shutdown this Registry
-     * @throws Exception - //fixme needs to be made more specific
      */
-    void close() throws Exception;
+    void close();
 
     /**
      * Get the low level configuration. For use cases where the configured object approach is not required
