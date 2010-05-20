@@ -545,16 +545,17 @@ public class DurableSubscriptionTest extends QpidTestCase
         TopicSubscriber subB = session.createDurableSubscriber(topic, 
                 "testResubscribeWithChangedSelector","Match = False", false);
         
-        // Check messages are recieved properly
+        // Check messages are received properly
         sendMatchingAndNonMatchingMessage(session, producer);
-        rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
-        assertNotNull(rMsg);
+        rMsg = subB.receive(POSITIVE_RECEIVE_TIMEOUT);
+
+        assertNotNull("Message should not be received", rMsg);
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelector2",
                      ((TextMessage) rMsg).getText());
         
         rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
-        assertNull(rMsg);
+        assertNull("Message should be received",rMsg);
         session.unsubscribe("testResubscribeWithChangedSelector");
     }
 

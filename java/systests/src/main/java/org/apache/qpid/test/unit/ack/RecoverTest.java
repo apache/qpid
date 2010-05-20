@@ -240,8 +240,7 @@ public class RecoverTest extends FailoverBaseCase
                     {
                         if (message.getJMSRedelivered())
                         {
-                            setError(
-                                    new Exception("Message marked as redilvered on what should be first delivery attempt"));
+                            setError(new Exception("Message marked as redelivered on what should be first delivery attempt"));
                         }
 
                         consumerSession.recover();
@@ -251,8 +250,7 @@ public class RecoverTest extends FailoverBaseCase
                         if (!message.getJMSRedelivered())
                         {
                             setError(
-                                    new Exception(
-                                            "Message not marked as redilvered on what should be second delivery attempt"));
+                                    new Exception("Message not marked as redelivered on what should be second delivery attempt"));
                         }
                     }
                     else
@@ -293,19 +291,13 @@ public class RecoverTest extends FailoverBaseCase
 
         Thread.sleep(1000);
 
-        if (count.get() != 2)
-        {
-            System.err.println("Count != 2 : " + count);
-        }
-
-        assertTrue(count.get() == 2);
-
-        con.close();
-
         if (_error != null)
         {
             throw _error;
         }
+
+        assertEquals("Message not received the correct number of times.",
+                     2, count.get());
     }
 
     private void setError(Exception e)
