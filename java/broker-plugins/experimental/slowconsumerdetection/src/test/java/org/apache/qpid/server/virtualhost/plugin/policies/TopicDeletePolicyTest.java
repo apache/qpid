@@ -228,6 +228,7 @@ public class TopicDeletePolicyTest extends TestCase
      */
     public void testPersistentTopicIsClosedAndDeleted()
     {
+        //Set the config to delete persistent queues
         _config.getConfig().addProperty("delete-persistent", "");
 
         TopicDeletePolicy policy = new TopicDeletePolicy(_config);
