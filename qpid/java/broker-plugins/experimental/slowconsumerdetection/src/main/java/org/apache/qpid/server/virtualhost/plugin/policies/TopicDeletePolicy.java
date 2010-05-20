@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost.plugin.policies;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -39,19 +40,12 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
     public static class TopicDeletePolicyFactory implements SlowConsumerPolicyPluginFactory
     {
 
-        public SlowConsumerPolicyPlugin newInstance(SlowConsumerDetectionPolicyConfiguration configuration)
+        public SlowConsumerPolicyPlugin newInstance(SlowConsumerDetectionPolicyConfiguration configuration) throws ConfigurationException
         {
             TopicDeletePolicyConfiguration config =
                     configuration.getConfiguration(TopicDeletePolicyConfiguration.class);
-            
-            if (config != null)
-            {
-                return new TopicDeletePolicy(config);
-            }
-            else
-            {
-                return null;
-            }
+
+            return new TopicDeletePolicy(config);
         }
 
         public String getPluginName()
