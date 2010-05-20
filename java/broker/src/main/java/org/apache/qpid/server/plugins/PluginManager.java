@@ -24,6 +24,7 @@ import org.apache.felix.framework.Felix;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.framework.util.StringMap;
 import org.apache.felix.main.AutoProcessor;
+import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.access.ACLPlugin;
@@ -50,7 +51,7 @@ import java.util.Map;
  *         Provides access to pluggable elements, such as exchanges
  */
 
-public class PluginManager
+public class PluginManager implements Closeable
 {
     private ServiceTracker _exchangeTracker = null;
     private ServiceTracker _securityTracker = null;

@@ -217,7 +217,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
         _virtualHostMBean = new VirtualHostMBean();
 
-        _connectionRegistry = new ConnectionRegistry(this);
+        _connectionRegistry = new ConnectionRegistry();
 
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
 
@@ -607,9 +607,8 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         return _accessManager;
     }
 
-    public void close() throws Exception
+    public void close()
     {
-
         //Stop Connections
         _connectionRegistry.close();
 
@@ -627,16 +626,32 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         {
             _houseKeepingTasks.shutdown();
 
-            if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
+            try
             {
-                _houseKeepingTasks.shutdownNow();
+                if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
+                {
+                    _houseKeepingTasks.shutdownNow();
+                }
+            }
+            catch (InterruptedException e)
+            {
+                _logger.warn("Interrupted during Housekeeping shutdown:" + e.getMessage());
+                // Swallowing InterruptedException ok as we are shutting down.
             }
         }
 
         //Close MessageStore
         if (_messageStore != null)
         {
-            _messageStore.close();
+            //Remove MessageStore Interface should not throw Exception
+            try
+            {
+                _messageStore.close();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
         }
 
         CurrentActor.get().message(VirtualHostMessages.VHT_CLOSED());

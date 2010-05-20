@@ -23,6 +23,7 @@ package org.apache.qpid.server.management;
 import javax.management.JMException;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.common.Closeable;
 
 import java.rmi.RemoteException;
 import java.io.IOException;
@@ -39,13 +40,11 @@ import java.io.IOException;
  * be the obvious choice for managed objects.
  *
  */
-public interface ManagedObjectRegistry
+public interface ManagedObjectRegistry extends Closeable
 {
     void start() throws IOException, ConfigurationException;
 
     void registerObject(ManagedObject managedObject) throws JMException;
 
     void unregisterObject(ManagedObject managedObject) throws JMException;
-
-    void close() throws RemoteException;
 }

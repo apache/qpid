@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.configuration.ConfigStore;
 
@@ -29,7 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class VirtualHostRegistry
+public class VirtualHostRegistry implements Closeable
 {
     private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String, VirtualHost>();
 
@@ -90,5 +91,14 @@ public class VirtualHostRegistry
     public ConfigStore getConfigStore()
     {
         return _applicationRegistry.getConfigStore();
+    }
+
+    public void close()
+    {
+        for (VirtualHost virtualHost : getVirtualHosts())
+        {
+            virtualHost.close();
+        }
+
     }
 }
