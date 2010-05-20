@@ -23,6 +23,7 @@ package org.apache.qpid.server.registry;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.BrokerConfig;
@@ -339,73 +340,52 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    public void close() throws Exception
+    /**
+     * Close non-null Closeable items and log any errors
+     * @param close
+     */
+    private void close(Closeable close)
+    {
+        try
+        {
+            if (close != null)
+            {
+                close.close();
+            }
+        }
+        catch (Throwable e)
+        {
+            _logger.error("Error thrown whilst closing " + close.getClass().getSimpleName(), e);
+        }
+    }
+
+
+    public void close()
     {
         if (_logger.isInfoEnabled())
         {
             _logger.info("Shutting down ApplicationRegistry:" + this);
         }
 
-        try
-        {
-            //Stop incoming connections
-            unbind();
-        }
-        finally
-        {
-            try
-            {
-//                Replace with this
-//                _virtualHostRegistry.close();
+        //Stop incoming connections
+        unbind();
 
-                //Shutdown virtualhosts
-                for (VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
-                {
-                    virtualHost.close();
-                }
-            }
-            finally
-            {
-//                _accessManager.close();
+        //Shutdown virtualhosts
+        close(_virtualHostRegistry);
+
+//      close(_accessManager);
 //
-//                _databaseManager.close();
+//      close(_databaseManager);
 
-                try
-                {
-                    _authenticationManager.close();
-                }
-                finally
-                {
-                    try
-                    {
-                        // close the rmi registry(if any) started for management
-                        if (_managedObjectRegistry != null)
-                        {
-                            _managedObjectRegistry.close();
-                        }
-                    }
-                    finally
-                    {
-                        try
-                        {
-                            _qmfService.close();
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                _pluginManager.close();
-                            }
-                            finally
-                            {
-                                CurrentActor.get().message(BrokerMessages.BRK_STOPPED());
-                            }
-                        }
-                    }
+        close(_authenticationManager);
 
-                }
-            }
-        }
+        close(_managedObjectRegistry);
+
+        close(_qmfService);
+
+        close(_pluginManager);
+
+        CurrentActor.get().message(BrokerMessages.BRK_STOPPED());
     }
 
     private void unbind()
@@ -415,8 +395,17 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             for (InetSocketAddress bindAddress : _acceptors.keySet())
             {
                 QpidAcceptor acceptor = _acceptors.get(bindAddress);
-                acceptor.getNetworkDriver().close();
-                CurrentActor.get().message(BrokerMessages.BRK_SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
+
+                try
+                {
+                    acceptor.getNetworkDriver().close();
+                }
+                catch (Throwable e)
+                {
+                    _logger.error("Unable to close network driver due to:" + e.getMessage());
+                }
+
+               CurrentActor.get().message(BrokerMessages.BRK_SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
             }
         }
     }

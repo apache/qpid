@@ -22,6 +22,7 @@
 package org.apache.qpid.qmf;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.Closeable;
 import org.apache.qpid.qmf.schema.BrokerSchema;
 import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -34,7 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class QMFService implements ConfigStore.ConfigEventListener
+public class QMFService implements ConfigStore.ConfigEventListener, Closeable
 {
 
 

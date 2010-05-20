@@ -53,7 +53,7 @@ public class NoopManagedObjectRegistry implements ManagedObjectRegistry
     {
     }
 
-    public void close() throws RemoteException
+    public void close()
     {
         
     }
