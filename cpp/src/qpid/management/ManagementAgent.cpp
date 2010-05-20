@@ -52,6 +52,25 @@ using namespace std;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 
+namespace {
+    const string defaultVendorName("vendor");
+    const string defaultProductName("product");
+
+    // Create a valid binding key substring by
+    // replacing all '.' chars with '_'
+    const string keyifyNameStr(const string& name)
+    {
+        string n2 = name;
+
+        size_t pos = n2.find('.');
+        while (pos != n2.npos) {
+            n2.replace(pos, 1, "_");
+            pos = n2.find('.', pos);
+        }
+        return n2;
+    }
+}
+
 
 static Variant::Map mapEncodeSchemaId(const string& pname,
                                       const string& cname,
@@ -81,6 +100,7 @@ ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
     threadPoolSize(1), interval(10), broker(0), timer(0),
     startTime(sys::now()),
     suppressed(false), disallowAllV1Methods(false),
+    vendorNameKey(defaultVendorName), productNameKey(defaultProductName),
     qmf1Support(qmfV1), qmf2Support(qmfV2)
 {
     nextObjectId   = 1;
@@ -89,6 +109,8 @@ ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
     nextRemoteBank = 10;
     nextRequestSequence = 1;
     clientWasAdded = false;
+    attrMap["_vendor"] = defaultVendorName;
+    attrMap["_product"] = defaultProductName;
 }
 
 ManagementAgent::~ManagementAgent ()
@@ -190,6 +212,9 @@ void ManagementAgent::setName(const string& vendor, const string& product, const
    name_address = vendor + ":" + product + ":" + inst;
    attrMap["_instance"] = inst;
    attrMap["_name"] = name_address;
+
+   vendorNameKey = keyifyNameStr(vendor);
+   productNameKey = keyifyNameStr(product);
 }
 
 
@@ -300,6 +325,10 @@ ObjectId ManagementAgent::addObject(ManagementObject* object,
 
 void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severity)
 {
+    static const std::string severityStr[] = {
+        "emerg", "alert", "crit", "error", "warn",
+        "note", "info", "debug"
+    };
     sys::Mutex::ScopedLock lock (userLock);
     uint8_t sev = (severity == SEV_DEFAULT) ? event.getSeverity() : (uint8_t) severity;
 
@@ -344,7 +373,11 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
         headers["qmf.agent"] = name_address;
 
         stringstream key;
-        key << "agent.ind.event." << sev << "." << name_address << "." << event.getEventName();
+        key << "agent.ind.event." << vendorNameKey
+            << "." << productNameKey
+            << "." << severityStr[sev]
+            << "." << keyifyNameStr(event.getPackageName())
+            << "." << keyifyNameStr(event.getEventName());
 
         string content;
         MapCodec::encode(map_, content);
@@ -720,16 +753,7 @@ void ManagementAgent::periodicProcessing (void)
     if (qmf2Support) {
         std::stringstream addr_key;
 
-        addr_key << "agent.ind.heartbeat";
-
-        // append .<vendor>.<product> to address key if present.
-        Variant::Map::const_iterator v;
-        if ((v = attrMap.find("_vendor")) != attrMap.end()){
-            addr_key << "." << v->second.getString();
-            if ((v = attrMap.find("_product")) != attrMap.end()) {
-                addr_key << "." << v->second.getString();
-            }
-        }
+        addr_key << "agent.ind.heartbeat." << vendorNameKey << "." << productNameKey;
 
         Variant::Map map;
         Variant::Map headers;
