@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 
+using namespace std;
 using namespace qpid;
 using namespace qpid::management;
 
@@ -71,19 +72,19 @@ ObjectId::ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq)
 }
 
 
-ObjectId::ObjectId(std::istream& in) : agent(0)
+ObjectId::ObjectId(istream& in) : agent(0)
 {
-    std::string text;
+    string text;
     in >> text;
     fromString(text);
 }
 
-ObjectId::ObjectId(const std::string& text) : agent(0)
+ObjectId::ObjectId(const string& text) : agent(0)
 {
     fromString(text);
 }
 
-void ObjectId::fromString(const std::string& text)
+void ObjectId::fromString(const string& text)
 {
 #define FIELDS 5
 #if defined (_WIN32) && !defined (atoll)
@@ -94,7 +95,7 @@ void ObjectId::fromString(const std::string& text)
     // V1: <flags>-<sequence>-<broker-bank>-<agent-bank>-<uint64-app-id>
     // V2: Not used
 
-    std::string copy(text.c_str());
+    string copy(text.c_str());
     char* cText;
     char* field[FIELDS];
     bool  atFieldStart = true;
@@ -124,7 +125,7 @@ void ObjectId::fromString(const std::string& text)
         (atoll(field[1]) << 48) +
         (atoll(field[2]) << 28);
 
-    agentName = std::string(field[3]);
+    agentName = string(field[3]);
     second = atoll(field[4]);
 }
 
@@ -146,7 +147,7 @@ bool ObjectId::equalV1(const ObjectId &other) const
 }
 
 // encode as V1-format binary
-void ObjectId::encode(std::string& buffer) const
+void ObjectId::encode(string& buffer) const
 {
     const uint32_t len = 16;
     char _data[len];
@@ -163,7 +164,7 @@ void ObjectId::encode(std::string& buffer) const
 }
 
 // decode as V1-format binary
-void ObjectId::decode(const std::string& buffer)
+void ObjectId::decode(const string& buffer)
 {
     const uint32_t len = 16;
     char _data[len];
@@ -174,16 +175,21 @@ void ObjectId::decode(const std::string& buffer)
     body.reset();
     first  = body.getLongLong();
     second = body.getLongLong();
-    v2Key = boost::lexical_cast<std::string>(second);
+    v2Key = boost::lexical_cast<string>(second);
 }
 
 // generate the V2 key from the index fields defined
 // in the schema.
 void ObjectId::setV2Key(const ManagementObject& object)
 {
-    std::stringstream oname;
+    stringstream oname;
     oname << object.getPackageName() << ":" << object.getClassName() << ":" << object.getKey();
     v2Key = oname.str();
+}
+
+void ObjectId::disambiguate()
+{
+    v2Key = v2Key + "_";
 }
 
 // encode as V2-format map
@@ -226,7 +232,7 @@ ObjectId::operator types::Variant::Map() const
 namespace qpid {
 namespace management {
 
-std::ostream& operator<<(std::ostream& out, const ObjectId& i)
+ostream& operator<<(ostream& out, const ObjectId& i)
 {
     uint64_t virtFirst = i.first;
     if (i.agent)
@@ -263,7 +269,7 @@ void ManagementObject::resourceDestroy()
 int ManagementObject::maxThreads = 1;
 int ManagementObject::nextThreadIndex = 0;
 
-void ManagementObject::writeTimestamps (std::string& buf) const
+void ManagementObject::writeTimestamps (string& buf) const
 {
     char _data[4000];
     qpid::framing::Buffer body(_data, 4000);
@@ -279,16 +285,16 @@ void ManagementObject::writeTimestamps (std::string& buf) const
     body.reset();
     body.getRawData(buf, len);
 
-    std::string oid;
+    string oid;
     objectId.encode(oid);
     buf += oid;
 }
 
-void ManagementObject::readTimestamps (const std::string& buf)
+void ManagementObject::readTimestamps (const string& buf)
 {
     char _data[4000];
     qpid::framing::Buffer body(_data, 4000);
-    std::string unused;
+    string unused;
     uint8_t unusedUuid[16];
 
     body.checkAvailable(buf.length());

@@ -242,13 +242,11 @@ private:
     // Protected by userLock
     //
     ManagementObjectMap          managementObjects;
-    ManagementObjectVector       deletedManagementObjects;
 
     //
     // Protected by addLock
     //
     ManagementObjectMap          newManagementObjects;
-    ManagementObjectVector       newDeletedManagementObjects;
 
     framing::Uuid                uuid;
 
