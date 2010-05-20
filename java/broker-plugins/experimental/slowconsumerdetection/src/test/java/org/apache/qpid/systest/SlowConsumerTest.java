@@ -95,12 +95,6 @@ public class SlowConsumerTest extends QpidTestCase implements ExceptionListener,
              <messageCount>50</messageCount>
 
              <!-- Policies configuration -->
-             <policy name="TopicDelete">
-                     <options>
-                         <option name="delete-persistent" value="true"/>
-                     </options>
-             </policy>
-
              <policy>
                  <name>TopicDelete"</name>
                  <topicDelete>
