@@ -245,6 +245,12 @@ public class PluginManager implements Closeable
 
     public <P extends PluginFactory> Map<String, P> getPlugins(Class<P> plugin)
     {
+        // If plugins are not configured then return an empty set
+        if (_activator == null)
+        {
+            return new HashMap<String, P>();
+        }
+
         ServiceTracker tracker = new ServiceTracker(_activator.getContext(), plugin.getName(), null);
         tracker.open();
 
