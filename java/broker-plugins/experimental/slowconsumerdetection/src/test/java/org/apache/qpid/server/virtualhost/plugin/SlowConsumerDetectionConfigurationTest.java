@@ -138,7 +138,7 @@ public class SlowConsumerDetectionConfigurationTest extends TestCase
             assertEquals("Cause not correct",
                          ConfigurationException.class, cause.getClass());
             assertEquals("Incorrect message.",
-                         "Slow Consumer Detection Delay must be a Positive Long value.",
+                         "SlowConsumerDetectionConfiguration: 'delay' must be a Positive Long value.",
                          cause.getMessage());
         }
     }
@@ -170,7 +170,7 @@ public class SlowConsumerDetectionConfigurationTest extends TestCase
             assertEquals("Cause not correct",
                          ConfigurationException.class, cause.getClass());
             assertEquals("Incorrect message.",
-                         "Slow Consumer Detection Delay must be a Positive Long value.",
+                         "SlowConsumerDetectionConfiguration: 'delay' must be a Positive Long value.",
                          cause.getMessage());
         }
     }
@@ -194,7 +194,7 @@ public class SlowConsumerDetectionConfigurationTest extends TestCase
         }
         catch (ConfigurationException e)
         {
-            assertEquals("Incorrect message.", "Unable to configure Slow Consumer Detection invalid delay:null", e.getMessage());
+            assertEquals("Incorrect message.", "SlowConsumerDetectionConfiguration: unable to configure invalid delay:null", e.getMessage());
         }
     }
 
@@ -205,7 +205,7 @@ public class SlowConsumerDetectionConfigurationTest extends TestCase
 
         String TIMEUNIT = "foo";
         XMLConfiguration xmlconfig = new XMLConfiguration();
-
+                                                                                
         xmlconfig.addProperty("delay", "10");
         xmlconfig.addProperty("timeunit", TIMEUNIT);
 

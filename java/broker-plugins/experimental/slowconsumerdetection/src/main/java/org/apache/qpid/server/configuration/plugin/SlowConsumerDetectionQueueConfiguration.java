@@ -81,10 +81,8 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
     }
 
     @Override
-    public void setConfiguration(String path, Configuration configuration) throws ConfigurationException
+     public void validateConfiguration() throws ConfigurationException
     {
-        super.setConfiguration(path, configuration);
-
         if (!containsPositiveLong("messageAge") &&
             !containsPositiveLong("depth") &&
             !containsPositiveLong("messageCount"))
@@ -102,8 +100,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
 
         if (policyConfig == null)
         {
-            throw new ConfigurationException("No Slow Consumer Policy specified at:'" +
-                                             path + "'. Known Policies:" + factories.keySet());
+            throw new ConfigurationException("No Slow Consumer Policy specified. Known Policies:" + factories.keySet());
         }
 
         if (_logger.isDebugEnabled())
