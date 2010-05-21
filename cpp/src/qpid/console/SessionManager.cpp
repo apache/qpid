@@ -138,6 +138,33 @@ void SessionManager::bindClass(const std::string& packageName, const std::string
         (*iter)->addBinding(key.str());
 }
 
+
+void SessionManager::bindEvent(const ClassKey& classKey)
+{
+    bindEvent(classKey.getPackageName(), classKey.getClassName());
+}
+
+
+void SessionManager::bindEvent(const std::string& packageName, const std::string& eventName)
+{
+    if (!settings.userBindings) throw Exception("Session not configured for userBindings.");
+    if (settings.rcvEvents) throw Exception("Session already configured to receive all events.");
+
+    stringstream key;
+    key << "console.event.*.*." << packageName;
+    if (eventName.length()) {
+        key << "." << eventName << ".#";
+    } else {
+        key << ".#";
+    }
+
+    bindingKeyList.push_back(key.str());
+    for (vector<Broker*>::iterator iter = brokers.begin();
+         iter != brokers.end(); iter++)
+        (*iter)->addBinding(key.str());
+}
+
+
 void SessionManager::getAgents(Agent::Vector& agents, Broker* broker)
 {
     agents.clear();
