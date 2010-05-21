@@ -320,6 +320,7 @@ namespace messaging {
                 rpString = System::Convert::ToString(theObjp);
                 rString = QpidMarshal::ToNative(rpString);
                 targetp = rString;
+				targetp.setEncoding(QpidMarshal::ToNative("utf8"));
             }
             break;
 
