@@ -24,17 +24,30 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.NullApplicationRegistry;
 
-
+/**
+ * Unit test the QueueConfiguration processing.
+ *
+ * This is slightly awkward as the SCDQC requries that a policy be available.
+ *
+ * So all the Valid test much catch the ensuing ConfigurationException and
+ * validate that the error is due to a lack of a valid Policy
+ */
 public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
 {
-    public void setUp()
-    {
-        
-    }
 
-
+    /**
+     * Test a fully loaded configuration file.
+     *
+     * It is not an error to have all control values specified.
+     *
+     * Here we need to catch the ConfigurationException that ensures due to lack
+     * of a Policy Plugin
+     */
     public void testConfigLoadingValidConfig()
     {
         SlowConsumerDetectionQueueConfiguration config = new SlowConsumerDetectionQueueConfiguration();
@@ -44,9 +57,6 @@ public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
         xmlconfig.addProperty("messageAge", "60000");
         xmlconfig.addProperty("depth", "1024");
         xmlconfig.addProperty("messageCount", "10");
-        xmlconfig.addProperty("policy.name", "TopicDelete");
-        xmlconfig.addProperty("policy.topicdelete", "");
-
 
         // Create a CompositeConfiguration as this is what the broker uses
         CompositeConfiguration composite = new CompositeConfiguration();
@@ -55,12 +65,126 @@ public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
         try
         {
             config.setConfiguration("", composite);
+            fail("No Policies are avaialbe to load in a unit test");
         }
         catch (ConfigurationException e)
         {
-            e.printStackTrace();
-            fail(e.getMessage());
+            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+                         e.getMessage());
         }
     }
 
+    /**
+     * When we do not specify any control value then a ConfigurationException
+     * must be thrown to remind us.
+     */
+    public void testConfigLoadingMissingConfig()
+    {
+        SlowConsumerDetectionQueueConfiguration config = new SlowConsumerDetectionQueueConfiguration();
+
+        XMLConfiguration xmlconfig = new XMLConfiguration();
+
+        // Create a CompositeConfiguration as this is what the broker uses
+        CompositeConfiguration composite = new CompositeConfiguration();
+        composite.addConfiguration(xmlconfig);
+
+        try
+        {
+            config.setConfiguration("", composite);
+            fail("No Policies are avaialbe to load in a unit test");
+        }
+        catch (ConfigurationException e)
+        {
+
+            assertEquals("At least one configuration property('messageAge','depth'" +
+                         " or 'messageCount') must be specified.", e.getMessage());
+        }
+    }
+
+    /**
+     * Setting messageAge on its own is enough to have a valid configuration
+     *
+     * Here we need to catch the ConfigurationException that ensures due to lack
+     * of a Policy Plugin
+     */
+    public void testConfigLoadingMessageAgeOk()
+    {
+        SlowConsumerDetectionQueueConfiguration config = new SlowConsumerDetectionQueueConfiguration();
+
+        XMLConfiguration xmlconfig = new XMLConfiguration();
+        xmlconfig.addProperty("messageAge", "60000");
+
+        // Create a CompositeConfiguration as this is what the broker uses
+        CompositeConfiguration composite = new CompositeConfiguration();
+        composite.addConfiguration(xmlconfig);
+
+        try
+        {
+            config.setConfiguration("", composite);
+            fail("No Policies are avaialbe to load in a unit test");
+        }
+        catch (ConfigurationException e)
+        {
+            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+                         e.getMessage());
+        }
+    }
+
+    /**
+     * Setting depth on its own is enough to have a valid configuration
+     *
+     * Here we need to catch the ConfigurationException that ensures due to lack
+     * of a Policy Plugin
+     */
+    public void testConfigLoadingDepthOk()
+    {
+        SlowConsumerDetectionQueueConfiguration config = new SlowConsumerDetectionQueueConfiguration();
+
+        XMLConfiguration xmlconfig = new XMLConfiguration();
+        xmlconfig.addProperty("depth", "1024");
+
+        // Create a CompositeConfiguration as this is what the broker uses
+        CompositeConfiguration composite = new CompositeConfiguration();
+        composite.addConfiguration(xmlconfig);
+
+        try
+        {
+            config.setConfiguration("", composite);
+            fail("No Policies are avaialbe to load in a unit test");
+        }
+        catch (ConfigurationException e)
+        {
+            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+                         e.getMessage());
+        }
+    }
+
+    /**
+     * Setting messageCount on its own is enough to have a valid configuration
+     *
+     * Here we need to catch the ConfigurationException that ensures due to lack
+     * of a Policy Plugin
+     */
+    public void testConfigLoadingMessageCountOk()
+    {
+        SlowConsumerDetectionQueueConfiguration config = new SlowConsumerDetectionQueueConfiguration();
+
+        XMLConfiguration xmlconfig = new XMLConfiguration();
+        xmlconfig.addProperty("messageCount", "10");
+
+        // Create a CompositeConfiguration as this is what the broker uses
+        CompositeConfiguration composite = new CompositeConfiguration();
+        composite.addConfiguration(xmlconfig);
+
+        try
+        {
+            config.setConfiguration("", composite);
+            fail("No Policies are avaialbe to load in a unit test");
+        }
+        catch (ConfigurationException e)
+        {
+            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+                         e.getMessage());
+        }
+    }
 }
