@@ -22,14 +22,19 @@ package org.apache.qpid.server.configuration.plugins;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConversionException;
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 public abstract class ConfigurationPlugin
@@ -44,14 +49,14 @@ public abstract class ConfigurationPlugin
     /**
      * The Elements that this Plugin can process.
      * i.e.
-     *   For a Queues plugin that would be a list containing:
-     *      queue - the queue entries
-     *      the alerting values for defaults
-     *      exchange - the default exchange
-     *      durable - set the default durablity
-     *      etc
+     * For a Queues plugin that would be a list containing:
+     * queue - the queue entries
+     * the alerting values for defaults
+     * exchange - the default exchange
+     * durable - set the default durablity
+     * etc
      *
-     * @return 
+     * @return
      */
     abstract public String[] getElementsProcessed();
 
@@ -96,12 +101,11 @@ public abstract class ConfigurationPlugin
             elementNameIndex = element.indexOf("[");
             if (elementNameIndex > 0)
             {
-                element = element.substring(0,elementNameIndex).trim();
+                element = element.substring(0, elementNameIndex).trim();
             }
 
             elements.add(element);
         }
-
 
         //Remove the items we already expect in the configuration
         for (String tag : getElementsProcessed())
@@ -114,7 +118,7 @@ public abstract class ConfigurationPlugin
             // configuration they don't have to. 
             int bracketIndex = tag.indexOf("[");
             if (bracketIndex != -1)
-            {                
+            {
                 tag = tag.substring(bracketIndex + 1, tag.length());
             }
 
@@ -128,7 +132,7 @@ public abstract class ConfigurationPlugin
                 _logger.info("Elements to lookup:" + path);
                 for (String tag : elements)
                 {
-                    _logger.info("Tag:'"+tag+"'");
+                    _logger.info("Tag:'" + tag + "'");
                 }
             }
         }
@@ -138,15 +142,14 @@ public abstract class ConfigurationPlugin
         {
             ConfigurationManager configurationManager = ApplicationRegistry.getInstance().getConfigurationManager();
 
-            String configurationElement = path +"."+ element;
+            String configurationElement = path + "." + element;
             ConfigurationPlugin elementHandler = configurationManager.
                     getConfigurationPlugin(configurationElement,
                                            configuration.subset(element));
 
-
             if (elementHandler == null)
             {
-                _logger.warn("Unused configuration element: '" + configurationElement+"'");
+                _logger.warn("Unused configuration element: '" + configurationElement + "'");
             }
             else
             {
@@ -154,6 +157,180 @@ public abstract class ConfigurationPlugin
             }
         }
     }
+
+    protected boolean hasConfiguration()
+    {
+        return _configuration != null;
+    }
+    
+    /// Getters
+
+    protected double getDoubleValue(String property)
+    {
+        return getDoubleValue(property, 0.0);
+    }
+
+    protected double getDoubleValue(String property, double defaultValue)
+    {
+        return _configuration.getDouble(property, defaultValue);
+    }
+
+
+    protected long getLongValue(String property)
+    {
+        return getLongValue(property, 0);
+    }
+
+    protected long getLongValue(String property, long defaultValue)
+    {
+        return _configuration.getLong(property, defaultValue);
+    }
+
+    protected int getIntValue(String property)
+    {
+        return getIntValue(property, 0);
+    }
+
+    protected int getIntValue(String property, int defaultValue)
+    {
+        return _configuration.getInt(property, defaultValue);
+    }
+
+    protected String getStringValue(String property)
+    {
+        return getStringValue(property, null);
+    }
+
+    protected String getStringValue(String property, String defaultValue)
+    {
+        return _configuration.getString(property, defaultValue);
+    }
+
+    protected boolean getBooleanValue(String property)
+    {
+        return getBooleanValue(property, false);
+    }
+
+    protected boolean getBooleanValue(String property, boolean defaultValue)
+    {
+        return _configuration.getBoolean(property, defaultValue);
+    }
+
+    protected List getListValue(String property)
+    {
+        return getListValue(property, Collections.EMPTY_LIST);
+    }
+
+    protected List getListValue(String property, List defaultValue)
+    {
+        return _configuration.getList(property, defaultValue);
+    }
+
+
+
+    /// Validation Helpers
+
+    protected boolean contains(String property)
+    {
+        return _configuration.getProperty(property) != null;
+    }
+
+
+    /**
+     * Provide mechanism to validate Configuration contains a Postiive Long Value
+     *
+     * @param property
+     *
+     * @throws ConfigurationException
+     */
+    protected void validatePositiveLong(String property) throws ConfigurationException
+    {
+        try
+        {
+            if (!containsPositiveLong(property))
+            {
+                throw new ConfigurationException(this.getClass().getSimpleName()
+                                                 + ": '" + property +
+                                                 "' must be a Positive Long value.");
+            }
+        }
+        catch (Exception e)
+        {
+            Throwable last = e;
+
+            // Find the first cause
+            if (e instanceof ConversionException)
+            {
+                Throwable t = e.getCause();
+                while (t != null)
+                {
+                    last = t;
+                    t = last.getCause();
+                }
+            }
+
+            throw new ConfigurationException(this.getClass().getSimpleName() +
+                                             ": unable to configure invalid " +
+                                             property + ":" +
+                                             _configuration.getString(property),
+                                             last);
+        }
+    }
+
+    protected boolean containsLong(String property)
+    {
+        try
+        {
+            _configuration.getLong(property);
+            return true;
+        }
+        catch (NoSuchElementException e)
+        {
+            return false;
+        }
+    }
+
+    protected boolean containsPositiveLong(String property)
+    {
+        try
+        {
+            long value = _configuration.getLong(property);
+            return value > 0;
+        }
+        catch (NoSuchElementException e)
+        {
+            return false;
+        }
+
+    }
+
+    protected boolean containsInt(String property)
+    {
+        try
+        {
+            _configuration.getInt(property);
+            return true;
+        }
+        catch (NoSuchElementException e)
+        {
+            return false;
+        }
+    }
+
+    protected boolean containsBoolean(String property)
+    {
+        try
+        {
+            _configuration.getBoolean(property);
+            return true;
+        }
+        catch (NoSuchElementException e)
+        {
+            return false;
+        }
+    }
+
+
 }
 
 
