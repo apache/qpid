@@ -56,7 +56,7 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
 
     public long getDelay()
     {
-        return _configuration.getLong("delay", 10);
+        return getLongValue("delay", 10);
     }
 
     public TimeUnit getTimeUnit()

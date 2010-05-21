@@ -56,7 +56,7 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
 
     public String getPolicyName()
     {
-        return _configuration.getString("name");
+        return getStringValue("name");
     }
 
     public void setConfiguration(String path, Configuration configuration) throws ConfigurationException

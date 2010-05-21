@@ -31,8 +31,6 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 public class QueueConfiguration extends ConfigurationPlugin
 {
-
-    private Configuration _config;
     private String _name;
     private VirtualHostConfiguration _vHostConfig;
 
@@ -44,7 +42,6 @@ public class QueueConfiguration extends ConfigurationPlugin
         CompositeConfiguration mungedConf = new CompositeConfiguration();
         mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues.queue." + name));
         mungedConf.addConfiguration(_vHostConfig.getConfig().subset("queues"));
-        _config = mungedConf;
 
         setConfiguration("virtualhosts.virtualhost.queues.queue", mungedConf);
     }
@@ -78,42 +75,42 @@ public class QueueConfiguration extends ConfigurationPlugin
 
     public boolean getDurable()
     {
-        return _config.getBoolean("durable" ,false);
+        return getBooleanValue("durable");
     }
     
     public boolean getExclusive()
     {
-        return _config.getBoolean("exclusive" ,false);
+        return getBooleanValue("exclusive");
     }
 
     public boolean getAutoDelete()
     {
-        return _config.getBoolean("autodelete", false);
+        return getBooleanValue("autodelete");
     }
 
     public String getOwner()
     {
-        return _config.getString("owner", null);
+        return getStringValue("owner", null);
     }
 
     public boolean getPriority()
     {
-        return _config.getBoolean("priority", false);
+        return getBooleanValue("priority");
     }
 
     public int getPriorities()
     {
-        return _config.getInt("priorities", -1);
+        return getIntValue("priorities", -1);
     }
 
     public String getExchange()
     {
-        return _config.getString("exchange", null);
+        return getStringValue("exchange", null);
     }
 
     public List getRoutingKeys()
     {
-        return _config.getList("routingKey");
+        return getListValue("routingKey");
     }
 
     public String getName()
@@ -123,46 +120,46 @@ public class QueueConfiguration extends ConfigurationPlugin
 
     public int getMaximumMessageAge()
     {
-        return _config.getInt("maximumMessageAge", _vHostConfig.getMaximumMessageAge());
+        return getIntValue("maximumMessageAge", _vHostConfig.getMaximumMessageAge());
     }
 
     public long getMaximumQueueDepth()
     {
-        return _config.getLong("maximumQueueDepth", _vHostConfig.getMaximumQueueDepth());
+        return getLongValue("maximumQueueDepth", _vHostConfig.getMaximumQueueDepth());
     }
 
     public long getMaximumMessageSize()
     {
-        return _config.getLong("maximumMessageSize", _vHostConfig.getMaximumMessageSize());
+        return getLongValue("maximumMessageSize", _vHostConfig.getMaximumMessageSize());
     }
 
     public long getMaximumMessageCount()
     {
-        return _config.getLong("maximumMessageCount", _vHostConfig.getMaximumMessageCount());
+        return getLongValue("maximumMessageCount", _vHostConfig.getMaximumMessageCount());
     }
 
     public long getMinimumAlertRepeatGap()
     {
-        return _config.getLong("minimumAlertRepeatGap", _vHostConfig.getMinimumAlertRepeatGap());
+        return getLongValue("minimumAlertRepeatGap", _vHostConfig.getMinimumAlertRepeatGap());
     }
 
     public long getCapacity()
     {
-        return _config.getLong("capacity", _vHostConfig.getCapacity());
+        return getLongValue("capacity", _vHostConfig.getCapacity());
     }
 
     public long getFlowResumeCapacity()
     {
-        return _config.getLong("flowResumeCapacity", _vHostConfig.getFlowResumeCapacity());
+        return getLongValue("flowResumeCapacity", _vHostConfig.getFlowResumeCapacity());
     }
 
     public boolean isLVQ()
     {
-        return _config.getBoolean("lvq", false);
+        return getBooleanValue("lvq");
     }
 
     public String getLVQKey()
     {
-        return _config.getString("lvqKey", null);
+        return getStringValue("lvqKey", null);
     }
 }
