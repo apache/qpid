@@ -94,6 +94,8 @@ namespace engine {
         void bindPackage(const char* packageName);
         void bindClass(const SchemaClassKey* key);
         void bindClass(const char* packageName, const char* className);
+        void bindEvent(const SchemaClassKey* key);
+        void bindEvent(const char* packageName, const char* eventName);
 
         /*
         void startSync(const Query& query, void* context, SyncQuery& sync);

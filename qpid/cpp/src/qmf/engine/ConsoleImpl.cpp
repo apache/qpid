@@ -259,6 +259,32 @@ void ConsoleImpl::bindClass(const char* packageName, const char* className)
         (*iter)->addBinding(QMF_EXCHANGE, key.str());
 }
 
+
+void ConsoleImpl::bindEvent(const SchemaClassKey* classKey)
+{
+    bindEvent(classKey->getPackageName(), classKey->getClassName());
+}
+
+void ConsoleImpl::bindEvent(const char* packageName, const char* eventName)
+{
+    if (!settings.userBindings) throw qpid::Exception("Console not configured for userBindings.");
+    if (settings.rcvEvents) throw qpid::Exception("Console already configured to receive all events.");
+
+    stringstream key;
+    key << "console.event.*.*." << packageName;
+    if (eventName && *eventName) {
+        key << "." << eventName << ".#";
+    } else {
+        key << ".#";
+    }
+
+    Mutex::ScopedLock _lock(lock);
+    bindingList.push_back(pair<string, string>(string(), key.str()));
+    for (vector<BrokerProxyImpl*>::iterator iter = brokerList.begin();
+         iter != brokerList.end(); iter++)
+        (*iter)->addBinding(QMF_EXCHANGE, key.str());
+}
+
 /*
 void ConsoleImpl::startSync(const Query& query, void* context, SyncQuery& sync)
 {
@@ -421,6 +447,10 @@ const SchemaEventClass* Console::getEventClass(const SchemaClassKey* key) const 
 void Console::bindPackage(const char* packageName) { impl->bindPackage(packageName); }
 void Console::bindClass(const SchemaClassKey* key) { impl->bindClass(key); }
 void Console::bindClass(const char* packageName, const char* className) { impl->bindClass(packageName, className); }
+
+void Console::bindEvent(const SchemaClassKey *key) { impl->bindEvent(key); }
+void Console::bindEvent(const char* packageName, const char* eventName) { impl->bindEvent(packageName, eventName); }
+
 //void Console::startSync(const Query& query, void* context, SyncQuery& sync) { impl->startSync(query, context, sync); }
 //void Console::touchSync(SyncQuery& sync) { impl->touchSync(sync); }
 //void Console::endSync(SyncQuery& sync) { impl->endSync(sync); }
