@@ -57,7 +57,7 @@ public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
     public boolean deletePersistent()
     {
         // If we don't have configuration then we don't deletePersistent Queues 
-        return (_configuration != null && _configuration.containsKey("delete-persistent"));
+        return (hasConfiguration() && contains("delete-persistent"));
     }
 
 }

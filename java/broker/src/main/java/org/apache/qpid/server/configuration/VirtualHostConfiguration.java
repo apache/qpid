@@ -37,14 +37,12 @@ import java.util.HashSet;
 
 public class VirtualHostConfiguration extends ConfigurationPlugin
 {
-    private Configuration _config;
     private String _name;
     private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
     private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
 
     public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
     {
-        _config = config;
         _name = name;
         setConfiguration(config);
     }
@@ -59,7 +57,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     {
         super.setConfiguration("virtualhosts.virtualhost",config);
 
-        Iterator i = _config.getList("queues.queue.name").iterator();
+        Iterator i = getListValue("queues.queue.name").iterator();
 
         while (i.hasNext())
         {
@@ -67,13 +65,13 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
             _queues.put(queueName, new QueueConfiguration(queueName, this));
         }
 
-        i = _config.getList("exchanges.exchange.name").iterator();
+        i = getListValue("exchanges.exchange.name").iterator();
         int count = 0;
         while (i.hasNext())
         {
             CompositeConfiguration mungedConf = new CompositeConfiguration();
             mungedConf.addConfiguration(config.subset("exchanges.exchange(" + count++ + ")"));
-            mungedConf.addConfiguration(_config.subset("exchanges"));
+            mungedConf.addConfiguration(_configuration.subset("exchanges"));
             String exchName = (String) i.next();
             _exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
         }
@@ -86,42 +84,42 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public long getHousekeepingExpiredMessageCheckPeriod()
     {
-        return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
+        return getLongValue("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
     }
 
     public String getAuthenticationDatabase()
     {
-        return _config.getString("security.authentication.name");
+        return getStringValue("security.authentication.name");
     }
 
     public List getCustomExchanges()
     {
-        return _config.getList("custom-exchanges.class-name");
+        return getListValue("custom-exchanges.class-name");
     }
 
     public SecurityConfiguration getSecurityConfiguration()
     {
-        return new SecurityConfiguration(_config.subset("security"));
+        return new SecurityConfiguration(_configuration.subset("security"));
     }
 
     public Configuration getStoreConfiguration()
     {
-        return _config.subset("store");
+        return _configuration.subset("store");
     }
 
     public String getMessageStoreClass()
     {
-        return _config.getString("store.class", MemoryMessageStore.class.getName());
+        return getStringValue("store.class", MemoryMessageStore.class.getName());
     }
 
     public void setMessageStoreClass(String storeClass)
     {
-        _config.setProperty("store.class", storeClass);
+        _configuration.setProperty("store.class", storeClass);
     }
 
     public List getExchanges()
     {
-        return _config.getList("exchanges.exchange.name");
+        return getListValue("exchanges.exchange.name");
     }
 
     public String[] getQueueNames()
@@ -158,47 +156,47 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public long getMemoryUsageMaximum()
     {
-        return _config.getLong("queues.maximumMemoryUsage", 0);
+        return getLongValue("queues.maximumMemoryUsage");
     }
 
     public long getMemoryUsageMinimum()
     {
-        return _config.getLong("queues.minimumMemoryUsage", 0);
+        return getLongValue("queues.minimumMemoryUsage");
     }
 
     public int getMaximumMessageAge()
     {
-        return _config.getInt("queues.maximumMessageAge", 0);
+        return getIntValue("queues.maximumMessageAge");
     }
 
     public Long getMaximumQueueDepth()
     {
-        return _config.getLong("queues.maximumQueueDepth", 0);
+        return getLongValue("queues.maximumQueueDepth");
     }
 
     public Long getMaximumMessageSize()
     {
-        return _config.getLong("queues.maximumMessageSize", 0);
+        return getLongValue("queues.maximumMessageSize");
     }
 
     public Long getMaximumMessageCount()
     {
-        return _config.getLong("queues.maximumMessageCount", 0);
+        return getLongValue("queues.maximumMessageCount");
     }
 
     public Long getMinimumAlertRepeatGap()
     {
-        return _config.getLong("queues.minimumAlertRepeatGap", 0);
+        return getLongValue("queues.minimumAlertRepeatGap");
     }
 
     public long getCapacity()
     {
-        return _config.getLong("queues.capacity", 0l);
+        return getLongValue("queues.capacity");
     }
 
     public long getFlowResumeCapacity()
     {
-        return _config.getLong("queues.flowResumeCapacity", getCapacity());
+        return getLongValue("queues.flowResumeCapacity", getCapacity());
     }
 
     public String[] getElementsProcessed()
@@ -210,6 +208,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public int getHouseKeepingThreadCount()
     {
-        return _config.getInt("housekeeping.poolSize", Runtime.getRuntime().availableProcessors());
+        return getIntValue("housekeeping.poolSize", Runtime.getRuntime().availableProcessors());
     }
 }

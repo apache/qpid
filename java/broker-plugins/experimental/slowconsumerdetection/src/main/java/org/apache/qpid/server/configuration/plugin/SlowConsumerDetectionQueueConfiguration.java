@@ -60,19 +60,19 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
                             "messageCount"};
     }
 
-    public int getMessageAge()
+    public long getMessageAge()
     {
-        return (int) getConfigurationValue("messageAge");
+        return getLongValue("messageAge");
     }
 
     public long getDepth()
     {
-        return getConfigurationValue("depth");
+        return getLongValue("depth");
     }
 
     public long getMessageCount()
     {
-        return getConfigurationValue("messageCount");
+        return getLongValue("messageCount");
     }
 
     public SlowConsumerPolicyPlugin getPolicy()
@@ -85,7 +85,16 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
     {
         super.setConfiguration(path, configuration);
 
-        SlowConsumerDetectionPolicyConfiguration policyConfig = getConfiguration(SlowConsumerDetectionPolicyConfiguration.class);
+        if (!containsPositiveLong("messageAge") &&
+            !containsPositiveLong("depth") &&
+            !containsPositiveLong("messageCount"))
+        {
+            throw new ConfigurationException("At least one configuration property" +
+                                             "('messageAge','depth' or 'messageCount') must be specified.");             
+        }
+
+        SlowConsumerDetectionPolicyConfiguration policyConfig =
+                getConfiguration(SlowConsumerDetectionPolicyConfiguration.class);
 
         PluginManager pluginManager = ApplicationRegistry.getInstance().getPluginManager();
         Map<String, SlowConsumerPolicyPluginFactory> factories =
@@ -93,7 +102,8 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
 
         if (policyConfig == null)
         {
-            throw new ConfigurationException("No Slow Consumer Policy specified at:" + path + ". Known Policies:" + factories.keySet());
+            throw new ConfigurationException("No Slow Consumer Policy specified at:'" +
+                                             path + "'. Known Policies:" + factories.keySet());
         }
 
         if (_logger.isDebugEnabled())
@@ -123,18 +133,6 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
         }
 
         _policyPlugin = pluginFactory.newInstance(policyConfig);
-    }
-
-    private long getConfigurationValue(String property)
-    {
-        // The _configuration we are given is a munged configurated
-        // so the queue will already have queue-queues munging
-
-        // we then need to ensure that the TopicsConfiguration
-        // and TopicConfiguration classes correctly munge their configuration:
-        // queue-queues -> topic-topics
-
-        return _configuration.getLong(property, 0);
     }
 
 }

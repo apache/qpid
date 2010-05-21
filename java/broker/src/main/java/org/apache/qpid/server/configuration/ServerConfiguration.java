@@ -287,7 +287,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public boolean getStatusUpdatesEnabled()
     {
         // Retrieve the setting from configuration but default to on.
-        String value = getConfig().getString(STATUS_UPDATES, DEFAULT_STATUS_UPDATES);
+        String value = getStringValue(STATUS_UPDATES, DEFAULT_STATUS_UPDATES);
 
         return value.equalsIgnoreCase("on");
     }
@@ -300,7 +300,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public Locale getLocale()
     {
 
-        String localeString = getConfig().getString(ADVANCED_LOCALE);
+        String localeString = getStringValue(ADVANCED_LOCALE);
         // Expecting locale of format langauge_country_variant
 
         // If the configuration does not have a defined locale use the JVM default
@@ -430,12 +430,12 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public int getJMXManagementPort()
     {
-        return getConfig().getInt("management.jmxport", DEFAULT_JMXPORT);
+        return getIntValue("management.jmxport", DEFAULT_JMXPORT);
     }
 
     public boolean getUseCustomRMISocketFactory()
     {
-        return getConfig().getBoolean(MGMT_CUSTOM_REGISTRY_SOCKET, true);
+        return getBooleanValue(MGMT_CUSTOM_REGISTRY_SOCKET, true);
     }
 
     public void setUseCustomRMISocketFactory(boolean bool)
@@ -445,7 +445,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public boolean getPlatformMbeanserver()
     {
-        return getConfig().getBoolean("management.platform-mbeanserver", true);
+        return getBooleanValue("management.platform-mbeanserver", true);
     }
 
     public String[] getVirtualHosts()
@@ -455,7 +455,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getPluginDirectory()
     {
-        return getConfig().getString("plugin-directory");
+        return getStringValue("plugin-directory");
     }
 
     public VirtualHostConfiguration getVirtualHostConfig(String name)
@@ -470,84 +470,84 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public List<String> getPrincipalDatabaseNames()
     {
-        return getConfig().getList("security.principal-databases.principal-database.name");
+        return getListValue("security.principal-databases.principal-database.name");
     }
 
     public List<String> getPrincipalDatabaseClass()
     {
-        return getConfig().getList("security.principal-databases.principal-database.class");
+        return getListValue("security.principal-databases.principal-database.class");
     }
 
     public List<String> getPrincipalDatabaseAttributeNames(int index)
     {
         String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.name";
-        return getConfig().getList(name);
+        return getListValue(name);
     }
 
     public List<String> getPrincipalDatabaseAttributeValues(int index)
     {
         String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.value";
-        return getConfig().getList(name);
+        return getListValue(name);
     }
 
     public List<String> getManagementPrincipalDBs()
     {
-        return getConfig().getList("security.jmx.principal-database");
+        return getListValue("security.jmx.principal-database");
     }
 
     public List<String> getManagementAccessList()
     {
-        return getConfig().getList("security.jmx.access");
+        return getListValue("security.jmx.access");
     }
 
     public int getFrameSize()
     {
-        return getConfig().getInt("advanced.framesize", DEFAULT_FRAME_SIZE);
+        return getIntValue("advanced.framesize", DEFAULT_FRAME_SIZE);
     }
 
     public boolean getProtectIOEnabled()
     {
-        return getConfig().getBoolean(CONNECTOR_PROTECTIO_ENABLED, DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED);
+        return getBooleanValue(CONNECTOR_PROTECTIO_ENABLED, DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED);
     }
 
     public int getBufferReadLimit()
     {
-        return getConfig().getInt(CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_READ_LIMIT_SIZE);
+        return getIntValue(CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_READ_LIMIT_SIZE);
     }
 
     public int getBufferWriteLimit()
     {
-        return getConfig().getInt(CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_WRITE_LIMIT_SIZE);
+        return getIntValue(CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_WRITE_LIMIT_SIZE);
     }
 
     public boolean getSynchedClocks()
     {
-        return getConfig().getBoolean("advanced.synced-clocks", false);
+        return getBooleanValue("advanced.synced-clocks");
     }
 
     public boolean getMsgAuth()
     {
-        return getConfig().getBoolean("security.msg-auth", false);
+        return getBooleanValue("security.msg-auth");
     }
 
     public String getJMXPrincipalDatabase()
     {
-        return getConfig().getString("security.jmx.principal-database");
+        return getStringValue("security.jmx.principal-database");
     }
 
     public String getManagementKeyStorePath()
     {
-        return getConfig().getString("management.ssl.keyStorePath", null);
+        return getStringValue("management.ssl.keyStorePath");
     }
 
     public boolean getManagementSSLEnabled()
     {
-        return getConfig().getBoolean("management.ssl.enabled", true);
+        return getBooleanValue("management.ssl.enabled", true);
     }
 
     public String getManagementKeyStorePassword()
     {
-        return getConfig().getString("management.ssl.keyStorePassword");
+        return getStringValue("management.ssl.keyStorePassword");
     }
 
     public SecurityConfiguration getSecurityConfiguration()
@@ -557,12 +557,12 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public boolean getQueueAutoRegister()
     {
-        return getConfig().getBoolean("queue.auto_register", true);
+        return getBooleanValue("queue.auto_register", true);
     }
 
     public boolean getManagementEnabled()
     {
-        return getConfig().getBoolean("management.enabled", true);
+        return getBooleanValue("management.enabled", true);
     }
 
     public void setManagementEnabled(boolean enabled)
@@ -572,162 +572,162 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public int getHeartBeatDelay()
     {
-        return getConfig().getInt("heartbeat.delay", 5);
+        return getIntValue("heartbeat.delay", 5);
     }
 
     public double getHeartBeatTimeout()
     {
-        return getConfig().getDouble("heartbeat.timeoutFactor", 2.0);
+        return getDoubleValue("heartbeat.timeoutFactor", 2.0);
     }
 
     public int getDeliveryPoolSize()
     {
-        return getConfig().getInt("delivery.poolsize", 0);
+        return getIntValue("delivery.poolsize");
     }
 
     public long getMaximumMessageAge()
     {
-        return getConfig().getLong("maximumMessageAge", 0);
+        return getLongValue("maximumMessageAge");
     }
 
     public long getMaximumMessageCount()
     {
-        return getConfig().getLong("maximumMessageCount", 0);
+        return getLongValue("maximumMessageCount");
     }
 
     public long getMaximumQueueDepth()
     {
-        return getConfig().getLong("maximumQueueDepth", 0);
+        return getLongValue("maximumQueueDepth");
     }
 
     public long getMaximumMessageSize()
     {
-        return getConfig().getLong("maximumMessageSize", 0);
+        return getLongValue("maximumMessageSize");
     }
 
     public long getMinimumAlertRepeatGap()
     {
-        return getConfig().getLong("minimumAlertRepeatGap", 0);
+        return getLongValue("minimumAlertRepeatGap");
     }
 
     public long getCapacity()
     {
-        return getConfig().getLong("capacity", 0L);
+        return getLongValue("capacity");
     }
 
     public long getFlowResumeCapacity()
     {
-        return getConfig().getLong("flowResumeCapacity", getCapacity());
+        return getLongValue("flowResumeCapacity", getCapacity());
     }
 
     public int getProcessors()
     {
-        return getConfig().getInt("connector.processors", 4);
+        return getIntValue("connector.processors", 4);
     }
 
     public List getPorts()
     {
-        return getConfig().getList("connector.port", Collections.singletonList(DEFAULT_PORT));
+        return getListValue("connector.port", Collections.singletonList(DEFAULT_PORT));
     }
 
     public List getPortExclude010()
     {
-        return getConfig().getList("connector.non010port", Collections.EMPTY_LIST);
+        return getListValue("connector.non010port");
     }
 
     public List getPortExclude091()
     {
-        return getConfig().getList("connector.non091port", Collections.EMPTY_LIST);
+        return getListValue("connector.non091port");
     }
 
     public List getPortExclude09()
     {
-        return getConfig().getList("connector.non09port", Collections.EMPTY_LIST);
+        return getListValue("connector.non09port");
     }
 
     public List getPortExclude08()
     {
-        return getConfig().getList("connector.non08port", Collections.EMPTY_LIST);
+        return getListValue("connector.non08port");
     }
 
     public String getBind()
     {
-        return getConfig().getString("connector.bind", "wildcard");
+        return getStringValue("connector.bind", "wildcard");
     }
 
     public int getReceiveBufferSize()
     {
-        return getConfig().getInt("connector.socketReceiveBuffer", 32767);
+        return getIntValue("connector.socketReceiveBuffer", 32767);
     }
 
     public int getWriteBufferSize()
     {
-        return getConfig().getInt("connector.socketWriteBuffer", 32767);
+        return getIntValue("connector.socketWriteBuffer", 32767);
     }
 
     public boolean getTcpNoDelay()
     {
-        return getConfig().getBoolean("connector.tcpNoDelay", true);
+        return getBooleanValue("connector.tcpNoDelay", true);
     }
 
     public boolean getEnableExecutorPool()
     {
-        return getConfig().getBoolean("advanced.filterchain[@enableExecutorPool]", false);
+        return getBooleanValue("advanced.filterchain[@enableExecutorPool]");
     }
 
     public boolean getEnablePooledAllocator()
     {
-        return getConfig().getBoolean("advanced.enablePooledAllocator", false);
+        return getBooleanValue("advanced.enablePooledAllocator");
     }
 
     public boolean getEnableDirectBuffers()
     {
-        return getConfig().getBoolean("advanced.enableDirectBuffers", false);
+        return getBooleanValue("advanced.enableDirectBuffers");
     }
 
     public boolean getEnableSSL()
     {
-        return getConfig().getBoolean("connector.ssl.enabled", false);
+        return getBooleanValue("connector.ssl.enabled");
     }
 
     public boolean getSSLOnly()
     {
-        return getConfig().getBoolean("connector.ssl.sslOnly", false);
+        return getBooleanValue("connector.ssl.sslOnly");
     }
 
     public int getSSLPort()
     {
-        return getConfig().getInt("connector.ssl.port", DEFAULT_SSL_PORT);
+        return getIntValue("connector.ssl.port", DEFAULT_SSL_PORT);
     }
 
     public String getKeystorePath()
     {
-        return getConfig().getString("connector.ssl.keystorePath", "none");
+        return getStringValue("connector.ssl.keystorePath", "none");
     }
 
     public String getKeystorePassword()
     {
-        return getConfig().getString("connector.ssl.keystorePassword", "none");
+        return getStringValue("connector.ssl.keystorePassword", "none");
     }
 
     public String getCertType()
     {
-        return getConfig().getString("connector.ssl.certType", "SunX509");
+        return getStringValue("connector.ssl.certType", "SunX509");
     }
 
     public boolean getQpidNIO()
     {
-        return getConfig().getBoolean("connector.qpidnio", false);
+        return getBooleanValue("connector.qpidnio");
     }
 
     public boolean getUseBiasedWrites()
     {
-        return getConfig().getBoolean("advanced.useWriteBiasedPool", false);
+        return getBooleanValue("advanced.useWriteBiasedPool");
     }
 
     public String getDefaultVirtualHost()
     {
-        return getConfig().getString("virtualhosts.default");
+        return getStringValue("virtualhosts.default");
     }
 
     public void setDefaultVirtualHost(String vhost)
@@ -742,8 +742,8 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public long getHousekeepingCheckPeriod()
     {
-        return getConfig().getLong("housekeeping.checkPeriod",
-                                   getConfig().getLong("housekeeping.expiredMessageCheckPeriod",
+        return getLongValue("housekeeping.checkPeriod",
+                                   getLongValue("housekeeping.expiredMessageCheckPeriod",
                                                        DEFAULT_HOUSEKEEPING_PERIOD));
     }
 
@@ -760,7 +760,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
             public Boolean getTcpNoDelay()
             {
                 // Can't call parent getTcpNoDelay since it just calls this one
-                return getConfig().getBoolean("connector.tcpNoDelay", true);
+                return getBooleanValue("connector.tcpNoDelay", true);
             }
 
             public Integer getSoTimeout()
