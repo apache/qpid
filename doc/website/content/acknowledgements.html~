@@ -1,0 +1,16 @@
+<div id="main_text_area_body"  xmlns="http://www.w3.org/1999/xhtml">
+<h1>Acknowledgements</h1>
+  <div >
+    <table ><tbody>
+	<tr>
+	  <td > <a href="http://www.ej-technologies.com/products/jprofiler/overview.html" class="external-link" rel="nofollow"><span class="image-wrap" style=""><img src="/confluence/download/attachments/74463/jprofiler.png?version=1&amp;modificationDate=1200398797000" style="border: 0px solid black" /></span></a> </td>
+	  <td > <table class="sectionMacro" border="0" cellpadding="5" cellspacing="0" width="100%"><tbody><tr><p> We acknowledge <a href="http://www.ej-technologies.com" class="external-link" rel="nofollow">ej-technologies</a>  for giving us a free team license for profiling Qpid Java code. </p></tr></tbody></table> </td>
+
+	</tr>
+	<tr>
+	  <td > <a href="http://www.headwaysoftware.com/products/structure101" class="external-link" rel="nofollow"><span class="image-wrap" style=""><img src="/confluence/download/attachments/74463/structure101.jpg?version=1&amp;modificationDate=1202130339000" style="border: 0px solid black" /></span></a> </td>
+	  <td > <table class="sectionMacro" border="0" cellpadding="5" cellspacing="0" width="100%"><tbody><tr><p> We acknowledge <a href="http://www.headwaysoftware.com" class="external-link" rel="nofollow">Headway Software</a> for giving us free licenses of Structure101 for analyzing and managing the architecture of Qpid Java code. </p></tr></tbody></table> </td>
+	</tr>
+    </tbody></table>
+  </div>
+</div>
