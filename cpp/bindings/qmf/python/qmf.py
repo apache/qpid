@@ -1166,9 +1166,22 @@ class Console(Thread):
             if "class" in kwargs:
                 self.impl.bindClass(package, kwargs["class"])
             else:
-                self.impl.bindClass(package)
+                self.impl.bindClass(package, "*")
         else:
             raise Exception("Argument error: invalid arguments, use 'key' or 'package'[,'class']")
+
+
+    def bind_event(self, kwargs = {}):
+        if "key" in kwargs:
+            self.impl.bindEvent(kwargs["key"])
+        elif "package" in kwargs:
+            package = kwargs["package"]
+            if "event" in kwargs:
+                self.impl.bindEvent(package, kwargs["event"])
+            else:
+                self.impl.bindEvent(package, "*")
+        else:
+            raise Exception("Argument error: invalid arguments, use 'key' or 'package'[,'event']")
     
     
     def agents(self, broker=None):

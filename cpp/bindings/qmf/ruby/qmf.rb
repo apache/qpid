@@ -1087,6 +1087,21 @@ module Qmf
       end
     end
 
+    def bind_event(kwargs = {})
+      if kwargs.include?(:key)
+        @impl.bindEvent(kwargs[:key])
+      elsif kwargs.include?(:package)
+        package = kwargs[:package]
+        if kwargs.include?(:event)
+          @impl.bindEvent(package, kwargs[:event])
+        else
+          @impl.bindEvent(package, "*")
+        end
+      else
+        raise ArgumentError, "Invalid arguments, use :key or :package[,:event]"
+      end
+    end
+
     def agents(broker = nil)
       blist = []
       if broker
