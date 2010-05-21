@@ -247,6 +247,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     name(settings.name),
     self(cpg.self()),
     clusterId(true),
+    mAgent(0),
     expiryPolicy(new ExpiryPolicy(mcast, self, broker.getTimer())),
     mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
     dispatcher(cpg, poller, boost::bind(&Cluster::leave, this)),
