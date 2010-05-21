@@ -156,7 +156,11 @@ public abstract class ConfigurationPlugin
                 _pluginConfiguration.put(elementHandler.getClass(), elementHandler);
             }
         }
+
+        validateConfiguration();
     }
+
+    abstract public void validateConfiguration() throws ConfigurationException;
 
     protected boolean hasConfiguration()
     {

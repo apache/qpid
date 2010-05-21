@@ -59,10 +59,9 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
         return getStringValue("name");
     }
 
-    public void setConfiguration(String path, Configuration configuration) throws ConfigurationException
+    @Override
+    public void validateConfiguration() throws ConfigurationException
     {
-        super.setConfiguration(path,configuration);
-
         if (getPolicyName() == null)
         {
             throw new ConfigurationException("No Slow consumer policy defined.");

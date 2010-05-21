@@ -68,6 +68,12 @@ public class QueueConfiguration extends ConfigurationPlugin
         };
     }
 
+    @Override
+    public void validateConfiguration() throws ConfigurationException
+    {
+        //Currently doesn't do validation
+    }
+
     public VirtualHostConfiguration getVirtualHostConfiguration()
     {
         return _vHostConfig;

@@ -206,6 +206,12 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     }
 
+    @Override
+    public void validateConfiguration() throws ConfigurationException
+    {
+        //Currently doesn't do validation
+    }
+
     public int getHouseKeepingThreadCount()
     {
         return getIntValue("housekeeping.poolSize", Runtime.getRuntime().availableProcessors());

@@ -54,6 +54,12 @@ public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
         return new String[]{"delete-persistent"};
     }
 
+    @Override
+    public void validateConfiguration() throws ConfigurationException
+    {
+        // No validation requried.
+    }
+
     public boolean deletePersistent()
     {
         // If we don't have configuration then we don't deletePersistent Queues 
