@@ -197,9 +197,9 @@ class Object(object):
     else:
       self._objectId = None
 
-    self._currentTime = omap.get("update_ts", 0)
-    self._createTime = omap.get("create_ts", 0)
-    self._deleteTime = omap.get("delete_ts", 0)
+    self._currentTime = omap.get("_update_ts", 0)
+    self._createTime = omap.get("_create_ts", 0)
+    self._deleteTime = omap.get("_delete_ts", 0)
 
   def getAgent(self):
     """ Return the agent from which this object was sent """
