@@ -65,39 +65,11 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
     }
 
     @Override
-    public void setConfiguration(String path, Configuration configuration) throws ConfigurationException
+    public void validateConfiguration() throws ConfigurationException
     {
-        super.setConfiguration(path, configuration);
+        validatePositiveLong("delay");
 
-        //Validate Configuration
-
-        try
-        {
-            long delay = _configuration.getLong("delay");
-            if (delay <= 0)
-            {
-                throw new ConfigurationException("Slow Consumer Detection Delay must be a Positive Long value.");
-            }
-        }
-        catch (Exception e)
-        {
-            Throwable last = e;
-
-            // Find the first cause
-            if (e instanceof ConversionException)
-            {
-                Throwable t = e.getCause();
-                while (t != null)
-                {
-                    last = t;
-                    t = last.getCause();
-                }
-            }
-
-            throw new ConfigurationException("Unable to configure Slow Consumer Detection invalid delay:"+ _configuration.getString("delay"), last);
-        }
-
-        String timeUnit = _configuration.getString("timeunit");
+        String timeUnit = getStringValue("timeunit");
 
 
         if (timeUnit != null)
@@ -108,7 +80,7 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
             }
             catch (IllegalArgumentException iae)
             {
-                throw new ConfigurationException("Unable to configure Slow Consumer Detection invalid TimeUnit:" + timeUnit);            
+                throw new ConfigurationException("Unable to configure Slow Consumer Detection invalid TimeUnit:" + timeUnit);
             }
         }
 

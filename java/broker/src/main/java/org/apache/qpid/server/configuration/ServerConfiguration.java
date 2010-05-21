@@ -192,6 +192,12 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return new String[]{""};
     }
 
+    @Override
+    public void validateConfiguration() throws ConfigurationException
+    {
+        //Currently doesn't do validation
+    }
+
     /*
      * Modified to enforce virtualhosts configuration in external file or main file, but not
      * both, as a fix for QPID-2360 and QPID-2361.

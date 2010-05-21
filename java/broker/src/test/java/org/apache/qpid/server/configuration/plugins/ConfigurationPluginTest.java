@@ -28,8 +28,8 @@ import org.apache.commons.configuration.XMLConfiguration;
 import java.util.List;
 
 /**
- * Test that verifies that given a configuration the
- * Plugin manager
+ * Test that verifies that given a Configuration a ConfigurationPlugin can
+ * process and validate that data.
  */
 public class ConfigurationPluginTest extends TestCase
 {
@@ -48,6 +48,12 @@ public class ConfigurationPluginTest extends TestCase
                                 "true", "list", "double"};
         }
 
+        @Override
+        public void validateConfiguration() throws ConfigurationException
+        {
+            // no validation requried
+        }
+
         public String getName()
         {
             return getStringValue("name");
@@ -57,6 +63,7 @@ public class ConfigurationPluginTest extends TestCase
         {
             return getStringValue("[@property]");
         }
+
 
     }
 
@@ -170,6 +177,8 @@ public class ConfigurationPluginTest extends TestCase
 
     public void testBoolean()
     {
+        assertTrue("Boolean value not returned", _plugin.containsBoolean("boolean"));
+        assertFalse("Boolean value not returned", _plugin.containsBoolean("NonExistent"));
         assertTrue("Boolean value not returned", _plugin.getBooleanValue("boolean"));
         assertFalse("default String value not returned", _plugin.getBooleanValue("NonExistent"));
         assertTrue("set default String value not returned", _plugin.getBooleanValue("NonExistent", true));

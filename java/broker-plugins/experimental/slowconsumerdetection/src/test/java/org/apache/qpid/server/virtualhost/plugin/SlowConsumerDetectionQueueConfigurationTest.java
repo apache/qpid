@@ -69,7 +69,7 @@ public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
                          e.getMessage());
         }
     }
@@ -125,7 +125,7 @@ public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
                          e.getMessage());
         }
     }
@@ -154,7 +154,7 @@ public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
                          e.getMessage());
         }
     }
@@ -183,7 +183,7 @@ public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified at:''. Known Policies:[]",
+            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
                          e.getMessage());
         }
     }
