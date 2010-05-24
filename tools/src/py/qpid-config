@@ -57,7 +57,7 @@ MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
 QUEUE_EVENT_GENERATION = "qpid.queue_event_generation"
 
-def Usage ():
+def Usage (short=False):
     print "Usage:  qpid-config [OPTIONS]"
     print "        qpid-config [OPTIONS] exchanges [filter-string]"
     print "        qpid-config [OPTIONS] queues    [filter-string]"
@@ -70,6 +70,9 @@ def Usage ():
     print "                  <for type header>  [all|any] k1=v1 [, k2=v2...]"
     print "        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"
     print
+    if short:
+        return
+
     print "Options:"
     print "    --timeout seconds (10)                    Maximum time to wait for broker connection"
     print "    -b [ --bindings ]                         Show bindings in queue or exchange list"
@@ -452,13 +455,17 @@ def YN (bool):
 ##
 
 try:
-    longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
+    longOpts = ("help", "durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
                 "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
                 "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
                 "force_if_used", "alternate-exchange=", "passive", "timeout=", "file=")
-    (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:bf:", longOpts)
-except:
-    Usage ()
+    (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "ha:bf:", longOpts)
+except Exception, e:
+    Usage (short=True)
+    # make output match optparse-based tools' output, for consistent scripting
+    msg = str(e).replace('option', 'no such option:').replace('not recognized', '')
+    print "qpid-config: error:", msg
+    sys.exit (1)    
 
 try:
     encoding = locale.getpreferredencoding()
@@ -467,6 +474,9 @@ except:
     cargs = encArgs
 
 for opt in optlist:
+    if opt[0] == "-h" or opt[0] == "--help":
+        Usage()
+        sys.exit(1)
     if opt[0] == "-b" or opt[0] == "--bindings":
         _recursive = True
     if opt[0] == "-a" or opt[0] == "--broker-addr":

@@ -26,7 +26,7 @@ import os
 import locale
 from qmf.console import Session, BrokerURL
 
-def Usage():
+def Usage(short=False):
     print "Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]"
     print "        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>"
     print
@@ -42,6 +42,8 @@ def Usage():
     print "        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>"
     print "        qpid-route [OPTIONS] link list [<dest-broker>]"
     print
+    if short:
+        return
     print "Options:"
     print "    --timeout seconds (10)   Maximum time to wait for broker connection"
     print "    -v [ --verbose ]         Verbose output"
@@ -406,10 +408,14 @@ def YN(val):
 ##
 
 try:
-    longOpts = ("verbose", "quiet", "durable", "del-empty-link", "src-local", "transport=", "ack=", "timeout=")
-    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "vqdest:", longOpts)
-except:
-    Usage()
+    longOpts = ("help", "verbose", "quiet", "durable", "del-empty-link", "src-local", "transport=", "ack=", "timeout=")
+    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "hvqdest:", longOpts)
+except Exception, e:
+    Usage(short=True)
+    # make output match optparse-based tools' output, for consistent scripting
+    msg = str(e).replace('option', 'no such option:').replace('not recognized', '')
+    print "qpid-config: error:", msg
+    sys.exit (1)    
 
 try:
     encoding = locale.getpreferredencoding()
@@ -418,6 +424,9 @@ except:
     cargs = encArgs
 
 for opt in optlist:
+    if opt[0] == "-h" or opt[0] == "--help":
+        Usage()
+        sys.exit(1)
     if opt[0] == "--timeout":
         _connTimeout = int(opt[1])
         if _connTimeout == 0:

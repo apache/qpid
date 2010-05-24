@@ -38,12 +38,15 @@ class Config:
         self._showConn = False
         self._delConn = None
 
-def usage ():
+def usage (short=False):
     print "Usage:  qpid-cluster [OPTIONS] [broker-addr]"
     print
     print "             broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
     print "             ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
+    if short:
+        return
+
     print "Options:"
     print "          --timeout seconds (10)  Maximum time to wait for broker connection"
     print "          -C [--all-connections]  View client connections to all cluster members"
@@ -244,11 +247,14 @@ def main(argv=None):
     try:
         config = Config()
         try:
-            longOpts = ("stop=", "all-stop", "force", "connections=", "all-connections" "del-connection=", "numeric", "timeout=")
-            (optlist, encArgs) = getopt.gnu_getopt(argv[1:], "s:kfCc:d:n", longOpts)
-        except:
-            usage()
-            return 1
+            longOpts = ("help", "stop=", "all-stop", "force", "connections=", "all-connections" "del-connection=", "numeric", "timeout=")
+            (optlist, encArgs) = getopt.gnu_getopt(argv[1:], "hs:kfCc:d:n", longOpts)
+        except Exception, e:
+            usage (short=True)
+            # make output match optparse-based tools' output, for consistent scripting
+            msg = str(e).replace('option', 'no such option:').replace('not recognized', '')
+            print "qpid-config: error:", msg
+            sys.exit (1)    
 
         try:
             encoding = locale.getpreferredencoding()
@@ -258,6 +264,9 @@ def main(argv=None):
 
         count = 0
         for opt in optlist:
+            if opt[0] == "-h" or opt[0] == "--help":
+                usage()
+                sys.exit(1)
             if opt[0] == "--timeout":
                 config._connTimeout = int(opt[1])
                 if config._connTimeout == 0:
