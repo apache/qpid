@@ -21,7 +21,7 @@
 
 /**
  * This file provides one half of a test and example of a pub-sub
- * style of interaction. See topic_publisher.cpp for the other half,
+ * style of interaction. See qpid-topic-publisher.cpp for the other half,
  * in which the logic for publishing is defined.
  *
  * This file contains the listener logic. A listener will subscribe to
@@ -183,7 +183,7 @@ int main(int argc, char** argv){
 
             if( args.statusqueue.length() > 0 ) {
                 stringstream msg_str;
-                msg_str << "topic_listener: " << qpid::sys::SystemInfo::getProcessId();
+                msg_str << "qpid-topic-listener: " << qpid::sys::SystemInfo::getProcessId();
                 session.messageTransfer(arg::content=Message(msg_str.str(), args.statusqueue));
                 cout << "Ready status put on queue '" << args.statusqueue << "'" << endl;
             }
@@ -192,7 +192,7 @@ int main(int argc, char** argv){
                 session.txSelect();
             }
 
-            cout << "topic_listener: listening..." << endl;
+            cout << "qpid-topic-listener: listening..." << endl;
             mgr.run();
             if (args.durable) {
                 session.queueDelete(arg::queue=control);
@@ -203,7 +203,7 @@ int main(int argc, char** argv){
         }
         return 0;
     } catch (const std::exception& error) {
-        cout << "topic_listener: " << error.what() << endl;
+        cout << "qpid-topic-listener: " << error.what() << endl;
     }
     return 1;
 }

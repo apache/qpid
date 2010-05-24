@@ -211,7 +211,7 @@ class LongTests(BrokerTest):
             """Start ordinary clients for a broker. Start one client per broker.
             Round-robin on a colllection of different clients."""
             cmds=[
-                ["perftest", "--count", 50000,
+                ["qpid-perftest", "--count", 50000,
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
                 ["testagent", "localhost", str(broker.port())] ]
