@@ -98,6 +98,8 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
     int code;
     //  If we are not given a specific sasl path, do 
     //  nothing and allow the default to be used.
+    //  If we have a version of SASL in which SASL_PATH_TYPE_CONFIG does not yet exist, do nothing.
+    #if (SASL_VERSION_MAJOR >= 2) && (SASL_VERSION_MINOR >= 1) && (SASL_VERSION_STEP >= 22)
     if ( ! saslConfigPath.empty() ) {
         if(SASL_OK != (code=sasl_set_path(SASL_PATH_TYPE_CONFIG, const_cast<char *>(saslConfigPath.c_str())))) {
           QPID_LOG(error, "SASL: sasl_set_path: [" << code << "] " );
@@ -105,6 +107,7 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
         }
         QPID_LOG(info, "SASL: config path set to " << saslConfigPath );
     }
+    #endif
 
     code = sasl_server_init(NULL, saslName.c_str());
     if (code != SASL_OK) {

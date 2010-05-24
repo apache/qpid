@@ -241,6 +241,11 @@ using namespace qpid::tests;
 int
 main ( int argc, char ** argv )
 {
+    // I need the SASL_PATH_TYPE_CONFIG feature, which did not appear until SASL 2.1.22
+    #if (SASL_VERSION_MAJOR < 2) || (SASL_VERSION_MINOR < 1) || (SASL_VERSION_STEP < 22)
+    return 0;
+    #endif
+
     int n_iterations = argc > 1 ? atoi(argv[1]) : 1;
         runSilent    = argc > 2 ? atoi(argv[2]) : 1;  // default to silent
     int killBroker   = argc > 3 ? atoi(argv[3]) : 0;  // Force the kill of one broker.
