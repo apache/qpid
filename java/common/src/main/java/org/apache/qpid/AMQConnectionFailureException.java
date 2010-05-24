@@ -18,12 +18,9 @@
  * under the License.
  *
  */
-
 package org.apache.qpid;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 
 import org.apache.qpid.protocol.AMQConstant;
 
@@ -43,7 +40,7 @@ public class AMQConnectionFailureException extends AMQException
     
 	public AMQConnectionFailureException(String message, Throwable cause)
 	{
-		super(null, message, cause);
+		super(cause instanceof AMQException ? ((AMQException) cause).getErrorCode() : null, message, cause);
 	}
 
     public AMQConnectionFailureException(AMQConstant errorCode, String message, Throwable cause)
