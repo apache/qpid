@@ -104,10 +104,10 @@ runPerftest ( ) {
     stringstream portSs;
     portSs << newbiePort;
 
-    char const *  path = "./perftest";
+    char const *  path = "./qpid-perftest";
 
     vector<char const *> argv;
-    argv.push_back ( "./perftest" );
+    argv.push_back ( "./qpid-perftest" );
     argv.push_back ( "-p" );
     argv.push_back ( portSs.str().c_str() );
     argv.push_back ( "--username" );
@@ -129,7 +129,7 @@ runPerftest ( ) {
 
         execv ( path, const_cast<char * const *>(&argv[0]) );
         // The exec failed: we are still in parent process.
-        perror ( "error running perftest: " ); 
+        perror ( "error running qpid-perftest: " );
         return false;
     }
     else {
@@ -146,19 +146,19 @@ runPerftest ( ) {
           if ( returned_pid == pid ) {
               int exit_status = WEXITSTATUS(status);
               if ( exit_status ) {
-                cerr << "Perftest failed. exit_status was: " << exit_status;
+                cerr << "qpid-perftest failed. exit_status was: " << exit_status;
                 return false;
               }
               else {
-                return true; // perftest succeeded.
+                return true; // qpid-perftest succeeded.
               }
           }
-          else  {  // perftest has not yet completed. 
+          else  {  // qpid-perftest has not yet completed.
               gettimeofday ( & currentTime, 0 );
               timersub ( & currentTime, & startTime, & duration );
               if ( duration.tv_sec > 60 ) {
                 kill ( pid, 9 );
-                cerr << "Perftest pid " << pid << " hanging: killed.\n";
+                cerr << "qpid-perftest pid " << pid << " hanging: killed.\n";
                 return false;
               }
           }
@@ -214,7 +214,7 @@ main ( int argc, char ** argv )
 
     sleep ( 3 );
 
-    /* Run all perftest iterations, and only then check for brokers 
+    /* Run all qpid-perftest iterations, and only then check for brokers
      * still being up.  If you just want a quick check for the failure 
      * mode in which a single iteration would kill all brokers except 
      * the client-connected one, just run it with the iterations arg
@@ -222,14 +222,14 @@ main ( int argc, char ** argv )
     */
     for ( int iteration = 0; iteration < n_iterations; ++ iteration ) {
         if ( ! runPerftest ( ) ) {
-            cerr << "Perftest " << iteration << " failed.\n";
+            cerr << "qpid-perftest " << iteration << " failed.\n";
             return 1;
         }
         if ( ! ( iteration % 10 ) ) {
-            cerr << "perftest " << iteration << " complete. -------------- \n";
+            cerr << "qpid-perftest " << iteration << " complete. -------------- \n";
         }
     }
-    cerr << "\nperftest " << n_iterations << " iterations complete. -------------- \n\n";
+    cerr << "\nqpid-perftest " << n_iterations << " iterations complete. -------------- \n\n";
 
     if ( ! allBrokersAreAlive ( brokers ) ) {
         cerr << "not all brokers are alive.\n";

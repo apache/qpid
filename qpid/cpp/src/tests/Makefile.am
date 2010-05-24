@@ -184,35 +184,35 @@ qpid_send_SOURCES = \
   Statistics.cpp
 qpid_send_LDADD = $(lib_messaging)
 
-qpidtest_PROGRAMS+=perftest
-perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
-perftest_INCLUDES=$(PUBLIC_INCLUDES)
-perftest_LDADD=$(lib_client) 
+qpidtest_PROGRAMS+=qpid-perftest
+qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
+qpid_perftest_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_perftest_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=txtest
-txtest_INCLUDES=$(PUBLIC_INCLUDES)
-txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
-txtest_LDADD=$(lib_client) 
+qpidtest_PROGRAMS+=qpid-txtest
+qpid_txtest_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
+qpid_txtest_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=latencytest
-latencytest_INCLUDES=$(PUBLIC_INCLUDES)
-latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
-latencytest_LDADD=$(lib_client) 
+qpidtest_PROGRAMS+=qpid-latency-test
+qpid_latency_test_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_latency_test_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
+qpid_latency_test_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=client_test
-client_test_INCLUDES=$(PUBLIC_INCLUDES)
-client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
-client_test_LDADD=$(lib_client) 
+qpidtest_PROGRAMS+=qpid-client-test
+qpid_client_test_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
+qpid_client_test_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=topic_listener
-topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
-topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
-topic_listener_LDADD=$(lib_client) 
+qpidtest_PROGRAMS+=qpid-topic-listener
+qpid_topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
+qpid_topic_listener_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=topic_publisher
-topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
-topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
-topic_publisher_LDADD=$(lib_client) 
+qpidtest_PROGRAMS+=qpid-topic-publisher
+qpid_topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
+qpid_topic_publisher_LDADD=$(lib_client) 
 
 qpidtest_PROGRAMS+=qpid_ping
 qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
@@ -313,7 +313,7 @@ TESTS_ENVIRONMENT = \
     QPID_DATA_DIR= \
     $(srcdir)/run_test 
 
-system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
+system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest
 TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test
 
 EXTRA_DIST +=								\

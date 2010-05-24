@@ -73,7 +73,7 @@ export QPID_SSL_CERT_DB=${CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 
 ## Test connection via connection settings
-./perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary
+./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary
 
 ## Test connection with a URL
 URL=amqp:ssl:$TEST_HOSTNAME:$PORT 

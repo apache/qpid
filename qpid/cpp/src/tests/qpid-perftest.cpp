@@ -111,7 +111,7 @@ struct Opts : public TestOptions {
 
     Opts() :
         TestOptions(helpText),
-        setup(false), control(false), publish(false), subscribe(false), baseName("perftest"),
+        setup(false), control(false), publish(false), subscribe(false), baseName("qpid-perftest"),
         pubs(1), count(500000), size(1024), confirm(true), durable(false), uniqueData(false), syncPub(false),
         subs(1), ack(0),
         qt(1),singleConnect(false), iterations(1), mode(SHARED), summary(false),
@@ -210,15 +210,15 @@ struct Opts : public TestOptions {
 };
 
 const std::string Opts::helpText=
-"There are two ways to use perftest: single process or multi-process.\n\n"
+"There are two ways to use qpid-perftest: single process or multi-process.\n\n"
 "If none of the --setup, --publish, --subscribe or --control options\n"
-"are given perftest will run a single-process test.\n"
+"are given qpid-perftest will run a single-process test.\n"
 "For a  multi-process test first run:\n"
-"  perftest --setup <other options>\n"
+"  qpid-perftest --setup <other options>\n"
 "and wait for it to complete. The remaining process should run concurrently::\n"
-"Run --npubs times: perftest --publish <other options>\n"
-"Run --nsubs times: perftest --subscribe <other options>\n"
-"Run once:          perftest --control <other options>\n"
+"Run --npubs times: pqid-perftest --publish <other options>\n"
+"Run --nsubs times: qpid-perftest --subscribe <other options>\n"
+"Run once:          qpid-perftest --control <other options>\n"
 "Note the <other options> must be identical for all processes.\n";
 
 Opts opts;
