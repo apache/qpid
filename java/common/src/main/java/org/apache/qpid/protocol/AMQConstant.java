@@ -46,7 +46,7 @@ import org.apache.qpid.framing.AMQShortString;
 public final class AMQConstant
 {
     /** Defines a map from codes to constants. */
-    private static Map _codeMap = new HashMap();
+    private static Map<Integer, AMQConstant> _codeMap = new HashMap<Integer, AMQConstant>();
 
     /** Indicates that the method completed successfully. */
     public static final AMQConstant REPLY_SUCCESS = new AMQConstant(200, "reply success", true);
@@ -181,7 +181,7 @@ public final class AMQConstant
         _name = new AMQShortString(name);
         if (map)
         {
-            _codeMap.put(new Integer(code), this);
+            _codeMap.put(Integer.valueOf(code), this);
         }
     }
 
@@ -195,7 +195,7 @@ public final class AMQConstant
      */
     public static AMQConstant getConstant(int code)
     {
-        AMQConstant c = (AMQConstant) _codeMap.get(new Integer(code));
+        AMQConstant c = _codeMap.get(Integer.valueOf(code));
         if (c == null)
         {
             c = new AMQConstant(code, "unknown code", false);
