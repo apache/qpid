@@ -260,7 +260,12 @@
 
 
   <property name="profile" value="default"/>
-  <property file="${test.profiles}/${profile}.testprofile" prefix="preload"/>
+  <property name="testprofile.file" value="${test.profiles}/${profile}.testprofile"/>
+  
+  <available file="${testprofile.file}" property="testprofile.file.present"/>
+  <fail unless="testprofile.file.present" message="The requested test profile was not found: ${testprofile.file}"/>
+
+  <property file="${testprofile.file}" prefix="preload"/>
   <property name="preload.include" value=""/>
   <condition property="profiles"
              value="${preload.include} ${profile}"
