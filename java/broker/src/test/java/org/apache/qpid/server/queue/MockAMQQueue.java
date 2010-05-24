@@ -202,7 +202,7 @@ public class MockAMQQueue implements AMQQueue
 
     public String getName()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _name.asString();
     }
 
     public void registerSubscription(Subscription subscription, boolean exclusive) throws AMQException
