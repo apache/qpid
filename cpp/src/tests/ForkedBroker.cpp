@@ -40,7 +40,7 @@ return o;
 namespace qpid {
 namespace tests {
 
-ForkedBroker::ForkedBroker(const Args& constArgs) {
+ForkedBroker::ForkedBroker(const Args& constArgs) : running(false), exitStatus(0) {
     Args args(constArgs);
     Args::iterator i = find(args.begin(), args.end(), string("TMP_DATA_DIR"));
     if (i != args.end()) {
@@ -79,6 +79,8 @@ void ForkedBroker::kill(int sig) {
         throw ErrnoException("wait for forked process failed");
     if (WEXITSTATUS(status) != 0 && sig != 9)
         throw qpid::Exception(QPID_MSG("Forked broker exited with: " << WEXITSTATUS(status)));
+    running = false;
+    exitStatus = status;
 }
 
 bool isLogOption(const std::string& s) {
@@ -122,6 +124,7 @@ void ForkedBroker::init(const Args& userArgs) {
             else throw qpid::Exception("EOF reading port number from child.");
         }
         ::close(pipeFds[0]);
+	running = true;
     }
     else {                  // child
         ::close(pipeFds[0]);

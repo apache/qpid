@@ -63,10 +63,14 @@ class ForkedBroker {
     int wait();                 // Wait for exit, return exit status.
     uint16_t getPort() { return port; }
     pid_t getPID() { return pid; }
+    bool isRunning() { return running; }
 
   private:
 
     void init(const Args& args);
+
+    bool running;
+    int exitStatus;
 
     pid_t pid;
     int port;
