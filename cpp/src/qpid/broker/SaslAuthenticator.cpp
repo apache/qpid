@@ -93,9 +93,20 @@ bool SaslAuthenticator::available(void) {
 }
 
 // Initialize the SASL mechanism; throw if it fails.
-void SaslAuthenticator::init(const std::string& saslName)
+void SaslAuthenticator::init(const std::string& saslName, std::string const & saslConfigPath )
 {
-    int code = sasl_server_init(NULL, saslName.c_str());
+    int code;
+    //  If we are not given a specific sasl path, do 
+    //  nothing and allow the default to be used.
+    if ( ! saslConfigPath.empty() ) {
+        if(SASL_OK != (code=sasl_set_path(SASL_PATH_TYPE_CONFIG, const_cast<char *>(saslConfigPath.c_str())))) {
+          QPID_LOG(error, "SASL: sasl_set_path: [" << code << "] " );
+          return;
+        }
+        QPID_LOG(info, "SASL: config path set to " << saslConfigPath );
+    }
+
+    code = sasl_server_init(NULL, saslName.c_str());
     if (code != SASL_OK) {
         // TODO: Figure out who owns the char* returned by
         // sasl_errstring, though it probably does not matter much
@@ -224,18 +235,20 @@ void CyrusAuthenticator::init()
           * which cannot specify a realm for the user that is
           * authenticating.
           */
+    int code;
+
     const char *realm = connection.getBroker().getOptions().realm.c_str();
-    int code = sasl_server_new(BROKER_SASL_NAME, /* Service name */
-                               NULL, /* Server FQDN, gethostname() */
-                               realm, /* Authentication realm */
-                               NULL, /* Local IP, needed for some mechanism */
-                               NULL, /* Remote IP, needed for some mechanism */
-                               NULL, /* Callbacks */
-                               0, /* Connection flags */
-                               &sasl_conn);
+    code = sasl_server_new(BROKER_SASL_NAME, /* Service name */
+                           NULL, /* Server FQDN, gethostname() */
+                           realm, /* Authentication realm */
+                           NULL, /* Local IP, needed for some mechanism */
+                           NULL, /* Remote IP, needed for some mechanism */
+                           NULL, /* Callbacks */
+                           0, /* Connection flags */
+                           &sasl_conn);
     
     if (SASL_OK != code) {
-        QPID_LOG(info, "SASL: Connection creation failed: [" << code << "] " << sasl_errdetail(sasl_conn));
+        QPID_LOG(error, "SASL: Connection creation failed: [" << code << "] " << sasl_errdetail(sasl_conn));
         
         // TODO: Change this to an exception signaling
         // server error, when one is available

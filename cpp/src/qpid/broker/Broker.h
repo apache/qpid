@@ -110,6 +110,7 @@ public:
         bool tcpNoDelay;
         bool requireEncrypted;
         std::string knownHosts;
+        std::string saslConfigPath;
         uint32_t maxSessionRate;
         bool asyncQueueEvents;
         bool qmf2Support;

@@ -58,7 +58,7 @@ public:
     static bool available(void);
 
     // Initialize the SASL mechanism; throw if it fails.
-    static void init(const std::string& saslName);
+    static void init(const std::string& saslName, std::string const & saslConfigPath );
     static void fini(void);
 
     static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection, bool isShadow);
