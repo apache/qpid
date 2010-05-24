@@ -182,40 +182,40 @@ endif (BUILD_CLUSTER)
 #
 # Other test programs
 #
-add_executable (perftest perftest.cpp ${platform_test_additions})
-target_link_libraries (perftest qpidclient)
-#perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
-remember_location(perftest)
+add_executable (qpid-perftest qpid-perftest.cpp ${platform_test_additions})
+target_link_libraries (qpid-perftest qpidclient)
+#qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
+remember_location(qpid-perftest)
 
-add_executable (txtest txtest.cpp ${platform_test_additions})
-target_link_libraries (txtest qpidclient)
-#txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
-remember_location(txtest)
+add_executable (qpid-txtest qpid-txtest.cpp ${platform_test_additions})
+target_link_libraries (qpid-txtest qpidclient)
+#qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
+remember_location(qpid-txtest)
 
-add_executable (latencytest latencytest.cpp ${platform_test_additions})
-target_link_libraries (latencytest qpidclient)
-#latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
-remember_location(latencytest)
+add_executable (qpid-latency-test qpid-latency-test.cpp ${platform_test_additions})
+target_link_libraries (qpid-latency-test qpidclient)
+#qpid_latencytest_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
+remember_location(qpid-latency-test)
 
 add_executable (echotest echotest.cpp ${platform_test_additions})
 target_link_libraries (echotest qpidclient)
 #echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
 remember_location(echotest)
 
-add_executable (client_test client_test.cpp ${platform_test_additions})
-target_link_libraries (client_test qpidclient)
-#client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
-remember_location(client_test)
+add_executable (qpid-client-test qpid-client-test.cpp ${platform_test_additions})
+target_link_libraries (qpid-client-test qpidclient)
+#qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
+remember_location(qpid-client-test)
 
-add_executable (topic_listener topic_listener.cpp ${platform_test_additions})
-target_link_libraries (topic_listener qpidclient)
-#topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
-remember_location(topic_listener)
+add_executable (qpid-topic-listener qpid-topic-listener.cpp ${platform_test_additions})
+target_link_libraries (qpid-topic-listener qpidclient)
+#qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
+remember_location(qpid-topic-listener)
 
-add_executable (topic_publisher topic_publisher.cpp ${platform_test_additions})
-target_link_libraries (topic_publisher qpidclient)
-#topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
-remember_location(topic_publisher)
+add_executable (qpid-topic-publisher qpid-topic-publisher.cpp ${platform_test_additions})
+target_link_libraries (qpid-topic-publisher qpidclient)
+#qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
+remember_location(qpid-topic-publisher)
 
 add_executable (publish publish.cpp ${platform_test_additions})
 target_link_libraries (publish qpidclient)
@@ -272,8 +272,8 @@ add_executable (qpid_send qpid_send.cpp Statistics.cpp ${platform_test_additions
 target_link_libraries (qpid_send qpidmessaging)
 remember_location(qpid_send)
 
-# perftest and latencytest are generally useful so install them
-install (TARGETS perftest latencytest RUNTIME
+# qpid-perftest and qpid-latency-test are generally useful so install them
+install (TARGETS qpid-perftest qpid-latency-test RUNTIME
          DESTINATION ${QPID_INSTALL_BINDIR})
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
@@ -286,8 +286,8 @@ set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix}
 
 add_test (unit_test ${test_wrap} ${unit_test_LOCATION})
 add_test (start_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/start_broker${test_script_suffix})
-add_test (client_test ${test_wrap} ${client_test_LOCATION})
-add_test (quick_perftest ${test_wrap} ${perftest_LOCATION} --summary --count 100)
+add_test (qpid-client-test ${test_wrap} ${client_test_LOCATION})
+add_test (quick_perftest ${test_wrap} ${qpid-perftest_LOCATION} --summary --count 100)
 add_test (quick_topictest ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
 add_test (quick_txtest ${test_wrap} ${txtest_LOCATION} --queues 4 --tx-count 10 --quiet)
 if (PYTHON_EXECUTABLE)

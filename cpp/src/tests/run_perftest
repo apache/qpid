@@ -19,10 +19,10 @@
 # under the License.
 #
 
-# Args: count [perftest options...]
-# Run a perftest with count multiplied.
+# Args: count [qpid-perftest options...]
+# Run a qpid-perftest with count multiplied.
 # 
 MULTIPLIER=3
 COUNT=`expr $1 \* $MULTIPLIER`
 shift
-exec `dirname $0`/run_test ./perftest --summary --count $COUNT "$@"
+exec `dirname $0`/run_test ./qpid-perftest --summary --count $COUNT "$@"

@@ -21,7 +21,7 @@
 
 /**
  * This file provides one half of a test and example of a pub-sub
- * style of interaction. See topic_listener.cpp for the other half, in
+ * style of interaction. See qpid-topic-listener.cpp for the other half, in
  * which the logic for subscribers is defined.
  *
  * This file contains the publisher logic. The publisher will send a

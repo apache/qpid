@@ -19,4 +19,4 @@
 # under the License.
 #
 
-exec `dirname $0`/run_test ./perftest --summary --count 100
+exec `dirname $0`/run_test ./qpid-perftest --summary --count 100

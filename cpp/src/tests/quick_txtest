@@ -19,4 +19,4 @@
 # under the License.
 #
 
-exec `dirname $0`/run_test ./txtest --queues 4 --tx-count 10 --quiet
+exec `dirname $0`/run_test ./qpid-txtest --queues 4 --tx-count 10 --quiet
