@@ -127,7 +127,7 @@ bool SaslAuthenticator::available(void) {
     return false;
 }
 
-void SaslAuthenticator::init(const std::string& /*saslName*/)
+void SaslAuthenticator::init(const std::string& /*saslName*/, std::string const & /*saslConfigPath*/ )
 {
     throw Exception("Requested authentication but SASL unavailable");
 }
