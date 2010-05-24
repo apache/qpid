@@ -597,7 +597,6 @@ class IdRegistry(object):
 def Usage():
   print "Usage:  qpid-tool [[<username>/<password>@]<target-host>[:<tcp-port>]]"
   print
-  sys.exit(1)
 
 #=========================================================
 # Main Program
@@ -612,6 +611,9 @@ if len(cargs) > 0:
 
 if _host[0] == '-':
   Usage()
+  if _host != '-h' and _host != "--help":
+    print "qpid-tool: error: no such option:", _host
+  sys.exit(1)
 
 disp = Display()
 

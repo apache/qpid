@@ -35,12 +35,15 @@ _limit = 50
 _increasing = False
 _sortcol = None
 
-def Usage ():
+def Usage (short=False):
     print "Usage:  qpid-stat [OPTIONS] [broker-addr]"
     print
     print "             broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
     print "             ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
+    if short:
+        return
+
     print "General Options:"
     print "    --timeout seconds (10)  Maximum time to wait for broker connection"
 #    print "     -n [--numeric]  Don't resolve names"
@@ -456,10 +459,14 @@ class BrokerManager(Console):
 ##
 
 try:
-    longOpts = ("top", "numeric", "sort-by=", "limit=", "increasing", "timeout=")
-    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "bcequS:L:I", longOpts)
-except:
-    Usage()
+    longOpts = ("help", "top", "numeric", "sort-by=", "limit=", "increasing", "timeout=")
+    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "hbcequS:L:I", longOpts)
+except Exception, e:
+    Usage(short=True)
+    # make output match optparse-based tools' output, for consistent scripting
+    msg = str(e).replace('option', 'no such option:').replace('not recognized', '')
+    print "qpid-config: error:", msg
+    sys.exit (1)    
 
 try:
     encoding = locale.getpreferredencoding()
@@ -468,6 +475,9 @@ except:
     cargs = encArgs
 
 for opt in optlist:
+    if opt[0] == "-h" or opt[0] == "--help":
+        Usage()
+        sys.exit(1)
     if opt[0] == "--timeout":
         _connTimeout = int(opt[1])
         if _connTimeout == 0:
