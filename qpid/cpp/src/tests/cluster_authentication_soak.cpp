@@ -44,6 +44,10 @@
 #include <qpid/client/Connection.h>
 
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 
 
 
@@ -64,32 +68,42 @@ typedef vector<ForkedBroker *> brokerVector;
 
 
 
-int newbiePort    = 0;
+int  runSilent    = 1;
+int  newbiePort   = 0;
 
+
+void
+makeClusterName ( string & s ) {
+    stringstream ss;
+    ss << "authenticationSoakCluster_" << Uuid(true).str();
+    s = ss.str();
+}
 
 
 
 void
-startBroker ( brokerVector & brokers ,
-              int brokerNumber ) {
-    stringstream portSS, prefix;
+startBroker ( brokerVector & brokers , int brokerNumber, string const & clusterName ) {
+    stringstream prefix, clusterArg;
     prefix << "soak-" << brokerNumber;
+    clusterArg << "--cluster-name=" << clusterName;
+
     std::vector<std::string> argv;
 
     argv.push_back ("../qpidd");
     argv.push_back ("--no-module-dir");
     argv.push_back ("--load-module=../.libs/cluster.so");
-    argv.push_back ("--cluster-name=micks_test_cluster");
-    argv.push_back ("--cluster-username=guest");
-    argv.push_back ("--cluster-password=guest");
+    argv.push_back (clusterArg.str().c_str());
+    argv.push_back ("--cluster-username=zig");
+    argv.push_back ("--cluster-password=zig");
     argv.push_back ("--cluster-mechanism=ANONYMOUS");
-    argv.push_back ("TMP_DATA_DIR");
+    argv.push_back ("--sasl-config=./sasl_config");
     argv.push_back ("--auth=yes");
     argv.push_back ("--mgmt-enable=yes");
     argv.push_back ("--log-prefix");
     argv.push_back (prefix.str());
     argv.push_back ("--log-to-file");
     argv.push_back (prefix.str()+".log");
+    argv.push_back ("TMP_DATA_DIR");
 
     ForkedBroker * newbie = new ForkedBroker (argv);
     newbiePort = newbie->getPort();
@@ -100,7 +114,7 @@ startBroker ( brokerVector & brokers ,
 
 
 bool
-runPerftest ( ) {
+runPerftest ( bool hangTest ) {
     stringstream portSs;
     portSs << newbiePort;
 
@@ -111,9 +125,9 @@ runPerftest ( ) {
     argv.push_back ( "-p" );
     argv.push_back ( portSs.str().c_str() );
     argv.push_back ( "--username" );
-    argv.push_back ( "guest" );
+    argv.push_back ( "zig" );
     argv.push_back ( "--password" );
-    argv.push_back ( "guest" );
+    argv.push_back ( "zig" );
     argv.push_back ( "--mechanism" );
     argv.push_back ( "DIGEST-MD5" );
     argv.push_back ( "--count" );
@@ -133,6 +147,12 @@ runPerftest ( ) {
         return false;
     }
     else {
+	if ( hangTest ) {
+	    if ( ! runSilent )
+	        cerr << "Pausing perftest " << pid << endl;
+	    kill ( pid, 19 );
+	}
+
         struct timeval startTime,
                        currentTime,
                        duration;
@@ -140,7 +160,7 @@ runPerftest ( ) {
         gettimeofday ( & startTime, 0 );
 
         while ( 1 ) {
-          sleep ( 5 );
+          sleep ( 2 );
           int status;
           int returned_pid = waitpid ( pid, &status, WNOHANG );
           if ( returned_pid == pid ) {
@@ -171,14 +191,9 @@ runPerftest ( ) {
 
 bool
 allBrokersAreAlive ( brokerVector & brokers ) {
-    for ( unsigned int i = 0; i < brokers.size(); ++ i ) {
-        pid_t pid = brokers[i]->getPID();
-        int status;
-        int value;
-        if ( (value = waitpid ( pid, &status, WNOHANG ) ) ) {
-           return false; 
-        }
-    }
+    for ( unsigned int i = 0; i < brokers.size(); ++ i )
+        if ( ! brokers[i]->isRunning() ) 
+	    return false;
 
     return true;
 }
@@ -186,10 +201,23 @@ allBrokersAreAlive ( brokerVector & brokers ) {
 
 
 
+
 void
 killAllBrokers ( brokerVector & brokers ) {
-    for ( unsigned int i = 0; i < brokers.size(); ++ i )
+    for ( unsigned int i = 0; i < brokers.size(); ++ i ) {
         brokers[i]->kill ( 9 );
+    }
+}
+
+
+
+
+void
+killOneBroker ( brokerVector & brokers ) {
+    int doomedBroker = getpid() % brokers.size();
+    cout << "Killing broker " << brokers[doomedBroker]->getPID() << endl;
+    brokers[doomedBroker]->kill ( 9 );
+    sleep ( 2 );
 }
 
 
@@ -201,15 +229,36 @@ using namespace qpid::tests;
 
 
 
+/*
+ *  Please note that this test has self-test capability.
+ *  It is intended to detect 
+ *    1. perftest hangs.
+ *    2. broker deaths
+ *  Both of these condtions can be forced when running manually
+ *  to ensure that the test really does detect them.
+ *  See command-line arguments 3 and 4.
+ */
 int
 main ( int argc, char ** argv )
 {
-    int n_iterations = argc > 0 ? atoi(argv[1]) : 1;
+    int n_iterations = argc > 1 ? atoi(argv[1]) : 1;
+        runSilent    = argc > 2 ? atoi(argv[2]) : 1;  // default to silent
+    int killBroker   = argc > 3 ? atoi(argv[3]) : 0;  // Force the kill of one broker.
+    int hangTest     = argc > 4 ? atoi(argv[4]) : 0;  // Force the first perftest to hang.
     int n_brokers = 3;
     brokerVector brokers;
 
+    #ifndef HAVE_SASL
+    if ( ! runSilent )
+        cout << "No SASL support. cluster_authentication_soak disabled.";
+    return 0;
+    #endif
+
+    srand ( getpid() );
+    string clusterName;
+    makeClusterName ( clusterName );
     for ( int i = 0; i < n_brokers; ++ i ) {
-        startBroker ( brokers, i );
+        startBroker ( brokers, i, clusterName );
     }
 
     sleep ( 3 );
@@ -221,22 +270,38 @@ main ( int argc, char ** argv )
      * set to 1.
     */
     for ( int iteration = 0; iteration < n_iterations; ++ iteration ) {
-        if ( ! runPerftest ( ) ) {
-            cerr << "qpid-perftest " << iteration << " failed.\n";
+        if ( ! runPerftest ( hangTest ) ) {
+	    if ( ! runSilent )
+	        cerr << "qpid-perftest " << iteration << " failed.\n";
             return 1;
         }
         if ( ! ( iteration % 10 ) ) {
-            cerr << "qpid-perftest " << iteration << " complete. -------------- \n";
+	    if ( ! runSilent )
+                cerr << "qpid-perftest " << iteration << " complete. -------------- \n";
         }
     }
-    cerr << "\nqpid-perftest " << n_iterations << " iterations complete. -------------- \n\n";
+    if ( ! runSilent )
+        cerr << "\nqpid-perftest " << n_iterations << " iterations complete. -------------- \n\n";
+
+    /* If the command-line tells us to kill a broker, do
+     * it now.  Use this option to prove that this test
+     * really can detect broker-deaths.
+     */
+    if ( killBroker ) {
+        killOneBroker ( brokers );
+    }
 
     if ( ! allBrokersAreAlive ( brokers ) ) {
-        cerr << "not all brokers are alive.\n";
+        if ( ! runSilent ) 
+            cerr << "not all brokers are alive.\n";
+	killAllBrokers ( brokers );
         return 2;
     }
 
     killAllBrokers ( brokers );
+    if ( ! runSilent )
+        cout << "success.\n";
+
     return 0;
 }
 

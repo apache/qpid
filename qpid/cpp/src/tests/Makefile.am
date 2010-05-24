@@ -314,7 +314,7 @@ TESTS_ENVIRONMENT = \
     $(srcdir)/run_test 
 
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test run_cluster_authentication_test
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -351,7 +351,8 @@ EXTRA_DIST +=								\
   run_test.ps1								\
   start_broker.ps1							\
   stop_broker.ps1							\
-  topictest.ps1
+  topictest.ps1                                                         \
+  run_cluster_authentication_test
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -364,7 +365,8 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test qpidd.port $(unit_wrappers)
 
 LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test stop_broker \
  run_failover_soak reliable_replication_test \
- federated_cluster_test_with_node_failure
+ federated_cluster_test_with_node_failure \
+ run_cluster_authentication_soak
 
 EXTRA_DIST+=						\
 	fanout_perftest					\
@@ -373,7 +375,8 @@ EXTRA_DIST+=						\
 	topic_perftest					\
 	run_failover_soak				\
 	reliable_replication_test			\
-	federated_cluster_test_with_node_failure
+	federated_cluster_test_with_node_failure        \
+        run_cluster_authentication_soak
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=

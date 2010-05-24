@@ -124,6 +124,7 @@ Broker::Options::Options(const std::string& name) :
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
+        ("sasl-config", optValue(saslConfigPath, "FILE"), "gets sasl config from nonstandard location")
         ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)")
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication");
 }
@@ -263,7 +264,7 @@ Broker::Broker(const Broker::Options& conf) :
      * SASL setup, can fail and terminate startup
      */
     if (conf.auth) {
-        SaslAuthenticator::init(qpid::saslName);
+        SaslAuthenticator::init(qpid::saslName, conf.saslConfigPath);
         QPID_LOG(info, "SASL enabled");
     } else {
         QPID_LOG(notice, "SASL disabled: No Authentication Performed");

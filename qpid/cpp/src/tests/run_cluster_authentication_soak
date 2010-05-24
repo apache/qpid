@@ -1,0 +1,4 @@
+#! /bin/bash
+
+./cluster_authentication_soak 500
+
