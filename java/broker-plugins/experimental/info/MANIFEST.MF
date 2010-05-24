@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: QpidPlugin
+Bundle-SymbolicName: qpid_info_plugin;singleton:=true
+Bundle-Version: 1.0.0
+Bundle-Activator: org.apache.qpid.info.Activator
+Import-Package: org.apache.qpid.server.configuration,
+ org.osgi.framework
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: .
+Bundle-ActivationPolicy: lazy
+Export-Package: org.apache.qpid.info;uses:="org.osgi.framework"
+
