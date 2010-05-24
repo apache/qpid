@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.securiity.auth.sasl;
+package org.apache.qpid.server.security.auth.sasl;
 
 import junit.framework.TestCase;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
@@ -38,10 +38,8 @@ import java.util.Properties;
  */
 public class CRAMMD5HexInitialiserTest extends TestCase
 {
-
     public void testHex()
     {
-
         //Create User details for testing
         String user = "testUser";
         String password = "testPassword";
@@ -51,7 +49,6 @@ public class CRAMMD5HexInitialiserTest extends TestCase
 
     public void testHashedHex()
     {
-
         //Create User details for testing
         String user = "testUser";
         String password = "testPassword";
@@ -104,7 +101,6 @@ public class CRAMMD5HexInitialiserTest extends TestCase
 
         //Hex the password we initialised with and compare it with the passwordCallback
         assertArrayEquals(toHex(password.toCharArray()), passwordCallback.getPassword());
-
     }
 
     private void assertArrayEquals(char[] expected, char[] actual)
@@ -138,6 +134,4 @@ public class CRAMMD5HexInitialiserTest extends TestCase
 
         return hex;
     }
-    
-
 }
