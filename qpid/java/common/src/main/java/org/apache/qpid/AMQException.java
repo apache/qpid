@@ -20,8 +20,6 @@
  */
 package org.apache.qpid;
 
-import javax.management.JMException;
-
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
@@ -50,7 +48,7 @@ public class AMQException extends Exception
      */
     public AMQException(AMQConstant errorCode, String msg, Throwable cause)
     {
-        super(((msg == null) ? "" : msg) + ((errorCode == null) ? "" : (" [error code " + errorCode + "]")), cause);
+        super(((msg == null) ? "" : msg), cause);
         _errorCode = errorCode;
     }
 
@@ -58,13 +56,13 @@ public class AMQException extends Exception
      * Deprecated constructors brought from M2.1
      */
     @Deprecated
-    public AMQException (String msg) 
+    public AMQException(String msg) 
     {
         this(null, (msg == null) ? "" : msg);
     }
     
     @Deprecated 
-    public AMQException (AMQConstant errorCode, String msg) 
+    public AMQException(AMQConstant errorCode, String msg) 
     {
         this(errorCode, (msg == null) ? "" : msg, null);
     }
@@ -75,6 +73,11 @@ public class AMQException extends Exception
         this(null, msg, cause);
     }
 
+    @Override
+    public String toString()
+    {
+        return getClass().getName() + ": " + getMessage() + (_errorCode == null ? "" : " [error code " + _errorCode + "]");
+    }
     
     /**
      * Gets the AMQ protocol exception code associated with this exception.
@@ -94,11 +97,10 @@ public class AMQException extends Exception
     /**
      * Rethrown this exception as a new exception.
      *
-     * Attempt to create a new exception of the same class if they hav the default constructor of:
+     * Attempt to create a new exception of the same class if they have the default constructor of:
      * {AMQConstant.class, String.class, Throwable.class}
-     *
+     * <p>
      * Individual subclasses may override as requried to create a new instance.
-     * 
      */
     public AMQException cloneForCurrentThread()
     {
