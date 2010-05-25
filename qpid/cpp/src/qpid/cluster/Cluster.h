@@ -273,7 +273,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     ClusterMap map;
     MemberSet elders;
     bool elder;
-    size_t lastSize;
+    size_t lastAliveCount;
     bool lastBroker;
     sys::Thread updateThread;
     boost::optional<ClusterMap> updatedMap;
