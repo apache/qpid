@@ -148,7 +148,7 @@ void ManagementAgentImpl::init(const string& brokerHost,
                                const string& mech,
                                const string& proto)
 {
-    client::ConnectionSettings settings;
+    management::ConnectionSettings settings;
     settings.protocol = proto;
     settings.host = brokerHost;
     settings.port = brokerPort;
@@ -158,7 +158,7 @@ void ManagementAgentImpl::init(const string& brokerHost,
     init(settings, intervalSeconds, useExternalThread, _storeFile);
 }
 
-void ManagementAgentImpl::init(const qpid::client::ConnectionSettings& settings,
+void ManagementAgentImpl::init(const qpid::management::ConnectionSettings& settings,
                                uint16_t intervalSeconds,
                                bool useExternalThread,
                                const string& _storeFile)
@@ -170,7 +170,26 @@ void ManagementAgentImpl::init(const qpid::client::ConnectionSettings& settings,
 
     QPID_LOG(info, "QMF Agent Initialized: broker=" << settings.host << ":" << settings.port <<
              " interval=" << intervalSeconds << " storeFile=" << _storeFile);
-    connectionSettings = settings;
+
+    //
+    // Convert from management::ConnectionSettings to client::ConnectionSettings
+    //
+    connectionSettings.protocol     = settings.protocol;
+    connectionSettings.host         = settings.host;
+    connectionSettings.port         = settings.port;
+    connectionSettings.virtualhost  = settings.virtualhost;
+    connectionSettings.username     = settings.username;
+    connectionSettings.password     = settings.password;
+    connectionSettings.mechanism    = settings.mechanism;
+    connectionSettings.locale       = settings.locale;
+    connectionSettings.heartbeat    = settings.heartbeat;
+    connectionSettings.maxChannels  = settings.maxChannels;
+    connectionSettings.maxFrameSize = settings.maxFrameSize;
+    connectionSettings.bounds       = settings.bounds;
+    connectionSettings.tcpNoDelay   = settings.tcpNoDelay;
+    connectionSettings.service      = settings.service;
+    connectionSettings.minSsf       = settings.minSsf;
+    connectionSettings.maxSsf       = settings.maxSsf;
 
     retrieveData();
     bootSequence++;
