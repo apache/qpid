@@ -68,7 +68,7 @@ bool SaslAuthenticator::available(void)
 }
 
 // Initialize the SASL mechanism; throw if it fails.
-void SaslAuthenticator::init(const std::string& /*saslName*/)
+void SaslAuthenticator::init(const std::string& /*saslName*/, const std::string& /*saslConfig*/)
 {
     return;
 }
