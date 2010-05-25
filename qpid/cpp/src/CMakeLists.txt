@@ -616,6 +616,7 @@ set (qpidcommon_SOURCES
      qpid/log/Selector.cpp
      qpid/log/Statement.cpp
      qpid/management/Buffer.cpp
+     qpid/management/ConnectionSettings.cpp
      qpid/management/Mutex.cpp
      qpid/management/Manageable.cpp
      qpid/management/ManagementObject.cpp
