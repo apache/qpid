@@ -106,13 +106,13 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             sconn.setVirtualHost(vhost);
 
-            sconn.invoke(new ConnectionOpenOk(Collections.EMPTY_LIST));
+            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
 
             sconn.setState(Connection.State.OPEN);
         }
         else
         {
-            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown vistrulhost '"+vhostName+"'"));
+            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '" + vhostName + "'"));
             sconn.setState(Connection.State.CLOSING);
         }
 
