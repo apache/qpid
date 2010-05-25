@@ -575,6 +575,8 @@ except KeyboardInterrupt:
 except IOError, e:
     print e
     sys.exit(1)
+except SystemExit, e:
+    sys.exit(1)
 except Exception,e:
     if e.__class__.__name__ != "Timeout":
         # ignore Timeout exception, handle in the loop below
