@@ -489,8 +489,6 @@ if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.cpp
 libqpidcommon_la_LIBADD += -lsasl2
-
-include sasl.mk
 endif
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
