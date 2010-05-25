@@ -41,8 +41,7 @@ public class DupsOkTest extends QpidTestCase
 {
 
     private Queue _queue;
-    // Question why do we need to send so many messages?
-    private static final int MSG_COUNT = 4999;
+    private static final int MSG_COUNT = 100;
     private CountDownLatch _awaitCompletion = new CountDownLatch(1);
 
     public void setUp() throws Exception
