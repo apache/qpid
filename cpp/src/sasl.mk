@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-SASLTEST_DIR = tests/sasl_config
+SASLTEST_DIR = $(top_srcdir)/src/tests/sasl_config
 SASLTEST_CONF = $(SASLTEST_DIR)/qpidd.conf
 SASLTEST_DB = $(SASLTEST_DIR)/qpidd.sasldb
 
