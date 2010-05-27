@@ -43,6 +43,7 @@
 #include <ForkedBroker.h>
 #include <qpid/client/Connection.h>
 
+#include <sasl/sasl.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -117,13 +118,13 @@ bool
 runPerftest ( bool hangTest ) {
     stringstream portSs;
     portSs << newbiePort;
-
+    string portStr = portSs.str();
     char const *  path = "./qpid-perftest";
 
     vector<char const *> argv;
     argv.push_back ( "./qpid-perftest" );
     argv.push_back ( "-p" );
-    argv.push_back ( portSs.str().c_str() );
+    argv.push_back ( portStr.c_str() );
     argv.push_back ( "--username" );
     argv.push_back ( "zig" );
     argv.push_back ( "--password" );
@@ -166,7 +167,7 @@ runPerftest ( bool hangTest ) {
           if ( returned_pid == pid ) {
               int exit_status = WEXITSTATUS(status);
               if ( exit_status ) {
-                cerr << "qpid-perftest failed. exit_status was: " << exit_status;
+                  cerr << "qpid-perftest failed. exit_status was: " << exit_status << endl;
                 return false;
               }
               else {
@@ -242,9 +243,10 @@ int
 main ( int argc, char ** argv )
 {
     // I need the SASL_PATH_TYPE_CONFIG feature, which did not appear until SASL 2.1.22
-    #if (SASL_VERSION_MAJOR < 2) || (SASL_VERSION_MINOR < 1) || (SASL_VERSION_STEP < 22)
+#if (SASL_VERSION_FULL < ((2<<16)|(1<<8)|22))
+    cout << "Skipping SASL test, SASL version too low." << endl;
     return 0;
-    #endif
+#endif
 
     int n_iterations = argc > 1 ? atoi(argv[1]) : 1;
         runSilent    = argc > 2 ? atoi(argv[2]) : 1;  // default to silent
@@ -252,12 +254,6 @@ main ( int argc, char ** argv )
     int hangTest     = argc > 4 ? atoi(argv[4]) : 0;  // Force the first perftest to hang.
     int n_brokers = 3;
     brokerVector brokers;
-
-    #ifndef HAVE_SASL
-    if ( ! runSilent )
-        cout << "No SASL support. cluster_authentication_soak disabled.";
-    return 0;
-    #endif
 
     srand ( getpid() );
     string clusterName;

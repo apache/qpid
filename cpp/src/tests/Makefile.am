@@ -146,6 +146,7 @@ test_store_la_LIBADD = $(lib_broker)
 test_store_la_LDFLAGS = -module
 
 include cluster.mk
+include sasl.mk
 if SSL
 include ssl.mk
 endif
@@ -248,11 +249,6 @@ failover_soak_INCLUDES=$(PUBLIC_INCLUDES)
 failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
 failover_soak_LDADD=$(lib_client) $(lib_broker)
 
-check_PROGRAMS+=cluster_authentication_soak
-cluster_authentication_soak_INCLUDES=$(PUBLIC_INCLUDES)
-cluster_authentication_soak_SOURCES=cluster_authentication_soak.cpp  ForkedBroker.h ForkedBroker.cpp
-cluster_authentication_soak_LDADD=$(lib_client) $(lib_broker)
-
 check_PROGRAMS+=declare_queues
 declare_queues_INCLUDES=$(PUBLIC_INCLUDES)
 declare_queues_SOURCES=declare_queues.cpp  
@@ -314,7 +310,7 @@ TESTS_ENVIRONMENT = \
     $(srcdir)/run_test 
 
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test run_cluster_authentication_test
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -351,7 +347,7 @@ EXTRA_DIST +=								\
   run_test.ps1								\
   start_broker.ps1							\
   stop_broker.ps1							\
-  topictest.ps1                                                         \
+  topictest.ps1								\
   run_cluster_authentication_test
 
 check_LTLIBRARIES += libdlclose_noop.la
@@ -365,8 +361,7 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test qpidd.port $(unit_wrappers)
 
 LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test stop_broker \
  run_failover_soak reliable_replication_test \
- federated_cluster_test_with_node_failure \
- run_cluster_authentication_soak
+ federated_cluster_test_with_node_failure
 
 EXTRA_DIST+=						\
 	fanout_perftest					\
