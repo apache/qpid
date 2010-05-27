@@ -182,7 +182,7 @@ boost::shared_ptr<ConnectionImpl> ConnectionImpl::create(framing::ProtocolVersio
 
 ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSettings& settings)
     : Bounds(settings.maxFrameSize * settings.bounds),
-      handler(settings, v),
+      handler(settings, v, *this),
       version(v),
       nextChannel(1),
       shutdownComplete(false),

@@ -73,11 +73,22 @@ using namespace framing;
 namespace arg=client::arg;
 using client::SessionBase_0_10Access;
 
-struct ClusterConnectionProxy : public AMQP_AllProxy::ClusterConnection {
+struct ClusterConnectionProxy : public AMQP_AllProxy::ClusterConnection, public framing::FrameHandler 
+{
+    boost::shared_ptr<qpid::client::ConnectionImpl> connection;
+
     ClusterConnectionProxy(client::Connection c) :
-        AMQP_AllProxy::ClusterConnection(*client::ConnectionAccess::getImpl(c)) {}
+        AMQP_AllProxy::ClusterConnection(*static_cast<framing::FrameHandler*>(this)),
+        connection(client::ConnectionAccess::getImpl(c)) {}
     ClusterConnectionProxy(client::AsyncSession s) :
         AMQP_AllProxy::ClusterConnection(SessionBase_0_10Access(s).get()->out) {}
+
+    void handle(framing::AMQFrame& f)
+    {
+        assert(connection);
+        connection->expand(f.encodedSize(), false);
+        connection->handle(f);
+    }
 };
 
 // Create a connection with special version that marks it as a catch-up connection.
@@ -153,6 +164,7 @@ void UpdateClient::update() {
     ClusterConnectionMembershipBody membership;
     map.toMethodBody(membership);
     AMQFrame frame(membership);
+    client::ConnectionAccess::getImpl(connection)->expand(frame.encodedSize(), false);
     client::ConnectionAccess::getImpl(connection)->handle(frame);
 
     connection.close();
