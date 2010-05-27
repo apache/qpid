@@ -47,6 +47,8 @@ struct SecuritySettings;
 
 namespace client {
 
+class Bounds;
+
 class ConnectionHandler : private StateManager,
                           public ConnectionSettings,
                           public ChainableFrameHandler,
@@ -60,9 +62,10 @@ class ConnectionHandler : private StateManager,
     class Adapter : public framing::FrameHandler
     {
         ConnectionHandler& handler;
+        Bounds& bounds;
     public:
-        Adapter(ConnectionHandler& h) : handler(h) {}
-        void handle(framing::AMQFrame& f) { handler.out(f); }
+        Adapter(ConnectionHandler& h, Bounds& bounds);
+        void handle(framing::AMQFrame& f);
     }; 
 
     Adapter outHandler;
@@ -102,7 +105,7 @@ public:
     typedef boost::function<void(uint16_t, const std::string&)> ErrorListener;
     typedef boost::function<const qpid::sys::SecuritySettings*()> GetSecuritySettings;
 
-    ConnectionHandler(const ConnectionSettings&, framing::ProtocolVersion&);
+    ConnectionHandler(const ConnectionSettings&, framing::ProtocolVersion&, Bounds&);
 
     void received(framing::AMQFrame& f) { incoming(f); } 
 
