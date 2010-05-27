@@ -95,21 +95,19 @@ bool SaslAuthenticator::available(void) {
 // Initialize the SASL mechanism; throw if it fails.
 void SaslAuthenticator::init(const std::string& saslName, std::string const & saslConfigPath )
 {
-    int code;
-    //  If we are not given a specific sasl path, do 
-    //  nothing and allow the default to be used.
-    //  If we have a version of SASL in which SASL_PATH_TYPE_CONFIG does not yet exist, do nothing.
-    #if (SASL_VERSION_MAJOR >= 2) && (SASL_VERSION_MINOR >= 1) && (SASL_VERSION_STEP >= 22)
+    //  Check if we have a version of SASL that supports sasl_set_path()
+#if (SASL_VERSION_FULL >= ((2<<16)|(1<<8)|22))
+    //  If we are not given a sasl path, do nothing and allow the default to be used.
     if ( ! saslConfigPath.empty() ) {
-        if(SASL_OK != (code=sasl_set_path(SASL_PATH_TYPE_CONFIG, const_cast<char *>(saslConfigPath.c_str())))) {
-          QPID_LOG(error, "SASL: sasl_set_path: [" << code << "] " );
-          return;
-        }
+        int code = sasl_set_path(SASL_PATH_TYPE_CONFIG,
+                                 const_cast<char *>(saslConfigPath.c_str()));
+        if(SASL_OK != code)
+            throw Exception(QPID_MSG("SASL: sasl_set_path failed [" << code << "] " ));
         QPID_LOG(info, "SASL: config path set to " << saslConfigPath );
     }
-    #endif
+#endif
 
-    code = sasl_server_init(NULL, saslName.c_str());
+    int code = sasl_server_init(NULL, saslName.c_str());
     if (code != SASL_OK) {
         // TODO: Figure out who owns the char* returned by
         // sasl_errstring, though it probably does not matter much

@@ -1,16 +1,5 @@
 #! /bin/bash
 
-SASL_PW=/usr/sbin/saslpasswd2 
-SASLTEST_DB=./sasl_config/qpidd.sasldb
-
-if [ -e $SASL_PW ]
-then
-  echo "Building temporary sasl db."
-  rm -f $SASLTEST_DB
-  echo zig | $SASL_PW -c -p -f $SASLTEST_DB -u QPID zig
-  echo zag | $SASL_PW -c -p -f $SASLTEST_DB -u QPID zag
-fi
-
-# This test will return something reasonable whether or not sasl exists.
+source sasl_test_setup.sh
 ./cluster_authentication_soak 500
 
