@@ -68,12 +68,7 @@ class ConnectionHandler : public framing::FrameHandler
         void closeOk();
 
         UserIdCallback userIdCallback;
-        void setUserIdCallback ( UserIdCallback fn ) {
-                 userIdCallback = fn;
-             };
-
-
-        void callUserIdCallbacks ( );
+        void setUserIdCallback ( UserIdCallback fn ) { userIdCallback = fn; };
 
 
         void start(const qpid::framing::FieldTable& serverProperties,
