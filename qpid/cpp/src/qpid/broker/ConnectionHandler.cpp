@@ -181,14 +181,6 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
     connection.setHeartbeatInterval(heartbeat);
 }
 
-void ConnectionHandler::Handler::callUserIdCallbacks ( ) {
-    string s;
-    if ( false == authenticator->getUsername(s) )
-        s = "none";
-    if ( userIdCallback )
-      userIdCallback ( s );
-}
-
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                                       const framing::Array& /*capabilities*/, bool /*insist*/)
 {
@@ -204,7 +196,14 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
         if (sl.get()) secured->activateSecurityLayer(sl);
     }
 
-    callUserIdCallbacks ( );
+    if ( userIdCallback ) {
+        string s;
+        // Not checking the return value of getUsername, if there is
+        // no username then we want to call the userIdCallback anyway
+        // with an empty string.
+        authenticator->getUsername(s);
+        userIdCallback(s);
+    }
 }
 
 

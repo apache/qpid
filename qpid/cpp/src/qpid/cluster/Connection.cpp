@@ -620,26 +620,26 @@ void Connection::managementAgents(const std::string& data) {
 }
 
 
-// Only the direct, non-shadow gets this call.
 void Connection::mcastUserId ( std::string & id ) {
-    cluster.getMulticast().mcastControl( ClusterConnectionSecureUserIdBody(ProtocolVersion(), string(id)), getId() );
-
-  {
-      sys::Mutex::ScopedLock l(connectionNegotiationMonitor);
-      inConnectionNegotiation = false;
-      mcastSentButNotReceived = false;
-      connectionNegotiationMonitor.notify();
-  }
+    // Only the directly connected broker will mcast the secure user id, and only
+    // for client connections (not update connections)
+    if (isLocalClient())
+        cluster.getMulticast().mcastControl(
+            ClusterConnectionSecureUserIdBody(ProtocolVersion(), string(id)), getId() );
+    {
+        // This call signals the end of the connection negotiation phase.
+        sys::Mutex::ScopedLock l(connectionNegotiationMonitor);
+        inConnectionNegotiation = false;
+        mcastSentButNotReceived = false;
+        connectionNegotiationMonitor.notify();
+    }
 }
 
 // All connections, shadow or not, get this call.
 void Connection::secureUserId(const std::string& id) {
-    if ( isShadow() ) {
-        // If the user ID is "none", it is not legitimate.  Take no action.
-        if ( strcmp ( id.c_str(), "none" ) ) {
-            connection->setUserId ( id );
-        }
-    }
+    // Only set the user ID on shadow connections, and only if id is not the empty string.
+    if ( isShadow() && !id.empty() )
+        connection->setUserId ( id );
 }
 
 
