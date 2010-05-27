@@ -272,7 +272,8 @@ class Broker(Popen):
 
         self.test = test
         self._port=port
-        cmd = [BrokerTest.qpidd_exec, "--port", port, "--no-module-dir", "--auth=no"] + args
+        cmd = [BrokerTest.qpidd_exec, "--port", port, "--no-module-dir"] + args
+        if not "--auth" in args: cmd.append("--auth=no")
         if name: self.name = name
         else:
             self.name = "broker%d" % Broker._broker_count
@@ -304,10 +305,9 @@ class Broker(Popen):
     def unexpected(self,msg):
         raise BadProcessStatus("%s: %s (%s)" % (msg, self.name, self.pname))
 
-    def connect(self):
+    def connect(self, **kwargs):
         """New API connection to the broker."""
-        return messaging.Connection.establish(host=self.host(),
-                                              port=self.port())
+        return messaging.Connection.establish(self.host_port(), **kwargs)
 
     def connect_old(self):
         """Old API connection to the broker."""
@@ -376,13 +376,13 @@ class Broker(Popen):
             return False
         finally: f.close()
 
-    def ready(self):
+    def ready(self, **kwargs):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
         if not retry(self.log_ready):
             raise Exception("Timed out waiting for broker %s" % self.name)
         # Make a connection, this will wait for extended cluster init to finish.
-        try: self.connect().close()
+        try: self.connect(**kwargs).close()
         except: raise RethrownException("Broker %s failed ready test"%self.name)
 
     def store_state(self):
@@ -484,10 +484,6 @@ class BrokerTest(TestCase):
         """Create and return a cluster ready for use"""
         cluster = Cluster(self, count, args, expect=expect, wait=wait)
         return cluster
-
-#    def wait(self):
-#        """Wait for all brokers in the cluster to be ready"""
-#        for b in _brokers: b.connect().close()
 
 class RethrownException(Exception):
     """Captures the stack trace of the current exception to be thrown later"""
