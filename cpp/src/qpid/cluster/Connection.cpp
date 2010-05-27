@@ -573,12 +573,22 @@ void Connection::queue(const std::string& encoded) {
 }
 
 void Connection::sessionError(uint16_t , const std::string& msg) {
-    cluster.flagError(*this, ERROR_TYPE_SESSION, msg);
+    // If we are negotiating the connection when it fails just close the connectoin.
+    // If it fails after that then we have to flag the error to the cluster.
+    if (inConnectionNegotiation)
+        cluster.getMulticast().mcastControl(ClusterConnectionDeliverCloseBody(), self);
+    else
+        cluster.flagError(*this, ERROR_TYPE_SESSION, msg);
     
 }
 
 void Connection::connectionError(const std::string& msg) {
-    cluster.flagError(*this, ERROR_TYPE_CONNECTION, msg);
+    // If we are negotiating the connection when it fails just close the connectoin.
+    // If it fails after that then we have to flag the error to the cluster.
+    if (inConnectionNegotiation)
+        cluster.getMulticast().mcastControl(ClusterConnectionDeliverCloseBody(), self);
+    else
+        cluster.flagError(*this, ERROR_TYPE_CONNECTION, msg);
 }
 
 void Connection::addQueueListener(const std::string& q, uint32_t listener) {

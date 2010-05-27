@@ -376,7 +376,7 @@ EXTRA_DIST+=						\
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
 
-check: python_prep test_env.sh
+check: python_prep test_env.sh sasl_config
 
 PYTHON_SRC_DIR=$(abs_srcdir)/../../../python
 PYTHON_BLD_DIR=$(abs_builddir)/python
@@ -390,5 +390,9 @@ python_prep:
 		--prefix=$(PYTHON_BLD_DIR) --install-lib=$(PYTHON_BLD_DIR) \
 		--install-scripts=$(PYTHON_BLD_DIR)/commands; \
 	else echo "WARNING: python client not built, missing $(PYTHON_SRC_DIR)"; fi
+
+sasl_config: sasl_test_setup.sh
+	sh $(srcdir)/sasl_test_setup.sh
+	touch sasl_config
 
 include testagent.mk
