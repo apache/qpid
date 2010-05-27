@@ -124,6 +124,7 @@ class Sender {
         f.setLastSegment(lastSeg);
         f.setFirstFrame(firstFrame);
         f.setLastFrame(lastFrame);
+        connection->expand(f.encodedSize(), false);
         connection->handle(f);
     }
 
@@ -209,6 +210,7 @@ QPID_AUTO_TEST_CASE(testBadClientData) {
     boost::shared_ptr<client::ConnectionImpl> ci =
         client::ConnectionAccess::getImpl(c0.connection);
     AMQFrame poison(boost::intrusive_ptr<AMQBody>(new PoisonPill));
+    ci->expand(poison.encodedSize(), false);
     ci->handle(poison);
     {
         ScopedSuppressLogging sl;

@@ -33,19 +33,19 @@ Bounds::Bounds(size_t maxSize) : max(maxSize), current(0) {}
 bool Bounds::expand(size_t sizeRequired, bool block) {
     if (!max) return true;
     Waitable::ScopedLock l(lock);
-    current += sizeRequired;
     if (block) {
         Waitable::ScopedWait w(lock);
-        while (current > max) 
+        while (current + sizeRequired > max) 
             lock.wait();
     }
+    current += sizeRequired;
     return current <= max;
 }
 
 void Bounds::reduce(size_t size) {
     if (!max || size == 0) return;
     Waitable::ScopedLock l(lock);
-    if (current == 0) return;
+    assert(current >= size);
     current -= std::min(size, current);
     if (current < max && lock.hasWaiters()) {
         lock.notifyAll();

@@ -510,8 +510,8 @@ void SessionImpl::proxyOut(AMQFrame& frame) // network thread
 
 void SessionImpl::sendFrame(AMQFrame& frame, bool canBlock)
 {
-    channel.handle(frame);
     connection->expand(frame.encodedSize(), canBlock);
+    channel.handle(frame);
 }
 
 void SessionImpl::deliver(AMQFrame& frame) // network thread

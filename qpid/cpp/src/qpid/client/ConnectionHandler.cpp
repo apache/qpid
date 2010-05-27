@@ -22,6 +22,7 @@
 #include "qpid/client/ConnectionHandler.h"
 
 #include "qpid/client/SaslFactory.h"
+#include "qpid/client/Bounds.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"
@@ -70,8 +71,15 @@ CloseCode ConnectionHandler::convert(uint16_t replyCode)
     }
 }
 
-ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersion& v)
-    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this), proxy(outHandler),
+ConnectionHandler::Adapter::Adapter(ConnectionHandler& h, Bounds& b) : handler(h), bounds(b) {}
+void ConnectionHandler::Adapter::handle(framing::AMQFrame& f)
+{ 
+    bounds.expand(f.encodedSize(), false);
+    handler.out(f);
+}
+
+ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersion& v, Bounds& b)
+    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this, b), proxy(outHandler),
       errorCode(CLOSE_CODE_NORMAL), version(v)
 {
     insist = true;
