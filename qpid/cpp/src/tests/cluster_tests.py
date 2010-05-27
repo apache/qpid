@@ -101,6 +101,18 @@ class ShortTests(BrokerTest):
         assert readfile("direct.dump") == readfile("updatee.dump")
         os.remove("direct.dump")
         os.remove("updatee.dump")
+
+    def test_sasl(self):
+        """Test SASL authentication and encryption in a cluster"""
+        sasl_config=os.path.join(self.rootdir, "sasl_config")
+        cluster = self.cluster(3, ["--auth", "yes", "--sasl-config", sasl_config])
+        # Try a bad user ID
+        try:
+            c = messaging.Connection.establish("nosuch/user@%s"%(cluster[0].host_port()))
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
         
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
