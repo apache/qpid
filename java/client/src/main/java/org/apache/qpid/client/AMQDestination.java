@@ -139,7 +139,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected Node _targetNode;
     protected Node _sourceNode;
     protected Link _targetLink;
-    protected Link _sourceLink;    
+    protected Link _link;    
     // ----- / Fields required to support new address syntax -------
     
     static
@@ -739,14 +739,14 @@ public abstract class AMQDestination implements Destination, Referenceable
         _sourceNode = node;
     }
 
-    public Link getSourceLink()
+    public Link getLink()
     {
-        return _sourceLink;
+        return _link;
     }
 
-    public void setSourceLink(Link link)
+    public void setLink(Link link)
     {
-        _sourceLink = link;
+        _link = link;
     }
     
     public void setExchangeName(AMQShortString name)
@@ -792,7 +792,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _addressType = _addrHelper.getTargetNodeType();         
         _targetNode =  _addrHelper.getTargetNode(_addressType);
         _sourceNode = _addrHelper.getSourceNode(_addressType);
-        _sourceLink = _addrHelper.getLink();       
+        _link = _addrHelper.getLink();       
     }
     
     // This method is needed if we didn't know the node type at the beginning.
