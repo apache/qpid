@@ -396,4 +396,7 @@ sasl_config: sasl_test_setup.sh
 	sh $(srcdir)/sasl_test_setup.sh
 	touch sasl_config
 
+clean-local:
+	rm -rf sasl_config
+
 include testagent.mk
