@@ -19,6 +19,7 @@
  */
 
 #include "test_tools.h"
+#include "config.h"
 #include "qpid/sys/Shlib.h"
 #include "qpid/Exception.h"
 
@@ -37,7 +38,7 @@ QPID_AUTO_TEST_CASE(testShlib) {
     // The CMake-based build passes in the module suffix; if it's not there,
     // this is a Linux/UNIX libtool-based build.
 #if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
-    Shlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_SUFFIX);
+    Shlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_POSTFIX QPID_MODULE_SUFFIX);
 #else
     Shlib sh(".libs/libshlibtest.so");
 #endif
@@ -59,7 +60,7 @@ QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
 #if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
-        AutoShlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_SUFFIX);
+        AutoShlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_POSTFIX QPID_MODULE_SUFFIX);
 #else
         AutoShlib sh(".libs/libshlibtest.so");
 #endif
