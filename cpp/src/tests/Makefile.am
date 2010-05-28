@@ -41,6 +41,7 @@ TESTS=
 EXTRA_DIST=
 CLEANFILES=
 LONG_TESTS=
+CLEAN_LOCAL=
 
 #
 # Destination for intalled programs and tests defined here
@@ -396,7 +397,9 @@ sasl_config: sasl_test_setup.sh
 	sh $(srcdir)/sasl_test_setup.sh
 	touch sasl_config
 
+CLEAN_LOCAL += sasl_config
+
 clean-local:
-	rm -rf sasl_config
+	rm -rf $(CLEAN_LOCAL)
 
 include testagent.mk
