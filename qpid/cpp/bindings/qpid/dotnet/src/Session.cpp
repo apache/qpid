@@ -24,6 +24,7 @@
 #include <limits>
 
 #include "qpid/messaging/Session.h"
+#include "qpid/messaging/exceptions.h"
 
 #include "QpidMarshal.h"
 #include "Session.h"
@@ -31,6 +32,8 @@
 #include "Duration.h"
 #include "Receiver.h"
 #include "Sender.h"
+#include "Message.h"
+#include "QpidException.h"
 
 namespace org {
 namespace apache {
@@ -65,7 +68,7 @@ namespace messaging {
     // copy constructor
     Session::Session(const Session % rhs)
     {
-        sessionp          = rhs.sessionp;
+        sessionp = rhs.sessionp;
         parentConnectionp = rhs.parentConnectionp;
     }
 
@@ -98,7 +101,7 @@ namespace messaging {
 
     void Session::acknowledge()
     {
-        sessionp->acknowledge();
+        acknowledge(false);
     }
 
     void Session::acknowledge(bool sync)
@@ -106,9 +109,19 @@ namespace messaging {
         sessionp->acknowledge(sync);
     }
 
+    void Session::reject(Message ^ message)
+    {
+        sessionp->::qpid::messaging::Session::reject(*(message->messagep));
+    }
+
+    void Session::release(Message ^ message)
+    {
+        sessionp->::qpid::messaging::Session::release(*(message->messagep));
+    }
+
     void Session::sync()
     {
-        sessionp->sync();
+        sync(true);
     }
 
     void Session::sync(bool block)
@@ -116,67 +129,291 @@ namespace messaging {
         sessionp->sync(block);
     }
 
-    System::UInt32 Session::getReceivable()
+    // next(receiver)
+    bool Session::nextReceiver(Receiver ^ rcvr)
     {
-        return sessionp->getReceivable();
+        return nextReceiver(rcvr, DurationConstants::FORVER);
     }
 
-    System::UInt32 Session::getUnsettledAcks()
+    bool Session::nextReceiver(Receiver ^ rcvr, Duration ^ timeout)
     {
-        return sessionp->getUnsettledAcks();
+        System::Exception           ^ newException = nullptr;
+
+        try
+        {
+            ::qpid::messaging::Duration dur(timeout->Milliseconds);
+
+            return sessionp->nextReceiver(*(rcvr->receiverp), dur);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            if (errmsg = "No message to fetch")
+            {
+                // on timeout return null
+                return false;
+            }
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Session::nextReceiver unknown error");
+
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (sessionp != NULL)
+                {
+                    delete sessionp;
+                }
+
+                throw newException;
+            }
+        }
+        return true;
     }
 
-    //bool Session::nextReceiver(Receiver)
-    //{
-    //    sessionp->nextReceiver(Receiver)
-    //}
+    // receiver = next()
+    Receiver ^ Session::nextReceiver()
+    {
+        return nextReceiver(DurationConstants::FORVER);
+    }
 
-    //bool Session::nextReceiver(Receiver, Duration timeout)
-    //{
-    //    sessionp->nextReceiver();
-    //}
+    Receiver ^ Session::nextReceiver(Duration ^ timeout)
+    {
+        System::Exception           ^ newException = nullptr;
 
-    //Receiver Session::nextReceiver(Duration timeout)
-    //{
-    //}
+        try
+        {
+            ::qpid::messaging::Duration dur(timeout->Milliseconds);
+            ::qpid::messaging::Receiver * rcvr = new ::qpid::messaging::Receiver;
+
+            *rcvr = sessionp->::qpid::messaging::Session::nextReceiver(dur);
+
+            Receiver ^ newRcvr = gcnew Receiver(rcvr, this);
+
+            return newRcvr;
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            if (errmsg = "No message to fetch")
+            {
+                // on timeout return null
+                return nullptr;
+            }
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Session::nextReceiver unknown error");
+
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (sessionp != NULL)
+                {
+                    delete sessionp;
+                }
+
+                throw newException;
+            }
+        }
+        return nullptr;
+    }
 
 
     Sender ^ Session::createSender  (System::String ^ address)
     {
-        // allocate a native sender
-        ::qpid::messaging::Sender * senderp = new ::qpid::messaging::Sender;
+        System::Exception          ^ newException = nullptr;
+        ::qpid::messaging::Sender  * senderp         = NULL;
+        Sender                     ^ newSender       = nullptr;
 
-        // create the sender
-        *senderp = sessionp->::qpid::messaging::Session::createSender(QpidMarshal::ToNative(address));
+        try
+        {
+            // allocate a native sender
+            ::qpid::messaging::Sender * senderp = new ::qpid::messaging::Sender ;
 
-        // create a managed sender
-        Sender ^ newSender = gcnew Sender(senderp, this);
+            // create the sender
+            *senderp = sessionp->::qpid::messaging::Session::createSender(QpidMarshal::ToNative(address));
+
+            // create a managed sender
+            newSender = gcnew Sender(senderp, this);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Session::createSender unknown error");
+
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (senderp != NULL)
+                {
+                    delete senderp;
+                }
+
+                throw newException;
+            }
+        }
 
         return newSender;
     }
 
     Receiver ^ Session::createReceiver(System::String ^ address)
     {
-        // allocate a native receiver
-        ::qpid::messaging::Receiver * receiverp = new ::qpid::messaging::Receiver;
+        System::Exception           ^ newException = nullptr;
+        ::qpid::messaging::Receiver * receiverp    = NULL;
+        Receiver                    ^ newReceiver  = nullptr;
 
-        // create the receiver
-        *receiverp = sessionp->createReceiver(QpidMarshal::ToNative(address));
+        try
+        {
+            // allocate a native receiver
+            receiverp = new ::qpid::messaging::Receiver;
 
-        // create a managed receiver
-        Receiver ^ newReceiver = gcnew Receiver(receiverp, this);
+            // create the receiver
+            *receiverp = sessionp->createReceiver(QpidMarshal::ToNative(address));
+
+            // create a managed receiver
+            newReceiver = gcnew Receiver(receiverp, this);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Session::createReceiver unknown error");
+
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (sessionp != NULL)
+                {
+                    delete sessionp;
+                }
+
+                throw newException;
+            }
+        }
 
         return newReceiver;
     }
 
+
+    Receiver ^ Session::createReceiver()
+    {
+        System::Exception           ^ newException = nullptr;
+        ::qpid::messaging::Receiver * receiverp    = NULL;
+        Receiver                    ^ newReceiver  = nullptr;
+
+        try
+        {
+            // allocate a native receiver
+            receiverp = new ::qpid::messaging::Receiver;
+
+            // create a managed receiver
+            newReceiver = gcnew Receiver(receiverp, this);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Session::createReceiver unknown error");
+
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (sessionp != NULL)
+                {
+                    delete sessionp;
+                }
+
+                throw newException;
+            }
+        }
+
+        return newReceiver;
+    }
+
+
+    Sender ^ Session::getSender(System::String ^ name)
+    {
+        ::qpid::messaging::Sender * sender = new ::qpid::messaging::Sender;
+
+        *sender = sessionp->::qpid::messaging::Session::getSender(QpidMarshal::ToNative(name));
+
+        Sender ^ newSender = gcnew Sender(sender, this);
+
+        return newSender;
+    }
+
+
+
+    Receiver ^ Session::getReceiver(System::String ^ name)
+    {
+        ::qpid::messaging::Receiver * receiver = new ::qpid::messaging::Receiver;
+
+        *receiver = sessionp->::qpid::messaging::Session::getReceiver(QpidMarshal::ToNative(name));
+
+        Receiver ^ newReceiver = gcnew Receiver(receiver, this);
+
+        return newReceiver;
+    }
+
+
+
     Connection ^ Session::getConnection()
     {
         return parentConnectionp;
-    }
-
-    bool Session::hasError()
-    {
-        return sessionp->hasError();
     }
 
     void Session::checkError()

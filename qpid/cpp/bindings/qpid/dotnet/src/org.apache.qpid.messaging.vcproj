@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=" /Zm1000 /wd4244 /wd4800 /wd4355"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(QPID_BUILD_ROOT)\include&quot;;&quot;$(QPID_BUILD_ROOT)\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\..\include&quot;;&quot;$(ProjectDir)..\..\..\..\src&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;WIN32_LEAN_AND_MEAN"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -63,12 +63,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /STACK:10000000 /machine:I386"
-				AdditionalDependencies="$(QPID_BUILD_ROOT)\src\Debug\qpidclientd.lib $(QPID_BUILD_ROOT)\src\Debug\qpidcommond.lib"
-				OutputFile="$(OutDir)\org.apache.qpid.messagingd.dll"
+				AdditionalDependencies="$(ProjectDir)..\..\..\..\src\Debug\qpidclientd.lib $(ProjectDir)..\..\..\..\src\Debug\qpidcommond.lib $(ProjectDir)..\..\..\..\src\Debug\qpidmessagingd.lib"
+				OutputFile="$(ProjectDir)..\..\..\..\src\$(ConfigurationName)\org.apache.qpid.messagingd.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
+				KeyFile="qpid.snk"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -90,6 +91,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -188,15 +190,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\Address.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\AssemblyInfo.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\Connection.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Duration.cpp"
 				>
 			</File>
 			<File
@@ -215,12 +217,20 @@
 				RelativePath=".\Session.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\TypeTranslator.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\Address.h"
+				>
+			</File>
 			<File
 				RelativePath=".\Connection.h"
 				>
@@ -238,6 +248,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\QpidTypeCheck.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Receiver.h"
 				>
 			</File>
@@ -247,6 +261,10 @@
 			</File>
 			<File
 				RelativePath=".\Session.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TypeTranslator.h"
 				>
 			</File>
 		</Filter>
@@ -260,11 +278,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\app.rc"
+				RelativePath=".\org.apache.qpid.messaging.rc"
 				>
 			</File>
 			<File
-				RelativePath=".\resource.h"
+				RelativePath=".\resource1.h"
 				>
 			</File>
 		</Filter>

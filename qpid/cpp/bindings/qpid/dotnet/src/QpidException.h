@@ -17,6 +17,22 @@
 * under the License.
 */
 
-//{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by app.rc
+#pragma once
+
+namespace org {
+namespace apache {
+namespace qpid {
+namespace messaging {
+
+using namespace System;
+
+public ref class QpidException : System::Exception
+{
+ public:
+
+ QpidException() : System::Exception() {}
+ QpidException(String^ estring) : System::Exception(estring) {}
+
+};
+
+}}}}

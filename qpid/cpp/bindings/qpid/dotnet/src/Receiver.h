@@ -51,33 +51,39 @@ namespace messaging {
     public ref class Receiver
     {
     private:
-        // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::Receiver * receiverp;
-
         // The session that created this Receiver
         Session ^ parentSession;
-
-        // Kept object lifetime flag
-        bool disposed;
 
         // Kept object deletion code
         void Cleanup();
 
     public:
+        // The kept object in the Messaging C++ DLL
+        ::qpid::messaging::Receiver * receiverp;
+
         Receiver(::qpid::messaging::Receiver * r,
             Session ^ sessRef);
         ~Receiver();
         !Receiver();
         Receiver(const Receiver ^ rhs);
 
+        // get(message)
         bool get(Message ^ mmsgp);
         bool get(Message ^ mmsgp, Duration ^ durationp);
+
+        // message = get()
+        Message ^ get();
         Message ^ get(Duration ^ durationp);
 
+        // fetch(message)
         bool fetch(Message ^ mmsgp);
-        bool fetch(Message ^ mmsgp, Duration ^ durationp);
+        bool fetch(Message ^ mmsgp, Duration ^ duration);
+
+        // message = fetch()
+        Message ^ fetch();
         Message ^ fetch(Duration ^ durationp);
 
+        void setCapacity(System::UInt32 capacity);
         System::UInt32 getCapacity();
         System::UInt32 getAvailable();
         System::UInt32 getUnsettled();

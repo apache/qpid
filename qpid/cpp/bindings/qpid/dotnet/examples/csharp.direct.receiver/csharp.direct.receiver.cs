@@ -37,7 +37,20 @@ namespace CSharpDirect
         {
             String host = "localhost:5672";
             String addr = "amq.direct/key";
-            int    nMsg = 10;
+            Int32 nMsg = 10;
+
+            if (args.Length > 0)
+                host = args[0];
+            if (args.Length > 1)
+                addr = args[1];
+            if (args.Length > 2)
+                nMsg = Convert.ToInt32(args[2]);
+
+            Console.WriteLine("csharp.direct.receiver");
+            Console.WriteLine("host : {0}", host);
+            Console.WriteLine("addr : {0}", addr);
+            Console.WriteLine("nMsg : {0}", nMsg);
+            Console.WriteLine();
 
             Connection conn = new Connection(host);
 
@@ -52,7 +65,7 @@ namespace CSharpDirect
 
                 Session sess = conn.createSession();
 
-                Duration dur = new Duration(1000 * 3600 * 24); // Wait one day
+                Duration dura = new Duration(3600000); // wait forever
 
                 Receiver rcv = sess.createReceiver(addr);
 
@@ -62,7 +75,7 @@ namespace CSharpDirect
                 {
                     try
                     {
-                        Message msg2 = rcv.fetch(dur);
+                        Message msg2 = rcv.fetch(dura);
                         Console.WriteLine("Rcvd msg {0} : {1}", i, msg2.getContent());
                     }
                     catch (Exception e)

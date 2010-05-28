@@ -50,14 +50,29 @@ namespace messaging {
 
     public:
         Connection(System::String ^ url);
+
+        Connection(System::String ^ url, 
+                   System::Collections::Generic::Dictionary<
+                       System::String ^, System::Object ^> ^ options);
+
         Connection(System::String ^ url, System::String ^ options);
         ~Connection();
         !Connection();
 
+        void setOption(System::String ^ name, System::Object ^ value);
+
+        void open();
+        System::Boolean isOpen();
+        void close();
+
+        // createTransactionalSession()
+        Session ^ createTransactionalSession();
+        Session ^ createTransactionalSession(System::String ^ name);
+
+        // createSession()
         Session ^ createSession();
         Session ^ createSession(System::String ^ name);
-        void open();
-        bool isOpen();
-        void close();
+
+        Session ^ getSession(System::String ^ name);
     };
 }}}}

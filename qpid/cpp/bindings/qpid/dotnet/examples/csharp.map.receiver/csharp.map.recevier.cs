@@ -29,8 +29,8 @@ namespace org.apache.qpid.messaging.examples
     {
         static void Main(string[] args)
         {
-//            string url = "amqp:tcp:localhost:5672";
-            string url = "10.16.18.254:5672";
+            string url = "amqp:tcp:localhost:5672";
+//            string url = "10.16.18.254:5672";
             if (args.Length > 0)
                 url = args[0];
 

@@ -25,10 +25,13 @@
 
 #include "qpid/messaging/Connection.h"
 #include "qpid/messaging/Session.h"
+#include "qpid/messaging/exceptions.h"
 
 #include "QpidMarshal.h"
 #include "Connection.h"
 #include "Session.h"
+#include "QpidException.h"
+#include "TypeTranslator.h"
 
 namespace org {
 namespace apache {
@@ -39,11 +42,24 @@ namespace messaging {
     /// Connection is a managed wrapper for a qpid::messaging::Connection
     /// </summary>
 
-    // Public constructor
+    // constructors
     Connection::Connection(System::String ^ url) :
         connectionp(new ::qpid::messaging::Connection(QpidMarshal::ToNative(url)))
     {
     }
+
+
+    Connection::Connection(System::String ^ url,
+                           System::Collections::Generic::Dictionary<
+                               System::String ^, System::Object ^> ^ options) :
+        connectionp(new ::qpid::messaging::Connection(QpidMarshal::ToNative(url)))
+    {
+        for each (System::Collections::Generic::KeyValuePair<System::String^, System::Object^> kvp in options)
+        {
+            setOption(kvp.Key, kvp.Value);
+        }
+    }
+
 
     Connection::Connection(System::String ^ url, System::String ^ options) :
         connectionp(new ::qpid::messaging::Connection(QpidMarshal::ToNative(url),
@@ -77,6 +93,90 @@ namespace messaging {
         }
     }
 
+
+    void Connection::setOption(System::String ^ name, System::Object ^ value)
+    {
+        ::qpid::types::Variant entryValue;
+        TypeTranslator::ManagedToNativeObject(value, entryValue);
+        std::string entryName = QpidMarshal::ToNative(name);
+        connectionp->::qpid::messaging::Connection::setOption(entryName, entryValue);
+    }
+
+    void Connection::open()
+    {
+        connectionp->open();
+    }
+
+    System::Boolean Connection::isOpen()
+    {
+        return connectionp->isOpen();
+    }
+
+    void Connection::close()
+    {
+        connectionp->close();
+    }
+
+    //
+    // createTransactionalSession()
+    //
+    Session ^ Connection::createTransactionalSession()
+    {
+        return createTransactionalSession("");
+    }
+
+
+    Session ^ Connection::createTransactionalSession(System::String ^ name)
+    {
+        System::Exception          ^ newException = nullptr;
+        ::qpid::messaging::Session * sessionp     = NULL;
+        Session                    ^ newSession   = nullptr;
+
+        try
+        {
+            // allocate native session
+            sessionp = new ::qpid::messaging::Session ;
+
+            // create native session
+            *sessionp = connectionp->createTransactionalSession(QpidMarshal::ToNative(name));
+
+            // create managed session
+            newSession = gcnew Session(sessionp, this);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Connection::createTransactionalSession unknown error");
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (sessionp != NULL)
+                {
+                    delete sessionp;
+                }
+                throw newException;
+            }
+        }
+
+        return newSession;
+    }
+
+
+    //
+    // createSession()
+    //
     Session ^ Connection::createSession()
     {
         return createSession("");
@@ -85,31 +185,93 @@ namespace messaging {
 
     Session ^ Connection::createSession(System::String ^ name)
     {
-        // allocate native session
-        ::qpid::messaging::Session * sessionp = new ::qpid::messaging::Session;
+        System::Exception          ^ newException = nullptr;
+        ::qpid::messaging::Session * sessionp     = NULL;
+        Session                    ^ newSession   = nullptr;
 
-        // create native session
-        *sessionp = connectionp->createSession(QpidMarshal::ToNative(name));
+        try
+        {
+            // allocate native session
+            sessionp = new ::qpid::messaging::Session ;
 
-        // create managed session
-        Session ^ newSession = gcnew Session(sessionp, this);
+            // create native session
+            *sessionp = connectionp->createSession(QpidMarshal::ToNative(name));
+
+            // create managed session
+            newSession = gcnew Session(sessionp, this);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Connection::createSession unknown error");
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (sessionp != NULL)
+                {
+                    delete sessionp;
+                }
+                throw newException;
+            }
+        }
 
         return newSession;
     }
 
 
-    void Connection::open()
+    Session ^ Connection::getSession(System::String ^ name)
     {
-        connectionp->open();
-    }
+        System::Exception          ^ newException = nullptr;
+        ::qpid::messaging::Session * sess         = NULL;
+        Session                    ^ newSession   = nullptr;
+      
+        try
+        {
+            const std::string n = QpidMarshal::ToNative(name);
 
-    bool Connection::isOpen()
-    {
-        return connectionp->isOpen();
-    }
+            *sess = connectionp->::qpid::messaging::Connection::getSession(n);
+            
+            newSession = gcnew Session(sess, this);
+        }
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        catch (const std::exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        } 
+        catch ( ... )
+        {
+            newException = gcnew QpidException("Connection::getSession unknown error");
+        }
+        finally
+        {
+            // Clean up and throw on caught exceptions
+            if (newException != nullptr)
+            {
+                if (sess != NULL)
+                {
+                    delete sess;
+                }
+                throw newException;
+            }
+        }
 
-    void Connection::close()
-    {
-        connectionp->close();
+        return newSession;
     }
 }}}}
