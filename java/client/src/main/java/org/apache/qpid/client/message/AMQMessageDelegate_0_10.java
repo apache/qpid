@@ -35,7 +35,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.commons.collections.map.ReferenceMap;
+import org.apache.qpid.collections.ReferenceMap;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.CustomJMSXProperty;
@@ -49,8 +49,6 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
-import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.transport.codec.BBEncoder;
 
 /**
  * This extends AbstractAMQMessageDelegate which contains common code between
