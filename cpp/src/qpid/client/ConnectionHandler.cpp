@@ -72,7 +72,7 @@ CloseCode ConnectionHandler::convert(uint16_t replyCode)
 }
 
 ConnectionHandler::Adapter::Adapter(ConnectionHandler& h, Bounds& b) : handler(h), bounds(b) {}
-void ConnectionHandler::Adapter::handle(framing::AMQFrame& f)
+void ConnectionHandler::Adapter::handle(qpid::framing::AMQFrame& f)
 { 
     bounds.expand(f.encodedSize(), false);
     handler.out(f);
