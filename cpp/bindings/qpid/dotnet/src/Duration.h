@@ -25,8 +25,6 @@
 #include <string>
 #include <limits>
 
-#include "qpid/messaging/Duration.h"
-
 namespace org {
 namespace apache {
 namespace qpid {
@@ -34,34 +32,59 @@ namespace messaging {
 
     /// <summary>
     /// Duration is a time interval in milliseconds.
-    /// It is a managed wrapper for a ::qpid::messaging::Duration
+    /// It is a managed equivalent of ::qpid::messaging::Duration
     /// </summary>
 
     public ref class Duration
     {
     private:
-        // Experimental constructor
-        Duration(const ::qpid::messaging::Duration *);
-
-        // Kept object deletion code
-        void Cleanup();
+        System::UInt64 milliseconds;
 
     public:
-        Duration(System::UInt64 milliseconds);
-        ~Duration();
-        !Duration();
 
-        // The kept object in the Messaging C++ DLL
-        const ::qpid::messaging::Duration * durationp;
+        Duration(const Duration % rhs) :
+            milliseconds(rhs.milliseconds)
+        {
+        };
 
-        System::UInt64 getMilliseconds();
+        explicit Duration(System::UInt64 mS) : 
+            milliseconds(mS) {};
+        
+        Duration()                           : 
+            milliseconds(System::UInt64::MaxValue) {};
 
-        // Return value(s) for constant durations
-        // NOTE: These return the duration mS and not a Duration 
-        //       object like the C++ code gets.
-        System::UInt64 FOREVER();
-        System::UInt64 IMMEDIATE();
-        System::UInt64 SECOND();
-        System::UInt64 MINUTE();
+        property System::UInt64 Milliseconds
+        {
+            System::UInt64 get () { return milliseconds; }
+        }
+
+        static Duration ^ operator * (Duration ^ dur, const System::UInt64 multiplier)
+        {
+            Duration ^ result = gcnew Duration(dur->Milliseconds * multiplier);
+            return result;
+        }
+
+        static Duration ^ operator * (const System::UInt64 multiplier, Duration ^ dur)
+        {
+            Duration ^ result = gcnew Duration(multiplier * dur->Milliseconds);
+            return result;
+        }
+    };
+
+    public ref class DurationConstants
+    {
+    public:
+        static Duration ^ FORVER;
+        static Duration ^ IMMEDIATE;
+        static Duration ^ SECOND;
+        static Duration ^ MINUTE;
+
+        static DurationConstants()
+        {
+            FORVER    = gcnew Duration();
+            IMMEDIATE = gcnew Duration(0);
+            SECOND    = gcnew Duration(1000);
+            MINUTE    = gcnew Duration(60000);
+        }
     };
 }}}}

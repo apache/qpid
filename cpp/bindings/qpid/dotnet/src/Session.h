@@ -49,6 +49,7 @@ namespace messaging {
     ref class Duration;
     ref class Receiver;
     ref class Sender;
+    ref class Message;
 
     public ref class Session
     {
@@ -74,20 +75,44 @@ namespace messaging {
         void rollback();
         void acknowledge();
         void acknowledge(bool sync);
-        //void reject(Message);
-        //void release(Message);
+        void reject(Message ^);
+        void release(Message ^);
         void sync();
         void sync(bool block);
-        System::UInt32 getReceivable();
-        System::UInt32 getUnsettledAcks();
-        //bool nextReceiver(Receiver);
-        //bool nextReceiver(Receiver, Duration timeout);
-        //Receiver nextReceiver(Duration timeout);
-        //bool nextReceiver()
-        Sender     ^ createSender  (System::String ^ address);
-        Receiver   ^ createReceiver(System::String ^ address);
+
+        property System::UInt32 Receivable
+        {
+            System::UInt32 get () { return sessionp->getReceivable(); }
+        }
+
+        property System::UInt32 UnsetledAcks
+        {
+            System::UInt32 get () { return sessionp->getUnsettledAcks(); }
+        }
+
+        // next(receiver)
+        bool nextReceiver(Receiver ^);
+        bool nextReceiver(Receiver ^, Duration ^ timeout);
+
+        // receiver = next()
+        Receiver ^ nextReceiver();
+        Receiver ^ nextReceiver(Duration ^ timeout);
+
+
+        Sender   ^ createSender  (System::String ^ address);
+        Receiver ^ createReceiver(System::String ^ address);
+        Receiver ^ createReceiver();
+
+        Sender   ^ getSender(System::String ^ name);
+        Receiver ^ getReceiver(System::String ^ name);
+
         Connection ^ getConnection();
-        bool hasError();
+
+        property System::Boolean HasError
+        {
+            System::Boolean get () { return sessionp->hasError(); }
+        }
+
         void checkError();
     };
 }}}}
