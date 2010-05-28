@@ -65,13 +65,36 @@ namespace messaging {
         !Sender();
         Sender(const Sender % rhs);
 
+        // send(message)
         void send(Message ^ mmsgp);
         void send(Message ^ mmsgp, bool sync);
-        void setCapacity(System::UInt32 capacity);
-        System::UInt32 getCapacity();
-        System::UInt32 getUnsettled();
-        System::UInt32 getAvailable();
-        System::String ^ getName();
+
+        void close();
+
+        property System::UInt32 Capacity
+        {
+            System::UInt32 get () { return senderp->getCapacity(); }
+            void set (System::UInt32 capacity) { senderp->setCapacity(capacity); }
+        }
+
+        property System::UInt32 Unsettled
+        {
+            System::UInt32 get () { return senderp->getUnsettled(); }
+        }
+
+        property System::UInt32 Available
+        {
+            System::UInt32 get () { return senderp->getAvailable(); }
+        }
+
+        property System::String ^ Name
+        {
+            System::String ^ get ()
+            {
+                return gcnew System::String(senderp->getName().c_str());
+            }
+        }
+
         Session ^ getSession();
     };
 }}}}

@@ -12,27 +12,77 @@ namespace org.apache.qpid.messaging
         {
             //
             // Duration test - stub until proper nunit tests are ready...
-            //
+
             Duration myDuration = new Duration(1234);
 
             Console.WriteLine("Duration should be : 1234, is : {0}",
-                            myDuration.getMilliseconds());
+                            myDuration.Milliseconds);
 
             Console.WriteLine("Duration FOREVER should be : 1.8x10^19 (realbig), is : {0}",
-                            myDuration.FOREVER());
+                            DurationConstants.FORVER.Milliseconds);
 
             Console.WriteLine("Duration IMMEDIATE should be : 0, is : {0}",
-                            myDuration.IMMEDIATE());
+                            DurationConstants.IMMEDIATE.Milliseconds);
 
             Console.WriteLine("Duration SECOND should be : 1,000, is : {0}",
-                            myDuration.SECOND());
+                            DurationConstants.SECOND.Milliseconds);
 
             Console.WriteLine("Duration MINUTE should be : 60,000, is : {0}",
-                            myDuration.MINUTE());
+                            DurationConstants.MINUTE.Milliseconds);
 
+            Duration isInfinite = new Duration();
+
+            Console.WriteLine("Duration() should be : realbig, is : {0}",
+                            isInfinite.Milliseconds);
+
+            Duration fiveMinutes = new Duration(DurationConstants.MINUTE.Milliseconds * 5);
+            Console.WriteLine("Duration 5MINUTE should be : 300,000, is : {0}",
+                            fiveMinutes.Milliseconds);
+
+            Duration fiveSec = DurationConstants.SECOND * 5;
+            Console.WriteLine("Duration 5SECOND should be : 5,000 is : {0}",
+                            fiveSec.Milliseconds);
             //
             // and so on
             //
+
+            Dictionary<string, object> dx = new Dictionary<string, object>();
+
+            Console.WriteLine("Dictionary.GetType() {0}", dx.GetType());
+
+            //
+            // Address test
+            //
+            Address aEmpty = new Address();
+            Address aStr   = new Address("rare");
+
+            Dictionary<string, object> options = new Dictionary<string,object>();
+            options["one"] = 1;
+            options["two"] = "two";
+
+            Address aSubj = new Address("rare2", "subj", options);
+
+            Address aType = new Address ("check3", "subj", options, "hot");
+
+            Console.WriteLine("aEmpty : {0}", aEmpty.str());
+            Console.WriteLine("aStr   : {0}", aStr.str());
+            Console.WriteLine("aSubj  : {0}", aSubj.str());
+            Console.WriteLine("aType  : {0}", aType.str());
+
+            //
+            // Raw message data retrieval
+            //
+
+            Message m2 = new Message("rarey");
+            UInt64 m2Size = m2.getContentSize();
+
+
+            byte[] myRaw = new byte [m2Size];
+
+            m2.getRaw(myRaw);
+            Console.WriteLine("Got raw array size {0}", m2Size);
+            for (UInt64 i = 0; i < m2Size; i++)
+                Console.Write("{0} ", myRaw[i].ToString());
         }
     }
 }

@@ -31,14 +31,8 @@ namespace apache {
 namespace qpid {
 namespace messaging {
 
-typedef System::Collections::Generic::Dictionary<
-            System::String^, 
-            System::Object^> 
-                VMap;
-
-typedef System::Collections::Generic::List<
-            System::Object^> 
-                VList;
+    ref class Address;
+    ref class Duration;
 
     /// <summary>
     /// Message is a managed wrapper for a ::qpid::messaging::Message
@@ -51,51 +45,20 @@ typedef System::Collections::Generic::List<
         // Kept object deletion code
         void Cleanup();
 
-        bool objIsMap (System::Object ^ op)
-        { 
-            return (*op).GetType() == pVMapType;
-        }
-
-        bool objIsList(System::Object ^ op)
-        { 
-            return (*op).GetType() == pVListType;
-        }
-
-        // The given object is a Dictionary.
-        // Add its elements to the qpid map.
-        void Encode(::qpid::types::Variant::Map & theMapp,
-                    VMap ^ theObjp);
-
-        // The given object is a List.
-        // Add its elements to the qpid list.
-        void Encode(::qpid::types::Variant::List & theListp,
-                    VList ^ theObjp);
-
-        // Returns a variant representing simple native type object.
-        // Not to be called for Map/List objects.
-        void EncodeObject(System::Object ^ theObjp,
-                          ::qpid::types::Variant & targetp);
-
-
-        void Decode(VMap ^ dict, ::qpid::types::Variant::Map & map);
-
-        void Decode(VList ^ vList, ::qpid::types::Variant::List & qpidList);
-
-
-        // map and list for type comparison
-        VMap  aVMap;
-        VList aVList;
-        System::Type ^ pVMapType;
-        System::Type ^ pVListType;
-
     public:
+        // Create empty message
+        Message();
+
         // Create from String
-        Message(System::String ^ bytes);
+        Message(System::String ^ string);
 
         // Create from object
         Message(System::Object ^ obj);
 
-        // Create reference copy
+        // TODO: Create from bytes
+        // Message(System::Byte [] ^ bytes);
+
+        // Create from received message
         Message(::qpid::messaging::Message * msgp);
 
         ~Message();
@@ -107,8 +70,8 @@ typedef System::Collections::Generic::List<
         // The kept object in the Messaging C++ DLL
         ::qpid::messaging::Message * messagep;
 
-        //void setReplyTo(System::String ^ address);
-        //System::String ^ getReplyTo();
+        void setReplyTo(Address ^ address);
+        Address ^ getReplyTo();
 
         void setSubject(System::String ^ subject);
         System::String ^ getSubject();
@@ -128,8 +91,8 @@ typedef System::Collections::Generic::List<
         void setPriority(unsigned char priority);
         unsigned char getPriority();
 
-        //void setTtl(Duration ttl);
-        //Duration getTtl();
+        void setTtl(Duration ^ ttl);
+        Duration ^ getTtl();
 
         void setDurable(bool durable);
         bool getDurable();
@@ -137,17 +100,32 @@ typedef System::Collections::Generic::List<
         bool getRedelivered();
         void setRedelivered(bool redelivered);
 
-        //System::String ^ getProperties();
+        System::Collections::Generic::Dictionary<
+            System::String^, System::Object^> ^ getProperties();
 
         void setContent(System::String ^ content);
 
+        //TODO:: void setContent(Bytes{} bytes, offset, length);
+
+        // get content as string
         System::String ^ getContent();
 
+        // get content as dictionary
         void getContent(System::Collections::Generic::Dictionary<
                             System::String^, 
                             System::Object^> ^ dict);
 
+        // get content as map
         void getContent(System::Collections::Generic::List<
                             System::Object^> ^);
+
+        // get content as bytes
+        void getRaw(cli::array<System::Byte> ^ arr);
+
+        System::UInt64 getContentSize();
+
+        //TODO: EncodingException
+
+        // Note: encode/decode functions are in TypeTranslator
     };
 }}}}

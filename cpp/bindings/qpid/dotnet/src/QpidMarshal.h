@@ -37,6 +37,7 @@ public:
 
     /// <summary>
     /// Convert managed String into native UTF8-encoded string
+    /// TODO: figure out some encoding other that UTF-8
     /// </summary>
 
     static std::string ToNative (System::String^ managed) 

@@ -28,7 +28,6 @@
 #include "qpid/messaging/Message.h"
 
 #include "Sender.h"
-#include "Session.h"
 #include "Message.h"
 
 namespace org {
@@ -79,9 +78,12 @@ namespace messaging {
         }
     }
 
+    //
+    // send(msg)
+    //
     void Sender::send(Message ^ mmsgp)
     {
-        senderp->::qpid::messaging::Sender::send(*((*mmsgp).messagep));
+        send(mmsgp, false);
     }
 
     void Sender::send(Message ^ mmsgp, bool sync)
@@ -89,29 +91,10 @@ namespace messaging {
         senderp->::qpid::messaging::Sender::send(*((*mmsgp).messagep), sync);
     }
 
-    void Sender::setCapacity(System::UInt32 capacity)
-    {
-        senderp->setCapacity(capacity);
-    }
 
-    System::UInt32 Sender::getCapacity()
+    void Sender::close()
     {
-        return senderp->getCapacity();
-    }
-
-    System::UInt32 Sender::getUnsettled()
-    {
-        return senderp->getUnsettled();
-    }
-
-    System::UInt32 Sender::getAvailable()
-    {
-        return senderp->getAvailable();
-    }
-
-    System::String ^ Sender::getName()
-    {
-        return gcnew System::String(senderp->getName().c_str());
+        senderp->close();
     }
 
     Session ^ Sender::getSession()

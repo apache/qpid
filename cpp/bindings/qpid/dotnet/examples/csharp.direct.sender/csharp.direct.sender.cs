@@ -33,7 +33,20 @@ namespace csharp.direct.sender
         {
             String host = "localhost:5672";
             String addr = "amq.direct/key";
-            int nMsg = 10;
+            Int32 nMsg = 10;
+
+            if (args.Length > 0)
+                host = args[0];
+            if (args.Length > 1)
+                addr = args[1];
+            if (args.Length > 2)
+                nMsg = Convert.ToInt32(args[2]);
+
+            Console.WriteLine("csharp.direct.sender");
+            Console.WriteLine("host : {0}", host);
+            Console.WriteLine("addr : {0}", addr);
+            Console.WriteLine("nMsg : {0}", nMsg);
+            Console.WriteLine();
 
             Connection conn = new Connection(host);
 
