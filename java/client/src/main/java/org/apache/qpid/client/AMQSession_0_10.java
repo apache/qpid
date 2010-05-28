@@ -612,9 +612,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         long capacity = 0;
         if (destination.getDestSyntax() == DestSyntax.ADDR && 
-                destination.getSourceLink().getCapacity() > 0)
+                destination.getLink().getConsumerCapacity() > 0)
         {
-            capacity = destination.getSourceLink().getCapacity();
+            capacity = destination.getLink().getConsumerCapacity();
         }
         else if (prefetch())
         {
@@ -1229,10 +1229,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 dest.setRoutingKey(ExchangeDefaults.WILDCARD_ANY);
                 dest.setSubject(ExchangeDefaults.WILDCARD_ANY.toString());
             }
-            else if (dest.getExchangeClass() == ExchangeDefaults.DIRECT_EXCHANGE_CLASS)
+            else
             {
-               throw new AMQException("If sending to an exchange of type direct," +
-               		" a valid subject must be specified");
+                dest.setRoutingKey(new AMQShortString(""));
+                dest.setSubject("");
             }
         }
     }
@@ -1242,9 +1242,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         QueueNode node = (QueueNode)dest.getSourceNode();  // source node is never null
         if (dest.getQueueName() == null || !isQueueExist(dest,node,true))
         {
-            // can name : my-queue be used in x-declare?
-            // if so set it to dest queue name
-            // if (dest.getQueueName() == null) { dest.setName(node.getName()) }
+            if (dest.getLink() != null && dest.getLink().getName() != null) 
+            {
+                dest.setQueueName(new AMQShortString(dest.getLink().getName())); 
+            }
             send0_10QueueDeclare(dest,null,false,false);
         }
         node.addBinding(new Binding(dest.getAddressName(),

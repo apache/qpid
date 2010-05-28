@@ -106,9 +106,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         
         // Destination setting overrides connection defaults
         if (destination.getDestSyntax() == DestSyntax.ADDR && 
-                destination.getSourceLink().getCapacity() > 0)
+                destination.getLink().getConsumerCapacity() > 0)
         {
-            capacity = destination.getSourceLink().getCapacity();
+            capacity = destination.getLink().getConsumerCapacity();
         }
         else if (getSession().prefetch())
         {

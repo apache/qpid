@@ -58,6 +58,8 @@ public class AddressHelper
     public static final String BINDINGS = "bindings";
     public static final String BROWSE_ONLY = "browse";
     public static final String CAPACITY = "capacity";
+    public static final String CAPACITY_SOURCE = "source";
+    public static final String CAPACITY_TARGET = "target";
     public static final String NAME = "name";
     public static final String EXCHANGE = "exchange";
     public static final String QUEUE = "queue";
@@ -220,11 +222,7 @@ public class AddressHelper
         {
             return AMQDestination.QUEUE_TYPE;
         }
-        else if ((nodeProps.getString(TYPE).equals("topic") ||
-                 nodeProps.getString(TYPE).equals("direct") ||
-                 nodeProps.getString(TYPE).equals("fanout") ||
-                 nodeProps.getString(TYPE).equals("match") ||  
-                 nodeProps.getString(TYPE).equals("xml")) )
+        else if (nodeProps.getString(TYPE).equals("topic"))
         {
             return AMQDestination.TOPIC_TYPE;
         }
@@ -258,7 +256,8 @@ public class AddressHelper
         Map declareArgs = getDeclareArgs(parent);
         MapAccessor argsMap = new MapAccessor(declareArgs);
         ExchangeNode node = new ExchangeNode();
-        node.setExchangeType(nodeProps.getString(TYPE));
+        node.setExchangeType(argsMap.getString(TYPE) == null?
+                             "topic":argsMap.getString(TYPE));
         node.setDeclareArgs(getQpidExchangeOptions(argsMap));
         fillInCommonNodeArgs(node,parent,argsMap);
         return node;
@@ -285,6 +284,11 @@ public class AddressHelper
         node.setBindings(getBindings(parent));
     }
     
+    /**
+     * if the type == queue x-declare args from the node props is used.
+     * if the type == exchange x-declare args from the link props is used
+     * else just create a default temp queue.
+     */
     public Node getSourceNode(int addressType)
     {
         if (addressType == AMQDestination.QUEUE_TYPE && nodeProps != null)
@@ -309,7 +313,19 @@ public class AddressHelper
         {            
             link.setDurable(linkProps.getBoolean(DURABLE)== null? false : linkProps.getBoolean(DURABLE));
             link.setName(linkProps.getString(NAME));
-            link.setCapacity(linkProps.getInt(CAPACITY));
+            
+            if (((Map)address.getOptions().get(LINK)).get(CAPACITY) instanceof Map)
+            { 
+                MapAccessor capacityProps = new MapAccessor(
+                        (Map)((Map)address.getOptions().get(LINK)).get(CAPACITY));
+                link.setConsumerCapacity(capacityProps.getInt(CAPACITY_SOURCE));
+                link.setProducerCapacity(capacityProps.getInt(CAPACITY_TARGET));
+            }
+            else
+            {
+                link.setConsumerCapacity(linkProps.getInt(CAPACITY));  
+                link.setProducerCapacity(linkProps.getInt(CAPACITY));
+            }
             link.setFilter(linkProps.getString(FILTER));
             // so far filter type not used
         }
