@@ -83,7 +83,6 @@ class IOThread {
     int ioThreads;
     int connections;
     Mutex threadLock;
-    Condition noConnections;
     std::vector<Thread> t;
     Poller::shared_ptr poller_;
 
@@ -103,8 +102,6 @@ public:
     void sub() {
         ScopedLock<Mutex> l(threadLock);
         --connections;
-        if (connections == 0)
-            noConnections.notifyAll();
     }
 
     Poller::shared_ptr poller() const {
@@ -128,14 +125,15 @@ public:
     // and we can't do that before we're unloaded as we can't
     // restart the Poller after shutting it down
     ~IOThread() {
-        ScopedLock<Mutex> l(threadLock);
-        while (connections > 0) {
-            noConnections.wait(threadLock);
+        std::vector<Thread> threads;
+        {
+            ScopedLock<Mutex> l(threadLock);
+            if (poller_)
+                poller_->shutdown();
+            t.swap(threads);
         }
-        if (poller_)
-            poller_->shutdown();
-        for (int i=0; i<ioThreads; ++i) {
-            t[i].join();
+        for (std::vector<Thread>::iterator i = threads.begin(); i != threads.end(); ++i) {
+            i->join();
         }
     }
 };
