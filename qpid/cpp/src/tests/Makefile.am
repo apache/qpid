@@ -371,7 +371,8 @@ EXTRA_DIST+=						\
 	run_failover_soak				\
 	reliable_replication_test			\
 	federated_cluster_test_with_node_failure        \
-        run_cluster_authentication_soak
+        run_cluster_authentication_soak			\
+	sasl_test_setup.sh
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
