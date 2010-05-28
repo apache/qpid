@@ -252,14 +252,25 @@ bool ClientImpl::encode(const string& clearText, output_string& cipherText)
 
 bool ClientImpl::decode(const string& cipherText, output_string& clearText)
 {
+    const char* input = cipherText.c_str();
+    unsigned int inLen = cipherText.size();
+    unsigned int remaining = inLen;
+    const char* cursor = input;
     const char* output;
     unsigned int outlen;
-    int result = sasl_decode(conn, cipherText.c_str(), cipherText.size(), &output, &outlen);
-    if (result != SASL_OK) {
-        setError("sasl_decode", result);
-        return false;
+
+    clearText = string();
+    while (remaining > 0) {
+        unsigned int segmentLen = (remaining < maxBufSize) ? remaining : maxBufSize;
+        int result = sasl_decode(conn, cursor, segmentLen, &output, &outlen);
+        if (result != SASL_OK) {
+            setError("sasl_decode", result);
+            return false;
+        }
+        clearText = clearText + string(output, outlen);
+        cursor += segmentLen;
+        remaining -= segmentLen;
     }
-    clearText = string(output, outlen);
     return true;
 }
 
