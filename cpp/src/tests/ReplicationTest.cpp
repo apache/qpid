@@ -20,6 +20,7 @@
  */
 #include "unit_test.h"
 #include "test_tools.h"
+#include "config.h"
 #include "BrokerFixture.h"
 
 #include "qpid/Plugin.h"
@@ -50,11 +51,13 @@ QPID_AUTO_TEST_SUITE(ReplicationTestSuite)
 // FIXME aconway 2009-11-26: clean this up.
 // The CMake-based build passes in the module suffix; if it's not there, this
 // is a Linux/UNIX libtool-based build.
-#if defined (QPID_MODULE_SUFFIX)
-qpid::sys::Shlib plugin("replicating_listener" QPID_MODULE_SUFFIX);
+#if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
+static const char *default_shlib =
+    QPID_MODULE_PREFIX "replicating_listener" QPID_MODULE_POSTFIX QPID_MODULE_SUFFIX;
 #else
-qpid::sys::Shlib plugin(getLibPath("REPLICATING_LISTENER_LIB"));
+static const char *default_shlib = ".libs/replicating_listener.so";
 #endif
+qpid::sys::Shlib plugin(getLibPath("REPLICATING_LISTENER_LIB", default_shlib));
 
 qpid::broker::Broker::Options getBrokerOpts(const std::vector<std::string>& args)
 {
