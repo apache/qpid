@@ -31,7 +31,8 @@ public class Link
     protected FilterType _filterType = FilterType.SUBJECT;
     protected boolean _isNoLocal;
     protected boolean _isDurable;
-    protected int _capacity = 0;
+    protected int _consumerCapacity = 0;
+    protected int _producerCapacity = 0;
     protected Node node;
     
     public Node getNode()
@@ -84,16 +85,26 @@ public class Link
         _isNoLocal = noLocal;
     }
 
-    public int getCapacity()
+    public int getConsumerCapacity()
     {
-        return _capacity;
+        return _consumerCapacity;
     }
 
-    public void setCapacity(int capacity)
+    public void setConsumerCapacity(int capacity)
     {
-        this._capacity = capacity;
+        _consumerCapacity = capacity;
+    }
+    
+    public int getProducerCapacity()
+    {
+        return _producerCapacity;
     }
 
+    public void setProducerCapacity(int capacity)
+    {
+        _producerCapacity = capacity;
+    }
+    
     public String getName()
     {
         return name;
