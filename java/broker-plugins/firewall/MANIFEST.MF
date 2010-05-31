@@ -1,0 +1,36 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Qpid Broker-Plugins Firewall
+Bundle-SymbolicName: broker-plugins-firewall
+Bundle-Description: Firewall plugin for Qpid.
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-DocURL: http://www.apache.org/
+Bundle-Version: 1.0.0
+Bundle-Activator: org.apache.qpid.server.security.access.plugins.FirewallActivator
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: .
+Bundle-ActivationPolicy: lazy
+Import-Package:  org.apache.qpid,
+ org.apache.qpid.framing,
+ org.apache.qpid.junit.extensions.util,
+ org.apache.qpid.protocol,
+ org.apache.qpid.server.configuration,
+ org.apache.qpid.server.configuration.plugins,
+ org.apache.qpid.server.exchange,
+ org.apache.qpid.server.management,
+ org.apache.qpid.server.plugins,
+ org.apache.qpid.server.queue,
+ org.apache.qpid.server.security,
+ org.apache.qpid.server.security.access,
+ org.apache.qpid.server.virtualhost,
+ org.apache.qpid.util,
+ org.apache.commons.configuration;version=1.0.0,
+ org.apache.commons.lang;version=1.0.0,
+ org.apache.commons.lang.builder;version=1.0.0,
+ org.apache.log4j;version=1.0.0,
+ javax.management;version=1.0.0,
+ javax.management.openmbean;version=1.0.0,
+ org.osgi.util.tracker;version=1.0.0,
+ org.osgi.framework;version=1.3
+Private-Package: org.apache.qpid.server.security.access.config
+Export-Package: org.apache.qpid.server.security.access.plugins;uses:="org.osgi.framework"
