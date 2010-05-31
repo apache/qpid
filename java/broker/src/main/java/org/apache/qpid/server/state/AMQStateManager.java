@@ -62,6 +62,7 @@ import org.apache.qpid.server.handler.TxCommitHandler;
 import org.apache.qpid.server.handler.TxRollbackHandler;
 import org.apache.qpid.server.handler.TxSelectHandler;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 /**
@@ -258,6 +259,7 @@ public class AMQStateManager implements AMQMethodListener
 
     public AMQProtocolSession getProtocolSession()
     {
+        SecurityManager.setThreadPrincipal(_protocolSession.getPrincipal());
         return _protocolSession;
     }
 }

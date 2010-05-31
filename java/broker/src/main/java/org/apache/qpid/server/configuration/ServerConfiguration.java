@@ -20,24 +20,6 @@
 
 package org.apache.qpid.server.configuration;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConfigurationFactory;
-import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +28,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConfigurationFactory;
+import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.NetworkDriverConfiguration;
+
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 public class ServerConfiguration extends ConfigurationPlugin implements SignalHandler
 {
@@ -63,16 +63,21 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public static final int DEFAULT_SSL_PORT = 8672;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT = 8999;
+    
+    public static final String QPID_HOME = "QPID_HOME";
+    public static final String QPID_WORK = "QPID_WORK";
+    public static final String LIB_DIR = "lib";
+    public static final String PLUGIN_DIR = "plugins";
+    public static final String CACHE_DIR = "cache";
 
     private Map<String, VirtualHostConfiguration> _virtualHosts = new HashMap<String, VirtualHostConfiguration>();
 
     private File _configFile;
     private File _vhostsFile;
 
-    private Logger _log = LoggerFactory.getLogger(this.getClass());
+    private Logger _log = Logger.getLogger(this.getClass());
 
     private ConfigurationManagementMBean _mbean;
-
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -142,6 +147,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         }
         catch (IllegalArgumentException e)
         {
+            _logger.error("Signal HUP not supported for OS: " + System.getProperty("os.name"));
             // We're on something that doesn't handle SIGHUP, how sad, Windows.
         }
     }
@@ -192,7 +198,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String[] getElementsProcessed()
     {
-        return new String[]{""};
+        return new String[] { "" };
     }
 
     @Override
@@ -308,7 +314,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
      */
     public Locale getLocale()
     {
-
         String localeString = getStringValue(ADVANCED_LOCALE);
         // Expecting locale of format langauge_country_variant
 
@@ -432,10 +437,15 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
             _logger.warn(SECURITY_CONFIG_RELOADED);
         }
     }
-
+    
     public String getQpidWork()
     {
-        return System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir"));
+        return System.getProperty(QPID_WORK, System.getProperty("java.io.tmpdir"));
+    }
+    
+    public String getQpidHome()
+    {
+        return System.getProperty(QPID_HOME);
     }
 
     public void setJMXManagementPort(int mport)
@@ -467,10 +477,15 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     {
         return _virtualHosts.keySet().toArray(new String[_virtualHosts.size()]);
     }
-
+    
     public String getPluginDirectory()
     {
         return getStringValue("plugin-directory");
+    }
+    
+    public String getCacheDirectory()
+    {
+        return getStringValue("cache-directory");
     }
 
     public VirtualHostConfiguration getVirtualHostConfig(String name)

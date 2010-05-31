@@ -15,40 +15,72 @@
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
  *  under the License.
- *
- *
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLPluginFactory;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.security.Result;
+import org.apache.qpid.server.security.SecurityPluginFactory;
 
-public class AllowAll extends BasicACLPlugin
+/** Always allow. */
+public class AllowAll extends BasicPlugin
 {
-
-    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
-    {
-        public boolean supportsTag(String name)
+    public static class AllowAllConfiguration extends ConfigurationPlugin {
+        public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
         {
-            return false;
+            public List<String> getParentPaths()
+            {
+                return Arrays.asList("security", "virtualhosts.virtualhost.security");
+            }
+
+            public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
+            {
+                ConfigurationPlugin instance = new AllowAllConfiguration();
+                instance.setConfiguration(path, config);
+                return instance;
+            }
+        };
+        
+        public String[] getElementsProcessed()
+        {
+            return new String[] { "allow-all" };
+        }
+    }
+    
+    public static final SecurityPluginFactory<AllowAll> FACTORY = new SecurityPluginFactory<AllowAll>()
+    {
+        public AllowAll newInstance(ConfigurationPlugin config) throws ConfigurationException
+        {
+            AllowAll plugin = new AllowAll(config);
+            plugin.configure();
+            return plugin;
         }
 
-        public ACLPlugin newInstance(Configuration config)
+        public String getPluginName()
         {
-            return new AllowAll();
+            return AllowAll.class.getName();
+        }
+
+        public Class<AllowAll> getPluginClass()
+        {
+            return AllowAll.class;
         }
     };
-
-    public String getPluginName()
-    {
-        return this.getClass().getSimpleName();
+	
+    @Override
+	public Result getDefault()
+	{
+		return Result.ALLOWED;
     }
 
-    @Override
-    protected AuthzResult getResult()
+    public AllowAll(ConfigurationPlugin config)
     {
-        // Always allow
-        return AuthzResult.ALLOWED;
+        _config = config.getConfiguration(AllowAllConfiguration.class);
     }
 }

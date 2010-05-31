@@ -38,7 +38,7 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
+import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
 import org.apache.qpid.AMQException;
 
 import javax.management.JMException;
@@ -51,7 +51,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 
     public ConfigurationFilePrincipalDatabaseManager(ServerConfiguration _configuration) throws Exception
     {
-        _logger.info("Initialising PrincipleDatabase authentication manager");
+        _logger.info("Initialising PrincipalDatabase authentication manager");
         _databases = initialisePrincipalDatabases(_configuration);
     }
 
@@ -171,16 +171,13 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             AMQUserManagementMBean _mbean = new AMQUserManagementMBean();
 
             List<String> principalDBs = config.getManagementPrincipalDBs();
-
-            if (principalDBs.size() == 0)
+            if (principalDBs.isEmpty())
             {
                 throw new ConfigurationException("No principal-database specified for jmx security");
             }
 
             String databaseName = principalDBs.get(0);
-
             PrincipalDatabase database = getDatabases().get(databaseName);
-
             if (database == null)
             {
                 throw new ConfigurationException("Principal-database '" + databaseName + "' not found");
@@ -189,14 +186,13 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             _mbean.setPrincipalDatabase(database);
 
             List<String> jmxaccesslist = config.getManagementAccessList();
-
-            if (jmxaccesslist.size() == 0)
+            if (jmxaccesslist.isEmpty())
             {
                 throw new ConfigurationException("No access control files specified for jmx security");
             }
 
             String jmxaccesssFile = null;
-
+            
             try
             {
                 jmxaccesssFile = PropertyUtils.replaceProperties(jmxaccesslist.get(0));
@@ -205,7 +201,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             {
                 throw new ConfigurationException("Unable to parse access control filename '" + jmxaccesssFile + "'");
             }
-
+            
             try
             {
                 _mbean.setAccessFile(jmxaccesssFile);

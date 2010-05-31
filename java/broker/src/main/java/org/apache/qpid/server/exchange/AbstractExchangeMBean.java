@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
@@ -32,6 +34,7 @@ import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.framing.AMQShortString;
 
 import javax.management.openmbean.*;
+import javax.management.MBeanException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
@@ -133,7 +136,15 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
         }
 
         CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
-        vhost.getBindingFactory().addBinding(binding,queue,getExchange(),null);
+        try
+        {
+            vhost.getBindingFactory().addBinding(binding,queue,getExchange(),null);
+        }
+        catch (AMQException ex)
+        {
+            JMException jme = new JMException(ex.toString());
+            throw new MBeanException(jme, "Error creating new binding " + binding);
+        }
         CurrentActor.remove();
     }
-} // End of MBean class
+}

@@ -263,7 +263,7 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
             throws Exception
     {
         //Create Connection using the default connection URL. i.e. not the Failover URL that would be used by default
-        _connection = (AMQConnection) getConnection(getConnectionFactory("default").getConnectionURL());
+        _connection = (AMQConnection) getConnectionFactory("default").createConnection("guest", "guest");
         // The default connection does not have any retries configured so
         // Allow this connection to retry so that we can block on the failover.
         // The alternative would be to use the getConnection() default. However,

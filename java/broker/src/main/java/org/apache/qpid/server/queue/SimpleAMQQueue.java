@@ -1,11 +1,31 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -50,26 +70,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-/*
-*
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*   http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied.  See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*
-*/
 public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 {
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
@@ -386,9 +386,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     // ------ Manage Subscriptions
 
-    public synchronized void registerSubscription(final Subscription subscription, final boolean exclusive) throws AMQException
+    public synchronized void registerSubscription(final Subscription subscription, final boolean exclusive)
+            throws AMQSecurityException, ExistingExclusiveSubscription, ExistingSubscriptionPreventsExclusive
     {
-
+        // Access control
+        if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
+        {
+            throw new AMQSecurityException("Permission denied");
+        }
+        
+        
         if (hasExclusiveSubscriber())
         {
             throw new ExistingExclusiveSubscription();
@@ -403,7 +410,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             else
             {
                 _exclusiveSubscriber = subscription;
-
             }
         }
 
@@ -1212,38 +1218,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
-    public void purge(final long request)
+    public void purge(final long request) throws AMQException
     {
-        if(request == 0l)
-        {
-            clearQueue();
-        }
-        else if(request > 0l)
-        {
-
-            QueueEntryIterator queueListIterator = _entries.iterator();
-            long count = 0;
-
-            ServerTransaction txn = new LocalTransaction(getVirtualHost().getTransactionLog());
-
-            while (queueListIterator.advance())
-            {
-                QueueEntry node = queueListIterator.getNode();
-                if (!node.isDeleted() && node.acquire())
-                {
-                    dequeueEntry(node, txn);
-                    if(++count == request)
-                    {
-                        break;
-                    }
-                }
-
-            }
-
-            txn.commit();
-
-
-        }
+        clear(request);
     }
 
     public long getCreateTime()
@@ -1270,9 +1247,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-    public long clearQueue()
-    {
+    public long clearQueue() throws AMQException
+    {         
+        return clear(0l);
+    }
 
+    private long clear(final long request) throws AMQSecurityException
+    {
+        //Perform ACLs
+        if (!getVirtualHost().getSecurityManager().authorisePurge(this))
+        {
+            throw new AMQSecurityException("Permission denied: queue " + getName());
+        }
+        
         QueueEntryIterator queueListIterator = _entries.iterator();
         long count = 0;
 
@@ -1284,7 +1271,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             if (!node.isDeleted() && node.acquire())
             {
                 dequeueEntry(node, txn);
-                count++;
+                if(++count == request)
+                {
+                    break;
+                }
             }
 
         }
@@ -1292,7 +1282,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         txn.commit();
 
         return count;
-
     }
 
     private void dequeueEntry(final QueueEntry node)
@@ -1329,12 +1318,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         _deleteTaskList.remove(task);
     }
 
-    public int delete() throws AMQException
+    // TODO list all thrown exceptions
+    public int delete() throws AMQSecurityException, AMQException
     {
         if (!_deleted.getAndSet(true))
         {
+            // Check access
+            if (!_virtualHost.getSecurityManager().authoriseDelete(this))
+            {
+                throw new AMQSecurityException("Permission denied: " + getName());
+            }
 
-            for(Binding b : getBindings())
+            for (Binding b : getBindings())
             {
                 _virtualHost.getBindingFactory().removeBinding(b);
             }
@@ -1606,6 +1601,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void flushSubscription(Subscription sub) throws AMQException
     {
+        // Access control
+        if (!getVirtualHost().getSecurityManager().authoriseConsume(this))
+        {
+            throw new AMQSecurityException("Permission denied: " + getName());
+        }
         flushSubscription(sub, Long.MAX_VALUE);
     }
 

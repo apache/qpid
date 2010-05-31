@@ -60,11 +60,11 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     public void methodReceived(AMQStateManager stateManager, ConnectionStartOkBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-
+        
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
         _logger.info("Locale selected: " + body.getLocale());
 
-        AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();//session.getVirtualHost().getAuthenticationManager();
+        AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
 
         SaslServer ss = null;
         try
@@ -73,8 +73,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             if (ss == null)
             {
-                throw body.getConnectionException(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server:" + body.getMechanism()
-                );
+                throw body.getConnectionException(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server:" + body.getMechanism());
             }
 
             session.setSaslServer(ss);

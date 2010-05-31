@@ -20,16 +20,25 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TimerTask;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import javax.management.NotCompliantMBeanException;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -58,29 +67,17 @@ import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.Accessable;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLog;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
+import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
-import javax.management.NotCompliantMBeanException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TimerTask;
-import java.util.UUID;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-public class VirtualHostImpl implements Accessable, VirtualHost
+public class VirtualHostImpl implements VirtualHost
 {
     private static final Logger _logger = Logger.getLogger(VirtualHostImpl.class);
 
@@ -102,7 +99,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
     private AuthenticationManager _authenticationManager;
 
-    private ACLManager _accessManager;
+    private SecurityManager _securityManager;
 
     private final ScheduledThreadPoolExecutor _houseKeepingTasks;
     private final IApplicationRegistry _appRegistry;
@@ -117,17 +114,6 @@ public class VirtualHostImpl implements Accessable, VirtualHost
     private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
-    public void setAccessableName(String name)
-    {
-        _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
-                     + name + ") ignored remains :" + getAccessableName());
-    }
-
-    public String getAccessableName()
-    {
-        return _name;
-    }
-
     public IConnectionRegistry getConnectionRegistry()
     {
         return _connectionRegistry;
@@ -140,7 +126,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
     public UUID getId()
     {
-        return _id;  //To change body of implemented methods use File | Settings | File Templates.
+        return _id;
     }
 
     public VirtualHostConfigType getConfigType()
@@ -200,12 +186,17 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
     private VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
     {
+		if (hostConfig == null)
+		{
+			throw new IllegalAccessException("HostConfig and MessageStore cannot be null");
+		}
+		
         _appRegistry = appRegistry;
-        _broker = appRegistry.getBroker();
+        _broker = _appRegistry.getBroker();
         _configuration = hostConfig;
-        _name = hostConfig.getName();
+        _name = _configuration.getName();
 
-        _id = appRegistry.getConfigStore().createId();
+        _id = _appRegistry.getConfigStore().createId();
 
         CurrentActor.get().message(VirtualHostMessages.VHT_CREATED(_name));
 
@@ -213,6 +204,9 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         {
     		throw new IllegalArgumentException("Illegal name (" + _name + ") for virtualhost.");
         }
+
+        _securityManager = new SecurityManager(_appRegistry.getSecurityManager());
+        _securityManager.configureHostPlugins(_configuration);
 
         _virtualHostMBean = new VirtualHostMBean();
 
@@ -223,14 +217,9 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         _queueRegistry = new DefaultQueueRegistry(this);
 
         _exchangeFactory = new DefaultExchangeFactory(this);
-        _exchangeFactory.initialise(hostConfig);
+        _exchangeFactory.initialise(_configuration);
 
         _exchangeRegistry = new DefaultExchangeRegistry(this);
-
-
-        //Create a temporary RT to store the durable entries from the config file
-        // so we can replay them in to the real _RT after it has been loaded.
-        /// This should be removed after the _RT has been fully split from the the TL
 
         StartupRoutingTable configFileRT = new StartupRoutingTable();
 
@@ -241,7 +230,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
 
         _bindingFactory = new BindingFactory(this);
 
-        initialiseModel(hostConfig);
+        initialiseModel(_configuration);
 
         if (store != null)
         {
@@ -250,36 +239,10 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         }
         else
         {
-            if (hostConfig == null)
-            {
-                throw new IllegalAccessException("HostConfig and MessageStore cannot be null");
-            }
-            initialiseMessageStore(hostConfig);
+			initialiseMessageStore(hostConfig);
         }
-
-
-
-        //Now that the RT has been initialised loop through the persistent queues/exchanges created from the config
-        // file and write them in to the new routing Table.
-/*        for (StartupRoutingTable.CreateQueueTuple cqt : configFileRT.queue)
-        {
-            getDurableConfigurationStore().createQueue(cqt.queue, cqt.arguments);
-        }
-
-        for (Exchange exchange : configFileRT.exchange)
-        {
-            getDurableConfigurationStore().createExchange(exchange);
-        }
-
-        for (StartupRoutingTable.CreateBindingTuple cbt : configFileRT.bindings)
-        {
-            getDurableConfigurationStore().bindQueue(cbt.exchange, cbt.routingKey, cbt.queue, cbt.arguments);
-        }*/
-
-        _authenticationManager = new PrincipalDatabaseAuthenticationManager(_name, hostConfig);
-
-        _accessManager = ApplicationRegistry.getInstance().getAccessManager();
-        _accessManager.configureHostPlugins(hostConfig.getSecurityConfiguration());
+		
+        _authenticationManager = new PrincipalDatabaseAuthenticationManager(_name, _configuration);
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
@@ -330,8 +293,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
             }
 
             Map<String, VirtualHostPluginFactory> plugins =
-                    ApplicationRegistry.getInstance().
-                            getPluginManager().getVirtualHostPlugins();
+                ApplicationRegistry.getInstance().getPluginManager().getVirtualHostPlugins();
 
             if (plugins != null)
             {
@@ -340,24 +302,6 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                     try
                     {
                         VirtualHostPlugin plugin = plugins.get(pluginName).newInstance(this);
-                        
-                        TimeUnit units = TimeUnit.MILLISECONDS;
-
-                        if (plugin.getTimeUnit() != null)
-                        {
-                            try
-                            {
-                                units = TimeUnit.valueOf(plugin.getTimeUnit());
-                            }
-                            catch (IllegalArgumentException iae)
-                            {
-                                _logger.warn("Plugin:" + pluginName +
-                                             " provided an illegal TimeUnit value:"
-                                             + plugin.getTimeUnit());
-                                // Warn and use default of millseconds
-                                // Should not occur in a well behaved plugin
-                            }
-                        }
 
                         _houseKeepingTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
                                                        plugin.getDelay(), plugin.getTimeUnit());
@@ -600,9 +544,9 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         return _authenticationManager;
     }
 
-    public ACLManager getAccessManager()
+    public SecurityManager getSecurityManager()
     {
-        return _accessManager;
+        return _securityManager;
     }
 
     public void close()

@@ -20,7 +20,12 @@
  */
 package org.apache.qpid.server.binding;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.BindingConfig;
@@ -35,13 +40,8 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class BindingFactory
 {
-
     private final VirtualHost _virtualHost;
     private final DurableConfigurationStore.Source _configSource;
     private final Exchange _defaultExchange;
@@ -51,14 +51,14 @@ public class BindingFactory
 
     public BindingFactory(final VirtualHost vhost)
     {
-        this(vhost,vhost.getExchangeRegistry().getDefaultExchange());
+        this(vhost, vhost.getExchangeRegistry().getDefaultExchange());
     }
 
     public BindingFactory(final DurableConfigurationStore.Source configSource, final Exchange defaultExchange)
     {
         _configSource = configSource;
         _defaultExchange = defaultExchange;
-        if(configSource instanceof VirtualHost)
+        if (configSource instanceof VirtualHost)
         {
             _virtualHost = (VirtualHost) configSource;
         }
@@ -83,7 +83,7 @@ public class BindingFactory
 
         private BindingImpl(String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> arguments)
         {
-            super(queue.getVirtualHost().getConfigStore().createId(),bindingKey, queue, exchange, arguments);
+            super(queue.getVirtualHost().getConfigStore().createId(), bindingKey, queue, exchange, arguments);
             _logSubject = new BindingLogSubject(bindingKey,exchange,queue);
 
         }
@@ -94,7 +94,7 @@ public class BindingFactory
             removeBinding(this);
         }
 
-        public void onClose(final Exchange exchange)
+        public void onClose(final Exchange exchange) throws AMQSecurityException
         {
             removeBinding(this);
         }
@@ -138,7 +138,7 @@ public class BindingFactory
 
 
 
-    public boolean addBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments)
+    public boolean addBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException
     {
         return makeBinding(bindingKey, queue, exchange, arguments, false, false);
     }
@@ -147,37 +147,43 @@ public class BindingFactory
     public boolean replaceBinding(final String bindingKey,
                                final AMQQueue queue,
                                final Exchange exchange,
-                               final Map<String, Object> arguments)
+                               final Map<String, Object> arguments) throws AMQSecurityException
     {
         return makeBinding(bindingKey, queue, exchange, arguments, false, true);
     }
 
-    private boolean makeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force)
+    private boolean makeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force) throws AMQSecurityException
     {
         assert queue != null;
-        if(bindingKey == null)
+        if (bindingKey == null)
         {
             bindingKey = "";
         }
-        if(exchange == null)
+        if (exchange == null)
         {
             exchange = _defaultExchange;
         }
-        if(arguments == null)
+        if (arguments == null)
         {
-            arguments = Collections.EMPTY_MAP;
+            arguments = Collections.emptyMap();
         }
-
+      
+        //Perform ACLs
+        if (!getVirtualHost().getSecurityManager().authoriseBind(exchange, queue, new AMQShortString(bindingKey)))
+        {
+            throw new AMQSecurityException("Permission denied: binding " + bindingKey);
+        }
+        
         BindingImpl b = new BindingImpl(bindingKey,queue,exchange,arguments);
         BindingImpl existingMapping = _bindings.putIfAbsent(b,b);
-        if(existingMapping == null || force)
+        if (existingMapping == null || force)
         {
-            if(existingMapping != null)
+            if (existingMapping != null)
             {
                 removeBinding(existingMapping);
             }
 
-            if(b.isDurable() && !restore)
+            if (b.isDurable() && !restore)
             {
                 try
                 {
@@ -185,7 +191,7 @@ public class BindingFactory
                 }
                 catch (AMQException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException(e); // FIXME
                 }
             }
 
@@ -201,8 +207,6 @@ public class BindingFactory
         {
             return false;
         }
-
-
     }
 
     private ConfigStore getConfigStore()
@@ -210,43 +214,49 @@ public class BindingFactory
         return getVirtualHost().getConfigStore();
     }
 
-    public void restoreBinding(final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap)
+    public void restoreBinding(final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap) throws AMQSecurityException
     {
         makeBinding(bindingKey,queue,exchange,argumentMap,true, false);
     }
 
-    public void removeBinding(final Binding b)
+    public void removeBinding(final Binding b) throws AMQSecurityException
     {
         removeBinding(b.getBindingKey(), b.getQueue(), b.getExchange(), b.getArguments());
     }
 
 
-    public Binding removeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments)
+    public Binding removeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException
     {
         assert queue != null;
-        if(bindingKey == null)
+        if (bindingKey == null)
         {
             bindingKey = "";
         }
-        if(exchange == null)
+        if (exchange == null)
         {
             exchange = _defaultExchange;
         }
-        if(arguments == null)
+        if (arguments == null)
         {
-            arguments = Collections.EMPTY_MAP;
+            arguments = Collections.emptyMap();
         }
 
+        // Check access
+        if (!getVirtualHost().getSecurityManager().authoriseUnbind(exchange, new AMQShortString(bindingKey), queue))
+        {
+            throw new AMQSecurityException("Permission denied: binding " + bindingKey);
+        }
+        
         BindingImpl b = _bindings.remove(new BindingImpl(bindingKey,queue,exchange,arguments));
 
-        if(b != null)
+        if (b != null)
         {
             exchange.removeBinding(b);
             queue.removeBinding(b);
             exchange.removeCloseTask(b);
             queue.removeQueueDeleteTask(b);
 
-            if(b.isDurable())
+            if (b.isDurable())
             {
                 try
                 {
@@ -257,12 +267,11 @@ public class BindingFactory
                 }
                 catch (AMQException e)
                 {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e); // FIXME
                 }
             }
             b.logDestruction();
             getConfigStore().removeConfiguredObject(b);
-
         }
 
         return b;
@@ -281,7 +290,7 @@ public class BindingFactory
         }
         if(arguments == null)
         {
-            arguments = Collections.EMPTY_MAP;
+            arguments = Collections.emptyMap();
         }
 
         BindingImpl b = new BindingImpl(bindingKey,queue,exchange,arguments);

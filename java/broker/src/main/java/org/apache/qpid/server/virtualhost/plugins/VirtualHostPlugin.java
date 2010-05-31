@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -39,5 +41,5 @@ public interface VirtualHostPlugin extends Runnable, Plugin
      * @see java.util.concurrent.TimeUnit for valid value.
      * @return
      */
-    public String getTimeUnit();
+    public TimeUnit getTimeUnit();
 }

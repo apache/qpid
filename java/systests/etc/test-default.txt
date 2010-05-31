@@ -1,0 +1,73 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# This section grants virtualhost access rights
+ACL ALLOW client ACCESS VIRTUALHOST
+ACL ALLOW server ACCESS VIRTUALHOST
+
+# This section grants publish rights to an exchange + routing key pair
+
+# Allow clients to publish requests
+ACL ALLOW client PUBLISH EXCHANGE name="amq.direct" routingKey="example.RequestQueue"
+
+# Allow the processor to respond to a client on their Temporary Topic
+ACL ALLOW server PUBLISH EXCHANGE name="amq.direct" routingKey="tmp_*"
+ACL ALLOW server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
+
+# This section grants users the ability to consume from the broker
+
+# Allow client to consume from temporary queues
+ACL ALLOW client CONSUME QUEUE temporary=true
+
+# Only allow the server to consume from the Request Queue
+ACL ALLOW server CONSUME QUEUE name="example.RequestQueue"
+
+# Allow client and server to consume from kipper queues
+ACL ALLOW client CONSUME QUEUE name="clientid:kipper"
+ACL ALLOW server CONSUME QUEUE name="clientid:kipper"
+
+# This section grants users the ability to create/delete queues and exchanges
+
+# Allow clients to create and delete temporary and kipper queue on this exchange
+ACL ALLOW client CREATE QUEUE temporary=true
+ACL ALLOW client DELETE QUEUE temporary=true
+ACL ALLOW client CREATE QUEUE durable="true"
+ACL ALLOW client DELETE QUEUE durable="true"
+
+# Allow the server to create the Request Queue and kipper queue
+ACL ALLOW server CREATE QUEUE name="example.RequestQueue"
+ACL ALLOW server CREATE QUEUE name="clientid:kipper"
+
+## Allow client and server exchange access for the relevant queues
+ACL ALLOW client BIND EXCHANGE name="amq.direct" temporary=true
+ACL ALLOW client UNBIND EXCHANGE name="amq.direct" temporary=true
+ACL ALLOW client BIND EXCHANGE name="amq.direct" durable=true
+ACL ALLOW client UNBIND EXCHANGE name="amq.direct" durable=true
+ACL ALLOW server BIND EXCHANGE name="amq.direct" queueName="example.RequestQueue"
+
+## Allow client and server exchange access for the relevant topics
+ACL ALLOW client BIND EXCHANGE name="amq.topic" durable=true routingKey=kipper
+ACL ALLOW client UNBIND EXCHANGE name="amq.topic" durable=true routingKey=kipper
+ACL ALLOW server BIND EXCHANGE name="amq.topic" durable=true routingKey=kipper
+
+# Action[operation=BIND,objectType=EXCHANGE,properties={OWNER=client, DURABLE=true, QUEUE_NAME=IllegalQueue, AUTO_DELETE=false, ROUTING_KEY=IllegalQueue, NAME=amq.direct, TEMPORARY=false, EXCLUSIVE=false}]
+
+
+ACL ALLOW client CREATE EXCHANGE
+ACL ALLOW server CREATE EXCHANGE

@@ -15,61 +15,72 @@
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
  *  under the License.
- *
- *
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLPluginFactory;
-import org.apache.qpid.server.security.access.AccessResult;
-import org.apache.qpid.server.security.access.Permission;
+import java.util.Arrays;
+import java.util.List;
 
-public class DenyAll extends BasicACLPlugin
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.security.Result;
+import org.apache.qpid.server.security.SecurityPluginFactory;
+
+/** Always Deny. */
+public class DenyAll extends BasicPlugin
 {
-    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
-    {
-        public boolean supportsTag(String name)
+    public static class DenyAllConfiguration extends ConfigurationPlugin {
+        public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
         {
-            return false;
+            public List<String> getParentPaths()
+            {
+                return Arrays.asList("security", "virtualhosts.virtualhost.security");
+            }
+
+            public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
+            {
+                ConfigurationPlugin instance = new DenyAllConfiguration();
+                instance.setConfiguration(path, config);
+                return instance;
+            }
+        };
+        
+        public String[] getElementsProcessed()
+        {
+            return new String[] { "deny-all" };
+        }
+    }
+    
+    public static final SecurityPluginFactory<DenyAll> FACTORY = new SecurityPluginFactory<DenyAll>()
+    {
+        public DenyAll newInstance(ConfigurationPlugin config) throws ConfigurationException
+        {
+            DenyAll plugin = new DenyAll(config);
+            plugin.configure();
+            return plugin;
         }
 
-        public ACLPlugin newInstance(Configuration config)
+        public String getPluginName()
         {
-            return new DenyAll();
+            return DenyAll.class.getName();
+        }
+
+        public Class<DenyAll> getPluginClass()
+        {
+            return DenyAll.class;
         }
     };
-    
-    public AccessResult authorise(AMQProtocolSession session,
-            Permission permission, AMQMethodBody body, Object... parameters)
-            throws AMQConnectionException
-    {
-
-        if (ACLManager.getLogger().isInfoEnabled())
-        {
-            ACLManager.getLogger().info(
-                    "Denying user:" + session.getPrincipal());
-        }
-        throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
-                "DenyAll Plugin");
+	
+    @Override
+	public Result getDefault()
+	{
+		return Result.DENIED;
     }
 
-    public String getPluginName()
+    public DenyAll(ConfigurationPlugin config) throws ConfigurationException
     {
-        return getClass().getSimpleName();
+        _config = config.getConfiguration(DenyAllConfiguration.class);
     }
-
-    @Override 
-    protected AuthzResult getResult()
-    {
-        // Always deny
-        return AuthzResult.DENIED;
-    }
-
 }

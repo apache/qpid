@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 public class QueueConfiguration extends ConfigurationPlugin
@@ -109,7 +110,7 @@ public class QueueConfiguration extends ConfigurationPlugin
 
     public String getExchange()
     {
-        return getStringValue("exchange", null);
+        return getStringValue("exchange", ExchangeDefaults.DEFAULT_EXCHANGE_NAME.asString());
     }
 
     public List getRoutingKeys()

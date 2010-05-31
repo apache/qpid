@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+
+import org.apache.qpid.common.Closeable;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
 
 public interface AuthenticationManager extends Closeable
 {

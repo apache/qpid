@@ -25,6 +25,7 @@
     <conf>${prefix}/etc</conf>
 
     <plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>
+    <cache-directory>${QPID_WORK}/cache</cache-directory>
     
     <connector>
         <!-- To enable SSL edit the keystorePath and keystorePassword
@@ -83,9 +84,7 @@
             </principal-database>
         </principal-databases>
 
-        <access>
-            <class>org.apache.qpid.server.security.access.plugins.AllowAll</class>
-        </access>
+        <allow-all />
         
         <msg-auth>false</msg-auth>
         

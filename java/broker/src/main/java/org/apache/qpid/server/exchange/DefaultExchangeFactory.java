@@ -26,9 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.qmf.ManagementExchange;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -79,27 +82,26 @@ public class DefaultExchangeFactory implements ExchangeFactory
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
             throws AMQException
     {
-        ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(new AMQShortString(type));
-        if (exchType == null)
-        {
-
-            throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
-        }
-        Exchange e = exchType.newInstance(_host, (new AMQShortString(exchange)).intern(), durable, 0, autoDelete);
-        return e;
-
+        return createExchange(new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete, 0);
     }
 
     public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                                    int ticket)
             throws AMQException
     {
+        // Check access
+        if (!_host.getSecurityManager().authoriseCreateExchange(autoDelete, durable, exchange, null, null, null, type))
+        {
+            String description = "Permission denied: exchange-name '" + exchange.asString() + "'";
+            throw new AMQSecurityException(description);
+        }
+        
         ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
         if (exchType == null)
         {
-
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
         }
+        
         Exchange e = exchType.newInstance(_host, exchange, durable, ticket, autoDelete);
         return e;
     }
