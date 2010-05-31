@@ -15,77 +15,92 @@
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
  *  under the License.
- *
- *
  */
-
 package org.apache.qpid.server.security.access.plugins;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.framing.AMQShortString;
+import static org.apache.qpid.server.security.access.ObjectProperties.Property.*;
 
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLPluginFactory;
-import org.apache.qpid.server.security.access.AccessResult;
-import org.apache.qpid.server.security.access.Permission;
-import org.apache.qpid.server.security.access.PrincipalPermissions;
-import org.apache.qpid.server.security.PrincipalHolder;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
+import java.security.Principal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.security.AbstractPlugin;
+import org.apache.qpid.server.security.Result;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SecurityPluginFactory;
+import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.qpid.server.security.access.ObjectType;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.access.config.PrincipalPermissions;
+import org.apache.qpid.server.security.access.config.PrincipalPermissions.Permission;
 
 /**
  * This uses the default
  */
-public class SimpleXML implements ACLPlugin
+public class SimpleXML extends AbstractPlugin
 {
-    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
+    public static final Logger _logger = Logger.getLogger(SimpleXML.class);
+
+    private Map<String, PrincipalPermissions> _users;
+	
+    public static final SecurityPluginFactory<SimpleXML> FACTORY = new SecurityPluginFactory<SimpleXML>()
     {
-        public boolean supportsTag(String name)
+        public SimpleXML newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            return name.startsWith("access_control_list");
+            SimpleXML plugin = new SimpleXML(config);
+            plugin.configure();
+            return plugin;
         }
 
-        public ACLPlugin newInstance(Configuration config)
+        public String getPluginName()
         {
-            SimpleXML plugin = new SimpleXML();
-            plugin.setConfiguration(config);
-            return plugin;
+            return SimpleXML.class.getName();
+        }
+
+        public Class<SimpleXML> getPluginClass()
+        {
+            return SimpleXML.class;
         }
     };
 
-    private Map<String, PrincipalPermissions> _users;
-    private final AccessResult GRANTED = new AccessResult(this, AccessResult.AccessStatus.GRANTED);
-
-    public SimpleXML()
+    public SimpleXML(ConfigurationPlugin config) throws ConfigurationException
     {
-        _users = new ConcurrentHashMap<String, PrincipalPermissions>();
+        _config = config.getConfiguration(SimpleXMLConfiguration.class);
     }
 
-    public void setConfiguration(Configuration config)
+    public void configure() throws ConfigurationException
     {
-        processConfig(config);
+        SimpleXMLConfiguration config = (SimpleXMLConfiguration) _config;
+        
+        if (isConfigured())
+        {
+            _users = new ConcurrentHashMap<String, PrincipalPermissions>();
+
+            processConfig(config.getConfiguration());
+        }
     }
 
     private void processConfig(Configuration config)
     {
         processPublish(config);
-
         processConsume(config);
-
         processCreate(config);
-        
         processAccess(config);
     }
 
+    /**
+	 * @param config XML Configuration
+     */
     private void processAccess(Configuration config)
     {
-        Configuration accessConfig = config.subset("access_control_list.access");
+        Configuration accessConfig = config.subset("access");
         
-        if(accessConfig.isEmpty())
+        if (accessConfig.isEmpty())
         {
             //there is no access configuration to process
             return;
@@ -93,7 +108,7 @@ public class SimpleXML implements ACLPlugin
         
         // Process users that have full access permission
         String[] users = accessConfig.getStringArray("users.user");
-
+        
         for (String user : users)
         {
             grant(Permission.ACCESS, user);
@@ -101,14 +116,13 @@ public class SimpleXML implements ACLPlugin
     }
     
     /**
-     * Publish format takes Exchange + Routing Key Pairs
+	 * Publish format takes Exchange + Routing Key Pairs
      *
-     * @param config
-     *            XML Configuration
+     * @param config XML Configuration
      */
     private void processPublish(Configuration config)
     {
-        Configuration publishConfig = config.subset("access_control_list.publish");
+        Configuration publishConfig = config.subset("publish");
 
         // Process users that have full publish permission
         String[] users = publishConfig.getStringArray("users.user");
@@ -177,11 +191,14 @@ public class SimpleXML implements ACLPlugin
         permissions.grant(permission, parameters);
     }
 
+	/**
+	 * @param config XML Configuration
+     */
     private void processConsume(Configuration config)
     {
         boolean temporary = false;
         Configuration tempConfig = null;
-        Configuration consumeConfig = config.subset("access_control_list.consume");
+        Configuration consumeConfig = config.subset("consume");
 
         tempConfig = consumeConfig.subset("queues.temporary(0)");
         if (tempConfig != null)
@@ -233,12 +250,15 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
+	/**
+	 * @param config XML Configuration
+     */
     private void processCreate(Configuration config)
     {
         boolean temporary = false;
         Configuration tempConfig = null;
 
-        Configuration createConfig = config.subset("access_control_list.create");
+        Configuration createConfig = config.subset("create");
 
         tempConfig = createConfig.subset("queues.temporary(0)");
         if (tempConfig != null)
@@ -333,151 +353,73 @@ public class SimpleXML implements ACLPlugin
             grant(Permission.CREATEEXCHANGE, user);
             grant(Permission.CREATEQUEUE, user);
         }
-
     }
 
-    public String getPluginName()
+    public Result access(ObjectType objectType, Object instance)
     {
-        return "Simple";
-    }
-
-    public AuthzResult authoriseBind(PrincipalHolder session, Exchange exch, AMQQueue queue, AMQShortString routingKey)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
+        Principal principal = SecurityManager.getThreadPrincipal();
+        if (principal == null)
+        {
+            return getDefault(); // Default if there is no user associated with the thread
+        }
+        PrincipalPermissions principalPermissions = _users.get(principal.getName());
         if (principalPermissions == null)
         {
-            return AuthzResult.DENIED;
+            return Result.DENIED;
         }
-        else
-        {
-            return principalPermissions.authorise(Permission.BIND, null, exch, queue, routingKey);
-        }
-    }
-
-    public AuthzResult authoriseConnect(PrincipalHolder session, VirtualHost virtualHost)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
+        
+        // Authorise object access
+        if (objectType == ObjectType.BROKER || objectType == ObjectType.VIRTUALHOST)
         {
             return principalPermissions.authorise(Permission.ACCESS);
         }
+        
+        // Default
+		return getDefault();
     }
 
-    public AuthzResult authoriseConsume(PrincipalHolder session, boolean noAck, AMQQueue queue)
+    public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
+        Principal principal = SecurityManager.getThreadPrincipal();
+        if (principal == null)
+        {
+            return getDefault(); // Default if there is no user associated with the thread
+        }
+        PrincipalPermissions principalPermissions = _users.get(principal.getName());
         if (principalPermissions == null)
         {
-            return AuthzResult.DENIED;
+            return Result.DENIED;
         }
-        else
+        
+        // Authorise operation
+        switch (operation)
         {
-            return principalPermissions.authorise(Permission.CONSUME, queue);
-        }
-    }
-
-    public AuthzResult authoriseConsume(PrincipalHolder session, boolean exclusive, boolean noAck, boolean noLocal,
-            boolean nowait, AMQQueue queue)
-    {
-        return authoriseConsume(session, noAck, queue);
-    }
-
-    public AuthzResult authoriseCreateExchange(PrincipalHolder session, boolean autoDelete, boolean durable,
-            AMQShortString exchangeName, boolean internal, boolean nowait, boolean passive, AMQShortString exchangeType)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
-        {
-            return principalPermissions.authorise(Permission.CREATEEXCHANGE, exchangeName);
-        }
-    }
-
-    public AuthzResult authoriseCreateQueue(PrincipalHolder session, boolean autoDelete, boolean durable, boolean exclusive,
-            boolean nowait, boolean passive, AMQShortString queue)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
-        {
-            return principalPermissions.authorise(Permission.CREATEQUEUE, autoDelete, queue);
-        }
-    }
-
-    public AuthzResult authoriseDelete(PrincipalHolder session, AMQQueue queue)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
-        {
+        case CONSUME:
+            return principalPermissions.authorise(Permission.CONSUME, properties.get(NAME), properties.get(AUTO_DELETE), properties.get(OWNER));
+        case PUBLISH:
+            return principalPermissions.authorise(Permission.PUBLISH, properties.get(NAME), properties.get(ROUTING_KEY));
+        case CREATE:
+            if (objectType == ObjectType.EXCHANGE)
+            {
+                return principalPermissions.authorise(Permission.CREATEEXCHANGE, properties.get(NAME));
+            }
+            else if (objectType == ObjectType.QUEUE)
+            {
+                return principalPermissions.authorise(Permission.CREATEQUEUE, properties.get(AUTO_DELETE), properties.get(NAME));
+            }
+        case ACCESS:
+            return principalPermissions.authorise(Permission.ACCESS);
+        case BIND:
+            return principalPermissions.authorise(Permission.BIND, null, properties.get(NAME), properties.get(QUEUE_NAME), properties.get(ROUTING_KEY));
+        case UNBIND:
+            return principalPermissions.authorise(Permission.UNBIND);
+        case DELETE:
             return principalPermissions.authorise(Permission.DELETE);
-        }
-    }
-
-    public AuthzResult authoriseDelete(PrincipalHolder session, Exchange exchange)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
-        {
-            return principalPermissions.authorise(Permission.DELETE);
-        }
-    }
-
-    public AuthzResult authorisePublish(PrincipalHolder session, boolean immediate, boolean mandatory,
-            AMQShortString routingKey, Exchange e)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
-        {
-            return principalPermissions.authorise(Permission.PUBLISH, e, routingKey);
-        }
-    }
-
-    public AuthzResult authorisePurge(PrincipalHolder session, AMQQueue queue)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
-        {
+        case PURGE:
             return principalPermissions.authorise(Permission.PURGE);
         }
+        
+        // Default
+		return getDefault();
     }
-
-    public AuthzResult authoriseUnbind(PrincipalHolder session, Exchange exch, AMQShortString routingKey, AMQQueue queue)
-    {
-        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
-        if (principalPermissions == null)
-        {
-            return AuthzResult.DENIED;
-        }
-        else
-        {
-            return principalPermissions.authorise(Permission.UNBIND);
-        }
-    }
-
 }

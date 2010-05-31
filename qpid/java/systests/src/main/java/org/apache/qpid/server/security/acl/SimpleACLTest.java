@@ -88,13 +88,8 @@ public class SimpleACLTest extends AbstractACLTestCase
         try
         {
             //get a connection to the 'test2' vhost using the guest user and perform various actions.
-            Connection conn = getConnection(new AMQConnectionURL(
-                    "amqp://username:password@clientid/test2?brokerlist='" + getBroker() + "'"));
-            
-            ((AMQConnection) conn).setConnectionListener(this);
-
-            Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
+            Connection conn = getConnection("test2", "guest", "guest");
+            Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
             conn.start();
 
             //create Queues and consumers for each
