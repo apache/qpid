@@ -26,6 +26,8 @@ import org.apache.commons.configuration.ConversionException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
@@ -39,9 +41,9 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
             return slowConsumerConfig;
         }
 
-        public String[] getParentPaths()
+        public List<String> getParentPaths()
         {
-            return new String[]{"virtualhosts.virtualhost.slow-consumer-detection"};
+            return Arrays.asList("virtualhosts.virtualhost.slow-consumer-detection");
         }
     }
 
@@ -71,7 +73,6 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
 
         String timeUnit = getStringValue("timeunit");
 
-
         if (timeUnit != null)
         {
             try
@@ -83,7 +84,6 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
                 throw new ConfigurationException("Unable to configure Slow Consumer Detection invalid TimeUnit:" + timeUnit);
             }
         }
-
 
         System.out.println("Configured SCDC");
         System.out.println("Delay:" + getDelay());

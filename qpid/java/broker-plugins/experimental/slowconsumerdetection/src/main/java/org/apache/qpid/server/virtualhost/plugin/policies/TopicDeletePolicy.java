@@ -26,7 +26,9 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
@@ -39,18 +41,22 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
 
     public static class TopicDeletePolicyFactory implements SlowConsumerPolicyPluginFactory
     {
-
-        public SlowConsumerPolicyPlugin newInstance(SlowConsumerDetectionPolicyConfiguration configuration) throws ConfigurationException
+        public TopicDeletePolicy newInstance(ConfigurationPlugin configuration) throws ConfigurationException
         {
             TopicDeletePolicyConfiguration config =
                     configuration.getConfiguration(TopicDeletePolicyConfiguration.class);
-
+            
             return new TopicDeletePolicy(config);
         }
 
         public String getPluginName()
         {
             return "topicdelete";
+        }
+
+        public Class<TopicDeletePolicy> getPluginClass()
+        {
+            return TopicDeletePolicy.class;
         }
     }
 
@@ -120,5 +126,23 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         }
 
         return false;
+    }
+
+    @Override
+    public String getPluginName()
+    {
+        return "topicdelete";
+    }
+
+    @Override
+    public boolean isConfigured()
+    {
+        return _configuration != null;
+    }
+
+    @Override
+    public void configure() throws ConfigurationException
+    {
+        // Empty
     }
 }

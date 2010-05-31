@@ -25,27 +25,27 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
 {
-
-    public static class SlowConsumerDetectionPolicyConfigurationFactory
-            implements ConfigurationPluginFactory
+    public static class SlowConsumerDetectionPolicyConfigurationFactory implements ConfigurationPluginFactory
     {
-        public ConfigurationPlugin newInstance(String path,
-                                               Configuration config)
-                throws ConfigurationException
+        public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
         {
-            SlowConsumerDetectionPolicyConfiguration slowConsumerConfig =
-                    new SlowConsumerDetectionPolicyConfiguration();
+            SlowConsumerDetectionPolicyConfiguration slowConsumerConfig = new SlowConsumerDetectionPolicyConfiguration();
             slowConsumerConfig.setConfiguration(path, config);
             return slowConsumerConfig;
         }
 
-        public String[] getParentPaths()
+        public List<String> getParentPaths()
         {
-            return new String[]{
+            return Arrays.asList(
                     "virtualhosts.virtualhost.queues.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy"};
+                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy",
+                    "virtualhosts.virtualhost.topics.slow-consumer-detection.policy",
+                    "virtualhosts.virtualhost.queues.topics.topic.slow-consumer-detection.policy");
         }
     }
 
@@ -67,5 +67,4 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
             throw new ConfigurationException("No Slow consumer policy defined.");
         }
     }
-
 }
