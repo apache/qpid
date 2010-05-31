@@ -19,22 +19,21 @@
 package org.apache.qpid.server.plugins;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLPluginFactory;
-import org.apache.qpid.server.security.access.QueueDenier;
+import org.apache.qpid.server.security.SecurityPluginFactory;
 
 public class MockPluginManager extends PluginManager
 {
+    private Map<String, SecurityPluginFactory> _securityPlugins = new HashMap<String, SecurityPluginFactory>();
+    private Map<List<String>, ConfigurationPluginFactory> _configPlugins = new HashMap<List<String>, ConfigurationPluginFactory>();
 
-    private Map<String, ACLPluginFactory> _securityPlugins = new HashMap<String, ACLPluginFactory>();
-
-    public MockPluginManager(String plugindir) throws Exception
+    public MockPluginManager(String pluginPath, String cachePath) throws Exception
     {
-        super(plugindir);
-        _securityPlugins.put("org.apache.qpid.server.security.access.QueueDenier", QueueDenier.FACTORY);
+        super(pluginPath, cachePath);
     }
 
     @Override
@@ -44,8 +43,14 @@ public class MockPluginManager extends PluginManager
     }
 
     @Override
-    public Map<String, ACLPluginFactory> getSecurityPlugins()
+    public Map<String, SecurityPluginFactory> getSecurityPlugins()
     {
         return _securityPlugins;
+    }
+
+    @Override
+    public Map<List<String>, ConfigurationPluginFactory> getConfigurationPlugins()
+    {
+        return _configPlugins;
     }
 }

@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.qpid.server.plugins;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.osgi.framework.BundleActivator;
@@ -26,17 +26,21 @@ import org.osgi.framework.BundleContext;
 
 public class Activator implements BundleActivator
 {
+    private static final Logger _logger = Logger.getLogger(Activator.class);
     
-    BundleContext _context = null;
+    private BundleContext _context = null;
     
     public void start(BundleContext ctx) throws Exception
     {
         _context = ctx;
-         ctx.registerService(ServerConfiguration.class.getName(), ApplicationRegistry.getInstance().getConfiguration(), null);         
+        _logger.info("Registering bundle: " + _context.getBundle().getSymbolicName());
+         ctx.registerService(ServerConfiguration.class.getName(), ApplicationRegistry.getInstance().getConfiguration(), null);
     }
 
     public void stop(BundleContext ctx) throws Exception
-    {        
+    {
+        _logger.info("Stopping bundle: " + _context.getBundle().getSymbolicName());
+        _context = null;
     }
 
     public BundleContext getContext()
