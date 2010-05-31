@@ -849,3 +849,6 @@ dist-hook: $(BUILT_SOURCES)
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)/$(localstatedir)/lib/qpidd
 
+# Support for pkg-config 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = qpid.pc
