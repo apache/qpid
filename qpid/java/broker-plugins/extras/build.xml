@@ -18,15 +18,14 @@ nn - or more contributor license agreements.  See the NOTICE file
  - under the License.
  -
  -->
-<project name="AMQ Broker-Plugins" default="build">
+<project name="Qpid Broker-Plugins Extras" default="build">
+    <property name="module.depends" value="common management/common broker broker-plugins junit-toolkit" />
+    <property name="module.test.depends" value="junit-toolkit broker/test" />
+    
+    <property name="module.manifest" value="MANIFEST.MF" />
+    <property name="module.plugin" value="true" />
 
-    <property name="module.depends" value="common client management/common broker broker-plugins junit-toolkit"/>
-    <property name="module.test.depends" value="broker/test"/>
-    <property name="module.manifest" value="MANIFEST.MF"/>
-    <property name="module.plugin" value="true"/>
+    <import file="../../module.xml" />
 
-    <import file="../../module.xml"/>
-
-    <target name="bundle" depends="bundle-tasks"/>
-
+    <target name="bundle" depends="bundle-tasks" />
 </project>
