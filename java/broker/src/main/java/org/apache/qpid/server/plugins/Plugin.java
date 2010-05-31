@@ -19,13 +19,21 @@
 package org.apache.qpid.server.plugins;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
-public interface PluginFactory<P extends Plugin>
+public interface Plugin
 {
-    public Class<P> getPluginClass();
-
-    public String getPluginName();
-
-    public P newInstance(ConfigurationPlugin config)  throws ConfigurationException;
+    /**
+     * The name of this plugin.
+     */
+    String getPluginName();
+    
+    /**
+     * Is this plugin configured?.
+     */
+    boolean isConfigured();
+    
+    /**
+     * Configure this plugin
+     */
+    void configure() throws ConfigurationException;
 }
