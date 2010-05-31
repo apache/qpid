@@ -47,7 +47,7 @@ if opts.search_path is None:
 else:
   path = []
   for p in opts.search_path:
-    path.extend(p.split(":"))
+    path.extend(p.split(os.pathsep))
 
 expanded_path = []
 for p in path:
