@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,10 +15,8 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-
-package org.apache.qpid.server.security.access.plugins.network;
+package org.apache.qpid.server.security.access;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -33,15 +30,14 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.security.Result;
+import org.apache.qpid.server.security.access.plugins.Firewall;
+import org.apache.qpid.server.security.access.plugins.FirewallConfiguration;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.TestNetworkDriver;
 
 public class FirewallPluginTest extends TestCase
 {
-
     public class RuleInfo
     {
         private String _access;
@@ -79,24 +75,18 @@ public class FirewallPluginTest extends TestCase
         }
     }
 
-    private TestableMemoryMessageStore _store;
-    private VirtualHost _virtualHost;
-    private AMQProtocolEngine _session;
-    private TestNetworkDriver _testDriver;
+    // IP address
+    private String _address;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        _store = new TestableMemoryMessageStore();
-        _testDriver = new TestNetworkDriver();
-        _testDriver.setRemoteAddress("127.0.0.1");
+        
+        _address = "127.0.0.1";
 
-        // Retreive VirtualHost from the Registry
-        VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
-        _virtualHost = virtualHostRegistry.getVirtualHost("test");
-
-        _session = new AMQProtocolEngine(virtualHostRegistry, _testDriver);
+        // Create new ApplicationRegistry
+        ApplicationRegistry.getInstance();
     }
 
     public void tearDown() throws Exception
@@ -106,12 +96,13 @@ public class FirewallPluginTest extends TestCase
         super.tearDown();
     }
 
-    private FirewallPlugin initialisePlugin(String defaultAction, RuleInfo[] rules) throws IOException, ConfigurationException
+    private Firewall initialisePlugin(String defaultAction, RuleInfo[] rules) throws IOException, ConfigurationException
     {
         // Create sample config file
         File confFile = File.createTempFile(getClass().getSimpleName()+"conffile", null);
         confFile.deleteOnExit();
         BufferedWriter buf = new BufferedWriter(new FileWriter(confFile));
+        buf.write("<security>\n");
         buf.write("<firewall default-action=\""+defaultAction+"\">\n");
         if (rules != null)
         {
@@ -131,15 +122,19 @@ public class FirewallPluginTest extends TestCase
             }
         }
         buf.write("</firewall>");
+        buf.write("</security>\n");
         buf.close();
         
         // Configure plugin
-        FirewallPlugin plugin = new FirewallPlugin();
-        plugin.setConfiguration(new XMLConfiguration(confFile));
+        FirewallConfiguration config = new FirewallConfiguration();
+        config.setConfiguration("", new XMLConfiguration(confFile));
+        Firewall plugin = new Firewall(config);
+        plugin._config = config;
+        plugin.configure();
         return plugin;
     }
 
-    private FirewallPlugin initialisePlugin(String string) throws ConfigurationException, IOException
+    private Firewall initialisePlugin(String string) throws ConfigurationException, IOException
     {
         return initialisePlugin(string, null);
     }
@@ -147,12 +142,12 @@ public class FirewallPluginTest extends TestCase
     public void testDefaultAction() throws Exception
     {
         // Test simple deny
-        FirewallPlugin plugin = initialisePlugin("deny");
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        Firewall plugin = initialisePlugin("deny");
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
 
         // Test simple allow
         plugin = initialisePlugin("allow");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
 
@@ -162,13 +157,13 @@ public class FirewallPluginTest extends TestCase
         rule.setAccess("allow");
         rule.setNetwork("192.168.23.23");
         
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("192.168.23.23");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "192.168.23.23";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
     public void testSingleNetworkRule() throws Exception
@@ -177,13 +172,13 @@ public class FirewallPluginTest extends TestCase
         rule.setAccess("allow");
         rule.setNetwork("192.168.23.0/24");
         
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("192.168.23.23");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "192.168.23.23";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
 
     public void testSingleHostRule() throws Exception
@@ -192,11 +187,11 @@ public class FirewallPluginTest extends TestCase
         rule.setAccess("allow");
         rule.setHostname(new InetSocketAddress("127.0.0.1", 5672).getHostName());
         
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("127.0.0.1");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "127.0.0.1";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
 
     public void testSingleHostWilcardRule() throws Exception
@@ -205,11 +200,11 @@ public class FirewallPluginTest extends TestCase
         rule.setAccess("allow");
         String hostname = new InetSocketAddress("127.0.0.1", 0).getHostName();
         rule.setHostname(".*"+hostname.subSequence(hostname.length() - 1, hostname.length())+"*");
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("127.0.0.1");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "127.0.0.1";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
     public void testSeveralFirstAllowsAccess() throws Exception
@@ -226,13 +221,13 @@ public class FirewallPluginTest extends TestCase
         thirdRule.setAccess("deny");
         thirdRule.setHostname("localhost");
         
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule, secondRule, thirdRule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{firstRule, secondRule, thirdRule});
 
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("192.168.23.23");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "192.168.23.23";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
     public void testSeveralLastAllowsAccess() throws Exception
@@ -249,13 +244,13 @@ public class FirewallPluginTest extends TestCase
         thirdRule.setAccess("allow");
         thirdRule.setNetwork("192.168.23.23");
         
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule, secondRule, thirdRule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{firstRule, secondRule, thirdRule});
 
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("192.168.23.23");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "192.168.23.23";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
 
     public void testNetmask() throws Exception
@@ -263,13 +258,13 @@ public class FirewallPluginTest extends TestCase
         RuleInfo firstRule = new RuleInfo();
         firstRule.setAccess("allow");
         firstRule.setNetwork("192.168.23.0/24");
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
 
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("192.168.23.23");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "192.168.23.23";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
     public void testCommaSeperatedNetmask() throws Exception
@@ -277,13 +272,13 @@ public class FirewallPluginTest extends TestCase
         RuleInfo firstRule = new RuleInfo();
         firstRule.setAccess("allow");
         firstRule.setNetwork("10.1.1.1/8, 192.168.23.0/24");
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
 
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("192.168.23.23");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "192.168.23.23";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
     public void testCommaSeperatedHostnames() throws Exception
@@ -291,13 +286,14 @@ public class FirewallPluginTest extends TestCase
         RuleInfo firstRule = new RuleInfo();
         firstRule.setAccess("allow");
         firstRule.setHostname("foo, bar, "+new InetSocketAddress("127.0.0.1", 5672).getHostName());
-        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
-        _testDriver.setRemoteAddress("10.0.0.1");
-        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        Firewall plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
         
-        // Set session IP so that we're connected from the right address
-        _testDriver.setRemoteAddress("127.0.0.1");
-        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+        // Set IP so that we're connected from the right address
+        _address = "10.0.0.1";
+        assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
+        
+        // Set IP so that we're connected from the right address
+        _address = "127.0.0.1";
+        assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
-    
 }
