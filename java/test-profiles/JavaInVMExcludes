@@ -16,3 +16,6 @@ org.apache.qpid.test.unit.ack.RecoverTest#testAcknowledgePerConsumer
 // related to QPID-2471. These are new test cases and fail with the Java broker.
 org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithAsyncConsumer
 org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
+
+//The VM broker does not export the logging management JMX MBean
+org.apache.qpid.server.security.acl.ExternalAdminACLTest#*

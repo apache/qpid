@@ -27,7 +27,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -51,13 +50,6 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         VirtualHost virtualHost = session.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
 
-        //Perform ACLs
-        if (!virtualHost.getAccessManager().authoriseDelete(session,
-                exchangeRegistry.getExchange(body.getExchange())))
-        {
-            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-        }
-
         try
         {
             if(exchangeRegistry.getExchange(body.getExchange()) == null)
@@ -75,6 +67,5 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
             throw body.getChannelException(AMQConstant.IN_USE, "Exchange in use");
             // TODO: sort out consistent channel close mechanism that does all clean up etc.
         }
-
     }
 }

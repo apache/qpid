@@ -23,14 +23,13 @@ package org.apache.qpid.server.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -59,18 +58,17 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
             _logger.debug("Publish received on channel " + channelId);
         }
 
-        AMQShortString exchange = body.getExchange();
+        AMQShortString exchangeName = body.getExchange();
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
-        if (exchange == null)
+        if (exchangeName == null)
         {
-            exchange = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
-
+            exchangeName = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
         }
 
         VirtualHost vHost = session.getVirtualHost();
-        Exchange e = vHost.getExchangeRegistry().getExchange(exchange);
+        Exchange exch = vHost.getExchangeRegistry().getExchange(exchangeName);
         // if the exchange does not exist we raise a channel exception
-        if (e == null)
+        if (exch == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange name");
         }
@@ -86,17 +84,9 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
                 throw body.getChannelNotFoundException(channelId);
             }
 
-            //Access Control
-            if (!vHost.getAccessManager().authorisePublish(session, 
-                    body.getImmediate(), body.getMandatory(), 
-                    body.getRoutingKey(), e))
-            {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-            }
-
             MessagePublishInfo info = session.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
-            info.setExchange(exchange);
-            channel.setPublishFrame(info, e);
+            info.setExchange(exchangeName);
+            channel.setPublishFrame(info, exch);
         }
     }
 

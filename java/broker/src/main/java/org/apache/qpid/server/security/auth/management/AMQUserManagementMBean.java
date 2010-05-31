@@ -18,8 +18,38 @@
  *
  * 
  */
-package org.apache.qpid.server.security.access.management;
+package org.apache.qpid.server.security.auth.management;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Principal;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
+import javax.management.JMException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import javax.management.openmbean.TabularType;
+import javax.management.remote.JMXPrincipal;
+import javax.security.auth.Subject;
+import javax.security.auth.login.AccountNotFoundException;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.log4j.Logger;
 import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
@@ -27,42 +57,11 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanInvocationHandlerImpl;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-import org.apache.qpid.util.FileUtils;
-import org.apache.log4j.Logger;
-import org.apache.commons.configuration.ConfigurationException;
-
-import javax.management.JMException;
-import javax.management.remote.JMXPrincipal;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.security.auth.login.AccountNotFoundException;
-import javax.security.auth.Subject;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.FileOutputStream;
-import java.util.Properties;
-import java.util.List;
-import java.util.Enumeration;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
-import java.security.Principal;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 
 /** MBean class for AMQUserManagementMBean. It implements all the management features exposed for managing users. */
 @MBeanDescription("User Management Interface")
 public class AMQUserManagementMBean extends AMQManagedObject implements UserManagement
 {
-
     private static final Logger _logger = Logger.getLogger(AMQUserManagementMBean.class);
 
     private PrincipalDatabase _principalDatabase;
@@ -533,6 +532,8 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     {
         _logger.debug("Setting Access Rights:" + accessRights);
         _accessRights = accessRights;
-        MBeanInvocationHandlerImpl.setAccessRights(_accessRights);
+		
+		// TODO check where this is used
+        // MBeanInvocationHandlerImpl.setAccessRights(_accessRights);
     }
 }

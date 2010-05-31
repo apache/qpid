@@ -1,6 +1,4 @@
-package org.apache.qpid.server.security.firewall;
 /*
- * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,9 +15,8 @@ package org.apache.qpid.server.security.firewall;
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
  */
-
+package org.apache.qpid.server.security.firewall;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -85,7 +82,7 @@ public class FirewallConfigTest extends QpidTestCase
         }
         out.close();
     }
-    
+
     public void testVhostAllowBrokerDeny() throws Exception
     {
         if (_broker.equals(VM))
@@ -104,8 +101,7 @@ public class FirewallConfigTest extends QpidTestCase
         {
             //Try to get a connection to the 'test2' vhost
             //This is expected to fail as it is denied at the broker level
-            conn = getConnection(new AMQConnectionURL(
-                    "amqp://username:password@clientid/test2?brokerlist='" + getBroker() + "'"));
+            conn = getConnection(new AMQConnectionURL("amqp://username:password@clientid/test2?brokerlist='" + getBroker() + "'"));
             fail("We expected the connection to fail");
         } 
         catch (JMSException e)
@@ -235,7 +231,7 @@ public class FirewallConfigTest extends QpidTestCase
         }
         );
     }
-    
+
     public void testDenyOnReloadInVhost() throws Exception
     {
         testDeny(true, new Runnable() {
@@ -259,7 +255,7 @@ public class FirewallConfigTest extends QpidTestCase
     {
         testFirewall(true, inVhost, restartOrReload);
     }
-    
+
     /*
      * Check we can get a connection
      */
@@ -278,7 +274,7 @@ public class FirewallConfigTest extends QpidTestCase
         
         return conn != null;
     }
-    
+
     private void testFirewall(boolean initial, boolean inVhost, Runnable restartOrReload) throws Exception
     {
         if (_broker.equals(VM))

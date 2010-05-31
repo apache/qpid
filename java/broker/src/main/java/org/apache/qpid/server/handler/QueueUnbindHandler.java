@@ -20,24 +20,23 @@ package org.apache.qpid.server.handler;
  * 
  */
 
-
 import org.apache.log4j.Logger;
-
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
-import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidRoutingKeyException;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.QueueUnbindBody;
+import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindBody>
 {
@@ -98,12 +97,6 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         if (exch == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
-        }
-
-        //Perform ACLs
-        if (!virtualHost.getAccessManager().authoriseUnbind(session, exch, routingKey, queue))
-        {
-            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
         }
 
         if(virtualHost.getBindingFactory().getBinding(String.valueOf(routingKey), queue, exch, FieldTable.convertToMap(body.getArguments())) == null)

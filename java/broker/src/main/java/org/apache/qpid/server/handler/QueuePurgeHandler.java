@@ -101,12 +101,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         {
                 AMQSessionModel session = queue.getExclusiveOwningSession();
 
-                //Perform ACLs
-                if (!virtualHost.getAccessManager().authorisePurge(protocolConnection, queue))
-                {
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-                }
-                else if (queue.isExclusive() && (session == null || session.getConnectionModel() != protocolConnection))
+                if (queue.isExclusive() && (session == null || session.getConnectionModel() != protocolConnection))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Queue is exclusive, but not created on this Connection.");

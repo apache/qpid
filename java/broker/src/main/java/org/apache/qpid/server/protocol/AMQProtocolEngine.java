@@ -20,16 +20,52 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.management.JMException;
+import javax.security.sasl.SaslServer;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
-
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQProtocolHeaderException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.Job;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
@@ -60,25 +96,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Sender;
-
-import javax.management.JMException;
-import javax.security.sasl.SaslServer;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocolSession, ConnectionConfig
 {
@@ -117,6 +134,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private Object _lastSent;
 
     protected volatile boolean _closed;
+    
     // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
 
@@ -358,14 +376,12 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void methodFrameReceived(int channelId, AMQMethodBody methodBody)
     {
-
         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(channelId, methodBody);
 
         try
         {
             try
             {
-
                 boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
 
                 if (!_frameListeners.isEmpty())
@@ -418,10 +434,15 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                 _logger.info(e.getMessage() + " whilst processing:" + methodBody);
                 closeConnection(channelId, e, false);
             }
+            catch (AMQSecurityException e)
+            {
+                AMQConnectionException ce = evt.getMethod().getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                _logger.info(e.getMessage() + " whilst processing:" + methodBody);
+                closeConnection(channelId, ce, false);
+            }
         }
         catch (Exception e)
         {
-
             for (AMQMethodListener listener : _frameListeners)
             {
                 listener.error(e);
@@ -999,7 +1020,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         if (throwable instanceof AMQProtocolHeaderException)
         {
-
             writeFrame(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
             _networkDriver.close();
 

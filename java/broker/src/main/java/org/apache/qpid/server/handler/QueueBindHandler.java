@@ -65,7 +65,6 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
-
         final AMQQueue queue;
         final AMQShortString routingKey;
 
@@ -113,14 +112,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
         try
         {
-
-            //Perform ACLs
-            if (!virtualHost.getAccessManager().authoriseBind(protocolConnection, exch,
-                    queue, routingKey))
-            {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-            }
-            else if (queue.isExclusive() && !queue.isDurable())
+            if (queue.isExclusive() && !queue.isDurable())
             {
                 AMQSessionModel session = queue.getExclusiveOwningSession();
                 if (session == null || session.getConnectionModel() != protocolConnection)

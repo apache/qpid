@@ -102,7 +102,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     
             if (q == null)
             {
-                q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
+                q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, false, _virtualHost,
                                                        arguments);
                 _virtualHost.getQueueRegistry().registerQueue(q);
             }

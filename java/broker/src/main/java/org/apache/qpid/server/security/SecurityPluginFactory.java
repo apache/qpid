@@ -18,16 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.access;
+package org.apache.qpid.server.security;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.plugins.PluginFactory;
 
-public interface ACLPluginFactory
+/**
+ * The factory that generates instances of security plugins. Usually implemented as a static member class in the plugin itself.
+ */
+public interface SecurityPluginFactory<S extends SecurityPlugin> extends PluginFactory<S>
 {
-
-    public boolean supportsTag(String name);
-    
-    public ACLPlugin newInstance(Configuration config) throws ConfigurationException;
-    
 }

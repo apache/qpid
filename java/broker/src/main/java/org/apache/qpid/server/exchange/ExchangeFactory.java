@@ -22,8 +22,6 @@ package org.apache.qpid.server.exchange;
 
 import java.util.Collection;
 
-import org.apache.commons.configuration.Configuration;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;

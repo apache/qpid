@@ -157,7 +157,6 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
                         catch (AMQException e)
                         {
                             // TODO
-                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                             throw new RuntimeException(e);
                         }
                     }

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.List;
 
 import javax.management.JMException;
+import javax.management.MBeanException;
 import javax.management.MBeanOperationInfo;
 
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
@@ -71,55 +72,63 @@ public interface ManagedBroker
     
     /**
      * Creates a new Exchange.
+     * 
      * @param name
      * @param type
      * @param durable
      * @throws IOException
      * @throws JMException
+     * @throws MBeanException
      */
     @MBeanOperation(name="createNewExchange", description="Creates a new Exchange", impact= MBeanOperationInfo.ACTION)
     void createNewExchange(@MBeanOperationParameter(name="name", description="Name of the new exchange")String name,
                            @MBeanOperationParameter(name="ExchangeType", description="Type of the exchange")String type,
                            @MBeanOperationParameter(name="durable", description="true if the Exchang should be durable")boolean durable)
-        throws IOException, JMException;
+            throws IOException, JMException, MBeanException;
 
     /**
      * unregisters all the channels, queuebindings etc and unregisters
      * this exchange from managed objects.
+     * 
      * @param exchange
      * @throws IOException
      * @throws JMException
+     * @throws MBeanException
      */
     @MBeanOperation(name="unregisterExchange",
                     description="Unregisters all the related channels and queuebindings of this exchange",
                     impact= MBeanOperationInfo.ACTION)
     void unregisterExchange(@MBeanOperationParameter(name= ManagedExchange.TYPE, description="Exchange Name")String exchange)
-        throws IOException, JMException;
+            throws IOException, JMException, MBeanException;
 
     /**
-     * Create a new Queue on the Broker server
+     * Create a new Queue on the Broker server.
+     * 
      * @param queueName
      * @param durable
      * @param owner
      * @throws IOException
      * @throws JMException
+     * @throws MBeanException
      */
     @MBeanOperation(name="createNewQueue", description="Create a new Queue on the Broker server", impact= MBeanOperationInfo.ACTION)
     void createNewQueue(@MBeanOperationParameter(name="queue name", description="Name of the new queue")String queueName,
                         @MBeanOperationParameter(name="owner", description="Owner name")String owner,
                         @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable)
-        throws IOException, JMException;
+            throws IOException, JMException, MBeanException;
 
     /**
      * Unregisters the Queue bindings, removes the subscriptions and unregisters
      * from the managed objects.
+     * 
      * @param queueName
      * @throws IOException
      * @throws JMException
+     * @throws MBeanException
      */
     @MBeanOperation(name="deleteQueue",
                          description="Unregisters the Queue bindings, removes the subscriptions and deletes the queue",
                          impact= MBeanOperationInfo.ACTION)
     void deleteQueue(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue Name")String queueName)
-        throws IOException, JMException;
+            throws IOException, JMException, MBeanException;
 }

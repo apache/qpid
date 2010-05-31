@@ -25,12 +25,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Properties;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Collection;
-import java.util.Arrays;
+import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -42,8 +42,6 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
-import org.apache.qpid.transport.network.ConnectionBinding;
-import org.apache.qpid.transport.*;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -56,21 +54,18 @@ import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AMQProtocolEngineFactory;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
+import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.network.mina.MINANetworkDriver;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
 
 /**
  * Main entry point for AMQPD.
  *
  */
-@SuppressWarnings({"AccessStaticViaInstance"})
 public class Main
 {
     private static Logger _logger;
@@ -83,7 +78,6 @@ public class Main
     private static final int IPV4_ADDRESS_LENGTH = 4;
 
     private static final char IPV4_LITERAL_SEPARATOR = '.';
-    private static final Collection<VERSION> ALL_VERSIONS = Arrays.asList(VERSION.values());
 
     protected static class InitException extends Exception
     {
@@ -123,6 +117,7 @@ public class Main
         }
     }
 
+    @SuppressWarnings("static-access")
     protected void setOptions(Options options)
     {
         Option help = new Option("h", "help", false, "print this message");
@@ -403,7 +398,7 @@ public class Main
 
                     NetworkDriver driver = new MINANetworkDriver();
 
-                    Set<VERSION> supported = new HashSet<VERSION>(ALL_VERSIONS);
+                    Set<VERSION> supported = EnumSet.allOf(VERSION.class);
 
                     if(exclude_0_10.contains(port))
                     {

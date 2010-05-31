@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,24 +15,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
- */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
  */
 package org.apache.qpid.server;
 
@@ -189,8 +170,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param type
      * @param durable
      * @throws JMException
+     * @throws MBeanException
      */
-    public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException
+    public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException, MBeanException
     {
         CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
@@ -216,7 +198,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            throw new MBeanException(ex, "Error in creating exchange " + exchangeName);
+            JMException jme = new JMException(ex.toString());
+            throw new MBeanException(jme, "Error in creating exchange " + exchangeName);
         }
         finally
         {
@@ -229,8 +212,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      *
      * @param exchangeName
      * @throws JMException
+     * @throws MBeanException
      */
-    public void unregisterExchange(String exchangeName) throws JMException
+    public void unregisterExchange(String exchangeName) throws JMException, MBeanException
     {
         // TODO
         // Check if the exchange is in use.
@@ -244,7 +228,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            throw new MBeanException(ex, "Error in unregistering exchange " + exchangeName);
+            JMException jme = new JMException(ex.toString());
+            throw new MBeanException(jme, "Error in unregistering exchange " + exchangeName);
         }
         finally
         {
@@ -260,8 +245,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param durable
      * @param owner
      * @throws JMException
+     * @throws MBeanException
      */
-    public void createNewQueue(String queueName, String owner, boolean durable) throws JMException
+    public void createNewQueue(String queueName, String owner, boolean durable) throws JMException, MBeanException
     {
         AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue != null)
@@ -278,8 +264,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 ownerShortString = new AMQShortString(owner);
             }
 
-            queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(queueName), durable, ownerShortString, false, false,
-                                                       getVirtualHost(), null);
+            queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(queueName), durable, ownerShortString, false, false, getVirtualHost(), null);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _durableConfig.createQueue(queue);
@@ -289,8 +274,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            JMException jme = new JMException(ex.getMessage());
-            jme.initCause(ex);
+            JMException jme = new JMException(ex.toString());
             throw new MBeanException(jme, "Error in creating queue " + queueName);
         }
         finally
@@ -309,13 +293,14 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      *
      * @param queueName
      * @throws JMException
+     * @throws MBeanException
      */
-    public void deleteQueue(String queueName) throws JMException
+    public void deleteQueue(String queueName) throws JMException, MBeanException
     {
         AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue == null)
         {
-            throw new JMException("The Queue " + queueName + " is not a registerd queue.");
+            throw new JMException("The Queue " + queueName + " is not a registered queue.");
         }
 
         CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
@@ -329,8 +314,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            JMException jme = new JMException(ex.getMessage());
-            jme.initCause(ex);
+            JMException jme = new JMException(ex.toString());
             throw new MBeanException(jme, "Error in deleting queue " + queueName);
         }
         finally
@@ -339,14 +323,16 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
     }
 
+    @Override
     public ManagedObject getParentObject()
     {
         return _virtualHostMBean;
     }
 
     // This will have a single instance for a virtual host, so not having the name property in the ObjectName
+    @Override
     public ObjectName getObjectName() throws MalformedObjectNameException
     {
         return getObjectNameForSingleInstanceMBean();
     }
-} // End of MBean class
+}

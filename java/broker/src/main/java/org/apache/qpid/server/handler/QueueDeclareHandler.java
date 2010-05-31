@@ -69,21 +69,9 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
-
-        if (!body.getPassive())
-        {
-            // Perform ACL if request is not passive
-            if (!virtualHost.getAccessManager().authoriseCreateQueue(protocolConnection, body.getAutoDelete(), body.getDurable(),
-                    body.getExclusive(), body.getNowait(), body.getPassive(), body.getQueue()))
-            {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-            }
-        }
-
         final AMQShortString queueName;
 
         // if we aren't given a queue name, we create one which we return to the client
-
         if ((body.getQueue() == null) || (body.getQueue().length() == 0))
         {
             queueName = createName();
@@ -94,11 +82,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         }
 
         AMQQueue queue;
+        
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
         synchronized (queueRegistry)
         {
-
             queue = queueRegistry.getQueue(queueName);
 
             AMQSessionModel owningSession = null;
@@ -110,7 +98,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
             if (queue == null)
             {
-
                 if (body.getPassive())
                 {
                     String msg = "Queue: " + queueName + " not found on VirtualHost(" + virtualHost + ").";
@@ -129,9 +116,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                         queue.setDeleteOnNoConsumers(true);
                     }
                     queueRegistry.registerQueue(queue);
-                    if(body.getExclusive())
+                    if (body.getExclusive())
                     {
-
                         queue.setExclusiveOwningSession(protocolConnection.getChannel(channelId));
                         queue.setPrincipalHolder(protocolConnection);
 
@@ -153,7 +139,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                                 }
                             });
                         }
-
                     }
                     if (autoRegister)
                     {
@@ -239,7 +224,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(),
                                                                   body.getExclusive(),virtualHost, body.getArguments());
 
-
         if (body.getExclusive() && !body.getDurable())
         {
             final AMQProtocolSession.Task deleteQueueTask =
@@ -263,7 +247,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     session.removeSessionCloseTask(deleteQueueTask);
                 }
             });
-        }// if exclusive and not durable
+        }
 
         return queue;
     }

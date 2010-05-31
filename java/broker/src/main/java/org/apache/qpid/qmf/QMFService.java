@@ -1063,7 +1063,14 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public BrokerSchema.QueueClass.PurgeMethodResponseCommand purge(final BrokerSchema.QueueClass.PurgeMethodResponseCommandFactory factory,
                                                                         final Long request)
         {
-            _obj.purge(request);
+            try
+            {
+                _obj.purge(request);
+            } catch (AMQException e)
+            {
+                // TODO
+                throw new RuntimeException();
+            }
             return factory.createResponseCommand();
         }
 
