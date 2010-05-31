@@ -30,7 +30,7 @@
   <property name="qpidbuildversion.java" location="${module.precompiled}/org/apache/qpid/QpidBuildVersion.java" />
   <property name="xml.spec.dir" location="${project.root}/../specs" />
   <property name="xml.spec.deps" value="amqp.0-8.xml amqp.0-9.xml amqp0-9-1.stripped.xml" />
-  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/amqp.0-9.xml ${xml.spec.dir}/amqp0-9-1.stripped.xml" />
+  <property name="xml.spec.list" value='"${xml.spec.dir}/amqp.0-8.xml" "${xml.spec.dir}/amqp.0-9.xml" "${xml.spec.dir}/amqp0-9-1.stripped.xml"' />
   <property name="gentools.timestamp" location="${generated.dir}/gentools.timestamp" />
   <property name="jython.timestamp" location="${generated.dir}/jython.timestamp" />
 
@@ -65,13 +65,13 @@
   <target name="gentools" depends="compile_gentools,check_gentool_deps" unless="gentools.notRequired">
     <mkdir dir="${generated.dir}"/>
     <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src" failonerror="true">
-      <arg line="-j -o ${generated.dir} -t ${project.root}/common/templates ${xml.spec.list}"/>
+      <arg line='-j -o "${generated.dir}" -t "${project.root}/common/templates" ${xml.spec.list}'/>
       <classpath>
         <pathelement path="${gentools.home}/src" />
         <fileset dir="${gentools.home}/lib">
           <include name="**/*.jar"/>
         </fileset>
-	<pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+        <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
         <pathelement path="${gentools.home}/lib/velocity-dep-1.4.jar" />
       </classpath>
     </java>

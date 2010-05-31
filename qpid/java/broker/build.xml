@@ -74,7 +74,11 @@
   <target name="gen_logging" depends="compile_velocity,check_velocity_deps" unless="velocity.notRequired">
     <mkdir dir="${generated.dir}"/>
     <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
-      <arg line="-j -o ${generated.dir} -t ${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
+      <arg value="-j"/>
+      <arg value="-o"/>
+      <arg value="${generated.dir}"/>
+      <arg value="-t"/>
+      <arg value="${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
       <classpath>
         <pathelement path="${project.root}/broker/src/main/java"/>
         <pathelement path="${velocity.compile.dir}" />
