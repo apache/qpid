@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -28,7 +29,6 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 
 import java.util.Map;
 import java.util.HashMap;
-
 
 public class AMQQueueFactory
 {
@@ -128,22 +128,20 @@ public class AMQQueueFactory
     };
 
 
-
+    /** @see #createAMQQueueImpl(String, boolean, String, boolean, boolean, VirtualHost, Map) */
     public static AMQQueue createAMQQueueImpl(AMQShortString name,
                                               boolean durable,
                                               AMQShortString owner,
                                               boolean autoDelete,
-                                              boolean exclusive, 
-                                              VirtualHost virtualHost,
-                                              final FieldTable arguments)
+                                              boolean exclusive,
+                                              VirtualHost virtualHost, final FieldTable arguments) throws AMQException
     {
         return createAMQQueueImpl(name == null ? null : name.toString(),
                                   durable,
                                   owner == null ? null : owner.toString(),
                                   autoDelete,
                                   exclusive,
-                                  virtualHost, 
-                                  FieldTable.convertToMap(arguments));
+                                  virtualHost, FieldTable.convertToMap(arguments));
     }
 
 
@@ -152,8 +150,15 @@ public class AMQQueueFactory
                                               String owner,
                                               boolean autoDelete,
                                               boolean exclusive,
-                                              VirtualHost virtualHost, Map<String, Object> arguments)
+                                              VirtualHost virtualHost, Map<String, Object> arguments) throws AMQSecurityException
     {
+        // Access check
+        if (!virtualHost.getSecurityManager().authoriseCreateQueue(autoDelete, durable, exclusive, null, null, new AMQShortString(queueName), owner))
+        {
+            String description = "Permission denied: queue-name '" + queueName + "'";
+            throw new AMQSecurityException(description);
+        }
+        
         int priorities = 1;
         String conflationKey = null;
         if(arguments != null)

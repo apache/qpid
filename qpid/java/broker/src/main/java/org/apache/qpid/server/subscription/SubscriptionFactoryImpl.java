@@ -20,25 +20,17 @@
  */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionFactory;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.flow.FlowCreditManager;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 public class SubscriptionFactoryImpl implements SubscriptionFactory
 {
-
-  /*  private SubscriptionFactoryImpl()
-    {
-
-    }*/
-
     public Subscription createSubscription(int channelId, AMQProtocolSession protocolSession,
                                            AMQShortString consumerTag, boolean acks, FieldTable filters,
                                            boolean noLocal, FlowCreditManager creditManager) throws AMQException

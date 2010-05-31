@@ -147,13 +147,13 @@ public class TopicSessionTest extends QpidTestCase
 
     public void testUnsubscriptionAfterConnectionClose() throws Exception
     {
-        AMQConnection con1 = (AMQConnection) getConnection("guest", "guest", "clientid");
+        AMQConnection con1 = (AMQConnection) getClientConnection("guest", "guest", "clientid");
         AMQTopic topic = new AMQTopic(con1, "MyTopic3");
 
         TopicSession session1 = con1.createTopicSession(true, AMQSession.AUTO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
 
-        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest", "clientid");
+        AMQConnection con2 = (AMQConnection) getClientConnection("guest", "guest", "clientid");
         TopicSession session2 = con2.createTopicSession(true, AMQSession.AUTO_ACKNOWLEDGE);
         TopicSubscriber sub = session2.createDurableSubscriber(topic, "subscription0");
 
@@ -167,7 +167,7 @@ public class TopicSessionTest extends QpidTestCase
         con2.close();
         publisher.publish(session1.createTextMessage("Hello2"));
         session1.commit();
-        con2 =  (AMQConnection) getConnection("guest", "guest", "clientid");
+        con2 =  (AMQConnection) getClientConnection("guest", "guest", "clientid");
         session2 = con2.createTopicSession(true, AMQSession.NO_ACKNOWLEDGE);
         sub = session2.createDurableSubscriber(topic, "subscription0");
         con2.start();
@@ -367,7 +367,7 @@ public class TopicSessionTest extends QpidTestCase
         m = (TextMessage) noLocal.receive(100);
         assertNull(m);
 
-        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest", "foo");
+        AMQConnection con2 = (AMQConnection) getClientConnection("guest", "guest", "foo");
         TopicSession session2 = con2.createTopicSession(true, AMQSession.AUTO_ACKNOWLEDGE);
         TopicPublisher publisher2 = session2.createPublisher(topic);
 

@@ -99,7 +99,7 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
         }
         catch (AccountNotFoundException e)
         {
-            throw new SecurityException(INVALID_CREDENTIALS);
+            throw new SecurityException(INVALID_CREDENTIALS); // XXX
         }
 
         if (authenticated)

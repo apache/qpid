@@ -51,9 +51,6 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
     {
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
 
-
-
-
         AMQChannel channel = protocolConnection.getChannel(channelId);
 
         VirtualHost vHost = protocolConnection.getVirtualHost();
@@ -93,17 +90,9 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             }
             else
             {
-
                 final AMQShortString consumerTagName;
 
-                // Check authz
-                if (!vHost.getAccessManager().authoriseConsume(protocolConnection,
-                        body.getExclusive(), body.getNoAck(),
-                        body.getNoLocal(), body.getNowait(), queue))
-                {
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-                }
-                else if (queue.isExclusive() && !queue.isDurable())
+                if (queue.isExclusive() && !queue.isDurable())
                 {
                     AMQSessionModel session = queue.getExclusiveOwningSession();
                     if (session == null || session.getConnectionModel() != protocolConnection)

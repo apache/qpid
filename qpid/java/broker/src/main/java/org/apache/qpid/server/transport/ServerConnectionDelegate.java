@@ -22,6 +22,7 @@ package org.apache.qpid.server.transport;
 
 import org.apache.qpid.transport.*;
 
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -29,16 +30,13 @@ import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslException;
 import java.util.*;
 
-
 public class ServerConnectionDelegate extends ServerDelegate
 {
-
     private String _localFQDN;
     private final IApplicationRegistry _appRegistry;
 
 
-    public ServerConnectionDelegate(IApplicationRegistry appRegistry,
-                                    String localFQDN)
+    public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN)
     {
         this(new HashMap<String,Object>(Collections.singletonMap("qpid.federation_tag",appRegistry.getBroker().getFederationTag())), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN);
     }
@@ -50,6 +48,7 @@ public class ServerConnectionDelegate extends ServerDelegate
                                     String localFQDN)
     {
         super(properties, parseToList(appRegistry.getAuthenticationManager().getMechanisms()), locales);
+        
         _appRegistry = appRegistry;
         _localFQDN = localFQDN;
     }
@@ -65,18 +64,15 @@ public class ServerConnectionDelegate extends ServerDelegate
         return list;
     }
 
-    @Override public ServerSession getSession(Connection conn, SessionAttach atc)
+    @Override
+    public ServerSession getSession(Connection conn, SessionAttach atc)
     {
-
         SessionDelegate serverSessionDelegate = new ServerSessionDelegate(_appRegistry);
 
         ServerSession ssn = new ServerSession(conn, serverSessionDelegate,  new Binary(atc.getName()), 0);
         //ssn.setSessionListener(new Echo());
         return ssn;
     }
-
-
-
 
     @Override
     protected SaslServer createSaslServer(String mechanism) throws SaslException
@@ -85,11 +81,10 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     }
 
-
     @Override public void connectionOpen(Connection conn, ConnectionOpen open)
     {
         ServerConnection sconn = (ServerConnection) conn;
-
+        
         VirtualHost vhost;
         String vhostName;
         if(open.hasVirtualHost())
@@ -102,19 +97,27 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
         vhost = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhostName);
 
+        SecurityManager.setThreadPrincipal(conn.getAuthorizationID());
+        
         if(vhost != null)
         {
             sconn.setVirtualHost(vhost);
 
-            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
-
-            sconn.setState(Connection.State.OPEN);
+            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, sconn.getConfig().getAddress()))
+            {
+                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
+                sconn.setState(Connection.State.CLOSING);
+            }
+            else
+            {
+	            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
+	            sconn.setState(Connection.State.OPEN);
+            }
         }
         else
         {
-            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '" + vhostName + "'"));
+            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
             sconn.setState(Connection.State.CLOSING);
         }
-
     }
 }

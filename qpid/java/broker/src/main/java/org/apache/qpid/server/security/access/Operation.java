@@ -15,35 +15,35 @@
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
  *  under the License.
- *
- *
  */
 package org.apache.qpid.server.security.access;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.security.access.plugins.AllowAll;
-import org.apache.qpid.server.security.PrincipalHolder;
-
-public class ExchangeDenier extends AllowAll
+/**
+ * An enumeration of all possible actions that can form part of an access control v2 rule.
+ */
+public enum Operation
 {
-
-    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
+    ALL,
+    CONSUME,
+    PUBLISH,
+    CREATE,
+    ACCESS,
+    BIND,
+    UNBIND,
+    DELETE,
+    PURGE,
+    UPDATE,
+    EXECUTE;
+    
+    public static Operation parse(String text)
     {
-        public boolean supportsTag(String name)
+        for (Operation operation : values())
         {
-            return name.startsWith("exchangeDenier");
+            if (operation.name().equalsIgnoreCase(text))
+            {
+                return operation;
+            }
         }
-
-        public ACLPlugin newInstance(Configuration config)
-        {
-            return new ExchangeDenier();
-        }
-    };
-
-    @Override
-    public AuthzResult authoriseDelete(PrincipalHolder session, Exchange exchange)
-    {
-        return AuthzResult.DENIED;
+        throw new IllegalArgumentException("Not a valid operation: " + text);
     }
 }

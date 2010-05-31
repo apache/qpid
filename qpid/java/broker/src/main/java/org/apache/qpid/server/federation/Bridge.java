@@ -674,13 +674,22 @@ public class Bridge implements BridgeConfig
             options.put("qpid.trace.exclude", _link.getFederationTag());
             options.put("qpid.trace.id",_link.getRemoteFederationTag());
 
-            _queue = AMQQueueFactory.createAMQQueueImpl(_tmpQueueName,
+            try
+            {
+                _queue = AMQQueueFactory.createAMQQueueImpl(_tmpQueueName,
                                                         isDurable(),
                                                         _link.getFederationTag(),
                                                         false,
                                                         false,
-                                                        getVirtualHost(), options);
-
+                                                        getVirtualHost(),
+                                                        options);
+            }
+            catch (AMQException e)
+            {
+                // TODO
+                throw new RuntimeException(e);
+            }
+                
             FlowCreditManager_0_10 creditManager = new WindowCreditManager(0xFFFFFFFF,getMessageWindowSize());
 
             Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
@@ -695,14 +704,13 @@ public class Bridge implements BridgeConfig
             try
             {
                 _queue.registerSubscription(sub, true);
+                getVirtualHost().getBindingFactory().addBinding(_key, _queue, exchange, Collections.<String, Object>emptyMap());
             }
             catch (AMQException e)
             {
                 // TODO
                 throw new RuntimeException(e);
             }
-
-            getVirtualHost().getBindingFactory().addBinding(_key, _queue, exchange, Collections.EMPTY_MAP);
         }
 
         public void close()

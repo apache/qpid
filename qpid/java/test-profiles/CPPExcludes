@@ -1,9 +1,14 @@
 org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 org.apache.qpid.client.ResetMessageListenerTest#*
 
+//These tests will not work until 0-10 exception halding is fixed
+org.apache.qpid.server.security.acl.*
+
 //These tests are for the java broker
-org.apache.qpid.server.security.acl.SimpleACLTest#*
+org.apache.qpid.server.security.access.plugins.*
+org.apache.qpid.server.security.access.*
 org.apache.qpid.server.security.firewall.FirewallConfigTest#*
+org.apache.qpid.server.security.firewall.FirewallConfigurationTest#*
 org.apache.qpid.server.plugins.PluginTest#*
 org.apache.qpid.server.BrokerStartupTest#*
 

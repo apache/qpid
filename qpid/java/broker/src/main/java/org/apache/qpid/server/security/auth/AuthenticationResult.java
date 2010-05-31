@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.security.auth;
 
-import javax.security.sasl.SaslException;
-
 public class AuthenticationResult
 {
     public enum AuthenticationStatus

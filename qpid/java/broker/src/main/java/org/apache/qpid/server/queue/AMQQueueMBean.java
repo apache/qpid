@@ -28,6 +28,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
@@ -39,6 +40,7 @@ import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.transport.MessageProperties;
 
 import javax.management.JMException;
+import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
 import javax.management.OperationsException;
@@ -336,7 +338,14 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
      */
     public Long clearQueue() throws JMException
     {
-        return _queue.clearQueue();
+        try
+        {
+            return _queue.clearQueue();
+        }
+        catch (AMQException ex)
+        {
+            throw new MBeanException(ex, "Error clearing queue " + _queueName);
+        }
     }
 
     /**

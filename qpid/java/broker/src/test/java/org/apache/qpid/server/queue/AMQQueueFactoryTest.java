@@ -49,7 +49,7 @@ public class AMQQueueFactoryTest extends TestCase
     }
 
 
-    public void testPriorityQueueRegistration()
+    public void testPriorityQueueRegistration() throws Exception
     {
         FieldTable fieldTable = new FieldTable();
         fieldTable.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), 5);
@@ -62,7 +62,7 @@ public class AMQQueueFactoryTest extends TestCase
     }
 
 
-    public void testSimpleQueueRegistration()
+    public void testSimpleQueueRegistration() throws Exception
     {
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
                                            false, _virtualHost, null);

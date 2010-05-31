@@ -92,13 +92,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             }
             else
             {
-
-                //Perform ACLs
-                if (!vHost.getAccessManager().authoriseConsume(protocolConnection, body.getNoAck(), queue))
-                {
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-                }
-                else if (queue.isExclusive())
+                if (queue.isExclusive())
                 {
                     AMQSessionModel session = queue.getExclusiveOwningSession();
                     if (session == null || session.getConnectionModel() != protocolConnection)

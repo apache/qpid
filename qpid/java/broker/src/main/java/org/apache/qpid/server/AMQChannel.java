@@ -23,6 +23,7 @@ package org.apache.qpid.server;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -244,9 +245,12 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         return _channelId;
     }
 
-    public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQException
+    public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQSecurityException
     {
-
+        if (!getVirtualHost().getSecurityManager().authorisePublish(info.isImmediate(), info.getRoutingKey().asString(), e.getName()))
+        {
+            throw new AMQSecurityException("Permission denied: " + e.getName());
+        }
         _currentMessage = new IncomingMessage(info);
         _currentMessage.setExchange(e);
     }
@@ -421,7 +425,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         {
             throw new AMQException("Consumer already exists with same tag: " + tag);
         }
-
+        
          Subscription subscription =
                 SubscriptionFactoryImpl.INSTANCE.createSubscription(_channelId, _session, tag, acks, filters, noLocal, _creditManager);
 

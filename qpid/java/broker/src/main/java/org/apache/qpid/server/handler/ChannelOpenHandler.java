@@ -20,15 +20,19 @@
  */
 package org.apache.qpid.server.handler;
 
-import java.util.UUID;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.UUID;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
+import org.apache.qpid.framing.ChannelOpenBody;
+import org.apache.qpid.framing.ChannelOpenOkBody;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
+import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
@@ -39,6 +43,8 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenBody>
 {
+    private static final Logger _logger = Logger.getLogger(ChannelOpenHandler.class);
+    
     private static ChannelOpenHandler _instance = new ChannelOpenHandler();
 
     public static ChannelOpenHandler getInstance()
@@ -54,19 +60,16 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
-
         
         // Protect the broker against out of order frame request.
         if (virtualHost == null)
         {
             throw new AMQException(AMQConstant.COMMAND_INVALID, "Virtualhost has not yet been set. ConnectionOpen has not been called.", null);
         }
+        _logger.info("Connecting to: " + virtualHost.getName());
 
-        final AMQChannel channel = new AMQChannel(session,channelId,
-                                                  virtualHost.getMessageStore());
-
+        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getMessageStore());
         
-
         session.addChannel(channel);
 
         ChannelOpenOkBody response;

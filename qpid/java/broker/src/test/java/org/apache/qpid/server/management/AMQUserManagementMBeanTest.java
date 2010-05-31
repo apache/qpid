@@ -19,24 +19,20 @@
  *
  */
 
-package org.apache.qpid.server.security.access.management;
+package org.apache.qpid.server.management;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
+import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.management.MBeanInvocationHandlerImpl;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-
-import junit.framework.TestCase;
+import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
 
 /* Note: The main purpose is to test the jmx access rights file manipulation 
  * within AMQUserManagementMBean. The Principal Databases are tested by their own tests, 

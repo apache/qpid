@@ -97,7 +97,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                                                                 ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
                 session.writeFrame(tuneBody.generateFrame(0));
                 session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));
-                disposeSaslServer(session);
+                disposeSaslServer(session);                
                 break;
             case CONTINUE:
                 stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);

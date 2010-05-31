@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.server.handler;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
-import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
-import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ConnectionOpenBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.log4j.Logger;
 
 public class ConnectionOpenMethodHandler implements StateAwareMethodListener<ConnectionOpenBody>
 {
@@ -57,7 +57,6 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-
         //ignore leading '/'
         String virtualHostName;
         if ((body.getVirtualHost() != null) && body.getVirtualHost().charAt(0) == '/')
@@ -77,13 +76,14 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         }
         else
         {
-            session.setVirtualHost(virtualHost);
-
-            //Perform ACL
-            if (!virtualHost.getAccessManager().authoriseConnect(session, virtualHost))
+            // Check virtualhost access
+            if (!virtualHost.getSecurityManager().accessVirtualhost(virtualHostName, session.getRemoteAddress().toString()))
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied: '" + virtualHost.getName() + "'");
             }
+
+            session.setVirtualHost(virtualHost);
+            _logger.error(session.getPrincipal().getName());
 
             // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
             if (session.getContextKey() == null)
@@ -97,8 +97,6 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             stateManager.changeState(AMQState.CONNECTION_OPEN);
 
             session.writeFrame(responseBody.generateFrame(channelId));
-
-
         }
     }
 }

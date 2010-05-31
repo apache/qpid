@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -194,7 +195,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void deleteMessageFromTop();
 
-    long clearQueue();
+    long clearQueue() throws AMQException;
 
     /**
      * Checks the status of messages on the queue, purging expired ones, firing age related alerts etc.

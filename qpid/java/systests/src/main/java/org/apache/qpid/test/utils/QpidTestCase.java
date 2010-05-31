@@ -56,6 +56,7 @@ import junit.framework.TestResult;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
@@ -71,33 +72,29 @@ import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.LogMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- *
- *
+ * Qpid base class for system testing test cases.
  */
 public class QpidTestCase extends TestCase
 {
     protected final String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
 
-    protected static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
+    protected static final Logger _logger = Logger.getLogger(QpidTestCase.class);
     protected static final int LOGMONITOR_TIMEOUT = 5000;
 
     protected long RECEIVE_TIMEOUT = 1000l;
 
     private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
     private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
-    private Map<org.apache.log4j.Logger, Level> _loggerLevelSetForTest = new HashMap<org.apache.log4j.Logger, Level>();
+    private Map<Logger, Level> _loggerLevelSetForTest = new HashMap<Logger, Level>();
 
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
     private XMLConfiguration _testVirtualhosts = new XMLConfiguration();
 
     protected static final String INDEX = "index";
     protected static final String CONTENT = "content";
-
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -198,10 +195,10 @@ public class QpidTestCase extends TestCase
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
-    private String _output = System.getProperty(TEST_OUTPUT);
+    protected String _output = System.getProperty(TEST_OUTPUT);
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
-    private static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
+    protected static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
     protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
 
     protected File _outputFile;
@@ -210,10 +207,10 @@ public class QpidTestCase extends TestCase
 
     protected Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
 
-    private InitialContext _initialContext;
+    protected InitialContext _initialContext;
     protected AMQConnectionFactory _connectionFactory;
 
-    private String _testName;
+    protected String _testName;
 
     // the connections created for a given test
     protected List<Connection> _connections = new ArrayList<Connection>();
@@ -248,6 +245,11 @@ public class QpidTestCase extends TestCase
     {
         this("QpidTestCase");
     }
+	
+	public Logger getLogger()
+	{
+		return QpidTestCase._logger;
+	}
 
     public void runBare() throws Throwable
     {
@@ -286,6 +288,11 @@ public class QpidTestCase extends TestCase
         try
         {
             super.runBare();
+        }
+        catch (Exception e)
+        {
+            _logger.error("exception", e);
+            throw e;
         }
         finally
         {
@@ -935,7 +942,7 @@ public class QpidTestCase extends TestCase
      * @param logger the logger to change
      * @param level the level to set
      */
-    protected void setLoggerLevel(org.apache.log4j.Logger logger, Level level)
+    protected void setLoggerLevel(Logger logger, Level level)
     {
         assertNotNull("Cannot set level of null logger", logger);
         assertNotNull("Cannot set Logger("+logger.getName()+") to null level.",level);
@@ -954,7 +961,7 @@ public class QpidTestCase extends TestCase
      */
     protected void revertLoggingLevels()
     {
-        for (org.apache.log4j.Logger logger : _loggerLevelSetForTest.keySet())
+        for (Logger logger : _loggerLevelSetForTest.keySet())
         {
             logger.setLevel(_loggerLevelSetForTest.get(logger));
         }
@@ -1079,7 +1086,8 @@ public class QpidTestCase extends TestCase
 
     public Connection getConnection(ConnectionURL url) throws JMSException
     {
-        Connection connection = new AMQConnectionFactory(url).createConnection("guest", "guest");
+        _logger.info(url.getURL());
+        Connection connection = new AMQConnectionFactory(url).createConnection(url.getUsername(), url.getPassword());
 
         _connections.add(connection);
 
@@ -1098,14 +1106,14 @@ public class QpidTestCase extends TestCase
      */
     public Connection getConnection(String username, String password) throws JMSException, NamingException
     {
-        _logger.info("get Connection");
+        _logger.info("get connection");
         Connection con = getConnectionFactory().createConnection(username, password);
         //add the connection in the lis of connections
         _connections.add(con);
         return con;
     }
 
-    public Connection getConnection(String username, String password, String id) throws JMSException, URLSyntaxException, AMQException, NamingException
+    public Connection getClientConnection(String username, String password, String id) throws JMSException, URLSyntaxException, AMQException, NamingException
     {
         _logger.info("get Connection");
         Connection con;
@@ -1382,10 +1390,19 @@ public class QpidTestCase extends TestCase
             /*
              * Sigh, this is going to get messy. grep for BRKR and the port number
              */
-
-            Process p = Runtime.getRuntime().exec("/usr/bin/pgrep -f " + getPort(port));
+            String osName = System.getProperty("os.name");
+            boolean osx = osName.equals("Mac OS X");
+            
+            String cmd = osx ? "/usr/sbin/lsof -i TCP:%d -Fp" : "/usr/bin/pgrep -f %d";            
+            Process p = Runtime.getRuntime().exec(String.format(cmd, getPort(port)));
             BufferedReader reader = new BufferedReader (new InputStreamReader(p.getInputStream()));
-            String cmd = "/bin/kill -SIGHUP " + reader.readLine();
+            String pid = reader.readLine();
+            while (reader.ready())
+            {
+                pid = reader.readLine();
+            }
+            
+            cmd = "/bin/kill -SIGHUP " + (osx ? pid.substring(1) : pid);
             p = Runtime.getRuntime().exec(cmd);
 
             LogMonitor _monitor = new LogMonitor(_outputFile);

@@ -45,8 +45,6 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         return _instance;
     }
 
-
-
     private ExchangeDeclareHandler()
     {
     }
@@ -58,27 +56,14 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
 
-        if (!body.getPassive())
-        {
-            // Perform ACL if request is not passive
-            if (!virtualHost.getAccessManager().authoriseCreateExchange(session, body.getAutoDelete(),
-                    body.getDurable(), body.getExchange(), body.getInternal(), body.getNowait(), body.getPassive(),
-                    body.getType()))
-            {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-            }
-
-        }
-
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Request to declare exchange of type " + body.getType() + " with name " + body.getExchange());
         }
+        
         synchronized(exchangeRegistry)
         {
             Exchange exchange = exchangeRegistry.getExchange(body.getExchange());
-
-
 
             if (exchange == null)
             {
@@ -90,7 +75,6 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 {
                     try
                     {
-
                         exchange = exchangeFactory.createExchange(body.getExchange() == null ? null : body.getExchange().intern(),
                                                                   body.getType() == null ? null : body.getType().intern(),
                                                                   body.getDurable(),
@@ -113,14 +97,12 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
                 throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " + body.getExchange() + " of type " + exchange.getTypeShortString() + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
             }
-
         }
         if(!body.getNowait())
         {
             MethodRegistry methodRegistry = session.getMethodRegistry();
             AMQMethodBody responseBody = methodRegistry.createExchangeDeclareOkBody();
             session.writeFrame(responseBody.generateFrame(channelId));
-
         }
     }
 }

@@ -99,24 +99,17 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
             {
                 // TODO - Error code
                 throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is still used.");
-
             }
             else
             {
-
                 AMQSessionModel session = queue.getExclusiveOwningSession();
-                //Perform ACLs
-                if (!virtualHost.getAccessManager().authoriseDelete(protocolConnection, queue))
-                {
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
-                }
-                else if (queue.isExclusive() && !queue.isDurable() && (session == null || session.getConnectionModel() != protocolConnection))
+                if (queue.isExclusive() && !queue.isDurable() && (session == null || session.getConnectionModel() != protocolConnection))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Queue " + queue.getNameShortString() + " is exclusive, but not created on this Connection.");
                 }
+                
                 int purged = queue.delete();
-
 
                 if (queue.isDurable())
                 {

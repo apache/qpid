@@ -124,7 +124,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     @SuppressWarnings("finally")
     public static void initialise(IApplicationRegistry instance, int instanceID) throws Exception
     {
-        _logger.error("initialise(IApplicationRegistry instance, int instanceID)");
         if (instance != null)
         {
             _logger.info("Initialising Application Registry(" + instance + "):" + instanceID);
@@ -142,7 +141,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             try
             {
-                _logger.error("instance.initialise(instanceID)");
                 instance.initialise(instanceID);
             }
             catch (Exception e)
@@ -237,12 +235,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void configure() throws ConfigurationException
     {
-
         _configurationManager = new ConfigurationManager();
 
         try
         {
-            _pluginManager = new PluginManager(_configuration.getPluginDirectory());
+            _pluginManager = new PluginManager(_configuration.getPluginDirectory(), _configuration.getCacheDirectory());
         }
         catch (Exception e)
         {

@@ -35,9 +35,6 @@
 
 
             <security>
-                <access>
-                    <class>org.apache.qpid.server.security.access.plugins.SimpleXML</class>
-                </access>
                 <access_control_list>
                     <!-- This section grants pubish rights to an exchange + routing key pair -->
                     <publish>
@@ -45,7 +42,6 @@
                             <exchange>
                                 <name>amq.direct</name>
                                 <routing_keys>
-
                                     <!-- Allow clients to publish requests -->
                                     <routing_key>
                                         <value>example.RequestQueue</value>
@@ -68,7 +64,6 @@
                                         </users>
                                     </routing_key>
                                 </routing_keys>
-
                             </exchange>
                         </exchanges>
                     </publish>
@@ -90,7 +85,14 @@
                                 </users>
                             </queue>
 
-
+                            <!-- Allow client and server to consume from the kipper Queue-->
+                            <queue>
+                                <name>clientid:kipper</name>
+                                <users>
+                                    <user>client</user>
+                                    <user>server</user>
+                                </users>
+                            </queue>
                         </queues>
                     </consume>
 
@@ -110,10 +112,28 @@
                                         <name>amq.direct</name>
                                         <users>
                                             <user>client</user>
+                                            <user>server</user>
+                                        </users>
+                                    </exchange>
+                                    <exchange>
+                                        <name>amq.topic</name>
+                                        <users>
+                                            <user>client</user>
+                                            <user>server</user>
                                         </users>
                                     </exchange>
                                 </exchanges>
                             </queue>
+                            
+                            <!--  everyone can create the kipper queue --> 
+                            <queue>
+                                <name>clientid:kipper</name>
+                                <users>
+                                    <user>client</user>
+                                    <user>server</user>
+                                </users>
+                            </queue>
+                            
                             <!-- Allow the server to create the Request Queue-->
                             <queue>
                                 <name>example.RequestQueue</name>
@@ -121,13 +141,21 @@
                                     <user>server</user>
                                 </users>
                             </queue>
-
                         </queues>
                     </create>
 
-
+                    <delete>
+                        <queues>
+                            <!--  only client can delete the kipper queue --> 
+                            <queue>
+                                <name>clientid:kipper</name>
+                                <users>
+                                    <user>client</user>
+                                </users>
+                            </queue>
+                        </queues>
+                    </delete>
                 </access_control_list>
-
             </security>
         </test>
     </virtualhost>
@@ -136,10 +164,6 @@
         <name>test2</name>
         <test2>
             <security>
-                <access>
-                    <class>org.apache.qpid.server.security.access.plugins.SimpleXML</class>
-                </access>
-                
                 <access_control_list>
                     <!-- This section grants specific users full permissions to all artifacts in this virtualhost -->
                     <access>

@@ -20,34 +20,36 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
-import org.apache.qpid.management.common.mbeans.UserManagement;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Principal;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.management.Attribute;
+import javax.management.JMException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanServer;
+import javax.management.Notification;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnectionNotification;
+import javax.management.remote.JMXPrincipal;
+import javax.management.remote.MBeanServerForwarder;
+import javax.security.auth.Subject;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.log4j.Logger;
-
-import javax.management.remote.MBeanServerForwarder;
-import javax.management.remote.JMXPrincipal;
-import javax.management.remote.JMXConnectionNotification;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
-import javax.management.JMException;
-import javax.management.NotificationListener;
-import javax.management.Notification;
-import javax.security.auth.Subject;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.Principal;
-import java.security.AccessControlContext;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Properties;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 
 /**
  * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. This implements
@@ -65,18 +67,11 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
     private MBeanServer _mbs;
     private static Properties _userRoles = new Properties();
     private static ManagementActor  _logActor;
-
-    private static HashSet<String> _adminOnlyMethods = new HashSet<String>();
-    {
-        _adminOnlyMethods.add(UserManagement.TYPE); 
-        _adminOnlyMethods.add(LoggingManagement.TYPE);
-        _adminOnlyMethods.add(ConfigurationManagement.TYPE);
-    }
     
     public static MBeanServerForwarder newProxyInstance()
     {
         final InvocationHandler handler = new MBeanInvocationHandlerImpl();
-        final Class[] interfaces = new Class[]{MBeanServerForwarder.class};
+        final Class<?>[] interfaces = new Class[] { MBeanServerForwarder.class };
 
 
         _logActor = new ManagementActor(CurrentActor.get().getRootMessageLogger());
@@ -87,7 +82,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
     {
-        final String methodName = method.getName();
+        final String methodName = getMethodName(method, args);
 
         if (methodName.equals("getMBeanServer"))
         {
@@ -112,145 +107,165 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         AccessControlContext acc = AccessController.getContext();
         Subject subject = Subject.getSubject(acc);
 
-        // Allow operations performed locally on behalf of the connector server itself
-        if (subject == null)
+        try
         {
-            return method.invoke(_mbs, args);
-        }
-
-        if (args == null || DELEGATE.equals(args[0]))
-        {
-            return method.invoke(_mbs, args);
-        }
-
-        // Restrict access to "createMBean" and "unregisterMBean" to any user
-        if (methodName.equals("createMBean") || methodName.equals("unregisterMBean"))
-        {
-            _logger.debug("User trying to create or unregister an MBean");
-            throw new SecurityException("Access denied");
-        }
-
-        // Retrieve JMXPrincipal from Subject
-        Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
-        if (principals == null || principals.isEmpty())
-        {
-            throw new SecurityException("Access denied");
-        }
-
-        Principal principal = principals.iterator().next();
-        String identity = principal.getName();
-
-        if (isAdminMethod(args))
-        {
-            if (isAdmin(identity))
+            // Allow operations performed locally on behalf of the connector server itself
+            if (subject == null)
             {
                 return method.invoke(_mbs, args);
             }
+    
+            if (args == null || DELEGATE.equals(args[0]))
+            {
+                return method.invoke(_mbs, args);
+            }
+    
+            // Restrict access to "createMBean" and "unregisterMBean" to any user
+            if (methodName.equals("createMBean") || methodName.equals("unregisterMBean"))
+            {
+                _logger.debug("User trying to create or unregister an MBean");
+                throw new SecurityException("Access denied: " + methodName);
+            }
+    
+            // Allow querying available object names
+            if (methodName.equals("queryNames"))
+            {
+                return method.invoke(_mbs, args);
+            }
+    
+            // Retrieve JMXPrincipal from Subject
+            Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
+            if (principals == null || principals.isEmpty())
+            {
+                throw new SecurityException("Access denied: no principal");
+            }
+			
+            // Save the principal
+            Principal principal = principals.iterator().next();
+            SecurityManager.setThreadPrincipal(principal);
+    
+			// Get the component, type and impact, which may be null
+            String type = getType(method, args);
+            String vhost = getVirtualHost(method, args);
+            int impact = getImpact(method, args);
+            
+            // Get the security manager for the virtual host (if set)
+            SecurityManager security;
+            if (vhost == null)
+            {
+                security = ApplicationRegistry.getInstance().getSecurityManager();
+            }
             else
             {
-                throw new SecurityException("Access denied");
+                security = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(vhost).getSecurityManager();
             }
+            
+			if (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO)
+			{
+				// Check for read-only method invocation permission
+                if (!security.authoriseMethod(Operation.ACCESS, type, methodName))
+                {
+                    throw new SecurityException("Permission denied: Access " + methodName);
+                }
+			}
+			else if (isUpdateMethod(methodName))
+            {
+	            // Check for setting properties permission
+                if (!security.authoriseMethod(Operation.UPDATE, type, methodName))
+                {
+                    throw new SecurityException("Permission denied: Update " + methodName);
+                }
+            }
+			else 
+            {
+	            // Check for invoking/executing method action/operation permission
+                if (!security.authoriseMethod(Operation.EXECUTE, type, methodName))
+                {
+                    throw new SecurityException("Permission denied: Execute " + methodName);
+                }
+            }
+			
+			// Actually invoke the method
+			return method.invoke(_mbs, args);
         }
-
-        // Following users can perform any operation other than "createMBean" and "unregisterMBean"
-        if (isAllowedToModify(identity))
+        catch (InvocationTargetException e)
         {
-            return method.invoke(_mbs, args);
+            throw e.getTargetException();
         }
-
-        // These users can only call "getAttribute" on the MBeanServerDelegate MBean
-        // Here we can add other fine grained permissions like specific method for a particular mbean
-        if (isReadOnlyUser(identity) && isReadOnlyMethod(method, args))
-        {
-            return method.invoke(_mbs, args);
-        }
-
-        throw new SecurityException("Access denied");
     }
 
-    private boolean isAdminMethod(Object[] args)
-    {
+    private String getType(Method method, Object[] args)
+    {		
+		if (args[0] instanceof ObjectName)
+		{
+			ObjectName object = (ObjectName) args[0];
+			String type = object.getKeyProperty("type");
+			
+			return type;
+		}
+		return null;
+    }
+
+    private String getVirtualHost(Method method, Object[] args)
+    {       
         if (args[0] instanceof ObjectName)
         {
             ObjectName object = (ObjectName) args[0];
+            String vhost = object.getKeyProperty("VirtualHost");
             
-            return _adminOnlyMethods.contains(object.getKeyProperty("type"));
+            return vhost;
         }
-        return false;
+        return null;
     }
-
-    // Initialises the user roles
-    public static void setAccessRights(Properties accessRights)
-    {
-        _userRoles = accessRights;
-    }
-
-    private boolean isAdmin(String userName)
-    {
-        if (ADMIN.equals(_userRoles.getProperty(userName)))
-        {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isAllowedToModify(String userName)
-    {
-        if (ADMIN.equals(_userRoles.getProperty(userName))
-            || READWRITE.equals(_userRoles.getProperty(userName)))
-        {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isReadOnlyUser(String userName)
-    {
-        if (READONLY.equals(_userRoles.getProperty(userName)))
-        {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isReadOnlyMethod(Method method, Object[] args)
+    
+    private String getMethodName(Method method, Object[] args)
     {
         String methodName = method.getName();
+
+        // if arguments are set, try and work out real method name
+        if (args != null && args.length >= 1 && args[0] instanceof ObjectName)
+        {
+            if (methodName.equals("getAttribute"))
+            {
+                methodName = "get" + (String) args[1];
+            }
+            else if (methodName.equals("setAttribute"))
+            {
+                methodName = "set" + ((Attribute) args[1]).getName();
+            }
+            else if (methodName.equals("invoke"))
+            {
+                methodName = (String) args[1];
+            }
+        }
         
-        //handle standard get/set/query and select 'is' methods from MBeanServer
-        if (methodName.startsWith("query") || methodName.startsWith("get")
-            ||methodName.startsWith("isInstanceOf") || methodName.startsWith("isRegistered"))
-        {
-            return true;
-        }
-        else if (methodName.startsWith("set"))
-        {
-            return false;
-        }
+        return methodName;
+    }
 
+    private int getImpact(Method method, Object[] args)
+    {
         //handle invocation of other methods on mbeans
-        if ((args[0] instanceof ObjectName) && (methodName.equals("invoke")))
+        if ((args[0] instanceof ObjectName) && (method.getName().equals("invoke")))
         {
-
             //get invoked method name
             String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
             if (mbeanMethod == null)
             {
-                return false;
+                return -1;
             }
-
+            
             try
             {
-                //check if the given method is tagged with an INFO impact attribute
+                //Get the impact attribute
                 MBeanInfo mbeanInfo = _mbs.getMBeanInfo((ObjectName) args[0]);
                 if (mbeanInfo != null)
                 {
                     MBeanOperationInfo[] opInfos = mbeanInfo.getOperations();
                     for (MBeanOperationInfo opInfo : opInfos)
                     {
-                        if (opInfo.getName().equals(mbeanMethod) && (opInfo.getImpact() == MBeanOperationInfo.INFO))
+                        if (opInfo.getName().equals(mbeanMethod))
                         {
-                            return true;
+                            return opInfo.getImpact();
                         }
                     }
                 }
@@ -261,7 +276,20 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             }
         }
 
-        return false;
+        return -1;
+    }
+
+    private boolean isAccessMethod(String methodName)
+    {
+        //handle standard get/query/is methods from MBeanServer
+        return (methodName.startsWith("query") || methodName.startsWith("get") || methodName.startsWith("is"));
+    }
+
+
+    private boolean isUpdateMethod(String methodName)
+    {
+        //handle standard set methods from MBeanServer
+        return methodName.startsWith("set");
     }
 
     public void handleNotification(Notification notification, Object handback)

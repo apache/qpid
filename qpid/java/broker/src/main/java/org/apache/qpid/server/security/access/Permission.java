@@ -20,19 +20,28 @@
  */
 package org.apache.qpid.server.security.access;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.commons.lang.StringUtils;
 
+/**
+ * An enumeration of all possible permissions that can be applied to an access control v2 rule.
+ */
 public enum Permission
 {
-    CONSUME,
-    PUBLISH,
-    CREATEQUEUE,
-    CREATEEXCHANGE,
-    ACCESS,
-    BIND,
-    UNBIND,
-    DELETE,
-    PURGE
+    ALLOW,
+    ALLOW_LOG,
+    DENY,
+    DENY_LOG;
+    
+    public static Permission parse(String text)
+    {
+        
+        for (Permission permission : values())
+        {
+            if (permission.name().equalsIgnoreCase(StringUtils.replaceChars(text, '-', '_')))
+            {
+                return permission;
+            }
+        }
+        throw new IllegalArgumentException("Not a valid permission: " + text);
+    }
 }
