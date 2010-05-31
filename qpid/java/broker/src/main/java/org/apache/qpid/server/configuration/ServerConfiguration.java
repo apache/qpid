@@ -244,6 +244,10 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 	        {
 	            // Open the vhosts XML file and copy values from it to our config
                 _vhostsFile = new File(fileName);
+                if (!_vhostsFile.exists())
+                {
+                    throw new ConfigurationException("Virtualhosts file does not exist");
+                }
 	        	vhostConfiguration = parseConfig(new File(fileName));
 
                 // save the default virtualhost name

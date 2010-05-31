@@ -1494,4 +1494,33 @@ public class ServerConfigurationTest extends TestCase
         assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
         assertEquals("Incorrect virtualhost name", "test-one", oneHost.getName());
     }
+
+    /**
+     * Test that a non-existant virtualhost file throws a {@link ConfigurationException}.
+     * <p>
+     * Test for QPID-2624
+     */
+    public void testNonExistantVirtualhosts() throws Exception
+    {
+        // Write out combined config file
+        File mainFile = File.createTempFile(getClass().getName(), "main");
+        File vhostsFile = new File("doesnotexist");
+        mainFile.deleteOnExit();
+        writeConfigFile(mainFile, true, false, vhostsFile, null);
+
+        // Load config
+        try
+        {
+            ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
+            config.initialise();
+        }
+        catch (ConfigurationException ce)
+        {
+            assertEquals("Virtualhosts file does not exist", ce.getMessage());
+        }
+        catch (Exception e)
+        {
+            fail("Should throw a ConfigurationException");
+        }
+    }
 }
