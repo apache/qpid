@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.access;
+package org.apache.qpid.server.security.access.config;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,14 +27,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
+import org.apache.qpid.server.security.Result;
 
+@SuppressWarnings("unchecked")
 public class PrincipalPermissions
 {
-
+    public enum Permission
+    {
+        CONSUME,
+        PUBLISH,
+        CREATEQUEUE,
+        CREATEEXCHANGE,
+        ACCESS,
+        BIND,
+        UNBIND,
+        DELETE,
+        PURGE
+    }
+    
+    private static final Logger _logger = Logger.getLogger(PrincipalPermissions.class);
+    
     private static final Object CONSUME_QUEUES_KEY = new Object();
     private static final Object CONSUME_TEMPORARY_KEY = new Object();
     private static final Object CONSUME_OWN_QUEUES_ONLY_KEY = new Object();
@@ -358,22 +373,22 @@ public class PrincipalPermissions
      *  PURGE: none
      *  UNBIND: none
      */
-    public AuthzResult authorise(Permission permission, Object... parameters)
+    public Result authorise(Permission permission, String... parameters)
     {
 
         switch (permission)
         {
             case ACCESS://No Parameters
-                return AuthzResult.ALLOWED; // The existence of this user-specific PP infers some level of access is authorised
-            case BIND: // Parameters : QueueBindMethod , Exchange , AMQQueue, AMQShortString routingKey
+                return Result.ALLOWED; // The existence of this user-specific PP infers some level of access is authorised
+            case BIND: // Parameters : QueueBindMethod , exhangeName , queueName, routingKey
                 return authoriseBind(parameters);
-            case CREATEQUEUE:// Parameters : boolean autodelete, AMQShortString name
+            case CREATEQUEUE:// Parameters : autoDelete, queueName
                 return authoriseCreateQueue(permission, parameters);
-            case CREATEEXCHANGE:
+            case CREATEEXCHANGE: //Parameters: exchangeName
                 return authoriseCreateExchange(permission, parameters);
-            case CONSUME: // Parameters :  AMQQueue
+            case CONSUME: // Parameters :  queueName, autoDelete, owner
                 return authoriseConsume(permission, parameters);
-            case PUBLISH: // Parameters : Exchange exchange, AMQShortString routingKey
+            case PUBLISH: // Parameters : exchangeName, routingKey
                 return authorisePublish(permission, parameters);
             /* Fall through */
             case DELETE:
@@ -383,34 +398,38 @@ public class PrincipalPermissions
                 if(_fullVHostAccess)
                 {
                     //user has been granted full access to the vhost
-                    return AuthzResult.ALLOWED;
+                    return Result.ALLOWED;
                 }
                 else
                 {
                     //SimpleXML ACL does not implement these permissions and should abstain
-                    return AuthzResult.ABSTAIN;
+                    return Result.ABSTAIN;
                 }
         }
 
     }
 
-	private AuthzResult authoriseConsume(Permission permission, Object... parameters)
+	private Result authoriseConsume(Permission permission, String... parameters)
 	{
 	    if(_fullVHostAccess)
 	    {
 	        //user has been granted full access to the vhost
-	        return AuthzResult.ALLOWED;
+	        return Result.ALLOWED;
 	    }
 
-        if (parameters.length == 1 && parameters[0] instanceof AMQQueue)
+        if (parameters.length == 3)
         {
-            AMQQueue queue = ((AMQQueue) parameters[0]);
+            AMQShortString queueName = new AMQShortString(parameters[0]);
+            Boolean autoDelete = Boolean.valueOf(parameters[1]);
+            AMQShortString owner = new AMQShortString(parameters[2]);
             Map queuePermissions = (Map) _permissions.get(permission);
 
+            _logger.error("auth consume on " + StringUtils.join(parameters, ", "));
+            
             if (queuePermissions == null)
             {
                 //we have a problem - we've never granted this type of permission .....
-                return AuthzResult.DENIED;
+                return Result.DENIED;
             }
 
             List queues = (List) queuePermissions.get(CONSUME_QUEUES_KEY);
@@ -420,20 +439,20 @@ public class PrincipalPermissions
 
 
             // If user is allowed to consume from temporary queues and this is a temp queue then allow it.
-            if (temporaryQueues && queue.isAutoDelete())
+            if (temporaryQueues && autoDelete)
             {
                 // This will allow consumption from any temporary queue including ones not owned by this user.
                 // Of course the exclusivity will not be broken.
                 {
 
                     // if not limited to ownQueuesOnly then ok else check queue Owner.
-                    return (!ownQueuesOnly || new AMQShortString(queue.getPrincipalHolder().getPrincipal().getName()).equals(_user)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                    return (!ownQueuesOnly || owner.equals(_user)) ? Result.ALLOWED : Result.DENIED;
                 }
             }
             //if this is a temporary queue and the user does not have permissions for temporary queues then deny
-            else if (!temporaryQueues && queue.isAutoDelete())
+            else if (!temporaryQueues && autoDelete)
             {
-                return AuthzResult.DENIED;
+                return Result.DENIED;
             }
 
             // if queues are white listed then ensure it is ok
@@ -442,38 +461,38 @@ public class PrincipalPermissions
                 // if no queues are listed then ALL are ok othereise it must be specified.
                 if (ownQueuesOnly)
                 {
-                    if ( new AMQShortString(queue.getPrincipalHolder().getPrincipal().getName()).equals(_user))
+                    if (owner.equals(_user))
                     {
-                        return (queues.size() == 0 || queues.contains(queue.getNameShortString())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                        return (queues.size() == 0 || queues.contains(queueName)) ? Result.ALLOWED : Result.DENIED;
                     }
                     else
                     {
-                        return AuthzResult.DENIED;
+                        return Result.DENIED;
                     }
                 }
 
                 // If we are
-                return (queues.size() == 0 || queues.contains(queue.getNameShortString())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                return (queues.size() == 0 || queues.contains(queueName)) ? Result.ALLOWED : Result.DENIED;
             }
         }
 
         // Can't authenticate without the right parameters
-        return AuthzResult.DENIED;
+        return Result.DENIED;
 	}
 
-	private AuthzResult authorisePublish(Permission permission, Object... parameters)
+	private Result authorisePublish(Permission permission, String... parameters)
 	{
 	    if(_fullVHostAccess)
 	    {
 	        //user has been granted full access to the vhost
-	        return AuthzResult.ALLOWED;
+	        return Result.ALLOWED;
 	    }
 
 	    Map publishRights = (Map) _permissions.get(permission);
 
 		if (publishRights == null)
 		{
-		    return AuthzResult.DENIED;
+		    return Result.DENIED;
 		}
 
 		Map exchanges = (Map) publishRights.get(PUBLISH_EXCHANGES_KEY);
@@ -481,33 +500,32 @@ public class PrincipalPermissions
 		// Having no exchanges listed gives full publish rights to all exchanges
 		if (exchanges == null)
 		{
-		    return AuthzResult.ALLOWED;
+		    return Result.ALLOWED;
 		}
 		// Otherwise exchange must be listed in the white list
 
 		// If the map doesn't have the exchange then it isn't allowed
-		if (!exchanges.containsKey(((Exchange) parameters[0]).getNameShortString()))
+		AMQShortString exchangeName = new AMQShortString(parameters[0]);
+		if (!exchanges.containsKey(exchangeName))
 		{
-		    return AuthzResult.DENIED;
+		    return Result.DENIED;
 		}
 		else
 		{
-
 		    // Get valid routing keys
-		    HashSet routingKeys = (HashSet) exchanges.get(((Exchange)parameters[0]).getNameShortString());
+		    HashSet routingKeys = (HashSet) exchanges.get(exchangeName);
 
 		    // Having no routingKeys in the map then all are allowed.
 		    if (routingKeys == null)
 		    {
-		        return AuthzResult.ALLOWED;
+		        return Result.ALLOWED;
 		    }
 		    else
 		    {
 		        // We have routingKeys so a match must be found to allowed binding
 		        Iterator keys = routingKeys.iterator();
 
-
-		        AMQShortString publishRKey = (AMQShortString)parameters[1];
+		        AMQShortString publishRKey = new AMQShortString(parameters[1]);
 
 		        boolean matched = false;
 		        while (keys.hasNext() && !matched)
@@ -523,41 +541,41 @@ public class PrincipalPermissions
 		                matched = publishRKey.equals(rkey);
 		            }
 		        }
-		        return (matched) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+		        return (matched) ? Result.ALLOWED : Result.DENIED;
 		    }
 		}
 	}
 
-	private AuthzResult authoriseCreateExchange(Permission permission, Object... parameters)
+	private Result authoriseCreateExchange(Permission permission, String... parameters)
 	{
         if(_fullVHostAccess)
         {
             //user has been granted full access to the vhost
-            return AuthzResult.ALLOWED;
+            return Result.ALLOWED;
         }
 
 		Map rights = (Map) _permissions.get(permission);
 
-		AMQShortString exchangeName = (AMQShortString) parameters[0];
+		AMQShortString exchangeName = new AMQShortString(parameters[0]);
 
 		// If the exchange list is doesn't exist then all is allowed else
 		// check the valid exchanges
 		if (rights == null || rights.containsKey(exchangeName))
 		{
-		    return AuthzResult.ALLOWED;
+		    return Result.ALLOWED;
 		}
 		else
 		{
-		    return AuthzResult.DENIED;
+		    return Result.DENIED;
 		}
 	}
 
-	private AuthzResult authoriseCreateQueue(Permission permission, Object... parameters)
+	private Result authoriseCreateQueue(Permission permission, String... parameters)
 	{
         if(_fullVHostAccess)
         {
             //user has been granted full access to the vhost
-            return AuthzResult.ALLOWED;
+            return Result.ALLOWED;
         }
 
         Map createRights = (Map) _permissions.get(permission);
@@ -565,7 +583,7 @@ public class PrincipalPermissions
 		// If there are no create rights then deny request
 		if (createRights == null)
 		{
-		    return AuthzResult.DENIED;
+		    return Result.DENIED;
 		}
 
 		//Look up the Queue Creation Rights
@@ -575,46 +593,42 @@ public class PrincipalPermissions
 		Map create_queues_queues = (Map) create_queues.get(CREATE_QUEUE_QUEUES_KEY);
 
 
-		AMQShortString queueName = (AMQShortString) parameters[1];
-		Boolean autoDelete = (Boolean) parameters[0];
+        Boolean autoDelete = Boolean.valueOf(parameters[0]);
+		AMQShortString queueName = new AMQShortString(parameters[1]);
 
 		if (autoDelete)// we have a temporary queue
 		{
-		    return ((Boolean) create_queues.get(CREATE_QUEUE_TEMPORARY_KEY)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+		    return ((Boolean) create_queues.get(CREATE_QUEUE_TEMPORARY_KEY)) ? Result.ALLOWED : Result.DENIED;
 		}
 		else
 		{
 		    // If there is a white list then check
 		    if (create_queues_queues == null || create_queues_queues.containsKey(queueName))
 		    {
-		        return AuthzResult.ALLOWED;
+		        return Result.ALLOWED;
 		    }
 		    else
 		    {
-		        return AuthzResult.DENIED;
+		        return Result.DENIED;
 		    }
 
 		}
 	}
 
-	private AuthzResult authoriseBind(Object... parameters)
+	private Result authoriseBind(String... parameters)
 	{
         if(_fullVHostAccess)
         {
             //user has been granted full access to the vhost
-            return AuthzResult.ALLOWED;
+            return Result.ALLOWED;
         }
 
-        Exchange exchange = (Exchange) parameters[1];
-
-		AMQQueue bind_queueName = (AMQQueue) parameters[2];
-		AMQShortString routingKey = (AMQShortString) parameters[3];
+        AMQShortString exchangeName = new AMQShortString(parameters[1]);
+        AMQShortString bind_queueName = new AMQShortString(parameters[2]);
+		AMQShortString routingKey = new AMQShortString(parameters[3]);
 
 		//Get all Create Rights for this user
 		Map bindCreateRights = (Map) _permissions.get(Permission.CREATEQUEUE);
-
-		//Look up the Queue Creation Rights
-		Map bind_create_queues = (Map) bindCreateRights.get(CREATE_QUEUES_KEY);
 
 		//Lookup the list of queues
 		Map bind_create_queues_queues = (Map) bindCreateRights.get(CREATE_QUEUE_QUEUES_KEY);
@@ -627,17 +641,17 @@ public class PrincipalPermissions
 
 		    if (exchangeDetails == null) //Then all queue can be bound to all exchanges.
 		    {
-		        return AuthzResult.ALLOWED;
+		        return Result.ALLOWED;
 		    }
 
 		    // Check to see if we have a white list of routingkeys to check
-		    Map rkeys = (Map) exchangeDetails.get(exchange.getNameShortString());
+		    Map rkeys = (Map) exchangeDetails.get(exchangeName);
 
 		    // if keys is null then any rkey is allowed on this exchange
 		    if (rkeys == null)
 		    {
 		        // There is no routingkey white list
-		        return AuthzResult.ALLOWED;
+		        return Result.ALLOWED;
 		    }
 		    else
 		    {
@@ -659,7 +673,7 @@ public class PrincipalPermissions
 		        }
 
 
-		        return (matched) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+		        return (matched) ? Result.ALLOWED : Result.DENIED;
 		    }
 
 
@@ -667,7 +681,7 @@ public class PrincipalPermissions
 		else
 		{
 		    //no white list so all allowed.
-		    return AuthzResult.ALLOWED;
+		    return Result.ALLOWED;
 		}
 	}
 }
