@@ -27,48 +27,35 @@ import javax.management.JMException;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.AbstractExchangeMBean;
 import org.apache.qpid.server.exchange.ExchangeType;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import org.apache.qpid.junit.extensions.util.SizeOf;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.log4j.Logger;
-
 /**
- *
  * This is a special diagnostic exchange type which doesn't actually do anything
  * with messages. When it receives a message, it writes information about the
  * current memory usage to the "memory" property of the message and places it on the
  * diagnosticqueue for retrieval
- *
- * @author Aidan Skinner
- *
  */
-
 public class DiagnosticExchange extends AbstractExchange
 {
-
     private static final Logger _logger = Logger.getLogger(DiagnosticExchange.class);
-
 
     public static final AMQShortString DIAGNOSTIC_EXCHANGE_CLASS = new AMQShortString("x-diagnostic");
     public static final AMQShortString DIAGNOSTIC_EXCHANGE_NAME = new AMQShortString("diagnostic");
 
-    /**
-     * the logger.
-     */
-   //private static final Logger _logger = Logger.getLogger(DiagnosticExchange.class);
+    /** The logger */
+    //private static final Logger _logger = Logger.getLogger(DiagnosticExchange.class);
 
     /**
      * MBean class implementing the management interfaces.
@@ -76,7 +63,6 @@ public class DiagnosticExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Diagnostic Exchange")
     private final class DiagnosticExchangeMBean extends AbstractExchangeMBean<DiagnosticExchange>
     {
-
         /**
          * Usual constructor.
          *
@@ -95,9 +81,9 @@ public class DiagnosticExchange extends AbstractExchange
          *
          * @throws OpenDataException
          * @returns null
-         * @todo ... or can there? Could this actually return all the
-         *       information in one easy to read table?
+         * TODO or can there? Could this actually return all the information in one easy to read table?
          */
+        @Override
         public TabularData bindings() throws OpenDataException
         {
             return null;
@@ -107,19 +93,16 @@ public class DiagnosticExchange extends AbstractExchange
          * This exchange type doesn't support queues, so this method does
          * nothing.
          *
-         * @param queueName
-         *            the queue you'll fail to create
-         * @param binding
-         *            the binding you'll fail to create
-         * @throws JMException
-         *             an exception that will never be thrown
+         * @param queueName the queue you'll fail to create
+         * @param binding the binding you'll fail to create
+         * @throws JMException an exception that will never be thrown
          */
+        @Override
         public void createNewBinding(String queueName, String binding) throws JMException
         {
             // No Op
         }
-
-    } // End of MBean class
+    }
 
 
     public static final ExchangeType<DiagnosticExchange> TYPE = new ExchangeType<DiagnosticExchange>()
@@ -167,7 +150,6 @@ public class DiagnosticExchange extends AbstractExchange
     protected AbstractExchangeMBean createMBean() throws JMException
     {
         return new DiagnosticExchange.DiagnosticExchangeMBean();
-
     }
 
     public Logger getLogger()
@@ -203,20 +185,18 @@ public class DiagnosticExchange extends AbstractExchange
 
     public ArrayList<AMQQueue> doRoute(InboundMessage payload)
     {
-
+        //TODO shouldn't modify messages... perhaps put a new message on the queue?
+        /*
         Long value = new Long(SizeOf.getUsedMemory());
         AMQShortString key = new AMQShortString("memory");
-
-        //TODO shouldn't modify messages... perhaps put a new message on the queue?
-/*        FieldTable headers = ((BasicContentHeaderProperties)payload.getMessageHeader().properties).getHeaders();
+        FieldTable headers = ((BasicContentHeaderProperties)payload.getMessageHeader().properties).getHeaders();
         headers.put(key, value);
-        ((BasicContentHeaderProperties)payload.getMessageHeader().properties).setHeaders(headers);*/
+        ((BasicContentHeaderProperties)payload.getMessageHeader().properties).setHeaders(headers);
+        */
         AMQQueue q = getQueueRegistry().getQueue(new AMQShortString("diagnosticqueue"));
-
         ArrayList<AMQQueue> queues =  new ArrayList<AMQQueue>();
         queues.add(q);
         return queues;
-
     }
 
 
@@ -226,14 +206,13 @@ public class DiagnosticExchange extends AbstractExchange
 		return false;
 	}
 
-
     protected void onBind(final Binding binding)
     {
-
+        // No op
     }
 
     protected void onUnbind(final Binding binding)
     {
-
+        // No op
     }
 }
