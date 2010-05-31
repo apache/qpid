@@ -52,6 +52,7 @@ void RetractClient::run() {
         c.open(url, connectionSettings);
         AutoClose ac(c);
         AMQFrame retract((ClusterConnectionRetractOfferBody()));
+        client::ConnectionAccess::getImpl(c)->expand(retract.encodedSize(), false);
         client::ConnectionAccess::getImpl(c)->handle(retract);
     } catch (const std::exception& e) {
         QPID_LOG(error, " while retracting retract to " << url << ": " << e.what()); 
