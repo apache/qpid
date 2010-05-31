@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import javax.jms.Connection;
@@ -64,7 +65,7 @@ public class PersistentStoreTest extends QpidTestCase
         _session = _con.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _con.start();
         _consumer = _session.createConsumer(_destination);
-        for (int i = 0; i < NUM_MESSAGES; i++)
+        for (int i = 1; i <= NUM_MESSAGES; i++)
         {
             Message msg = _consumer.receive(RECEIVE_TIMEOUT);
             assertNotNull("Message " + i + " not received", msg);
@@ -118,6 +119,7 @@ public class PersistentStoreTest extends QpidTestCase
     public void testForcibleStartStopMidTransaction() throws Exception
     {
         sendMessage(_session, _destination, 5);
+        ((AMQSession) _session).sync();
         restartBroker();
         checkMessages();
     }
@@ -168,7 +170,7 @@ public class PersistentStoreTest extends QpidTestCase
 
         MessageProducer producer = session.createProducer(destination);
 
-        for (int i = 0;i < (count); i++)
+        for (int i = 1;i <= (count); i++)
         {
             Message next = createNextMessage(session, i);
 
