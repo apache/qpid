@@ -34,8 +34,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.transport.NetworkDriverConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -50,6 +49,8 @@ import java.util.Map.Entry;
 
 public class ServerConfiguration extends ConfigurationPlugin implements SignalHandler
 {
+    protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
+
     // Default Configuration values
     public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
     public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
@@ -117,14 +118,15 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
      *
      * This will load the file and present the root level properties but will
      * not perform any virtualhost configuration.
-     *
-     * To perform this configure() must be called.
-     *
+     * <p>
+     * To perform this {@link #initialise()} must be called.
+     * <p>
      * This has been made a two step process to allow the Plugin Manager and
      * Configuration Manager to be initialised in the Application Registry.
-     *
+     * <p>
      * If using this ServerConfiguration via an ApplicationRegistry there is no
-     * need to explictly call configure() as this is done via the AR.initialise()
+     * need to explictly call {@link #initialise()} as this is done via the
+     * {@link ApplicationRegistry#initialise()} method.
      *
      * @param configurationURL
      * @throws org.apache.commons.configuration.ConfigurationException
@@ -149,15 +151,16 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
      *
      * Mainly used during testing and in locations where configuration is not
      * desired but the interface requires configuration.
-     *
-     * If the given configuration has VirtualHost configuration then configure()
-     * must be called to perform the required setup.
-     *
+     * <p>
+     * If the given configuration has VirtualHost configuration then
+     * {@link #initialise()} must be called to perform the required setup.
+     * <p>
      * This has been made a two step process to allow the Plugin Manager and
      * Configuration Manager to be initialised in the Application Registry.
-     *
+     * <p>
      * If using this ServerConfiguration via an ApplicationRegistry there is no 
-     * need to explictly call configure() as this is done via the AR.initialise()
+     * need to explictly call {@link #initialise()} as this is done via the
+     * {@link ApplicationRegistry#initialise()} method.
      *
      * @param conf
      */
@@ -173,17 +176,17 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
      * This has been separated from the constructor to allow the PluginManager
      * time to be created and provide plugins to the ConfigurationManager for
      * processing here.
-     *
-     * Called by ApplicationRegistry.initialise();
-     *
+     * <p>
+     * Called by {@link ApplicationRegistry#initialise()}.
+     * <p>
      * NOTE: A DEFAULT ApplicationRegistry must exist when using this method
      * or a new ApplicationRegistry will be created. 
      *
      * @throws ConfigurationException
      */
-    public void configure() throws ConfigurationException
-    {
-
+    public void initialise() throws ConfigurationException
+    {	
+        setConfiguration("", _configuration);
         setupVirtualHosts(_configuration);
     }
 
@@ -380,6 +383,11 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return conf;
     }
 
+    public String getConfigurationURL()
+    {
+        return _configFile == null ? "" : _configFile.getAbsolutePath();
+    }
+
     public void handle(Signal arg0)
     {
         try
@@ -388,7 +396,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         }
         catch (ConfigurationException e)
         {
-            _log.error("Could not reload configuration file security sections", e);
+             _logger.error("Could not reload configuration file security sections", e);
         }
     }
 
@@ -397,9 +405,9 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         if (_configFile != null)
         {
             Configuration newConfig = parseConfig(_configFile);
-
             setConfiguration("", newConfig);
-
+            ApplicationRegistry.getInstance().getSecurityManager().configureHostPlugins(this);
+			
             // Reload virtualhosts from correct location
             Configuration newVhosts;
             if (_vhostsFile == null)
@@ -412,15 +420,16 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
             }
 
             VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
-            for (String hostname : _virtualHosts.keySet())
+            for (String hostName : _virtualHosts.keySet())
             {
-                VirtualHost vhost = vhostRegistry.getVirtualHost(hostname);
-                SecurityConfiguration hostSecurityConfig = new SecurityConfiguration(newVhosts.subset("virtualhost."+hostname+".security"));
-                vhost.getAccessManager().configureGlobalPlugins(getSecurityConfiguration());
-                vhost.getAccessManager().configureHostPlugins(hostSecurityConfig);
+                VirtualHost vhost = vhostRegistry.getVirtualHost(hostName);
+                Configuration vhostConfig = newVhosts.subset("virtualhost." + hostName);
+                vhost.getConfiguration().setConfiguration("virtualhosts.virtualhost", vhostConfig); // XXX
+                vhost.getSecurityManager().configureGlobalPlugins(this);
+                vhost.getSecurityManager().configureHostPlugins(vhost.getConfiguration());
             }
 
-            _log.warn(SECURITY_CONFIG_RELOADED);
+            _logger.warn(SECURITY_CONFIG_RELOADED);
         }
     }
 
@@ -554,11 +563,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public String getManagementKeyStorePassword()
     {
         return getStringValue("management.ssl.keyStorePassword");
-    }
-
-    public SecurityConfiguration getSecurityConfiguration()
-    {
-        return new SecurityConfiguration(_configuration.subset("security"));
     }
 
     public boolean getQueueAutoRegister()

@@ -113,7 +113,7 @@ public class AlertingTest extends AbstractTestLogging
 
             message.append("\nVirtualhost maxMessageCount:\n");
             ServerConfiguration config = new ServerConfiguration(_configFile);
-            config.configure();;
+            config.initialise();
             message.append(config.getVirtualHostConfig(VIRTUALHOST).getMaximumMessageCount());
 
             fail(message.toString());

@@ -32,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BrokerConfigAdapter implements BrokerConfig
 {
     private final IApplicationRegistry _instance;
-    private final int _instanceId;
     private SystemConfig _system;
 
     private final Map<UUID, VirtualHostConfig> _vhosts = new ConcurrentHashMap<UUID, VirtualHostConfig>();
@@ -40,10 +39,9 @@ public class BrokerConfigAdapter implements BrokerConfig
     private UUID _id;
     private String _federationTag;
 
-    public BrokerConfigAdapter(final IApplicationRegistry instance, final int instanceID)
+    public BrokerConfigAdapter(final IApplicationRegistry instance)
     {
         _instance = instance;
-        _instanceId = instanceID;
         _id = instance.getConfigStore().createId();
         _federationTag = UUID.randomUUID().toString();
     }

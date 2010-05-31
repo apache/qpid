@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.commons.configuration.ConfigurationException;
+import java.net.InetSocketAddress;
+import java.util.UUID;
 
 import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.BrokerConfig;
@@ -31,15 +32,12 @@ import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-import java.net.InetSocketAddress;
-import java.util.UUID;
 
 public interface IApplicationRegistry
 {
@@ -71,7 +69,7 @@ public interface IApplicationRegistry
 
     VirtualHostRegistry getVirtualHostRegistry();
 
-    ACLManager getAccessManager() throws ConfigurationException;
+    SecurityManager getSecurityManager();
 
     PluginManager getPluginManager();
 
