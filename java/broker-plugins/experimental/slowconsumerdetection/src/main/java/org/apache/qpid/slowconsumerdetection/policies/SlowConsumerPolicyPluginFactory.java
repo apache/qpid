@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.slowconsumerdetection.policies;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
 import org.apache.qpid.server.plugins.PluginFactory;
 
-public interface SlowConsumerPolicyPluginFactory extends PluginFactory
+public interface SlowConsumerPolicyPluginFactory<P extends SlowConsumerPolicyPlugin> extends PluginFactory<P>
 {
-
-    public SlowConsumerPolicyPlugin newInstance(SlowConsumerDetectionPolicyConfiguration configuration) throws ConfigurationException;
 }

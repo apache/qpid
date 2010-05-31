@@ -20,38 +20,54 @@
  */
 package org.apache.qpid.server.virtualhost.plugin;
 
-import org.apache.log4j.Logger;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
-import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
-
-import java.util.concurrent.TimeUnit;
 
 class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
 {
-    Logger _logger = Logger.getLogger(SlowConsumerDetection.class);
     private SlowConsumerDetectionConfiguration _config;
 
     public static class SlowConsumerFactory implements VirtualHostPluginFactory
     {
-        public VirtualHostHouseKeepingPlugin newInstance(VirtualHost vhost)
+        public Class<SlowConsumerDetection> getPluginClass()
         {
-            return new SlowConsumerDetection(vhost);
+            return SlowConsumerDetection.class;
+        }
+
+        public String getPluginName()
+        {
+            return SlowConsumerDetection.class.getName();
+        }
+
+        public SlowConsumerDetection newInstance(VirtualHost vhost) throws ConfigurationException
+        {
+            SlowConsumerDetection plugin = new SlowConsumerDetection(vhost);
+            plugin.configure(vhost.getConfiguration());
+            return plugin;
         }
     }
 
-    public SlowConsumerDetection(VirtualHost vhost)
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
-        super(vhost);
-        _config = vhost.getConfiguration().getConfiguration(SlowConsumerDetectionConfiguration.class);
+        _config = config.getConfiguration(SlowConsumerDetectionConfiguration.class);
+        
         if (_config == null)
         {
             throw new IllegalArgumentException("Plugin has not been configured");
         }
+    }
+    
+    public SlowConsumerDetection(VirtualHost vhost)
+    {
+        super(vhost);
     }
 
     @Override
@@ -60,12 +76,11 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
         _logger.info("Starting the SlowConsumersDetection job");
         for (AMQQueue q : _virtualhost.getQueueRegistry().getQueues())
         {
-            _logger.debug("Checking consumer status for queue: "
-                          + q.getName());
+            _logger.debug("Checking consumer status for queue: " + q.getName());
             try
             {
                 SlowConsumerDetectionQueueConfiguration config =
-                        q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class);
+                            q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class);
 
                 if (checkQueueStatus(q, config))
                 {
@@ -106,6 +121,7 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     {
         if (config != null)
         {
+            _logger.info("Retrieved Queue(" + q.getName() + ") Config:" + config);
             if ((config.getMessageCount() != 0 && q.getMessageCount() >= config.getMessageCount()) ||
                     (config.getDepth() != 0 && q.getQueueDepth() >= config.getDepth()) ||
                     (config.getMessageAge() != 0 && q.getOldestMessageArrivalTime() >= config.getMessageAge()))
@@ -123,5 +139,20 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
             }
         }
         return false;
+    }
+
+    public String getPluginName()
+    {
+        return SlowConsumerDetection.class.getName();
+    }
+
+    public boolean isConfigured()
+    {
+        return _config != null && _virtualhost != null;
+    }
+
+    public void configure() throws ConfigurationException
+    {
+        // Empty
     }
 }

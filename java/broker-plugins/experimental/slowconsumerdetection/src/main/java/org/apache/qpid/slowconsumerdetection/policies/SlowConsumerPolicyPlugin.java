@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.slowconsumerdetection.policies;
 
+import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.queue.AMQQueue;
 
-public interface SlowConsumerPolicyPlugin
+public interface SlowConsumerPolicyPlugin extends Plugin
 {
     public void performPolicy(AMQQueue Queue);
 }
