@@ -88,13 +88,13 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         //1
         assertEquals("MST-1001 is not the first MST message", "MST-1001", getMessageID(fromMessage(log)));
 
-        // Load VirtualHost list from file.
-        ServerConfiguration configuration = new ServerConfiguration(_configFile);
-        configuration.configure();
-        List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
-
         //Validate each vhost logs a creation
         results = _monitor.waitAndFindMatches("MST-1001", DEFAULT_LOG_WAIT);
+
+        // Load VirtualHost list from file.
+        ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        configuration.initialise();
+        List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
         assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
@@ -155,7 +155,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         // Load VirtualHost list from file.
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
-        configuration.configure();
+        configuration.initialise();
         List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
         //Validate each vhost logs a creation

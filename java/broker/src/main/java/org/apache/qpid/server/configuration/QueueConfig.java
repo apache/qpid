@@ -23,6 +23,8 @@ package org.apache.qpid.server.configuration;
 
 import java.util.Map;
 
+import org.apache.qpid.AMQException;
+
 
 public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConfig>
 {
@@ -80,5 +82,5 @@ public interface QueueConfig extends ConfiguredObject<QueueConfigType, QueueConf
     
     long getUnackedMessageCountHigh();
 
-    void purge(long request);
+    void purge(long request) throws AMQException;
 }

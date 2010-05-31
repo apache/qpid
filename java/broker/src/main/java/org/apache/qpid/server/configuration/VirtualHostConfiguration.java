@@ -20,20 +20,18 @@
  */
 package org.apache.qpid.server.configuration;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.MemoryMessageStore;
 
 public class VirtualHostConfiguration extends ConfigurationPlugin
 {
@@ -55,7 +53,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
      */
     public void setConfiguration(Configuration config) throws ConfigurationException
     {
-        super.setConfiguration("virtualhosts.virtualhost",config);
+        setConfiguration("virtualhosts.virtualhost", config);
 
         Iterator i = getListValue("queues.queue.name").iterator();
 
@@ -95,11 +93,6 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     public List getCustomExchanges()
     {
         return getListValue("custom-exchanges.class-name");
-    }
-
-    public SecurityConfiguration getSecurityConfiguration()
-    {
-        return new SecurityConfiguration(_configuration.subset("security"));
     }
 
     public Configuration getStoreConfiguration()
@@ -201,8 +194,7 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
 
     public String[] getElementsProcessed()
     {
-        return new String[]{"queues", "exchanges", "custom-exchanges",
-                            "security", "store", "housekeeping"};
+        return new String[]{"queues", "exchanges", "custom-exchanges", "store", "housekeeping"};
 
     }
 

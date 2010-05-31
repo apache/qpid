@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.server.util;
 
+import java.util.NoSuchElementException;
+import java.util.Properties;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.actors.BrokerActor;
@@ -30,9 +32,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
-
-import java.util.NoSuchElementException;
-import java.util.Properties;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
@@ -64,7 +63,6 @@ public class NullApplicationRegistry extends ApplicationRegistry
             _configuration.setDefaultVirtualHost("test");
         }
     }
-
 
     @Override
     public void initialise(int instanceID) throws Exception
@@ -117,6 +115,3 @@ public class NullApplicationRegistry extends ApplicationRegistry
         }
     }
 }
-
-
-

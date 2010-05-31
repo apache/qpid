@@ -20,16 +20,27 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.virtualhost.HouseKeepingTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.concurrent.TimeUnit;
 
-public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask
+public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask implements VirtualHostPlugin
 {
+    protected final Logger _logger = Logger.getLogger(getClass());
+
+    protected VirtualHost _virtualhost;
+    
     public VirtualHostHouseKeepingPlugin(VirtualHost vhost)
     {
         super(vhost);
+        setVirtualHost(vhost);
+    }
+
+    public void setVirtualHost(VirtualHost vhost)
+    {
+        _virtualhost = vhost;
     }
 
     /**
@@ -47,5 +58,4 @@ public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask
      * @see java.util.concurrent.TimeUnit for valid value.
      */
     public abstract TimeUnit getTimeUnit();
-
 }

@@ -20,40 +20,34 @@
  */
 package org.apache.qpid.server.configuration;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
-import java.util.Map;
-
 public class ConfigurationManager
 {
-    Logger _logger = Logger.getLogger(ConfigurationManager.class);
-
-    public ConfigurationPlugin getConfigurationPlugin(String configurationElement, Configuration configuration) throws ConfigurationException
+    public List<ConfigurationPlugin> getConfigurationPlugins(String configurationElement, Configuration configuration) throws ConfigurationException
     {
-        Map<String, ConfigurationPluginFactory> configPlugins =
-                ApplicationRegistry.getInstance().getPluginManager().getConfigurationPlugins();
+        List<ConfigurationPlugin> plugins = new ArrayList<ConfigurationPlugin>();
+        Map<List<String>, ConfigurationPluginFactory> factories =
+            ApplicationRegistry.getInstance().getPluginManager().getConfigurationPlugins();
 
-        ConfigurationPluginFactory factory = configPlugins.get(configurationElement);
-
-        if (_logger.isInfoEnabled())
+        for (Entry<List<String>, ConfigurationPluginFactory> entry : factories.entrySet())
         {
-            _logger.info("Got Factory:" + factory + ": for :" + configurationElement);
-        }
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Loaded Plugins:");
-            for (String key : configPlugins.keySet())
+            if (entry.getKey().contains(configurationElement))
             {
-                _logger.debug(key + ":" + configPlugins.get(key));
+                ConfigurationPluginFactory factory = entry.getValue();
+                plugins.add(factory.newInstance(configurationElement, configuration));
             }
         }
-
-        return factory != null ? factory.newInstance(configurationElement, configuration) : null;
+        
+        return plugins;
     }
 }
