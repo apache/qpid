@@ -439,7 +439,7 @@ void Connection::membership(const FieldTable& joiners, const FieldTable& members
 }
 
 void Connection::retractOffer() {
-    QPID_LOG(debug, cluster << " incoming update retracted on connection " << *this);
+    QPID_LOG(info, cluster << " incoming update retracted on connection " << *this);
     cluster.updateInRetracted();
     self.second = 0;        // Mark this as completed update connection.
 }
