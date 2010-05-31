@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost.plugin.policies;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
@@ -41,11 +44,11 @@ public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
             return slowConsumerConfig;
         }
 
-        public String[] getParentPaths()
+        public List<String> getParentPaths()
         {
-            return new String[]{
+            return Arrays.asList(
                     "virtualhosts.virtualhost.queues.slow-consumer-detection.policy.topicDelete",
-                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy.topicDelete"};
+                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy.topicDelete");
         }
     }
 

@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.configuration.plugin;
 
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
@@ -28,9 +33,6 @@ import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
-
-import java.util.Iterator;
-import java.util.Map;
 
 public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
 {
@@ -45,12 +47,14 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
             return slowConsumerConfig;
         }
 
-        public String[] getParentPaths()
+        public List<String> getParentPaths()
         {
-            return new String[]{"virtualhosts.virtualhost.queues.slow-consumer-detection",
-                                "virtualhosts.virtualhost.queues.queue.slow-consumer-detection"};
+            return Arrays.asList(
+                    "virtualhosts.virtualhost.queues.slow-consumer-detection",
+                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection",
+                    "virtualhosts.virtualhost.topics.slow-consumer-detection",
+                    "virtualhosts.virtualhost.queues.topics.topic.slow-consumer-detection");
         }
-
     }
 
     public String[] getElementsProcessed()
@@ -81,7 +85,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
     }
 
     @Override
-     public void validateConfiguration() throws ConfigurationException
+    public void validateConfiguration() throws ConfigurationException
     {
         if (!containsPositiveLong("messageAge") &&
             !containsPositiveLong("depth") &&
@@ -91,12 +95,10 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
                                              "('messageAge','depth' or 'messageCount') must be specified.");             
         }
 
-        SlowConsumerDetectionPolicyConfiguration policyConfig =
-                getConfiguration(SlowConsumerDetectionPolicyConfiguration.class);
+        SlowConsumerDetectionPolicyConfiguration policyConfig = getConfiguration(SlowConsumerDetectionPolicyConfiguration.class);
 
         PluginManager pluginManager = ApplicationRegistry.getInstance().getPluginManager();
-        Map<String, SlowConsumerPolicyPluginFactory> factories =
-                pluginManager.getPlugins(SlowConsumerPolicyPluginFactory.class);
+        Map<String, SlowConsumerPolicyPluginFactory> factories = pluginManager.getPlugins(SlowConsumerPolicyPluginFactory.class);
 
         if (policyConfig == null)
         {
@@ -122,7 +124,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
             _logger.debug("Available factories:" + factories);
         }
 
-        SlowConsumerPolicyPluginFactory pluginFactory = factories.get(policyConfig.getPolicyName().toLowerCase());
+        SlowConsumerPolicyPluginFactory<SlowConsumerPolicyPlugin> pluginFactory = factories.get(policyConfig.getPolicyName().toLowerCase());
 
         if (pluginFactory == null)
         {
@@ -131,5 +133,4 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
 
         _policyPlugin = pluginFactory.newInstance(policyConfig);
     }
-
 }
