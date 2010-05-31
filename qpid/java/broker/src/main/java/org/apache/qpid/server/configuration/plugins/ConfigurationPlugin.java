@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,18 +15,9 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package org.apache.qpid.server.configuration.plugins;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConversionException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ConfigurationManager;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,9 +27,16 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConversionException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.ConfigurationManager;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+
 public abstract class ConfigurationPlugin
 {
-    protected Logger _logger = Logger.getLogger(this.getClass());
+    protected static final Logger _logger = Logger.getLogger(ConfigurationPlugin.class);
 
     private Map<Class<? extends ConfigurationPlugin>, ConfigurationPlugin>
             _pluginConfiguration = new HashMap<Class<? extends ConfigurationPlugin>, ConfigurationPlugin>();
@@ -48,17 +45,24 @@ public abstract class ConfigurationPlugin
 
     /**
      * The Elements that this Plugin can process.
-     * i.e.
+     * 
      * For a Queues plugin that would be a list containing:
-     * queue - the queue entries
-     * the alerting values for defaults
-     * exchange - the default exchange
-     * durable - set the default durablity
-     * etc
-     *
-     * @return
+     * <ul>
+     * <li>queue - the queue entries
+     * <li>the alerting values for defaults
+     * <li>exchange - the default exchange
+     * <li>durable - set the default durablity
+     * </ul> 
      */
     abstract public String[] getElementsProcessed();
+    
+    /**
+     * Performs configuration validation.
+     */
+    public void validateConfiguration() throws ConfigurationException
+    {
+        // Override in sub-classes
+    }
 
     public Configuration getConfig()
     {
@@ -76,7 +80,6 @@ public abstract class ConfigurationPlugin
      * @param path
      * @param configuration the configuration for this plugin.
      */
-
     public void setConfiguration(String path, Configuration configuration) throws ConfigurationException
     {
         _configuration = configuration;
@@ -97,7 +100,7 @@ public abstract class ConfigurationPlugin
                 element = key.substring(0, elementNameIndex).trim();
             }
 
-            //Trim any element properties
+            // Trim any element properties
             elementNameIndex = element.indexOf("[");
             if (elementNameIndex > 0)
             {
@@ -138,29 +141,46 @@ public abstract class ConfigurationPlugin
         }
 
         // Process the elements in the configuration
-        for (String element : elements.toArray(new String[elements.size()]))
+        for (String element : elements)
         {
             ConfigurationManager configurationManager = ApplicationRegistry.getInstance().getConfigurationManager();
-
-            String configurationElement = path + "." + element;
-            ConfigurationPlugin elementHandler = configurationManager.
-                    getConfigurationPlugin(configurationElement,
-                                           configuration.subset(element));
-
-            if (elementHandler == null)
+            Configuration handled = element.length() == 0 ? configuration : configuration.subset(element);
+            
+            String configurationElement = element;
+            if (path.length() > 0)
             {
-                _logger.warn("Unused configuration element: '" + configurationElement + "'");
+                configurationElement =  path + "." + configurationElement;
             }
-            else
+
+            List<ConfigurationPlugin> handlers = configurationManager.getConfigurationPlugins(configurationElement, handled);
+            for (ConfigurationPlugin plugin : handlers)
             {
-                _pluginConfiguration.put(elementHandler.getClass(), elementHandler);
+                _pluginConfiguration.put(plugin.getClass(), plugin);
             }
         }
 
         validateConfiguration();
     }
-
-    abstract public void validateConfiguration() throws ConfigurationException;
+    
+    /**
+     * Helper method to print out list of keys in a {@link Configuration}.
+     */
+    public static final void showKeys(Configuration config)
+    {
+        if (config.isEmpty())
+        {
+            _logger.info("Configuration is empty");
+        }
+        else
+        {
+            Iterator<?> keys = config.getKeys();
+            while (keys.hasNext())
+            {
+                String key = (String) keys.next();
+                _logger.info("Configuration key: " + key);
+            }
+        }
+    }
 
     protected boolean hasConfiguration()
     {

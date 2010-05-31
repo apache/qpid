@@ -159,7 +159,9 @@ public class VirtualHostImpl implements Accessable, VirtualHost
     }
 
     /**
-     * Abstract MBean class. This has some of the methods implemented from management intrerface for exchanges. Any
+     * Virtual host JMX MBean class.
+     *
+     * This has some of the methods implemented from management intrerface for exchanges. Any
      * implementaion of an Exchange MBean should extend this class.
      */
     public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
@@ -183,10 +185,7 @@ public class VirtualHostImpl implements Accessable, VirtualHost
         {
             return VirtualHostImpl.this;
         }
-
-    } // End of MBean class
-
-
+    }
 
     public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
     {
@@ -340,9 +339,25 @@ public class VirtualHostImpl implements Accessable, VirtualHost
                 {
                     try
                     {
-                        VirtualHostHouseKeepingPlugin plugin =
-                                plugins.get(pluginName).newInstance(this);
+                        VirtualHostPlugin plugin = plugins.get(pluginName).newInstance(this);
+                        
+                        TimeUnit units = TimeUnit.MILLISECONDS;
 
+                        if (plugin.getTimeUnit() != null)
+                        {
+                            try
+                            {
+                                units = TimeUnit.valueOf(plugin.getTimeUnit());
+                            }
+                            catch (IllegalArgumentException iae)
+                            {
+                                _logger.warn("Plugin:" + pluginName +
+                                             " provided an illegal TimeUnit value:"
+                                             + plugin.getTimeUnit());
+                                // Warn and use default of millseconds
+                                // Should not occur in a well behaved plugin
+                            }
+                        }
 
                         _houseKeepingTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
                                                        plugin.getDelay(), plugin.getTimeUnit());

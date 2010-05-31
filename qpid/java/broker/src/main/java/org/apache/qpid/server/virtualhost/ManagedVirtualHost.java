@@ -25,8 +25,7 @@ import java.io.IOException;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 
 /**
- * The management interface exposed to allow management of an Exchange.
- * @version 0.1
+ * The management interface exposed to allow management of a virtualHost
  */
 public interface ManagedVirtualHost
 {

@@ -21,8 +21,6 @@
 package org.apache.qpid.server.configuration;
 
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;

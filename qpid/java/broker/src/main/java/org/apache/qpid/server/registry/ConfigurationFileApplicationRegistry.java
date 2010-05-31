@@ -20,8 +20,9 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.commons.configuration.ConfigurationException;
+import java.io.File;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.actors.BrokerActor;
@@ -29,15 +30,12 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 
-import java.io.File;
-
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
         super(new ServerConfiguration(configurationURL));
     }
-
 
     @Override
     public void close()

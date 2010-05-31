@@ -32,8 +32,8 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.binding.BindingFactory;
@@ -65,7 +65,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
 
     AuthenticationManager getAuthenticationManager();
 
-    ACLManager getAccessManager();
+    SecurityManager getSecurityManager();
 
     void close();
 

@@ -18,21 +18,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration.plugins;
+package org.apache.qpid.server.virtualhost.plugins;
 
-import java.util.List;
+import org.apache.qpid.server.plugins.Plugin;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-
-public interface ConfigurationPluginFactory
+public interface VirtualHostPlugin extends Runnable, Plugin
 {
+    public void setVirtualHost(VirtualHost vhost);
+    
     /**
-     * The Parent paths of the configuration that this plugin supports.
-     * 
-     * For example, {@code queue} elements have a parent path of {@code virtualhosts.virtualhost}.
+     * Long value representing the delay between repeats
+     *
+     * @return
      */
-    public List<String> getParentPaths();
+    public long getDelay();
 
-    public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException;
+    /**
+     * Option to specify what the delay value represents
+     * @see java.util.concurrent.TimeUnit for valid value.
+     * @return
+     */
+    public String getTimeUnit();
 }

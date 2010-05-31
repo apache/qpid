@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.connection;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.protocol.AMQConstant;
-
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.common.Closeable;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 public class ConnectionRegistry implements IConnectionRegistry, Closeable
 {
@@ -38,7 +38,7 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
 
     public void initialise()
     {
-
+        // None required
     }
     
     public void expireClosedChannels()

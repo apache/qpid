@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.registry;
 
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -42,7 +47,7 @@ import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -51,11 +56,6 @@ import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -68,8 +68,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     protected static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
     private static Map<Integer, IApplicationRegistry> _instanceMap = new HashMap<Integer, IApplicationRegistry>();
-
-    private final Map<Class<?>, Object> _configuredObjects = new HashMap<Class<?>, Object>();
 
     protected final ServerConfiguration _configuration;
 
@@ -85,7 +83,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected VirtualHostRegistry _virtualHostRegistry;
 
-    protected ACLManager _accessManager;
+    protected SecurityManager _securityManager;
 
     protected PrincipalDatabaseManager _databaseManager;
 
@@ -123,8 +121,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         initialise(instance, DEFAULT_INSTANCE);
     }
 
+    @SuppressWarnings("finally")
     public static void initialise(IApplicationRegistry instance, int instanceID) throws Exception
     {
+        _logger.error("initialise(IApplicationRegistry instance, int instanceID)");
         if (instance != null)
         {
             _logger.info("Initialising Application Registry(" + instance + "):" + instanceID);
@@ -134,7 +134,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             store.setRoot(new SystemConfigImpl(store));
             instance.setConfigStore(store);
 
-            BrokerConfig broker = new BrokerConfigAdapter(instance, instanceID);
+            BrokerConfig broker = new BrokerConfigAdapter(instance);
 
             SystemConfig system = (SystemConfig) store.getRoot();
             system.addBroker(broker);
@@ -142,6 +142,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             try
             {
+                _logger.error("instance.initialise(instanceID)");
                 instance.initialise(instanceID);
             }
             catch (Exception e)
@@ -248,13 +249,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             throw new ConfigurationException(e);
         }
 
-        _configuration.configure();
+        _configuration.initialise();
     }
 
     public void initialise(int instanceID) throws Exception
     {
-        _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
-                                                       new Log4jMessageLogger());
+        _rootMessageLogger = new RootMessageLoggerImpl(_configuration, new Log4jMessageLogger());
         _registryName = String.valueOf(instanceID);
 
         // Set the Actor for current log messages
@@ -270,7 +270,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         _virtualHostRegistry = new VirtualHostRegistry(this);
 
-        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
+        _securityManager = new SecurityManager(_configuration, _pluginManager);
 
         createDatabaseManager(_configuration);
 
@@ -282,7 +282,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         initialiseVirtualHosts();
 
-        // Startup complete pop the current actor
+        // Startup complete, so pop the current actor
         CurrentActor.remove();
     }
 
@@ -433,9 +433,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _virtualHostRegistry;
     }
 
-    public ACLManager getAccessManager() throws ConfigurationException
+    public SecurityManager getSecurityManager()
     {
-        return new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
+        return _securityManager;
     }
 
     public ManagedObjectRegistry getManagedObjectRegistry()

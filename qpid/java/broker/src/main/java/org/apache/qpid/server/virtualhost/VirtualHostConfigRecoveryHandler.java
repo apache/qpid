@@ -94,21 +94,29 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     public void queue(String queueName, String owner, boolean exclusive, FieldTable arguments)
     {
-        AMQShortString queueNameShortString = new AMQShortString(queueName);
-
-        AMQQueue q = _virtualHost.getQueueRegistry().getQueue(queueNameShortString);
-
-        if (q == null)
+        try
         {
-            q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, exclusive,
-                                                   _virtualHost, arguments);
-            _virtualHost.getQueueRegistry().registerQueue(q);
+            AMQShortString queueNameShortString = new AMQShortString(queueName);
+    
+            AMQQueue q = _virtualHost.getQueueRegistry().getQueue(queueNameShortString);
+    
+            if (q == null)
+            {
+                q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
+                                                       arguments);
+                _virtualHost.getQueueRegistry().registerQueue(q);
+            }
+    
+            CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1004(queueName, true));
+    
+            //Record that we have a queue for recovery
+            _queueRecoveries.put(queueName, 0);
         }
-
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1004(queueName, true));
-
-        //Record that we have a queue for recovery
-        _queueRecoveries.put(queueName, 0);
+        catch (AMQException e)
+        {
+            // TODO
+            throw new RuntimeException(e);
+        }
     }
 
     public ExchangeRecoveryHandler completeQueueRecovery()
@@ -131,9 +139,9 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         }
         catch (AMQException e)
         {
+            // TODO
             throw new RuntimeException(e);
         }
-
     }
 
     public BindingRecoveryHandler completeExchangeRecovery()
