@@ -100,6 +100,11 @@ void Poller::shutdown() {
     PostQueuedCompletionStatus(impl->iocp, 0, key, 0);
 }
 
+bool Poller::hasShutdown()
+{
+    return impl->isShutdown;
+}
+
 bool Poller::interrupt(PollerHandle&) {
     return false;  // There's no concept of a registered handle.
 }

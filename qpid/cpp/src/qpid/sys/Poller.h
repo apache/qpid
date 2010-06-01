@@ -99,6 +99,8 @@ public:
     QPID_COMMON_EXTERN void monitorHandle(PollerHandle& handle, Direction dir);
     QPID_COMMON_EXTERN void unmonitorHandle(PollerHandle& handle, Direction dir);
     QPID_COMMON_EXTERN Event wait(Duration timeout = TIME_INFINITE);
+
+    QPID_COMMON_EXTERN bool hasShutdown();
 };
 
 /**

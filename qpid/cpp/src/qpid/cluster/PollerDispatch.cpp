@@ -60,8 +60,10 @@ void PollerDispatch::dispatch(sys::DispatchHandle& h) {
 
 // Entry point: called if disconnected from  CPG.
 void PollerDispatch::disconnect(sys::DispatchHandle& ) {
-    QPID_LOG(critical, "Disconnected from cluster");
-    onError();
+    if (!poller->hasShutdown()) {
+        QPID_LOG(critical, "Disconnected from cluster");
+        onError();
+    }
 }
 
 }} // namespace qpid::cluster
