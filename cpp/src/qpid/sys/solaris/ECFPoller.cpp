@@ -293,6 +293,11 @@ void Poller::shutdown() {
     impl->interrupt();
 }
 
+bool Poller::hasShutdown()
+{
+    return impl->isShutdown;
+}
+
 bool Poller::interrupt(PollerHandle& handle) {
     PollerPrivate::InterruptHandle& ih = impl->interruptHandle;
     PollerHandlePrivate& eh = *static_cast<PollerHandle&>(ih).impl;
