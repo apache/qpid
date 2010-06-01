@@ -127,8 +127,8 @@ class Connection:
     else:
       self.port = default(url.port, options.get("port", AMQP_PORT))
     self.heartbeat = options.get("heartbeat")
-    self.username = default(url.user, options.get("username", "guest"))
-    self.password = default(url.password, options.get("password", "guest"))
+    self.username = default(url.user, options.get("username", None))
+    self.password = default(url.password, options.get("password", None))
 
     self.sasl_mechanisms = options.get("sasl_mechanisms")
     self.sasl_service = options.get("sasl_service", "qpidd")
