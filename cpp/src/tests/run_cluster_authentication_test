@@ -1,5 +1,8 @@
 #! /bin/bash
 
+source ./test_env.sh
+source $srcdir/ais_check
 source sasl_test_setup.sh
-./cluster_authentication_soak 
+
+with_ais_group ./cluster_authentication_soak 
 
