@@ -468,7 +468,8 @@ runDeclareQueuesClient ( brokerVector brokers,
     vector<const char*> argv;
     argv.push_back ( "declareQueues" );
     argv.push_back ( host );
-    argv.push_back ( portSs.str().c_str() );
+    string portStr = portSs.str();
+    argv.push_back ( portStr.c_str() );
     if ( durable )
       argv.push_back ( "1" );
     else
