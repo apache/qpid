@@ -22,6 +22,7 @@
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/AtomicCount.h"
 #include "qpid/sys/DeletionManager.h"
 #include "qpid/sys/posix/check.h"
 #include "qpid/sys/posix/PrivatePosix.h"
@@ -33,6 +34,7 @@
 
 #include <assert.h>
 #include <queue>
+#include <set>
 #include <exception>
 
 namespace qpid {
@@ -156,6 +158,37 @@ PollerHandle::~PollerHandle() {
     PollerHandleDeletionManager.markForDeletion(impl);
 }
 
+class HandleSet
+{
+    Mutex lock;
+    std::set<PollerHandle*> handles;
+  public:
+    void add(PollerHandle*);
+    void remove(PollerHandle*);
+    void cleanup();
+};
+
+void HandleSet::add(PollerHandle* h)
+{
+    ScopedLock<Mutex> l(lock);
+    handles.insert(h);
+}
+void HandleSet::remove(PollerHandle* h)
+{
+    ScopedLock<Mutex> l(lock);
+    handles.erase(h);
+}
+void HandleSet::cleanup()
+{
+    // Inform all registered handles of disconnection
+    std::set<PollerHandle*> copy;
+    handles.swap(copy);
+    for (std::set<PollerHandle*>::const_iterator i = copy.begin(); i != copy.end(); ++i) {
+        Poller::Event event(*i, Poller::DISCONNECTED);
+        event.process();
+    }
+}
+
 /**
  * Concrete implementation of Poller to use the Linux specific epoll
  * interface
@@ -230,6 +263,8 @@ class PollerPrivate {
     bool isShutdown;
     InterruptHandle interruptHandle;
     ::sigset_t sigMask;
+    HandleSet registeredHandles;
+    AtomicCount threadCount;
 
     static ::__uint32_t directionToEpollEvent(Poller::Direction dir) {
         switch (dir) {
@@ -308,6 +343,7 @@ void Poller::registerHandle(PollerHandle& handle) {
     epe.data.u64 = 0; // Keep valgrind happy
     epe.data.ptr = &eh;
 
+    impl->registeredHandles.add(&handle);
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_ADD, eh.fd(), &epe));
 
     eh.setActive();
@@ -318,6 +354,7 @@ void Poller::unregisterHandle(PollerHandle& handle) {
     ScopedLock<Mutex> l(eh.lock);
     assert(!eh.isIdle());
 
+    impl->registeredHandles.remove(&handle);
     int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, eh.fd(), 0);
     // Ignore EBADF since deleting a nonexistent fd has the overall required result!
     // And allows the case where a sloppy program closes the fd and then does the delFd()
@@ -475,6 +512,7 @@ void Poller::run() {
         ::sigfillset(&ss);
         ::pthread_sigmask(SIG_SETMASK, &ss, 0);
 
+        ++(impl->threadCount);
         do {
             Event event = wait();
 
@@ -486,6 +524,8 @@ void Poller::run() {
                 switch (event.type) {
                 case SHUTDOWN:
                     PollerHandleDeletionManager.destroyThreadState();
+                    //last thread to respond to shutdown cleans up:
+                    if (--(impl->threadCount) == 0) impl->registeredHandles.cleanup();
                     return;
                 default:
                     // This should be impossible
@@ -497,6 +537,12 @@ void Poller::run() {
         QPID_LOG(error, "IO worker thread exiting with unhandled exception: " << e.what());
     }
     PollerHandleDeletionManager.destroyThreadState();
+    --(impl->threadCount);
+}
+
+bool Poller::hasShutdown()
+{
+    return impl->isShutdown;
 }
 
 Poller::Event Poller::wait(Duration timeout) {
