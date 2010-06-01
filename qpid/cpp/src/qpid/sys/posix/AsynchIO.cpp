@@ -554,13 +554,9 @@ void AsynchIO::writeable(DispatchHandle& h) {
 }
         
 void AsynchIO::disconnected(DispatchHandle& h) {
-    // If we've already queued close do it instead of disconnected callback
-    if (queuedClose) {
-        close(h);
-    } else if (disCallback) {
-        disCallback(*this);
-        h.unwatch();
-    }
+    // If we have not already queued close then call disconnected callback before closing
+    if (!queuedClose && disCallback) disCallback(*this);
+    close(h);
 }
 
 /*

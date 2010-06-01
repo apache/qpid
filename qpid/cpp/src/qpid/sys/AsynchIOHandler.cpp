@@ -173,9 +173,8 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     }
 }
 
-void AsynchIOHandler::eof(AsynchIO&) {
-    QPID_LOG(debug, "DISCONNECTED [" << identifier << "]");
-    if (codec) codec->closed();
+void AsynchIOHandler::eof(AsynchIO& a) {
+    disconnect(a);
     readError = true;
     aio->queueWriteClose();
 }
@@ -190,9 +189,9 @@ void AsynchIOHandler::closedSocket(AsynchIO&, const Socket& s) {
     delete this;
 }
 
-void AsynchIOHandler::disconnect(AsynchIO& a) {
-    // treat the same as eof
-    eof(a);
+void AsynchIOHandler::disconnect(AsynchIO&) {
+    QPID_LOG(debug, "DISCONNECTED [" << identifier << "]");
+    if (codec) codec->closed();
 }
 
 // Notifications
