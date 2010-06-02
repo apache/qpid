@@ -24,7 +24,7 @@ import org.apache.mina.common.WriteTimeoutException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.FailoverBaseCase;
 import org.apache.qpid.AMQConnectionClosedException;
 

@@ -24,6 +24,7 @@ package org.apache.qpid.test.client.destination;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -37,11 +38,11 @@ import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.messaging.Address;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AddressBasedDestinationTest extends QpidTestCase
+public class AddressBasedDestinationTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(AddressBasedDestinationTest.class);
     private Connection _connection;

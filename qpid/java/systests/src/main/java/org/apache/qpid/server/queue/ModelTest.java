@@ -27,7 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.test.utils.JMXTestUtils;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -57,7 +57,7 @@ import java.lang.reflect.UndeclaredThrowableException;
  * Tests should ensure that they clean up after themselves.
  * e,g. Durable queue creation test should perform a queue delete.
  */
-public class ModelTest extends QpidTestCase
+public class ModelTest extends QpidBrokerTestCase
 {
 
     private static final String USER = "admin";

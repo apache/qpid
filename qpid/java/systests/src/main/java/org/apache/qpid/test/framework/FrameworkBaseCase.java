@@ -25,7 +25,7 @@ import org.apache.log4j.NDC;
 
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import org.apache.qpid.junit.extensions.SetupTaskAware;
 import org.apache.qpid.junit.extensions.SetupTaskHandler;
@@ -47,7 +47,7 @@ import java.util.List;
  * <tr><td> Convert failed assertions to error messages.
  * </table>
  */
-public class FrameworkBaseCase extends QpidTestCase implements FrameworkTestContext, SetupTaskAware,
+public class FrameworkBaseCase extends QpidBrokerTestCase implements FrameworkTestContext, SetupTaskAware,
     BrokerLifecycleAware
 {
     /** Used for debugging purposes. */

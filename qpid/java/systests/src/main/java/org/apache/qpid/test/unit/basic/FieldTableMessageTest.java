@@ -30,7 +30,7 @@ import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +46,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class FieldTableMessageTest extends QpidTestCase implements MessageListener
+public class FieldTableMessageTest extends QpidBrokerTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(FieldTableMessageTest.class);
 

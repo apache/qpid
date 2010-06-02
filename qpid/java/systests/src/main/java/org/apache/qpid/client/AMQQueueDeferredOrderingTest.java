@@ -29,12 +29,12 @@ import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AMQQueueDeferredOrderingTest extends QpidTestCase
+public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
 {
 
     private static final int NUM_MESSAGES = 1000;

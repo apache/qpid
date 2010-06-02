@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.persistent;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.jms.ConnectionListener;
@@ -52,7 +52,7 @@ import java.io.File;
  * QPID-1813 highlights the lack of testing here as the broker will NPE as it
  * assumes that the client id of the publisher will always exist
  */
-public class NoLocalAfterRecoveryTest extends QpidTestCase implements ConnectionListener
+public class NoLocalAfterRecoveryTest extends QpidBrokerTestCase implements ConnectionListener
 {
     protected final String MY_TOPIC_SUBSCRIPTION_NAME = this.getName();
     protected static final int SEND_COUNT = 10;

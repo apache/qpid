@@ -25,12 +25,12 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * @author Apache Software Foundation
  */
-public class CloseWithBlockingReceiveTest extends QpidTestCase
+public class CloseWithBlockingReceiveTest extends QpidBrokerTestCase
 {
 
 

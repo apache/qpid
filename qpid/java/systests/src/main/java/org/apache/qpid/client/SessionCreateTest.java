@@ -24,7 +24,7 @@ import javax.jms.Connection;
 import javax.jms.Session;
 import javax.naming.Context;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Class to check that session creation on a connection has no accidental limit
  */
-public class SessionCreateTest extends QpidTestCase
+public class SessionCreateTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(MessageListenerTest.class);
 

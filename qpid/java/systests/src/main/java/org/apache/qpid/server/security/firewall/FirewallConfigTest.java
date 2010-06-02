@@ -26,9 +26,9 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 
 import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-public class FirewallConfigTest extends QpidTestCase 
+public class FirewallConfigTest extends QpidBrokerTestCase 
 {
     private File _tmpConfig, _tmpVirtualhosts;
     

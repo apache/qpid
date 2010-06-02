@@ -27,7 +27,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.AMQBindingURL;
 
 import javax.jms.Connection;
@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ConflationQueueTest extends QpidTestCase
+public class ConflationQueueTest extends QpidBrokerTestCase
 {
     private static final int TIMEOUT = 1500;
 

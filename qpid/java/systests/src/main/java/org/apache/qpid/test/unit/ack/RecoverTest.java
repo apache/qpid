@@ -316,7 +316,9 @@ public class RecoverTest extends FailoverBaseCase
     }
     
     /**
-     * Test strategy
+     * Goal : Check if ordering is preserved when doing recovery under reasonable circumstances.
+     *        Refer QPID-2471 for more details. 
+     * Test strategy :
      * Send 8 messages to a topic.
      * The consumer will call recover until it sees a message 5 times,
      * at which point it will ack that message.
@@ -336,7 +338,8 @@ public class RecoverTest extends FailoverBaseCase
         
         int messageSeen = 0;
         int expectedMsg = 0;
-        
+
+        // need to add a timer here as well.
         while(expectedMsg < 8)
         {
             Message message = cons.receive();            
@@ -362,7 +365,8 @@ public class RecoverTest extends FailoverBaseCase
     }
     
     /**
-     * Test strategy
+     * Goal : Same as testOderingWithSyncConsumer
+     * Test strategy :
      * Same as testOderingWithSyncConsumer but using a 
      * Message Listener instead of a sync receive().
      */

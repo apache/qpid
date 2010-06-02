@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.client;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -34,7 +34,7 @@ import javax.jms.Session;
  * qpid.declare_exchanges system properties functions as expected.
  * 
  */
-public class DynamicQueueExchangeCreateTest extends QpidTestCase
+public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
 {
 
     public void testQueueDeclare() throws Exception

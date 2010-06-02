@@ -76,7 +76,7 @@ import junit.framework.AssertionFailedError;
  * the problem exists and will not be suitable as part of a system test.
  *
  */
-public class RollbackOrderTest extends QpidTestCase
+public class RollbackOrderTest extends QpidBrokerTestCase
 {
 
     private Connection _connection;

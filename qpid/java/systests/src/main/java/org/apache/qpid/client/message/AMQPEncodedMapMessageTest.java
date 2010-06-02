@@ -42,10 +42,10 @@ import org.apache.qpid.client.message.AMQPEncodedMapMessage;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 
-public class AMQPEncodedMapMessageTest extends QpidTestCase
+public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
 {
     private Connection _connection;
     private Session _session;

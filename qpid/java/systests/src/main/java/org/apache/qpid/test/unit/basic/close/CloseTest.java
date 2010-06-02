@@ -19,7 +19,7 @@
  *
  */
 package org.apache.qpid.test.unit.basic.close;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.url.AMQBindingURL;
@@ -31,7 +31,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-public class CloseTest extends QpidTestCase
+public class CloseTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CloseTest.class);
 

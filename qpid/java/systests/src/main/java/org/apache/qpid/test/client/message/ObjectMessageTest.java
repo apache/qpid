@@ -22,7 +22,7 @@ package org.apache.qpid.test.client.message;
 
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.Connection;
@@ -34,7 +34,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import java.util.UUID;
 
-public class ObjectMessageTest extends QpidTestCase
+public class ObjectMessageTest extends QpidBrokerTestCase
 {
     private Connection _connection;
     private Session _session;

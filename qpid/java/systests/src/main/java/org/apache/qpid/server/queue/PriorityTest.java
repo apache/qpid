@@ -29,7 +29,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -43,7 +43,7 @@ import java.util.Hashtable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PriorityTest extends QpidTestCase
+public class PriorityTest extends QpidBrokerTestCase
 {
     private static final int TIMEOUT = 1500;
 

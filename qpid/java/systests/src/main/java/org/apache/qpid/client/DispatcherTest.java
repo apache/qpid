@@ -38,7 +38,7 @@ import javax.naming.spi.InitialContextFactory;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * When setting the message listener later the _synchronousQueue is just poll()'ed and the first message delivered
  * the remaining messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
-public class DispatcherTest extends QpidTestCase
+public class DispatcherTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(DispatcherTest.class);
 

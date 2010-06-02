@@ -31,7 +31,7 @@ import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 import junit.framework.Assert;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.jms.ConnectionListener;
 
@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
 
-public class TemporaryQueueTest extends QpidTestCase implements ExceptionListener
+public class TemporaryQueueTest extends QpidBrokerTestCase implements ExceptionListener
 {
     private List<Exception> _exceptions = new ArrayList<Exception>();
 
