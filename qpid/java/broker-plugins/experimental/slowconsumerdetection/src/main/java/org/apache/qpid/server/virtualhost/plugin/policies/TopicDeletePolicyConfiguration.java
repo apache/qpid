@@ -60,7 +60,7 @@ public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        // No validation requried.
+        // No validation required.
     }
 
     public boolean deletePersistent()
