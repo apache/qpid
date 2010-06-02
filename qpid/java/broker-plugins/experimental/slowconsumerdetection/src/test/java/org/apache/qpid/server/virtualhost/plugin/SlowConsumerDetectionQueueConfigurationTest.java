@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.server.virtualhost.plugin;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.NullApplicationRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Unit test the QueueConfiguration processing.
@@ -37,7 +34,7 @@ import org.apache.qpid.server.util.NullApplicationRegistry;
  * So all the Valid test much catch the ensuing ConfigurationException and
  * validate that the error is due to a lack of a valid Policy
  */
-public class SlowConsumerDetectionQueueConfigurationTest extends TestCase
+public class SlowConsumerDetectionQueueConfigurationTest extends QpidTestCase
 {
 
     /**

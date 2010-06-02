@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.virtualhost.plugin.policies;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TopicDeletePolicyConfigurationTest extends TestCase
+public class TopicDeletePolicyConfigurationTest extends QpidTestCase
 {
 
     public void testNoConfigNoDeletePersistent()
