@@ -111,7 +111,7 @@ void convert(const Variant::Map& from, ConnectionSettings& to)
 }
 
 ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) : 
-    reconnect(true), timeout(-1), limit(-1),
+    reconnect(false), timeout(-1), limit(-1),
     minReconnectInterval(3), maxReconnectInterval(60),
     retries(0), reconnectOnLimitExceeded(true)
 {
