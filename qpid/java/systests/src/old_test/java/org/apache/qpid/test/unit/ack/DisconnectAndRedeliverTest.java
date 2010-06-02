@@ -33,7 +33,7 @@ import org.apache.qpid.server.util.TestApplicationRegistry;
 
 import javax.jms.*;
 
-public class DisconnectAndRedeliverTest extends TestCase
+public class DisconnectAndRedeliverTest extends InternalBrokerBaseCase
 {
     private static final Logger _logger = Logger.getLogger(DisconnectAndRedeliverTest.class);
 
@@ -49,17 +49,18 @@ public class DisconnectAndRedeliverTest extends TestCase
         DOMConfigurator.configure("../broker/etc/log4j.xml");
     }
 
-    protected void setUp() throws Exception
+    @Override
+    public void createBroker() throws Exception
     {
-        super.setUp();
-        TransportConnection.createVMBroker(1);
-        ApplicationRegistry.initialise(new TestApplicationRegistry(), 1);
+        super.createBroker();
+        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
     }
 
-    protected void tearDown() throws Exception
+    @Override
+    public void stopBroker()
     {
-        super.tearDown();
-        TransportConnection.killAllVMBrokers();
+        TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        super.stopBroker();
     }
 
     /**
