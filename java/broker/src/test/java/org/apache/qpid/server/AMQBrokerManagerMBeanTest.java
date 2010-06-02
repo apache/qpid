@@ -27,10 +27,11 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class AMQBrokerManagerMBeanTest extends TestCase
+public class AMQBrokerManagerMBeanTest extends InternalBrokerBaseCase
 {
     private QueueRegistry _queueRegistry;
     private ExchangeRegistry _exchangeRegistry;
@@ -81,7 +82,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
     }
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
         super.setUp();
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
@@ -90,10 +91,4 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         _exchangeRegistry = _vHost.getExchangeRegistry();
     }
 
-    @Override
-    protected void tearDown() throws Exception
-    {
-        //Ensure we close the opened Registry
-        ApplicationRegistry.remove();
-    }
 }

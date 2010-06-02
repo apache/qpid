@@ -50,6 +50,7 @@ import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +62,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AbstractHeadersExchangeTestBase extends TestCase
+public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 {
     private static final Logger _log = Logger.getLogger(AbstractHeadersExchangeTestBase.class);
 

@@ -24,11 +24,12 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
-public class MaxChannelsTest extends TestCase
+public class MaxChannelsTest extends InternalBrokerBaseCase
 {
 	private AMQProtocolEngine _session;
 
@@ -61,13 +62,6 @@ public class MaxChannelsTest extends TestCase
     }
 
     @Override
-    public void setUp()
-    {
-        //Highlight that this test will cause a new AR to be created
-        ApplicationRegistry.getInstance();
-    }
-
-    @Override
     public void tearDown() throws Exception
     {
     	try {
@@ -78,8 +72,7 @@ public class MaxChannelsTest extends TestCase
 		}
         finally
         {
-            // Correctly Close the AR we created
-            ApplicationRegistry.remove();
+            super.tearDown();
         }
     }
 

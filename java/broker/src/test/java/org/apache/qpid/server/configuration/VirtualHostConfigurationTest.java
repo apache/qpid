@@ -27,27 +27,22 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class VirtualHostConfigurationTest extends TestCase
+public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
 {
 
-    private VirtualHostConfiguration vhostConfig;
     private XMLConfiguration  configXml;
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
         super.setUp();
         // Fill config file with stuff
         configXml = new XMLConfiguration();
         configXml.setRootElementName("virtualhosts");
         configXml.addProperty("virtualhost(-1).name", "test");
-    }
-
-    public void tearDown() throws Exception
-    {
-        super.tearDown();
     }
 
     public void testQueuePriority() throws Exception

@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 import junit.framework.TestCase;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +64,7 @@ import java.util.List;
  *
  * This test validates that Exchanges, Queues, Bindings and Messages are persisted correctly.
  */
-public class MessageStoreTest extends TestCase
+public class MessageStoreTest extends InternalBrokerBaseCase
 {
 
     private static final int DEFAULT_PRIORTY_LEVEL = 5;
@@ -114,9 +115,6 @@ public class MessageStoreTest extends TestCase
         }
     }
 
-    VirtualHost _virtualHost = null;
-    String virtualHostName = "MessageStoreTest";
-
     AMQShortString nonDurableExchangeName = new AMQShortString("MST-NonDurableDirectExchange");
     AMQShortString directExchangeName = new AMQShortString("MST-DirectExchange");
     AMQShortString topicExchangeName = new AMQShortString("MST-TopicExchange");
@@ -135,16 +133,7 @@ public class MessageStoreTest extends TestCase
     AMQShortString directRouting = new AMQShortString("MST-direct");
     AMQShortString topicRouting = new AMQShortString("MST-topic");
 
-    protected void setUp()
-    {
-        ApplicationRegistry.getInstance();
-    }
-
-    protected void tearDown()
-    {
-        ApplicationRegistry.remove();
-    }
-
+    
     protected void runTestWithStore(Configuration configuration)
     {
         //Ensure Environment Path is empty

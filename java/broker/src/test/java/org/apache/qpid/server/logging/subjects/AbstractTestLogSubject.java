@@ -35,6 +35,7 @@ import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
@@ -53,13 +54,14 @@ import java.util.List;
  * The resulting log file is then validated.
  *
  */
-public abstract class AbstractTestLogSubject extends TestCase
+public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
 {
     protected Configuration _config = new PropertiesConfiguration();
     protected LogSubject _subject = null;
 
     AMQProtocolSession _session;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();
@@ -73,13 +75,6 @@ public abstract class AbstractTestLogSubject extends TestCase
         _session = new InternalTestProtocolSession(virtualHost);
     }
 
-    public void tearDown() throws Exception
-    {
-        // Correctly Close the AR that we created above
-        ApplicationRegistry.remove();
-
-        super.tearDown();
-    }
 
     protected List<Object> performLog() throws ConfigurationException
     {

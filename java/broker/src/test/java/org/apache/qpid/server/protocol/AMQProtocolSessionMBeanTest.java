@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -39,7 +40,7 @@ import javax.management.openmbean.TabularData;
 
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
-public class AMQProtocolSessionMBeanTest extends TestCase
+public class AMQProtocolSessionMBeanTest extends InternalBrokerBaseCase
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(AMQProtocolSessionMBeanTest.class);
@@ -130,7 +131,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
     }
 
     @Override
-    protected void setUp() throws Exception
+    public  void setUp() throws Exception
     {
         super.setUp();
 
@@ -142,9 +143,4 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         _mbean = (AMQProtocolSessionMBean) _protocolSession.getManagedObject();
     }
 
-    @Override
-    protected void tearDown()
-    {
-        ApplicationRegistry.remove();
-    }
 }
