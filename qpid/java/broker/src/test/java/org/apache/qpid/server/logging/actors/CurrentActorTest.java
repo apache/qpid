@@ -20,10 +20,12 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 /**
@@ -68,15 +70,18 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
      * in there being no actors set.
      *
      * @throws AMQException
+     * @throws org.apache.commons.configuration.ConfigurationException
      */
-    public void testLIFO() throws AMQException
+    public void testLIFO() throws AMQException, ConfigurationException
     {
-        // Create a new actor using retrieving the rootMessageLogger from
-        // the default ApplicationRegistry.
-        //fixme reminder that we need a better approach for broker testing.
+        // This test only needs the local objects created, _session etc.
+        // So stopping the broker and making them useless will not affect the
+        // test, but the extra actors the test broker adds will so by stopping
+        // we remove the session actor and so all is good.
+        stopBroker();
+        
         AMQPConnectionActor connectionActor = new AMQPConnectionActor(_session,
-                                                                      ApplicationRegistry.getInstance().
-                                                                              getRootMessageLogger());
+                                                                      new NullRootMessageLogger());
 
         /*
          * Push the actor on to the stack:
@@ -118,8 +123,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
         AMQChannel channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
 
         AMQPChannelActor channelActor = new AMQPChannelActor(channel,
-                                                             ApplicationRegistry.getInstance().
-                                                                     getRootMessageLogger());
+                                                             new NullRootMessageLogger());
 
         CurrentActor.set(channelActor);
 
@@ -178,7 +182,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
      *
      * Checks are done to ensure that there is no set actor after the remove.
      *
-     * If the ThreadLoacl was not working then having concurrent actor sets
+     * If the ThreadLocal was not working then having concurrent actor sets
      * would result in more than one actor and so the remove will not result
      * in the clearing of the CurrentActor
      *
@@ -250,14 +254,14 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
             // Create a new actor using retrieving the rootMessageLogger from
             // the default ApplicationRegistry.
             //fixme reminder that we need a better approach for broker testing.
-            AMQPConnectionActor actor = new AMQPConnectionActor(_session,
-                                                                ApplicationRegistry.getInstance().
-                                                                        getRootMessageLogger());
-
-            CurrentActor.set(actor);
-
             try
             {
+
+                AMQPConnectionActor actor = new AMQPConnectionActor(_session,
+                                                                    new NullRootMessageLogger());
+
+                CurrentActor.set(actor);
+
                 //Use the Actor to send a simple message
                 CurrentActor.get().message(new LogSubject()
                 {

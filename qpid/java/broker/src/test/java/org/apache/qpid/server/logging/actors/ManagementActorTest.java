@@ -44,9 +44,9 @@ public class ManagementActorTest extends BaseActorTestCase
     private String _threadName;
 
     @Override
-    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
+    public void configure()
     {
-        super.setUpWithConfig(serverConfig);
+        super.configure();
         _amqpActor = new ManagementActor(_rootLogger);
 
         // Set the thread name to be the same as a RMI JMX Connection would use

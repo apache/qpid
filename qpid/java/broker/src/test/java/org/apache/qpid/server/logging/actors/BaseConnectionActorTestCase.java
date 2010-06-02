@@ -20,29 +20,14 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.AMQException;
-
 public class BaseConnectionActorTestCase extends BaseActorTestCase
 {
 
-    protected AMQProtocolSession _session;
-
     @Override
-    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
+    public void configure()
     {
-        super.setUpWithConfig(serverConfig);
+        super.configure();
 
-        VirtualHost virtualHost = ApplicationRegistry.getInstance().
-                getVirtualHostRegistry().getVirtualHosts().iterator().next();
-
-        // Create a single session for this test.
-        _session = new InternalTestProtocolSession(virtualHost);
-        
         _amqpActor = new AMQPConnectionActor(_session, _rootLogger);
     }
 

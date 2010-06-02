@@ -31,43 +31,34 @@ import org.apache.qpid.server.logging.LogActor;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-public class BaseActorTestCase extends TestCase
+public class BaseActorTestCase extends InternalBrokerBaseCase
 {
     protected LogActor _amqpActor;
     protected UnitTestMessageLogger _rawLogger;
     protected RootMessageLogger _rootLogger;
 
-    public void setUp() throws Exception
+    @Override
+    public void configure()
     {
-        super.setUp();
-        //Highlight that this test will cause a new AR to be created
-        ApplicationRegistry.getInstance();
+        _configuration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
 
-        Configuration config = new PropertiesConfiguration();
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+        _rawLogger = new UnitTestMessageLogger();
 
-        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
-
-        setUpWithConfig(serverConfig);
+        _rootLogger =
+                new RootMessageLoggerImpl(_configuration, _rawLogger);
     }
 
     public void tearDown() throws Exception
     {
         _rawLogger.clearLogMessages();
 
-        // Correctly Close the AR we created
-        ApplicationRegistry.remove();
-
         super.tearDown();
     }
 
     protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
     {
-        _rawLogger = new UnitTestMessageLogger();
-
-        _rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
     }
 
 
