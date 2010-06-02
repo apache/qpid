@@ -42,18 +42,13 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
+    public void configure()
     {
-        super.setUpWithConfig(serverConfig);
-
+        super.configure();
 
         MockSubscription mockSubscription = new MockSubscription();
 
-        MockAMQQueue queue = new MockAMQQueue(getName());
-
-        queue.setVirtualHost(_session.getVirtualHost());
-
-        mockSubscription.setQueue(queue,false);
+        mockSubscription.setQueue(_queue, false);
 
         _amqpActor = new SubscriptionActor(_rootLogger, mockSubscription);
     }
