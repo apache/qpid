@@ -208,7 +208,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         assertEquals("Max MessageSize not set",2000, _queueMBean.getMaximumMessageSize().longValue());
         assertEquals("Max QueueDepth not set",maxQueueDepth, _queueMBean.getMaximumQueueDepth().longValue());
 
-        assertEquals("Queue Name does not match", QUEUE_NAME, _queueMBean.getName());
+        assertEquals("Queue Name does not match", new AMQShortString(getName()), _queueMBean.getName());
         assertFalse("AutoDelete should not be set.",_queueMBean.isAutoDelete());
         assertFalse("Queue should not be durable.",_queueMBean.isDurable());
         //TODO add isExclusive when supported
