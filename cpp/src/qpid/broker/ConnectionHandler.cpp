@@ -188,7 +188,6 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
     framing::Array array(0x95); // str16 array
     for (std::vector<Url>::iterator i = urls.begin(); i < urls.end(); ++i)
         array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
-    proxy.openOk(array);
 
     //install security layer if one has been negotiated:
     if (secured) {
@@ -204,6 +203,7 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
         authenticator->getUsername(s);
         userIdCallback(s);
     }
+    proxy.openOk(array);
 }
 
 
