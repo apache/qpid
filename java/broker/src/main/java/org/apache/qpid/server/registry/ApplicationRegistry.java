@@ -72,8 +72,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     protected final ServerConfiguration _configuration;
 
     public static final int DEFAULT_INSTANCE = 1;
-    public static final String DEFAULT_APPLICATION_REGISTRY = "org.apache.qpid.server.util.NullApplicationRegistry";
-    public static String _APPLICATION_REGISTRY = DEFAULT_APPLICATION_REGISTRY;
 
     protected final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
 
@@ -315,20 +313,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             if (instance == null)
             {
-                try
-                {
-                    _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + _APPLICATION_REGISTRY + " : Instance:" + instanceID);
-                    IApplicationRegistry registry = (IApplicationRegistry) Class.forName(_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
-                    ApplicationRegistry.initialise(registry, instanceID);
-                    _logger.info("Initialised Application Registry:" + instanceID);
-                    return registry;
-                }
-                catch (Exception e)
-                {
-                    _logger.error("Error configuring application: " + e, e);
-                    //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
-                    throw new RuntimeException("Unable to create Application Registry", e);
-                }
+                throw new IllegalStateException("Application Registry (" + instanceID + ") not created");
             }
             else
             {
@@ -418,11 +403,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             _acceptors.put(bindAddress, acceptor);
         }
-    }
-
-    public static void setDefaultApplicationRegistry(String clazz)
-    {
-        _APPLICATION_REGISTRY = clazz;
     }
 
     public VirtualHostRegistry getVirtualHostRegistry()
