@@ -132,6 +132,7 @@ class Connection(Framer):
 
   def detach_all(self):
     self.lock.acquire()
+    self.failed = True
     try:
       for ssn in self.attached.values():
         if self.close_code[0] != 200:
