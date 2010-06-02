@@ -20,32 +20,36 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.TestCase;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
-public class AMQQueueFactoryTest extends TestCase
+public class AMQQueueFactoryTest extends InternalBrokerBaseCase
 {
     QueueRegistry _queueRegistry;
     VirtualHost _virtualHost;
+    int _defaultQueueCount;
 
-    public void setUp()
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         ApplicationRegistry registry = (ApplicationRegistry) ApplicationRegistry.getInstance();
 
         _virtualHost = registry.getVirtualHostRegistry().getVirtualHost("test");
 
         _queueRegistry = _virtualHost.getQueueRegistry();
 
-        assertEquals("Queues registered on an empty virtualhost", 0, _queueRegistry.getQueues().size());
+        _defaultQueueCount = _queueRegistry.getQueues().size();
     }
 
-    public void tearDown()
+    @Override
+    public void tearDown() throws Exception
     {
-        assertEquals("Queue was not registered in virtualhost", 1, _queueRegistry.getQueues().size());
-        ApplicationRegistry.remove();
+        assertEquals("Queue was not registered in virtualhost", _defaultQueueCount + 1, _queueRegistry.getQueues().size());
+        super.tearDown();
     }
 
 
