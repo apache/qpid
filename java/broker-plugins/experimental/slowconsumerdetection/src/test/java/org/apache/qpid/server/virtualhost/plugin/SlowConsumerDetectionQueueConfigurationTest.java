@@ -24,7 +24,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
  * Unit test the QueueConfiguration processing.
@@ -34,7 +34,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
  * So all the Valid test much catch the ensuing ConfigurationException and
  * validate that the error is due to a lack of a valid Policy
  */
-public class SlowConsumerDetectionQueueConfigurationTest extends QpidTestCase
+public class SlowConsumerDetectionQueueConfigurationTest extends InternalBrokerBaseCase
 {
 
     /**
