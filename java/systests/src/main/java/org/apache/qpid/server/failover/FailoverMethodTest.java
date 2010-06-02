@@ -29,6 +29,7 @@ import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,22 +38,23 @@ import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import java.util.concurrent.CountDownLatch;
 
-public class FailoverMethodTest extends TestCase implements ExceptionListener
+public class FailoverMethodTest extends InternalBrokerBaseCase implements ExceptionListener
 {
-    private CountDownLatch _failoverComplete;
+    private CountDownLatch _failoverComplete = new CountDownLatch(1);
     protected static final Logger _logger = LoggerFactory.getLogger(FailoverMethodTest.class);
 
-    public void setUp() throws AMQVMBrokerCreationException
+    @Override
+    public void createBroker() throws Exception
     {
-        ApplicationRegistry.getInstance();
+        super.createBroker();
         TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-        _failoverComplete = new CountDownLatch(1);
     }
 
-    public void tearDown()
+    @Override
+    public void stopBroker()
     {
         TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-        ApplicationRegistry.remove();
+        super.stopBroker();
     }
 
     /**
@@ -81,8 +83,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
 
             connection.setExceptionListener(this);
 
-            TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-            ApplicationRegistry.remove();
+            stopBroker();
 
             _failoverComplete.await();
 
@@ -125,8 +126,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
 
             connection.setExceptionListener(this);
 
-            TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-            ApplicationRegistry.remove();
+            stopBroker();
 
             _failoverComplete.await();
 
@@ -186,8 +186,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
         try
         {
             //Kill initial broker
-            TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-            ApplicationRegistry.remove();
+            stopBroker();
 
             //Create a thread to start the broker asynchronously
             Thread brokerStart = new Thread(new Runnable()
@@ -199,8 +198,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
                         //Wait before starting broker
                         // The wait should allow atleast 1 retries to fail before broker is ready
                         Thread.sleep(750);
-                        ApplicationRegistry.getInstance();
-                        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+                        createBroker();
                     }
                     catch (Exception e)
                     {
@@ -234,8 +232,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             start = System.currentTimeMillis();
 
             //Kill connection
-            TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-            ApplicationRegistry.remove();
+            stopBroker();
 
             _failoverComplete.await();
 
