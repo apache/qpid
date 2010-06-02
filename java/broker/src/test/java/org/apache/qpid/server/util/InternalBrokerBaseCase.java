@@ -31,9 +31,11 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.StartupRootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -54,20 +56,44 @@ public class InternalBrokerBaseCase extends TestCase
     protected VirtualHost _virtualHost;
     protected AMQQueue _queue;
     protected AMQShortString QUEUE_NAME;
+    protected ServerConfiguration _configuration;
 
     public void setUp() throws Exception
     {
         super.setUp();
+
+        createBroker();
+    }
+
+    protected void createBroker() throws Exception
+    {
+        CurrentActor.set(new TestLogActor(new StartupRootMessageLogger()));
+
         PropertiesConfiguration configuration = new PropertiesConfiguration();
         configuration.setProperty("virtualhosts.virtualhost.name", "test");
         configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
-        _registry = new TestApplicationRegistry(new ServerConfiguration(configuration));
-        ApplicationRegistry.initialise(_registry);
-        _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
+        
+        configuration.setProperty("virtualhosts.virtualhost.name", getName());
+        configuration.setProperty("virtualhosts.virtualhost."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
 
+        _configuration = new ServerConfiguration(configuration);
+
+        configure();
+
+        _registry = new TestApplicationRegistry(_configuration);
+        ApplicationRegistry.initialise(_registry);
+        _registry.getVirtualHostRegistry().setDefaultVirtualHostName(getName());
+        _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost(getName());
+
+        QUEUE_NAME = new AMQShortString("test");        
+        // Create a queue on the test Vhost.. this will aid in diagnosing duff tests
+        // as the ExpiredMessage Task will log with the test Name.
+        AMQQueueFactory.createAMQQueueImpl(QUEUE_NAME, false, new AMQShortString("testowner"),
+                                                    false, false, _virtualHost, null);
+
+        _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = _virtualHost.getMessageStore();
 
-        QUEUE_NAME = new AMQShortString("test");
         _queue = AMQQueueFactory.createAMQQueueImpl(QUEUE_NAME, false, new AMQShortString("testowner"),
                                                     false, false, _virtualHost, null);
 
@@ -85,21 +111,38 @@ public class InternalBrokerBaseCase extends TestCase
         _session.addChannel(_channel);
     }
 
-    public void tearDown() throws Exception
+    protected void configure()
+    {
+        // Allow other tests to override configuration
+    }
+
+    protected void stopBroker()
     {
         try
         {
+            //Remove the ProtocolSession Actor added during createBroker
             CurrentActor.remove();
         }
         finally
         {
-            try
+            ApplicationRegistry.remove();
+        }
+    }
+
+
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            stopBroker();
+        }
+        finally
+        {
+            super.tearDown();
+            // Purge Any erroneously added actors
+            while (CurrentActor.get() != null)
             {
-                ApplicationRegistry.remove();
-            }
-            finally
-            {
-                super.tearDown();
+                CurrentActor.remove();
             }
         }
     }
