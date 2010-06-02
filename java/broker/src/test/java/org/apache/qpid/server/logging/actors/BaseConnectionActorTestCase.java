@@ -24,9 +24,9 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
 {
 
     @Override
-    public void configure()
+    public void createBroker() throws Exception
     {
-        super.configure();
+        super.createBroker();
 
         _amqpActor = new AMQPConnectionActor(_session, _rootLogger);
     }

@@ -44,15 +44,26 @@ import java.util.List;
 public class AMQPChannelActorTest extends BaseConnectionActorTestCase
 {
 
-    AMQChannel _channel;
-
     @Override
     public void configure()
     {
-        super.configure();
+        // Prevent defaulting Logging to ON
+    }
+    
+
+    @Override
+    public void createBroker() throws Exception
+    {
+        //prevent auto-broker startup
+    }
+
+    private void startBrokerNow() throws Exception
+    {
+        super.createBroker();
 
         _amqpActor = new AMQPChannelActor(_channel, _rootLogger);
     }
+
 
     /**
      * Test that when logging on behalf of the channel
@@ -61,8 +72,12 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * The log message should be fully repalaced (no '{n}' values) and should
      * contain the channel id ('/ch:1') identification.
      */
-    public void testChannel()
+    public void testChannel() throws Exception
     {
+        _configXml.setProperty("status-updates", "ON");
+
+        startBrokerNow();
+
         final String message = sendTestMessage();
 
         List<Object> logs = _rawLogger.getLogMessages();
@@ -120,16 +135,15 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * @throws ConfigurationException
      * @throws AMQException
      */
-    public void testChannelLoggingOFF() throws ConfigurationException, AMQException
+    public void testChannelLoggingOFF() throws Exception, AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "OFF");
-
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+        _configXml.setProperty("status-updates", "OFF");
 
         _rawLogger = new UnitTestMessageLogger();
 
-        setUpWithConfig(serverConfig);
+        // Start the broker now.
+        startBrokerNow();
+
 
         sendTestMessage();
 
@@ -145,16 +159,13 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * @throws ConfigurationException
      * @throws AMQException
      */
-    public void testChannelLoggingOfF() throws ConfigurationException, AMQException
+    public void testChannelLoggingOfF() throws Exception, AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "OfF");
-
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+        _configXml.setProperty("status-updates", "OfF");
 
         _rawLogger = new UnitTestMessageLogger();
 
-        setUpWithConfig(serverConfig);
+        startBrokerNow();
 
         sendTestMessage();
 
@@ -170,16 +181,13 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * @throws ConfigurationException
      * @throws AMQException
      */
-    public void testChannelLoggingOff() throws ConfigurationException, AMQException
+    public void testChannelLoggingOff() throws Exception, AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "Off");
-
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+        _configXml.setProperty("status-updates", "Off");
 
         _rawLogger = new UnitTestMessageLogger();
 
-        setUpWithConfig(serverConfig);
+        startBrokerNow();
 
         sendTestMessage();
 
@@ -195,16 +203,13 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * @throws ConfigurationException
      * @throws AMQException
      */
-    public void testChannelLoggingofF() throws ConfigurationException, AMQException
+    public void testChannelLoggingofF() throws Exception, AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "ofF");
-
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+        _configXml.setProperty("status-updates", "ofF");
 
         _rawLogger = new UnitTestMessageLogger();
 
-        setUpWithConfig(serverConfig);
+        startBrokerNow();
 
         sendTestMessage();
 
@@ -220,16 +225,13 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * @throws ConfigurationException
      * @throws AMQException
      */
-    public void testChannelLoggingoff() throws ConfigurationException, AMQException
+    public void testChannelLoggingoff() throws Exception, AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "off");
-
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+        _configXml.setProperty("status-updates", "off");
 
         _rawLogger = new UnitTestMessageLogger();
 
-        setUpWithConfig(serverConfig);
+        startBrokerNow();
 
         sendTestMessage();
 
@@ -245,16 +247,13 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      * @throws ConfigurationException
      * @throws AMQException
      */
-    public void testChannelLoggingoFf() throws ConfigurationException, AMQException
-    {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "oFf");
-
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
+    public void testChannelLoggingoFf() throws Exception, AMQException
+    {        
+        _configXml.setProperty("status-updates", "oFf");
 
         _rawLogger = new UnitTestMessageLogger();
 
-        setUpWithConfig(serverConfig);
+        startBrokerNow();
 
         sendTestMessage();
 
