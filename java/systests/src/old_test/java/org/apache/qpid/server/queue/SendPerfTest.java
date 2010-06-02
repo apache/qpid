@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.BasicPublishBody;
@@ -28,6 +29,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.exchange.AbstractExchange;
@@ -84,7 +86,7 @@ public class SendPerfTest extends TimedRun
 
     public static void main(String[] argv) throws Exception
     {
-        ApplicationRegistry.initialise(new TestApplicationRegistry());
+        ApplicationRegistry.initialise(new TestApplicationRegistry(new ServerConfiguration(new PropertiesConfiguration())));
         int clients = Integer.parseInt(argv[0]);
         int messages = Integer.parseInt(argv[1]);
         int iterations = Integer.parseInt(argv[2]);

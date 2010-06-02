@@ -31,6 +31,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -51,12 +52,14 @@ import java.util.Hashtable;
  * - The message is returned.
  * - The broker doesn't leak memory.
  * - The broker's state is correct after test.
+ *
+ * Why is this hardcoded to InVM testing, should be converted to QTC.
  */
-public class QueueDepthWithSelectorTest extends TestCase
+public class QueueDepthWithSelectorTest extends InternalBrokerBaseCase
 {
     protected static final Logger _logger = Logger.getLogger(QueueDepthWithSelectorTest.class);
 
-    protected final String BROKER = "vm://:1";
+    protected final String BROKER = "vm://:"+ApplicationRegistry.DEFAULT_INSTANCE;
     protected final String VHOST = "test";
     protected final String QUEUE = this.getClass().getName();
 
@@ -75,8 +78,11 @@ public class QueueDepthWithSelectorTest extends TestCase
 
     protected Queue _queue;
 
-    protected void setUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
+        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
 
         System.err.println("amqj.logging.level:" + System.getProperty("amqj.logging.level"));
         System.err.println("_logger.level:" + _logger.getLevel());
@@ -88,11 +94,6 @@ public class QueueDepthWithSelectorTest extends TestCase
 
         System.err.println(Logger.getRootLogger().getLoggerRepository());
 
-        if (BROKER.startsWith("vm://"))
-        {
-            ApplicationRegistry.getInstance(1);
-            TransportConnection.createVMBroker(1);
-        }
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
         Hashtable<String, String> env = new Hashtable<String, String>();
@@ -107,10 +108,9 @@ public class QueueDepthWithSelectorTest extends TestCase
         init();
     }
 
-    protected void tearDown() throws Exception
+    @Override
+    public void tearDown() throws Exception
     {
-        super.tearDown();
-
         if (_producerConnection != null)
         {
             _producerConnection.close();
@@ -121,11 +121,8 @@ public class QueueDepthWithSelectorTest extends TestCase
             _clientConnection.close();
         }
 
-        if (BROKER.startsWith("vm://"))
-        {
-            TransportConnection.killVMBroker(1);
-            ApplicationRegistry.remove(1);
-        }
+        TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        super.tearDown();        
     }
 
     public void test() throws Exception
