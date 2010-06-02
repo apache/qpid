@@ -21,7 +21,6 @@
 package org.apache.qpid.server.util;
 
 import junit.framework.TestCase;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
@@ -58,26 +57,28 @@ public class InternalBrokerBaseCase extends TestCase
     protected AMQQueue _queue;
     protected AMQShortString QUEUE_NAME;
     protected ServerConfiguration _configuration;
+    protected XMLConfiguration _configXml = new XMLConfiguration();
+    private boolean _started = false;
 
     public void setUp() throws Exception
     {
         super.setUp();
+
+        _configXml.addProperty("virtualhosts.virtualhost.name", "test");
+        _configXml.addProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+
+        _configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
+        _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
 
         createBroker();
     }
 
     protected void createBroker() throws Exception
     {
+        _started = true;
         CurrentActor.set(new TestLogActor(new StartupRootMessageLogger()));
 
-        XMLConfiguration configuration = new XMLConfiguration();
-        configuration.addProperty("virtualhosts.virtualhost.name", "test");
-        configuration.addProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
-        
-        configuration.addProperty("virtualhosts.virtualhost(-1).name", getName());
-        configuration.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
-
-        _configuration = new ServerConfiguration(configuration);
+        _configuration = new ServerConfiguration(_configXml);
 
         configure();
 
@@ -89,20 +90,23 @@ public class InternalBrokerBaseCase extends TestCase
         QUEUE_NAME = new AMQShortString("test");        
         // Create a queue on the test Vhost.. this will aid in diagnosing duff tests
         // as the ExpiredMessage Task will log with the test Name.
-        AMQQueueFactory.createAMQQueueImpl(QUEUE_NAME, false, new AMQShortString("testowner"),
+        _queue = AMQQueueFactory.createAMQQueueImpl(QUEUE_NAME, false, new AMQShortString("testowner"),
                                                     false, false, _virtualHost, null);
+
+        Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+        _virtualHost.getBindingFactory().addBinding(QUEUE_NAME.toString(), _queue, defaultExchange, null);
 
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = _virtualHost.getMessageStore();
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(QUEUE_NAME, false, new AMQShortString("testowner"),
+        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()), false, new AMQShortString("testowner"),
                                                     false, false, _virtualHost, null);
 
         _virtualHost.getQueueRegistry().registerQueue(_queue);
 
-        Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+        defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
 
-        _virtualHost.getBindingFactory().addBinding(QUEUE_NAME.toString(), _queue, defaultExchange, null);        
+        _virtualHost.getBindingFactory().addBinding(getName(), _queue, defaultExchange, null);
 
         _session = new InternalTestProtocolSession(_virtualHost);
         CurrentActor.set(_session.getLogActor());
@@ -127,6 +131,7 @@ public class InternalBrokerBaseCase extends TestCase
         finally
         {
             ApplicationRegistry.remove();
+            _started = false;
         }
     }
 
@@ -135,7 +140,10 @@ public class InternalBrokerBaseCase extends TestCase
     {
         try
         {
-            stopBroker();
+            if (_started)
+            {
+                stopBroker();
+            }
         }
         finally
         {
@@ -217,7 +225,7 @@ public class InternalBrokerBaseCase extends TestCase
 
             public AMQShortString getRoutingKey()
             {
-                return QUEUE_NAME;
+                return new AMQShortString(getName());
             }
         };
 
