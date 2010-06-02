@@ -103,7 +103,7 @@ struct Options : public qpid::Options
             ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput and latency statistics every N messages.")
             ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")            ("ready-address", qpid::optValue(readyAddress, "ADDRESS"),
-             "send a message to this address when ready to receive")
+                                                                                                        "send a message to this address when ready to receive")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -162,10 +162,11 @@ using namespace qpid::tests;
 
 int main(int argc, char ** argv)
 {
-    Options opts;
-    if (opts.parse(argc, argv)) {
-        Connection connection(opts.url, opts.connectionOptions);
-        try {
+    Connection connection;
+    try {
+        Options opts;
+        if (opts.parse(argc, argv)) {
+            connection = Connection(opts.url, opts.connectionOptions);
             connection.open();
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
@@ -227,10 +228,10 @@ int main(int argc, char ** argv)
             session.close();
             connection.close();
             return 0;
-        } catch(const std::exception& error) {
-            std::cerr << "Failure: " << error.what() << std::endl;
-            connection.close();
         }
+    } catch(const std::exception& error) {
+        std::cerr << "Failure: " << error.what() << std::endl;
+        connection.close();
+        return 1;
     }
-    return 1;
 }
