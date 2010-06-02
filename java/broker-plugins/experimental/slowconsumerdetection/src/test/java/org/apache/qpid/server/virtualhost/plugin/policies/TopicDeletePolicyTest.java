@@ -100,9 +100,10 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
 
     /** Check that a null queue passed in does not upset the policy. */
-    public void testNullQueueParameter()
+    public void testNullQueueParameter() throws ConfigurationException
     {
-        TopicDeletePolicy policy = new TopicDeletePolicy(_config);
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        policy.configure(_config);
 
         try
         {
@@ -119,9 +120,10 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * Set a owning Session to null which means this is not an exclusive queue
      * so the queue should not be deleted
      */
-    public void testNonExclusiveQueue()
+    public void testNonExclusiveQueue() throws ConfigurationException
     {
-        TopicDeletePolicy policy = new TopicDeletePolicy(_config);
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        policy.configure(_config);
 
         MockAMQQueue queue = createOwnedQueue();
 
@@ -139,9 +141,10 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      *
      * JMS Queues are not to be processed so this should not delete the queue.
      */
-    public void testQueuesAreNotProcessed()
+    public void testQueuesAreNotProcessed() throws ConfigurationException
     {
-        TopicDeletePolicy policy = new TopicDeletePolicy(_config);
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        policy.configure(_config);
 
         MockAMQQueue queue = createOwnedQueue();
 
@@ -158,9 +161,10 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * Give a non auto-delete queue is bound to the topic exchange the
      * TopicDeletePolicy will close the connection and delete the queue,
      */
-    public void testNonAutoDeleteTopicIsNotClosed()
+    public void testNonAutoDeleteTopicIsNotClosed() throws ConfigurationException
     {
-        TopicDeletePolicy policy = new TopicDeletePolicy(_config);
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        policy.configure(_config);
 
         MockAMQQueue queue = createOwnedQueue();
 
@@ -178,9 +182,10 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * Give a auto-delete queue bound to the topic exchange the TopicDeletePolicy will
      * close the connection and delete the queue
      */
-    public void testTopicIsClosed()
+    public void testTopicIsClosed() throws ConfigurationException
     {
-        TopicDeletePolicy policy = new TopicDeletePolicy(_config);
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        policy.configure(_config);
 
         final MockAMQQueue queue = createOwnedQueue();
 
@@ -198,9 +203,10 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * Give a queue bound to the topic exchange the TopicDeletePolicy will
      * close the connection and NOT delete the queue
      */
-    public void testNonAutoDeleteTopicIsClosedNotDeleted() throws AMQException
+    public void testNonAutoDeleteTopicIsClosedNotDeleted() throws AMQException, ConfigurationException
     {
-        TopicDeletePolicy policy = new TopicDeletePolicy(_config);
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        policy.configure(_config);
 
         MockAMQQueue queue = createOwnedQueue();
 
@@ -217,12 +223,13 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * configured with the delete-persistent tag will close the connection
      * and delete the queue
      */
-    public void testPersistentTopicIsClosedAndDeleted()
+    public void testPersistentTopicIsClosedAndDeleted() throws ConfigurationException
     {
         //Set the config to delete persistent queues
         _config.getConfig().addProperty("delete-persistent", "");
 
-        TopicDeletePolicy policy = new TopicDeletePolicy(_config);
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        policy.configure(_config);
 
         assertTrue("Config was not updated to delete Persistent topics",
                    _config.deletePersistent());

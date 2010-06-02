@@ -58,8 +58,8 @@ public class LegacyAccess extends BasicPlugin
     {
         public LegacyAccess newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            LegacyAccess plugin = new LegacyAccess(config);
-            plugin.configure();
+            LegacyAccess plugin = new LegacyAccess();
+            plugin.configure(config);
             return plugin;
         }
 
@@ -74,7 +74,7 @@ public class LegacyAccess extends BasicPlugin
         }
     };
     
-    public LegacyAccess(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
         _config = config.getConfiguration(LegacyAccessConfiguration.class);
     }

@@ -57,8 +57,8 @@ public class DenyAll extends BasicPlugin
     {
         public DenyAll newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            DenyAll plugin = new DenyAll(config);
-            plugin.configure();
+            DenyAll plugin = new DenyAll();
+            plugin.configure(config);
             return plugin;
         }
 
@@ -79,8 +79,9 @@ public class DenyAll extends BasicPlugin
 		return Result.DENIED;
     }
 
-    public DenyAll(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
         _config = config.getConfiguration(DenyAllConfiguration.class);
     }
+
 }
