@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+if len(sys.argv) != 4:
+  print "Usage: $ generate template/template.html contentDir outputDir"
+  exit()
+
+else:
+    try:
+        srcDir = os.path.abspath(sys.argv[2])
+        srcFiles = os.listdir(srcDir)
+        targetDir = os.path.abspath(sys.argv[3])
+        template = open(sys.argv[1], "r")
+
+        for srcFile in srcFiles:
+            if os.path.splitext(srcFile)[1] == ".html":
+                content = open(os.path.join(srcDir,srcFile), "r")
+                output = open(os.path.join(targetDir,srcFile),"w")
+
+                template.seek(0)
+
+                for t in template:
+                    if t.rstrip() == "{.}":
+                        for c in content:
+                            output.write( c )
+                    else:
+                        output.write( t )
+            
+                output.close()
+                content.close()
+        
+    except:
+        print "Ooops!"
+        exit()
+
+template.close()
