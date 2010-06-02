@@ -38,12 +38,12 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
 
-public class TimeToLiveTest extends QpidTestCase
+public class TimeToLiveTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = Logger.getLogger(TimeToLiveTest.class);
 

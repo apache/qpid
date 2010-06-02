@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +33,7 @@ import javax.jms.JMSException;
  *
  */
 
-public class ExceptionListenerTest extends QpidTestCase
+public class ExceptionListenerTest extends QpidBrokerTestCase
 {
 
     public void testBrokerDeath() throws Exception

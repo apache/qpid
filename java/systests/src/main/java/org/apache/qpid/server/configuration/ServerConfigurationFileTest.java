@@ -21,7 +21,7 @@
 package org.apache.qpid.server.configuration;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * This system test ensures that when loading our default system-test
@@ -30,7 +30,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
  * All configuration values should be set in the systest config file so that
  * the ability to load them can be validated.
  */
-public class ServerConfigurationFileTest extends QpidTestCase
+public class ServerConfigurationFileTest extends QpidBrokerTestCase
 {
     ServerConfiguration _serverConfig;
 

@@ -24,7 +24,7 @@ import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
@@ -42,7 +42,7 @@ import javax.jms.QueueSession;
 import javax.jms.TopicSession;
 import javax.naming.NamingException;
 
-public class ConnectionTest extends QpidTestCase
+public class ConnectionTest extends QpidBrokerTestCase
 {
 
     String _broker_NotRunning = "vm://:2";

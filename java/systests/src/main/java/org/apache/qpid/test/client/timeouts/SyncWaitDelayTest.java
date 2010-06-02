@@ -33,7 +33,7 @@ import javax.jms.Session;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * This test must be run in conjunction with SyncWaiteTimeoutDelay or be run with POST_COMMIT_DELAY > 30s to ensure
  * that the default value is being replaced.
  */
-public class SyncWaitDelayTest extends QpidTestCase
+public class SyncWaitDelayTest extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(SyncWaitDelayTest.class);
 

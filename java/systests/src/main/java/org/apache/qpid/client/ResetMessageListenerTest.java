@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  * the message listener later the _synchronousQueue is just poll()'ed and the first message delivered the remaining
  * messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
-public class ResetMessageListenerTest extends QpidTestCase
+public class ResetMessageListenerTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(ResetMessageListenerTest.class);
 

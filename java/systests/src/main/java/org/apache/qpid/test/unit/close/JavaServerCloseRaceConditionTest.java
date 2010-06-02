@@ -27,7 +27,7 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeclareOkBody;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Session;
 
@@ -73,7 +73,7 @@ import javax.jms.Session;
  * sure to test that the BlockingWaiter is correctly awoken.
  *  
  */
-public class JavaServerCloseRaceConditionTest extends QpidTestCase
+public class JavaServerCloseRaceConditionTest extends QpidBrokerTestCase
 {
     private static final String EXCHANGE_NAME = "NewExchangeNametoFailLookup";
 

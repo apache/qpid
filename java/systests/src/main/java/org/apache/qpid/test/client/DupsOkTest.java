@@ -1,6 +1,6 @@
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 *
 */
 
-public class DupsOkTest extends QpidTestCase
+public class DupsOkTest extends QpidBrokerTestCase
 {
 
     private Queue _queue;

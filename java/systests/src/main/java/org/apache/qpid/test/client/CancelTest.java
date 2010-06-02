@@ -22,7 +22,7 @@
 package org.apache.qpid.test.client;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.MessageConsumer;
@@ -32,7 +32,7 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 import java.util.Enumeration;
 
-public class CancelTest extends QpidTestCase
+public class CancelTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = Logger.getLogger(CancelTest.class);
 

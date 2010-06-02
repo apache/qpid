@@ -41,7 +41,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
 /**
@@ -50,7 +50,7 @@ import org.apache.qpid.url.URLSyntaxException;
  * This base class contains convenience methods to mange ACL files and implements a mechanism that allows each
  * test method to run its own setup code before the broker starts.
  * 
- * TODO move the pre broker-startup setup method invocation code to {@link QpidTestCase}
+ * TODO move the pre broker-startup setup method invocation code to {@link QpidBrokerTestCase}
  * 
  * @see SimpleACLTest
  * @see ExternalACLTest
@@ -59,7 +59,7 @@ import org.apache.qpid.url.URLSyntaxException;
  * @see ExternalAdminACLTest
  * @see ExhaustiveACLTest
  */
-public abstract class AbstractACLTestCase extends QpidTestCase implements ConnectionListener
+public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements ConnectionListener
 {
     /** Used to synchronise {@link #tearDown()} when exceptions are thrown */
 	protected CountDownLatch _exceptionReceived;
@@ -82,7 +82,7 @@ public abstract class AbstractACLTestCase extends QpidTestCase implements Connec
      * as the test, but starting with {@code setUp} rather than {@code test}.
      * 
      * @see #setUpACLFile(String)
-     * @see org.apache.qpid.test.utils.QpidTestCase#setUp()
+     * @see org.apache.qpid.test.utils.QpidBrokerTestCase#setUp()
      */
     @Override
     public void setUp() throws Exception

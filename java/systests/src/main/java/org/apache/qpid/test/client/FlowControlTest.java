@@ -22,12 +22,12 @@ package org.apache.qpid.test.client;
 
 import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.log4j.Logger;
 
 import javax.jms.*;
 
-public class FlowControlTest extends QpidTestCase
+public class FlowControlTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = Logger.getLogger(FlowControlTest.class);
 

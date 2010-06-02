@@ -28,7 +28,7 @@ import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.test.utils.JMXTestUtils;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * When a message is received, its JMSDestination value must be equivalent to
  * the value assigned when it was sent.
  */
-public class JMSDestinationTest extends QpidTestCase
+public class JMSDestinationTest extends QpidBrokerTestCase
 {
 
     private Connection _connection;

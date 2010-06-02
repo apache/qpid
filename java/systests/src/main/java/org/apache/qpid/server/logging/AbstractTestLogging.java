@@ -21,7 +21,7 @@
 package org.apache.qpid.server.logging;
 
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class AbstractTestLogging extends QpidTestCase
+public class AbstractTestLogging extends QpidBrokerTestCase
 {
     public static final long DEFAULT_LOG_WAIT = 2000;
     protected LogMonitor _monitor;

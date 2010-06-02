@@ -27,9 +27,9 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-public class ReceiveTest extends QpidTestCase
+public class ReceiveTest extends QpidBrokerTestCase
 {
     private AMQConnection _connection;
     private AMQDestination _destination;

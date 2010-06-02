@@ -20,9 +20,9 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-public class TopicWithSelectorsTransientVolumeTest extends QpidTestCase
+public class TopicWithSelectorsTransientVolumeTest extends QpidBrokerTestCase
 {   
     private static final int NUM_MSG_PER_ITERATION = 50;//must be a multiple of 10
     private static final int NUM_ITERATIONS = 1000;

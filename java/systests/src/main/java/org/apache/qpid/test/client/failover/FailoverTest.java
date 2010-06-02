@@ -383,7 +383,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     }
 
     public void failoverComplete()
-    {
+    {   
         failoverComplete.countDown();
     }
 }

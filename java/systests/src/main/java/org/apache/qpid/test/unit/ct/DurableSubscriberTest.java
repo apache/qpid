@@ -23,13 +23,13 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  *   Crash Recovery tests for durable subscription
  *
  */
-public class DurableSubscriberTest extends QpidTestCase
+public class DurableSubscriberTest extends QpidBrokerTestCase
 {
     private final String _topicName = "durableSubscriberTopic";
 

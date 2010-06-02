@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
 
 import javax.jms.Connection;
@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
  *
  * Finally consume all the messages from the queue to clean up.
  */
-public class DeepQueueConsumeWithSelector extends QpidTestCase implements MessageListener
+public class DeepQueueConsumeWithSelector extends QpidBrokerTestCase implements MessageListener
 {
 
     private static final int MESSAGE_COUNT = 10000;
