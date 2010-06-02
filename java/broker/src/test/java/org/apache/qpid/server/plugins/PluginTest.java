@@ -24,36 +24,23 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 
 import java.util.Map;
 
-public class PluginTest extends TestCase
+public class PluginTest extends InternalBrokerBaseCase
 {
     private static final String TEST_EXCHANGE_CLASS = "org.apache.qpid.extras.exchanges.example.TestExchangeType";
     
     private static final String PLUGIN_DIRECTORY = System.getProperty("example.plugin.target");
     private static final String CACHE_DIRECTORY = System.getProperty("example.cache.target");
 
-    IApplicationRegistry _registry;
-
     @Override
-    public void setUp() throws Exception
+    public void configure()
     {
-        PropertiesConfiguration properties = new PropertiesConfiguration();
-        properties.addProperty("plugin-directory", PLUGIN_DIRECTORY);
-        properties.addProperty("cache-directory", CACHE_DIRECTORY);
-        ServerConfiguration config = new ServerConfiguration(properties);
-        
-        // This Test requries an application Registry
-        ApplicationRegistry.initialise(new TestApplicationRegistry(config));
-        _registry = ApplicationRegistry.getInstance();
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        ApplicationRegistry.remove();
+        _configuration.getConfig().addProperty("plugin-directory", PLUGIN_DIRECTORY);
+        _configuration.getConfig().addProperty("cache-directory", CACHE_DIRECTORY);
     }
 
     public void disabled_testLoadExchanges() throws Exception
