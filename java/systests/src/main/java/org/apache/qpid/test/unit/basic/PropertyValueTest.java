@@ -28,7 +28,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.AMQBindingURL;
 
@@ -53,7 +53,7 @@ import java.net.URISyntaxException;
 
 import java.lang.reflect.*;
 
-public class PropertyValueTest extends QpidTestCase implements MessageListener
+public class PropertyValueTest extends QpidBrokerTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(PropertyValueTest.class);
 

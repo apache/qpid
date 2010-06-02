@@ -26,12 +26,12 @@ import javax.jms.TopicSession;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * @author Apache Software Foundation
  */
-public class TopicPublisherCloseTest extends QpidTestCase
+public class TopicPublisherCloseTest extends QpidBrokerTestCase
 {
 
     protected void setUp() throws Exception

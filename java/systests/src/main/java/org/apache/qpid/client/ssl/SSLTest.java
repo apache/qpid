@@ -7,10 +7,10 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTestConnection_0_10;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.Connection;
 
-public class SSLTest extends QpidTestCase
+public class SSLTest extends QpidBrokerTestCase
 {      
     
     @Override

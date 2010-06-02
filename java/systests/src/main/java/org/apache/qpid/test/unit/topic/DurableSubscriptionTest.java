@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import org.apache.qpid.management.common.JMXConnnectionFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -56,7 +56,7 @@ import javax.management.remote.JMXConnector;
  *       out to make creating this test variation simpler. Want to make this variation available through LocalCircuit,
  *       driven by the test model.
  */
-public class DurableSubscriptionTest extends QpidTestCase
+public class DurableSubscriptionTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(DurableSubscriptionTest.class);
     

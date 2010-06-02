@@ -22,7 +22,7 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -35,7 +35,7 @@ import javax.jms.Session;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PersistentStoreTest extends QpidTestCase
+public class PersistentStoreTest extends QpidBrokerTestCase
 {
 
     private static final int NUM_MESSAGES = 100;

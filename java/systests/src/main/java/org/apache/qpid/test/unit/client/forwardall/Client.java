@@ -24,7 +24,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,14 +48,14 @@ public class Client implements MessageListener
     private final AMQSession _session;
     private final int _expected;
     private int _count;
-    private static QpidTestCase _qct;
+    private static QpidBrokerTestCase _qct;
 
     Client(String broker, int expected) throws Exception
     {
         this(connect(broker), expected);
     }
 
-    public static void setQTC(QpidTestCase qtc)
+    public static void setQTC(QpidBrokerTestCase qtc)
     {
         _qct = qtc;
     }

@@ -23,7 +23,7 @@ package org.apache.qpid.test.utils;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.JMSAMQException;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-public class QpidClientConnection extends QpidTestCase implements ExceptionListener
+public class QpidClientConnection extends QpidBrokerTestCase implements ExceptionListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(QpidClientConnection.class);
 

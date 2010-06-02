@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.client.transport.TransportConnection;
@@ -35,7 +35,7 @@ import java.util.LinkedList;
  * QPID-1394 : Test to ensure that the client can register their custom JCAProviders after the broker to ensure that
  * the Qpid custom authentication SASL plugins are used.
  */
-public class MultipleJCAProviderRegistrationTest extends QpidTestCase
+public class MultipleJCAProviderRegistrationTest extends QpidBrokerTestCase
 {
 
     public void setUp() throws Exception

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  * Runs the Service's and Client parts of the test in the same process
  * as the broker
  */
-public class CombinedTest extends QpidTestCase
+public class CombinedTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CombinedTest.class);
     private int run = 0;

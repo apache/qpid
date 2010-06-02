@@ -24,7 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.ExceptionListener;
@@ -33,7 +33,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.util.concurrent.CountDownLatch;
 
-public class CloseAfterConnectionFailureTest extends QpidTestCase implements ExceptionListener
+public class CloseAfterConnectionFailureTest extends QpidBrokerTestCase implements ExceptionListener
 {
     private int sessionCount = 0;
     AMQConnection connection;

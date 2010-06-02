@@ -24,11 +24,11 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.TestNetworkDriver;
 import org.apache.qpid.transport.NetworkDriver;
 
-public class AMQProtocolSessionTest extends QpidTestCase
+public class AMQProtocolSessionTest extends QpidBrokerTestCase
 {
     private static class AMQProtSession extends AMQProtocolSession
     {

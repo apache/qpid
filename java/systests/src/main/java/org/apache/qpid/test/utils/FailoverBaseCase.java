@@ -30,7 +30,7 @@ import org.apache.qpid.client.AMQConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FailoverBaseCase extends QpidTestCase
+public class FailoverBaseCase extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(FailoverBaseCase.class);
 

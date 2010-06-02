@@ -30,12 +30,12 @@ import javax.jms.Topic;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * @author Apache Software Foundation
  */
-public class PubSubTwoConnectionTest extends QpidTestCase
+public class PubSubTwoConnectionTest extends QpidBrokerTestCase
 {
     protected void setUp() throws Exception
     {

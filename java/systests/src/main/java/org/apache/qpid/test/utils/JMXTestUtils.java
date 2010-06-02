@@ -45,14 +45,14 @@ import org.apache.qpid.management.common.mbeans.UserManagement;
  */
 public class JMXTestUtils
 {
-    QpidTestCase _test;
+    QpidBrokerTestCase _test;
     MBeanServerConnection _mbsc;
     JMXConnector _jmxc;
 
     private String USER;
     private String PASSWORD;
 
-    public JMXTestUtils(QpidTestCase test, String user, String password)
+    public JMXTestUtils(QpidBrokerTestCase test, String user, String password)
     {
         _test = test;
         USER = user;

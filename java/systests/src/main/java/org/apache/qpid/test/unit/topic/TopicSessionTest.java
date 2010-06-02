@@ -34,11 +34,11 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQTopicSessionAdaptor;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 
 /** @author Apache Software Foundation */
-public class TopicSessionTest extends QpidTestCase
+public class TopicSessionTest extends QpidBrokerTestCase
 {
 
     protected void setUp() throws Exception

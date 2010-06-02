@@ -187,6 +187,11 @@ public class QpidBrokerTestCase extends QpidTestCase
         super(name);
     }
     
+    public QpidBrokerTestCase()
+    {
+        super();
+    }
+    
 	public Logger getLogger()
 	{
 		return QpidBrokerTestCase._logger;

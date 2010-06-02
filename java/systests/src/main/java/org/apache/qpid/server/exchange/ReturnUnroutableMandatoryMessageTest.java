@@ -43,11 +43,11 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 
-public class ReturnUnroutableMandatoryMessageTest extends QpidTestCase implements ExceptionListener
+public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase implements ExceptionListener
 {
     private static final Logger _logger = Logger.getLogger(ReturnUnroutableMandatoryMessageTest.class);
 

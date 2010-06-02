@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  *
  * Assumptions; - Assumes empty Queue
  */
-public class CommitRollbackTest extends QpidTestCase
+public class CommitRollbackTest extends QpidBrokerTestCase
 {
     protected AMQConnection conn;
     protected String queue = "direct://amq.direct//Qpid.Client.Transacted.CommitRollback.queue";

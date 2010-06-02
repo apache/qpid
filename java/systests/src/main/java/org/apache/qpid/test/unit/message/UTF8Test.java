@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.Session;
 
@@ -40,7 +40,7 @@ import java.io.*;
  *
  * those tests are related to qpid-1384
  */
-public class UTF8Test extends QpidTestCase
+public class UTF8Test extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(UTF8Test.class);
 
@@ -90,9 +90,9 @@ public class UTF8Test extends QpidTestCase
     private void declareQueue(String exch, String routkey, String qname) throws Exception
     {
             Connection conn = new Connection();
-            if (!_broker.equals(QpidTestCase.EXTERNAL) && !isBroker08())
+            if (!_broker.equals(QpidBrokerTestCase.EXTERNAL) && !isBroker08())
             {
-                conn.connect("localhost", QpidTestCase.DEFAULT_PORT, "test", "guest", "guest",false);
+                conn.connect("localhost", QpidBrokerTestCase.DEFAULT_PORT, "test", "guest", "guest",false);
             }
             else
             {

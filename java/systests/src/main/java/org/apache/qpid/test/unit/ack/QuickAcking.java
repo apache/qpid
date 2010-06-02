@@ -23,7 +23,7 @@ package org.apache.qpid.test.unit.ack;
 import edu.emory.mathcs.backport.java.util.concurrent.CountDownLatch;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -49,7 +49,7 @@ import javax.jms.Session;
  * connection/session are still working.
  *
  */
-public class QuickAcking extends QpidTestCase implements ConnectionListener
+public class QuickAcking extends QpidBrokerTestCase implements ConnectionListener
 {
     protected AMQConnection _connection;
     protected Queue _queue;
