@@ -25,9 +25,15 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.test.utils.QpidTestCase;
 
+/**
+ * Test to ensure TopicDelete Policy configuration can be loaded.
+ */
 public class TopicDeletePolicyConfigurationTest extends QpidTestCase
 {
-
+    /**
+     * Test without any configuration being provided that the
+     * deletePersistent option is disabled.
+     */
     public void testNoConfigNoDeletePersistent()
     {
         TopicDeletePolicyConfiguration config = new TopicDeletePolicyConfiguration();
@@ -36,7 +42,24 @@ public class TopicDeletePolicyConfigurationTest extends QpidTestCase
                     config.deletePersistent());
     }
 
-
+    /**
+     * Test that with the correct configuration the deletePersistent option can
+     * be enabled.
+     *
+     * Test creates a new Configuration object and passes in the xml snippet
+     * that the ConfigurationPlugin would receive during normal execution.
+     * This is the XML that would be matched for this plugin:
+     * <topicdelete>
+     *   <delete-persistent>
+     * <topicdelete>
+     *
+     * So it would be subset and passed in as just:
+     *   <delete-persistent>
+     *
+     *
+     * The property should therefore be enabled. 
+     *
+     */
     public void testConfigDeletePersistent()
     {
         TopicDeletePolicyConfiguration config = new TopicDeletePolicyConfiguration();
