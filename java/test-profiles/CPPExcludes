@@ -128,3 +128,7 @@ org.apache.qpid.test.unit.client.AMQConnectionTest#testHeartBeat
 //Excluded due to QPID-1447 : CPP broker does not have SlowConsumer Disconnection
 org.apache.qpid.systest.SlowConsumerTest#*
 
+org.apache.qpid.server.virtualhost.plugin.*
+org.apache.qpid.server.virtualhost.plugin.policies.*
+
+

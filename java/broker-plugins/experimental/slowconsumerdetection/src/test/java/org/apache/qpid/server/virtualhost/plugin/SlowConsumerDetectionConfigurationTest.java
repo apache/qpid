@@ -25,11 +25,12 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.concurrent.TimeUnit;
 
 /** Provide Unit Test coverage of the SlowConsumerConfiguration */
-public class SlowConsumerDetectionConfigurationTest extends TestCase
+public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
 {
 
     public void testConfigLoadingValidConfig()

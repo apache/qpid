@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.virtualhost.plugin.policies;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
@@ -34,8 +33,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TopicDeletePolicyTest extends TestCase
+public class TopicDeletePolicyTest extends QpidTestCase
 {
 
     TopicDeletePolicyConfiguration _config;
