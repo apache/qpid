@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.virtualhost.plugin;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class SlowConsumerDetectionPolicyConfigurationTest extends TestCase
+public class SlowConsumerDetectionPolicyConfigurationTest extends QpidTestCase
 {
 
     public void testConfigLoadingValidConfig()

@@ -26,7 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  * Slow consumers should on a topic should expect to receive a
  * 506 : Resource Error if the hit a predefined threshold.
  */
-public class SlowConsumerTest extends QpidTestCase implements ExceptionListener, ConnectionListener
+public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionListener, ConnectionListener
 {
     Destination _destination;
     private CountDownLatch _disconnectionLatch = new CountDownLatch(1);
