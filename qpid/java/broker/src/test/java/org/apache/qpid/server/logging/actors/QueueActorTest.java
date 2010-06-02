@@ -32,9 +32,9 @@ public class QueueActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    public void configure()
+    public void createBroker() throws Exception
     {
-        super.configure();
+        super.createBroker();
         _amqpActor = new QueueActor(_queue, _rootLogger);
     }
 
