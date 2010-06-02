@@ -247,10 +247,11 @@ class MapContentGenerator   : public ContentGenerator {
 
 int main(int argc, char ** argv)
 {
+    Connection connection;
     Options opts;
-    if (opts.parse(argc, argv)) {
-        Connection connection(opts.url, opts.connectionOptions);
-        try {
+    try {
+        if (opts.parse(argc, argv)) {
+             connection = Connection(opts.url, opts.connectionOptions);
             connection.open();
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
@@ -327,10 +328,10 @@ int main(int argc, char ** argv)
             session.close();
             connection.close();
             return 0;
-        } catch(const std::exception& error) {
-            std::cout << "Failed: " << error.what() << std::endl;
-            connection.close();
         }
+    } catch(const std::exception& error) {
+        std::cout << "Failed: " << error.what() << std::endl;
+        connection.close();
+        return 1;
     }
-    return 1;
 }

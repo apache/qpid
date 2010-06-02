@@ -46,7 +46,7 @@ Connection::Connection(const std::string& url, const std::string& o)
     if (o.empty() || parser.parseMap(options)) {
         PI::ctor(*this, new qpid::client::amqp0_10::ConnectionImpl(url, options));
     } else {
-        throw InvalidOptionString(o);
+        throw InvalidOptionString("Invalid option string: " + o);
     }
 }
 Connection::Connection(const std::string& url, const Variant::Map& options)
