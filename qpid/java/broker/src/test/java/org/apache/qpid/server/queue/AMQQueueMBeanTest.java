@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
@@ -29,8 +28,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.subscription.Subscription;
@@ -38,14 +36,9 @@ import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.mina.common.ByteBuffer;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 import javax.management.JMException;
 
@@ -54,14 +47,10 @@ import java.util.ArrayList;
 /**
  * Test class to test AMQQueueMBean attribtues and operations
  */
-public class AMQQueueMBeanTest extends TestCase
+public class AMQQueueMBeanTest extends InternalBrokerBaseCase
 {
     private static long MESSAGE_SIZE = 1000;
-    private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
-    private MessageStore _messageStore;
-    private VirtualHost _virtualHost;
-    private AMQProtocolSession _protocolSession;
     private static final SubscriptionFactoryImpl SUBSCRIPTION_FACTORY = SubscriptionFactoryImpl.INSTANCE;
 
     public void testMessageCountTransient() throws Exception
@@ -215,13 +204,14 @@ public class AMQQueueMBeanTest extends TestCase
         _queueMBean.setMaximumMessageSize(2000l);
         _queueMBean.setMaximumQueueDepth(maxQueueDepth);
 
-        assertTrue(_queueMBean.getMaximumMessageCount() == 50000);
-        assertTrue(_queueMBean.getMaximumMessageSize() == 2000);
-        assertTrue(_queueMBean.getMaximumQueueDepth() == (maxQueueDepth));
+        assertEquals("Max MessageCount not set",50000,_queueMBean.getMaximumMessageCount().longValue());
+        assertEquals("Max MessageSize not set",2000, _queueMBean.getMaximumMessageSize().longValue());
+        assertEquals("Max QueueDepth not set",maxQueueDepth, _queueMBean.getMaximumQueueDepth().longValue());
 
-        assertTrue(_queueMBean.getName().equals("testQueue"));
-        assertFalse(_queueMBean.isAutoDelete());
-        assertFalse(_queueMBean.isDurable());
+        assertEquals("Queue Name does not match", QUEUE_NAME, _queueMBean.getName());
+        assertFalse("AutoDelete should not be set.",_queueMBean.isAutoDelete());
+        assertFalse("Queue should not be durable.",_queueMBean.isDurable());
+        //TODO add isExclusive when supported
     }
 
     public void testExceptions() throws Exception
@@ -359,7 +349,7 @@ public class AMQQueueMBeanTest extends TestCase
         }
         
         //create a channel and use it to exercise the capacity check mechanism
-        AMQChannel channel = new AMQChannel(_protocolSession, 1, _messageStore);
+        AMQChannel channel = new AMQChannel(_session, 1, _messageStore);
         _queue.checkCapacity(channel);
         
         assertTrue(_queueMBean.isFlowOverfull());
@@ -415,26 +405,11 @@ public class AMQQueueMBeanTest extends TestCase
     }
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
         super.setUp();
 
-        PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.setProperty("virtualhosts.virtualhost.name","test");
-        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
-        IApplicationRegistry  applicationRegistry  = new TestApplicationRegistry(new ServerConfiguration(configuration));
-        ApplicationRegistry.initialise(applicationRegistry );
-
-        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
-
-        _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
-        _messageStore = _virtualHost.getMessageStore();
-
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, false,
-                                                    _virtualHost, null);
         _queueMBean = new AMQQueueMBean(_queue);
-
-        _protocolSession = new InternalTestProtocolSession(_virtualHost);
     }
 
     public void tearDown()
@@ -457,7 +432,7 @@ public class AMQQueueMBeanTest extends TestCase
 
             // Add the body so we have somthing to test later
             currentMessage.addContentBodyFrame(
-                    _protocolSession.getMethodRegistry()
+                    _session.getMethodRegistry()
                                                        .getProtocolVersionMethodConverter()
                                                        .convertToContentChunk(
                                                        new ContentBody(ByteBuffer.allocate((int) MESSAGE_SIZE),
