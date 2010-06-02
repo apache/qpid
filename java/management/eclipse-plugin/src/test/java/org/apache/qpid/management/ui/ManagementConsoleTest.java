@@ -30,6 +30,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.MBeanFeatureInfo;
@@ -43,24 +44,18 @@ import java.util.List;
  * There are some hardcoding of management feature names and parameter names to create a customized
  * look in the console.
  */
-public class ManagementConsoleTest extends TestCase
+public class ManagementConsoleTest extends InternalBrokerBaseCase
 {
     private VirtualHost _virtualHost;
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
         super.setUp();
         IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
     }
 
-    @Override
-    protected void tearDown() throws Exception
-    {
-        // Correctly Close the AR that we created above
-        ApplicationRegistry.remove();
-    }
 
     /**
      * Test for AMQQueueMBean attribute and operation names, which are used in the management console
