@@ -47,7 +47,9 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
             TopicDeletePolicyConfiguration config =
                     configuration.getConfiguration(TopicDeletePolicyConfiguration.class);
             
-            return new TopicDeletePolicy(config);
+            TopicDeletePolicy policy = new TopicDeletePolicy();
+            policy.configure(config);
+            return policy;
         }
 
         public String getPluginName()
@@ -59,11 +61,6 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         {
             return TopicDeletePolicy.class;
         }
-    }
-
-    public TopicDeletePolicy(TopicDeletePolicyConfiguration config)
-    {
-        _configuration = config;
     }
 
     public void performPolicy(AMQQueue q)
@@ -131,21 +128,13 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         return false;
     }
 
-    @Override
-    public String getPluginName()
-    {
-        return "topicdelete";
-    }
-
-    @Override
     public boolean isConfigured()
     {
         return _configuration != null;
     }
 
-    @Override
-    public void configure() throws ConfigurationException
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
-        // Empty
+        _configuration = (TopicDeletePolicyConfiguration) config;
     }
 }

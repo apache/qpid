@@ -43,8 +43,8 @@ public class Firewall extends AbstractPlugin
     {
         public Firewall newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            Firewall plugin = new Firewall(config);
-            plugin.configure();
+            Firewall plugin = new Firewall();
+            plugin.configure(config);
             return plugin;
         }
         
@@ -118,19 +118,16 @@ public class Firewall extends AbstractPlugin
         }
     }
     
-    public Firewall(ConfigurationPlugin config)
+
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
         _config = config.getConfiguration(FirewallConfiguration.class);
-    }
-
-    public void configure() throws ConfigurationException
-    {
-        FirewallConfiguration config = (FirewallConfiguration) _config;
+        FirewallConfiguration firewallConfiguration = (FirewallConfiguration) _config;
         
         if (isConfigured())
         {
             // Get default action
-            String defaultAction = config.getConfiguration().getString("[@default-action]");
+            String defaultAction = firewallConfiguration.getConfiguration().getString("[@default-action]");
             if (defaultAction == null)
             {
                 _default = Result.ABSTAIN;
@@ -144,8 +141,8 @@ public class Firewall extends AbstractPlugin
                 _default = Result.DENIED;
             }
             
-            CompositeConfiguration finalConfig = new CompositeConfiguration(config.getConfiguration());
-            List subFiles = config.getConfiguration().getList("xml[@fileName]");
+            CompositeConfiguration finalConfig = new CompositeConfiguration(firewallConfiguration.getConfiguration());
+            List subFiles = firewallConfiguration.getConfiguration().getList("xml[@fileName]");
             for (Object subFile : subFiles)
             {
                 finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
