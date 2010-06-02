@@ -22,6 +22,7 @@ package org.apache.qpid.server.util;
 
 import junit.framework.TestCase;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -69,12 +70,12 @@ public class InternalBrokerBaseCase extends TestCase
     {
         CurrentActor.set(new TestLogActor(new StartupRootMessageLogger()));
 
-        PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.setProperty("virtualhosts.virtualhost.name", "test");
-        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+        XMLConfiguration configuration = new XMLConfiguration();
+        configuration.addProperty("virtualhosts.virtualhost.name", "test");
+        configuration.addProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
         
-        configuration.setProperty("virtualhosts.virtualhost.name", getName());
-        configuration.setProperty("virtualhosts.virtualhost."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
+        configuration.addProperty("virtualhosts.virtualhost(-1).name", getName());
+        configuration.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
 
         _configuration = new ServerConfiguration(configuration);
 
