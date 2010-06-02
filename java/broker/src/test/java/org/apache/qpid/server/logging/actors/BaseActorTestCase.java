@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import junit.framework.TestCase;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.LogActor;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 public class BaseActorTestCase extends InternalBrokerBaseCase
@@ -43,6 +38,12 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
     public void configure()
     {
         _configuration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
+    }
+
+    @Override
+    public void createBroker() throws Exception
+    {
+        super.createBroker();
 
         _rawLogger = new UnitTestMessageLogger();
 
@@ -56,10 +57,5 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
 
         super.tearDown();
     }
-
-    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
-    {
-    }
-
 
 }

@@ -42,9 +42,9 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    public void configure()
+    public void createBroker() throws Exception
     {
-        super.configure();
+        super.createBroker();
 
         MockSubscription mockSubscription = new MockSubscription();
 

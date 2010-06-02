@@ -41,6 +41,19 @@ import java.util.List;
  */
 public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 {
+    @Override
+    public void configure()
+    {
+        // Prevent defaulting Logging to ON
+    }
+
+
+    @Override
+    public void createBroker()
+    {
+        //Prevent auto-broker startup
+    }
+
     /**
      * Test the AMQPActor logging as a Connection level.
      *
@@ -49,8 +62,12 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
      * The log message should be fully repalaced (no '{n}' values) and should
      * not contain any channel identification.
      */
-    public void testConnection()
+    public void testConnection() throws Exception
     {
+        _configXml.setProperty("status-updates", "ON");
+
+        super.createBroker();
+
         final String message = sendLogMessage();
 
         List<Object> logs = _rawLogger.getLogMessages();
@@ -75,14 +92,12 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
                     logs.get(0).toString().contains("/ch:"));
     }
 
-    public void testConnectionLoggingOff() throws ConfigurationException, AMQException
+    public void testConnectionLoggingOff() throws Exception, AMQException
     {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "OFF");
+        _configXml.setProperty("status-updates", "OFF");
 
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
-
-        setUpWithConfig(serverConfig);
+        // Start the broker now.
+        super.createBroker();
 
         sendLogMessage();
 
