@@ -29,18 +29,32 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.concurrent.TimeUnit;
 
-/** Provide Unit Test coverage of the SlowConsumerConfiguration */
+/**
+ *  Provide Unit Test coverage of the virtualhost SlowConsumer Configuration
+ *  This is what controls how often the plugin will execute
+ */
 public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
 {
 
+    /**
+     * Default Testing:
+     *
+     * Provide a fully complete and valid configuration specifying 'delay' and
+     * 'timeunit' and ensure that it is correctly processed.
+     *
+     * Ensure no exceptions are thrown and that we get the same values back that
+     * were put into the configuration.
+     */
     public void testConfigLoadingValidConfig()
     {
         SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
 
         XMLConfiguration xmlconfig = new XMLConfiguration();
 
-        xmlconfig.addProperty("delay", "10");
-        xmlconfig.addProperty("timeunit", TimeUnit.MICROSECONDS.toString());
+        long DELAY=10;
+        String TIMEUNIT=TimeUnit.MICROSECONDS.toString();
+        xmlconfig.addProperty("delay", String.valueOf(DELAY));
+        xmlconfig.addProperty("timeunit", TIMEUNIT);
 
         // Create a CompositeConfiguration as this is what the broker uses
         CompositeConfiguration composite = new CompositeConfiguration();
@@ -55,11 +69,60 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
+
+        assertEquals("Delay not correctly returned.", DELAY, config.getDelay());
+        assertEquals("TimeUnit not correctly returned.",
+                     TIMEUNIT, String.valueOf(config.getTimeUnit()));
     }
 
     /**
+       * Default Testing:
+       *
+       * Test Missing TimeUnit value gets default.
+       *
+       * The TimeUnit value is optional and default to SECONDS.
+       *
+       * Test that if we do not specify a TimeUnit then we correctly get seconds.
+       *
+       * Also verify that relying on the default does not impact the setting of
+       * the 'delay' value.
+       *
+       */
+      public void testConfigLoadingMissingTimeUnitDefaults()
+      {
+          SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
+
+          XMLConfiguration xmlconfig = new XMLConfiguration();
+
+          long DELAY=10;
+          xmlconfig.addProperty("delay", String.valueOf(DELAY));
+
+          // Create a CompositeConfiguration as this is what the broker uses
+          CompositeConfiguration composite = new CompositeConfiguration();
+          composite.addConfiguration(xmlconfig);
+          try
+          {
+              config.setConfiguration("", composite);
+          }
+          catch (ConfigurationException e)
+          {
+              e.printStackTrace();
+              fail(e.getMessage());
+          }
+
+          assertEquals("Delay not correctly returned.", DELAY, config.getDelay());
+          assertEquals("Default TimeUnit incorrect", TimeUnit.SECONDS, config.getTimeUnit());
+      }    
+
+    /**
+     * Input Testing:
+     *
      * TimeUnit parsing requires the String value be in UpperCase.
      * Ensure we can handle when the user doesn't know this.
+     *
+     * Same test as 'testConfigLoadingValidConfig' but checking that
+     * the timeunit field is not case sensitive.
+     * i.e. the toUpper is being correctly applied.
      */
     public void testConfigLoadingValidConfigStrangeTimeUnit()
     {
@@ -67,7 +130,9 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
 
         XMLConfiguration xmlconfig = new XMLConfiguration();
 
-        xmlconfig.addProperty("delay", "10");
+        long DELAY=10;
+
+        xmlconfig.addProperty("delay", DELAY);
         xmlconfig.addProperty("timeunit", "MiCrOsEcOnDs");
 
         // Create a CompositeConfiguration as this is what the broker uses
@@ -83,9 +148,23 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
+
+        assertEquals("Delay not correctly returned.", DELAY, config.getDelay());
+        assertEquals("TimeUnit not correctly returned.",
+                     TimeUnit.MICROSECONDS.toString(), String.valueOf(config.getTimeUnit()));
+
     }
 
-    /** Test that delay must be long not a string value. */
+    /**
+     * Failure Testing:
+     *
+     * Test that delay must be long not a string value.
+     * Provide a delay as a written value not a long. 'ten'.
+     *
+     * This should throw a configuration exception which is being trapped and
+     * verified to be the right exception, a NumberFormatException.
+     *
+     */
     public void testConfigLoadingInValidDelayString()
     {
         SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
@@ -112,7 +191,16 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
         }
     }
 
-    /** Test that negative delays are invalid */
+    /**
+     * Failure Testing:
+     *
+     * Test that negative delays are invalid.
+     *
+     * Delay must be a positive value as negative delay means doesn't make sense.
+     *
+     * Configuration exception with a useful message should be thrown here.
+     *
+     */
     public void testConfigLoadingInValidDelayNegative()
     {
         SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
@@ -144,7 +232,17 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
         }
     }
 
-    /** Tet that delay cannot be 0 */
+    /**
+     * Failure Testing:
+     *
+     *  Test that delay cannot be 0.
+     *
+     * A zero delay means run constantly. This is not how VirtualHostTasks
+     * are designed to be run so we dis-allow the use of 0 delay.
+     *
+     * Same test as 'testConfigLoadingInValidDelayNegative' but with a 0 value.
+     *
+     */
     public void testConfigLoadingInValidDelayZero()
     {
         SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
@@ -176,7 +274,14 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
         }
     }
 
-    /** Test that missing delay fails */
+    /**
+     * Failure Testing:
+     *
+     * Test that missing delay fails.
+     * If we have no delay then we do not pick a default. So a Configuration
+     * Exception is thrown.
+     *
+     * */
     public void testConfigLoadingInValidMissingDelay()
     {
         SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
@@ -199,14 +304,28 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
         }
     }
 
-    /** Test that erroneous TimeUnit fails */
+    /**
+     * Failure Testing:
+     *
+     * Test that erroneous TimeUnit fails.
+     *
+     * Valid TimeUnit values vary based on the JVM version i.e. 1.6 added HOURS/DAYS etc.
+     *
+     * We don't test the values for TimeUnit are accepted other than MILLISECONDS in the
+     * positive testing at the start.
+     *
+     * Here we ensure that an erroneous for TimeUnit correctly throws an exception.
+     *
+     * We test with 'foo', which will never be a TimeUnit
+     *
+     */
     public void testConfigLoadingInValidTimeUnit()
     {
         SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
 
         String TIMEUNIT = "foo";
         XMLConfiguration xmlconfig = new XMLConfiguration();
-                                                                                
+
         xmlconfig.addProperty("delay", "10");
         xmlconfig.addProperty("timeunit", TIMEUNIT);
 
@@ -224,29 +343,5 @@ public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
         }
     }
 
-    /** Test Missing TimeUnit value gets default */
-    public void testConfigLoadingMissingTimeUnitDefaults()
-    {
-        SlowConsumerDetectionConfiguration config = new SlowConsumerDetectionConfiguration();
-
-        XMLConfiguration xmlconfig = new XMLConfiguration();
-
-        xmlconfig.addProperty("delay", "10");
-
-        // Create a CompositeConfiguration as this is what the broker uses
-        CompositeConfiguration composite = new CompositeConfiguration();
-        composite.addConfiguration(xmlconfig);
-        try
-        {
-            config.setConfiguration("", composite);
-        }
-        catch (ConfigurationException e)
-        {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-
-        assertEquals("Default TimeUnit incorrect", TimeUnit.SECONDS, config.getTimeUnit());
-    }
 
 }

@@ -26,16 +26,29 @@ import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
 import org.apache.qpid.test.utils.QpidTestCase;
 
+/**
+ * Test class to ensure that the policy configuration can be processed.
+ */
 public class SlowConsumerDetectionPolicyConfigurationTest extends QpidTestCase
 {
 
+    /**
+     * Input Testing:
+     *
+     * Test that a given String can be set and retrieved through the configuration
+     *
+     * No validation is being performed to ensure that the policy exists. Only
+     * that a value can be set for the policy.
+     *
+     */
     public void testConfigLoadingValidConfig()
     {
         SlowConsumerDetectionPolicyConfiguration config = new SlowConsumerDetectionPolicyConfiguration();
 
         XMLConfiguration xmlconfig = new XMLConfiguration();
 
-        xmlconfig.addProperty("name", "TestPolicy");
+        String policyName = "TestPolicy";
+        xmlconfig.addProperty("name", policyName);
 
         // Create a CompositeConfiguration as this is what the broker uses
         CompositeConfiguration composite = new CompositeConfiguration();
@@ -50,8 +63,21 @@ public class SlowConsumerDetectionPolicyConfigurationTest extends QpidTestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
+
+        assertEquals("Policy name not retrieved as expected.",
+                     policyName, config.getPolicyName());
     }
 
+    /**
+     * Failure Testing:
+     *
+     * Test that providing a configuration section without the 'name' field
+     * causes an exception to be thrown.
+     *
+     * An empty configuration is provided and the thrown exception message
+     * is checked to confirm the right reason. 
+     *
+     */
     public void testConfigLoadingInValidConfig()
     {
         SlowConsumerDetectionPolicyConfiguration config = new SlowConsumerDetectionPolicyConfiguration();
