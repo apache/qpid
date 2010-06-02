@@ -28,6 +28,8 @@ import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ConnectionConfig;
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.configuration.SessionConfigType;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -569,6 +571,11 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         //fixme this will only work for 0-10 connections
         // In 0-8 there is an explicit ClientID property that is != Principal.
         return getPrincipal().getName();
+    }
+
+    public LogSubject getLogSubject()
+    {
+        return null;
     }
 
 }

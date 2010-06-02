@@ -24,6 +24,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
@@ -87,6 +88,11 @@ public class MockAMQQueue implements AMQQueue
     public int getBindingCount()
     {
         return 0;
+    }
+
+    public LogSubject getLogSubject()
+    {
+        return null; 
     }
 
     public ConfigStore getConfigStore()

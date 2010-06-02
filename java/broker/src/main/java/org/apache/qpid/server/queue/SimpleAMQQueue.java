@@ -526,6 +526,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return getBindings().size();
     }
 
+    public LogSubject getLogSubject()
+    {
+        return _logSubject;
+    }
+
     // ------ Enqueue / Dequeue
     public void enqueue(ServerMessage message) throws AMQException
     {
