@@ -37,8 +37,9 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 
 import junit.framework.TestCase;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-public class LoggingManagementMBeanTest extends TestCase
+public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
 {
     private static final String TEST_LOGGER = "LoggingManagementMBeanTestLogger";
     private static final String TEST_LOGGER_CHILD1 = "LoggingManagementMBeanTestLogger.child1";
@@ -55,12 +56,15 @@ public class LoggingManagementMBeanTest extends TestCase
 
     private File _testConfigFile;
 
-    protected void setUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         _testConfigFile = createTempTestLog4JConfig();
     }
     
-    protected void tearDown() throws Exception
+    @Override
+    public void tearDown() throws Exception
     {
         File oldTestConfigFile = new File(_testConfigFile.getAbsolutePath() + ".old");
         if(oldTestConfigFile.exists())
@@ -69,6 +73,8 @@ public class LoggingManagementMBeanTest extends TestCase
         }
         
         _testConfigFile.delete();
+        
+        super.tearDown();
     }
 
     private File createTempTestLog4JConfig()

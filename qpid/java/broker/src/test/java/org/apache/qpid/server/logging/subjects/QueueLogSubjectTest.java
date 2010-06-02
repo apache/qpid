@@ -34,6 +34,7 @@ public class QueueLogSubjectTest extends AbstractTestLogSubject
     AMQQueue _queue;
     VirtualHost _testVhost;
 
+    @Override
     public void setUp() throws Exception
     {
         super.setUp();

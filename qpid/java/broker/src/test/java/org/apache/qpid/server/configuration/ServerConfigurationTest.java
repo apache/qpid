@@ -37,29 +37,15 @@ import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.TestNetworkDriver;
 
-public class ServerConfigurationTest extends TestCase
+public class ServerConfigurationTest extends InternalBrokerBaseCase
 {
-    private XMLConfiguration _config;
+    private XMLConfiguration _config = new XMLConfiguration();
 
-    @Override
-    public void setUp()
-    {
-        //Highlight that this test will cause a new AR to be created
-        ApplicationRegistry.getInstance();
-
-        _config = new XMLConfiguration();
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        //Correctly Close the AR we created
-        ApplicationRegistry.remove();
-    }
 
     public void testSetJMXManagementPort() throws ConfigurationException
     {

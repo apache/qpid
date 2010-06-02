@@ -24,19 +24,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.plugins.Firewall;
 import org.apache.qpid.server.security.access.plugins.FirewallConfiguration;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.TestNetworkDriver;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-public class FirewallPluginTest extends TestCase
+public class FirewallPluginTest extends InternalBrokerBaseCase
 {
     public class RuleInfo
     {
@@ -89,12 +86,6 @@ public class FirewallPluginTest extends TestCase
         ApplicationRegistry.getInstance();
     }
 
-    public void tearDown() throws Exception
-    {
-        // Correctly Close the AR that we created above
-        ApplicationRegistry.remove();
-        super.tearDown();
-    }
 
     private Firewall initialisePlugin(String defaultAction, RuleInfo[] rules) throws IOException, ConfigurationException
     {

@@ -32,6 +32,7 @@ import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -49,7 +50,7 @@ import java.util.Set;
 /**
  * Tests that acknowledgements are handled correctly.
  */
-public class AckTest extends TestCase
+public class AckTest extends InternalBrokerBaseCase
 {
     private static final Logger _log = Logger.getLogger(AckTest.class);
 
@@ -66,11 +67,10 @@ public class AckTest extends TestCase
     private static final AMQShortString DEFAULT_CONSUMER_TAG = new AMQShortString("conTag");
     private VirtualHost _virtualHost;
 
-    protected void setUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
         super.setUp();
-        // The NullApplicationRegistry will be created by default when
-        // calling AR.getInstance
         _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = new TestMemoryMessageStore();
         _protocolSession = new InternalTestProtocolSession(_virtualHost);
@@ -80,11 +80,6 @@ public class AckTest extends TestCase
 
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, false,
                                                     _virtualHost, null);
-    }
-
-    protected void tearDown()
-    {
-        ApplicationRegistry.remove();
     }
 
     private void publishMessages(int count) throws AMQException
