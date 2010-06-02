@@ -144,11 +144,6 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
         return false;
     }
 
-    public String getPluginName()
-    {
-        return SlowConsumerDetection.class.getName();
-    }
-
     public boolean isConfigured()
     {
         return _config != null && _virtualhost != null;

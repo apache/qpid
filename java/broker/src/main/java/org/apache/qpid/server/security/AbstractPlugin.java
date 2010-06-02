@@ -35,11 +35,6 @@ public abstract class AbstractPlugin implements SecurityPlugin
     
     public ConfigurationPlugin _config;
 	
-    public String getPluginName()
-    {
-        return getClass().getSimpleName();
-    }
-	
 	public Result getDefault()
 	{
 		return Result.ABSTAIN;

@@ -31,7 +31,7 @@ import org.apache.qpid.server.security.access.Operation;
 /**
  * This {@link SecurityPlugin} simply abstains from all authorisation requests and ignores configuration.
  */
-public class BasicPlugin extends AbstractPlugin
+public abstract class BasicPlugin extends AbstractPlugin
 {
     public Result access(ObjectType objectType, Object instance)
     {
@@ -41,11 +41,5 @@ public class BasicPlugin extends AbstractPlugin
     public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)
     {
         return getDefault();
-    }
-
-    @Override
-    public void configure() throws ConfigurationException
-    {
-        // Not used
     }
 }

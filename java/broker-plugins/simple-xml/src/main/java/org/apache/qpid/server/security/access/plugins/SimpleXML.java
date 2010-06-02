@@ -52,8 +52,8 @@ public class SimpleXML extends AbstractPlugin
     {
         public SimpleXML newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            SimpleXML plugin = new SimpleXML(config);
-            plugin.configure();
+            SimpleXML plugin = new SimpleXML();
+            plugin.configure(config);
             return plugin;
         }
 
@@ -68,20 +68,17 @@ public class SimpleXML extends AbstractPlugin
         }
     };
 
-    public SimpleXML(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
         _config = config.getConfiguration(SimpleXMLConfiguration.class);
-    }
 
-    public void configure() throws ConfigurationException
-    {
-        SimpleXMLConfiguration config = (SimpleXMLConfiguration) _config;
+        SimpleXMLConfiguration configuration = (SimpleXMLConfiguration) _config;
         
         if (isConfigured())
         {
             _users = new ConcurrentHashMap<String, PrincipalPermissions>();
 
-            processConfig(config.getConfiguration());
+            processConfig(configuration.getConfiguration());
         }
     }
 

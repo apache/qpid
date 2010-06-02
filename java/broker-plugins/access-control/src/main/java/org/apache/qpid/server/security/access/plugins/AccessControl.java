@@ -60,17 +60,12 @@ public class AccessControl extends AbstractPlugin
 
         public AccessControl newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            AccessControl plugin = new AccessControl(config);
-            plugin.configure();
+            AccessControl plugin = new AccessControl();
+            plugin.configure(config);
             return plugin;
         }
     };
-    
-    public AccessControl(ConfigurationPlugin config)
-    {
-        _config = config.getConfiguration(AccessControlConfiguration.class);
-    }
-    
+
     public Result getDefault()
     {
         return _ruleSet.getDefault();
@@ -112,9 +107,9 @@ public class AccessControl extends AbstractPlugin
         return _ruleSet.check(principal.getName(), operation, objectType, properties);
     }
 
-    @Override
-    public void configure() throws ConfigurationException
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
+        _config = config.getConfiguration(AccessControlConfiguration.class);        
         AccessControlConfiguration accessConfig = (AccessControlConfiguration) _config;
             
         if (isConfigured())

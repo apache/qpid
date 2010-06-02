@@ -119,9 +119,8 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         // Configure plugin
         FirewallConfiguration config = new FirewallConfiguration();
         config.setConfiguration("", new XMLConfiguration(confFile));
-        Firewall plugin = new Firewall(config);
-        plugin._config = config;
-        plugin.configure();
+        Firewall plugin = new Firewall();
+        plugin.configure(config);
         return plugin;
     }
 

@@ -57,8 +57,8 @@ public class AllowAll extends BasicPlugin
     {
         public AllowAll newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            AllowAll plugin = new AllowAll(config);
-            plugin.configure();
+            AllowAll plugin = new AllowAll();
+            plugin.configure(config);
             return plugin;
         }
 
@@ -79,8 +79,8 @@ public class AllowAll extends BasicPlugin
 		return Result.ALLOWED;
     }
 
-    public AllowAll(ConfigurationPlugin config)
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
         _config = config.getConfiguration(AllowAllConfiguration.class);
-    }
+    }    
 }
