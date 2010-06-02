@@ -23,12 +23,12 @@ package org.apache.qpid.server.virtualhost.plugin.policies;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
  * Test to ensure TopicDelete Policy configuration can be loaded.
  */
-public class TopicDeletePolicyConfigurationTest extends QpidTestCase
+public class TopicDeletePolicyConfigurationTest extends InternalBrokerBaseCase
 {
     /**
      * Test without any configuration being provided that the

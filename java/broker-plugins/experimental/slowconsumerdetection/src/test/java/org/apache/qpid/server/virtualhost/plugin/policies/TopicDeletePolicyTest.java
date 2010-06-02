@@ -32,10 +32,11 @@ import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TopicDeletePolicyTest extends QpidTestCase
+public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 {
 
     TopicDeletePolicyConfiguration _config;
@@ -43,8 +44,10 @@ public class TopicDeletePolicyTest extends QpidTestCase
     VirtualHost _defaultVhost;
     InternalTestProtocolSession _connection;
 
-    public void setUp() throws ConfigurationException, AMQException
+    public void setUp() throws Exception
     {
+        super.setUp();
+
         _defaultVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getDefaultVirtualHost();
 
         _connection = new InternalTestProtocolSession(_defaultVhost);
@@ -54,18 +57,6 @@ public class TopicDeletePolicyTest extends QpidTestCase
         XMLConfiguration config = new XMLConfiguration();
 
         _config.setConfiguration("", config);
-    }
-
-    public void tearDown() throws Exception
-    {
-        try
-        {
-            ApplicationRegistry.remove();
-        }
-        finally
-        {
-            super.tearDown();
-        }
     }
 
     private MockAMQQueue createOwnedQueue()

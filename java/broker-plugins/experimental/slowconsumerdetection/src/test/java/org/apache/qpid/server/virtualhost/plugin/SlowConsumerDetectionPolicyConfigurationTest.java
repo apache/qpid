@@ -24,12 +24,12 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
  * Test class to ensure that the policy configuration can be processed.
  */
-public class SlowConsumerDetectionPolicyConfigurationTest extends QpidTestCase
+public class SlowConsumerDetectionPolicyConfigurationTest extends InternalBrokerBaseCase
 {
 
     /**

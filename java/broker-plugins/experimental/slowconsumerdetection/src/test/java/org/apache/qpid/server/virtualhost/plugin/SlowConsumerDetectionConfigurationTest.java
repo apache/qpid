@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.virtualhost.plugin;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *  Provide Unit Test coverage of the virtualhost SlowConsumer Configuration
  *  This is what controls how often the plugin will execute
  */
-public class SlowConsumerDetectionConfigurationTest extends QpidTestCase
+public class SlowConsumerDetectionConfigurationTest extends InternalBrokerBaseCase
 {
 
     /**
