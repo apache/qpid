@@ -79,6 +79,8 @@
       <arg value="${generated.dir}"/>
       <arg value="-t"/>
       <arg value="${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
+      <arg value="-r"/>
+      <arg value="org.apache.qpid.server.logging.messages.LogMessages"/>
       <classpath>
         <pathelement path="${project.root}/broker/src/main/java"/>
         <pathelement path="${velocity.compile.dir}" />

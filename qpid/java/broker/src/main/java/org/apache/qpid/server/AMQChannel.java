@@ -1079,6 +1079,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         return String.valueOf(_session.getContextKey());
     }
 
+    public LogSubject getLogSubject()
+    {
+        return _logSubject;
+    }
+
     private class MessageDeliveryAction implements ServerTransaction.Action
     {
         private IncomingMessage _incommingMessage;

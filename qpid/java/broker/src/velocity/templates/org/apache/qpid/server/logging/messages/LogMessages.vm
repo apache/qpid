@@ -18,7 +18,7 @@
  *
  *
  */
-package org.apache.qpid.server.logging.messages;
+package ${package};
 
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -59,7 +59,7 @@ public class ${type.name}Messages
             _currentLocale = Locale.getDefault();
         }
 
-        _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages", _currentLocale);
+        _messages = ResourceBundle.getBundle("${resource}", _currentLocale);
     }
 
 

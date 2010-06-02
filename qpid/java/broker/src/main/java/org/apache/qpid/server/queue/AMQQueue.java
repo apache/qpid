@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
@@ -57,6 +58,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     List<Binding> getBindings();
 
     int getBindingCount();
+
+    LogSubject getLogSubject();
 
     public interface Context
     {
