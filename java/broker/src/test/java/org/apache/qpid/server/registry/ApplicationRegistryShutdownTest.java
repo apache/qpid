@@ -20,8 +20,7 @@
  */
 package org.apache.qpid.server.registry;
 
-import junit.framework.TestCase;
-import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import java.security.Security;
 import java.security.Provider;
@@ -29,29 +28,23 @@ import java.util.List;
 import java.util.LinkedList;
 
 /**
- * QPID-1390 : Test to validate that the AuthenticationManger succesfully unregisters any new SASL providers when
+ * QPID-1390 : Test to validate that the AuthenticationManger can successfully unregister any new SASL providers when
  * The ApplicationRegistry is closed.
  *
  * This should be expanded as QPID-1399 is implemented.
  */
-public class ApplicationRegistryShutdownTest extends TestCase
+public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
 {
 
-    IApplicationRegistry _registry;
-
+    Provider[] _defaultProviders;
+    @Override
     public void setUp() throws Exception
     {
-        //Highlight that this test will cause a new AR to be created
-        // This must used TestAppRegistry but during the test getInstance()
-        // will be called so we must ensure to do the remove()
-        _registry = new TestApplicationRegistry();
-    }
+        // Get default providers
+        _defaultProviders = Security.getProviders();
 
-    @Override
-    public void tearDown() throws Exception
-    {
-        // Correctly Close the AR we created
-    	ApplicationRegistry.remove();
+        //Startup the new broker and register the new providers
+        super.setUp();
     }
 
 
@@ -62,11 +55,6 @@ public class ApplicationRegistryShutdownTest extends TestCase
      */
     public void testAuthenticationMangerCleansUp() throws Exception
     {
-        // Get default providers
-        Provider[] defaultProviders = Security.getProviders();
-
-        // Register new providers
-        ApplicationRegistry.initialise(_registry, ApplicationRegistry.DEFAULT_INSTANCE);        
 
         // Get the providers after initialisation
         Provider[] providersAfterInitialisation = Security.getProviders();
@@ -76,7 +64,7 @@ public class ApplicationRegistryShutdownTest extends TestCase
         for (Provider afterInit : providersAfterInitialisation)
         {
             boolean found = false;
-            for (Provider defaultProvider : defaultProviders)
+            for (Provider defaultProvider : _defaultProviders)
             {
                 if (defaultProvider == afterInit)
                 {

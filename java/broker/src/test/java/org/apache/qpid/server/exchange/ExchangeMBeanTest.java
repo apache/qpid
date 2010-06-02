@@ -29,6 +29,7 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -39,7 +40,7 @@ import java.util.ArrayList;
 /**
  * Unit test class for testing different Exchange MBean operations
  */
-public class ExchangeMBeanTest  extends TestCase
+public class ExchangeMBeanTest  extends InternalBrokerBaseCase
 {
     private AMQQueue _queue;
     private QueueRegistry _queueRegistry;
@@ -127,7 +128,7 @@ public class ExchangeMBeanTest  extends TestCase
     }
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
         super.setUp();
 
@@ -138,11 +139,4 @@ public class ExchangeMBeanTest  extends TestCase
                                                     _virtualHost, null);
         _queueRegistry.registerQueue(_queue);
     }
-
-    protected void tearDown()
-    {
-        // Correctly Close the AR that we created above
-        ApplicationRegistry.remove();
-    }
-
 }

@@ -28,17 +28,17 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
+
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /* Note: The main purpose is to test the jmx access rights file manipulation 
  * within AMQUserManagementMBean. The Principal Databases are tested by their own tests, 
  * this test just exercises their usage in AMQUserManagementMBean. 
  */
-public class AMQUserManagementMBeanTest extends TestCase
+public class AMQUserManagementMBeanTest extends InternalBrokerBaseCase
 {
     private PlainPasswordFilePrincipalDatabase _database;
     private AMQUserManagementMBean _amqumMBean;
@@ -50,8 +50,10 @@ public class AMQUserManagementMBeanTest extends TestCase
     private static final String TEST_PASSWORD = "password";
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
+        super.setUp();
+
         _database = new PlainPasswordFilePrincipalDatabase();
         _amqumMBean = new AMQUserManagementMBean();
         loadFreshTestPasswordFile();
@@ -59,7 +61,7 @@ public class AMQUserManagementMBeanTest extends TestCase
     }
 
     @Override
-    protected void tearDown() throws Exception
+    public void tearDown() throws Exception
     {
         //clean up test password/access files
         File _oldPasswordFile = new File(_passwordFile.getAbsolutePath() + ".old");
@@ -68,6 +70,8 @@ public class AMQUserManagementMBeanTest extends TestCase
         _oldAccessFile.delete();
         _passwordFile.delete();
         _accessFile.delete();
+
+        super.tearDown();
     }
 
     public void testDeleteUser()

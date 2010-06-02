@@ -30,20 +30,14 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
     AMQProtocolSession _protocolSession;
 
-    protected void setUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
         super.setUp();
-        // AR will use the NullAR by default
         // Just use the first vhost.
         VirtualHost
                 virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
         _protocolSession = new InternalTestProtocolSession(virtualHost);
-    }
-
-    protected void tearDown()
-    {
-        // Correctly Close the AR that we created above
-        ApplicationRegistry.remove();
     }
 
     public void testSimple() throws AMQException

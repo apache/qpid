@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import java.util.List;
 
@@ -31,7 +32,7 @@ import java.util.List;
  * Test that verifies that given a Configuration a ConfigurationPlugin can
  * process and validate that data.
  */
-public class ConfigurationPluginTest extends TestCase
+public class ConfigurationPluginTest extends InternalBrokerBaseCase
 {
     private static final double DOUBLE = 3.14;
     private static final long POSITIVE_LONG = 1000;
@@ -69,8 +70,12 @@ public class ConfigurationPluginTest extends TestCase
 
     ConfigPlugin _plugin;
 
-    public void setUp()
+    @Override
+    public void setUp() throws Exception
     {
+        // Test does not directly use the AppRegistry but the configured broker
+        // is required for the correct ConfigurationPlugin processing
+        super.setUp();
         XMLConfiguration xmlconfig = new XMLConfiguration();
         xmlconfig.addProperty("base.element[@property]", "property");
         xmlconfig.addProperty("base.element.name", "name");

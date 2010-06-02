@@ -32,7 +32,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 {
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
         _arguments = new FieldTable();
         _arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, 3);

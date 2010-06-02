@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import junit.framework.TestCase;
 import junit.framework.Assert;
 import org.apache.qpid.server.queue.*;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
@@ -37,7 +38,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
-public class TopicExchangeTest extends TestCase
+public class TopicExchangeTest extends InternalBrokerBaseCase
 {
 
     TopicExchange _exchange;
@@ -48,19 +49,15 @@ public class TopicExchangeTest extends TestCase
     InternalTestProtocolSession _protocolSession;
 
 
-    public void setUp() throws AMQException
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         _exchange = new TopicExchange();
         _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
         _store = new MemoryMessageStore();
         _protocolSession = new InternalTestProtocolSession(_vhost);
     }
-
-    public void tearDown()
-    {
-        ApplicationRegistry.remove();
-    }
-
 
     public void testNoRoute() throws AMQException
     {

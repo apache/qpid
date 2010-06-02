@@ -42,6 +42,7 @@ import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -49,7 +50,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class SimpleAMQQueueTest extends TestCase
+public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 {
 
     protected SimpleAMQQueue _queue;
@@ -92,7 +93,7 @@ public class SimpleAMQQueueTest extends TestCase
     };
 
     @Override
-    protected void setUp() throws Exception
+    public void setUp() throws Exception
     {
         super.setUp();
         //Create Application Registry for test
@@ -106,10 +107,10 @@ public class SimpleAMQQueueTest extends TestCase
     }
 
     @Override
-    protected void tearDown()
+    public void tearDown() throws Exception
     {
         _queue.stop();
-        ApplicationRegistry.remove();
+        super.tearDown();
     }
 
     public void testCreateQueue() throws AMQException
