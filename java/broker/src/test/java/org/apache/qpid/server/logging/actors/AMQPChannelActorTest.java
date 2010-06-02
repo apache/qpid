@@ -47,11 +47,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     AMQChannel _channel;
 
     @Override
-    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
+    public void configure()
     {
-        super.setUpWithConfig(serverConfig);
-
-        _channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
+        super.configure();
 
         _amqpActor = new AMQPChannelActor(_channel, _rootLogger);
     }

@@ -32,15 +32,10 @@ public class QueueActorTest extends BaseConnectionActorTestCase
 {
 
     @Override
-    protected void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
+    public void configure()
     {
-        super.setUpWithConfig(serverConfig);
-
-        MockAMQQueue queue = new MockAMQQueue(getName());
-
-        queue.setVirtualHost(_session.getVirtualHost());
-
-        _amqpActor = new QueueActor(queue, _rootLogger);
+        super.configure();
+        _amqpActor = new QueueActor(_queue, _rootLogger);
     }
 
     /**
