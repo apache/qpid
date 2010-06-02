@@ -28,9 +28,10 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.TopicExchange;
-import org.apache.qpid.server.plugins.Plugin;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.plugin.logging.TopicDeletePolicyMessages;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 
@@ -88,6 +89,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
 
         try
         {
+            CurrentActor.get().message(owner.getLogSubject(),TopicDeletePolicyMessages.TDP_DISCONNECTING());
             // Close the consumer . this will cause autoDelete Queues to be purged
             owner.getConnectionModel().
                     closeSession(owner, AMQConstant.RESOURCE_ERROR,
@@ -96,6 +98,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
             // Actively delete non autoDelete queues if deletePersistent is set
             if (!q.isAutoDelete() && _configuration.deletePersistent())
             {
+                CurrentActor.get().message(q.getLogSubject(), TopicDeletePolicyMessages.TDP_DELETING_QUEUE());
                 q.delete();
             }
 
