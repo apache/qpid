@@ -28,6 +28,7 @@ import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueCon
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.plugin.logging.SlowConsumerDetectionMessages;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
@@ -73,10 +74,11 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     @Override
     public void execute()
     {
-        _logger.info("Starting the SlowConsumersDetection job");
+        SlowConsumerDetectionMessages.SCD_RUNNING();
+
         for (AMQQueue q : _virtualhost.getQueueRegistry().getQueues())
         {
-            _logger.debug("Checking consumer status for queue: " + q.getName());
+            SlowConsumerDetectionMessages.SCD_CHECKING_QUEUE(q.getName());
             try
             {
                 SlowConsumerDetectionQueueConfiguration config =
@@ -96,7 +98,8 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
                 // house keeping task from running.
             }
         }
-        _logger.info("SlowConsumersDetection job completed.");
+
+        SlowConsumerDetectionMessages.SCD_COMPLETE();
     }
 
     public long getDelay()
@@ -113,7 +116,7 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
      * Check the depth,messageSize,messageAge,messageCount values for this q
      *
      * @param q      the queue to check
-     * @param config
+     * @param config the queue configuration to compare against the queue state
      *
      * @return true if the queue has reached a threshold.
      */
@@ -127,12 +130,12 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
                     (config.getMessageAge() != 0 && q.getOldestMessageArrivalTime() >= config.getMessageAge()))
             {
                 
-                if (_logger.isInfoEnabled())
+                if (_logger.isDebugEnabled())
                 {
-                    _logger.info("Detected Slow Consumer on Queue(" + q.getName() + ")");
-                    _logger.info("Queue Count:" + q.getMessageCount() + ":" + config.getMessageCount());
-                    _logger.info("Queue Depth:" + q.getQueueDepth() + ":" + config.getDepth());
-                    _logger.info("Queue Arrival:" + q.getOldestMessageArrivalTime() + ":" + config.getMessageAge());
+                    _logger.debug("Detected Slow Consumer on Queue(" + q.getName() + ")");
+                    _logger.debug("Queue Count:" + q.getMessageCount() + ":" + config.getMessageCount());
+                    _logger.debug("Queue Depth:" + q.getQueueDepth() + ":" + config.getDepth());
+                    _logger.debug("Queue Arrival:" + q.getOldestMessageArrivalTime() + ":" + config.getMessageAge());
                 }
 
                 return true;
