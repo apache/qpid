@@ -374,7 +374,6 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 
 void Queue::removeListener(Consumer::shared_ptr c)
 {
-    assertClusterSafe();
     QueueListeners::NotificationSet set;
     {
         Mutex::ScopedLock locker(messageLock);

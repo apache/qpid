@@ -391,7 +391,6 @@ SemanticState::ConsumerImpl::~ConsumerImpl()
 
 void SemanticState::cancel(ConsumerImpl::shared_ptr c)
 {
-    assertClusterSafe();
     c->disableNotify();
     if (session.isAttached())
         session.getConnection().outputTasks.removeOutputTask(c.get());
@@ -698,7 +697,6 @@ void SemanticState::ConsumerImpl::enableNotify()
 void SemanticState::ConsumerImpl::disableNotify()
 {
     Mutex::ScopedLock l(lock);
-    assertClusterSafe();
     notifyEnabled = false;
 }
 
