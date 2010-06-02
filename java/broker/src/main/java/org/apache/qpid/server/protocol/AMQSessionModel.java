@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol;
 
+import org.apache.qpid.server.logging.LogSubject;
+
 public interface AMQSessionModel
 {
     Object getID();
@@ -27,4 +29,6 @@ public interface AMQSessionModel
     AMQConnectionModel getConnectionModel();
 
     String getClientID();
+
+    LogSubject getLogSubject();
 }

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
@@ -38,6 +39,7 @@ public class GenerateLogMessages
 {
     private static String _tmplDir;
     private String _outputDir;
+    private String _resource;
 
     public static void main(String[] args)
     {
@@ -99,23 +101,41 @@ public class GenerateLogMessages
         System.out.println("Usage: GenerateLogMessages: -t tmplDir");
         System.out.println("       where -t tmplDir: Find templates in tmplDir.");
         System.out.println("             -o outDir:  Use outDir as the output dir.");
+        System.out.println("             -r resource:  The resource to build.");
     }
 
     public void run() throws InvalidTypeException, Exception
     {
-        /* lets make a Context and put data into it */
-        createMessageClass("Broker", "BRK");
-        createMessageClass("ManagementConsole", "MNG");
-        createMessageClass("VirtualHost", "VHT");
-        createMessageClass("MessageStore", "MST");
-        createMessageClass("ConfigStore", "CFG");
-        createMessageClass("TransactionLog", "TXN");
-        createMessageClass("Connection", "CON");
-        createMessageClass("Channel", "CHN");
-        createMessageClass("Queue", "QUE");
-        createMessageClass("Exchange", "EXH");
-        createMessageClass("Binding", "BND");
-        createMessageClass("Subscription", "SUB");
+
+        Map<String,String> messageClasses = extractMessageClasses();
+
+        for (String key : messageClasses.keySet())
+        {
+            createMessageClass(messageClasses.get(key),key);
+        }
+    }
+
+    private Map<String, String> extractMessageClasses()
+    {
+
+        ResourceBundle _messages = ResourceBundle.getBundle(_resource, Locale.US);
+
+        Enumeration<String> messageKeys = _messages.getKeys();
+
+        Map<String,String> types = new HashMap<String, String>();
+
+        //Identify 3-Digit keys
+        while(messageKeys.hasMoreElements())
+        {
+            String key = messageKeys.nextElement();
+
+            if (key.length() == 3)
+            {
+                types.put(key,_messages.getString(key));
+            }
+        }
+
+        return types;
     }
 
     /**
@@ -149,6 +169,12 @@ public class GenerateLogMessages
                             _tmplDir = args[i];
                         }
                         break;
+                    case 'r':
+                    case 'R':
+                        if (++i < args.length)
+                        {
+                            _resource = args[i];
+                        }
                 }
             }
         }
@@ -174,6 +200,11 @@ public class GenerateLogMessages
 
         // Get the Data for this class and typeIdentifier
         HashMap<String, Object> typeData = prepareType(className, typeIdentifier);
+
+
+        context.put("package", _resource.substring(0, _resource.lastIndexOf(".")));
+        //Store the resource Bundle name for the macro
+        context.put("resource",_resource);
 
         // Store this data in the context for the macro to access
         context.put("type", typeData);
@@ -236,7 +267,7 @@ public class GenerateLogMessages
     private HashMap<String, Object> prepareType(String messsageName, String messageKey) throws InvalidTypeException
     {
         // Load the LogMessages Resource Bundle
-        ResourceBundle _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages", Locale.US);
+        ResourceBundle _messages = ResourceBundle.getBundle(_resource, Locale.US);
 
         Enumeration<String> messageKeys = _messages.getKeys();
 
@@ -257,8 +288,8 @@ public class GenerateLogMessages
             //Add MessageName to amp
             String message = messageKeys.nextElement();
 
-            // Process the log message if it matches the specified key e.g.'BRK'
-            if (message.startsWith(messageKey))
+            // Process the log message if it matches the specified key e.g.'BRK_'
+            if (message.startsWith(messageKey+"_"))
             {
                 // Method names can't have a '-' in them so lets make it '_'
                 // e.g. BRK-STARTUP -> BRK_STARTUP
