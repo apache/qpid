@@ -21,27 +21,28 @@
 package org.apache.qpid.server.util;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
 
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import java.util.Properties;
+
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {
-    public TestApplicationRegistry() throws ConfigurationException
-    {
-        this(new ServerConfiguration(new PropertiesConfiguration()));
-    }
-
     public TestApplicationRegistry(ServerConfiguration config) throws ConfigurationException
     {
         super(config);
-        _configuration.getConfig().setProperty("virtualhosts.virtualhost.name",
-                                               "test");
-        _configuration.getConfig().setProperty("virtualhosts.virtualhost.test.store.class",
-                                               TestableMemoryMessageStore.class.getName());
     }
+
+    protected void createDatabaseManager(ServerConfiguration configuration) throws Exception
+    {
+        Properties users = new Properties();
+        users.put("guest","guest");
+        users.put("admin","admin");
+        _databaseManager = new PropertiesPrincipalDatabaseManager("testPasswordFile", users);
+    }
+
 }
 
 
