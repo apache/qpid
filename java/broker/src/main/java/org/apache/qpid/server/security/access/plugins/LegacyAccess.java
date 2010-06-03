@@ -37,7 +37,11 @@ public class LegacyAccess extends BasicPlugin
         {
             public List<String> getParentPaths()
             {
-                return Arrays.asList("security", "virtualhosts.virtualhost.security");
+                return Arrays.asList("security.jmx", "virtualhosts.virtualhost.security.jmx",
+                                     "security.false", "virtualhosts.virtualhost.security.false",
+                                     "security.msg-auth", "virtualhosts.virtualhost.security.msg-auth",
+                                     "security.access", "virtualhosts.virtualhost.security.access",
+                                     "security.principal-databases", "virtualhosts.virtualhost.security.principal-databases");
             }
 
             public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
@@ -50,7 +54,7 @@ public class LegacyAccess extends BasicPlugin
         
         public String[] getElementsProcessed()
         {
-            return new String[] { "principal-databases", "access", "msg-auth", "false", "jmx" };
+            return new String[] { "" };
         }
     }
     
@@ -58,8 +62,16 @@ public class LegacyAccess extends BasicPlugin
     {
         public LegacyAccess newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
+            LegacyAccessConfiguration configuration = config.getConfiguration(LegacyAccessConfiguration.class);
+
+            // If there is no configuration for this plugin then don't load it.
+            if (configuration == null)
+            {
+                return null;
+            }
+
             LegacyAccess plugin = new LegacyAccess();
-            plugin.configure(config);
+            plugin.configure(configuration);
             return plugin;
         }
 
@@ -74,8 +86,4 @@ public class LegacyAccess extends BasicPlugin
         }
     };
     
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
-    {
-        _config = config.getConfiguration(LegacyAccessConfiguration.class);
-    }
 }

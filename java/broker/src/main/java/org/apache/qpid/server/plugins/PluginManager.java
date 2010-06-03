@@ -36,6 +36,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SecurityPluginFactory;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.access.plugins.DenyAll;
@@ -78,6 +79,7 @@ public class PluginManager implements Closeable
             _securityPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
         for (ConfigurationPluginFactory configFactory : Arrays.asList(
+                SecurityManager.SecurityConfiguration.FACTORY,
                 AllowAll.AllowAllConfiguration.FACTORY,
                 DenyAll.DenyAllConfiguration.FACTORY,
                 LegacyAccess.LegacyAccessConfiguration.FACTORY))

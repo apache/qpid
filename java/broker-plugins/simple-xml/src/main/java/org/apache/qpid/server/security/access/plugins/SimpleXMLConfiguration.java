@@ -41,17 +41,17 @@ public class SimpleXMLConfiguration extends ConfigurationPlugin
 
         public List<String> getParentPaths()
         {
-            return Arrays.asList("security", "virtualhosts.virtualhost.security");
+            return Arrays.asList("security.access_control_list", "virtualhosts.virtualhost.security.access_control_list");
         }
     };
 
     public String[] getElementsProcessed()
     {
-        return new String[] { "access_control_list" };
+        return new String[] { "" };
     }
 
     public Configuration getConfiguration()
     {
-        return _configuration.subset("access_control_list");
+        return _configuration;
     }
 }

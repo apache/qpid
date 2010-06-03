@@ -25,6 +25,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
@@ -127,32 +128,15 @@ public class Firewall extends AbstractPlugin
     }
     
 
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config)
     {
         super.configure(config);
         FirewallConfiguration firewallConfiguration = (FirewallConfiguration) _config;
 
         // Get default action
-        String defaultAction = firewallConfiguration.getConfiguration().getString("[@default-action]");
-        if (defaultAction == null)
-        {
-            _default = Result.ABSTAIN;
-        }
-        else if (defaultAction.equalsIgnoreCase(FirewallRule.ALLOW))
-        {
-            _default = Result.ALLOWED;
-        }
-        else
-        {
-            _default = Result.DENIED;
-        }
+        _default = firewallConfiguration.getDefaultAction();
 
-        CompositeConfiguration finalConfig = new CompositeConfiguration(firewallConfiguration.getConfiguration());
-        List subFiles = firewallConfiguration.getConfiguration().getList("xml[@fileName]");
-        for (Object subFile : subFiles)
-        {
-            finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
-        }
+        Configuration finalConfig = firewallConfiguration.getConfiguration();
 
         // all rules must have an access attribute
         int numRules = finalConfig.getList("rule[@access]").size();
