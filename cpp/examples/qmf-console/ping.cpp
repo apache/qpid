@@ -55,6 +55,7 @@ int main_int(int /*argc*/, char** /*argv*/)
     // Add a broker connection to the session manager.
     //
     Broker* broker = sm.addBroker(connSettings);
+    broker->waitForStable();
 
     uint32_t count = 5;  // The number of echo requests we will send to the broker.
     Object::Vector list; // A container for holding objects retrieved from the broker.
