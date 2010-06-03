@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.access;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.DirectExchange;
@@ -44,13 +45,8 @@ public class PrincipalPermissionsTest extends InternalBrokerBaseCase
     private AMQShortString _tempQueueName = new AMQShortString(this.getClass().getName() + "tempqueue");
     private AMQShortString _exchangeName = new AMQShortString("amq.direct");
     private AMQShortString _routingKey = new AMQShortString(this.getClass().getName() + "route");
-    private int _ticket = 1;
-    private FieldTable _arguments = null;
-    private boolean _durable = false;
     private boolean _autoDelete = false;
     private AMQShortString _exchangeType = new AMQShortString("direct");
-    private DirectExchange _exchange;
-    private AMQShortString _owner = new AMQShortString(this.getClass().getName() + "owner");
     private Boolean _temporary = false;
     private Boolean _ownQueue = false;
 
@@ -60,16 +56,6 @@ public class PrincipalPermissionsTest extends InternalBrokerBaseCase
         super.setUp();
 
         _perms = new PrincipalPermissions(_user);
-        try
-        {
-            _exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, _durable, _ticket, _autoDelete);
-            AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, false, _virtualHost, _arguments);
-            AMQQueueFactory.createAMQQueueImpl(_tempQueueName, false, _owner , true, false, _virtualHost, _arguments);
-        }
-        catch (Exception e)
-        {
-            fail(e.getMessage());
-        }
     }
 
 
@@ -132,10 +118,12 @@ public class PrincipalPermissionsTest extends InternalBrokerBaseCase
         assertEquals(Result.ALLOWED, _perms.authorise(Permission.CONSUME, authArgs));
     }
 
-    public void testPublish()
+    public void testPublish() throws AMQException
     {
+        DirectExchange exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, false, 1, _autoDelete);    
+
         String[] authArgs = new String[]{_exchangeName.asString(), _routingKey.asString()};
-        Object[] grantArgs = new Object[]{_exchange.getNameShortString(), _routingKey};
+        Object[] grantArgs = new Object[]{exchange.getNameShortString(), _routingKey};
 
         assertEquals(Result.DENIED, _perms.authorise(Permission.PUBLISH, authArgs));
         _perms.grant(Permission.PUBLISH, grantArgs);
