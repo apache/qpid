@@ -25,12 +25,10 @@ public interface Plugin
 {
 
     /**
-     * Is this plugin configured?.
-     */
-    boolean isConfigured();
-    
-    /**
-     * Configure this plugin
+     * Provide Configuration to this plugin
+     *
+     * FIXME Should not throw ConfigurationException,
+     * Only ConfigurationPlugin should throw ConfigurationException 
      */
     public void configure(ConfigurationPlugin config) throws ConfigurationException;
 }

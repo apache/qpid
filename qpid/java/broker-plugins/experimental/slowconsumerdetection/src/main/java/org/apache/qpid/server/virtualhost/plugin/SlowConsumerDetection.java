@@ -57,7 +57,7 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     }
 
     public void configure(ConfigurationPlugin config) throws ConfigurationException
-    {
+    {        
         _config = config.getConfiguration(SlowConsumerDetectionConfiguration.class);
         
         if (_config == null)
@@ -144,13 +144,4 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
         return false;
     }
 
-    public boolean isConfigured()
-    {
-        return _config != null && _virtualhost != null;
-    }
-
-    public void configure() throws ConfigurationException
-    {
-        // Empty
-    }
 }
