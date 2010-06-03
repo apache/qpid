@@ -38,9 +38,7 @@ public class LegacyAccess extends BasicPlugin
             public List<String> getParentPaths()
             {
                 return Arrays.asList("security.jmx", "virtualhosts.virtualhost.security.jmx",
-                                     "security.false", "virtualhosts.virtualhost.security.false",
                                      "security.msg-auth", "virtualhosts.virtualhost.security.msg-auth",
-                                     "security.access", "virtualhosts.virtualhost.security.access",
                                      "security.principal-databases", "virtualhosts.virtualhost.security.principal-databases");
             }
 

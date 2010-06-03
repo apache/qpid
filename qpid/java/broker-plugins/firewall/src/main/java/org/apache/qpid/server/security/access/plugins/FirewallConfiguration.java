@@ -91,10 +91,11 @@ public class FirewallConfiguration extends ConfigurationPlugin
             _finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
         }
 
-        // all rules must have an access attribute
-        if (_finalConfig.getList("rule[@access]").size() == 0)
+        // all rules must have an access attribute or a default value
+        if (_finalConfig.getList("rule[@access]").size() == 0 &&
+            _configuration.getString("[@default-action]") == null)
         {
-            throw new ConfigurationException("No rules found in firewall configuration.");
+            throw new ConfigurationException("No rules or default-action found in firewall configuration.");
         }
     }
 

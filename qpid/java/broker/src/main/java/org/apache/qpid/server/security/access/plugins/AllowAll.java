@@ -54,10 +54,10 @@ public class AllowAll extends BasicPlugin
 
         public void validateConfiguration() throws ConfigurationException
         {
-            if (!_configuration.isEmpty())
-            {
-                throw new ConfigurationException("allow-all section takes no elements.");
-            }
+//            if (!_configuration.isEmpty())
+//            {
+//                throw new ConfigurationException("allow-all section takes no elements.");
+//            }
         }
 
     }
