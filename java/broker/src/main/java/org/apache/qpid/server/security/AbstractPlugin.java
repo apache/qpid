@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.security;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -33,7 +34,7 @@ public abstract class AbstractPlugin implements SecurityPlugin
 {
 	protected final Logger _logger = Logger.getLogger(getClass());
     
-    public ConfigurationPlugin _config;
+    protected ConfigurationPlugin _config;
 	
 	public Result getDefault()
 	{
@@ -43,22 +44,10 @@ public abstract class AbstractPlugin implements SecurityPlugin
     public abstract Result access(ObjectType object, Object instance);
 
     public abstract Result authorise(Operation operation, ObjectType object, ObjectProperties properties);
-    
-    public boolean isConfigured()
-    {
-        if (_config == null)
-        {
-            return false;
-        }
-        
-        for (String key : _config.getElementsProcessed())
-        {
-            if (!_config.getConfig().containsKey(key) && _config.getConfig().subset(key).isEmpty())
-            {
-                return false;
-            }
-        }
 
-        return true;
+    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    {
+        _config = config;
     }
+
 }

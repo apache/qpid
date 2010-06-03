@@ -52,8 +52,16 @@ public class SimpleXML extends AbstractPlugin
     {
         public SimpleXML newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
+            SimpleXMLConfiguration configuration = config.getConfiguration(SimpleXMLConfiguration.class);
+
+            // If there is no configuration for this plugin then don't load it.
+            if (configuration == null)
+            {
+                return null;
+            }
+
             SimpleXML plugin = new SimpleXML();
-            plugin.configure(config);
+            plugin.configure(configuration);
             return plugin;
         }
 
@@ -70,16 +78,13 @@ public class SimpleXML extends AbstractPlugin
 
     public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
-        _config = config.getConfiguration(SimpleXMLConfiguration.class);
+        super.configure(config);
 
         SimpleXMLConfiguration configuration = (SimpleXMLConfiguration) _config;
         
-        if (isConfigured())
-        {
-            _users = new ConcurrentHashMap<String, PrincipalPermissions>();
+        _users = new ConcurrentHashMap<String, PrincipalPermissions>();
 
-            processConfig(configuration.getConfiguration());
-        }
+        processConfig(configuration.getConfiguration());
     }
 
     private void processConfig(Configuration config)

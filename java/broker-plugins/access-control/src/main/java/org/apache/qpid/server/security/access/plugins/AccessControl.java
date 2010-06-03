@@ -60,8 +60,16 @@ public class AccessControl extends AbstractPlugin
 
         public AccessControl newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
+            AccessControlConfiguration configuration = config.getConfiguration(AccessControlConfiguration.class);
+
+            // If there is no configuration for this plugin then don't load it.
+            if (configuration == null)
+            {
+                return null;
+            }
+
             AccessControl plugin = new AccessControl();
-            plugin.configure(config);
+            plugin.configure(configuration);
             return plugin;
         }
     };
@@ -109,14 +117,12 @@ public class AccessControl extends AbstractPlugin
 
     public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
-        _config = config.getConfiguration(AccessControlConfiguration.class);        
+        super.configure(config);
+
         AccessControlConfiguration accessConfig = (AccessControlConfiguration) _config;
-            
-        if (isConfigured())
-        {
-            String fileName = accessConfig.getFileName();
-            File aclFile = new File(fileName);
-            parseFile(aclFile);
-        }
+
+        String fileName = accessConfig.getFileName();
+        File aclFile = new File(fileName);
+        parseFile(aclFile);
     }
 }
