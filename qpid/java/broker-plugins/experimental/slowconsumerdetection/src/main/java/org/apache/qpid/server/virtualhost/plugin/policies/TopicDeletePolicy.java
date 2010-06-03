@@ -93,7 +93,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
                                  "Consuming to slow.");
 
             // Actively delete non autoDelete queues if deletePersistent is set
-            if (!q.isAutoDelete() && _configuration.deletePersistent())
+            if (!q.isAutoDelete() && (_configuration != null && _configuration.deletePersistent()))
             {
                 CurrentActor.get().message(q.getLogSubject(), TopicDeletePolicyMessages.TDP_DELETING_QUEUE());
                 q.delete();
