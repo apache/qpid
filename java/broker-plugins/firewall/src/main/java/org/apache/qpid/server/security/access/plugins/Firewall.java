@@ -43,8 +43,16 @@ public class Firewall extends AbstractPlugin
     {
         public Firewall newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
+            FirewallConfiguration configuration = config.getConfiguration(FirewallConfiguration.class);
+
+            // If there is no configuration for this plugin then don't load it.
+            if (configuration == null)
+            {
+                return null;
+            }
+            
             Firewall plugin = new Firewall();
-            plugin.configure(config);
+            plugin.configure(configuration);
             return plugin;
         }
         
@@ -121,43 +129,41 @@ public class Firewall extends AbstractPlugin
 
     public void configure(ConfigurationPlugin config) throws ConfigurationException
     {
-        _config = config.getConfiguration(FirewallConfiguration.class);
+        super.configure(config);
         FirewallConfiguration firewallConfiguration = (FirewallConfiguration) _config;
-        
-        if (isConfigured())
+
+        // Get default action
+        String defaultAction = firewallConfiguration.getConfiguration().getString("[@default-action]");
+        if (defaultAction == null)
         {
-            // Get default action
-            String defaultAction = firewallConfiguration.getConfiguration().getString("[@default-action]");
-            if (defaultAction == null)
-            {
-                _default = Result.ABSTAIN;
-            }
-            else if (defaultAction.equalsIgnoreCase(FirewallRule.ALLOW))
-            {
-                _default = Result.ALLOWED;
-            }
-            else
-            {
-                _default = Result.DENIED;
-            }
-            
-            CompositeConfiguration finalConfig = new CompositeConfiguration(firewallConfiguration.getConfiguration());
-            List subFiles = firewallConfiguration.getConfiguration().getList("xml[@fileName]");
-            for (Object subFile : subFiles)
-            {
-                finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
-            }
-    
-            // all rules must have an access attribute
-            int numRules = finalConfig.getList("rule[@access]").size();
-            _rules = new FirewallRule[numRules];
-            for (int i = 0; i < numRules; i++)
-            {
-                FirewallRule rule = new FirewallRule(finalConfig.getString("rule(" + i + ")[@access]"),
-    												 finalConfig.getList("rule(" + i + ")[@network]"),
-    												 finalConfig.getList("rule(" + i + ")[@hostname]"));
-                _rules[i] = rule;
-            }
+            _default = Result.ABSTAIN;
         }
+        else if (defaultAction.equalsIgnoreCase(FirewallRule.ALLOW))
+        {
+            _default = Result.ALLOWED;
+        }
+        else
+        {
+            _default = Result.DENIED;
+        }
+
+        CompositeConfiguration finalConfig = new CompositeConfiguration(firewallConfiguration.getConfiguration());
+        List subFiles = firewallConfiguration.getConfiguration().getList("xml[@fileName]");
+        for (Object subFile : subFiles)
+        {
+            finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
+        }
+
+        // all rules must have an access attribute
+        int numRules = finalConfig.getList("rule[@access]").size();
+        _rules = new FirewallRule[numRules];
+        for (int i = 0; i < numRules; i++)
+        {
+            FirewallRule rule = new FirewallRule(finalConfig.getString("rule(" + i + ")[@access]"),
+                                                 finalConfig.getList("rule(" + i + ")[@network]"),
+                                                 finalConfig.getList("rule(" + i + ")[@hostname]"));
+            _rules[i] = rule;
+        }
+
     }
 }

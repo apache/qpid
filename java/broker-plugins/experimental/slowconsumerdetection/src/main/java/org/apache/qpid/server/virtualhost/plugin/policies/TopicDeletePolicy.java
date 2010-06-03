@@ -46,7 +46,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         {
             TopicDeletePolicyConfiguration config =
                     configuration.getConfiguration(TopicDeletePolicyConfiguration.class);
-            
+
             TopicDeletePolicy policy = new TopicDeletePolicy();
             policy.configure(config);
             return policy;
@@ -126,11 +126,6 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         }
 
         return false;
-    }
-
-    public boolean isConfigured()
-    {
-        return _configuration != null;
     }
 
     public void configure(ConfigurationPlugin config) throws ConfigurationException
