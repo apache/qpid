@@ -79,16 +79,18 @@ class ExceptionWrapper:
         except Exception, e:
             raise Exception("%s: %s" %(self.msg, str(e)))
 
-def error_line(filename):
-    """Get the last line of filename for error messages"""
-    result = ""
+def error_line(filename, n=1):
+    """Get the last n line(s) of filename for error messages"""
+    result = []
     try:
         f = open(filename)
         try:
-            for l in f: result = ": " + l
+            for l in f:
+                if len(result) == n:  result.pop(0)
+                result.append("\n    "+l)
         finally: f.close()
     except: return ""
-    return result
+    return ":" + "".join(result)
 
 def retry(function, timeout=10, delay=.01):
     """Call function until it returns True or timeout expires.
@@ -380,10 +382,12 @@ class Broker(Popen):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
         if not retry(self.log_ready):
-            raise Exception("Timed out waiting for broker %s" % self.name)
+            raise Exception(
+                "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,4)))
         # Make a connection, this will wait for extended cluster init to finish.
         try: self.connect(**kwargs).close()
-        except: raise RethrownException("Broker %s failed ready test"%self.name)
+        except: raise RethrownException(
+            "Broker %s failed ready test%s"%(self.name,error_line(self.log,4)))
 
     def store_state(self):
         uuids = open(os.path.join(self.datadir, "cluster", "store.status")).readlines()
@@ -407,7 +411,7 @@ class Cluster:
         self.args = copy(args)
         self.args += [ "--cluster-name", "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
         self.args += [ "--log-enable=info+", "--log-enable=debug+:cluster"]
-        assert BrokerTest.cluster_lib
+        assert BrokerTest.cluster_lib, "Cannot locate cluster plug-in"
         self.args += [ "--load-module", BrokerTest.cluster_lib ]
         self.start_n(count, expect=expect, wait=wait)
 
@@ -477,7 +481,7 @@ class BrokerTest(TestCase):
         if (wait):
             try: b.ready()
             except Exception, e:
-                raise Exception("Failed to start broker %s(%s): %s" % (b.name, b.log, e))
+                raise RethrownException("Failed to start broker %s(%s): %s" % (b.name, b.log, e))
         return b
 
     def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait=True):
