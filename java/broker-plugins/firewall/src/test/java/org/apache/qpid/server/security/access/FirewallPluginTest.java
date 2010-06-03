@@ -27,7 +27,7 @@ import java.net.InetSocketAddress;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.plugins.Firewall;
 import org.apache.qpid.server.security.access.plugins.FirewallConfiguration;
@@ -73,18 +73,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
     }
 
     // IP address
-    private String _address;
-
-    @Override
-    public void setUp() throws Exception
-    {
-        super.setUp();
-        
-        _address = "127.0.0.1";
-
-        // Create new ApplicationRegistry
-        ApplicationRegistry.getInstance();
-    }
+    private String _address= "127.0.0.1";
 
 
     private Firewall initialisePlugin(String defaultAction, RuleInfo[] rules) throws IOException, ConfigurationException
@@ -93,7 +82,6 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         File confFile = File.createTempFile(getClass().getSimpleName()+"conffile", null);
         confFile.deleteOnExit();
         BufferedWriter buf = new BufferedWriter(new FileWriter(confFile));
-        buf.write("<security>\n");
         buf.write("<firewall default-action=\""+defaultAction+"\">\n");
         if (rules != null)
         {
@@ -113,7 +101,6 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
             }
         }
         buf.write("</firewall>");
-        buf.write("</security>\n");
         buf.close();
         
         // Configure plugin

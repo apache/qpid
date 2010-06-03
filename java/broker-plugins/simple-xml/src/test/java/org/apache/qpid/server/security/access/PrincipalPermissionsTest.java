@@ -32,8 +32,9 @@ import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.config.PrincipalPermissions;
 import org.apache.qpid.server.security.access.config.PrincipalPermissions.Permission;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-public class PrincipalPermissionsTest extends TestCase
+public class PrincipalPermissionsTest extends InternalBrokerBaseCase
 {
     private String _user = "user";
     private PrincipalPermissions _perms;
@@ -49,21 +50,18 @@ public class PrincipalPermissionsTest extends TestCase
     private boolean _autoDelete = false;
     private AMQShortString _exchangeType = new AMQShortString("direct");
     private DirectExchange _exchange;
-    private VirtualHost _virtualHost;
     private AMQShortString _owner = new AMQShortString(this.getClass().getName() + "owner");
     private Boolean _temporary = false;
     private Boolean _ownQueue = false;
 
     @Override
-    public void setUp()
+    public void setUp() throws Exception
     {
-        //Highlight that this test will cause a new AR to be created
-        ApplicationRegistry.getInstance();
+        super.setUp();
 
         _perms = new PrincipalPermissions(_user);
         try
         {
-            _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
             _exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, _durable, _ticket, _autoDelete);
             AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, false, _virtualHost, _arguments);
             AMQQueueFactory.createAMQQueueImpl(_tempQueueName, false, _owner , true, false, _virtualHost, _arguments);
@@ -72,13 +70,6 @@ public class PrincipalPermissionsTest extends TestCase
         {
             fail(e.getMessage());
         }
-    }
-
-    @Override
-    protected void tearDown() throws Exception
-    {
-        //Ensure we close the opened Registry
-        ApplicationRegistry.remove();
     }
 
 
