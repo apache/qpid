@@ -25,19 +25,16 @@
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/types/Variant.h>
-#include <qpid/sys/Time.h>
 
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <ctime>
 
 #include "OptionParser.h"
 
 using namespace qpid::messaging;
 using namespace qpid::types;
-using qpid::sys::AbsTime;
-using qpid::sys::now;
-using qpid::sys::TIME_INFINITE;
 
 typedef std::vector<std::string> string_vector;
 
@@ -152,8 +149,11 @@ int main(int argc, char** argv)
                 message.setContent(options.content);
                 message.setContentType("text/plain");
             }
-            AbsTime end(now(), options.timeout * qpid::sys::TIME_SEC);
-            for (int count = 0; (count < options.count || options.count == 0) && (options.timeout == 0 || end > now()); count++) {
+            std::time_t start = std::time(0);
+            for (int count = 0; 
+                (count < options.count || options.count == 0) && 
+                (options.timeout == 0 || std::difftime(std::time(0), start) < options.timeout); 
+                count++) {
                 if (!options.replyto.empty()) message.setReplyTo(Address(options.replyto));
                 std::string id = options.id.empty() ? Uuid(true).str() : options.id;
                 std::stringstream spoutid;
