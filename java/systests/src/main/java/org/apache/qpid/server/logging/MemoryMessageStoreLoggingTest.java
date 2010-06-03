@@ -76,7 +76,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
     {
         assertLoggingNotYetOccured(MESSAGES_STORE_PREFIX);
 
-        startBroker();
+        super.setUp();
 
         List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
 
@@ -92,9 +92,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         results = _monitor.waitAndFindMatches("MST-1001", DEFAULT_LOG_WAIT);
 
         // Load VirtualHost list from file.
-        ServerConfiguration configuration = new ServerConfiguration(_configFile);
-        configuration.initialise();
-        List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
+        List<String> vhosts = Arrays.asList(_serverConfiguration.getVirtualHosts());
 
         assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
@@ -107,7 +105,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
             String vhostName = AbstractTestLogSubject.getSlice("vh", result).substring(1);
 
             // Get the store class used in the configuration for the virtualhost.
-            String fullStoreName = configuration.getVirtualHostConfig(vhostName).getMessageStoreClass();
+            String fullStoreName = _serverConfiguration.getVirtualHostConfig(vhostName).getMessageStoreClass();
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
@@ -142,7 +140,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
     {
         assertLoggingNotYetOccured(MESSAGES_STORE_PREFIX);
 
-        startBroker();
+        super.setUp();
 
         //Stop the broker so we get the close messages.
         stopBroker();
