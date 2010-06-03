@@ -56,9 +56,6 @@
             </principal-database>
         </principal-databases>
 
-        <access>
-            <class>org.apache.qpid.server.security.access.plugins.AllowAll</class>
-        </access>
         <jmx>
             <access>${passwordDir}/jmxremote.access</access>
             <principal-database>passwordfile</principal-database>

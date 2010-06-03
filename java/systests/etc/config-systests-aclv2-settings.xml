@@ -21,9 +21,6 @@
  -->
 <broker>
 	<security>
-		<access>
-			<class>org.apache.qpid.server.security.access.plugins.AccessControl</class>
-		</access>
 		<aclv2>${QPID_HOME}/etc/global-default.txt</aclv2>
 	</security>
 

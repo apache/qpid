@@ -80,10 +80,6 @@
             </principal-database>
         </principal-databases>
 
-        <access>
-            <class>org.apache.qpid.server.security.access.plugins.AllowAll</class>
-        </access>
-        
         <msg-auth>false</msg-auth>
         
         <jmx>
