@@ -117,9 +117,18 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
         if (config != null)
         {
             _logger.info("Retrieved Queue(" + q.getName() + ") Config:" + config);
-            if ((config.getMessageCount() != 0 && q.getMessageCount() >= config.getMessageCount()) ||
-                    (config.getDepth() != 0 && q.getQueueDepth() >= config.getDepth()) ||
-                    (config.getMessageAge() != 0 && q.getOldestMessageArrivalTime() >= config.getMessageAge()))
+
+            int count = q.getMessageCount();
+
+            // First Check message counts
+            if ((config.getMessageCount() != 0 && count >= config.getMessageCount()) ||
+                // The check queue depth
+                (config.getDepth() != 0 && q.getQueueDepth() >= config.getDepth()) ||
+                // finally if we have messages on the queue check Arrival time.
+                // We must check count as OldestArrival time is Long.MAX_LONG when
+                // there are no messages.
+                (config.getMessageAge() != 0 &&
+                 ((count > 0) && q.getOldestMessageArrivalTime() >= config.getMessageAge())))
             {
                 
                 if (_logger.isDebugEnabled())
