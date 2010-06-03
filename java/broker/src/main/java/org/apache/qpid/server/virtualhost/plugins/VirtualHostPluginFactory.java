@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public interface VirtualHostPluginFactory
 {
-    public VirtualHostHouseKeepingPlugin newInstance(VirtualHost vhost) throws ConfigurationException;
+    public VirtualHostHouseKeepingPlugin newInstance(VirtualHost vhost);
 }

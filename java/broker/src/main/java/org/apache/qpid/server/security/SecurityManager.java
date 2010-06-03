@@ -22,14 +22,18 @@ import static org.apache.qpid.server.security.access.ObjectType.*;
 import static org.apache.qpid.server.security.access.Operation.*;
 
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -56,6 +60,39 @@ public class SecurityManager
     private Map<String, SecurityPluginFactory> _pluginFactories = new HashMap<String, SecurityPluginFactory>();
     private Map<String, SecurityPlugin> _globalPlugins = new HashMap<String, SecurityPlugin>();
     private Map<String, SecurityPlugin> _hostPlugins = new HashMap<String, SecurityPlugin>();
+
+    public static class SecurityConfiguration extends ConfigurationPlugin
+    {
+        public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
+        {
+            public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
+            {
+                ConfigurationPlugin instance = new SecurityConfiguration();
+                instance.setConfiguration(path, config);
+                return instance;
+            }
+
+            public List<String> getParentPaths()
+            {
+                return Arrays.asList("security", "virtualhosts.virtualhost.security");
+            }
+        };
+
+        @Override
+        public String[] getElementsProcessed()
+        {
+            return new String[]{"security"};
+        }
+
+        public void validateConfiguration() throws ConfigurationException
+        {
+            if (_configuration.isEmpty())
+            {
+                throw new ConfigurationException("security section is incomplete, no elements found.");
+            }
+        }
+    }
+
 
     public SecurityManager(SecurityManager parent) throws ConfigurationException
     {
@@ -116,12 +153,18 @@ public class SecurityManager
     public Map<String, SecurityPlugin> configurePlugins(ConfigurationPlugin hostConfig) throws ConfigurationException
     {
         Map<String, SecurityPlugin> plugins = new HashMap<String, SecurityPlugin>();
-        for (SecurityPluginFactory<?> factory : _pluginFactories.values())
+        SecurityConfiguration securityConfig = hostConfig.getConfiguration(SecurityConfiguration.class);
+
+        // If we have no security Configuration then there is nothing to configure.        
+        if (securityConfig != null)
         {
-            SecurityPlugin plugin = factory.newInstance(hostConfig);
-            if (plugin.isConfigured())
+            for (SecurityPluginFactory<?> factory : _pluginFactories.values())
             {
-                plugins.put(factory.getPluginName(), plugin);
+                SecurityPlugin plugin = factory.newInstance(securityConfig);
+                if (plugin != null)
+                {
+                    plugins.put(factory.getPluginName(), plugin);
+                }
             }
         }
         return plugins;

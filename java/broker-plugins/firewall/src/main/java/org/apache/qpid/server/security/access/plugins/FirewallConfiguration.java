@@ -23,14 +23,20 @@ package org.apache.qpid.server.security.access.plugins;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.security.Result;
+import org.apache.qpid.server.security.access.config.FirewallRule;
 
 public class FirewallConfiguration extends ConfigurationPlugin
 {
-    public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory() 
+    CompositeConfiguration _finalConfig;
+
+    public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
     {
         public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
         {
@@ -41,17 +47,55 @@ public class FirewallConfiguration extends ConfigurationPlugin
 
         public List<String> getParentPaths()
         {
-            return Arrays.asList("security", "virtualhosts.virtualhost.security");
+            return Arrays.asList("security.firewall", "virtualhosts.virtualhost.security.firewall");
         }
     };
 
     public String[] getElementsProcessed()
     {
-        return new String[] { "firewall" };
+        return new String[] { "" };
     }
 
     public Configuration getConfiguration()
     {
-        return _configuration.subset("firewall");
+        return _finalConfig;
     }
+
+    public Result getDefaultAction()
+    {
+        String defaultAction = _configuration.getString("[@default-action]");
+        if (defaultAction == null)
+        {
+            return Result.ABSTAIN;
+        }
+        else if (defaultAction.equalsIgnoreCase(FirewallRule.ALLOW))
+        {
+            return Result.ALLOWED;
+        }
+        else
+        {
+            return Result.DENIED;
+        }
+    }
+
+
+
+    @Override
+    public void validateConfiguration() throws ConfigurationException
+    {
+        // Valid Configuration either has xml links to new files
+        _finalConfig = new CompositeConfiguration(_configuration);
+        List subFiles = _configuration.getList("xml[@fileName]");
+        for (Object subFile : subFiles)
+        {
+            _finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
+        }
+
+        // all rules must have an access attribute
+        if (_finalConfig.getList("rule[@access]").size() == 0)
+        {
+            throw new ConfigurationException("No rules found in firewall configuration.");
+        }
+    }
+
 }

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +28,9 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.security.access.config.ConfigurationFile;
+import org.apache.qpid.server.security.access.config.PlainConfiguration;
+import org.apache.qpid.server.security.access.config.RuleSet;
 
 public class AccessControlConfiguration extends ConfigurationPlugin
 {
@@ -41,17 +45,39 @@ public class AccessControlConfiguration extends ConfigurationPlugin
 
         public List<String> getParentPaths()
         {
-            return Arrays.asList("security", "virtualhosts.virtualhost.security");
+            return Arrays.asList("security.aclv2", "virtualhosts.virtualhost.security.aclv2");
         }
     };
 
+    private RuleSet _ruleSet;
+
     public String[] getElementsProcessed()
     {
-        return new String[] { "aclv2" };
+        return new String[] { "" };
     }
 
     public String getFileName()
     {
-        return _configuration.getString("aclv2");
+        return _configuration.getString("");
     }
+
+    public void validateConfiguration() throws ConfigurationException
+    {
+        String filename = getFileName();
+        if (filename == null)
+        {
+            throw new ConfigurationException("No ACL file name specified");
+        }
+
+        File aclFile = new File(filename);
+        
+        ConfigurationFile configFile = new PlainConfiguration(aclFile);
+        _ruleSet = configFile.load();
+    }
+
+    public RuleSet getRuleSet()
+    {
+        return _ruleSet;
+    }
+
 }

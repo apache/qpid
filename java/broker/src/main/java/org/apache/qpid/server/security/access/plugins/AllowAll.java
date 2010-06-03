@@ -36,7 +36,7 @@ public class AllowAll extends BasicPlugin
         {
             public List<String> getParentPaths()
             {
-                return Arrays.asList("security", "virtualhosts.virtualhost.security");
+                return Arrays.asList("security.allow-all", "virtualhosts.virtualhost.security.allow-all");
             }
 
             public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
@@ -49,16 +49,33 @@ public class AllowAll extends BasicPlugin
         
         public String[] getElementsProcessed()
         {
-            return new String[] { "allow-all" };
+            return new String[] { "" };
         }
+
+        public void validateConfiguration() throws ConfigurationException
+        {
+            if (!_configuration.isEmpty())
+            {
+                throw new ConfigurationException("allow-all section takes no elements.");
+            }
+        }
+
     }
     
     public static final SecurityPluginFactory<AllowAll> FACTORY = new SecurityPluginFactory<AllowAll>()
     {
-        public AllowAll newInstance(ConfigurationPlugin config) throws ConfigurationException
+        public AllowAll newInstance(ConfigurationPlugin config) throws ConfigurationException                    
         {
+            AllowAllConfiguration configuration = config.getConfiguration(AllowAllConfiguration.class);
+
+            // If there is no configuration for this plugin then don't load it.
+            if (configuration == null)
+            {
+                return null;
+            }
+
             AllowAll plugin = new AllowAll();
-            plugin.configure(config);
+            plugin.configure(configuration);
             return plugin;
         }
 
@@ -79,8 +96,4 @@ public class AllowAll extends BasicPlugin
 		return Result.ALLOWED;
     }
 
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
-    {
-        _config = config.getConfiguration(AllowAllConfiguration.class);
-    }    
 }

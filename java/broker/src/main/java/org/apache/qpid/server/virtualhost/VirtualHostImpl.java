@@ -308,11 +308,7 @@ public class VirtualHostImpl implements VirtualHost
 
                         _logger.info("Loaded VirtualHostPlugin:" + plugin);
                     }
-                    catch (IllegalArgumentException iae)
-                    {
-                        _logger.warn("VirtualHostPlugin:" + pluginName + " has not been configured for this virtualhost(" + getName() + ")");
-                    }
-                    catch (Exception e)
+                    catch (RuntimeException e)
                     {
                         _logger.error("Unable to load VirtualHostPlugin:" + pluginName + " due to:" + e.getMessage(), e);
                     }

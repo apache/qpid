@@ -38,32 +38,24 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
 
     public static class SlowConsumerFactory implements VirtualHostPluginFactory
     {
-        public Class<SlowConsumerDetection> getPluginClass()
+        public SlowConsumerDetection newInstance(VirtualHost vhost)
         {
-            return SlowConsumerDetection.class;
-        }
+            SlowConsumerDetectionConfiguration config = vhost.getConfiguration().getConfiguration(SlowConsumerDetectionConfiguration.class);
 
-        public String getPluginName()
-        {
-            return SlowConsumerDetection.class.getName();
-        }
+            if (config == null)
+            {
+                return null;
+            }
 
-        public SlowConsumerDetection newInstance(VirtualHost vhost) throws ConfigurationException
-        {
             SlowConsumerDetection plugin = new SlowConsumerDetection(vhost);
-            plugin.configure(vhost.getConfiguration());
+            plugin.configure(config);
             return plugin;
         }
     }
 
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config)
     {        
-        _config = config.getConfiguration(SlowConsumerDetectionConfiguration.class);
-        
-        if (_config == null)
-        {
-            throw new IllegalArgumentException("Plugin has not been configured");
-        }
+        _config = (SlowConsumerDetectionConfiguration) config;
     }
     
     public SlowConsumerDetection(VirtualHost vhost)

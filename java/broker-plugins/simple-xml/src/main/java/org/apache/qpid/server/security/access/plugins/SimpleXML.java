@@ -76,7 +76,7 @@ public class SimpleXML extends AbstractPlugin
         }
     };
 
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config)
     {
         super.configure(config);
 

@@ -36,7 +36,7 @@ public class DenyAll extends BasicPlugin
         {
             public List<String> getParentPaths()
             {
-                return Arrays.asList("security", "virtualhosts.virtualhost.security");
+                return Arrays.asList("security.deny-all", "virtualhosts.virtualhost.security.deny-all");
             }
 
             public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
@@ -49,16 +49,33 @@ public class DenyAll extends BasicPlugin
         
         public String[] getElementsProcessed()
         {
-            return new String[] { "deny-all" };
+            return new String[] { "" };
         }
+
+        public void validateConfiguration() throws ConfigurationException
+        {
+            if (!_configuration.isEmpty())
+            {
+                throw new ConfigurationException("deny-all section takes no elements.");
+            }
+        }
+
     }
     
     public static final SecurityPluginFactory<DenyAll> FACTORY = new SecurityPluginFactory<DenyAll>()
     {
         public DenyAll newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
+            DenyAllConfiguration configuration = config.getConfiguration(DenyAllConfiguration.class);
+
+            // If there is no configuration for this plugin then don't load it.
+            if (configuration == null)
+            {
+                return null;
+            }
+
             DenyAll plugin = new DenyAll();
-            plugin.configure(config);
+            plugin.configure(configuration);
             return plugin;
         }
 
@@ -77,11 +94,6 @@ public class DenyAll extends BasicPlugin
 	public Result getDefault()
 	{
 		return Result.DENIED;
-    }
-
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
-    {
-        _config = config.getConfiguration(DenyAllConfiguration.class);
     }
 
 }
