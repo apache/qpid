@@ -58,7 +58,7 @@ public class InternalBrokerBaseCase extends TestCase
     protected AMQShortString QUEUE_NAME;
     protected ServerConfiguration _configuration;
     protected XMLConfiguration _configXml = new XMLConfiguration();
-    private boolean _started = false;
+    protected boolean _started = false;
 
     public void setUp() throws Exception
     {

@@ -20,7 +20,13 @@
  */
 package org.apache.qpid.server.logging;
 
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
@@ -34,18 +40,65 @@ public class AbstractTestLogging extends QpidBrokerTestCase
 {
     public static final long DEFAULT_LOG_WAIT = 2000;
     protected LogMonitor _monitor;
+    ServerConfiguration _serverConfiguration;
+
+    InternalBrokerBaseCase _configLoader;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
         _monitor = new LogMonitor(_outputFile);
+
+        if (isExternalBroker())
+        {
+            _serverConfiguration = new ServerConfiguration(_configFile);
+
+            _configLoader = new InternalBrokerBaseCase()
+            {
+                @Override
+                protected void createBroker() throws Exception
+                {
+                    _started = true;
+                    CurrentActor.set(new TestLogActor(new StartupRootMessageLogger()));
+
+                    // Prevent the InVM broker from logging and spoiling tests.
+                    _serverConfiguration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "off");
+
+                    _configuration = _serverConfiguration;
+                    _registry = new TestApplicationRegistry(_configuration);
+                    ApplicationRegistry.initialise(_registry);
+
+                }
+
+                @Override
+                protected void stopBroker()
+                {
+                    ApplicationRegistry.remove();
+                }
+            };
+
+            // Set the test name as this will be used to define some default queues
+            // VirtualHost, use test as this is a default vhost name.
+            _configLoader.setName("test");
+
+            _configLoader.setUp();
+        }
+        else
+        {
+            _serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
+        }
+
     }
 
     @Override
     public void tearDown() throws Exception
     {
         _monitor.close();
+        if (isExternalBroker() && _configLoader != null)
+        {
+            _configLoader.tearDown();
+        }
         super.tearDown();
     }
 

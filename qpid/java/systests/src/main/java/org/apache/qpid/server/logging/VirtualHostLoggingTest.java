@@ -27,6 +27,7 @@ import java.util.List;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
  * Virtualhost Test Cases
@@ -68,10 +69,7 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         
         try
         {
-            // Load VirtualHost list from file. 
-            ServerConfiguration configuration = new ServerConfiguration(_configFile);
-            configuration.initialise();
-            List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
+            List<String> vhosts = Arrays.asList(_serverConfiguration.getVirtualHosts());
 
             assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
