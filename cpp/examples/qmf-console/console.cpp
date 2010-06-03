@@ -81,6 +81,7 @@ int main_int(int /*argc*/, char** /*argv*/)
     Broker* broker;
 
     broker = sm.addBroker(settings);
+    broker->waitForStable();
 
     cout << "Package List:" << endl;
     vector<string> packages;
