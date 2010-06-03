@@ -303,10 +303,14 @@ public class VirtualHostImpl implements VirtualHost
                     {
                         VirtualHostPlugin plugin = plugins.get(pluginName).newInstance(this);
 
-                        _houseKeepingTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
-                                                       plugin.getDelay(), plugin.getTimeUnit());
+                        // If we had configuration for the plugin the schedule it.
+                        if (plugin != null)
+                        {
+                            _houseKeepingTasks.scheduleAtFixedRate(plugin, plugin.getDelay() / 2,
+                                                           plugin.getDelay(), plugin.getTimeUnit());
 
-                        _logger.info("Loaded VirtualHostPlugin:" + plugin);
+                            _logger.info("Loaded VirtualHostPlugin:" + plugin);
+                        }
                     }
                     catch (RuntimeException e)
                     {
