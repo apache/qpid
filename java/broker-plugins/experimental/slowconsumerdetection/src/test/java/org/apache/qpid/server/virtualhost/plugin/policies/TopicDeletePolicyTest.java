@@ -34,7 +34,6 @@ import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.test.utils.QpidTestCase;
 
 public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 {
@@ -97,8 +96,6 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
         ((AMQChannel) queue.getExclusiveOwningSession()).getProtocolSession().addSessionCloseTask(deleteQueueTask);
     }
 
-
-
     /** Check that a null queue passed in does not upset the policy. */
     public void testNullQueueParameter() throws ConfigurationException
     {
@@ -120,7 +117,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * Set a owning Session to null which means this is not an exclusive queue
      * so the queue should not be deleted
      */
-    public void testNonExclusiveQueue() throws ConfigurationException
+    public void testNonExclusiveQueue()
     {
         TopicDeletePolicy policy = new TopicDeletePolicy();
         policy.configure(_config);
@@ -141,7 +138,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      *
      * JMS Queues are not to be processed so this should not delete the queue.
      */
-    public void testQueuesAreNotProcessed() throws ConfigurationException
+    public void testQueuesAreNotProcessed()
     {
         TopicDeletePolicy policy = new TopicDeletePolicy();
         policy.configure(_config);
@@ -156,12 +153,11 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
         assertFalse("Connection should not be closed", _connection.isClosed());
     }
 
-
     /**
      * Give a non auto-delete queue is bound to the topic exchange the
      * TopicDeletePolicy will close the connection and delete the queue,
      */
-    public void testNonAutoDeleteTopicIsNotClosed() throws ConfigurationException
+    public void testNonAutoDeleteTopicIsNotClosed()
     {
         TopicDeletePolicy policy = new TopicDeletePolicy();
         policy.configure(_config);
@@ -182,7 +178,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * Give a auto-delete queue bound to the topic exchange the TopicDeletePolicy will
      * close the connection and delete the queue
      */
-    public void testTopicIsClosed() throws ConfigurationException
+    public void testTopicIsClosed()
     {
         TopicDeletePolicy policy = new TopicDeletePolicy();
         policy.configure(_config);
@@ -203,7 +199,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * Give a queue bound to the topic exchange the TopicDeletePolicy will
      * close the connection and NOT delete the queue
      */
-    public void testNonAutoDeleteTopicIsClosedNotDeleted() throws AMQException, ConfigurationException
+    public void testNonAutoDeleteTopicIsClosedNotDeleted()
     {
         TopicDeletePolicy policy = new TopicDeletePolicy();
         policy.configure(_config);
@@ -223,7 +219,7 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
      * configured with the delete-persistent tag will close the connection
      * and delete the queue
      */
-    public void testPersistentTopicIsClosedAndDeleted() throws ConfigurationException
+    public void testPersistentTopicIsClosedAndDeleted()
     {
         //Set the config to delete persistent queues
         _config.getConfig().addProperty("delete-persistent", "");
@@ -242,6 +238,56 @@ public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 
         assertTrue("Queue should be deleted", queue.isDeleted());
         assertTrue("Connection should be closed", _connection.isClosed());
+    }
+
+    /**
+     * Give a queue bound to the topic exchange the TopicDeletePolicy not
+     * configured to close a persistent queue
+     */
+    public void testPersistentTopicIsClosedAndDeletedNullConfig()
+    {
+        TopicDeletePolicy policy = new TopicDeletePolicy();
+        // Explicity say we are not configuring the policy.
+        policy.configure(null);
+
+        MockAMQQueue queue = createOwnedQueue();
+
+        queue.addBinding(new Binding(null, "bindingKey", queue, new TopicExchange(), null));
+
+        policy.performPolicy(queue);
+
+        assertFalse("Queue should not be deleted", queue.isDeleted());
+        assertTrue("Connection should be closed", _connection.isClosed());
+    }
+
+    public void testNonExclusiveQueueNullConfig()
+    {
+        _config = null;
+        testNonExclusiveQueue();
+    }
+
+    public void testQueuesAreNotProcessedNullConfig()
+    {
+        _config = null;
+        testQueuesAreNotProcessed();
+    }
+
+    public void testNonAutoDeleteTopicIsNotClosedNullConfig()
+    {
+        _config = null;
+        testNonAutoDeleteTopicIsNotClosed();
+    }
+
+    public void testTopicIsClosedNullConfig()
+    {
+        _config = null;
+        testTopicIsClosed();
+    }
+
+    public void testNonAutoDeleteTopicIsClosedNotDeletedNullConfig() throws AMQException
+    {
+        _config = null;
+        testNonAutoDeleteTopicIsClosedNotDeleted();
     }
 
 }
