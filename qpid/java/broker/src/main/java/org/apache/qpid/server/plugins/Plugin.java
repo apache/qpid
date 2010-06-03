@@ -26,9 +26,6 @@ public interface Plugin
 
     /**
      * Provide Configuration to this plugin
-     *
-     * FIXME Should not throw ConfigurationException,
-     * Only ConfigurationPlugin should throw ConfigurationException 
      */
-    public void configure(ConfigurationPlugin config) throws ConfigurationException;
+    public void configure(ConfigurationPlugin config);
 }

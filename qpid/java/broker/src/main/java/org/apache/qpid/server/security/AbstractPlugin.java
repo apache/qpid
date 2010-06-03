@@ -45,7 +45,7 @@ public abstract class AbstractPlugin implements SecurityPlugin
 
     public abstract Result authorise(Operation operation, ObjectType object, ObjectProperties properties);
 
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config)
     {
         _config = config;
     }

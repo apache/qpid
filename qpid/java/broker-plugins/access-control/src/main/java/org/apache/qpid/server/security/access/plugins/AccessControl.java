@@ -79,13 +79,6 @@ public class AccessControl extends AbstractPlugin
         return _ruleSet.getDefault();
     }
 
-    /** Parse a version two access control file. */
-    private void parseFile(File aclFile) throws ConfigurationException
-    {
-        ConfigurationFile configFile = new PlainConfiguration(aclFile);
-        _ruleSet = configFile.load();
-    }
-    
     /**
      * Object instance access authorisation.
      *
@@ -115,14 +108,12 @@ public class AccessControl extends AbstractPlugin
         return _ruleSet.check(principal.getName(), operation, objectType, properties);
     }
 
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config)
     {
         super.configure(config);
 
         AccessControlConfiguration accessConfig = (AccessControlConfiguration) _config;
 
-        String fileName = accessConfig.getFileName();
-        File aclFile = new File(fileName);
-        parseFile(aclFile);
+        _ruleSet = accessConfig.getRuleSet();
     }
 }

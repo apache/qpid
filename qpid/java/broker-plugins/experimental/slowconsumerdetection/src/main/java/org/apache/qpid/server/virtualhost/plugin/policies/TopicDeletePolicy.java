@@ -128,7 +128,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         return false;
     }
 
-    public void configure(ConfigurationPlugin config) throws ConfigurationException
+    public void configure(ConfigurationPlugin config)
     {
         _configuration = (TopicDeletePolicyConfiguration) config;
     }
