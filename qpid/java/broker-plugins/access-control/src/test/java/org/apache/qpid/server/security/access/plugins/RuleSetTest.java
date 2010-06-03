@@ -21,16 +21,15 @@
 
 package org.apache.qpid.server.security.access.plugins;
 
-import junit.framework.TestCase;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.security.access.config.RuleSet;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
  * This test checks that the {@link RuleSet} object which forms the core of the access control plugin performs correctly.
@@ -40,7 +39,7 @@ import org.apache.qpid.server.security.access.config.RuleSet;
  * access control mechanism is validated by checking whether operations would be authorised by calling the
  * {@link RuleSet#check(String, Operation, ObjectType, ObjectProperties)} method.
  */
-public class RuleSetTest extends TestCase
+public class RuleSetTest extends InternalBrokerBaseCase
 {
     private RuleSet _ruleSet;
 
@@ -50,20 +49,18 @@ public class RuleSetTest extends TestCase
     private AMQShortString _exchangeType = new AMQShortString("direct");
 
     @Override
-    public void setUp()
+    public void setUp() throws Exception
     {
-        // Each test will cause a new application registry and non-transitive rule set to be created
-        ApplicationRegistry.getInstance();
+        super.setUp();
         _ruleSet = new RuleSet();
         _ruleSet.configure(RuleSet.TRANSITIVE, Boolean.FALSE);
     }
 
     @Override
-    protected void tearDown() throws Exception
+    public void tearDown() throws Exception
     {
-        // Ensure we close the opened Registry
-        ApplicationRegistry.remove();
         _ruleSet.clear();
+        super.tearDown();
     }
 
     public void assertDenyGrantAllow(String identity, Operation operation, ObjectType objectType)

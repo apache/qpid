@@ -17,8 +17,8 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Firewall" default="build">
-    <property name="module.depends" value="common management/common broker broker-plugins" />
-    <property name="module.test.depends" value="junit-toolkit broker/test common/test" />
+    <property name="module.depends" value="common broker broker-plugins" />
+    <property name="module.test.depends" value="test broker/test common/test management/common" />
     
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />
