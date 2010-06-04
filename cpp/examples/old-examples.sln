@@ -58,10 +58,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tradedemo_topic_listener", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tradedemo_topic_publisher", "tradedemo\tradedemo_topic_publisher.vcproj", "{E614CC2C-FECA-1BAD-23CE-CD4095BD3C8B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_drain", "messaging\messaging_drain.vcproj", "{D79791E5-C593-4F23-B545-0CE72D181F2A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_spout", "messaging\messaging_spout.vcproj", "{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -144,14 +140,6 @@ Global
 		{E614CC2C-FECA-1BAD-23CE-CD4095BD3C8B}.Debug|Win32.Build.0 = Debug|Win32
 		{E614CC2C-FECA-1BAD-23CE-CD4095BD3C8B}.Release|Win32.ActiveCfg = Release|Win32
 		{E614CC2C-FECA-1BAD-23CE-CD4095BD3C8B}.Release|Win32.Build.0 = Release|Win32
-		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Debug|Win32.Build.0 = Debug|Win32
-		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Release|Win32.ActiveCfg = Release|Win32
-		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Release|Win32.Build.0 = Release|Win32
-		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Debug|Win32.Build.0 = Debug|Win32
-		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Release|Win32.ActiveCfg = Release|Win32
-		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

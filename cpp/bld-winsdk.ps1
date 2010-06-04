@@ -59,11 +59,13 @@ devenv qpid-cpp.sln /build "Release|Win32" /project docs-user-api
 devenv qpid-cpp.sln /build "Debug|Win32" /project INSTALL
 devenv qpid-cpp.sln /build "Release|Win32" /project INSTALL
 
-# This is kludgy until we have more than one entry as the array declaration syntax
+# This would be kludgy if we have only one entry as the array declaration syntax
 # can't cope with just one nested array
-$move1=('bin/boost/*','bin')
-$move=@(0)
-$move[0]=$move1
+# Target must be a directory
+$move=(
+	('bin/*.lib','lib'),
+	('bin/boost/*.dll','bin')
+)
 
 $preserve=(
 	'include/qpid/agent',
@@ -77,16 +79,12 @@ $preserve=(
 $remove=(
 	'bin/qpidd.exe', 'bin/qpidbroker*.*',
 	'bin/qmfengine*.*', 'bin/qpidxarm*.*',
-	'bin/boost_regex*.*', 'bin/boost*.lib',
+	'bin/boost_regex*.*',
 	'bin/boost',
 	'conf',
 	'examples/direct',
 	'examples/failover',
 	'examples/fanout',
-	'examples/messaging/drain.cpp',
-	'examples/messaging/spout.cpp',
-	'examples/messaging/messaging_drain.vcproj',
-	'examples/messaging/messaging_spout.vcproj',
 	'examples/pub-sub',
 	'examples/qmf-console',
 	'examples/request-response',
@@ -100,8 +98,7 @@ $remove=(
 # Move some files around in the install tree
 foreach ($pattern in $move) {
 	$target = Join-Path $install_dir $pattern[1]
-	$tparent = Split-Path -parent $target
-	New-Item -force -type directory $tparent
+	New-Item -force -type directory $target
 	Move-Item -force -path "$install_dir/$($pattern[0])" -destination "$install_dir/$($pattern[1])"
 }
 # Copy aside the files to preserve
