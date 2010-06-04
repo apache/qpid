@@ -108,7 +108,8 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
     mcastFrameHandler(cluster.getMulticast(), self),
     updateIn(c.getUpdateReceiver()),
     secureConnection(0),
-    mcastSentButNotReceived(false)
+    mcastSentButNotReceived(false),
+    inConnectionNegotiation(true)
 {
     cluster.addLocalConnection(this);
     if (isLocalClient()) {

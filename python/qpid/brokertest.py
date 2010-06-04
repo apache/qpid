@@ -87,10 +87,10 @@ def error_line(filename, n=1):
         try:
             for l in f:
                 if len(result) == n:  result.pop(0)
-                result.append("\n    "+l)
+                result.append("    "+l)
         finally: f.close()
     except: return ""
-    return ":" + "".join(result)
+    return ":\n" + "".join(result)
 
 def retry(function, timeout=10, delay=.01):
     """Call function until it returns True or timeout expires.
@@ -301,7 +301,7 @@ class Broker(Popen):
             try: self._port = int(self.stdout.readline())
             except ValueError:
                 raise Exception("Can't get port for broker %s (%s)%s" %
-                                (self.name, self.pname, error_line(self.log)))
+                                (self.name, self.pname, error_line(self.log,4)))
         return self._port
 
     def unexpected(self,msg):
