@@ -22,10 +22,12 @@
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/StrError.h"
 #include "qpid/client/Connector.h"
-
+#include "qpid/sys/Mutex.h"
 #include <boost/lexical_cast.hpp>
 
 #include <algorithm>
+#include <vector>
+#include <string>
 
 #include <string.h>
 
@@ -33,6 +35,32 @@ using namespace std;
 using boost::lexical_cast;
 
 namespace qpid {
+
+class ProtocolTags {
+  public:
+    bool find(const string& tag) {
+        sys::Mutex::ScopedLock l(lock);
+        return std::find(tags.begin(), tags.end(), tag) != tags.end();
+    }
+
+    void add(const string& tag) {
+        sys::Mutex::ScopedLock l(lock);
+        if (std::find(tags.begin(), tags.end(), tag) == tags.end())
+            tags.push_back(tag);
+    }
+
+    static ProtocolTags& instance() {
+        /** First call must be made while program is still single threaded.
+         * This will be the case since tags are registered in static initializers.
+         */
+        static ProtocolTags tags;
+        return tags;
+    }
+    
+  private:
+    sys::Mutex lock;
+    vector<string> tags;
+};
 
 Url::Invalid::Invalid(const string& s) : Exception(s) {}
 
@@ -119,9 +147,7 @@ class UrlParser {
         const char* j = std::find(i,end,':');
         if (j != end) {
             string tag(i,j);
-            if (std::find(Url::protocols.begin(), Url::protocols.end(), tag) !=
-                Url::protocols.end())
-            {
+            if (ProtocolTags::instance().find(tag)) {
                 i = j+1;
                 result = tag;
                 return true;
@@ -234,8 +260,6 @@ std::istream& operator>>(std::istream& is, Url& url) {
     return is;
 }
 
-std::vector<std::string> Url::protocols;
-
-void Url::addProtocol(const std::string& tag) { protocols.push_back(tag); }
+void Url::addProtocol(const std::string& tag) { ProtocolTags::instance().add(tag); }
 
 } // namespace qpid
