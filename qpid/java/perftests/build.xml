@@ -36,7 +36,16 @@
       <isset property="result-path"/>
     </condition>
 
-    <target name="precompile">
+    <property name="scripts.timestamp" location="${build.scratch}/perftests/scripts.timestamp" />
+
+    <target name="check_scripts_uptodate">
+      <uptodate property="scripts.notRequired" targetfile="${scripts.timestamp}">
+        <srcfiles dir="${scripts.dir}" includes="**.sh" />
+        <srcfiles dir="${project.root}/perftests/" includes="scripts.xml" />
+      </uptodate>
+    </target>
+
+    <target name="precompile" depends="check_scripts_uptodate" unless="scripts.notRequired">
       <mkdir dir="${scripts.dir}"/>
       <jython path="${mllib.dir}">
         <args>
@@ -45,6 +54,7 @@
           <arg value="${scripts.dir}"/>
         </args>
       </jython>
+        <touch file="${scripts.timestamp}" />
     </target>
 
     <target name="all-tests" depends="all-queue-tests,all-topic-tests"/>
