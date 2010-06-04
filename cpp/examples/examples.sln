@@ -26,15 +26,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_map_receiver", "m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_map_sender", "messaging\messaging_map_sender.vcproj", "{3B9EA507-FECA-1BAD-1FEE-AE349A6B75AA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_queue_receiver", "messaging\messaging_queue_receiver.vcproj", "{64932FB7-FECA-1BAD-1FEE-AE349A6B75AA}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_queue_sender", "messaging\messaging_queue_sender.vcproj", "{2668EEDD-FECA-1BAD-1FEE-AE349A6B75AA}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_server", "messaging\messaging_server.vcproj", "{E0A50687-FECA-1BAD-1FEE-AE349A6B75AA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_topic_receiver", "messaging\messaging_topic_receiver.vcproj", "{64979B71-FECA-1BAD-1FEE-AE349A6B75AA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_drain", "messaging\messaging_drain.vcproj", "{D79791E5-C593-4F23-B545-0CE72D181F2A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_topic_sender", "messaging\messaging_topic_sender.vcproj", "{E068EA69-FECA-1BAD-1FEE-AE349A6B75AA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "messaging_spout", "messaging\messaging_spout.vcproj", "{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,26 +50,18 @@ Global
 		{3B9EA507-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.Build.0 = Debug|Win32
 		{3B9EA507-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.ActiveCfg = Release|Win32
 		{3B9EA507-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.Build.0 = Release|Win32
-		{64932FB7-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{64932FB7-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.Build.0 = Debug|Win32
-		{64932FB7-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.ActiveCfg = Release|Win32
-		{64932FB7-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.Build.0 = Release|Win32
-		{2668EEDD-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{2668EEDD-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.Build.0 = Debug|Win32
-		{2668EEDD-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.ActiveCfg = Release|Win32
-		{2668EEDD-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.Build.0 = Release|Win32
 		{E0A50687-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.ActiveCfg = Debug|Win32
 		{E0A50687-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.Build.0 = Debug|Win32
 		{E0A50687-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.ActiveCfg = Release|Win32
 		{E0A50687-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.Build.0 = Release|Win32
-		{64979B71-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{64979B71-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.Build.0 = Debug|Win32
-		{64979B71-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.ActiveCfg = Release|Win32
-		{64979B71-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.Build.0 = Release|Win32
-		{E068EA69-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E068EA69-FECA-1BAD-1FEE-AE349A6B75AA}.Debug|Win32.Build.0 = Debug|Win32
-		{E068EA69-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.ActiveCfg = Release|Win32
-		{E068EA69-FECA-1BAD-1FEE-AE349A6B75AA}.Release|Win32.Build.0 = Release|Win32
+		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Debug|Win32.Build.0 = Debug|Win32
+		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Release|Win32.ActiveCfg = Release|Win32
+		{D79791E5-C593-4F23-B545-0CE72D181F2A}.Release|Win32.Build.0 = Release|Win32
+		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Debug|Win32.Build.0 = Debug|Win32
+		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Release|Win32.ActiveCfg = Release|Win32
+		{D3115AC9-91C4-4D79-BCAC-DE837C70F1EA}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
