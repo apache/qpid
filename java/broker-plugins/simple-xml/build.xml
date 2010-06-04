@@ -18,7 +18,7 @@
  -->
 <project name="Qpid Broker-Plugins Simple XML" default="build">
     <property name="module.depends" value="common broker broker-plugins" />
-    <property name="module.test.depends" value="test broker/test common/test management/common" />
+    <property name="module.test.depends" value="test broker/test common/test management/common systests" />
     
     <property name="module.manifest" value="MANIFEST.MF" />
     <property name="module.plugin" value="true" />

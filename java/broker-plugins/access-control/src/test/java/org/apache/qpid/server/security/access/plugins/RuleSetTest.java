@@ -21,7 +21,6 @@
 
 package org.apache.qpid.server.security.access.plugins;
 
-
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -29,7 +28,7 @@ import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.security.access.config.RuleSet;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * This test checks that the {@link RuleSet} object which forms the core of the access control plugin performs correctly.
@@ -39,7 +38,7 @@ import org.apache.qpid.server.util.InternalBrokerBaseCase;
  * access control mechanism is validated by checking whether operations would be authorised by calling the
  * {@link RuleSet#check(String, Operation, ObjectType, ObjectProperties)} method.
  */
-public class RuleSetTest extends InternalBrokerBaseCase
+public class RuleSetTest extends QpidTestCase
 {
     private RuleSet _ruleSet;
 
@@ -52,6 +51,7 @@ public class RuleSetTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
+
         _ruleSet = new RuleSet();
         _ruleSet.configure(RuleSet.TRANSITIVE, Boolean.FALSE);
     }
