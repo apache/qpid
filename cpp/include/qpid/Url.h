@@ -82,8 +82,6 @@ struct Url : public std::vector<Address> {
     QPID_COMMON_EXTERN std::string getPass() const;
 
   private:
-    static std::vector<std::string> protocols;
-
     mutable std::string cache;  // cache string form for efficiency.
     std::string user, pass;
 
