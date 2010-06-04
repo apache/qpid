@@ -123,7 +123,7 @@ template <>
 inline bool FieldValue::convertsTo<std::string>() const { return data->convertsToString(); }
 
 template <>
-inline int FieldValue::get<int>() const { return data->getInt(); }
+inline int FieldValue::get<int>() const { return static_cast<int>(data->getInt()); }
 
 template <>
 inline int64_t FieldValue::get<int64_t>() const { return data->getInt(); }
