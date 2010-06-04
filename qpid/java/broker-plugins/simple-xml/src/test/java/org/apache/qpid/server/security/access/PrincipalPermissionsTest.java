@@ -18,24 +18,16 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.server.security.access;
-
-import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.config.PrincipalPermissions;
 import org.apache.qpid.server.security.access.config.PrincipalPermissions.Permission;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class PrincipalPermissionsTest extends InternalBrokerBaseCase
+public class PrincipalPermissionsTest extends QpidTestCase
 {
     private String _user = "user";
     private PrincipalPermissions _perms;
@@ -120,10 +112,8 @@ public class PrincipalPermissionsTest extends InternalBrokerBaseCase
 
     public void testPublish() throws AMQException
     {
-        DirectExchange exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, false, 1, _autoDelete);    
-
         String[] authArgs = new String[]{_exchangeName.asString(), _routingKey.asString()};
-        Object[] grantArgs = new Object[]{exchange.getNameShortString(), _routingKey};
+        Object[] grantArgs = new Object[]{_exchangeName, _routingKey};
 
         assertEquals(Result.DENIED, _perms.authorise(Permission.PUBLISH, authArgs));
         _perms.grant(Permission.PUBLISH, grantArgs);
