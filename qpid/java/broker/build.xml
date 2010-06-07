@@ -118,7 +118,8 @@
             <fileset dir="${basedir}/../common/bin"/>
         </copy>
         <chmod dir="${module.release}/bin" perm="ugo+rx" includes="**/*"/>
-
+        <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="unix"/>
+        <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="dos" includes="*.bat"/>
     </target>
 
     <target name="release-bin" depends="release-bin-tasks"/>
