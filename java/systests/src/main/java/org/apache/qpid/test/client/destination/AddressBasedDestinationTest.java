@@ -24,7 +24,6 @@ package org.apache.qpid.test.client.destination;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -269,9 +268,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                              "type: topic, " +
                              "x-declare: " +
                              "{ " + 
-                                 "auto-delete: true," +
-                                 "'qpid.msg_sequence': 1," +
-                                 "'qpid.ive': 1," + 
+                                 "type:direct, " + 
+                                 "auto-delete: true, " +
+                                 "'qpid.msg_sequence': 1, " +
+                                 "'qpid.ive': 1" + 
                              "}" +
                         "}" +
                       "}";
@@ -355,7 +355,17 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
      * 
      * Acks the 10th message and verifies we receive the rest of the msgs.
      */
-    public void testLinkCapacity() throws Exception
+    public void testCapacity() throws Exception
+    {
+        verifyCapacity("ADDR:my-queue; {create: always, link:{capacity: 10}}");
+    }
+    
+    public void testSourceAndTargetCapacity() throws Exception
+    {
+        verifyCapacity("ADDR:my-queue; {create: always, link:{capacity: {source:10, target:15} }}");
+    }
+    
+    private void verifyCapacity(String address) throws Exception
     {
         if (!isCppBroker())
         {
@@ -365,8 +375,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         
         Session jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
         
-        String addr = "ADDR:my-queue; {create: always, link:{capacity: 10}}";
-        AMQDestination dest = new AMQAnyDestination(addr);
+        AMQDestination dest = new AMQAnyDestination(address);
         MessageConsumer cons = jmsSession.createConsumer(dest); 
         MessageProducer prod = jmsSession.createProducer(dest);
         
