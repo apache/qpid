@@ -339,10 +339,18 @@ public class RecoverTest extends FailoverBaseCase
         int messageSeen = 0;
         int expectedMsg = 0;
 
-        // need to add a timer here as well.
+        long startTime = System.currentTimeMillis();
+        
         while(expectedMsg < 8)
         {
-            Message message = cons.receive();            
+            // Based on historical data, on average the test takes about 6 secs to complete.
+            if (System.currentTimeMillis() - startTime > 8000)
+            {
+                fail("Test did not complete on time. Received " + 
+                     expectedMsg + " msgs so far. Please check the logs");
+            }
+            
+            Message message = cons.receive(2000);            
             String text=((TextMessage) message).getText();            
             
             assertEquals("Received Message Out Of Order","Msg"+expectedMsg,text);
@@ -430,7 +438,8 @@ public class RecoverTest extends FailoverBaseCase
         
         synchronized(lock)
         {
-            lock.wait(5000);
+            // Based on historical data, on average the test takes about 6 secs to complete.
+            lock.wait(8000);
         }
         
         if (!pass.get())
