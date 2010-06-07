@@ -145,10 +145,6 @@ CyrusSasl::CyrusSasl(const ConnectionSettings& s) : conn(0), settings(s)
     callbacks[i++].context = 0;
 
     if (!settings.username.empty()) {
-        callbacks[i].id = SASL_CB_USER;
-        callbacks[i].proc = (CallbackProc*) &getUserFromSettings;
-        callbacks[i++].context = &settings;
-
         callbacks[i].id = SASL_CB_AUTHNAME;
         callbacks[i].proc = (CallbackProc*) &getUserFromSettings;
         callbacks[i++].context = &settings;
