@@ -360,6 +360,7 @@ Broker::~Broker() {
     finalize();                 // Finalize any plugins.
     if (config.auth)
         SaslAuthenticator::fini();
+    timer.stop();
     QPID_LOG(notice, "Shut down");
 }
 
