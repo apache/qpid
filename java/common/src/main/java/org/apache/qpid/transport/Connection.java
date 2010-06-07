@@ -216,12 +216,7 @@ public class Connection extends ConnectionInvoker
             state = OPENING;
             userID = settings.getUsername();
             delegate = new ClientDelegate(settings);
-
-            /*IoTransport.connect(settings.getHost(),
-                                settings.getPort(),
-                                ConnectionBinding.get(this),
-                                settings.isUseSSL());*/
-            
+           
             TransportBuilder transport = new TransportBuilder();
             transport.init(this);
             this.sender = transport.buildSenderPipe();
