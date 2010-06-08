@@ -32,6 +32,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +50,7 @@ public class PersistentStoreTest extends QpidBrokerTestCase
         super.setUp();
         _con = getConnection();
         _con.start();
-        _session = _con.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        _session = _con.createSession(true, Session.SESSION_TRANSACTED);
         _destination = _session.createQueue(getTestQueueName());
         _consumer = _session.createConsumer(_destination);
         _consumer.close();
@@ -69,8 +70,14 @@ public class PersistentStoreTest extends QpidBrokerTestCase
         {
             Message msg = _consumer.receive(RECEIVE_TIMEOUT);
             assertNotNull("Message " + i + " not received", msg);
+            assertEquals("Did not recieve the expected message", i, msg.getIntProperty(INDEX));
         }
-        assertNull("No more messages should be received", _consumer.receive(100));
+        
+        Message msg = _consumer.receive(100);
+        if(msg != null)
+        {
+            fail("No more messages should be received, but received message: " + msg.getIntProperty(INDEX));
+        }
     }
 
 //    /**
@@ -119,6 +126,7 @@ public class PersistentStoreTest extends QpidBrokerTestCase
     public void testForcibleStartStopMidTransaction() throws Exception
     {
         sendMessage(_session, _destination, 5);
+        //sync to ensure that the above messages have reached the broker
         ((AMQSession) _session).sync();
         restartBroker();
         checkMessages();
