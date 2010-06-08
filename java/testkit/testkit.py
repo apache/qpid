@@ -30,7 +30,7 @@ try:
 except ImportError: 
     _cp = checkenv("QP_CP")
 
-# The base test case has support for launching the genric
+# The base test case has support for launching the generic
 # receiver and sender through the TestLauncher with all the options.
 # 
 class JavaClientTest(BrokerTest):
@@ -95,25 +95,9 @@ class JavaClientTest(BrokerTest):
                           msg.properties.get("exception-trace")
                           ))
 
-    def terminate_and_capture_logs(self,popen, process_name):
-        if popen.is_running():          
-            popen.terminate()
-        log = os.path.join(self.dir, process_name+".out") 
-        f = open(log, 'w')
-        f.write(popen.stdout.read())
-        f.close() 
-
-        log = os.path.join(self.dir, process_name+".err") 
-        f = open(log, 'w')
-        f.write(popen.stderr.read())
-        f.close()
-
     def verify(self, receiver,sender):
         sender_running = receiver.is_running()
         receiver_running = sender.is_running()
-
-        self.terminate_and_capture_logs(receiver,"receiver")
-        self.terminate_and_capture_logs(sender,"sender") 
 
         self.assertTrue(receiver_running,"Receiver has exited prematually")
         self.assertTrue(sender_running,"Sender has exited prematually")
@@ -134,15 +118,15 @@ class ConcurrencyTest(JavaClientTest):
                                           ssn_count=25,
                                           port=p,
                                           test_name=self.id()),
-                              expect=EXPECT_EXIT_FAIL) 
+                              expect=EXPECT_RUNNING) 
 
         sender = self.popen(self.client(sender=True,
                                         ssn_count=25,
                                         port=p,
                                         test_name=self.id()),
-                              expect=EXPECT_EXIT_FAIL) 
+                              expect=EXPECT_RUNNING) 
 
-        self.monitor_clients(broker=cluster[0],run_time=60)
+        self.monitor_clients(broker=cluster[0],run_time=180)
         self.verify(receiver,sender)
 
 
@@ -160,14 +144,14 @@ class ConcurrencyTest(JavaClientTest):
                                           port=p,
                                           transacted=True,
                                           test_name=self.id()),
-                              expect=EXPECT_EXIT_FAIL) 
+                              expect=EXPECT_RUNNING) 
 
         sender = self.popen(self.client(sender=True,
                                         ssn_count=25,
                                         port=p,
                                         transacted=True,
                                         test_name=self.id()),
-                              expect=EXPECT_EXIT_FAIL) 
+                              expect=EXPECT_RUNNING) 
 
         self.monitor_clients(broker=cluster[0],run_time=60)
         ssn.close(); 
@@ -185,21 +169,21 @@ class SoakTest(JavaClientTest):
                                           port=p,
                                           reliability="at_least_once",
                                           test_name=self.id()),
-                              expect=EXPECT_EXIT_FAIL) 
+                              expect=EXPECT_RUNNING) 
 
         sender = self.popen(self.client(sender=True,
                                         ssn_count=1,
                                         port=p,
                                         reliability="at_least_once",
                                         test_name=self.id()),
-                              expect=EXPECT_EXIT_FAIL) 
+                              expect=EXPECT_RUNNING) 
       
         # grace period for java clients to get the failover properly setup.
         time.sleep(30) 
         error_msg=None
         # Kill original brokers, start new ones.
         try:
-            for i in range(4):
+            for i in range(8):
                 cluster[i].kill()
                 b=cluster.start()
                 self.monitor_clients(broker=b,run_time=30,error_ck_freq=30)
@@ -209,7 +193,6 @@ class SoakTest(JavaClientTest):
         except SessionError, e2:
             error_msg = "Session error while connected to new cluster node : " + traceback.format_exc(e2)
 
-        # verify also captures out/err streams
         self.verify(receiver,sender)
         if error_msg:      
             raise Exception(error_msg)            
