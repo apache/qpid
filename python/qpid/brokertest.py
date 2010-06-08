@@ -384,8 +384,12 @@ class Broker(Popen):
         if not retry(self.log_ready):
             raise Exception(
                 "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,4)))
-        # Make a connection, this will wait for extended cluster init to finish.
-        try: self.connect(**kwargs).close()
+        # Create a connection and a session. For a cluster broker this will
+        # return after cluster init has finished.
+        try:
+            c = self.connect(**kwargs)
+            try: c.session()
+            finally: c.close()
         except: raise RethrownException(
             "Broker %s failed ready test%s"%(self.name,error_line(self.log,4)))
 
