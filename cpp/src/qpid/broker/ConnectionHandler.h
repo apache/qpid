@@ -40,9 +40,6 @@ namespace broker {
 class Connection;
 class SecureConnection;
 
-typedef boost::function<void ( std::string& )> UserIdCallback;
-
-
 class ConnectionHandler : public framing::FrameHandler
 {
     struct Handler : public framing::AMQP_AllOperations::ConnectionHandler
@@ -53,6 +50,7 @@ class ConnectionHandler : public framing::FrameHandler
         std::auto_ptr<SaslAuthenticator> authenticator;
         AclModule* acl;
         SecureConnection* secured;
+        bool isOpen;
 
         Handler(Connection& connection, bool isClient, bool isShadow=false);
         ~Handler();
@@ -66,10 +64,6 @@ class ConnectionHandler : public framing::FrameHandler
                   const framing::Array& capabilities, bool insist);
         void close(uint16_t replyCode, const std::string& replyText);
         void closeOk();
-
-        UserIdCallback userIdCallback;
-        void setUserIdCallback ( UserIdCallback fn ) { userIdCallback = fn; };
-
 
         void start(const qpid::framing::FieldTable& serverProperties,
                    const framing::Array& mechanisms,
@@ -95,9 +89,7 @@ class ConnectionHandler : public framing::FrameHandler
     void heartbeat();
     void handle(framing::AMQFrame& frame);
     void setSecureConnection(SecureConnection* secured);
-    void setUserIdCallback ( UserIdCallback fn ) {
-      handler->setUserIdCallback ( fn );
-    }
+    bool isOpen() { return handler->isOpen; }
 };
 
 

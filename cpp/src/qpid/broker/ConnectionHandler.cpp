@@ -87,7 +87,8 @@ ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient, bool
 
 ConnectionHandler::Handler::Handler(Connection& c, bool isClient, bool isShadow) :
     proxy(c.getOutput()),
-    connection(c), serverMode(!isClient), acl(0), secured(0), userIdCallback(0)
+    connection(c), serverMode(!isClient), acl(0), secured(0),
+    isOpen(false)
 {
     if (serverMode) {
 
@@ -195,14 +196,7 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
         if (sl.get()) secured->activateSecurityLayer(sl);
     }
 
-    if ( userIdCallback ) {
-        string s;
-        // Not checking the return value of getUsername, if there is
-        // no username then we want to call the userIdCallback anyway
-        // with an empty string.
-        authenticator->getUsername(s);
-        userIdCallback(s);
-    }
+    isOpen = true;
     proxy.openOk(array);
 }
 
@@ -272,6 +266,7 @@ void ConnectionHandler::Handler::openOk(const framing::Array& knownHosts)
         Url url((*i)->get<std::string>());
         connection.getKnownHosts().push_back(url);
     }
+    isOpen = true;
 }
 
 void ConnectionHandler::Handler::redirect(const string& /*host*/, const framing::Array& /*knownHosts*/)

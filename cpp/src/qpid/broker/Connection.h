@@ -63,9 +63,6 @@ class LinkRegistry;
 class SecureConnection;
 struct ConnectionTimeoutTask;
 
-typedef boost::function<void ( std::string& )> userIdCallback;
-
-
 class Connection : public sys::ConnectionInputHandler,
                    public ConnectionState,
                    public RefCounted
@@ -146,9 +143,8 @@ class Connection : public sys::ConnectionInputHandler,
         return securitySettings;
     }
 
-    void setUserIdCallback ( UserIdCallback fn ) {
-        adapter.setUserIdCallback ( fn );
-    }
+    /** @return true if the initial connection negotiation is complete. */
+    bool isOpen();
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;

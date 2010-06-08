@@ -386,7 +386,6 @@ void Connection::restartTimeout()
         timeoutTimer->touch();
 }
 
-
-
+bool Connection::isOpen() { return adapter.isOpen(); }
 
 }}

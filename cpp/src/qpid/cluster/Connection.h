@@ -164,8 +164,9 @@ class Connection :
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
-    void announce(const std::string& mgmtId, uint32_t ssf, const std::string& authid, bool nodict);
-    void secureUserId(const std::string&);
+    void announce(const std::string& mgmtId, uint32_t ssf, const std::string& authid,
+                  bool nodict, const std::string& username,
+                  const std::string& initFrames);
     void abort();
     void deliverClose();
 
@@ -175,15 +176,7 @@ class Connection :
     void managementSchema(const std::string& data);
     void managementAgents(const std::string& data);
     void managementSetupState(uint64_t objectNum, uint16_t bootSequence);
-
-    //uint32_t getSsf() const { return connectionCtor.external.ssf; }
-
     void setSecureConnection ( broker::SecureConnection * sc );
-
-    // This is a callback, registered with the broker connection.
-    // It gives me the user ID, if one is negotiated through Sasl.
-    void mcastUserId ( std::string & );
-
 
   private:
     struct NullFrameHandler : public framing::FrameHandler {
@@ -228,6 +221,8 @@ class Connection :
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverDoOutput(uint32_t limit);
 
+    bool checkProtocolHeader(const char*& data, size_t size);
+    void processInitialFrames(const char*& data, size_t size);
     boost::shared_ptr<broker::Queue> findQueue(const std::string& qname);
     broker::SessionState& sessionState();
     broker::SemanticState& semanticState();
@@ -247,13 +242,10 @@ class Connection :
     McastFrameHandler mcastFrameHandler;
     UpdateReceiver& updateIn;
     qpid::broker::SecureConnection* secureConnection;
+    std::string initialFrames;
 
     static qpid::sys::AtomicValue<uint64_t> catchUpId;
 
-    mutable sys::Monitor connectionNegotiationMonitor;
-    bool mcastSentButNotReceived;
-    bool inConnectionNegotiation;
-    
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };
 
