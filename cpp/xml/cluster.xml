@@ -127,6 +127,10 @@
       <field name="authid" type="str16"/>
       <!-- exclude certain sasl mechs, used with ssl and sasl-external -->
       <field name="nodict" type="bit"/>
+      <!-- User name as negotiated by SASL -->
+      <field name="username" type="str32"/>
+      <!-- Frames forming the initial connection negotiation.  -->
+      <field name="initial-frames" type="str32"/>
     </control>
 
     <!-- Marks the cluster-wide point when a connection is considered closed. -->
@@ -263,11 +267,5 @@
     <control name="management-agents" code="0x37">
       <field name="data" type="vbin32"/>
     </control>
-
-    <!-- Announce the user ID on a secure connection -->
-    <control name="secureUserId" code="0x38">
-      <field name="secure-user-id" type="str16"/>
-    </control>
-
   </class>
 </amqp>

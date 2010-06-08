@@ -36,12 +36,6 @@ namespace broker {
 
 class Connection;
 
-// Calls your fn with the user ID string, just 
-// after the security negotiation is complete.
-// Add your callback to the list with addUserIdCallback().
-typedef boost::function<void ( std::string& )> UserIdCallback;
-
-
 class SaslAuthenticator
 {
 public:
@@ -54,7 +48,6 @@ public:
     virtual void getError(std::string&) {}
     virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize) = 0;
 
-    virtual void setUserIdCallback ( UserIdCallback ) { }
     static bool available(void);
 
     // Initialize the SASL mechanism; throw if it fails.
@@ -64,9 +57,6 @@ public:
     static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection, bool isShadow);
 
     virtual void callUserIdCallbacks() { }
-
-private:
-    UserIdCallback userIdCallback;
 };
 
 }}

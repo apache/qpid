@@ -61,7 +61,6 @@ void Multicaster::mcast(const Event& e) {
     QPID_LOG(trace, "MCAST " << e);
     if (bypass) {               // direct, don't queue
         iovec iov = e.toIovec();
-        // FIXME aconway 2010-03-10: should do limited retry.
         while (!cpg.mcast(&iov, 1))
             ;
     }
