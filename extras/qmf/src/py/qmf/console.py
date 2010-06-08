@@ -2390,8 +2390,12 @@ class Broker:
       elif agent:
         agent._handleQmfV1Message(opcode, seq, mp, ah, codec)
 
-    self.amqpSession.receiver._completed.add(msg.id)
-    self.amqpSession.channel.session_completed(self.amqpSession.receiver._completed)
+    # ignore failures as the session may be shutting down...
+    try:
+      self.amqpSession.receiver._completed.add(msg.id)
+      self.amqpSession.channel.session_completed(self.amqpSession.receiver._completed)
+    except:
+      pass
 
   def _v2Cb(self, msg):
     """
@@ -2404,13 +2408,21 @@ class Broker:
     if 'qmf.opcode' in ah:
       opcode = ah['qmf.opcode']
       if mp.content_type == "amqp/list":
-        content = codec.read_list()
-        if not content:
-          content = []
+        try:
+          content = codec.read_list()
+          if not content:
+            content = []
+        except:
+          # malformed list - ignore
+          content = None
       elif mp.content_type == "amqp/map":
-        content = codec.read_map()
-        if not content:
-          content = {}
+        try:
+          content = codec.read_map()
+          if not content:
+            content = {}
+        except:
+          # malformed map - ignore
+          content = None
       else:
         content = None
 
@@ -2433,8 +2445,12 @@ class Broker:
             agent = self.agents[agent_addr]
             agent._handleQmfV2Message(opcode, mp, ah, content)
 
-    self.amqpSession.receiver._completed.add(msg.id)
-    self.amqpSession.channel.session_completed(self.amqpSession.receiver._completed)
+    # ignore failures as the session may be shutting down...
+    try:
+      self.amqpSession.receiver._completed.add(msg.id)
+      self.amqpSession.channel.session_completed(self.amqpSession.receiver._completed)
+    except:
+      pass
 
   def _exceptionCb(self, data):
     self.connected = False
