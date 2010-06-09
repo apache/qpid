@@ -153,16 +153,12 @@ void Bridge::create(Connection& c)
     if (args.i_srcIsLocal) sessionHandler.getSession()->enableReceiverTracking();
 }
 
-void Bridge::cancel(Connection& c)
+void Bridge::cancel(Connection&)
 {
-    if (args.i_srcIsLocal) {    
-        //recreate peer to be sure that the session handler reference
-        //is valid (it could have been deleted due to a detach)
-        SessionHandler& sessionHandler = c.getChannel(id);
-        peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
+    if (resetProxy()) {
+        peer->getMessage().cancel(args.i_dest);
+        peer->getSession().detach(name);
     }
-    peer->getMessage().cancel(args.i_dest);
-    peer->getSession().detach(name);
 }
 
 void Bridge::closed()
@@ -310,10 +306,22 @@ void Bridge::sendReorigin()
     conn->requestIOProcessing(boost::bind(&Bridge::ioThreadPropagateBinding, this,
                                           queueName, args.i_src, args.i_key, bindArgs));
 }
+bool Bridge::resetProxy() 
+{
+    SessionHandler& sessionHandler = conn->getChannel(id);
+    if (!sessionHandler.getSession()) peer.reset();
+    else peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
+    return peer.get();
+}
 
 void Bridge::ioThreadPropagateBinding(const string& queue, const string& exchange, const string& key, FieldTable args)
 {
-    peer->getExchange().bind(queue, exchange, key, args);
+    if (resetProxy()) {
+        peer->getExchange().bind(queue, exchange, key, args);
+    } else {
+        QPID_LOG(error, "Cannot propagate binding for dynamic bridge as session has been detached, deleting dynamic bridge");
+        destroy();
+    }
 }
 
 bool Bridge::containsLocalTag(const string& tagList) const
