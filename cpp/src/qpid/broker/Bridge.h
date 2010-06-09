@@ -101,6 +101,8 @@ private:
     mutable uint64_t  persistenceId;
     ConnectionState* connState;
     Connection* conn;
+
+    bool resetProxy();
 };
 
 
