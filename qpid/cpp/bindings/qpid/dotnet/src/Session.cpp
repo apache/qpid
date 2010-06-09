@@ -35,10 +35,10 @@
 #include "Message.h"
 #include "QpidException.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Session is a managed wrapper for a ::qpid::messaging::Session
@@ -84,110 +84,93 @@ namespace messaging {
         }
     }
 
-    void Session::close()
+    void Session::Close()
     {
         sessionp->close();
     }
 
-    void Session::commit()
+    void Session::Commit()
     {
         sessionp->commit();
     }
 
-    void Session::rollback()
+    void Session::Rollback()
     {
         sessionp->rollback();
     }
 
-    void Session::acknowledge()
+    void Session::Acknowledge()
     {
-        acknowledge(false);
+        Acknowledge(false);
     }
 
-    void Session::acknowledge(bool sync)
+    void Session::Acknowledge(bool sync)
     {
         sessionp->acknowledge(sync);
     }
 
-    void Session::reject(Message ^ message)
+    void Session::Reject(Message ^ message)
     {
-        sessionp->::qpid::messaging::Session::reject(*(message->messagep));
+        sessionp->::qpid::messaging::Session::reject(*(message->NativeMessage));
     }
 
-    void Session::release(Message ^ message)
+    void Session::Release(Message ^ message)
     {
-        sessionp->::qpid::messaging::Session::release(*(message->messagep));
+        sessionp->::qpid::messaging::Session::release(*(message->NativeMessage));
     }
 
-    void Session::sync()
+    void Session::Sync()
     {
-        sync(true);
+        Sync(true);
     }
 
-    void Session::sync(bool block)
+    void Session::Sync(bool block)
     {
         sessionp->sync(block);
     }
 
     // next(receiver)
-    bool Session::nextReceiver(Receiver ^ rcvr)
+    bool Session::NextReceiver(Receiver ^ rcvr)
     {
-        return nextReceiver(rcvr, DurationConstants::FORVER);
+        return NextReceiver(rcvr, DurationConstants::FORVER);
     }
 
-    bool Session::nextReceiver(Receiver ^ rcvr, Duration ^ timeout)
+    bool Session::NextReceiver(Receiver ^ rcvr, Duration ^ timeout)
     {
         System::Exception           ^ newException = nullptr;
 
-        try
-        {
+        try 
+		{
+			// create a duration object
             ::qpid::messaging::Duration dur(timeout->Milliseconds);
 
-            return sessionp->nextReceiver(*(rcvr->receiverp), dur);
+			// wait for the next received message
+            return sessionp->nextReceiver(*(rcvr->NativeReceiver), dur);
         } 
         catch (const ::qpid::types::Exception & error) 
-        {
+		{
             String ^ errmsg = gcnew String(error.what());
-            if (errmsg = "No message to fetch")
-            {
-                // on timeout return null
+            if ("No message to fetch" == errmsg){
                 return false;
             }
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Session::nextReceiver unknown error");
 
-        }
-        finally
-        {
-            // Clean up and throw on caught exceptions
-            if (newException != nullptr)
-            {
-                if (sessionp != NULL)
-                {
-                    delete sessionp;
-                }
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 
-                throw newException;
-            }
-        }
         return true;
     }
 
     // receiver = next()
-    Receiver ^ Session::nextReceiver()
+    Receiver ^ Session::NextReceiver()
     {
-        return nextReceiver(DurationConstants::FORVER);
+        return NextReceiver(DurationConstants::FORVER);
     }
 
-    Receiver ^ Session::nextReceiver(Duration ^ timeout)
+    Receiver ^ Session::NextReceiver(Duration ^ timeout)
     {
         System::Exception           ^ newException = nullptr;
 
@@ -205,41 +188,23 @@ namespace messaging {
         catch (const ::qpid::types::Exception & error) 
         {
             String ^ errmsg = gcnew String(error.what());
-            if (errmsg = "No message to fetch")
+            if ("No message to fetch" == errmsg)
             {
-                // on timeout return null
                 return nullptr;
             }
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Session::nextReceiver unknown error");
 
-        }
-        finally
-        {
-            // Clean up and throw on caught exceptions
-            if (newException != nullptr)
-            {
-                if (sessionp != NULL)
-                {
-                    delete sessionp;
-                }
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 
-                throw newException;
-            }
-        }
-        return nullptr;
+		return nullptr;
     }
 
 
-    Sender ^ Session::createSender  (System::String ^ address)
+    Sender ^ Session::CreateSender  (System::String ^ address)
     {
         System::Exception          ^ newException = nullptr;
         ::qpid::messaging::Sender  * senderp         = NULL;
@@ -261,41 +226,39 @@ namespace messaging {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Session::createSender unknown error");
-
-        }
         finally
         {
-            // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
-                if (senderp != NULL)
-                {
-                    delete senderp;
-                }
-
-                throw newException;
+				if (newSender != nullptr)
+				{
+					delete newSender;
+				}
+				else
+				{
+					if (senderp != NULL)
+					{
+						delete senderp;
+					}
+				}
             }
         }
+        if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 
         return newSender;
     }
 
-    Receiver ^ Session::createReceiver(System::String ^ address)
+    Receiver ^ Session::CreateReceiver(System::String ^ address)
     {
         System::Exception           ^ newException = nullptr;
         ::qpid::messaging::Receiver * receiverp    = NULL;
         Receiver                    ^ newReceiver  = nullptr;
 
-        try
-        {
+        try 
+		{
             // allocate a native receiver
             receiverp = new ::qpid::messaging::Receiver;
 
@@ -306,39 +269,37 @@ namespace messaging {
             newReceiver = gcnew Receiver(receiverp, this);
         } 
         catch (const ::qpid::types::Exception & error) 
-        {
+		{
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Session::createReceiver unknown error");
-
-        }
-        finally
-        {
-            // Clean up and throw on caught exceptions
+        finally 
+		{
             if (newException != nullptr)
-            {
-                if (sessionp != NULL)
-                {
-                    delete sessionp;
-                }
-
-                throw newException;
+			{
+				if (newReceiver != nullptr)
+				{
+					delete newReceiver;
+				}
+				else
+				{
+					if (receiverp != NULL)
+					{
+						delete receiverp;
+					}
+				}
             }
         }
+        if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 
         return newReceiver;
     }
 
 
-    Receiver ^ Session::createReceiver()
+    Receiver ^ Session::CreateReceiver()
     {
         System::Exception           ^ newException = nullptr;
         ::qpid::messaging::Receiver * receiverp    = NULL;
@@ -357,35 +318,33 @@ namespace messaging {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Session::createReceiver unknown error");
-
-        }
-        finally
-        {
-            // Clean up and throw on caught exceptions
+        finally 
+		{
             if (newException != nullptr)
-            {
-                if (sessionp != NULL)
-                {
-                    delete sessionp;
-                }
-
-                throw newException;
+			{
+				if (newReceiver != nullptr)
+				{
+					delete newReceiver;
+				}
+				else
+				{
+					if (receiverp != NULL)
+					{
+						delete receiverp;
+					}
+				}
             }
         }
+        if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 
         return newReceiver;
     }
 
 
-    Sender ^ Session::getSender(System::String ^ name)
+    Sender ^ Session::GetSender(System::String ^ name)
     {
         ::qpid::messaging::Sender * sender = new ::qpid::messaging::Sender;
 
@@ -398,7 +357,7 @@ namespace messaging {
 
 
 
-    Receiver ^ Session::getReceiver(System::String ^ name)
+    Receiver ^ Session::GetReceiver(System::String ^ name)
     {
         ::qpid::messaging::Receiver * receiver = new ::qpid::messaging::Receiver;
 
@@ -411,12 +370,12 @@ namespace messaging {
 
 
 
-    Connection ^ Session::getConnection()
+    Connection ^ Session::GetConnection()
     {
         return parentConnectionp;
     }
 
-    void Session::checkError()
+    void Session::CheckError()
     {
         sessionp->checkError();
     }

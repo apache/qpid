@@ -34,10 +34,10 @@ namespace messaging {
     class SenderImpl {};
 }}
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Sender is a managed wrapper for a ::qpid::messaging::Sender 
@@ -65,11 +65,11 @@ namespace messaging {
         !Sender();
         Sender(const Sender % rhs);
 
-        // send(message)
-        void send(Message ^ mmsgp);
-        void send(Message ^ mmsgp, bool sync);
+        // Send(message)
+        void Send(Message ^ mmsgp);
+        void Send(Message ^ mmsgp, bool sync);
 
-        void close();
+        void Close();
 
         property System::UInt32 Capacity
         {
@@ -95,6 +95,6 @@ namespace messaging {
             }
         }
 
-        Session ^ getSession();
+        Session ^ GetSession();
     };
 }}}}

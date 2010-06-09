@@ -36,10 +36,10 @@ namespace messaging {
     class SessionImpl {};
 }}
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Session is a managed wrapper for a ::qpid::messaging::Session
@@ -70,15 +70,15 @@ namespace messaging {
         !Session();
         Session(const Session % rhs);
 
-        void close();
-        void commit();
-        void rollback();
-        void acknowledge();
-        void acknowledge(bool sync);
-        void reject(Message ^);
-        void release(Message ^);
-        void sync();
-        void sync(bool block);
+        void Close();
+        void Commit();
+        void Rollback();
+        void Acknowledge();
+        void Acknowledge(bool sync);
+        void Reject(Message ^);
+        void Release(Message ^);
+        void Sync();
+        void Sync(bool block);
 
         property System::UInt32 Receivable
         {
@@ -91,28 +91,28 @@ namespace messaging {
         }
 
         // next(receiver)
-        bool nextReceiver(Receiver ^);
-        bool nextReceiver(Receiver ^, Duration ^ timeout);
+        bool NextReceiver(Receiver ^ rcvr);
+        bool NextReceiver(Receiver ^ rcvr, Duration ^ timeout);
 
         // receiver = next()
-        Receiver ^ nextReceiver();
-        Receiver ^ nextReceiver(Duration ^ timeout);
+        Receiver ^ NextReceiver();
+        Receiver ^ NextReceiver(Duration ^ timeout);
 
 
-        Sender   ^ createSender  (System::String ^ address);
-        Receiver ^ createReceiver(System::String ^ address);
-        Receiver ^ createReceiver();
+        Sender   ^ CreateSender  (System::String ^ address);
+        Receiver ^ CreateReceiver(System::String ^ address);
+        Receiver ^ CreateReceiver();
 
-        Sender   ^ getSender(System::String ^ name);
-        Receiver ^ getReceiver(System::String ^ name);
+        Sender   ^ GetSender(System::String ^ name);
+        Receiver ^ GetReceiver(System::String ^ name);
 
-        Connection ^ getConnection();
+        Connection ^ GetConnection();
 
         property System::Boolean HasError
         {
             System::Boolean get () { return sessionp->hasError(); }
         }
 
-        void checkError();
+        void CheckError();
     };
 }}}}

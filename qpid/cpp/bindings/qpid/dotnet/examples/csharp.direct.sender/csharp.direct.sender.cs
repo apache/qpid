@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using org.apache.qpid.messaging;
+using Org.Apache.Qpid.Messaging;
 
 namespace csharp.direct.sender
 {
@@ -50,26 +50,26 @@ namespace csharp.direct.sender
 
             Connection conn = new Connection(host);
 
-            conn.open();
+            conn.Open();
 
-            if (!conn.isOpen())
+            if (!conn.IsOpen())
             {
                 Console.WriteLine("Failed to open connection to host : {0}", host);
             }
             else
             {
-                Session sess = conn.createSession();
+                Session sess = conn.CreateSession();
 
-                Sender snd = sess.createSender(addr);
+                Sender snd = sess.CreateSender(addr);
 
                 for (int i = 0; i < nMsg; i++)
                 {
                     Message msg = new Message(String.Format("Test Message {0}", i));
 
-                    snd.send(msg);
+                    snd.Send(msg);
                 }
 
-                conn.close();
+                conn.Close();
             }
         }
     }

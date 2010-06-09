@@ -27,11 +27,10 @@
 
 #include "qpid/messaging/Address.h"
 
-
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Address is a managed wrapper for a qpid::messaging::Address
@@ -43,10 +42,10 @@ namespace messaging {
         // Kept object deletion code
         void Cleanup();
 
-    public:
         // The kept object in the Messaging C++ DLL
         ::qpid::messaging::Address * addressp;
 
+    public:
         Address();
         
         Address(System::String ^ address);
@@ -69,21 +68,26 @@ namespace messaging {
         !Address();
 //        Address(const Address % rhs);
 
-        System::String ^ getName();
-        void setName(System::String ^ name);
+        property ::qpid::messaging::Address * NativeAddress
+        {
+            ::qpid::messaging::Address * get () { return addressp; }
+        }
 
-        System::String ^ getSubject();
-        void setSubject(System::String ^ subject);
+        System::String ^ GetName();
+        void SetName(System::String ^ name);
+
+        System::String ^ GetSubject();
+        void SetSubject(System::String ^ subject);
 
         System::Collections::Generic::Dictionary<
-            System::String ^, System::Object ^> ^ getOptions();
+            System::String ^, System::Object ^> ^ GetOptions();
 
-        void setOptions(System::Collections::Generic::Dictionary<
+        void SetOptions(System::Collections::Generic::Dictionary<
                             System::String ^, System::Object ^> ^ options);
 
-        System::String ^ getType();
-        void setType(System::String ^ type);
+        System::String ^ GetType();
+        void SetType(System::String ^ type);
 
-        System::String ^ str();
+        System::String ^ ToStr();
     };
 }}}}

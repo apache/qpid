@@ -23,9 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using org.apache.qpid.messaging;
+using Org.Apache.Qpid.Messaging;
 
-namespace org.apache.qpid.messaging.sessionreceiver
+namespace Org.Apache.Qpid.Messaging.SessionReceiver
 {
     /// <summary>
     /// ISessionReceiver interface defines the callback for users to supply.
@@ -43,19 +43,19 @@ namespace org.apache.qpid.messaging.sessionreceiver
 
     
     /// <summary>
-    /// eventEngine - wait for messages from the underlying C++ code.
+    /// EventEngine - wait for messages from the underlying C++ code.
     /// When available get them and deliver them via callback to our 
     /// client through the ISessionReceiver interface.
     /// This class consumes the thread that calls the Run() function.
     /// </summary>
 
-    internal class eventEngine
+    internal class EventEngine
     {
         private Session          session;
         private ISessionReceiver callback;
         private bool             keepRunning;
 
-        public eventEngine(Session theSession, ISessionReceiver thecallback)
+        public EventEngine(Session theSession, ISessionReceiver thecallback)
         {
             this.session  = theSession;
             this.callback = thecallback;
@@ -65,35 +65,35 @@ namespace org.apache.qpid.messaging.sessionreceiver
         /// Function to call Session's nextReceiver, discover messages,
         /// and to deliver messages through the callback.
         /// </summary>
-        public void open()
+        public void Open()
         {
-            Receiver rcvr = session.createReceiver();
+            Receiver rcvr = session.CreateReceiver();
             Message  msg;
 
             keepRunning = true;
             while (keepRunning)
             {
-                if (session.nextReceiver(rcvr, DurationConstants.SECOND))
+                if (session.NextReceiver(rcvr, DurationConstants.SECOND))
                 {
                     if (keepRunning)
                     {
-                        msg = rcvr.fetch(DurationConstants.SECOND);
+                        msg = rcvr.Fetch(DurationConstants.SECOND);
                         this.callback.SessionReceiver(rcvr, msg);
                     }
                 }
                 //else
                 //    receive timed out
-                //    eventEngine exits the nextReceiver() function periodically
+                //    EventEngine exits the nextReceiver() function periodically
                 //    in order to test the keepRunning flag
             }
             // Private thread is now exiting.
         }
 
         /// <summary>
-        /// Function to stop the eventEngine. Private thread will exit within
+        /// Function to stop the EventEngine. Private thread will exit within
         /// one second.
         /// </summary>
-        public void close()
+        public void Close()
         {
             keepRunning = false;
         }
@@ -104,9 +104,9 @@ namespace org.apache.qpid.messaging.sessionreceiver
     /// server is the class that users instantiate to connect a SessionReceiver
     /// callback to the stream of received messages received on a Session.
     /// </summary>
-    public class server
+    public class CallbackServer
     {
-        private eventEngine ee;
+        private EventEngine ee;
 
         /// <summary>
         /// Constructor for the server.
@@ -114,20 +114,20 @@ namespace org.apache.qpid.messaging.sessionreceiver
         /// <param name="session">The Session whose messages are collected.</param>
         /// <param name="callback">The user function call with each message.</param>
         /// 
-        public server(Session session, ISessionReceiver callback)
+        public CallbackServer(Session session, ISessionReceiver callback)
         {
-            ee = new eventEngine(session, callback);
+            ee = new EventEngine(session, callback);
 
             new System.Threading.Thread(
-                new System.Threading.ThreadStart(ee.open)).Start();
+                new System.Threading.ThreadStart(ee.Open)).Start();
         }
 
         /// <summary>
         /// Function to stop the server.
         /// </summary>
-        public void close()
+        public void Close()
         {
-            ee.close();
+            ee.Close();
         }
     }
 }

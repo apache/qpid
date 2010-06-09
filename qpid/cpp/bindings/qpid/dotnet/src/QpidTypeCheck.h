@@ -24,10 +24,10 @@
 #include <string>
 #include <limits>
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// QpidTypeCheck determines if a given managed object represents
@@ -35,7 +35,7 @@ namespace messaging {
     ///
     // The supported mapping is:
     /// * a managed Dictionary and a Qpid Messaging Map
-    /// * a managed List       and a Qpid Messaging List
+    /// * a managed Collection and a Qpid Messaging List
     /// </summary>
 
     typedef System::Collections::Generic::Dictionary<
@@ -43,33 +43,38 @@ namespace messaging {
                 System::Object^> 
                     QpidMap;
 
-    typedef System::Collections::Generic::List<
+    typedef System::Collections::ObjectModel::Collection<
                 System::Object^> 
                     QpidList;
 
-    private ref class QpidTypeCheckConstants
+    private ref class QpidTypeCheckConstants sealed
     {
+	private:
+		QpidTypeCheckConstants::QpidTypeCheckConstants() {}
+
     public:
         static System::Type const ^ const mapTypeP = System::Type::GetType(
             "System.Collections.Generic.Dictionary`2[System.String,System.Object]");
         static System::Type const ^ const listTypeP = System::Type::GetType(
-            "System.Collections.Generic.List`1[System.Object]");
+            "System.Collections.ObjectModel.Collection`1[System.Object]");
     };
 
 
-    public ref class QpidTypeCheck
+    public ref class QpidTypeCheck sealed
     {
+	private:
+		QpidTypeCheck::QpidTypeCheck() {}
 
     public:
 
-        static bool ObjectIsMap (System::Object ^ object)
+        static bool ObjectIsMap (System::Object ^ theValue)
         { 
-            return (*object).GetType() == QpidTypeCheckConstants::mapTypeP;
+            return (*theValue).GetType() == QpidTypeCheckConstants::mapTypeP;
         }
 
-        static bool ObjectIsList(System::Object ^ object)
+        static bool ObjectIsList(System::Object ^ theValue)
         { 
-            return (*object).GetType() == QpidTypeCheckConstants::listTypeP;
+            return (*theValue).GetType() == QpidTypeCheckConstants::listTypeP;
         }
     };
 }}}}

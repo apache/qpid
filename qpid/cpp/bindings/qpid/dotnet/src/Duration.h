@@ -25,17 +25,17 @@
 #include <string>
 #include <limits>
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Duration is a time interval in milliseconds.
     /// It is a managed equivalent of ::qpid::messaging::Duration
     /// </summary>
 
-    public ref class Duration
+    public ref class Duration sealed
     {
     private:
         System::UInt64 milliseconds;
@@ -69,10 +69,25 @@ namespace messaging {
             Duration ^ result = gcnew Duration(multiplier * dur->Milliseconds);
             return result;
         }
-    };
 
-    public ref class DurationConstants
+        static Duration ^ Multiply (Duration ^ dur, const System::UInt64 multiplier)
+        {
+            Duration ^ result = gcnew Duration(dur->Milliseconds * multiplier);
+            return result;
+        }
+
+        static Duration ^ Multiply (const System::UInt64 multiplier, Duration ^ dur)
+        {
+            Duration ^ result = gcnew Duration(multiplier * dur->Milliseconds);
+            return result;
+        }
+	};
+
+    public ref class DurationConstants sealed
     {
+	private:
+		DurationConstants::DurationConstants() {}
+
     public:
         static Duration ^ FORVER;
         static Duration ^ IMMEDIATE;

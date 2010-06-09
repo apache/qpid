@@ -22,10 +22,10 @@
 using namespace System;
 using namespace System::Text;
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
 
 
@@ -33,6 +33,9 @@ namespace messaging {
 
 private ref class QpidMarshal
 {
+private:
+	QpidMarshal::QpidMarshal() {}
+
 public:
 
     /// <summary>
