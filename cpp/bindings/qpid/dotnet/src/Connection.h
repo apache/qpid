@@ -28,10 +28,10 @@
 #include "qpid/messaging/Connection.h"
 #include "qpid/messaging/Session.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Connection is a managed wrapper for a qpid::messaging::Connection
@@ -59,20 +59,20 @@ namespace messaging {
         ~Connection();
         !Connection();
 
-        void setOption(System::String ^ name, System::Object ^ value);
+        void SetOption(System::String ^ name, System::Object ^ value);
 
-        void open();
-        System::Boolean isOpen();
-        void close();
+        void Open();
+        System::Boolean IsOpen();
+        void Close();
 
-        // createTransactionalSession()
-        Session ^ createTransactionalSession();
-        Session ^ createTransactionalSession(System::String ^ name);
+        // CreateTransactionalSession()
+        Session ^ CreateTransactionalSession();
+        Session ^ CreateTransactionalSession(System::String ^ name);
 
-        // createSession()
-        Session ^ createSession();
-        Session ^ createSession(System::String ^ name);
+        // CreateSession()
+        Session ^ CreateSession();
+        Session ^ CreateSession(System::String ^ name);
 
-        Session ^ getSession(System::String ^ name);
+        Session ^ GetSession(System::String ^ name);
     };
 }}}}

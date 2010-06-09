@@ -21,11 +21,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using org.apache.qpid.messaging;
+using Org.Apache.Qpid.Messaging;
 
-namespace org.apache.qpid.messaging.examples
+namespace Org.Apache.Qpid.Messaging.Examples
 {
     class MapSender
     {
@@ -42,7 +43,7 @@ namespace org.apache.qpid.messaging.examples
             Console.WriteLine("messages to a named exchange with a routing key.");
             Console.WriteLine();
             Console.WriteLine(" url = target address for 'new Connection(url)'");
-            Console.WriteLine(" addr = address for 'session.createReceiver(addr)'");
+            Console.WriteLine(" addr = address for 'session.CreateReceiver(addr)'");
             Console.WriteLine(" count = number of messages to send");
             Console.WriteLine();
             Console.WriteLine("Default values:");
@@ -82,14 +83,14 @@ namespace org.apache.qpid.messaging.examples
             // Create and open an AMQP connection to the broker URL
             //
             Connection connection = new Connection(url);
-            connection.open();
+            connection.Open();
 
             //
             // Create a session and a sender to the direct exchange using the
             // routing key "map_example".
             //
-            Session session = connection.createSession();
-            Sender sender = session.createSender(addr);
+            Session session = connection.CreateSession();
+            Sender sender = session.CreateSender(addr);
 
             //
             // Create structured content for the message.  This example builds a
@@ -97,7 +98,7 @@ namespace org.apache.qpid.messaging.examples
             //
             Dictionary<string, object> content = new Dictionary<string, object>();
             Dictionary<string, object> subMap = new Dictionary<string, object>();
-            List<object> colors = new List<object>();
+            Collection<object> colors = new Collection<object>();
 
             content["id"] = 987654321;
             content["name"] = "Widget";
@@ -120,12 +121,12 @@ namespace org.apache.qpid.messaging.examples
             //
             Message message = new Message(content);
             for (UInt32 i = 0; i<count; i++)
-                sender.send(message, true);
+                sender.Send(message, true);
 
             //
             // Close the connection.
             //
-            connection.close();
+            connection.Close();
         }
     }
 

@@ -33,10 +33,10 @@
 #include "QpidException.h"
 #include "TypeTranslator.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Connection is a managed wrapper for a qpid::messaging::Connection
@@ -56,7 +56,7 @@ namespace messaging {
     {
         for each (System::Collections::Generic::KeyValuePair<System::String^, System::Object^> kvp in options)
         {
-            setOption(kvp.Key, kvp.Value);
+            SetOption(kvp.Key, kvp.Value);
         }
     }
 
@@ -94,7 +94,7 @@ namespace messaging {
     }
 
 
-    void Connection::setOption(System::String ^ name, System::Object ^ value)
+    void Connection::SetOption(System::String ^ name, System::Object ^ value)
     {
         ::qpid::types::Variant entryValue;
         TypeTranslator::ManagedToNativeObject(value, entryValue);
@@ -102,31 +102,31 @@ namespace messaging {
         connectionp->::qpid::messaging::Connection::setOption(entryName, entryValue);
     }
 
-    void Connection::open()
+    void Connection::Open()
     {
         connectionp->open();
     }
 
-    System::Boolean Connection::isOpen()
+    System::Boolean Connection::IsOpen()
     {
         return connectionp->isOpen();
     }
 
-    void Connection::close()
+    void Connection::Close()
     {
         connectionp->close();
     }
 
     //
-    // createTransactionalSession()
+    // CreateTransactionalSession()
     //
-    Session ^ Connection::createTransactionalSession()
+    Session ^ Connection::CreateTransactionalSession()
     {
-        return createTransactionalSession("");
+        return CreateTransactionalSession("");
     }
 
 
-    Session ^ Connection::createTransactionalSession(System::String ^ name)
+    Session ^ Connection::CreateTransactionalSession(System::String ^ name)
     {
         System::Exception          ^ newException = nullptr;
         ::qpid::messaging::Session * sessionp     = NULL;
@@ -148,42 +148,44 @@ namespace messaging {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Connection::createTransactionalSession unknown error");
-        }
         finally
         {
             // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
-                if (sessionp != NULL)
-                {
-                    delete sessionp;
-                }
-                throw newException;
+                if (newSession != nullptr)
+				{
+					delete newSession;
+				}
+				else
+				{
+	                if (sessionp != NULL)
+		            {
+			            delete sessionp;
+				    }
+				}
             }
         }
 
-        return newSession;
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
+
+		return newSession;
     }
 
 
     //
-    // createSession()
+    // CreateSession()
     //
-    Session ^ Connection::createSession()
+    Session ^ Connection::CreateSession()
     {
-        return createSession("");
+        return CreateSession("");
     }
 
 
-    Session ^ Connection::createSession(System::String ^ name)
+    Session ^ Connection::CreateSession(System::String ^ name)
     {
         System::Exception          ^ newException = nullptr;
         ::qpid::messaging::Session * sessionp     = NULL;
@@ -205,33 +207,35 @@ namespace messaging {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Connection::createSession unknown error");
-        }
         finally
         {
             // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
-                if (sessionp != NULL)
-                {
-                    delete sessionp;
-                }
-                throw newException;
+				if (newSession != nullptr)
+				{
+					delete newSession;
+				}
+				else
+				{
+					if (sessionp != NULL)
+					{
+						delete sessionp;
+					}
+				}
             }
         }
+
+		if (nullptr != newException) 
+		{
+			throw newException;
+		}
 
         return newSession;
     }
 
 
-    Session ^ Connection::getSession(System::String ^ name)
+    Session ^ Connection::GetSession(System::String ^ name)
     {
         System::Exception          ^ newException = nullptr;
         ::qpid::messaging::Session * sess         = NULL;
@@ -250,27 +254,29 @@ namespace messaging {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Connection::getSession unknown error");
-        }
         finally
         {
             // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
-                if (sess != NULL)
-                {
-                    delete sess;
-                }
-                throw newException;
+				if (newSession != nullptr)
+				{
+					delete newSession;
+				}
+				else
+				{
+					if (sess != NULL)
+					{
+						delete sess;
+					}
+				}
             }
         }
+
+		if (nullptr != newException) 
+		{
+			throw newException;
+		}
 
         return newSession;
     }

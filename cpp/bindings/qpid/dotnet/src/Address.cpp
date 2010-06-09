@@ -30,10 +30,10 @@
 #include "QpidTypeCheck.h"
 #include "TypeTranslator.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Address is a managed wrapper for a qpid::messaging::Address
@@ -58,10 +58,10 @@ namespace messaging {
                          System::String ^, System::Object ^> ^ options) :
         addressp(new ::qpid::messaging::Address())
     {
-        setName(name);
-        setSubject(subject);
-        setOptions(options);
-        setType("");
+        SetName(name);
+        SetSubject(subject);
+        SetOptions(options);
+        SetType("");
     }
 
 
@@ -72,10 +72,10 @@ namespace messaging {
                      System::String ^ type) :
         addressp(new ::qpid::messaging::Address())
     {
-        setName(name);
-        setSubject(subject);
-        setOptions(options);
-        setType(type);
+        SetName(name);
+        SetSubject(subject);
+        SetOptions(options);
+        SetType(type);
     }
 
 
@@ -114,12 +114,12 @@ namespace messaging {
     //
     // name
     //
-    System::String ^ Address::getName()
+    System::String ^ Address::GetName()
     {
         return gcnew System::String(addressp->getName().c_str());
     }
 
-    void Address::setName(System::String ^ name)
+    void Address::SetName(System::String ^ name)
     {
         addressp->::qpid::messaging::Address::setName(QpidMarshal::ToNative(name));
     }
@@ -127,21 +127,21 @@ namespace messaging {
     //
     // subject
     //
-    System::String ^ Address::getSubject()
+    System::String ^ Address::GetSubject()
     {
         return gcnew System::String(addressp->getSubject().c_str());
     }
 
-    void Address::setSubject(System::String ^ subject)
+    void Address::SetSubject(System::String ^ subject)
     {
-        addressp->setName(QpidMarshal::ToNative(subject));
+        addressp->setSubject(QpidMarshal::ToNative(subject));
     }
 
     //
     // options
     //
     System::Collections::Generic::Dictionary<
-        System::String ^, System::Object ^> ^ Address::getOptions()
+        System::String ^, System::Object ^> ^ Address::GetOptions()
     {
         ::qpid::types::Variant::Map map;
         System::Collections::Generic::Dictionary<
@@ -149,37 +149,37 @@ namespace messaging {
             gcnew System::Collections::Generic::Dictionary<
                   System::String ^, System::Object ^>;
         map = addressp->getOptions();
-        TypeTranslator::NativeToManaged(newMap, map);
+        TypeTranslator::NativeToManaged(map, newMap);
         return newMap;
     }
 
 
-    void Address::setOptions(System::Collections::Generic::Dictionary<
+    void Address::SetOptions(System::Collections::Generic::Dictionary<
                         System::String ^, System::Object ^> ^ options)
     {
         ::qpid::types::Variant::Map map;
-        TypeTranslator::ManagedToNative(map, options);
+        TypeTranslator::ManagedToNative(options, map);
         addressp->setOptions(map);
     }
 
     //
     // type
     //
-    System::String ^ Address::getType()
+    System::String ^ Address::GetType()
     {
         return gcnew System::String(addressp->getType().c_str());
     }
 
 
-    void Address::setType(System::String ^ type)
+    void Address::SetType(System::String ^ type)
     {
         addressp->setName(QpidMarshal::ToNative(type));
     }
 
     //
-    // str
+    // ToString
     //
-    System::String ^ Address::str()
+    System::String ^ Address::ToStr()
     {
         return gcnew System::String(addressp->str().c_str());
     }

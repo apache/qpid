@@ -21,10 +21,11 @@
 
 using System;
 using System.Collections.Generic;
-using org.apache.qpid.messaging;
-using org.apache.qpid.messaging.sessionreceiver;
+using System.Collections.ObjectModel;
+using Org.Apache.Qpid.Messaging;
+using Org.Apache.Qpid.Messaging.SessionReceiver;
 
-namespace org.apache.qpid.messaging.examples
+namespace Org.Apache.Qpid.Messaging.Examples
 {
     /// <summary>
     /// A class with functions to display structured messages.
@@ -50,7 +51,7 @@ namespace org.apache.qpid.messaging.examples
                 else if (QpidTypeCheck.ObjectIsList(kvp.Value))
                 {
                     Console.WriteLine("Key: {0}, Value: List", kvp.Key);
-                    ShowList((List<object>)kvp.Value, level + 1);
+                    ShowList((Collection<object>)kvp.Value, level + 1);
                 }
                 else
                     Console.WriteLine("Key: {0}, Value: {1}, Type: {2}",
@@ -63,7 +64,7 @@ namespace org.apache.qpid.messaging.examples
         /// </summary>
         /// <param name="list">The AMQP list</param>
         /// <param name="level">Nested depth</param>
-        public static void ShowList(List<object> list, int level)
+        public static void ShowList(Collection<object> list, int level)
         {
             foreach (object obj in list)
             {
@@ -77,7 +78,7 @@ namespace org.apache.qpid.messaging.examples
                 else if (QpidTypeCheck.ObjectIsList(obj))
                 {
                     Console.WriteLine("List");
-                    ShowList((List<object>)obj, level + 1);
+                    ShowList((Collection<object>)obj, level + 1);
                 }
                 else
                     Console.WriteLine("Value: {0}, Type: {1}",
@@ -92,24 +93,24 @@ namespace org.apache.qpid.messaging.examples
         /// <param name="message">The Message</param>
         public static void ShowMessage(Message message)
         {
-            if ("amqp/map" == message.getContentType())
+            if ("amqp/map" == message.GetContentType())
             {
                 Console.WriteLine("Received a Dictionary");
                 Dictionary<string, object> content = new Dictionary<string, object>();
-                message.getContent(content);
+                message.GetContent(content);
                 ShowDictionary(content, 0);
             }
-            else if ("amqp/list" == message.getContentType())
+            else if ("amqp/list" == message.GetContentType())
             {
                 Console.WriteLine("Received a List");
-                List<object> content = new List<object>();
-                message.getContent(content);
+                Collection<object> content = new Collection<object>();
+                message.GetContent(content);
                 ShowList(content, 0);
             }
             else
             {
                 Console.WriteLine("Received a String");
-                Console.WriteLine(message.getContent());
+                Console.WriteLine(message.GetContent());
             }
         }
     }
@@ -147,7 +148,7 @@ namespace org.apache.qpid.messaging.examples
             //
             // Acknowledge the receipt of all received messages.
             //
-            receiver.getSession().acknowledge();
+            receiver.GetSession().Acknowledge();
         }
 
 
@@ -170,7 +171,7 @@ namespace org.apache.qpid.messaging.examples
             Console.WriteLine("The details of the message body's types and values are shown.");
             Console.WriteLine();
             Console.WriteLine(" url  = target address for 'new Connection(url)'");
-            Console.WriteLine(" addr = address for 'session.createReceiver(addr)'");
+            Console.WriteLine(" addr = address for 'session.CreateReceiver(addr)'");
             Console.WriteLine(" nSec = time in seconds to keep the receiver callback open");
             Console.WriteLine();
             Console.WriteLine("Default values:");
@@ -211,20 +212,20 @@ namespace org.apache.qpid.messaging.examples
             // Create and open an AMQP connection to the broker URL
             //
             Connection connection = new Connection(url);
-            connection.open();
+            connection.Open();
 
             //
             // Create a session.
             //
-            Session session = connection.createSession();
+            Session session = connection.CreateSession();
 
             //
             // Receive through callback
             //
             // Create callback server and implicitly start it
             //
-            sessionreceiver.server cbServer =
-                new sessionreceiver.server(session, this);
+            SessionReceiver.CallbackServer cbServer =
+                new SessionReceiver.CallbackServer(session, this);
 
             //
             // The callback server is running and executing callbacks on a
@@ -235,12 +236,12 @@ namespace org.apache.qpid.messaging.examples
             // Create a receiver for the direct exchange using the
             // routing key "map_example".
             //
-            Receiver receiver = session.createReceiver(addr);
+            Receiver receiver = session.CreateReceiver(addr);
 
             //
             // Establish a capacity
             //
-            receiver.setCapacity(100);
+            receiver.SetCapacity(100);
 
             //
             // Wait so many seconds for messages to arrive.
@@ -250,13 +251,13 @@ namespace org.apache.qpid.messaging.examples
             //
             // Stop the callback server.
             //
-            cbServer.close();
+            cbServer.Close();
 
             //
             // Close the receiver and the connection.
             //
-            receiver.close();
-            connection.close();
+            receiver.Close();
+            connection.Close();
         }
     }
 

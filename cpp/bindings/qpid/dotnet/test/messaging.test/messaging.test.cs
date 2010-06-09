@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using org.apache.qpid.messaging;
+using Org.Apache.Qpid.Messaging;
 
-namespace org.apache.qpid.messaging
+namespace Org.Apache.Qpid.Messaging
 {
     class Program
     {
@@ -64,22 +64,22 @@ namespace org.apache.qpid.messaging
 
             Address aType = new Address ("check3", "subj", options, "hot");
 
-            Console.WriteLine("aEmpty : {0}", aEmpty.str());
-            Console.WriteLine("aStr   : {0}", aStr.str());
-            Console.WriteLine("aSubj  : {0}", aSubj.str());
-            Console.WriteLine("aType  : {0}", aType.str());
+            Console.WriteLine("aEmpty : {0}", aEmpty.ToStr());
+            Console.WriteLine("aStr   : {0}", aStr.ToStr());
+            Console.WriteLine("aSubj  : {0}", aSubj.ToStr());
+            Console.WriteLine("aType  : {0}", aType.ToStr());
 
             //
             // Raw message data retrieval
             //
 
             Message m2 = new Message("rarey");
-            UInt64 m2Size = m2.getContentSize();
+            UInt64 m2Size = m2.GetContentSize();
 
 
             byte[] myRaw = new byte [m2Size];
 
-            m2.getRaw(myRaw);
+            m2.GetRaw(myRaw);
             Console.WriteLine("Got raw array size {0}", m2Size);
             for (UInt64 i = 0; i < m2Size; i++)
                 Console.Write("{0} ", myRaw[i].ToString());

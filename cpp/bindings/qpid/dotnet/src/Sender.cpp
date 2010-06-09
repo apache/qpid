@@ -30,10 +30,10 @@
 #include "Sender.h"
 #include "Message.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Sender a managed wrapper for a ::qpid::messaging::Sender 
@@ -79,25 +79,25 @@ namespace messaging {
     }
 
     //
-    // send(msg)
+    // Send(msg)
     //
-    void Sender::send(Message ^ mmsgp)
+    void Sender::Send(Message ^ mmsgp)
     {
-        send(mmsgp, false);
+        Send(mmsgp, false);
     }
 
-    void Sender::send(Message ^ mmsgp, bool sync)
+    void Sender::Send(Message ^ mmsgp, bool sync)
     {
-        senderp->::qpid::messaging::Sender::send(*((*mmsgp).messagep), sync);
+        senderp->::qpid::messaging::Sender::send(*((*mmsgp).NativeMessage), sync);
     }
 
 
-    void Sender::close()
+    void Sender::Close()
     {
         senderp->close();
     }
 
-    Session ^ Sender::getSession()
+    Session ^ Sender::GetSession()
     {
         return parentSession;
     }

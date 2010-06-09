@@ -34,10 +34,10 @@
 #include "Duration.h"
 #include "QpidException.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Receiver is a managed wrapper for a ::qpid::messaging::Receiver
@@ -85,30 +85,30 @@ namespace messaging {
     }
 
     //
-    // get(message)
+    // Get(message)
     //
-    bool Receiver::get(Message ^ mmsgp)
+    bool Receiver::Get(Message ^ mmsgp)
     {
-        return get(mmsgp, DurationConstants::FORVER);
+        return Get(mmsgp, DurationConstants::FORVER);
     }
 
-    bool Receiver::get(Message ^ mmsgp, Duration ^ durationp)
+    bool Receiver::Get(Message ^ mmsgp, Duration ^ durationp)
     {
         ::qpid::messaging::Duration dur((*durationp).Milliseconds);
 
-        return receiverp->Receiver::get(*(mmsgp->messagep), dur);
+        return receiverp->Receiver::get(*(mmsgp->NativeMessage), dur);
     }
 
     //
-    // message = get()
+    // message = Get()
     //
-    Message ^ Receiver::get()
+    Message ^ Receiver::Get()
     {
-        return get(DurationConstants::FORVER);
+        return Get(DurationConstants::FORVER);
     }
 
 
-    Message ^ Receiver::get(Duration ^ durationp)
+    Message ^ Receiver::Get(Duration ^ durationp)
     {
         System::Exception          ^ newException = nullptr;
         ::qpid::messaging::Message * msgp         = NULL;
@@ -133,58 +133,54 @@ namespace messaging {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Receiver:get unknown error");
-        }
         finally
         {
-            // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
                 if (msgp != NULL)
                 {
                     delete msgp;
                 }
-
-                throw newException;
+				if (newMessage != nullptr)
+				{
+					delete newMessage;
+				}
             }
         }
+        if (newException != nullptr)
+        {
+			throw newException;
+		}
 
         return newMessage;
     }
 
     //
-    // fetch(message)
+    // Fetch(message)
     //
-    bool Receiver::fetch(Message ^ mmsgp)
+    bool Receiver::Fetch(Message ^ mmsgp)
     {
-        return fetch(mmsgp, DurationConstants::FORVER);
+        return Fetch(mmsgp, DurationConstants::FORVER);
     }
 
-    bool Receiver::fetch(Message ^ mmsgp, Duration ^ durationp)
+    bool Receiver::Fetch(Message ^ mmsgp, Duration ^ durationp)
     {
         ::qpid::messaging::Duration dur((*durationp).Milliseconds);
 
-        return receiverp->::qpid::messaging::Receiver::fetch(*((*mmsgp).messagep), dur);
+        return receiverp->::qpid::messaging::Receiver::fetch(*((*mmsgp).NativeMessage), dur);
     }
     
 
     //
-    // message = fetch()
+    // message = Fetch()
     //
 
-    Message ^ Receiver::fetch()
+    Message ^ Receiver::Fetch()
     {
-        return fetch(DurationConstants::FORVER);
+        return Fetch(DurationConstants::FORVER);
     }
 
-    Message ^ Receiver::fetch(Duration ^ durationp)
+    Message ^ Receiver::Fetch(Duration ^ durationp)
     {
         System::Exception          ^ newException = nullptr;
         ::qpid::messaging::Message * msgp         = NULL;
@@ -209,64 +205,59 @@ namespace messaging {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
-        catch (const std::exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        } 
-        catch ( ... )
-        {
-            newException = gcnew QpidException("Receiver:fetch unknown error");
-
-        }
         finally
         {
-            // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
                 if (msgp != NULL)
                 {
                     delete msgp;
                 }
-
-                throw newException;
+				if (newMessage != nullptr)
+				{
+					delete newMessage;
+				}
             }
         }
+        if (newException != nullptr)
+        {
+			throw newException;
+		}
 
         return newMessage;
     }
 
-    void Receiver::setCapacity(System::UInt32 capacity)
+    void Receiver::SetCapacity(System::UInt32 capacity)
     {
         receiverp->setCapacity(capacity);
     }
 
-    System::UInt32 Receiver::getCapacity()
+    System::UInt32 Receiver::GetCapacity()
     {
         return receiverp->getCapacity();
     }
 
-    System::UInt32 Receiver::getAvailable()
+    System::UInt32 Receiver::GetAvailable()
     {
         return receiverp->getAvailable();
     }
 
-    System::UInt32 Receiver::getUnsettled()
+    System::UInt32 Receiver::GetUnsettled()
     {
         return receiverp->getUnsettled();
     }
 
-    void Receiver::close()
+    void Receiver::Close()
     {
         receiverp->close();
     }
 
-    System::String ^ Receiver::getName()
+    System::String ^ Receiver::GetName()
     {
         return gcnew System::String(receiverp->getName().c_str());
     }
 
-    Session ^ Receiver::getSession()
+    Session ^ Receiver::GetSession()
     {
         return parentSession;
     }

@@ -35,10 +35,10 @@ namespace messaging {
     class ReceiverImpl {};
 }}
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Mreceiver is a managed wrapper for a ::qpid::messaging::Receiver
@@ -57,38 +57,43 @@ namespace messaging {
         // Kept object deletion code
         void Cleanup();
 
-    public:
         // The kept object in the Messaging C++ DLL
         ::qpid::messaging::Receiver * receiverp;
 
+    public:
         Receiver(::qpid::messaging::Receiver * r,
             Session ^ sessRef);
         ~Receiver();
         !Receiver();
         Receiver(const Receiver ^ rhs);
 
-        // get(message)
-        bool get(Message ^ mmsgp);
-        bool get(Message ^ mmsgp, Duration ^ durationp);
+        property ::qpid::messaging::Receiver * NativeReceiver
+        {
+            ::qpid::messaging::Receiver * get () { return receiverp; }
+        }
 
-        // message = get()
-        Message ^ get();
-        Message ^ get(Duration ^ durationp);
+        // Get(message)
+        bool Get(Message ^ mmsgp);
+        bool Get(Message ^ mmsgp, Duration ^ durationp);
 
-        // fetch(message)
-        bool fetch(Message ^ mmsgp);
-        bool fetch(Message ^ mmsgp, Duration ^ duration);
+        // message = Get()
+        Message ^ Get();
+        Message ^ Get(Duration ^ durationp);
 
-        // message = fetch()
-        Message ^ fetch();
-        Message ^ fetch(Duration ^ durationp);
+        // Fetch(message)
+        bool Fetch(Message ^ mmsgp);
+        bool Fetch(Message ^ mmsgp, Duration ^ duration);
 
-        void setCapacity(System::UInt32 capacity);
-        System::UInt32 getCapacity();
-        System::UInt32 getAvailable();
-        System::UInt32 getUnsettled();
-        void close();
-        System::String ^ getName();
-        Session ^ getSession();
+        // message = Fetch()
+        Message ^ Fetch();
+        Message ^ Fetch(Duration ^ durationp);
+
+        void SetCapacity(System::UInt32 capacity);
+        System::UInt32 GetCapacity();
+        System::UInt32 GetAvailable();
+        System::UInt32 GetUnsettled();
+        void Close();
+        System::String ^ GetName();
+        Session ^ GetSession();
     };
 }}}}
