@@ -2951,7 +2951,7 @@ producer.send(m);
 
       <para>For more information on how to configure log4j, please consult the log4j documentation.</para>
 
-      <para>If using the log4j binding please ensure to set the log level explicitly. Otherwise log4j will default to DEBUG level which will degrade performance.</para>
+      <para>If using the log4j binding please ensure to set the log level for org.apache.qpid explicitly. Otherwise log4j will default to DEBUG which will degrade performance considerably due to excessive logging. Recommended logging level for production is WARN.</para>
 
       <example>
       <para>You could place the snippet below in a log4j.properties file and place it in the classpath or explicitly specify it using the -Dlog4j.configuration property. The following configures the qpid client to log at the WARN level</para>
