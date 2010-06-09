@@ -198,6 +198,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
 const uint16_t ConnectionImpl::NEXT_CHANNEL = std::numeric_limits<uint16_t>::max();
 
 ConnectionImpl::~ConnectionImpl() {
+    if (heartbeatTask) heartbeatTask->cancel();
     theIO().sub();
 }
 
