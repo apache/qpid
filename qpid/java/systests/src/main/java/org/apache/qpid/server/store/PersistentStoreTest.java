@@ -70,13 +70,13 @@ public class PersistentStoreTest extends QpidBrokerTestCase
         {
             Message msg = _consumer.receive(RECEIVE_TIMEOUT);
             assertNotNull("Message " + i + " not received", msg);
-            assertEquals("Did not recieve the expected message", i, msg.getIntProperty(INDEX));
+            assertEquals("Did not receive the expected message", i, msg.getIntProperty(INDEX));
         }
         
         Message msg = _consumer.receive(100);
         if(msg != null)
         {
-            fail("No more messages should be received, but received message: " + msg.getIntProperty(INDEX));
+            fail("No more messages should be received, but received additional message with index: " + msg.getIntProperty(INDEX));
         }
     }
 
