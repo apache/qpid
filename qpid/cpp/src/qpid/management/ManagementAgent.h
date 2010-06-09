@@ -175,11 +175,7 @@ private:
         void mapDecode(const qpid::types::Variant::Map& _map);
     };
 
-    // TODO: Eventually replace string with entire reply-to structure.  reply-to
-    //       currently assumes that the exchange is "amq.direct" even though it could
-    //       in theory be specified differently.
-    typedef std::map<ObjectId, RemoteAgent*> RemoteAgentMap;
-    typedef std::vector<std::string>         ReplyToVector;
+    typedef std::map<ObjectId, boost::shared_ptr<RemoteAgent> > RemoteAgentMap;
 
     //  Storage for known schema classes:
     //
