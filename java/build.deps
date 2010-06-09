@@ -10,7 +10,7 @@ commons-lang=lib/commons-lang-2.2.jar
 commons-logging=lib/commons-logging-1.0.4.jar
 commons-pool=lib/commons-pool-1.4.jar
 
-derby-db=lib/derby-10.3.2.1.jar
+derby-db=lib/derby-10.6.1.0.jar
 
 geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
 
