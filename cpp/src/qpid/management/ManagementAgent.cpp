@@ -1390,31 +1390,26 @@ uint32_t ManagementAgent::assignBankLH (uint32_t requestedBank)
 
 void ManagementAgent::deleteOrphanedAgentsLH()
 {
-    vector<ObjectId> deleteList;
+    list<ObjectId> deleteList;
 
-    for (RemoteAgentMap::iterator aIter = remoteAgents.begin(); aIter != remoteAgents.end(); aIter++) {
-        ObjectId connectionRef = aIter->first;
+    for (RemoteAgentMap::const_iterator aIter = remoteAgents.begin(); aIter != remoteAgents.end(); aIter++) {
         bool found = false;
 
         for (ManagementObjectMap::iterator iter = managementObjects.begin();
              iter != managementObjects.end();
              iter++) {
-            if (iter->first == connectionRef && !iter->second->isDeleted()) {
+            if (iter->first == aIter->first && !iter->second->isDeleted()) {
                 found = true;
                 break;
             }
         }
 
-        if (!found) {
-            deleteList.push_back(connectionRef);
-            delete aIter->second;
-        }
+        if (!found)
+            deleteList.push_back(aIter->first);
     }
 
-    for (vector<ObjectId>::iterator dIter = deleteList.begin(); dIter != deleteList.end(); dIter++)
+    for (list<ObjectId>::const_iterator dIter = deleteList.begin(); dIter != deleteList.end(); dIter++)
         remoteAgents.erase(*dIter);
-
-    deleteList.clear();
 }
 
 void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, const string& replyToKey, uint32_t sequence, const ConnectionToken* connToken)
@@ -1444,12 +1439,12 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, const string& rep
 
     assignedBank = assignBankLH(requestedAgentBank);
 
-    RemoteAgent* agent = new RemoteAgent(*this);
+    boost::shared_ptr<RemoteAgent> agent(new RemoteAgent(*this));
     agent->brokerBank = brokerBank;
     agent->agentBank  = assignedBank;
     agent->routingKey = replyToKey;
     agent->connectionRef = connectionRef;
-    agent->mgmtObject = new _qmf::Agent (this, agent);
+    agent->mgmtObject = new _qmf::Agent (this, agent.get());
     agent->mgmtObject->set_connectionRef(agent->connectionRef);
     agent->mgmtObject->set_label        (label);
     agent->mgmtObject->set_registeredTo (broker->GetManagementObject()->getObjectId());
@@ -2289,7 +2284,7 @@ void ManagementAgent::exportAgents(string& out) {
          ++i)
     {
         // TODO aconway 2010-03-04: see comment in ManagementAgent::RemoteAgent::encode
-        RemoteAgent* agent = i->second;
+        boost::shared_ptr<RemoteAgent> agent(i->second);
 
         map_.clear();
         amap.clear();
@@ -2310,7 +2305,7 @@ void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
     sys::Mutex::ScopedLock lock(userLock);
 
     for (l = content.begin(); l != content.end(); l++) {
-        auto_ptr<RemoteAgent> agent(new RemoteAgent(*this));
+        boost::shared_ptr<RemoteAgent> agent(new RemoteAgent(*this));
         Variant::Map map_;
         Variant::Map::const_iterator i;
 
@@ -2321,7 +2316,7 @@ void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
             agent->mapDecode(i->second.asMap());
 
             addObject (agent->mgmtObject, 0, false);
-            remoteAgents[agent->connectionRef] = agent.release();
+            remoteAgents[agent->connectionRef] = agent;
         }
     }
 }
