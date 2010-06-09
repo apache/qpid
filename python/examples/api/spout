@@ -39,13 +39,13 @@ parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
 parser.add_option("-r", "--reconnect", action="store_true",
                   help="enable auto reconnect")
-parser.add_option("-i", "--reconnect-interval", type=float, default=3,
+parser.add_option("-i", "--reconnect-interval", type="float", default=3,
                   help="interval between reconnect attempts")
-parser.add_option("-l", "--reconnect-limit", type=int,
+parser.add_option("-l", "--reconnect-limit", type="int",
                   help="maximum number of reconnect attempts")
-parser.add_option("-c", "--count", type=int, default=1,
+parser.add_option("-c", "--count", type="int", default=1,
                   help="stop after count messages have been sent, zero disables (default %default)")
-parser.add_option("-t", "--timeout", type=float, default=None,
+parser.add_option("-t", "--timeout", type="float", default=None,
                   help="exit after the specified time")
 parser.add_option("-I", "--id", help="use the supplied id instead of generating one")
 parser.add_option("-S", "--subject", help="specify a subject")

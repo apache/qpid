@@ -27,17 +27,17 @@ parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS ...",
                                description="Drain messages from the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
-parser.add_option("-c", "--count", type=int,
+parser.add_option("-c", "--count", type="int",
                   help="number of messages to drain")
 parser.add_option("-f", "--forever", action="store_true",
                   help="ignore timeout and wait forever")
 parser.add_option("-r", "--reconnect", action="store_true",
                   help="enable auto reconnect")
-parser.add_option("-i", "--reconnect-interval", type=float, default=3,
+parser.add_option("-i", "--reconnect-interval", type="float", default=3,
                   help="interval between reconnect attempts")
-parser.add_option("-l", "--reconnect-limit", type=int,
+parser.add_option("-l", "--reconnect-limit", type="int",
                   help="maximum number of reconnect attempts")
-parser.add_option("-t", "--timeout", type=float, default=0,
+parser.add_option("-t", "--timeout", type="float", default=0,
                   help="timeout in seconds to wait before exiting (default %default)")
 parser.add_option("-p", "--print", dest="format", default="%(M)s",
                   help="format string for printing messages (default %default)")
