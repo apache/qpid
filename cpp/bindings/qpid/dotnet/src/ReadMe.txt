@@ -1,13 +1,13 @@
 ========================================================================
-    DYNAMIC LINK LIBRARY : org.apache.qpid.messaging Project Overview
+    DYNAMIC LINK LIBRARY : Org.Apache.Qpid.Messaging Project Overview
 ========================================================================
 
-AppWizard has created this org.apache.qpid.messaging DLL for you.  
+AppWizard has created this Org.Apache.Qpid.Messaging DLL for you.  
 
 This file contains a summary of what you will find in each of the files that
-make up your org.apache.qpid.messaging application.
+make up your Org.Apache.Qpid.Messaging application.
 
-org.apache.qpid.messaging.vcproj
+Org.Apache.Qpid.Messaging.vcproj
     This is the main project file for VC++ projects generated using an Application Wizard. 
     It contains information about the version of Visual C++ that generated the file, and 
     information about the platforms, configurations, and project features selected with the

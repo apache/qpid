@@ -21,16 +21,15 @@
 
 using System;
 using System.Collections.Generic;
-using org.apache.qpid.messaging;
+using Org.Apache.Qpid.Messaging;
 
-namespace org.apache.qpid.messaging.examples
+namespace Org.Apache.Qpid.Messaging.examples
 {
     class MapReceiver
     {
         static void Main(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
-//            string url = "10.16.18.254:5672";
             if (args.Length > 0)
                 url = args[0];
 
@@ -38,37 +37,37 @@ namespace org.apache.qpid.messaging.examples
             // Create and open an AMQP connection to the broker URL
             //
             Connection connection = new Connection(url);
-            connection.open();
+            connection.Open();
 
             //
             // Create a session and a receiver fir the direct exchange using the
             // routing key "map_example".
             //
-            Session session = connection.createSession();
-            Receiver receiver = session.createReceiver("amq.direct/map_example");
+            Session session = connection.CreateSession();
+            Receiver receiver = session.CreateReceiver("amq.direct/map_example");
 
             //
             // Fetch the message from the broker (wait indefinitely by default)
             //
-            Message message = receiver.fetch(new Duration(60000));
+            Message message = receiver.Fetch(new Duration(60000));
 
             //
             // Extract the structured content from the message.
             //
             Dictionary<string, object> content = new Dictionary<string, object>();
-            message.getContent(content);
+            message.GetContent(content);
             Console.WriteLine("Received: {0}", content);
 
             //
             // Acknowledge the receipt of all received messages.
             //
-            session.acknowledge();
+            session.Acknowledge();
 
             //
             // Close the receiver and the connection.
             //
-            receiver.close();
-            connection.close();
+            receiver.Close();
+            connection.Close();
         }
     }
 }

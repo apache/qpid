@@ -28,43 +28,44 @@
 
 #include "QpidTypeCheck.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// TypeTranslator provides codec between .NET Dictionary/List and
     /// qpid messaging Map/List.
     /// </summary>
-
-    public ref class TypeTranslator
+    public ref class TypeTranslator sealed
     {
+	private:
+		TypeTranslator::TypeTranslator() {}
 
     public:
-        // The given object is a Dictionary.
+        // The given object is a managed Dictionary.
         // Add its elements to the qpid map.
-        static void ManagedToNative(::qpid::types::Variant::Map & theMapp,
-                                    QpidMap ^ theObjp);
+        static void ManagedToNative(QpidMap ^ theDictionary,
+									::qpid::types::Variant::Map & qpidMap);
 
-        // The given object is a List.
+        // The given object is a managed List.
         // Add its elements to the qpid list.
-        static void ManagedToNative(::qpid::types::Variant::List & theListp,
-                                    QpidList ^ theObjp);
+        static void ManagedToNative(QpidList ^ theList,
+									::qpid::types::Variant::List & qpidList);
 
-        // The given object is a simple native type (not a Dictionary or List)
+        // The given object is a simple managed type (not a Dictionary or List)
         // Returns a variant representing simple native type object.
-        static void ManagedToNativeObject(System::Object ^ theObjp,
-                                          ::qpid::types::Variant & targetp);
+        static void ManagedToNativeObject(System::Object ^ managedValue,
+                                          ::qpid::types::Variant & qpidVariant);
 
-        // Given a Dictionary,
-        // Return its values in a Qpid map
-        static void NativeToManaged(QpidMap ^ dict, 
-                                    ::qpid::types::Variant::Map & map);
+        // The given object is a qpid map.
+        // Add its elements to the managed Dictionary.
+        static void NativeToManaged(::qpid::types::Variant::Map & qpidMap,
+									QpidMap ^ dict);
 
-        // Given a List,
-        // Return its values in a Qpid list
-        static void NativeToManaged(QpidList ^ vList, 
-                                    ::qpid::types::Variant::List & qpidList);
+        // The given object is a qpid list.
+        // Add its elements to the managed List.
+        static void NativeToManaged(::qpid::types::Variant::List & qpidList,
+									QpidList ^ managedList);
     };
 }}}}

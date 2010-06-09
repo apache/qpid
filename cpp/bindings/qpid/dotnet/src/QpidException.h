@@ -19,19 +19,23 @@
 
 #pragma once
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
 using namespace System;
 
+[Serializable]
 public ref class QpidException : System::Exception
 {
  public:
 
- QpidException() : System::Exception() {}
- QpidException(String^ estring) : System::Exception(estring) {}
+ QpidException() 
+	 : System::Exception() {}
+
+ QpidException(String^ estring) 
+	 : System::Exception(estring) {}
 
 };
 

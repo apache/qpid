@@ -26,10 +26,10 @@
 
 #include "qpid/messaging/Message.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     ref class Address;
     ref class Duration;
@@ -45,15 +45,18 @@ namespace messaging {
         // Kept object deletion code
         void Cleanup();
 
+        // The kept object in the Messaging C++ DLL
+        ::qpid::messaging::Message * messagep;
+
     public:
         // Create empty message
         Message();
 
         // Create from String
-        Message(System::String ^ string);
+        Message(System::String ^ theStr);
 
         // Create from object
-        Message(System::Object ^ obj);
+        Message(System::Object ^ theValue);
 
         // TODO: Create from bytes
         // Message(System::Byte [] ^ bytes);
@@ -67,62 +70,64 @@ namespace messaging {
         // Copy constructor
         Message(const Message % rhs);
 
-        // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::Message * messagep;
+        property ::qpid::messaging::Message * NativeMessage
+        {
+            ::qpid::messaging::Message * get () { return messagep; }
+        }
 
-        void setReplyTo(Address ^ address);
-        Address ^ getReplyTo();
+        void SetReplyTo(Address ^ address);
+        Address ^ GetReplyTo();
 
-        void setSubject(System::String ^ subject);
-        System::String ^ getSubject();
+        void SetSubject(System::String ^ subject);
+        System::String ^ GetSubject();
 
-        void setContentType(System::String ^ ct);
-        System::String ^ getContentType();
+        void SetContentType(System::String ^ ct);
+        System::String ^ GetContentType();
         
-        void setMessageId(System::String ^ mId);
-        System::String ^ getMessageId();
+        void SetMessageId(System::String ^ messageId);
+        System::String ^ GetMessageId();
         
-        void setUserId(System::String ^ uId);
-        System::String ^ getUserId();
+        void SetUserId(System::String ^ uId);
+        System::String ^ GetUserId();
         
-        void setCorrelationId(System::String ^ cId);
-        System::String ^ getCorrelationId();
+        void SetCorrelationId(System::String ^ correlationId);
+        System::String ^ GetCorrelationId();
 
-        void setPriority(unsigned char priority);
-        unsigned char getPriority();
+        void SetPriority(unsigned char priority);
+        unsigned char GetPriority();
 
-        void setTtl(Duration ^ ttl);
-        Duration ^ getTtl();
+        void SetTtl(Duration ^ ttl);
+        Duration ^ GetTtl();
 
-        void setDurable(bool durable);
-        bool getDurable();
+        void SetDurable(bool durable);
+        bool GetDurable();
 
-        bool getRedelivered();
-        void setRedelivered(bool redelivered);
+        bool GetRedelivered();
+        void SetRedelivered(bool redelivered);
 
         System::Collections::Generic::Dictionary<
-            System::String^, System::Object^> ^ getProperties();
+            System::String^, System::Object^> ^ GetProperties();
 
-        void setContent(System::String ^ content);
+        void SetContent(System::String ^ content);
 
         //TODO:: void setContent(Bytes{} bytes, offset, length);
 
         // get content as string
-        System::String ^ getContent();
+        System::String ^ GetContent();
 
         // get content as dictionary
-        void getContent(System::Collections::Generic::Dictionary<
+        void GetContent(System::Collections::Generic::Dictionary<
                             System::String^, 
                             System::Object^> ^ dict);
 
         // get content as map
-        void getContent(System::Collections::Generic::List<
+        void GetContent(System::Collections::ObjectModel::Collection<
                             System::Object^> ^);
 
         // get content as bytes
-        void getRaw(cli::array<System::Byte> ^ arr);
+        void GetRaw(cli::array<System::Byte> ^ arr);
 
-        System::UInt64 getContentSize();
+        System::UInt64 GetContentSize();
 
         //TODO: EncodingException
 

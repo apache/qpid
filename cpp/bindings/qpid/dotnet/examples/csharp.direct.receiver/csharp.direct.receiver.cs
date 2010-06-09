@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using org.apache.qpid.messaging;
+using Org.Apache.Qpid.Messaging;
 
 namespace CSharpDirect
 {
@@ -54,20 +54,20 @@ namespace CSharpDirect
 
             Connection conn = new Connection(host);
 
-            conn.open();
+            conn.Open();
 
-            if (!conn.isOpen())
+            if (!conn.IsOpen())
             {
                 Console.WriteLine("Failed to open connection to host : {0}", host);
             }
             else
             {
 
-                Session sess = conn.createSession();
+                Session sess = conn.CreateSession();
 
                 Duration dura = new Duration(3600000); // wait forever
 
-                Receiver rcv = sess.createReceiver(addr);
+                Receiver rcv = sess.CreateReceiver(addr);
 
                 Message msg = new Message("");
 
@@ -75,8 +75,8 @@ namespace CSharpDirect
                 {
                     try
                     {
-                        Message msg2 = rcv.fetch(dura);
-                        Console.WriteLine("Rcvd msg {0} : {1}", i, msg2.getContent());
+                        Message msg2 = rcv.Fetch(dura);
+                        Console.WriteLine("Rcvd msg {0} : {1}", i, msg2.GetContent());
                     }
                     catch (Exception e)
                     {
@@ -84,7 +84,7 @@ namespace CSharpDirect
                     }
                 }
 
-                conn.close();
+                conn.Close();
             }
         }
     }

@@ -36,10 +36,10 @@
 #include "QpidException.h"
 #include "TypeTranslator.h"
 
-namespace org {
-namespace apache {
-namespace qpid {
-namespace messaging {
+namespace Org {
+namespace Apache {
+namespace Qpid {
+namespace Messaging {
 
     /// <summary>
     /// Message is a managed wrapper for a ::qpid::messaging::Message
@@ -52,19 +52,16 @@ namespace messaging {
     }
 
     // Create from string
-    Message::Message(System::String ^ string) :
-        messagep(new ::qpid::messaging::Message(QpidMarshal::ToNative(string)))
+    Message::Message(System::String ^ theStr) :
+        messagep(new ::qpid::messaging::Message(QpidMarshal::ToNative(theStr)))
     {
     }
 
     // Create from object
-    Message::Message(System::Object ^ objp) :
+    Message::Message(System::Object ^ theValue) :
         messagep(new ::qpid::messaging::Message(QpidMarshal::ToNative("")))
     {
-        ::qpid::types::Variant * variantp  = 0;
-        std::string            * variantsp = 0;
-
-        if (QpidTypeCheck::ObjectIsMap(objp))
+        if (QpidTypeCheck::ObjectIsMap(theValue))
         {
             // Create a mapped message using given dictionary
 
@@ -72,7 +69,7 @@ namespace messaging {
             ::qpid::types::Variant::Map newMap;
 
             // Add the map variables to the map
-            TypeTranslator::ManagedToNative(newMap, (QpidMap ^)objp);
+            TypeTranslator::ManagedToNative((QpidMap ^)theValue, newMap);
 
             // Set message content type
             messagep->setContentType("ampq/map");
@@ -80,7 +77,7 @@ namespace messaging {
             // Insert the map into the message
             ::qpid::messaging::encode(newMap, *messagep, QpidMarshal::ToNative("amqp/map"));
         }
-        else if (QpidTypeCheck::ObjectIsList(objp))
+        else if (QpidTypeCheck::ObjectIsList(theValue))
         {
             // Create a list message using given list
 
@@ -88,7 +85,7 @@ namespace messaging {
             ::qpid::types::Variant::List newList;
 
             // Add the list variables to the list
-            TypeTranslator::ManagedToNative(newList, (QpidList ^)objp);
+            TypeTranslator::ManagedToNative((QpidList ^)theValue, newList);
 
             // Set message content type
             messagep->setContentType("ampq/list");
@@ -99,7 +96,7 @@ namespace messaging {
         else
         {
             // Create a binary string message
-            messagep->setContent(QpidMarshal::ToNative(objp->ToString()));
+            messagep->setContent(QpidMarshal::ToNative(theValue->ToString()));
         }
     }
 
@@ -145,12 +142,12 @@ namespace messaging {
     //
     // ReplyTo
     //
-    void Message::setReplyTo(Address ^ address)
+    void Message::SetReplyTo(Address ^ address)
     {
-        messagep->setReplyTo(*(address->addressp));
+        messagep->setReplyTo(*(address->NativeAddress));
     }
 
-    Address ^ Message::getReplyTo()
+    Address ^ Message::GetReplyTo()
     {
         const ::qpid::messaging::Address & addrp =
             messagep->::qpid::messaging::Message::getReplyTo();
@@ -162,12 +159,12 @@ namespace messaging {
     //
     // Subject
     //
-    void Message::setSubject(System::String ^ subject)
+    void Message::SetSubject(System::String ^ subject)
     {
         messagep->setSubject(QpidMarshal::ToNative(subject));
     }
     
-    System::String ^ Message::getSubject()
+    System::String ^ Message::GetSubject()
     {
         return gcnew String(messagep->getSubject().c_str());
     }
@@ -176,26 +173,26 @@ namespace messaging {
     //
     // ContentType
     //
-    void Message::setContentType(System::String ^ ct)
+    void Message::SetContentType(System::String ^ ct)
     {
         messagep->setContentType(QpidMarshal::ToNative(ct));
     }
     
-    System::String ^ Message::getContentType()
+	System::String ^ Message::GetContentType()
     {
-        return gcnew String(messagep->getContentType().c_str());
+		return gcnew String(messagep->::qpid::messaging::Message::getContentType().c_str());
     }
     
     
     //
     // MessageId
     //
-    void Message::setMessageId(System::String ^ mId)
+    void Message::SetMessageId(System::String ^ messageId)
     {
-        messagep->setMessageId(QpidMarshal::ToNative(mId));
+        messagep->setMessageId(QpidMarshal::ToNative(messageId));
     }
     
-    System::String ^ Message::getMessageId()
+    System::String ^ Message::GetMessageId()
     {
         return gcnew String(messagep->getMessageId().c_str());
     }
@@ -204,12 +201,12 @@ namespace messaging {
     //
     // UserId
     //
-    void Message::setUserId(System::String ^ uId)
+    void Message::SetUserId(System::String ^ uId)
     {
         messagep->setUserId(QpidMarshal::ToNative(uId));
     }
     
-    System::String ^ Message::getUserId()
+    System::String ^ Message::GetUserId()
     {
         return gcnew String(messagep->getUserId().c_str());
     }
@@ -218,12 +215,12 @@ namespace messaging {
     //
     // CorrelationId
     //
-    void Message::setCorrelationId(System::String ^ cId)
+    void Message::SetCorrelationId(System::String ^ correlationId)
     {
-        messagep->setCorrelationId(QpidMarshal::ToNative(cId));
+        messagep->setCorrelationId(QpidMarshal::ToNative(correlationId));
     }
     
-    System::String ^ Message::getCorrelationId()
+    System::String ^ Message::GetCorrelationId()
     {
         return gcnew String(messagep->getCorrelationId().c_str());
     }
@@ -232,12 +229,12 @@ namespace messaging {
     //
     // Priority
     //
-    void Message::setPriority(unsigned char priority)
+    void Message::SetPriority(unsigned char priority)
     {
         messagep->setPriority(priority);
     }
     
-    unsigned char Message::getPriority()
+    unsigned char Message::GetPriority()
     {
         return messagep->getPriority();
     }
@@ -246,44 +243,44 @@ namespace messaging {
     //
     // Ttl
     //
-    void Message::setTtl(Duration ^ ttl)
+    void Message::SetTtl(Duration ^ ttl)
     {
         ::qpid::messaging::Duration dur(ttl->Milliseconds);
 
         messagep->setTtl(dur);
     }
     
-    Duration ^ Message::getTtl()
+    Duration ^ Message::GetTtl()
     {
         Duration ^ dur = gcnew Duration(messagep->getTtl().getMilliseconds());
 
         return dur;
     }
 
-    void Message::setDurable(bool durable)
+    void Message::SetDurable(bool durable)
     {
         messagep->setDurable(durable);
     }
     
-    bool Message::getDurable()
+    bool Message::GetDurable()
     {
         return messagep->getDurable();
     }
 
 
-    bool Message::getRedelivered()
+    bool Message::GetRedelivered()
     {
         return messagep->getRedelivered();
     }
 
-    void Message::setRedelivered(bool redelivered)
+    void Message::SetRedelivered(bool redelivered)
     {
         messagep->setRedelivered(redelivered);
     }
 
 
     System::Collections::Generic::Dictionary<
-            System::String^, System::Object^> ^ Message::getProperties()
+            System::String^, System::Object^> ^ Message::GetProperties()
     {
         ::qpid::types::Variant::Map map;
 
@@ -294,19 +291,19 @@ namespace messaging {
             gcnew System::Collections::Generic::Dictionary<
                       System::String^, System::Object^> ;
 
-        TypeTranslator::NativeToManaged(dict, map);
+        TypeTranslator::NativeToManaged(map, dict);
 
         return dict;
     }
 
 
-    void Message::setContent(System::String ^ content)
+    void Message::SetContent(System::String ^ content)
     {
         messagep->setContent(QpidMarshal::ToNative(content));
     }
 
 
-    System::String ^ Message::getContent()
+    System::String ^ Message::GetContent()
     {
         return gcnew String(messagep->getContent().c_str());
     }
@@ -315,7 +312,7 @@ namespace messaging {
     //
     // User wants to extract a Dictionary from the message
     //
-    void Message::getContent(System::Collections::Generic::Dictionary<
+    void Message::GetContent(System::Collections::Generic::Dictionary<
                                 System::String^, 
                                 System::Object^> ^ dict)
     {
@@ -324,14 +321,14 @@ namespace messaging {
         
         ::qpid::messaging::decode(*messagep, map, QpidMarshal::ToNative("amqp/map"));
 
-        TypeTranslator::NativeToManaged(dict, map);
+        TypeTranslator::NativeToManaged(map, dict);
     }
 
 
     //
     // User wants to extract a list from the message
     //
-    void Message::getContent(System::Collections::Generic::List<
+    void Message::GetContent(System::Collections::ObjectModel::Collection<
                         System::Object^> ^ list)
     {
         // allocate a native messaging::List
@@ -341,22 +338,22 @@ namespace messaging {
         ::qpid::messaging::decode(*messagep, nativeList, QpidMarshal::ToNative("amqp/list"));
 
         // translate native list into user's managed list
-        TypeTranslator::NativeToManaged(list, nativeList);
+        TypeTranslator::NativeToManaged(nativeList, list);
     }
 
     //
     // User wants content as bytes.
     // result array must be correct size already
     //
-    void Message::getRaw(array<System::Byte> ^ arr)
+    void Message::GetRaw(array<System::Byte> ^ arr)
     {
         System::UInt32 size = messagep->getContentSize();
      
         if (0 == size)
-            throw gcnew QpidException("Message::getRaw - message size is zero");
+            throw gcnew QpidException("Message::GetRaw - message size is zero");
 
         if (arr->Length != size)
-            throw gcnew QpidException("Message::getRaw - receive buffer is too small");
+            throw gcnew QpidException("Message::GetRaw - receive buffer is too small");
 
         const char * ptr = messagep->getContentPtr();
 
@@ -369,7 +366,7 @@ namespace messaging {
     }
 
 
-    System::UInt64 Message::getContentSize()
+    System::UInt64 Message::GetContentSize()
     {
         return messagep->getContentSize();
     }
