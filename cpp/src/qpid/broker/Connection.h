@@ -111,6 +111,7 @@ class Connection : public sys::ConnectionInputHandler,
     std::string getAuthCredentials();
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
+    void raiseConnectEvent();
     const std::string& getUserId() const { return ConnectionState::getUserId(); }
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }

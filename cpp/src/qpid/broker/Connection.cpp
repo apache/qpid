@@ -24,6 +24,7 @@
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/SecuritySettings.h"
+#include "qpid/sys/ClusterSafe.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
@@ -121,7 +122,9 @@ Connection::~Connection()
 {
     if (mgmtObject != 0) {
         mgmtObject->resourceDestroy();
-        if (!isLink)
+        // In a cluster, Connections destroyed during shutdown are in
+        // a cluster-unsafe context. Don't raise an event in that case.
+        if (!isLink && isClusterSafe())
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId()));
     }
     if (isLink)
@@ -202,6 +205,13 @@ void Connection::notifyConnectionForced(const string& text)
 void Connection::setUserId(const string& userId)
 {
     ConnectionState::setUserId(userId);
+    // In a cluster, the cluster code will raise the connect event
+    // when the connection is replicated to the cluster.
+    if (!sys::isCluster())
+        raiseConnectEvent();
+}
+
+void Connection::raiseConnectEvent() {
     if (mgmtObject != 0) {
         mgmtObject->set_authIdentity(userId);
         agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId));

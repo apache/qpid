@@ -223,6 +223,7 @@ class LongTests(BrokerTest):
             """Start ordinary clients for a broker. Start one client per broker.
             Round-robin on a colllection of different clients."""
             cmds=[
+                ["qpid-tool", "localhost:%s"%(broker.port())],
                 ["qpid-perftest", "--count", 50000,
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
@@ -234,14 +235,15 @@ class LongTests(BrokerTest):
             cmd = ["qpid-stat", "-b", "localhost:%s" %(broker.port())]
             mclients.append(ClientLoop(broker, cmd))
 
-        endtime = time.time() + self.duration()
+        duration = max(self.duration(), 5)
+        endtime = time.time() + duration
         alive = 0                       # First live cluster member
         for i in range(len(cluster)):
             start_clients(cluster[i], i)
         start_mclients(cluster[alive])
 
         while time.time() < endtime:
-            time.sleep(min(5,self.duration()/2))
+            time.sleep(min(5,duration/2))
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker, expect the clients to fail. 
             for c in clients[alive] + mclients: c.expect_fail()

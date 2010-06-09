@@ -165,6 +165,8 @@ void Connection::announce(
             connection->received(frame);
          connection->setUserId(username);
     }
+    // Raise the connection management event now that the connection is replicated.
+    connection->raiseConnectEvent();
 }
 
 Connection::~Connection() {
