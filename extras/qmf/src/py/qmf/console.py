@@ -279,6 +279,8 @@ class Object(object):
       self._properties = newer.getProperties()
     if len(newer.getStatistics()) > 0:
       self._statistics = newer.getStatistics()
+    self._currentTime = newer._currentTime
+    self._deleteTime = newer._deleteTime
 
   def update(self):
     """ Contact the agent and retrieve the lastest property and statistic values for this object. """
