@@ -32,8 +32,12 @@ bool inCluster = false;
 QPID_TSS bool inContext = false;
 }
 
+bool isClusterSafe() { return !inCluster || inContext; }
+
+bool isCluster() { return inCluster; }
+
 void assertClusterSafe()  {
-    if (inCluster && !inContext) {
+    if (!isClusterSafe()) {
         QPID_LOG(critical, "Modified cluster state outside of cluster context");
         ::abort();
     }

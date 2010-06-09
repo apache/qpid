@@ -42,6 +42,20 @@ namespace sys {
 QPID_COMMON_EXTERN void assertClusterSafe();
 
 /**
+ * In a non-clustered broker, returns true.
+ *
+ * In a clustered broker returns true if we are in a context where it
+ * is safe to modify cluster state.
+ *
+ * This function is in the common library rather than the cluster
+ * library because it is called by code in the broker library.
+ */
+QPID_COMMON_EXTERN bool isClusterSafe();
+
+/** Return true in a clustered broker */
+QPID_COMMON_EXTERN bool isCluster();
+
+/**
  * Base class for classes that encapsulate state which is replicated
  * to all members of a cluster. Acts as a marker for clustered state
  * and provides functions to assist detecting bugs in cluster
@@ -53,7 +67,8 @@ struct ClusterSafeScope {
 };
 
 /**
- * Enable cluster-safe assertions. By defaul they are no-ops.
+ * Enable cluster-safe assertions. By default they are no-ops.
+ * Called by cluster code.
  */
 void enableClusterSafe();
 
