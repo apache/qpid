@@ -30,9 +30,9 @@ parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
 parser.add_option("-r", "--reconnect", action="store_true",
                   help="enable auto reconnect")
-parser.add_option("-i", "--reconnect-interval", type=float, default=3,
+parser.add_option("-i", "--reconnect-interval", type="float", default=3,
                   help="interval between reconnect attempts")
-parser.add_option("-l", "--reconnect-limit", type=int,
+parser.add_option("-l", "--reconnect-limit", type="int",
                   help="maximum number of reconnect attempts")
 parser.add_option("-v", dest="verbose", action="store_true",
                   help="enable logging")
