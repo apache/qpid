@@ -167,9 +167,11 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 serverMessage = new MessageTransferMessage(message, null);
                 break;
             default:
-                throw new RuntimeException("Unknown message type retreived from store " + message.getMetaData().getClass());
+                throw new RuntimeException("Unknown message type retrieved from store " + message.getMetaData().getClass());
         }
 
+        //_logger.debug("Recovered message with id " + serverMessage);
+        
 
         _recoveredMessages.put(message.getMessageNumber(), serverMessage);
         _unusedMessages.put(message.getMessageNumber(), message);
@@ -222,7 +224,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             AMQQueue queue = queueRegistry.getQueue(new AMQShortString(queueName));
             if (queue == null)
             {
-                _logger.error("Unkown queue: " + queueName + " cannot be bound to exchange: "
+                _logger.error("Unknown queue: " + queueName + " cannot be bound to exchange: "
                     + exchange.getNameShortString());
             }
             else
@@ -302,7 +304,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 }
                 else
                 {
-                    _logger.warn("Message id " + messageId + " referenced in log as enqueue in queue " + queue.getNameShortString() + " is unknwon, entry will be discarded");
+                    _logger.warn("Message id " + messageId + " referenced in log as enqueued in queue " + queue.getNameShortString() + " is unknown, entry will be discarded");
                     TransactionLog.Transaction txn = _transactionLog.newTransaction();
                     txn.dequeueMessage(queue, messageId);
                     txn.commitTranAsync();
