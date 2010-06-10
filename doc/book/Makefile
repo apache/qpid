@@ -9,34 +9,22 @@
 #  xmllint
 # 
 
-DOCBOOKXSL = /usr/share/sgml/docbook/xsl-stylesheets-1.75.2/
+all: cpp java programming
 
-out/pdf/qpid-book.pdf: build/qpid-book.fo
-	mkdir -p out/pdf
-	fop build/qpid-book.fo out/pdf/qpid-book.pdf
+cpp: build/AMQP-Messaging-Broker-CPP-Book
 
-build/qpid-book.fo: build/qpid-book.xml
-	xsltproc ${DOCBOOKXSL}/fo/docbook.xsl build/qpid-book.xml >build/qpid-book.fo
+java: build/AMQP-Messaging-Broker-Java-Book
 
-build/qpid-book.xml: 
-	mkdir -p build
-	xmllint --xinclude src/Book.xml >build/qpid-book.xml
+programming: build/Programming-In-Apache-Qpid
 
-out/html/index.html: build/qpid-book.xml
-	mkdir -p out/html
-	mkdir -p out/html/Common_Content
-	cd out/html; ln -s ../../src/images
-	cd  out/html/Common_Content; ln -s ../../../src/images
-	cd out/html; xsltproc ${DOCBOOKXSL}/html/chunk.xsl ../../build/qpid-book.xml
+build/AMQP-Messaging-Broker-CPP-Book:
+	./build-book.sh AMQP-Messaging-Broker-CPP-Book
 
-pdf: out/pdf/qpid-book.pdf
+build/AMQP-Messaging-Broker-Java-Book:
+	./build-book.sh AMQP-Messaging-Broker-Java-Book
 
-html:  out/html/index.html
-
-all: pdf html
+build/Programming-In-Apache-Qpid:
+	./build-book.sh Programming-In-Apache-Qpid
 
 clean:
 	rm -rf build
-	rm -rf out
-
-  
