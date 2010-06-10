@@ -218,8 +218,9 @@ public class DerbyMessageStore implements MessageStore
     {
         initialiseDriver();
 
-        final String databasePath = storeConfiguration.getString(ENVIRONMENT_PATH_PROPERTY, 
-                                            System.getProperty("QPID_WORK")+"/derbyDB/" + name);
+        //Update to pick up QPID_WORK and use that as the default location not just derbyDB
+
+        final String databasePath = storeConfiguration.getString(ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")+"/derbyDB");
 
         File environmentPath = new File(databasePath);
         if (!environmentPath.exists())
@@ -233,7 +234,7 @@ public class DerbyMessageStore implements MessageStore
 
         CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_STORE_LOCATION(environmentPath.getAbsolutePath()));
 
-        createOrOpenDatabase(databasePath);
+        createOrOpenDatabase(name, databasePath);
     }
 
     private static synchronized void initialiseDriver() throws ClassNotFoundException
@@ -244,9 +245,10 @@ public class DerbyMessageStore implements MessageStore
         }
     }
 
-    private void createOrOpenDatabase(final String environmentPath) throws SQLException
+    private void createOrOpenDatabase(String name, final String environmentPath) throws SQLException
     {
-        _connectionURL = "jdbc:derby:" + environmentPath + ";create=true";
+        //FIXME this the _vhost name should not be added here, but derby wont use an empty directory as was possibly just created.
+        _connectionURL = "jdbc:derby:" + environmentPath + "/" + name + ";create=true";
 
         Connection conn = newAutoCommitConnection();
 
