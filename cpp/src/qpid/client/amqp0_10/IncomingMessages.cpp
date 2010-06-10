@@ -289,7 +289,7 @@ void IncomingMessages::MessageTransfer::retrieve(qpid::messaging::Message* messa
 namespace {
 //TODO: unify conversion to and from 0-10 message that is currently
 //split between IncomingMessages and OutgoingMessage
-const std::string SUBJECT("subject");
+const std::string SUBJECT("qpid.subject");
 }
 
 void populateHeaders(qpid::messaging::Message& message, 

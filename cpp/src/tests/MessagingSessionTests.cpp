@@ -55,11 +55,13 @@ QPID_AUTO_TEST_CASE(testSimpleSendReceive)
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
     Message out("test-message");
+    out.setSubject("test-subject");
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(Duration::SECOND * 5);
     fix.session.acknowledge();
     BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    BOOST_CHECK_EQUAL(in.getSubject(), out.getSubject());
 }
 
 QPID_AUTO_TEST_CASE(testSyncSendReceive)
