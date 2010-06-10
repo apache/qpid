@@ -38,9 +38,6 @@ using namespace qpid::framing;
 using namespace qpid::client;
 using namespace qpid;
 
-namespace qpid {
-namespace tests {
-
 struct PingOptions : public qpid::TestOptions {
     int timeout;                // Timeout in seconds.
     bool quiet;                 // No output
@@ -51,71 +48,29 @@ struct PingOptions : public qpid::TestOptions {
     }
 };
 
-PingOptions opts;
-
-class Ping : public Runnable {
-    Connection connection;
-    Thread thread;
-    Monitor lock;
-    enum { WAITING, SUCCESS, ERROR } status;
-
-  public:
-    Ping() : status(WAITING) {}
-
-    void run() {
-        try {
-            opts.open(connection);
-            if (!opts.quiet) cout << "Opened connection." << endl;
-            AsyncSession s = connection.newSession();
-            string qname(Uuid(true).str());
-            s.queueDeclare(arg::queue=qname,arg::autoDelete=true,arg::exclusive=true);
-            s.messageTransfer(arg::content=Message("hello", qname));
-            if (!opts.quiet) cout << "Sent message." << endl;
-            SubscriptionManager subs(s);
-            subs.get(qname);
-            if (!opts.quiet) cout << "Received message." << endl;
-            s.sync();
-            s.close();
-            connection.close();
-            Mutex::ScopedLock l(lock);
-            status = SUCCESS;
-            lock.notifyAll();
-        } catch (const exception& e) {
-            cerr << "Unexpected exception: " << e.what() << endl;
-            Mutex::ScopedLock l(lock);
-            status = ERROR;
-            lock.notifyAll();
-        }
-    }
-
-    void start() { thread=Thread(this); }
-
-    bool wait() {
-        Mutex::ScopedLock l(lock);
-        AbsTime deadline(now(), opts.timeout*TIME_SEC);
-        while (status == WAITING && lock.wait(deadline))
-            ;
-        if (status == WAITING && !opts.quiet)
-            cerr << "Timed out after " << opts.timeout << " seconds." << endl;
-        if (status != WAITING) thread.join();
-        return status == SUCCESS;
-    }
-};
-
-}} // namespace qpid::tests
-
-using namespace qpid::tests;
-
 int main(int argc, char** argv) {
     try {
+        PingOptions opts;
         opts.parse(argc, argv);
-        Ping ping;
-        ping.start();
-        if (!ping.wait()) return 1;
-        if (!opts.quiet) cout << "Success!" << endl;
+        opts.con.heartbeat = (opts.timeout+1)/2;
+        Connection connection;
+        opts.open(connection);
+        if (!opts.quiet) cout << "Opened connection." << endl;
+        AsyncSession s = connection.newSession();
+        string qname(Uuid(true).str());
+        s.queueDeclare(arg::queue=qname,arg::autoDelete=true,arg::exclusive=true);
+        s.messageTransfer(arg::content=Message("hello", qname));
+        if (!opts.quiet) cout << "Sent message." << endl;
+        SubscriptionManager subs(s);
+        subs.get(qname);
+        if (!opts.quiet) cout << "Received message." << endl;
+        s.sync();
+        s.close();
+        connection.close();
+        if (!opts.quiet) cout << "Success." << endl;
         return 0;
     } catch (const exception& e) {
-        cerr << "Unexpected exception: " << e.what()  << endl;
+        cerr << "Error: " << e.what() << endl;
         return 1;
     }
 }
