@@ -72,7 +72,7 @@ start() {
 	    touch $pidfile
 	    chown qpidd.qpidd $pidfile
             [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
-	    runuser -s /bin/sh qpidd -c "/usr/sbin/$prog --check > $pidfile"
+	    runuser - -s /bin/sh qpidd -c "/usr/sbin/$prog --check > $pidfile"
 	fi
 	return $RETVAL
 }
