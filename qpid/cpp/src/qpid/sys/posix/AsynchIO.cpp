@@ -157,6 +157,7 @@ public:
                     ConnectedCallback connCb,
                     FailedCallback failCb);
     void start(Poller::shared_ptr poller);
+    void stop();
 };
 
 AsynchConnector::AsynchConnector(const Socket& s,
@@ -181,6 +182,11 @@ AsynchConnector::AsynchConnector(const Socket& s,
 void AsynchConnector::start(Poller::shared_ptr poller)
 {
     startWatch(poller);
+}
+
+void AsynchConnector::stop()
+{
+    stopWatch();
 }
 
 void AsynchConnector::connComplete(DispatchHandle& h)

@@ -71,6 +71,7 @@ class TCPConnector : public Connector, public sys::Codec
 
     sys::Socket socket;
 
+    sys::AsynchConnector* connector;
     sys::AsynchIO* aio;
     std::string identifier;
     boost::shared_ptr<sys::Poller> poller;
