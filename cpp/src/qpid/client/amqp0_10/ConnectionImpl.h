@@ -31,7 +31,7 @@
 #include <vector>
 
 namespace qpid {
-class Url;
+struct Url;
 
 namespace client {
 namespace amqp0_10 {
