@@ -499,8 +499,8 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
     if ((oid = inMap.find("_object_id")) == inMap.end() ||
         (mid = inMap.find("_method_name")) == inMap.end()) {
-        (outMap["_values"].asMap())["_status_code"] = Manageable::STATUS_PARAMETER_INVALID;
-        (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID);
+        sendException(replyTo, cid, Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID),
+                      Manageable::STATUS_PARAMETER_INVALID);
         failed = true;
     } else {
         string methodName;
@@ -520,8 +520,8 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
             ManagementObjectMap::iterator iter = managementObjects.find(objId);
             if (iter == managementObjects.end() || iter->second->isDeleted()) {
-                (outMap["_values"].asMap())["_status_code"] = Manageable::STATUS_UNKNOWN_OBJECT;
-                (outMap["_values"].asMap())["_status_text"] = Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT);
+                sendException(replyTo, cid, Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT),
+                              Manageable::STATUS_UNKNOWN_OBJECT);
                 failed = true;
             } else {
                 iter->second->doMethod(methodName, inArgs, callMap);
@@ -534,33 +534,25 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
                     if (iter->first != "_status_code" && iter->first != "_status_text")
                         outMap["_arguments"].asMap()[iter->first] = iter->second;
             } else {
-                (outMap["_values"].asMap())["_status_code"] = callMap["_status_code"];
-                (outMap["_values"].asMap())["_status_text"] = callMap["_status_text"];
+                sendException(replyTo, cid, callMap["_status_text"], callMap["_status_code"]);
                 failed = true;
             }
 
         } catch(types::InvalidConversion& e) {
-            outMap.clear();
-            outMap["_values"] = Variant::Map();
-            (outMap["_values"].asMap())["_status_code"] = Manageable::STATUS_EXCEPTION;
-            (outMap["_values"].asMap())["_status_text"] = e.what();
+            sendException(replyTo, cid, e.what(), Manageable::STATUS_EXCEPTION);
             failed = true;
         }
     }
 
-    Variant::Map headers;
-    headers["method"] = "response";
-    headers["qmf.agent"] = name_address;
-    if (failed) {
-        headers["qmf.opcode"] = "_exception";
-        QPID_LOG(trace, "SENT Exception map=" << outMap);
-    } else {
+    if (!failed) {
+        Variant::Map headers;
+        headers["method"] = "response";
+        headers["qmf.agent"] = name_address;
         headers["qmf.opcode"] = "_method_response";
         QPID_LOG(trace, "SENT MethodResponse map=" << outMap);
+        MapCodec::encode(outMap, content);
+        connThreadBody.sendBuffer(content, cid, headers, "qmf.default.direct", replyTo);
     }
-
-    MapCodec::encode(outMap, content);
-    connThreadBody.sendBuffer(content, cid, headers, "qmf.default.direct", replyTo);
 }
 
 void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, const string& replyTo)
