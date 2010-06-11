@@ -494,7 +494,7 @@ Options:
           <para>
             There are several transport options available for the federation
             link:
-          </para><table><title/><tgroup cols="2">
+          </para><table><title>Transport Options for Federation</title><tgroup cols="2">
             <tbody>
               <row>
                 <entry>

@@ -48,7 +48,7 @@
             This table list the various SASL mechanisms that each component
             supports. The version listed shows when this
             functionality was added to the product.
-          </para><table><title/><tgroup cols="7">
+          </para><table><title>SASL Mechanism Support</title><tgroup cols="7">
             <tbody>
               <row>
                 <entry>
@@ -255,7 +255,7 @@
 	 <para>
             There have been some custom mechanisms added to our
             implementations.
-          </para><table><title/><tgroup cols="3">
+          </para><table><title>SASL Custom Mechanisms</title><tgroup cols="3">
             <tbody>
               <row>
                 <entry>

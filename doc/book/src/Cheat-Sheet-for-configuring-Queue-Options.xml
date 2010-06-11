@@ -166,7 +166,7 @@
             ignored.
             </para></listitem>
           </itemizedlist><para>
-            A fully worked <xref linkend="qpid_LVQ-Example"/> can be found here
+            A fully worked <xref linkend="LVQ-Examplesource"/> can be found here
           </para>
 	  <!--h3--></section>
 	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"><title>
@@ -211,7 +211,7 @@
             This option is used to determine whether enqueue/dequeue events
             representing changes made to queue state are generated. These
             events can then be processed by plugins such as that used for
-            <xref linkend="qpid_queue-state-replication"/>.
+            <xref linkend="queue-state-replication"/>.
           </para><para>
             Example:
           </para>

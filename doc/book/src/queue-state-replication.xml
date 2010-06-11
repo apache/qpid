@@ -20,9 +20,9 @@
  
 -->
 
-<section>
+<section id="queue-state-replication">
   <title>
-    queue state replication
+    Queue State Replication
   </title>
 
   <section role="h2" id="queuestatereplication-AsynchronousReplicationofQueueState">

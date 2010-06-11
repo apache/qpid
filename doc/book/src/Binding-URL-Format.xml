@@ -43,7 +43,7 @@
             is required for the server to instantiate an exchange.
           </para><para>
             There are a number of options that are currently defined:
-          </para><table><title/><tgroup cols="3">
+          </para><table><title>Binding URL Options</title><tgroup cols="3">
             <tbody>
               <row>
                 <entry>
