@@ -35,7 +35,8 @@
       supported in the following brokers:
     </para>
 
-	  <table><title/><tgroup cols="2">
+	  <table><title>ACL Support in Qpid Broker Versions</title>
+	  <tgroup cols="2">
 	  <thead>
               <row>
                 <entry>
@@ -315,7 +316,9 @@ acl deny all all
             connection not on management functions:
           </para>
 
-	  <table><title/><tgroup cols="5">
+	  <table>
+	    <title>Mapping ACL Traps</title>
+	  <tgroup cols="5">
             <thead>
               <row>
                 <entry>
@@ -671,7 +674,9 @@ acl deny all all
             schema it will be mapped in ACL file as follows
           </para>
 
-	  <table><title/><tgroup cols="3">
+	  <table>
+	    <title>Mapping Management Actions to ACL</title>
+	      <tgroup cols="3">
             <thead>
               <row>
                 <entry>

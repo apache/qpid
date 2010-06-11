@@ -2943,8 +2943,8 @@ producer.send(m);
 
     </section>
     
-    <section id="section-JMS-Loggin">
-      <title>JMS Client Loggin</title>
+    <section id="section-JMS-Logging">
+      <title>JMS Client Logging</title>
       <para>The JMS Client logging is handled using <ulink url="http://www.slf4j.org/">SLF4J</ulink>. A user can place a slf4j binding of their choice in the classpath and configure the respective logging mechanism to suit their needs. Ex bindings include log4j, jdk1.4 logging ..etc</para>
 
       <para>Following is an example on how to configure the client logging with the log4j binding.</para>
@@ -2954,8 +2954,9 @@ producer.send(m);
       <para>If using the log4j binding please ensure to set the log level for org.apache.qpid explicitly. Otherwise log4j will default to DEBUG which will degrade performance considerably due to excessive logging. Recommended logging level for production is WARN.</para>
 
       <example>
-      <para>You could place the snippet below in a log4j.properties file and place it in the classpath or explicitly specify it using the -Dlog4j.configuration property. The following configures the qpid client to log at the WARN level</para>
-      <programlisting><![CDATA[
+	<title>log4j Logging Properties</title>
+	<para>You could place the snippet below in a log4j.properties file and place it in the classpath or explicitly specify it using the -Dlog4j.configuration property. The following configures the qpid client to log at the WARN level</para>
+	<programlisting><![CDATA[
 log4j.logger.org.apache.qpid=WARN, console
 log4j.additivity.org.apache.qpid=false
 
@@ -2963,7 +2964,7 @@ log4j.appender.console=org.apache.log4j.ConsoleAppender
 log4j.appender.console.Threshold=all
 log4j.appender.console.layout=org.apache.log4j.PatternLayout
 log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
-      ]]></programlisting>
+]]></programlisting>
       </example> 
     </section>
   </chapter>

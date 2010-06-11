@@ -24,7 +24,7 @@
 <para>To get started with Apache Qpid, follow the steps below.</para>
 
 <orderedlist>
-<listitem><para><xref linkend="chapter-Download"/></para></listitem>
+<listitem><para>Download Apache Qpid.</para></listitem>
 <listitem>
   <para>Start a broker. </para>
   <itemizedlist>

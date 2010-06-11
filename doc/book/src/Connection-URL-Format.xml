@@ -107,7 +107,9 @@ amqp://guest:guest@client1/development?brokerlist='tcp://localhost:5672'
 
 	  <title> Options</title>
 
-	<table><title/><tgroup cols="3">
+	<table>
+	  <title>Connection URL Options</title>
+	  <tgroup cols="3">
             <tbody>
               <row>
                 <entry>
@@ -182,7 +184,8 @@ brokerlist='&lt;broker url&gt;[;&lt;broker url&gt;]'
             not have to be re-written. The result is if there is no
             transport, 'tcp' is assumed and the default AMQP port of 5672 is
             used if no port is specified.
-          </para><table><title/><tgroup cols="1">
+          </para><table><title>Broker URL- Transport</title>
+	  <tgroup cols="1">
             <tbody>
               <row>
                 <entry>
@@ -207,7 +210,9 @@ brokerlist='&lt;broker url&gt;[;&lt;broker url&gt;]'
             support for further transports the
             ''client.transportTransportConnection'' class needs updating
             along with the parsing to handle the transport.
-          </para><table><title/><tgroup cols="3">
+          </para>
+	  <table><title>Broker URL - Connection Options</title>
+	  <tgroup cols="3">
             <tbody>
               <row>
                 <entry>
@@ -283,7 +288,7 @@ failover='&lt;method&gt;[?&lt;options&gt;]'
             used for defining further methods.
           </para><para>
             Currently implemented failover methods.
-          </para><table><title/><tgroup cols="2">
+          </para><table><title>Broker List - Failover Options</title><tgroup cols="2">
             <tbody>
               <row>
                 <entry>
@@ -332,7 +337,7 @@ failover='&lt;method&gt;[?&lt;options&gt;]'
           </para>
 
           <table>
-	    <title> Options</title>
+	    <title>Broker List - Failover Options</title>
 	  <tgroup cols="3">
             <tbody>
               <row>
