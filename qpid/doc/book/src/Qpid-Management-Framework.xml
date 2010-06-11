@@ -242,7 +242,7 @@
           </para><para>
             The XML syntax for &lt;property&gt; and &lt;statistic&gt; have
             the following XML-attributes:
-          </para><table><title/><tgroup cols="4">
+          </para><table><title>XML Attributes for QMF Properties and Statistics</title><tgroup cols="4">
             <tbody>
               <row>
                 <entry>
@@ -475,7 +475,7 @@
             data types. The data types are based on the rich data typing
             system provided by the AMQP messaging protocol. The following
             table describes the data types available for QMF:
-          </para><table><title/><tgroup cols="2">
+          </para><table><title>QMF Datatypes</title><tgroup cols="2">
             <tbody>
               <row>
                 <entry>
@@ -638,7 +638,7 @@
             attributes of different types. The following table enumerates the
             types available in the XML format, which QMF types they map to,
             and other special handling that occurs.
-          </para><table><title/><tgroup cols="4">
+          </para><table><title>XML Schema Mapping for QMF Types</title><tgroup cols="4">
             <tbody>
               <row>
                 <entry>

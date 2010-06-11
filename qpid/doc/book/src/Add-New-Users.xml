@@ -201,7 +201,8 @@ martin:X03MO1qnZdYdgyfeuILPmQ==
             about the SASL module they support and not the type of
             PrincipalDatabase. So I client that understands CRAM-MD5 will
             work correctly with a Plain and Base64MD5 PrincipalDatabase.
-          </para><table><title/><tgroup cols="2">
+          </para><table>
+	  <title>File Format and Principal Database</title><tgroup cols="2">
             <tbody>
               <row>
                 <entry>

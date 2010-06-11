@@ -156,19 +156,8 @@ log-to-syslog=yes
             with any client that uses the same AMQP version. When running the
             C</emphasis>+ broker, it is highly recommended to run AMQP 0-10.
           </para><para>
-            Note that JMS also works with the C++ broker. For more details on
-            using the Java client refer to these pages:
-          </para><itemizedlist>
-            <listitem><para>
-              <xref linkend="How-to-Use-JNDI"/>
-            </para></listitem>
-            <listitem><para>
-              <xref linkend="qpid_URL-Formats"/>
-            </para></listitem>
-            <listitem><para>
-              <xref linkend="qpid_Example-Classes"/>
-            </para></listitem>
-          </itemizedlist>
+            Note that JMS also works with the C++ broker.
+          </para>
 	  <!--h3--></section>
 	<!--h2--></section>
 	  <section role="h2" id="RASC-Authentication"><title>

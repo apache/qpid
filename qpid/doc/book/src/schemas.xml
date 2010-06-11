@@ -21,6 +21,9 @@
 -->
 
 <locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <uri resource="Programming-In-Apache-Qpid.xml" typeId="DocBook"/>
+  <uri resource="queue-state-replication.xml" typeId="DocBook"/>
+  <uri resource="AMQP-Messaging-Broker-Java-Book.xml" typeId="DocBook"/>
   <uri resource="High-Level-API.xml" typeId="DocBook"/>
   <uri resource="High-Level-API.xml" typeId="DocBook"/>
   <uri resource="Java-JMS-Selector-Syntax.xml" typeId="DocBook"/>
