@@ -482,7 +482,7 @@ VariantImpl* VariantImpl::create(const Variant& v)
     }
 }
 
-Variant::Variant() : impl(new VariantImpl()) {}
+Variant::Variant() : impl(0) {}
 Variant::Variant(bool b) : impl(new VariantImpl(b)) {}
 Variant::Variant(uint8_t i) : impl(new VariantImpl(i)) {}
 Variant::Variant(uint16_t i) : impl(new VariantImpl(i)) {}
@@ -506,7 +506,7 @@ Variant::~Variant() { if (impl) delete impl; }
 void Variant::reset()
 {
     if (impl) delete impl;
-    impl = new VariantImpl();
+    impl = 0;
 }
 
 
@@ -622,29 +622,32 @@ Variant& Variant::operator=(const Variant& v)
     return *this;
 }
 
-VariantType Variant::getType() const { return impl->getType(); }
-bool Variant::isVoid() const { return impl->getType() == VAR_VOID; }
-bool Variant::asBool() const { return impl->asBool(); }
-uint8_t Variant::asUint8() const { return impl->asUint8(); }
-uint16_t Variant::asUint16() const { return impl->asUint16(); }
-uint32_t Variant::asUint32() const { return impl->asUint32(); }
-uint64_t Variant::asUint64() const { return impl->asUint64(); }
-int8_t Variant::asInt8() const { return impl->asInt8(); }
-int16_t Variant::asInt16() const { return impl->asInt16(); }
-int32_t Variant::asInt32() const { return impl->asInt32(); }
-int64_t Variant::asInt64() const { return impl->asInt64(); }
-float Variant::asFloat() const { return impl->asFloat(); }
-double Variant::asDouble() const { return impl->asDouble(); }
-std::string Variant::asString() const { return impl->asString(); }
-Uuid Variant::asUuid() const { return impl->asUuid(); }
-const Variant::Map& Variant::asMap() const { return impl->asMap(); }
-Variant::Map& Variant::asMap() { return impl->asMap(); }
-const Variant::List& Variant::asList() const { return impl->asList(); }
-Variant::List& Variant::asList() { return impl->asList(); }
-const std::string& Variant::getString() const { return impl->getString(); }
-std::string& Variant::getString() { return impl->getString(); }
-void Variant::setEncoding(const std::string& s) { impl->setEncoding(s); }
-const std::string& Variant::getEncoding() const { return impl->getEncoding(); }
+VariantType Variant::getType() const { return impl ? impl->getType() : VAR_VOID; }
+bool Variant::isVoid() const { return getType() == VAR_VOID; }
+bool Variant::asBool() const { return impl && impl->asBool(); }
+uint8_t Variant::asUint8() const { return impl ? impl->asUint8() : 0; }
+uint16_t Variant::asUint16() const { return impl ? impl->asUint16() : 0; }
+uint32_t Variant::asUint32() const { return impl ? impl->asUint32() : 0; }
+uint64_t Variant::asUint64() const { return impl ? impl->asUint64() : 0; }
+int8_t Variant::asInt8() const { return impl ? impl->asInt8() : 0; }
+int16_t Variant::asInt16() const { return impl ? impl->asInt16() : 0; }
+int32_t Variant::asInt32() const { return impl ? impl->asInt32(): 0; }
+int64_t Variant::asInt64() const { return impl ? impl->asInt64() : 0; }
+float Variant::asFloat() const { return impl ? impl->asFloat() : 0; }
+double Variant::asDouble() const { return impl ? impl->asDouble() : 0; }
+std::string Variant::asString() const { return impl ? impl->asString() : EMPTY; }
+Uuid Variant::asUuid() const { return impl ? impl->asUuid() : Uuid(); }
+const Variant::Map& Variant::asMap() const { if (!impl) throw InvalidConversion("Can't convert VOID to MAP"); return impl->asMap(); }
+Variant::Map& Variant::asMap() { if (!impl) throw InvalidConversion("Can't convert VOID to MAP"); return impl->asMap(); }
+const Variant::List& Variant::asList() const { if (!impl) throw InvalidConversion("Can't convert VOID to LIST"); return impl->asList(); }
+Variant::List& Variant::asList() { if (!impl) throw InvalidConversion("Can't convert VOID to LIST"); return impl->asList(); }
+const std::string& Variant::getString() const { if (!impl) throw InvalidConversion("Can't convert VOID to STRING"); return impl->getString(); }
+std::string& Variant::getString() { if (!impl) throw InvalidConversion("Can't convert VOID to STRING"); return impl->getString(); }
+void Variant::setEncoding(const std::string& s) { 
+    if (!impl) impl = new VariantImpl();
+    impl->setEncoding(s); 
+}
+const std::string& Variant::getEncoding() const { return impl ? impl->getEncoding() : EMPTY; }
 
 Variant::operator bool() const { return asBool(); }
 Variant::operator uint8_t() const { return asUint8(); }
@@ -708,7 +711,7 @@ bool operator==(const Variant& a, const Variant& b)
 
 bool Variant::isEqualTo(const Variant& other) const
 {
-    return impl->isEqualTo(*other.impl);
+    return impl && impl->isEqualTo(*other.impl);
 }
 
 }} // namespace qpid::types
