@@ -69,7 +69,7 @@ public:
                                    ConnectedCallback connCb,
                                    FailedCallback failCb);
     virtual void start(boost::shared_ptr<Poller> poller) = 0;
-
+    virtual void stop() {};
 protected:
     AsynchConnector() {}
     virtual ~AsynchConnector() {}

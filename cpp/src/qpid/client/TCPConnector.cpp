@@ -76,10 +76,11 @@ TCPConnector::TCPConnector(Poller::shared_ptr p,
       initiated(false),
       closed(true),
       shutdownHandler(0),
+      connector(0),
       aio(0),
       poller(p)
 {
-    QPID_LOG(debug, "TCPConnector created for " << version.toString());
+    QPID_LOG(debug, "TCPConnector created for " << version);
     settings.configureSocket(socket);
 }
 
@@ -90,17 +91,18 @@ TCPConnector::~TCPConnector() {
 void TCPConnector::connect(const std::string& host, int port) {
     Mutex::ScopedLock l(lock);
     assert(closed);
-    AsynchConnector* c = AsynchConnector::create(
+    connector = AsynchConnector::create(
         socket,
         host, port,
         boost::bind(&TCPConnector::connected, this, _1),
         boost::bind(&TCPConnector::connectFailed, this, _3));
     closed = false;
 
-    c->start(poller);
+    connector->start(poller);
 }
 
 void TCPConnector::connected(const Socket&) {
+    connector = 0;
     aio = AsynchIO::create(socket,
                        boost::bind(&TCPConnector::readbuff, this, _1, _2),
                        boost::bind(&TCPConnector::eof, this, _1),
@@ -128,6 +130,7 @@ void TCPConnector::initAmqp() {
 }
 
 void TCPConnector::connectFailed(const std::string& msg) {
+    connector = 0;
     QPID_LOG(warning, "Connect failed: " << msg);
     socket.close();
     if (!closed)
@@ -158,8 +161,9 @@ void TCPConnector::abort() {
         if (aio) {
             // Established connection
             aio->requestCallback(boost::bind(&TCPConnector::eof, this, _1));
-        } else {
+        } else if (connector) {
             // We're still connecting
+            connector->stop();
             connectFailed("Connection timedout");
         }
     }
