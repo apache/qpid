@@ -37,7 +37,7 @@ bool AclValidator::IntPropertyType::validate(const std::string& val) {
   try
   {
     v = boost::lexical_cast<int64_t>(val);
-  }catch(const boost::bad_lexical_cast& e){
+  }catch(const boost::bad_lexical_cast&){
     return 0;
   }
 
