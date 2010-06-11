@@ -101,7 +101,7 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 
                                                           try{                      
                                                               aclMax = boost::lexical_cast<uint64_t>(pMItr->second);
-                                                          }catch(const boost::bad_lexical_cast& e){
+                                                          }catch(const boost::bad_lexical_cast&){
                                                               match = false;  
                                                               QPID_LOG(error,"Error evaluating rule. " << 
                                                               "Illegal value given in ACL source <" << aclSource <<
@@ -113,7 +113,7 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
                                         
                                                           try{
                                                               paramMax = boost::lexical_cast<uint64_t>(paramItr->second);
-                                                          }catch(const boost::bad_lexical_cast& e){
+                                                          }catch(const boost::bad_lexical_cast&){
                                                               match = false;
                                                               QPID_LOG(error,"Error evaluating rule. " <<
                                                               "Illegal value given in lookup for property '" <<  
