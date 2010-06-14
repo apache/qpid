@@ -301,12 +301,12 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
         if (notification.getType().equals(JMXConnectionNotification.OPENED))
         {
-            _logActor.message(ManagementConsoleMessages.MNG_OPEN(user));
+            _logActor.message(ManagementConsoleMessages.OPEN(user));
         }
         else if (notification.getType().equals(JMXConnectionNotification.CLOSED) ||
                  notification.getType().equals(JMXConnectionNotification.FAILED))
         {
-            _logActor.message(ManagementConsoleMessages.MNG_CLOSE());
+            _logActor.message(ManagementConsoleMessages.CLOSE());
         }
     }
 }

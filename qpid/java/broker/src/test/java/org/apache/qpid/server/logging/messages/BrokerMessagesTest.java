@@ -32,7 +32,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
         String version = "Qpid 0.6";
         String build = "796936M";
 
-        _logMessage = BrokerMessages.BRK_STARTUP(version, build);
+        _logMessage = BrokerMessages.STARTUP(version, build);
         List<Object> log = performLog();
 
         String[] expected = {"Startup :", "Version:", version, "Build:", build};
@@ -45,7 +45,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
         String transport = "TCP";
         Integer port = 2765;
 
-        _logMessage = BrokerMessages.BRK_LISTENING(transport, port);
+        _logMessage = BrokerMessages.LISTENING(transport, port);
 
         List<Object> log = performLog();
 
@@ -60,7 +60,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
         String transport = "TCP";
         Integer port = 2765;
 
-        _logMessage = BrokerMessages.BRK_SHUTTING_DOWN(transport, port);
+        _logMessage = BrokerMessages.SHUTTING_DOWN(transport, port);
 
         List<Object> log = performLog();
 
@@ -71,7 +71,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
 
     public void testBrokerReady()
     {
-        _logMessage = BrokerMessages.BRK_READY();
+        _logMessage = BrokerMessages.READY();
         List<Object> log = performLog();
 
         String[] expected = {"Ready"};
@@ -81,7 +81,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
 
     public void testBrokerStopped()
     {
-        _logMessage = BrokerMessages.BRK_STOPPED();
+        _logMessage = BrokerMessages.STOPPED();
         List<Object> log = performLog();
 
         String[] expected = {"Stopped"};
@@ -93,7 +93,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
     {
         String path = "/file/path/to/configuration.xml";
 
-        _logMessage = BrokerMessages.BRK_CONFIG(path);
+        _logMessage = BrokerMessages.CONFIG(path);
         List<Object> log = performLog();
 
         String[] expected = {"Using configuration :", path};
@@ -105,7 +105,7 @@ public class BrokerMessagesTest extends AbstractTestMessages
     {
         String path = "/file/path/to/configuration.xml";
 
-        _logMessage = BrokerMessages.BRK_LOG_CONFIG(path);
+        _logMessage = BrokerMessages.LOG_CONFIG(path);
         List<Object> log = performLog();
 
         String[] expected = {"Using logging configuration :", path};

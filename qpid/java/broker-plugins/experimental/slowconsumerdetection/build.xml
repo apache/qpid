@@ -29,64 +29,6 @@ nn - or more contributor license agreements.  See the NOTICE file
 
     <target name="bundle" depends="bundle-tasks"/>
 
-
-
     <target name="precompile" depends="gen_logging"/>
-
-
-    <property name="velocity.properties.dir" value="src/main/java/org/apache/qpid/server/virtualhost/plugin/logging"/>
-
-    <property name="gentools.home" location="${project.root}/../gentools" />
-
-    <property name="generated.package" value="org/apache/qpid/server/virtualhost/plugin/logging" />
-    <property name="generated.dir" location="${module.precompiled}" />
-    <property name="velocity.compile.dir" value="${build.scratch}/broker/velocity"/>
-    <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
-
-
-    <target name="check_velocity_deps">
-      <uptodate property="velocity.notRequired" targetfile="${velocity.timestamp}">
-        <srcfiles dir="${velocity.properties.dir}" includes="LogMessages**" />
-        <srcfiles dir="${project.root}/broker/src/velocity/" includes="**/*.java **/*.vm" />
-      </uptodate>
-    </target>
-
-
-
-
-    <target name="gen_logging" depends="check_velocity_deps" unless="velocity.notRequired">
-      <mkdir dir="${generated.dir}"/>
-
-      <path id="logmessages.path">
-        <fileset  dir="${module.src}">
-          <include name="**/*_logmessages.properties"/>
-        </fileset>
-      </path>
-
-      <pathconvert property="logmessages"
-                   refid="logmessages.path"
-                   pathsep=" "/>
-        
-      <echo message="logmessages is ${logmessages}"/>
-
-      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
-        <arg line="-r ${logmessages}"/>
-          <arg value="-j"/>
-          <arg value="-o"/>
-          <arg value="${generated.dir}"/>
-          <arg value="-t"/>
-          <arg value="${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
-        <classpath>
-          <pathelement path="${project.root}/broker-plugins/experimental/slowconsumerdetection/src/main/java"/>
-          <pathelement path="${velocity.compile.dir}" />
-          <fileset dir="${project.root}/lib">
-            <include name="**/*.jar"/>
-          </fileset>
-          <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
-        </classpath>
-      </java>
-      <touch file="${velocity.timestamp}" />
-    </target>
-
 
 </project>

@@ -118,7 +118,7 @@ public class LogMessageTest extends TestCase
      * Inner class used by testSimultaneousLogging.
      *
      * This class creates a given number of LogMessages using the BrokerMessages package.
-     * BRK_CONFIG and BRK_LISTENING messages are both created per count.
+     * CONFIG and LISTENING messages are both created per count.
      *
      * This class is run multiple times simultaneously so that we increase the chance of
      * reproducing QPID-2137. This is reproduced when the pattern string used in the MessageFormat
@@ -145,8 +145,8 @@ public class LogMessageTest extends TestCase
                 // try and generate _count iterations of Config & Listening messages.
                 for (int i = 0; i < _count; i++)
                 {
-                    BrokerMessages.BRK_CONFIG("Config");
-                    BrokerMessages.BRK_LISTENING("TCP", 1234);
+                    BrokerMessages.CONFIG("Config");
+                    BrokerMessages.LISTENING("TCP", 1234);
                 }
             }
             catch (Exception e)

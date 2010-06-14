@@ -102,7 +102,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     public void start() throws IOException, ConfigurationException
     {
 
-        CurrentActor.get().message(ManagementConsoleMessages.MNG_STARTUP());
+        CurrentActor.get().message(ManagementConsoleMessages.STARTUP());
         
         //check if system properties are set to use the JVM's out-of-the-box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
@@ -173,7 +173,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 _log.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
                 _startupLog.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
 
-                CurrentActor.get().message(ManagementConsoleMessages.MNG_SSL_KEYSTORE(ksf.getAbsolutePath()));
+                CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(ksf.getAbsolutePath()));
             }
 
             //check the key store password is set
@@ -201,8 +201,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             _startupLog.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
                      (port +PORT_EXPORT_OFFSET) + ") with SSL");
 
-            CurrentActor.get().message(ManagementConsoleMessages.MNG_LISTENING("SSL RMI Registry", port));
-            CurrentActor.get().message(ManagementConsoleMessages.MNG_LISTENING("SSL RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("SSL RMI Registry", port));
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("SSL RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
 
         }
         else
@@ -213,8 +213,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
             _log.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
             _startupLog.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
-            CurrentActor.get().message(ManagementConsoleMessages.MNG_LISTENING("RMI Registry", port));
-            CurrentActor.get().message(ManagementConsoleMessages.MNG_LISTENING("RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", port));
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
         }
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
@@ -329,7 +329,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         _cs.start();
 
 
-        CurrentActor.get().message(ManagementConsoleMessages.MNG_READY());
+        CurrentActor.get().message(ManagementConsoleMessages.READY());
     }
 
     /*
@@ -410,7 +410,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             // Stopping the JMX ConnectorServer
             try
             {
-                CurrentActor.get().message(ManagementConsoleMessages.MNG_SHUTTING_DOWN("RMI ConnectorServer", _cs.getAddress().getPort()));
+                CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI ConnectorServer", _cs.getAddress().getPort()));
                 _cs.stop();
             }
             catch (IOException e)
@@ -422,7 +422,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         if (_rmiRegistry != null)
         {
             // Stopping the RMI registry
-            CurrentActor.get().message(ManagementConsoleMessages.MNG_SHUTTING_DOWN("RMI Registry", _cs.getAddress().getPort() - PORT_EXPORT_OFFSET));
+            CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _cs.getAddress().getPort() - PORT_EXPORT_OFFSET));
             try
             {
                 UnicastRemoteObject.unexportObject(_rmiRegistry, false);
@@ -456,7 +456,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
         }
 
-        CurrentActor.get().message(ManagementConsoleMessages.MNG_STOPPED());
+        CurrentActor.get().message(ManagementConsoleMessages.STOPPED());
     }
 
 }

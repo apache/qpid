@@ -152,7 +152,7 @@ public class DerbyMessageStore implements MessageStore
     {
         stateTransition(State.INITIAL, State.CONFIGURING);
         _logSubject = logSubject;
-        CurrentActor.get().message(_logSubject, ConfigStoreMessages.CFG_1001(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, ConfigStoreMessages.CREATED(this.getClass().getName()));
 
         if(!_configured)
         {
@@ -174,7 +174,7 @@ public class DerbyMessageStore implements MessageStore
                           Configuration storeConfiguration,
                           LogSubject logSubject) throws Exception
     {
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_CREATED(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
 
         if(!_configured)
         {
@@ -196,7 +196,7 @@ public class DerbyMessageStore implements MessageStore
                           Configuration storeConfiguration,
                           LogSubject logSubject) throws Exception
     {
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1001(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, TransactionLogMessages.CREATED(this.getClass().getName()));
 
         if(!_configured)
         {
@@ -232,7 +232,7 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_STORE_LOCATION(environmentPath.getAbsolutePath()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.STORE_LOCATION(environmentPath.getAbsolutePath()));
 
         createOrOpenDatabase(name, databasePath);
     }
@@ -370,7 +370,7 @@ public class DerbyMessageStore implements MessageStore
     {
         stateTransition(State.CONFIGURING, State.RECOVERING);
 
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_RECOVERY_START());
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.RECOVERY_START());
 
         try
         {
@@ -517,7 +517,7 @@ public class DerbyMessageStore implements MessageStore
 
     public void close() throws Exception
     {
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_CLOSED());
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
         _closed.getAndSet(true);
     }
 

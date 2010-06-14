@@ -198,7 +198,7 @@ public class VirtualHostImpl implements VirtualHost
 
         _id = _appRegistry.getConfigStore().createId();
 
-        CurrentActor.get().message(VirtualHostMessages.VHT_CREATED(_name));
+        CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
 
         if (_name == null || _name.length() == 0)
         {
@@ -596,7 +596,7 @@ public class VirtualHostImpl implements VirtualHost
             }
         }
 
-        CurrentActor.get().message(VirtualHostMessages.VHT_CLOSED());
+        CurrentActor.get().message(VirtualHostMessages.CLOSED());
     }
 
     public ManagedObject getBrokerMBean()

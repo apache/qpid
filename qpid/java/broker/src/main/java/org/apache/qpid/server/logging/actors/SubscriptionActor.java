@@ -21,15 +21,12 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
 import org.apache.qpid.server.subscription.Subscription;
 
-import java.text.MessageFormat;
-
 /**
  * The subscription actor provides formatted logging for actions that are
- * performed by the subsciption. Such as SUB_STATE changes.
+ * performed by the subsciption. Such as STATE changes.
  */
 public class SubscriptionActor extends AbstractActor
 {
