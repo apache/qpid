@@ -320,6 +320,7 @@ void RdmaConnector::send(AMQFrame& frame) {
 // This is NOT only called in response to previously calling notifyPendingWrite
 void RdmaConnector::writebuff(Rdma::AsynchIO&) {
     // It's possible to be disconnected and be writable
+    Mutex::ScopedLock l(pollingLock);
     if (!polling)
         return;
 
