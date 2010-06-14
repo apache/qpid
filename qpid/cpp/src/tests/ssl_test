@@ -77,8 +77,8 @@ export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 
 ## Test connection with a URL
 URL=amqp:ssl:$TEST_HOSTNAME:$PORT 
-./qpid_send -b $URL --content-string=hello -a "foo;{create:always}"
-MSG=`./qpid_receive -b $URL -a "foo;{create:always}" --messages 1`
+./qpid-send -b $URL --content-string=hello -a "foo;{create:always}"
+MSG=`./qpid-receive -b $URL -a "foo;{create:always}" --messages 1`
 test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }
 
 test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
@@ -95,7 +95,7 @@ pick_port() {
 ssl_cluster_broker() {		# $1 = port
     ../qpidd $COMMON_OPTS --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1 --port 0 --ssl-port $1 --transport ssl > /dev/null
     # Wait for broker to be ready
-    qpid_ping -Pssl -b $TEST_HOSTNAME -qp $1 || { echo "Cannot connect to broker on $1"; exit 1; }
+    qpid-ping -Pssl -b $TEST_HOSTNAME -qp $1 || { echo "Cannot connect to broker on $1"; exit 1; }
     echo "Running SSL cluster broker on port $1"
 }
 
@@ -103,11 +103,11 @@ PORT1=`pick_port`; ssl_cluster_broker $PORT1
 PORT2=`pick_port`; ssl_cluster_broker $PORT2
 
 # Pipe receive output to uniq to remove duplicates
-./qpid_receive --connection-options "{reconnect-timeout:5}" --failover-updates -b amqp:ssl:$TEST_HOSTNAME:$PORT1 -a "foo;{create:always}" -f | uniq > ssl_test_receive.tmp &
-./qpid_send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=one -a "foo;{create:always}"
+./qpid-receive --connection-options "{reconnect-timeout:5}" --failover-updates -b amqp:ssl:$TEST_HOSTNAME:$PORT1 -a "foo;{create:always}" -f | uniq > ssl_test_receive.tmp &
+./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=one -a "foo;{create:always}"
 ../qpidd --no-module-dir -qp $PORT1 # Kill broker 1 receiver should fail-over.
-./qpid_send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=two -a "foo;{create:always}" --send-eos 1
-wait				# Wait for qpid_receive
+./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=two -a "foo;{create:always}" --send-eos 1
+wait				# Wait for qpid-receive
 { echo one; echo two; } > ssl_test_receive.cmp
 diff  ssl_test_receive.tmp ssl_test_receive.cmp || { echo "Failover failed"; exit 1; }
 rm -f ssl_test_receive.*
