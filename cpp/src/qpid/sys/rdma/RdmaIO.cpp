@@ -130,8 +130,6 @@ namespace Rdma {
 
     // Mark writing closed (so we don't accept any more writes or make any idle callbacks)
     void AsynchIO::drainWriteQueue(NotifyCallback nc) {
-        draining = true;
-
         State oldState;
         State newState;
         bool doReturn;
@@ -149,6 +147,7 @@ namespace Rdma {
             }
         } while (!state.boolCompareAndSwap(oldState, newState));
         if (doReturn) {
+            draining = true;
             notifyCallback = nc;
             return;
         }
