@@ -525,7 +525,7 @@ class NumberedSender(Thread):
         """
         Thread.__init__(self)
         self.sender = broker.test.popen(
-            ["qpid_send",
+            ["qpid-send",
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
@@ -584,7 +584,7 @@ class NumberedReceiver(Thread):
         Thread.__init__(self)
         self.test = broker.test
         self.receiver = self.test.popen(
-            ["qpid_receive",
+            ["qpid-receive",
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
