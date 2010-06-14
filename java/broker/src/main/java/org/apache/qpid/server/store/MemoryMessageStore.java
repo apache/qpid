@@ -24,25 +24,17 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.commons.configuration.Configuration;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.nio.ByteBuffer;
 
 /** A simple message store that stores the messages in a threadsafe structure in memory. */
 public class MemoryMessageStore implements MessageStore
@@ -86,7 +78,7 @@ public class MemoryMessageStore implements MessageStore
     public void configureConfigStore(String name, ConfigurationRecoveryHandler handler, Configuration configuration, LogSubject logSubject) throws Exception
     {
         _logSubject = logSubject;
-        CurrentActor.get().message(_logSubject, ConfigStoreMessages.CFG_1001(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, ConfigStoreMessages.CREATED(this.getClass().getName()));
 
 
     }
@@ -102,13 +94,13 @@ public class MemoryMessageStore implements MessageStore
         }
         int hashtableCapacity = config.getInt(name + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
         _log.info("Using capacity " + hashtableCapacity + " for hash tables");
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_CREATED(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
     }
 
     public void close() throws Exception
     {
         _closed.getAndSet(true);
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_CLOSED());
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
 
     }
 

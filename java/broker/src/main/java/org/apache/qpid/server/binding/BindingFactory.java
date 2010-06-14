@@ -101,12 +101,12 @@ public class BindingFactory
 
         void logCreation()
         {
-            CurrentActor.get().message(_logSubject, BindingMessages.BND_CREATED(String.valueOf(getArguments()), getArguments() != null && !getArguments().isEmpty()));
+            CurrentActor.get().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()), getArguments() != null && !getArguments().isEmpty()));
         }
 
         void logDestruction()
         {
-            CurrentActor.get().message(_logSubject, BindingMessages.BND_DELETED());
+            CurrentActor.get().message(_logSubject, BindingMessages.DELETED());
         }
 
         public String getOrigin()

@@ -40,7 +40,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         String type = exchange.getTypeShortString().toString();
         String name = exchange.getNameShortString().toString();
 
-        _logMessage = ExchangeMessages.EXH_CREATED(type, name, false);
+        _logMessage = ExchangeMessages.CREATED(type, name, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Type:", type, "Name:", name};
@@ -58,7 +58,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         String type = exchange.getTypeShortString().toString();
         String name = exchange.getNameShortString().toString();
 
-        _logMessage = ExchangeMessages.EXH_CREATED(type, name, true);
+        _logMessage = ExchangeMessages.CREATED(type, name, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Durable", "Type:", type, "Name:", name};
@@ -69,7 +69,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 
     public void testExchangeDeleted()
     {
-        _logMessage = ExchangeMessages.EXH_DELETED();
+        _logMessage = ExchangeMessages.DELETED();
         List<Object> log = performLog();
 
         String[] expected = {"Deleted"};

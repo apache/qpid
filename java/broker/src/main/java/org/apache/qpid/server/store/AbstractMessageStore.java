@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -34,11 +33,11 @@ public abstract class AbstractMessageStore implements MessageStore
     public void configure(VirtualHost virtualHost) throws Exception
     {
         _logSubject = new MessageStoreLogSubject(virtualHost, this);
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_CREATED(this.getClass().getName()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
     }
 
     public void close() throws Exception
     {
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_CLOSED());
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
     }
 }

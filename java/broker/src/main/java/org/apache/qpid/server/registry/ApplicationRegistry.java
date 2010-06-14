@@ -259,7 +259,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         _qmfService = new QMFService(getConfigStore(), this);
 
-        CurrentActor.get().message(BrokerMessages.BRK_STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+        CurrentActor.get().message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
 
         initialiseManagedObjectRegistry();
 
@@ -367,7 +367,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         close(_pluginManager);
 
-        CurrentActor.get().message(BrokerMessages.BRK_STOPPED());
+        CurrentActor.get().message(BrokerMessages.STOPPED());
     }
 
     private void unbind()
@@ -387,7 +387,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                     _logger.error("Unable to close network driver due to:" + e.getMessage());
                 }
 
-               CurrentActor.get().message(BrokerMessages.BRK_SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
+               CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
             }
         }
     }

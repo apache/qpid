@@ -22,7 +22,6 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
@@ -172,7 +171,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
         results = _monitor.waitAndFindMatches("QUE-1004", DEFAULT_LOG_WAIT);
 
-        assertEquals("Did not find correct number of QUE_UNDERFULL queue underfull messages", 1, results.size());
+        assertEquals("Did not find correct number of UNDERFULL queue underfull messages", 1, results.size());
 
 
         

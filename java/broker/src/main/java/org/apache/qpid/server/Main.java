@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -268,7 +267,7 @@ public class Main
         }
         else
         {
-            CurrentActor.get().message(BrokerMessages.BRK_CONFIG(configFile.getAbsolutePath()));
+            CurrentActor.get().message(BrokerMessages.CONFIG(configFile.getAbsolutePath()));
         }
 
         String logConfig = commandLine.getOptionValue("l");
@@ -427,7 +426,7 @@ public class Main
                                 serverConfig.getNetworkConfiguration(), null);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
                                                                   new QpidAcceptor(driver,"TCP"));
-                    CurrentActor.get().message(BrokerMessages.BRK_LISTENING("TCP", port));
+                    CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
 
                 }
 
@@ -441,14 +440,14 @@ public class Main
                             new AMQProtocolEngineFactory(), serverConfig.getNetworkConfiguration(), sslFactory);
                 ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, serverConfig.getSSLPort()),
                         new QpidAcceptor(driver,"TCP"));
-                CurrentActor.get().message(BrokerMessages.BRK_LISTENING("TCP/SSL", serverConfig.getSSLPort()));
+                CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", serverConfig.getSSLPort()));
             }
 
             //fixme  qpid.AMQP should be using qpidproperties to get value
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                     + " build: " + QpidProperties.getBuildVersion());
 
-            CurrentActor.get().message(BrokerMessages.BRK_READY());
+            CurrentActor.get().message(BrokerMessages.READY());
 
         }
         finally
@@ -568,7 +567,7 @@ public class Main
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            CurrentActor.get().message(BrokerMessages.BRK_LOG_CONFIG(logConfigFile.getAbsolutePath()));
+            CurrentActor.get().message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
             if (logWatchTime > 0)
             {

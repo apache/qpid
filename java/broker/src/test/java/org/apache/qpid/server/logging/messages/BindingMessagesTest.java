@@ -30,7 +30,7 @@ public class BindingMessagesTest extends AbstractTestMessages
 
     public void testBindCreate_NoArgs()
     {
-        _logMessage = BindingMessages.BND_CREATED(null, false);
+        _logMessage = BindingMessages.CREATED(null, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create"};
@@ -42,7 +42,7 @@ public class BindingMessagesTest extends AbstractTestMessages
     {
         String arguments = "arguments";
 
-        _logMessage = BindingMessages.BND_CREATED(arguments, true);
+        _logMessage = BindingMessages.CREATED(arguments, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create", ": Arguments :", arguments};
@@ -52,7 +52,7 @@ public class BindingMessagesTest extends AbstractTestMessages
         
     public void testBindDelete()
     {
-        _logMessage = BindingMessages.BND_DELETED();
+        _logMessage = BindingMessages.DELETED();
 
         List<Object> log = performLog();
 

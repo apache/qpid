@@ -31,7 +31,7 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
     {
         String arguments = "arguments";
 
-        _logMessage = SubscriptionMessages.SUB_CREATE(arguments, true, true);
+        _logMessage = SubscriptionMessages.CREATE(arguments, true, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Durable", "Arguments :", arguments};
@@ -41,7 +41,7 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
 
     public void testSubscriptionCreateDurable()
     {
-        _logMessage = SubscriptionMessages.SUB_CREATE(null, true, false);
+        _logMessage = SubscriptionMessages.CREATE(null, true, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Durable"};
@@ -53,7 +53,7 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
     {
         String arguments = "arguments";
 
-        _logMessage = SubscriptionMessages.SUB_CREATE(arguments, false, true);
+        _logMessage = SubscriptionMessages.CREATE(arguments, false, true);
         List<Object> log = performLog();
 
         String[] expected = {"Create :","Arguments :", arguments};
@@ -64,7 +64,7 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
 
     public void testSubscriptionClose()
     {
-        _logMessage = SubscriptionMessages.SUB_CLOSE();
+        _logMessage = SubscriptionMessages.CLOSE();
         List<Object> log = performLog();
 
         String[] expected = {"Close"};
@@ -76,7 +76,7 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
     {
         String state = "ACTIVE";
 
-        _logMessage = SubscriptionMessages.SUB_STATE(state);
+        _logMessage = SubscriptionMessages.STATE(state);
         List<Object> log = performLog();
 
         String[] expected = {"State :", state};

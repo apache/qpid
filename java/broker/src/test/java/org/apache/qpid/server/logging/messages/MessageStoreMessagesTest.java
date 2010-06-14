@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import java.text.MessageFormat;
 import java.util.List;
 
 /**
@@ -32,7 +31,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
     {
         String name = "DerbyMessageStore";
 
-        _logMessage = MessageStoreMessages.MST_CREATED(name);
+        _logMessage = MessageStoreMessages.CREATED(name);
         List<Object> log = performLog();
 
         String[] expected = {"Created :", name};
@@ -44,7 +43,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
     {
         String location = "/path/to/the/message/store.files";
 
-        _logMessage = MessageStoreMessages.MST_STORE_LOCATION(location);
+        _logMessage = MessageStoreMessages.STORE_LOCATION(location);
         List<Object> log = performLog();
 
         String[] expected = {"Store location :", location};
@@ -54,7 +53,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
 
     public void testMessageStoreClosed()
     {
-        _logMessage = MessageStoreMessages.MST_CLOSED();
+        _logMessage = MessageStoreMessages.CLOSED();
         List<Object> log = performLog();
 
         String[] expected = {"Closed"};
@@ -64,7 +63,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
 
   public void testMessageStoreRecoveryStart()
     {
-        _logMessage = MessageStoreMessages.MST_RECOVERY_START();
+        _logMessage = MessageStoreMessages.RECOVERY_START();
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Start"};
@@ -76,7 +75,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
     {
         String queueName = "testQueue";
 
-        _logMessage = MessageStoreMessages.MST_RECOVERY_START(queueName, true);
+        _logMessage = MessageStoreMessages.RECOVERY_START(queueName, true);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Start :", queueName};
