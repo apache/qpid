@@ -210,8 +210,8 @@ namespace Rdma {
                 newState = NOTIFY_WRITE;
                 break;
             case SHUTDOWN:
-                // This is not allowed - we can't make any more writes as we shut the connection down.
-                assert(oldState!=SHUTDOWN);
+                // We can get here because it is too hard to eliminate all races of stop() and notifyPendingWrite()
+                // just do nothing.
                 doReturn = true;
             case DRAINED:
                 // This is not allowed - we can't make any more writes as we're draining the write queue.
