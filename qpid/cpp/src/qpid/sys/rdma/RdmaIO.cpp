@@ -171,6 +171,7 @@ namespace Rdma {
             }
             ++outstandingWrites;
             --xmitCredit;
+            assert(xmitCredit>=0);
         } else {
             if (fullCallback) {
                 fullCallback(*this, buff);
@@ -397,8 +398,10 @@ namespace Rdma {
                 // Get our xmitCredit if it was sent
                 bool dataPresent = true;
                 if (e.immPresent() ) {
+                    assert(xmitCredit>=0);
                     xmitCredit += (e.getImm() & ~FlagsMask);
                     dataPresent = ((e.getImm() & IgnoreData) == 0);
+                    assert(xmitCredit>0);
                 }
 
                 // if there was no data sent then the message was only to update our credit
@@ -430,6 +433,7 @@ namespace Rdma {
                         recvCredit -= creditSent;
                         ++outstandingWrites;
                         --xmitCredit;
+                        assert(xmitCredit>=0);
                     } else {
                         QPID_LOG(warning, "RDMA: qp=" << qp << ":  Unable to send unsolicited credit");
                     }
@@ -453,6 +457,9 @@ namespace Rdma {
     void AsynchIO::doWriteCallback() {
         // TODO: maybe don't call idle unless we're low on write buffers
         // Keep on calling the idle routine as long as we are writable and we got something to write last call
+
+        // Do callback even if there are no available free buffers as the application itself might be
+        // holding onto buffers
         while (writable()) {
             int xc = xmitCredit;
             idleCallback(*this);
