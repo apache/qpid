@@ -45,18 +45,37 @@ namespace Rdma {
 
     struct Buffer {
         friend class QueuePair;
+        friend class QueuePairEvent;
 
-        char* const bytes;
-        const int32_t byteCount;
-        int32_t dataStart;
-        int32_t dataCount;
+        char* bytes() const;
+        int32_t byteCount() const;
+        int32_t dataCount() const;
+        void dataCount(int32_t);
 
-        Buffer(::ibv_pd* pd, char* const b, const int32_t s);
+        Buffer(::ibv_pd* pd, const int32_t s);
         ~Buffer();
 
     private:
+        const int32_t bufferSize;
         ::ibv_mr* mr;
+        ::ibv_sge sge;
     };
+
+    inline char* Buffer::bytes() const {
+      return (char*) sge.addr;
+    }
+
+    inline int32_t Buffer::byteCount() const {
+        return bufferSize;
+    }
+
+    inline int32_t Buffer::dataCount() const {
+        return sge.length;
+    }
+
+    inline void Buffer::dataCount(int32_t s) {
+        sge.length = s;
+    }
 
     class Connection;
 
