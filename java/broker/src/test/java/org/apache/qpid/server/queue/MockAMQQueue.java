@@ -21,8 +21,8 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.*;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.subscription.Subscription;
@@ -36,7 +36,6 @@ import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.AMQException;
 
-import javax.swing.*;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -520,12 +519,12 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void configure(QueueConfiguration config)
+    public void configure(ConfigurationPlugin config)
     {
 
     }
 
-    public QueueConfiguration getConfiguration()
+    public ConfigurationPlugin getConfiguration()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

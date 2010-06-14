@@ -32,6 +32,8 @@ import org.apache.qpid.server.configuration.BindingConfig;
 import org.apache.qpid.server.configuration.BindingConfigType;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BindingMessages;
@@ -201,6 +203,15 @@ public class BindingFactory
             exchange.addBinding(b);
             getConfigStore().addConfiguredObject(b);
             b.logCreation();
+
+            //Reconfigure the queue for to reflect this new binding.
+            ConfigurationPlugin config = queue.getVirtualHost().getConfiguration().getQueueConfiguration(queue);
+
+            if (config != null)
+            {
+                // Reconfigure with new config.
+                queue.configure(config);
+            }
             return true;
         }
         else

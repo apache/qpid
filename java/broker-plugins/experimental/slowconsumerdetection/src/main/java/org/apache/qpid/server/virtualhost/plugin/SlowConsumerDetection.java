@@ -40,7 +40,7 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     {
         public SlowConsumerDetection newInstance(VirtualHost vhost)
         {
-            SlowConsumerDetectionConfiguration config = vhost.getConfiguration().getConfiguration(SlowConsumerDetectionConfiguration.class);
+            SlowConsumerDetectionConfiguration config = vhost.getConfiguration().getConfiguration(SlowConsumerDetectionConfiguration.class.getName());
 
             if (config == null)
             {
@@ -74,7 +74,7 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
             try
             {
                 SlowConsumerDetectionQueueConfiguration config =
-                            q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class);
+                            q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class.getName());
 
                 if (checkQueueStatus(q, config))
                 {

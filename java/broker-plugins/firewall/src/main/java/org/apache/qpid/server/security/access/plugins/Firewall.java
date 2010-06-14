@@ -44,7 +44,7 @@ public class Firewall extends AbstractPlugin
     {
         public Firewall newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            FirewallConfiguration configuration = config.getConfiguration(FirewallConfiguration.class);
+            FirewallConfiguration configuration = config.getConfiguration(FirewallConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)

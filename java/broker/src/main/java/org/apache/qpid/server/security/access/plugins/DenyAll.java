@@ -66,7 +66,7 @@ public class DenyAll extends BasicPlugin
     {
         public DenyAll newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            DenyAllConfiguration configuration = config.getConfiguration(DenyAllConfiguration.class);
+            DenyAllConfiguration configuration = config.getConfiguration(DenyAllConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)

@@ -38,7 +38,7 @@ public class LogMessageTest extends TestCase
     {
         Locale usLocal = Locale.US;
         Locale.setDefault(usLocal);
-        ResourceBundle _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages",
+        ResourceBundle _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.Broker_logmessages",
                                                             usLocal);
 
         assertNotNull("Unable to load ResourceBundle", _messages);
@@ -55,7 +55,7 @@ public class LogMessageTest extends TestCase
         Locale.setDefault(japanese);
         try
         {
-            ResourceBundle _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages",
+            ResourceBundle _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.Broker_logmessages",
                                                                 japanese);
 
             assertNotNull("Unable to load ResourceBundle", _messages);

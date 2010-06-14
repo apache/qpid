@@ -66,7 +66,7 @@ public class AllowAll extends BasicPlugin
     {
         public AllowAll newInstance(ConfigurationPlugin config) throws ConfigurationException                    
         {
-            AllowAllConfiguration configuration = config.getConfiguration(AllowAllConfiguration.class);
+            AllowAllConfiguration configuration = config.getConfiguration(AllowAllConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)
