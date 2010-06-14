@@ -52,7 +52,7 @@ public class SimpleXML extends AbstractPlugin
     {
         public SimpleXML newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            SimpleXMLConfiguration configuration = config.getConfiguration(SimpleXMLConfiguration.class);
+            SimpleXMLConfiguration configuration = config.getConfiguration(SimpleXMLConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)

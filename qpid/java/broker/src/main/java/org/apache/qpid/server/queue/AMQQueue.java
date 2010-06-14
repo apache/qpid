@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -274,9 +275,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
         public void doTask(AMQQueue queue) throws AMQException;
     }
 
-    void configure(QueueConfiguration config);
+    void configure(ConfigurationPlugin config);
 
-    QueueConfiguration getConfiguration();
+    ConfigurationPlugin getConfiguration();
 
     ManagedObject getManagedObject();
 }

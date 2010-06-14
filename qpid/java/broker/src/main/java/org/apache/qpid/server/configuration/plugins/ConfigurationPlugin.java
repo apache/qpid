@@ -38,8 +38,8 @@ public abstract class ConfigurationPlugin
 {
     protected static final Logger _logger = Logger.getLogger(ConfigurationPlugin.class);
 
-    private Map<Class<? extends ConfigurationPlugin>, ConfigurationPlugin>
-            _pluginConfiguration = new HashMap<Class<? extends ConfigurationPlugin>, ConfigurationPlugin>();
+    private Map<String, ConfigurationPlugin>
+            _pluginConfiguration = new HashMap<String, ConfigurationPlugin>();
 
     protected Configuration _configuration;
 
@@ -69,7 +69,7 @@ public abstract class ConfigurationPlugin
         return _configuration;
     }
 
-    public <C extends ConfigurationPlugin> C getConfiguration(Class<C> plugin)
+    public <C extends ConfigurationPlugin> C getConfiguration(String plugin)
     {
         return (C) _pluginConfiguration.get(plugin);
     }
@@ -155,7 +155,7 @@ public abstract class ConfigurationPlugin
             List<ConfigurationPlugin> handlers = configurationManager.getConfigurationPlugins(configurationElement, handled);
             for (ConfigurationPlugin plugin : handlers)
             {
-                _pluginConfiguration.put(plugin.getClass(), plugin);
+                _pluginConfiguration.put(plugin.getClass().getName(), plugin);
             }
         }
 

@@ -60,7 +60,7 @@ public class LegacyAccess extends BasicPlugin
     {
         public LegacyAccess newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            LegacyAccessConfiguration configuration = config.getConfiguration(LegacyAccessConfiguration.class);
+            LegacyAccessConfiguration configuration = config.getConfiguration(LegacyAccessConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)

@@ -45,7 +45,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
         public TopicDeletePolicy newInstance(ConfigurationPlugin configuration) throws ConfigurationException
         {
             TopicDeletePolicyConfiguration config =
-                    configuration.getConfiguration(TopicDeletePolicyConfiguration.class);
+                    configuration.getConfiguration(TopicDeletePolicyConfiguration.class.getName());
 
             TopicDeletePolicy policy = new TopicDeletePolicy();
             policy.configure(config);
