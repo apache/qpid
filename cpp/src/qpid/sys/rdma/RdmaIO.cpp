@@ -109,7 +109,7 @@ namespace Rdma {
         do {
             newState = oldState = state.get();
             doReturn = false;
-            if (outstandingWrites > 0 || (oldState != IDLE && oldState != DRAINED)) {
+            if (oldState != IDLE && oldState != DRAINED) {
                 doReturn = true;
                 break;
             }
