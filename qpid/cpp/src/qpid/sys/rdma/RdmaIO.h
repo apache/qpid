@@ -103,7 +103,7 @@ namespace Rdma {
         const static int FlagsMask = 0x10000000; // Mask for all flag bits - be sure to update this if you add more command bits
         const static int IgnoreData = 0x10000000; // Message contains no application data
 
-        void dataEvent(qpid::sys::DispatchHandle& handle);
+        void dataEvent();
         void processCompletions();
         void doWriteCallback();
         void doStoppedCallback();
