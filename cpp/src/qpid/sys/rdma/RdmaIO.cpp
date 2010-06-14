@@ -42,7 +42,7 @@ namespace Rdma {
             ErrorCallback ec
     ) :
         qp(q),
-        dataHandle(*qp, boost::bind(&AsynchIO::dataEvent, this, _1), 0, 0),
+        dataHandle(*qp, boost::bind(&AsynchIO::dataEvent, this), 0, 0),
         bufferSize(size),
         recvCredit(0),
         xmitCredit(xCredit),
@@ -278,7 +278,7 @@ namespace Rdma {
         } while (true);
     }
 
-    void AsynchIO::dataEvent(qpid::sys::DispatchHandle&) {
+    void AsynchIO::dataEvent() {
         // Keep track of writable notifications
         // qpid::sys::ScopedLock<qpid::sys::Mutex> l(stateLock);
         State oldState;
