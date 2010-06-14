@@ -264,13 +264,13 @@ target_link_libraries (sender qpidmessaging)
 #sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
 remember_location(sender)
 
-add_executable (qpid_receive qpid_receive.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid_receive qpidmessaging)
-remember_location(qpid_receive)
+add_executable (qpid-receive qpid-receive.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (qpid-receive qpidmessaging)
+remember_location(qpid-receive)
 
-add_executable (qpid_send qpid_send.cpp Statistics.cpp ${platform_test_additions})
-target_link_libraries (qpid_send qpidmessaging)
-remember_location(qpid_send)
+add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions})
+target_link_libraries (qpid-send qpidmessaging)
+remember_location(qpid-send)
 
 # qpid-perftest and qpid-latency-test are generally useful so install them
 install (TARGETS qpid-perftest qpid-latency-test RUNTIME

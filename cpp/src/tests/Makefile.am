@@ -127,14 +127,6 @@ if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
 endif
 
-
-# Disabled till we move to amqp_0_10 codec.
-# 	amqp_0_10/serialize.cpp allSegmentTypes.h \
-# 	amqp_0_10/ProxyTemplate.cpp \
-# 	amqp_0_10/apply.cpp \
-# 	amqp_0_10/Map.cpp \
-# 	amqp_0_10/handlers.cpp 
-
 TESTLIBFLAGS = -module -rpath $(abs_builddir)
 
 check_LTLIBRARIES += libshlibtest.la
@@ -153,6 +145,9 @@ include ssl.mk
 endif
 
 # Test programs that are installed and therefore built as part of make, not make check
+
+qpidtest_SCRIPTS += qpid-cpp-benchmark
+
 qpidtest_PROGRAMS += receiver
 receiver_SOURCES = \
   receiver.cpp \
@@ -168,18 +163,18 @@ sender_SOURCES = \
   Statistics.cpp
 sender_LDADD = $(lib_messaging)
 
-qpidtest_PROGRAMS += qpid_receive
+qpidtest_PROGRAMS += qpid-receive
 qpid_receive_SOURCES = \
-  qpid_receive.cpp \
+  qpid-receive.cpp \
   TestOptions.h \
   ConnectionOptions.h \
   Statistics.h \
   Statistics.cpp
 qpid_receive_LDADD = $(lib_messaging)
 
-qpidtest_PROGRAMS += qpid_send
+qpidtest_PROGRAMS += qpid-send
 qpid_send_SOURCES = \
-  qpid_send.cpp \
+  qpid-send.cpp \
   TestOptions.h \
   ConnectionOptions.h \
   Statistics.h \
@@ -216,9 +211,9 @@ qpid_topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
 qpid_topic_publisher_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=qpid_ping
+qpidtest_PROGRAMS+=qpid-ping
 qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
-qpid_ping_SOURCES=qpid_ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
+qpid_ping_SOURCES=qpid-ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_ping_LDADD=$(lib_client)
 
 #
@@ -299,10 +294,10 @@ check_PROGRAMS+=qrsh
 qrsh_SOURCES=qrsh.cpp
 qrsh_LDADD=$(lib_client)
 
-check_PROGRAMS+=qpid_stream
+check_PROGRAMS+=qpid-stream
 qpid_stream_INCLUDES=$(PUBLIC_INCLUDES)
-qpid_stream_SOURCES=qpid_stream.cpp
-qpid_stream_LDADD=$(lib_messaging) 
+qpid_stream_SOURCES=qpid-stream.cpp
+qpid_stream_LDADD=$(lib_messaging)
 
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \

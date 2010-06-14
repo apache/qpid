@@ -136,7 +136,7 @@ struct Options : public qpid::Options
             qpid::log::Logger::instance().configure(log);
             if (help) {
                 std::ostringstream msg;
-                std::cout << msg << *this << std::endl << std::endl 
+                std::cout << msg << *this << std::endl << std::endl
                           << "Drains messages from the specified address" << std::endl;
                 return false;
             } else {
@@ -173,7 +173,7 @@ struct Options : public qpid::Options
             message.getProperties()[name] = value;
         } else {
             message.getProperties()[name] = Variant();
-        }    
+        }
     }
 
     void setProperties(Message& message) const
@@ -279,7 +279,7 @@ int main(int argc, char ** argv)
                 contentGen.reset(new MapContentGenerator(opts));
             else if (opts.contentSize > 0)
                 contentGen.reset(new FixedContentGenerator(string(opts.contentSize, 'X')));
-            else 
+            else
                 contentGen.reset(new FixedContentGenerator(opts.contentString));
 
             qpid::sys::AbsTime start = qpid::sys::now();
@@ -288,9 +288,9 @@ int main(int argc, char ** argv)
 
             while (contentGen->setContent(msg)) {
                 ++sent;
-                if (opts.sequence) 
+                if (opts.sequence)
                     msg.getProperties()[SN] = sent;
-                if (opts.timestamp) 
+                if (opts.timestamp)
                     msg.getProperties()[TS] = int64_t(
                         qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
                 sender.send(msg);
