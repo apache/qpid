@@ -47,8 +47,6 @@ namespace Rdma {
         typedef boost::function2<void, AsynchIO&, Buffer*> FullCallback;
         typedef boost::function1<void, AsynchIO&> NotifyCallback;
 
-        QueuePair::intrusive_ptr qp;
-        qpid::sys::DispatchHandleRef dataHandle;
         int bufferSize;
         int recvCredit;
         int xmitCredit;
@@ -62,6 +60,10 @@ namespace Rdma {
         std::deque<Buffer*> bufferQueue;
         qpid::sys::Mutex bufferQueueLock;
         boost::ptr_deque<Buffer> buffers;
+        // The QueuePair must be after the buffers so that the connection is destroyed before the buffers
+        // are deallocated so that the hardware doesn't write into memory that's been given back.
+        QueuePair::intrusive_ptr qp;
+        qpid::sys::DispatchHandleRef dataHandle;
 
         ReadCallback readCallback;
         IdleCallback idleCallback;
