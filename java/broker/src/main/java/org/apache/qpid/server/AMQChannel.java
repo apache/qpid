@@ -170,7 +170,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         _actor = new AMQPChannelActor(this, session.getLogActor().getRootMessageLogger());
         _logSubject = new ChannelLogSubject(this);
         _id = getConfigStore().createId();
-        _actor.message(ChannelMessages.CHN_CREATE());
+        _actor.message(ChannelMessages.CREATE());
 
         getConfigStore().addConfiguredObject(this);
 
@@ -492,7 +492,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             return;
         }
 
-        CurrentActor.get().message(_logSubject, ChannelMessages.CHN_CLOSE());
+        CurrentActor.get().message(_logSubject, ChannelMessages.CLOSE());
 
         unsubscribeAllConsumers();
         _transaction.rollback();
@@ -827,7 +827,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             // Log Flow Started before we start the subscriptions
             if (!suspended)
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_FLOW("Started"));
+                _actor.message(_logSubject, ChannelMessages.FLOW("Started"));
             }
 
 
@@ -878,7 +878,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             // stopped.
             if (suspended)
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_FLOW("Stopped"));
+                _actor.message(_logSubject, ChannelMessages.FLOW("Stopped"));
             }
 
         }
@@ -1001,7 +1001,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
     public void setCredit(final long prefetchSize, final int prefetchCount)
     {
-        _actor.message(ChannelMessages.CHN_PREFETCH_SIZE(prefetchSize, prefetchCount));
+        _actor.message(ChannelMessages.PREFETCH_SIZE(prefetchSize, prefetchCount));
         _creditManager.setCreditLimits(prefetchSize, prefetchCount);
     }
 
@@ -1306,7 +1306,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
             if(_blocking.compareAndSet(false,true))
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_FLOW_ENFORCED(queue.getNameShortString().toString()));
+                _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getNameShortString().toString()));
                 flow(false);
             }
         }
@@ -1318,7 +1318,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         {
             if(_blocking.compareAndSet(true,false))
             {
-                _actor.message(_logSubject, ChannelMessages.CHN_FLOW_REMOVED());
+                _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
 
                 flow(true);
             }

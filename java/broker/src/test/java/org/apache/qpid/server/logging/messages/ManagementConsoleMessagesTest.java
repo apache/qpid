@@ -29,7 +29,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 {
     public void testManagementStartup()
     {
-        _logMessage = ManagementConsoleMessages.MNG_STARTUP();
+        _logMessage = ManagementConsoleMessages.STARTUP();
         List<Object> log = performLog();
 
         String[] expected = {"Startup"};
@@ -42,7 +42,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         String transport = "JMX";
         Integer port = 8889;
 
-        _logMessage = ManagementConsoleMessages.MNG_LISTENING(transport, port);
+        _logMessage = ManagementConsoleMessages.LISTENING(transport, port);
         List<Object> log = performLog();
 
         String[] expected = {"Starting :", transport, ": Listening on port", String.valueOf(port)};
@@ -55,7 +55,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         String transport = "JMX";
         Integer port = 8889;
 
-        _logMessage = ManagementConsoleMessages.MNG_SHUTTING_DOWN(transport, port);
+        _logMessage = ManagementConsoleMessages.SHUTTING_DOWN(transport, port);
         List<Object> log = performLog();
 
         String[] expected = {"Shuting down :", transport, ": port", String.valueOf(port)};
@@ -65,7 +65,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 
     public void testManagementReady()
     {
-        _logMessage = ManagementConsoleMessages.MNG_READY();
+        _logMessage = ManagementConsoleMessages.READY();
         List<Object> log = performLog();
 
         String[] expected = {"Ready"};
@@ -75,7 +75,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 
     public void testManagementStopped()
     {
-        _logMessage = ManagementConsoleMessages.MNG_STOPPED();
+        _logMessage = ManagementConsoleMessages.STOPPED();
         List<Object> log = performLog();
 
         String[] expected = {"Stopped"};
@@ -87,7 +87,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
     {
         String path = "/path/to/the/keystore/files.jks";
 
-        _logMessage = ManagementConsoleMessages.MNG_SSL_KEYSTORE(path);
+        _logMessage = ManagementConsoleMessages.SSL_KEYSTORE(path);
         List<Object> log = performLog();
 
         String[] expected = {"Using SSL Keystore :", path};

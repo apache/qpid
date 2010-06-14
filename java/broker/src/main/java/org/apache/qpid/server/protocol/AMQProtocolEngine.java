@@ -196,7 +196,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         _id = _configStore.createId();
 
 
-        _actor.message(ConnectionMessages.CON_OPEN(null, null, false, false));
+        _actor.message(ConnectionMessages.OPEN(null, null, false, false));
 
     }
 
@@ -347,7 +347,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         try
         {
             // Log incomming protocol negotiation request
-            _actor.message(ConnectionMessages.CON_OPEN(null, pi._protocolMajor + "-" + pi._protocolMinor, false, true));
+            _actor.message(ConnectionMessages.OPEN(null, pi._protocolMajor + "-" + pi._protocolMinor, false, true));
 
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
@@ -746,7 +746,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                     notifyAll();
                 }
                 _poolReference.releaseExecutorService();
-                CurrentActor.get().message(_logSubject, ConnectionMessages.CON_CLOSE());
+                CurrentActor.get().message(_logSubject, ConnectionMessages.CLOSE());
             }
         }
         else
@@ -866,7 +866,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                 setContextKey(new AMQShortString(clientID));
 
                 // Log the Opening of the connection for this client
-                _actor.message(ConnectionMessages.CON_OPEN(clientID, _protocolVersion.toString(), true, true));
+                _actor.message(ConnectionMessages.OPEN(clientID, _protocolVersion.toString(), true, true));
             }
 
             if (_clientProperties.getString(ClientProperties.version.toString()) != null)

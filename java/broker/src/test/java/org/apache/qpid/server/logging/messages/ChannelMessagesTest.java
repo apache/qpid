@@ -29,7 +29,7 @@ public class ChannelMessagesTest extends AbstractTestMessages
 {
     public void testChannelCreate()
     {
-        _logMessage = ChannelMessages.CHN_CREATE();
+        _logMessage = ChannelMessages.CREATE();
         List<Object> log = performLog();
 
         // We use the MessageFormat here as that is what the ChannelMessage
@@ -43,7 +43,7 @@ public class ChannelMessagesTest extends AbstractTestMessages
     {
         String flow = "ON";
 
-        _logMessage = ChannelMessages.CHN_FLOW(flow);
+        _logMessage = ChannelMessages.FLOW(flow);
         List<Object> log = performLog();
 
         String[] expected = {"Flow", flow};
@@ -53,7 +53,7 @@ public class ChannelMessagesTest extends AbstractTestMessages
 
     public void testChannelClose()
     {
-        _logMessage = ChannelMessages.CHN_CLOSE();
+        _logMessage = ChannelMessages.CLOSE();
         List<Object> log = performLog();
 
         String[] expected = {"Close"};

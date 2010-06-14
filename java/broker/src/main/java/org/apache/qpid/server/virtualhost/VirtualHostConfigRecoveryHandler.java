@@ -87,7 +87,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     {
         _logSubject = new MessageStoreLogSubject(_virtualHost,store);
         _store = store;
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1004(null, false));
+        CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_START(null, false));
 
         return this;
     }
@@ -107,7 +107,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 _virtualHost.getQueueRegistry().registerQueue(q);
             }
     
-            CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1004(queueName, true));
+            CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_START(queueName, true));
     
             //Record that we have a queue for recovery
             _queueRecoveries.put(queueName, 0);
@@ -348,12 +348,12 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
         for(Map.Entry<String,Integer> entry : _queueRecoveries.entrySet())
         {
-            CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1005(entry.getValue(), entry.getKey()));
+            CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERED(entry.getValue(), entry.getKey()));
 
-            CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1006(entry.getKey(), true));
+            CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(entry.getKey(), true));
         }
 
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.TXN_1006(null, false));
+        CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
     }
 
 }

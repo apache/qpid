@@ -36,13 +36,14 @@ import java.util.ResourceBundle;
 
 public class GenerateLogMessages
 {
+    private boolean DEBUG = false;
     private static String _tmplDir;
     private String _outputDir;
     private List<String> _logMessages = new LinkedList<String>();
+    private String _packageSource;
 
     public static void main(String[] args)
     {
-        System.out.println("Starting LogMessage Generator");
         GenerateLogMessages generator = null;
         try
         {
@@ -84,7 +85,7 @@ public class GenerateLogMessages
         processArgs(args);
 
         // We need the template and input files to run.
-        if (_tmplDir == null || _outputDir == null || _logMessages.size() == 0)
+        if (_tmplDir == null || _outputDir == null || _logMessages.size() == 0 || _packageSource == null)
         {
             showUsage();
             throw new IllegalAccessException();
@@ -98,18 +99,20 @@ public class GenerateLogMessages
 
     private void showUsage()
     {
-        System.out.println("Broker LogMessageGenerator v.0.0");
-        System.out.println("Usage: GenerateLogMessages: -t tmplDir");
-        System.out.println("       where -t tmplDir: Find templates in tmplDir.");
-        System.out.println("             -o outDir:  Use outDir as the output dir.");
+        System.out.println("Broker LogMessageGenerator v.2.0");
+        System.out.println("Usage: GenerateLogMessages: [-d] -t <Template Dir> -o <Output Root> -s <Source Directory> <List of _logmessage.property files to process>");
+        System.out.println("       where -d : Additional debug loggin.\n" +
+                           "             Template Dir: Is the base template to use.");
+        System.out.println("             Output Root:  The root form where the LogMessage Classes will be placed.");
+        System.out.println("             Source Dir :  The root form where the logmessasge.property files can be found.");
+        System.out.println("             _logmessage.property files must include the full package structure.");
     }
 
     public void run() throws InvalidTypeException, Exception
     {
-
         for (String file : _logMessages)
         {
-            System.out.println("Processing File:" + file);
+            debug("Processing File:" + file);
 
             createMessageClass(file);
         }
@@ -150,6 +153,17 @@ public class GenerateLogMessages
                             _tmplDir = args[i];
                         }
                         break;
+                    case 's':
+                    case 'S':
+                        if (++i < args.length)
+                        {
+                            _packageSource = args[i];
+                        }
+                        break;
+                    case 'd':
+                    case 'D':
+                        DEBUG=true;
+                        break;
                 }
             }
         }
@@ -173,20 +187,22 @@ public class GenerateLogMessages
 
         String bundle = file.replace(File.separator, ".");
 
-        bundle = bundle.substring(bundle.indexOf("org."), bundle.indexOf(".properties"));
+        int packageStartIndex = bundle.indexOf(_packageSource) + _packageSource.length() + 2;
 
-        System.out.println("Creating Classes for bundle:" + bundle);
+        bundle = bundle.substring(packageStartIndex, bundle.indexOf(".properties"));
+
+        System.out.println("Creating Class for bundle:" + bundle);
 
         ResourceBundle fileBundle = ResourceBundle.getBundle(bundle, Locale.US);
 
         // Pull the bit from /os/path/<className>.logMessages from the bundle name
         String className = file.substring(file.lastIndexOf(File.separator) + 1, file.lastIndexOf("_"));
-        System.out.println("Creating ClassName form file:" + className);
+        debug("Creating ClassName form file:" + className);
 
         String packageString = bundle.substring(0, bundle.indexOf(className));
         String packagePath = packageString.replace(".", File.separator);
 
-        System.out.println("Package path:" + packagePath);
+        debug("Package path:" + packagePath);
 
         File outputDirectory = new File(_outputDir + File.separator + packagePath);
         if (!outputDirectory.exists())
@@ -209,7 +225,7 @@ public class GenerateLogMessages
 
         // Create the file writer to put the finished file in
         String outputFile = _outputDir + File.separator + packagePath + className + "Messages.java";
-        System.out.println("Creating Java file:" + outputFile);
+        debug("Creating Java file:" + outputFile);
         FileWriter output = new FileWriter(outputFile);
 
         // Run Velocity to create the output file.
@@ -291,7 +307,7 @@ public class GenerateLogMessages
             if (!message.equals("package"))
             {
                 // Method names can't have a '-' in them so lets make it '_'
-                // e.g. BRK-STARTUP -> BRK_STARTUP
+                // e.g. RECOVERY-STARTUP -> RECOVERY_STARTUP
                 logEntryData.put("methodName", message.replace('-', '_'));
                 // Store the real name so we can use that in the actual log.
                 logEntryData.put("name", message);
@@ -306,7 +322,7 @@ public class GenerateLogMessages
                 // Add the parameters for this message
                 logEntryData.put("parameters", extractParameters(logMessage));
 
-                //Add the options for this messagse
+                //Add the options for this messages
                 logEntryData.put("options", extractOptions(logMessage));
 
                 //Add this entry to the list for this class
@@ -499,4 +515,13 @@ public class GenerateLogMessages
             super(message);
         }
     }
+
+    public void debug(String msg)
+    {
+        if (DEBUG)
+        {
+            System.out.println(msg);
+        }
+    }
+
 }

@@ -33,12 +33,6 @@
     <property name="qmf.output.dir" value="${module.precompiled}/org/apache/qpid/qmf/schema"/>
     <property name="qmf.output.file" value="BrokerSchema.java"/>
 
-    <property name="gentools.home" location="${project.root}/../gentools" />
-    <property name="generated.package" value="org/apache/qpid/server/logging/messages" />
-    <property name="generated.dir" location="${module.precompiled}/${generated.package}" />
-    <property name="velocity.compile.dir" value="${module.build}/velocity"/>
-    <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
-
 
     <target name="precompile" depends="gen_logging,gen_qmf">
         <mkdir dir="${output.dir}"/>
@@ -48,50 +42,6 @@
                 javacchome="${project.root}/lib"/>
     </target>
 
-    <target name="compile_velocity" >
-        <mkdir dir="${velocity.compile.dir}" />	
-        <!-- Compile LogMessages Velocity Generator -->
-        <javac source="${java.source}" target="${java.target}"
-               destdir="${velocity.compile.dir}" debug="on" includeantruntime="false"
-               deprecation="${javac.deprecation}" 
-               srcdir="src/velocity/java" >
-          <classpath>
-            <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
-          </classpath>
-          <compilerarg line="${javac.compiler.args}"/>
-        </javac>
-    </target>
-
-  <property name="velocity.properties.dir" value="${project.root}/broker/src/main/java/org/apache/qpid/server/logging/messages"/>
-
-  <target name="check_velocity_deps">
-    <uptodate property="velocity.notRequired" targetfile="${velocity.timestamp}">
-      <srcfiles dir="${velocity.properties.dir}" includes="LogMessages**" />
-      <srcfiles dir="src/velocity/" includes="**/*.java **/*.vm" />
-    </uptodate>
-  </target>
-
-  <target name="gen_logging" depends="compile_velocity,check_velocity_deps" unless="velocity.notRequired">
-    <mkdir dir="${generated.dir}"/>
-    <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
-      <arg value="-j"/>
-      <arg value="-o"/>
-      <arg value="${generated.dir}"/>
-      <arg value="-t"/>
-      <arg value="${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
-      <arg value="-r"/>
-      <arg value="org.apache.qpid.server.logging.messages.LogMessages"/>
-      <classpath>
-        <pathelement path="${project.root}/broker/src/main/java"/>
-        <pathelement path="${velocity.compile.dir}" />
-        <fileset dir="${project.root}/lib">
-          <include name="**/*.jar"/>
-        </fileset> 
-        <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
-      </classpath>
-    </java>
-    <touch file="${velocity.timestamp}" />
-  </target>
 
   <target name="check_qmf_deps">
     <uptodate property="gen_qmf.notRequired" targetfile="${qmf.output.dir}/${qmf.output.file}">

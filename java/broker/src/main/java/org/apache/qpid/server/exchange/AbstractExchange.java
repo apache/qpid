@@ -150,7 +150,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
         // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.EXH_CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
+        CurrentActor.get().message(ExchangeMessages.CREATED(String.valueOf(getTypeShortString()), String.valueOf(name), durable));
     }
 
     public ConfigStore getConfigStore()
@@ -190,7 +190,7 @@ public abstract class AbstractExchange implements Exchange, Managable
                 _alternateExchange.removeReference(this);
             }
 
-            CurrentActor.get().message(_logSubject, ExchangeMessages.EXH_DELETED());
+            CurrentActor.get().message(_logSubject, ExchangeMessages.DELETED());
 
             for(Task task : _closeTaskList)
             {

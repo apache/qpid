@@ -32,7 +32,7 @@ public class ConnectionMessagesTest extends AbstractTestMessages
         String clientID = "client";
         String protocolVersion = "8-0";
 
-        _logMessage = ConnectionMessages.CON_OPEN(clientID, protocolVersion, true , true);
+        _logMessage = ConnectionMessages.OPEN(clientID, protocolVersion, true , true);
         List<Object> log = performLog();
 
         String[] expected = {"Open :", "Client ID", clientID,
@@ -45,7 +45,7 @@ public class ConnectionMessagesTest extends AbstractTestMessages
     {
         String clientID = "client";        
 
-        _logMessage = ConnectionMessages.CON_OPEN(clientID, null,true, false);
+        _logMessage = ConnectionMessages.OPEN(clientID, null,true, false);
         List<Object> log = performLog();
 
         String[] expected = {"Open :", "Client ID", clientID};
@@ -57,7 +57,7 @@ public class ConnectionMessagesTest extends AbstractTestMessages
     {
         String protocolVersion = "8-0";
 
-        _logMessage = ConnectionMessages.CON_OPEN(null, protocolVersion, false , true);
+        _logMessage = ConnectionMessages.OPEN(null, protocolVersion, false , true);
         List<Object> log = performLog();
 
         String[] expected = {"Open", ": Protocol Version :", protocolVersion};
@@ -67,7 +67,7 @@ public class ConnectionMessagesTest extends AbstractTestMessages
 
     public void testConnectionOpen_WithNoClientIDNoProtocolVersion()
     {
-        _logMessage = ConnectionMessages.CON_OPEN(null, null,false, false);
+        _logMessage = ConnectionMessages.OPEN(null, null,false, false);
         List<Object> log = performLog();
 
         String[] expected = {"Open"};
@@ -79,7 +79,7 @@ public class ConnectionMessagesTest extends AbstractTestMessages
 
     public void testConnectionClose()
     {
-        _logMessage = ConnectionMessages.CON_CLOSE();
+        _logMessage = ConnectionMessages.CLOSE();
         List<Object> log = performLog();
 
         String[] expected = {"Close"};

@@ -30,7 +30,7 @@ public class VirtualHostMessagesTest extends AbstractTestMessages
     public void testVirtualhostCreated()
     {
         String name = "test";
-        _logMessage = VirtualHostMessages.VHT_CREATED(name);
+        _logMessage = VirtualHostMessages.CREATED(name);
         List<Object> log = performLog();
 
         String[] expected = {"Created :", name};
@@ -40,7 +40,7 @@ public class VirtualHostMessagesTest extends AbstractTestMessages
 
     public void testSubscriptionClosed()
     {
-        _logMessage = VirtualHostMessages.VHT_CLOSED();
+        _logMessage = VirtualHostMessages.CLOSED();
         List<Object> log = performLog();
 
         String[] expected = {"Closed"};
