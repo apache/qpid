@@ -39,7 +39,7 @@ nn - or more contributor license agreements.  See the NOTICE file
     <property name="gentools.home" location="${project.root}/../gentools" />
 
     <property name="generated.package" value="org/apache/qpid/server/virtualhost/plugin/logging" />
-    <property name="generated.dir" location="${module.precompiled}/${generated.package}" />
+    <property name="generated.dir" location="${module.precompiled}" />
     <property name="velocity.compile.dir" value="${build.scratch}/broker/velocity"/>
     <property name="velocity.timestamp" location="${generated.dir}/velocity.timestamp" />
 
@@ -56,14 +56,26 @@ nn - or more contributor license agreements.  See the NOTICE file
 
     <target name="gen_logging" depends="check_velocity_deps" unless="velocity.notRequired">
       <mkdir dir="${generated.dir}"/>
+
+      <path id="logmessages.path">
+        <fileset  dir="${module.src}">
+          <include name="**/*_logmessages.properties"/>
+        </fileset>
+      </path>
+
+      <pathconvert property="logmessages"
+                   refid="logmessages.path"
+                   pathsep=" "/>
+        
+      <echo message="logmessages is ${logmessages}"/>
+
       <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
-        <arg value="-j"/>
-        <arg value="-o"/>
-        <arg value="${generated.dir}"/>
-        <arg value="-t"/>
-        <arg value="${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
-        <arg value="-r"/>
-        <arg value="org.apache.qpid.server.virtualhost.plugin.logging.LogMessages"/>
+        <arg line="-r ${logmessages}"/>
+          <arg value="-j"/>
+          <arg value="-o"/>
+          <arg value="${generated.dir}"/>
+          <arg value="-t"/>
+          <arg value="${project.root}/broker/src/velocity/templates/org/apache/qpid/server/logging/messages"/>
         <classpath>
           <pathelement path="${project.root}/broker-plugins/experimental/slowconsumerdetection/src/main/java"/>
           <pathelement path="${velocity.compile.dir}" />

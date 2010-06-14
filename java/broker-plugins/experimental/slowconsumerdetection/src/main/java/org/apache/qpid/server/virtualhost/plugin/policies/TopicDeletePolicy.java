@@ -86,7 +86,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
 
         try
         {
-            CurrentActor.get().message(owner.getLogSubject(),TopicDeletePolicyMessages.TDP_DISCONNECTING());
+            CurrentActor.get().message(owner.getLogSubject(),TopicDeletePolicyMessages.DISCONNECTING());
             // Close the consumer . this will cause autoDelete Queues to be purged
             owner.getConnectionModel().
                     closeSession(owner, AMQConstant.RESOURCE_ERROR,
@@ -95,7 +95,7 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
             // Actively delete non autoDelete queues if deletePersistent is set
             if (!q.isAutoDelete() && (_configuration != null && _configuration.deletePersistent()))
             {
-                CurrentActor.get().message(q.getLogSubject(), TopicDeletePolicyMessages.TDP_DELETING_QUEUE());
+                CurrentActor.get().message(q.getLogSubject(), TopicDeletePolicyMessages.DELETING_QUEUE());
                 q.delete();
             }
 

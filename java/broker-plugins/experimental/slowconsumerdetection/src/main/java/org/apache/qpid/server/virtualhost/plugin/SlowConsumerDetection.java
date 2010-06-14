@@ -66,11 +66,11 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     @Override
     public void execute()
     {
-        SlowConsumerDetectionMessages.SCD_RUNNING();
+        SlowConsumerDetectionMessages.RUNNING();
 
         for (AMQQueue q : _virtualhost.getQueueRegistry().getQueues())
         {
-            SlowConsumerDetectionMessages.SCD_CHECKING_QUEUE(q.getName());
+            SlowConsumerDetectionMessages.CHECKING_QUEUE(q.getName());
             try
             {
                 SlowConsumerDetectionQueueConfiguration config =
@@ -91,7 +91,7 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
             }
         }
 
-        SlowConsumerDetectionMessages.SCD_COMPLETE();
+        SlowConsumerDetectionMessages.COMPLETE();
     }
 
     public long getDelay()
