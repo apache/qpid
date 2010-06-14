@@ -60,7 +60,7 @@ public class AccessControl extends AbstractPlugin
 
         public AccessControl newInstance(ConfigurationPlugin config) throws ConfigurationException
         {
-            AccessControlConfiguration configuration = config.getConfiguration(AccessControlConfiguration.class);
+            AccessControlConfiguration configuration = config.getConfiguration(AccessControlConfiguration.class.getName());
 
             // If there is no configuration for this plugin then don't load it.
             if (configuration == null)

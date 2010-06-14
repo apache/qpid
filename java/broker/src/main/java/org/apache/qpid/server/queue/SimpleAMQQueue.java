@@ -26,6 +26,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -185,7 +186,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
-    private QueueConfiguration _queueConfiguration;
+    private ConfigurationPlugin _queueConfiguration;
 
 
 
@@ -2065,24 +2066,29 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     }
 
 
-    public void configure(QueueConfiguration config)
+    public void configure(ConfigurationPlugin config)
     {
         if (config != null)
         {
-            setMaximumMessageAge(config.getMaximumMessageAge());
-            setMaximumQueueDepth(config.getMaximumQueueDepth());
-            setMaximumMessageSize(config.getMaximumMessageSize());
-            setMaximumMessageCount(config.getMaximumMessageCount());
-            setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
-            _capacity = config.getCapacity();
-            _flowResumeCapacity = config.getFlowResumeCapacity();
+            if (config instanceof QueueConfiguration)
+            {
+
+                setMaximumMessageAge(((QueueConfiguration)config).getMaximumMessageAge());
+                setMaximumQueueDepth(((QueueConfiguration)config).getMaximumQueueDepth());
+                setMaximumMessageSize(((QueueConfiguration)config).getMaximumMessageSize());
+                setMaximumMessageCount(((QueueConfiguration)config).getMaximumMessageCount());
+                setMinimumAlertRepeatGap(((QueueConfiguration)config).getMinimumAlertRepeatGap());
+                _capacity = ((QueueConfiguration)config).getCapacity();
+                _flowResumeCapacity = ((QueueConfiguration)config).getFlowResumeCapacity();
+            }
 
             _queueConfiguration = config;
+
         }
     }
 
 
-    public QueueConfiguration getConfiguration()
+    public ConfigurationPlugin getConfiguration()
     {
         return _queueConfiguration;
     }

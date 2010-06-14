@@ -95,7 +95,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
                                              "('messageAge','depth' or 'messageCount') must be specified.");             
         }
 
-        SlowConsumerDetectionPolicyConfiguration policyConfig = getConfiguration(SlowConsumerDetectionPolicyConfiguration.class);
+        SlowConsumerDetectionPolicyConfiguration policyConfig = getConfiguration(SlowConsumerDetectionPolicyConfiguration.class.getName());
 
         PluginManager pluginManager = ApplicationRegistry.getInstance().getPluginManager();
         Map<String, SlowConsumerPolicyPluginFactory> factories = pluginManager.getPlugins(SlowConsumerPolicyPluginFactory.class);

@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  * Slow consumers should on a topic should expect to receive a
  * 506 : Resource Error if the hit a predefined threshold.
  */
-public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionListener, ConnectionListener
+public class GlobalQueuesTest extends QpidBrokerTestCase implements ExceptionListener, ConnectionListener
 {
     Topic _destination;
     private CountDownLatch _disconnectionLatch = new CountDownLatch(1);
@@ -59,6 +59,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
     private Exception _publisherError = null;
     private JMSException _connectionException = null;
     private static final long JOIN_WAIT = 5000;
+    protected String CONFIG_SECTION = ".queues";
 
     @Override
     public void setUp() throws IOException, ConfigurationException, NamingException
@@ -71,32 +72,26 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
                                  + getConnectionURL().getVirtualHost().substring(1) +
                                  ".slow-consumer-detection.timeunit", "SECONDS");
 
-        setConfigurationProperty("virtualhosts.virtualhost."
-                                 + getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "policy.name", "TopicDelete");
-
-
         /**
          *  Queue Configuration
 
          <slow-consumer-detection>
-             <!-- The depth before which the policy will be applied-->
-             <depth>4235264</depth>
+         <!-- The depth before which the policy will be applied-->
+         <depth>4235264</depth>
 
-             <!-- The message age before which the policy will be applied-->
-             <messageAge>600000</messageAge>
+         <!-- The message age before which the policy will be applied-->
+         <messageAge>600000</messageAge>
 
-             <!-- The number of message before which the policy will be applied-->
-             <messageCount>50</messageCount>
+         <!-- The number of message before which the policy will be applied-->
+         <messageCount>50</messageCount>
 
-             <!-- Policies configuration -->
-             <policy>
-                 <name>TopicDelete</name>
-                 <topicDelete>
-                     <delete-persistent/>
-                 </topicDelete>
-             </policy>
+         <!-- Policies configuration -->
+         <policy>
+         <name>TopicDelete</name>
+         <topicDelete>
+         <delete-persistent/>
+         </topicDelete>
+         </policy>
          </slow-consumer-detection>
 
          */
@@ -105,8 +100,8 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
          *  VirtualHost Plugin Configuration
 
          <slow-consumer-detection>
-            <delay>1</delay>
-            <timeunit>MINUTES</timeunit>
+         <delay>1</delay>
+         <timeunit>MINUTES</timeunit>
          </slow-consumer-detection>
 
          */
@@ -132,6 +127,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
      * Clients should not have to modify their code based on the protocol in use.
      *
      * @param ackMode @see javax.jms.Session
+     *
      * @throws Exception
      */
     public void topicConsumer(int ackMode, boolean durable) throws Exception
@@ -260,6 +256,27 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
 
     }
 
+    public void setConfig(String property, String value, boolean deleteDurable) throws NamingException, IOException, ConfigurationException
+    {
+        setConfigurationProperty("virtualhosts.virtualhost."
+                                 + getConnectionURL().getVirtualHost().substring(1) +
+                                 CONFIG_SECTION + ".slow-consumer-detection." +
+                                 "policy.name", "TopicDelete");
+
+        setConfigurationProperty("virtualhosts.virtualhost." +
+                                 getConnectionURL().getVirtualHost().substring(1) +
+                                 CONFIG_SECTION + ".slow-consumer-detection." +
+                                 property, value);
+
+        if (deleteDurable)
+        {
+            setConfigurationProperty("virtualhosts.virtualhost."
+                                     + getConnectionURL().getVirtualHost().substring(1) +
+                                     CONFIG_SECTION + ".slow-consumer-detection." +
+                                     "policy.topicdelete.delete-persistent", "");
+        }
+    }
+
     /**
      * Test that setting messageCount takes affect on topics
      *
@@ -271,10 +288,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
     {
         MAX_QUEUE_MESSAGE_COUNT = 10;
 
-        setConfigurationProperty("virtualhosts.virtualhost." +
-                                 getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "messageCount", String.valueOf(MAX_QUEUE_MESSAGE_COUNT - 1));
+        setConfig("messageCount", String.valueOf(MAX_QUEUE_MESSAGE_COUNT - 1), false);
 
         //Start the broker
         super.setUp();
@@ -295,10 +309,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
     {
         MAX_QUEUE_MESSAGE_COUNT = 10;
 
-        setConfigurationProperty("virtualhosts.virtualhost." +
-                                 getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "depth", String.valueOf(MESSAGE_SIZE * 9));
+        setConfig("depth", String.valueOf(MESSAGE_SIZE * 9), false);
 
         //Start the broker
         super.setUp();
@@ -321,10 +332,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
     {
         MAX_QUEUE_MESSAGE_COUNT = 10;
 
-        setConfigurationProperty("virtualhosts.virtualhost." +
-                                 getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "messageAge", String.valueOf(DISCONNECTION_WAIT / 2));
+        setConfig("messageAge", String.valueOf(DISCONNECTION_WAIT / 2), false);
 
         //Start the broker
         super.setUp();
@@ -346,15 +354,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
     {
         MAX_QUEUE_MESSAGE_COUNT = 10;
 
-        setConfigurationProperty("virtualhosts.virtualhost." +
-                                 getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "messageCount", String.valueOf(MAX_QUEUE_MESSAGE_COUNT - 1));
-
-        setConfigurationProperty("virtualhosts.virtualhost."
-                                 + getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "policy.topicdelete.delete-persistent", "");
+        setConfig("messageCount", String.valueOf(MAX_QUEUE_MESSAGE_COUNT - 1), true);
 
         //Start the broker
         super.setUp();
@@ -377,15 +377,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
     {
         MAX_QUEUE_MESSAGE_COUNT = 10;
 
-        setConfigurationProperty("virtualhosts.virtualhost." +
-                                 getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "depth", String.valueOf(MESSAGE_SIZE * 9));
-
-        setConfigurationProperty("virtualhosts.virtualhost."
-                                 + getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "policy.topicdelete.delete-persistent", "");
+        setConfig("depth", String.valueOf(MESSAGE_SIZE * 9), true);
 
         //Start the broker
         super.setUp();
@@ -395,7 +387,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
         topicConsumer(Session.AUTO_ACKNOWLEDGE, true);
     }
 
-     /**
+    /**
      * Test that setting messageAge has an effect on topics
      *
      * Ensure we set the delete-persistent option
@@ -410,15 +402,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
     {
         MAX_QUEUE_MESSAGE_COUNT = 10;
 
-        setConfigurationProperty("virtualhosts.virtualhost." +
-                                 getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "messageAge", String.valueOf(DISCONNECTION_WAIT / 5));
-
-        setConfigurationProperty("virtualhosts.virtualhost."
-                                 + getConnectionURL().getVirtualHost().substring(1) +
-                                 ".queues.slow-consumer-detection." +
-                                 "policy.topicdelete.delete-persistent", "");
+        setConfig("messageAge", String.valueOf(DISCONNECTION_WAIT / 5), true);
 
         //Start the broker
         super.setUp();
@@ -437,6 +421,7 @@ public class SlowConsumerTest extends QpidBrokerTestCase implements ExceptionLis
 
         _disconnectionLatch.countDown();
     }
+
 
     /// Connection Listener
 

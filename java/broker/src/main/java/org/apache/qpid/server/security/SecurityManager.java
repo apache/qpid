@@ -153,7 +153,7 @@ public class SecurityManager
     public Map<String, SecurityPlugin> configurePlugins(ConfigurationPlugin hostConfig) throws ConfigurationException
     {
         Map<String, SecurityPlugin> plugins = new HashMap<String, SecurityPlugin>();
-        SecurityConfiguration securityConfig = hostConfig.getConfiguration(SecurityConfiguration.class);
+        SecurityConfiguration securityConfig = hostConfig.getConfiguration(SecurityConfiguration.class.getName());
 
         // If we have no security Configuration then there is nothing to configure.        
         if (securityConfig != null)
