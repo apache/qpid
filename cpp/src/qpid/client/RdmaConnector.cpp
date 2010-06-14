@@ -162,7 +162,12 @@ namespace {
 RdmaConnector::~RdmaConnector() {
     QPID_LOG(debug, "~RdmaConnector " << identifier);
     close();
-    if (aio) aio->stop(deleteAsynchIO);
+    if (aio) {
+        aio->stop(deleteAsynchIO);
+    }
+    if (shutdownHandler) {
+        shutdownHandler->shutdown();
+    }
 }
 
 void RdmaConnector::connect(const std::string& host, int port){
@@ -244,15 +249,21 @@ void RdmaConnector::dataError(Rdma::AsynchIO&) {
     drained();
 }
 
-void RdmaConnector::stopped(Rdma::AsynchIO* aio) {
-    delete aio;
+void RdmaConnector::stopped(Rdma::AsynchIO* a) {
+    QPID_LOG(debug, "RdmaConnector::stopped " << identifier);
+    assert(!polling);
+    aio = 0;
+    delete a;
     if (shutdownHandler) {
-        shutdownHandler->shutdown();
+        ShutdownHandler* s = shutdownHandler;
+        shutdownHandler = 0;
+        s->shutdown();
     }
 }
 
 void RdmaConnector::drained() {
     QPID_LOG(debug, "RdmaConnector::drained " << identifier);
+    assert(!polling);
     if (aio) {
         aio->stop(boost::bind(&RdmaConnector::stopped, this, aio));
         aio = 0;
