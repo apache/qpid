@@ -117,11 +117,14 @@ namespace Rdma {
             newState = SHUTDOWN;
 
         } while (!state.boolCompareAndSwap(oldState, newState));
+        
+        // Ensure we can't get any more callbacks (except for the stopped callback)
+        dataHandle.stopWatch();
+
         if (doReturn) {
             notifyCallback = nc;
             return;
         }
-        dataHandle.stopWatch();
         // Callback, but don't store it - SHUTDOWN state means callback has been called
         // we *are* allowed to delete the AsynchIO in this callback, so we have to return immediately
         // after the callback
@@ -473,7 +476,6 @@ namespace Rdma {
     }
 
     void AsynchIO::doStoppedCallback() {
-        dataHandle.stopWatch();
         NotifyCallback nc;
         nc.swap(notifyCallback);
         // Transition unconditionally to SHUTDOWN
