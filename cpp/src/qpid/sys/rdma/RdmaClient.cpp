@@ -65,9 +65,7 @@ Duration fullTestDuration(TIME_INFINITE);
 vector<char> testString;
 
 void write(Rdma::AsynchIO& aio) {
-    while (aio.writable()) {
-        if (smsgs >= target)
-            return;
+    while (aio.writable() && aio.bufferAvailable() && smsgs < target) {
         Rdma::Buffer* b = aio.getBuffer();
         std::copy(testString.begin(), testString.end(), b->bytes);
         b->dataCount = msgsize;
