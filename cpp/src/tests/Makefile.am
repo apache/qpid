@@ -147,6 +147,7 @@ endif
 # Test programs that are installed and therefore built as part of make, not make check
 
 qpidtest_SCRIPTS += qpid-cpp-benchmark
+EXTRA_DIST += qpid-cpp-benchmark
 
 qpidtest_PROGRAMS += receiver
 receiver_SOURCES = \
