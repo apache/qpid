@@ -110,8 +110,17 @@ namespace Rdma {
         void doDrainedCallback();
     };
 
+    // We're only writable if:
+    // * not draining write queue
+    // * we've got space in the transmit queue
+    // * we've got credit to transmit
+    // * if there's only 1 transmit credit we must send some credit
     inline bool AsynchIO::writable() const {
-        return (!draining && outstandingWrites < xmitBufferCount && xmitCredit > 0);
+        assert(xmitCredit>=0);
+        return !draining &&
+               outstandingWrites < xmitBufferCount &&
+               xmitCredit > 0 &&
+               ( xmitCredit > 1 || recvCredit > 0);
     }
 
     inline int AsynchIO::incompletedWrites() const {
