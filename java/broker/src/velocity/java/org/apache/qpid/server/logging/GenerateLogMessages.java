@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
@@ -39,10 +38,11 @@ public class GenerateLogMessages
 {
     private static String _tmplDir;
     private String _outputDir;
-    private String _resource;
+    private List<String> _logMessages = new LinkedList<String>();
 
     public static void main(String[] args)
     {
+        System.out.println("Starting LogMessage Generator");
         GenerateLogMessages generator = null;
         try
         {
@@ -62,6 +62,7 @@ public class GenerateLogMessages
 
         try
         {
+            System.out.println("Running LogMessage Generator");
             generator.run();
         }
         catch (InvalidTypeException e)
@@ -82,8 +83,8 @@ public class GenerateLogMessages
     {
         processArgs(args);
 
-        // We need the template and output dirs set to run.
-        if (_tmplDir == null || _outputDir == null)
+        // We need the template and input files to run.
+        if (_tmplDir == null || _outputDir == null || _logMessages.size() == 0)
         {
             showUsage();
             throw new IllegalAccessException();
@@ -101,47 +102,23 @@ public class GenerateLogMessages
         System.out.println("Usage: GenerateLogMessages: -t tmplDir");
         System.out.println("       where -t tmplDir: Find templates in tmplDir.");
         System.out.println("             -o outDir:  Use outDir as the output dir.");
-        System.out.println("             -r resource:  The resource to build.");
     }
 
     public void run() throws InvalidTypeException, Exception
     {
 
-        Map<String,String> messageClasses = extractMessageClasses();
-
-        for (String key : messageClasses.keySet())
+        for (String file : _logMessages)
         {
-            createMessageClass(messageClasses.get(key),key);
+            System.out.println("Processing File:" + file);
+
+            createMessageClass(file);
         }
-    }
-
-    private Map<String, String> extractMessageClasses()
-    {
-
-        ResourceBundle _messages = ResourceBundle.getBundle(_resource, Locale.US);
-
-        Enumeration<String> messageKeys = _messages.getKeys();
-
-        Map<String,String> types = new HashMap<String, String>();
-
-        //Identify 3-Digit keys
-        while(messageKeys.hasMoreElements())
-        {
-            String key = messageKeys.nextElement();
-
-            if (key.length() == 3)
-            {
-                types.put(key,_messages.getString(key));
-            }
-        }
-
-        return types;
     }
 
     /**
      * Process the args for:
-     *   -t|T value for the template location
-     *   -o|O value for the output directory
+     * -t|T value for the template location
+     * -o|O value for the output directory
      *
      * @param args the commandline arguments
      */
@@ -151,7 +128,11 @@ public class GenerateLogMessages
         for (int i = 0; i < args.length; i++)
         {
             String arg = args[i];
-            if (arg.charAt(0) == '-')
+            if (args[i].endsWith("_logmessages.properties"))
+            {
+                _logMessages.add(args[i]);
+            }
+            else if (arg.charAt(0) == '-')
             {
                 switch (arg.charAt(1))
                 {
@@ -169,12 +150,6 @@ public class GenerateLogMessages
                             _tmplDir = args[i];
                         }
                         break;
-                    case 'r':
-                    case 'R':
-                        if (++i < args.length)
-                        {
-                            _resource = args[i];
-                        }
                 }
             }
         }
@@ -188,29 +163,54 @@ public class GenerateLogMessages
      * The extraction is done based on typeIdentifier which is a 3-digit prefix
      * on the messages e.g. BRK for Broker.
      *
-     * @param className The name for the file '_className_Messages.java'
-     * @param typeIdentifier The 3 digit identifier
      * @throws InvalidTypeException when an unknown parameter type is used in the properties file
-     * @throws Exception thrown by velocity if there is an error
+     * @throws Exception            thrown by velocity if there is an error
      */
-    private void createMessageClass(String className, String typeIdentifier)
+    private void createMessageClass(String file)
             throws InvalidTypeException, Exception
     {
         VelocityContext context = new VelocityContext();
 
+        String bundle = file.replace(File.separator, ".");
+
+        bundle = bundle.substring(bundle.indexOf("org."), bundle.indexOf(".properties"));
+
+        System.out.println("Creating Classes for bundle:" + bundle);
+
+        ResourceBundle fileBundle = ResourceBundle.getBundle(bundle, Locale.US);
+
+        // Pull the bit from /os/path/<className>.logMessages from the bundle name
+        String className = file.substring(file.lastIndexOf(File.separator) + 1, file.lastIndexOf("_"));
+        System.out.println("Creating ClassName form file:" + className);
+
+        String packageString = bundle.substring(0, bundle.indexOf(className));
+        String packagePath = packageString.replace(".", File.separator);
+
+        System.out.println("Package path:" + packagePath);
+
+        File outputDirectory = new File(_outputDir + File.separator + packagePath);
+        if (!outputDirectory.exists())
+        {
+            if (!outputDirectory.mkdirs())
+            {
+                throw new IllegalAccessException("Unable to create package structure:" + outputDirectory);
+            }
+        }
+
         // Get the Data for this class and typeIdentifier
-        HashMap<String, Object> typeData = prepareType(className, typeIdentifier);
+        HashMap<String, Object> typeData = prepareType(className, fileBundle);
 
-
-        context.put("package", _resource.substring(0, _resource.lastIndexOf(".")));
+        context.put("package", packageString.substring(0, packageString.lastIndexOf('.')));
         //Store the resource Bundle name for the macro
-        context.put("resource",_resource);
+        context.put("resource", bundle);
 
         // Store this data in the context for the macro to access
         context.put("type", typeData);
 
         // Create the file writer to put the finished file in
-        FileWriter output = new FileWriter(_outputDir + File.separator + className + "Messages.java");
+        String outputFile = _outputDir + File.separator + packagePath + className + "Messages.java";
+        System.out.println("Creating Java file:" + outputFile);
+        FileWriter output = new FileWriter(outputFile);
 
         // Run Velocity to create the output file.
         // Fix the default file encoding to 'ISO-8859-1' rather than let
@@ -250,26 +250,25 @@ public class GenerateLogMessages
      *
      * - name - ClassName ('Broker')
      * - list[logEntryData] - methodName ('BRK_1001')
-     *                      - name ('BRK-1001')
-     *                      - format ('Startup : Version: {0} Build: {1}')
-     *                      - parameters (list)
-     *                          - type ('String'|'Number')
-     *                          - name ('param1')
-     *                      - options (list)
-     *                          - name ('opt1')
-     *                          - value ('AutoDelete')
+     * - name ('BRK-1001')
+     * - format ('Startup : Version: {0} Build: {1}')
+     * - parameters (list)
+     * - type ('String'|'Number')
+     * - name ('param1')
+     * - options (list)
+     * - name ('opt1')
+     * - value ('AutoDelete')
      *
      * @param messsageName the name to give the Class e.g. 'Broker'
-     * @param messageKey the 3-digit key to extract the messages e.g. 'BRK'
+     *
      * @return A HashMap with data for the macro
+     *
      * @throws InvalidTypeException when an unknown parameter type is used in the properties file
      */
-    private HashMap<String, Object> prepareType(String messsageName, String messageKey) throws InvalidTypeException
+    private HashMap<String, Object> prepareType(String messsageName, ResourceBundle messages) throws InvalidTypeException
     {
         // Load the LogMessages Resource Bundle
-        ResourceBundle _messages = ResourceBundle.getBundle(_resource, Locale.US);
-
-        Enumeration<String> messageKeys = _messages.getKeys();
+        Enumeration<String> messageKeys = messages.getKeys();
 
         //Create the return map
         HashMap<String, Object> messageTypeData = new HashMap<String, Object>();
@@ -289,7 +288,7 @@ public class GenerateLogMessages
             String message = messageKeys.nextElement();
 
             // Process the log message if it matches the specified key e.g.'BRK_'
-            if (message.startsWith(messageKey+"_"))
+            if (!message.equals("package"))
             {
                 // Method names can't have a '-' in them so lets make it '_'
                 // e.g. BRK-STARTUP -> BRK_STARTUP
@@ -298,7 +297,7 @@ public class GenerateLogMessages
                 logEntryData.put("name", message);
 
                 //Retrieve the actual log message string.
-                String logMessage = _messages.getString(message);
+                String logMessage = messages.getString(message);
 
                 // Store the value of the property so we can add it to the
                 // Javadoc of the method.
@@ -321,9 +320,9 @@ public class GenerateLogMessages
     /**
      * This method is responsible for extracting the options form the given log
      * message and providing a HashMap with the expected data:
-     *                      - options (list)
-     *                          - name ('opt1')
-     *                          - value ('AutoDelete')
+     * - options (list)
+     * - name ('opt1')
+     * - value ('AutoDelete')
      *
      * The options list that this method provides must contain HashMaps that
      * have two entries. A 'name' and a 'value' these strings are important as
@@ -337,6 +336,7 @@ public class GenerateLogMessages
      * aid readability.
      *
      * @param logMessage the message from the properties file
+     *
      * @return list of option data
      */
     private List<HashMap<String, String>> extractOptions(String logMessage)
@@ -396,9 +396,9 @@ public class GenerateLogMessages
      * This method is responsible for extract the parameters that are requried
      * for this log message. The data is returned in a HashMap that has the
      * following structure:
-     *                      - parameters (list)
-     *                          - type ('String'|'Number')
-     *                          - name ('param1')
+     * - parameters (list)
+     * - type ('String'|'Number')
+     * - name ('param1')
      *
      * The parameters list that is provided must contain HashMaps that have the
      * two named entries. A 'type' and a 'name' these strings are importans as
@@ -413,7 +413,9 @@ public class GenerateLogMessages
      * MessageFormat class for formating the log message.
      *
      * @param logMessage the message from the properties file
+     *
      * @return list of option data
+     *
      * @throws InvalidTypeException if the FormatType is specified and is not 'number'
      */
     private List<HashMap<String, String>> extractParameters(String logMessage)
@@ -446,7 +448,6 @@ public class GenerateLogMessages
                 // Check for any properties of the parameter :
                 // e.g. {0} vs {0,number} vs {0,number,xxxx}
                 int typeIndex = parametersString[index].indexOf(",");
-
 
                 // The parameter type
                 String type;
