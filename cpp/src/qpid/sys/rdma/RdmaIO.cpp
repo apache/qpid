@@ -41,8 +41,6 @@ namespace Rdma {
             FullCallback fc,
             ErrorCallback ec
     ) :
-        qp(q),
-        dataHandle(*qp, boost::bind(&AsynchIO::dataEvent, this), 0, 0),
         bufferSize(size),
         recvCredit(0),
         xmitCredit(xCredit),
@@ -51,6 +49,8 @@ namespace Rdma {
         outstandingWrites(0),
         draining(false),
         state(IDLE),
+        qp(q),
+        dataHandle(*qp, boost::bind(&AsynchIO::dataEvent, this), 0, 0),
         readCallback(rc),
         idleCallback(ic),
         fullCallback(fc),
