@@ -26,6 +26,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -59,7 +60,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     protected AMQShortString _qname = new AMQShortString("qname");
     protected AMQShortString _owner = new AMQShortString("owner");
     protected AMQShortString _routingKey = new AMQShortString("routing key");
-    protected DirectExchange _exchange = new DirectExchange();
+    protected DirectExchange _exchange;
     protected MockSubscription _subscription = new MockSubscription();
     protected FieldTable _arguments = null;
 
@@ -104,6 +105,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
+
+        _exchange = (DirectExchange)_virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
 
     @Override
