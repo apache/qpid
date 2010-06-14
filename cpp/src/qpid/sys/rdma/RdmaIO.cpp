@@ -65,7 +65,6 @@ namespace Rdma {
             // Allocate recv buffer
             Buffer* b = qp->createBuffer(bufferSize);
             buffers.push_front(b);
-            b->dataCount = b->byteCount;
             qp->postRecv(b);
         }
 
@@ -74,8 +73,6 @@ namespace Rdma {
             Buffer* b = qp->createBuffer(bufferSize);
             buffers.push_front(b);
             bufferQueue.push_front(b);
-            b->dataCount = 0;
-            b->dataStart = 0;
         }
     }
 
@@ -410,8 +407,6 @@ namespace Rdma {
                 }
 
                 // At this point the buffer has been consumed so put it back on the recv queue
-                b->dataStart = 0;
-                b->dataCount = 0;
                 qp->postRecv(b);
 
                 // Received another message
@@ -425,8 +420,8 @@ namespace Rdma {
                     if (writable()) {
                         Buffer* ob = getBuffer();
                         // Have to send something as adapters hate it when you try to transfer 0 bytes
-                        *reinterpret_cast< uint32_t* >(ob->bytes) = htonl(recvCredit);
-                        ob->dataCount = sizeof(uint32_t);
+                        *reinterpret_cast< uint32_t* >(ob->bytes()) = htonl(recvCredit);
+                        ob->dataCount(sizeof(uint32_t));
 
                         int creditSent = recvCredit & ~FlagsMask;
                         qp->postSend(creditSent | IgnoreData, ob);
@@ -498,16 +493,12 @@ namespace Rdma {
         assert(!bufferQueue.empty());
         Buffer* b = bufferQueue.front();
         bufferQueue.pop_front();
-        b->dataCount = 0;
-        b->dataStart = 0;
         return b;
     }
 
     void AsynchIO::returnBuffer(Buffer* b) {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferQueueLock);
         bufferQueue.push_front(b);
-        b->dataCount = 0;
-        b->dataStart = 0;
     }
 
     ConnectionManager::ConnectionManager(

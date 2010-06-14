@@ -108,9 +108,9 @@ void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
 {
     QPID_LOG(debug, "Rdma: SENT [" << identifier << "] INIT(" << data << ")");
     Rdma::Buffer* buff = aio->getBuffer();
-    framing::Buffer out(buff->bytes, buff->byteCount);
+    framing::Buffer out(buff->bytes(), buff->byteCount());
     data.encode(out);
-    buff->dataCount = data.encodedSize();
+    buff->dataCount(data.encodedSize());
     aio->queueWrite(buff);
 }
 
@@ -135,8 +135,8 @@ void RdmaIOHandler::idle(Rdma::AsynchIO&) {
     if (codec == 0) return;
     if (codec->canEncode()) {
         Rdma::Buffer* buff = aio->getBuffer();
-        size_t encoded=codec->encode(buff->bytes, buff->byteCount);
-        buff->dataCount = encoded;
+        size_t encoded=codec->encode(buff->bytes(), buff->byteCount());
+        buff->dataCount(encoded);
         aio->queueWrite(buff);
     }
     if (codec->isClosed())
@@ -178,7 +178,7 @@ void RdmaIOHandler::readbuff(Rdma::AsynchIO&, Rdma::Buffer* buff) {
     size_t decoded = 0;
     try {
         if (codec) {
-            decoded = codec->decode(buff->bytes+buff->dataStart, buff->dataCount);
+            decoded = codec->decode(buff->bytes(), buff->dataCount());
         }else{
             // Need to start protocol processing
             initProtocolIn(buff);
@@ -191,7 +191,7 @@ void RdmaIOHandler::readbuff(Rdma::AsynchIO&, Rdma::Buffer* buff) {
 }
 
 void RdmaIOHandler::initProtocolIn(Rdma::Buffer* buff) {
-    framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
+    framing::Buffer in(buff->bytes(), buff->dataCount());
     framing::ProtocolInitiation protocolInit;
     size_t decoded = 0;
     if (protocolInit.decode(in)) {

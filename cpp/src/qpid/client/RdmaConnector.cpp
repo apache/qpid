@@ -326,10 +326,9 @@ void RdmaConnector::writebuff(Rdma::AsynchIO&) {
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
     if (codec->canEncode()) {
         std::auto_ptr<BufferBase> buffer = std::auto_ptr<BufferBase>(aio->getBuffer());
-        size_t encoded = codec->encode(buffer->bytes, buffer->byteCount);
+        size_t encoded = codec->encode(buffer->bytes(), buffer->byteCount());
 
-        buffer->dataStart = 0;
-        buffer->dataCount = encoded;
+        buffer->dataCount(encoded);
         aio->queueWrite(buffer.release());
     }
 }
@@ -362,7 +361,7 @@ size_t RdmaConnector::encode(const char* buffer, size_t size)
 
 void RdmaConnector::readbuff(Rdma::AsynchIO&, Rdma::Buffer* buff) {
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
-    codec->decode(buff->bytes+buff->dataStart, buff->dataCount);
+    codec->decode(buff->bytes(), buff->dataCount());
 }
 
 size_t RdmaConnector::decode(const char* buffer, size_t size) 
@@ -386,9 +385,9 @@ size_t RdmaConnector::decode(const char* buffer, size_t size)
 
 void RdmaConnector::writeDataBlock(const AMQDataBlock& data) {
     Rdma::Buffer* buff = aio->getBuffer();
-    framing::Buffer out(buff->bytes, buff->byteCount);
+    framing::Buffer out(buff->bytes(), buff->byteCount());
     data.encode(out);
-    buff->dataCount = data.encodedSize();
+    buff->dataCount(data.encodedSize());
     aio->queueWrite(buff);
 }
 

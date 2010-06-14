@@ -70,8 +70,8 @@ void idle(ConRec* cr, Rdma::AsynchIO& a) {
 void data(ConRec* cr, Rdma::AsynchIO& a, Rdma::Buffer* b) {
     // Echo data back
     Rdma::Buffer* buf = a.getBuffer();
-    std::copy(b->bytes+b->dataStart, b->bytes+b->dataStart+b->dataCount, buf->bytes);
-    buf->dataCount = b->dataCount;
+    std::copy(b->bytes(), b->bytes()+b->dataCount(), buf->bytes());
+    buf->dataCount(b->dataCount());
     if (cr->queuedWrites.empty()) {
         // If can't write then full will be called and push buffer on back of queue
         a.queueWrite(buf);
