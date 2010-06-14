@@ -67,8 +67,8 @@ vector<char> testString;
 void write(Rdma::AsynchIO& aio) {
     while (aio.writable() && aio.bufferAvailable() && smsgs < target) {
         Rdma::Buffer* b = aio.getBuffer();
-        std::copy(testString.begin(), testString.end(), b->bytes);
-        b->dataCount = msgsize;
+        std::copy(testString.begin(), testString.end(), b->bytes());
+        b->dataCount(msgsize);
         aio.queueWrite(b);
         ++smsgs;
         sbytes += msgsize;
@@ -81,7 +81,7 @@ void dataError(Rdma::AsynchIO&) {
 
 void data(Poller::shared_ptr p, Rdma::AsynchIO& aio, Rdma::Buffer* b) {
     ++rmsgs;
-    rbytes += b->dataCount;
+    rbytes += b->dataCount();
 
     // When all messages have been recvd stop
     if (rmsgs < target) {
@@ -99,7 +99,7 @@ void full(Rdma::AsynchIO& a, Rdma::Buffer* b) {
 
     // Don't need to keep buffer just adjust the counts
     --smsgs;
-    sbytes -= b->dataCount;
+    sbytes -= b->dataCount();
 
     // Give buffer back
     a.returnBuffer(b);

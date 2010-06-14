@@ -50,19 +50,20 @@ namespace Rdma {
         return count;
     }
 
-    Buffer::Buffer(::ibv_pd* pd, char* const b, const int32_t s) :
-        bytes(b),
-        byteCount(s),
-        dataStart(0),
-        dataCount(0),
+    Buffer::Buffer(::ibv_pd* pd, const int32_t s) :
+        bufferSize(s),
         mr(CHECK_NULL(::ibv_reg_mr(
-        pd, bytes, byteCount,
+        pd, new char[s], s,
         ::IBV_ACCESS_LOCAL_WRITE)))
-    {}
+    {
+        sge.addr = (uintptr_t) mr->addr;
+        sge.length = 0;
+        sge.lkey = mr->lkey;
+    }
 
     Buffer::~Buffer() {
         (void) ::ibv_dereg_mr(mr);
-        delete [] bytes;
+        delete [] bytes();
     }
 
     QueuePairEvent::QueuePairEvent() :
@@ -106,7 +107,7 @@ namespace Rdma {
 
     Buffer* QueuePairEvent::getBuffer() const {
         Buffer* b = reinterpret_cast<Buffer*>(wc.wr_id);
-        b->dataCount = wc.byte_len;
+        b->dataCount(wc.byte_len);
         return b;
     }
 
@@ -157,7 +158,7 @@ namespace Rdma {
 
     // Create a buffer to use for writing
     Buffer* QueuePair::createBuffer(int s) {
-        return new Buffer(pd.get(), new char[s], s);
+        return new Buffer(pd.get(), s);
     }
 
     // Make channel non-blocking by making
@@ -213,14 +214,11 @@ namespace Rdma {
 
     void QueuePair::postRecv(Buffer* buf) {
         ::ibv_recv_wr rwr = {};
-        ::ibv_sge sge;
-
-        sge.addr = (uintptr_t) buf->bytes+buf->dataStart;
-        sge.length = buf->dataCount;
-        sge.lkey = buf->mr->lkey;
 
         rwr.wr_id = reinterpret_cast<uint64_t>(buf);
-        rwr.sg_list = &sge;
+        // We are given the whole buffer
+        buf->dataCount(buf->byteCount());
+        rwr.sg_list = &buf->sge;
         rwr.num_sge = 1;
 
         ::ibv_recv_wr* badrwr = 0;
@@ -231,16 +229,11 @@ namespace Rdma {
 
     void QueuePair::postSend(Buffer* buf) {
         ::ibv_send_wr swr = {};
-        ::ibv_sge sge;
-
-        sge.addr = (uintptr_t) buf->bytes+buf->dataStart;
-        sge.length = buf->dataCount;
-        sge.lkey = buf->mr->lkey;
 
         swr.wr_id = reinterpret_cast<uint64_t>(buf);
         swr.opcode = IBV_WR_SEND;
         swr.send_flags = IBV_SEND_SIGNALED;
-        swr.sg_list = &sge;
+        swr.sg_list = &buf->sge;
         swr.num_sge = 1;
 
         ::ibv_send_wr* badswr = 0;
@@ -251,17 +244,12 @@ namespace Rdma {
 
     void QueuePair::postSend(uint32_t imm, Buffer* buf) {
         ::ibv_send_wr swr = {};
-        ::ibv_sge sge;
-
-        sge.addr = (uintptr_t) buf->bytes+buf->dataStart;
-        sge.length = buf->dataCount;
-        sge.lkey = buf->mr->lkey;
-        swr.send_flags = IBV_SEND_SIGNALED;        
 
         swr.wr_id = reinterpret_cast<uint64_t>(buf);
         swr.imm_data = htonl(imm);
         swr.opcode = IBV_WR_SEND_WITH_IMM;
-        swr.sg_list = &sge;
+        swr.send_flags = IBV_SEND_SIGNALED;
+        swr.sg_list = &buf->sge;
         swr.num_sge = 1;
 
         ::ibv_send_wr* badswr = 0;
