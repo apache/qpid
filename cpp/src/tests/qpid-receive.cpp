@@ -122,7 +122,7 @@ struct Options : public qpid::Options
             qpid::log::Logger::instance().configure(log);
             if (help) {
                 std::ostringstream msg;
-                std::cout << msg << *this << std::endl << std::endl 
+                std::cout << msg << *this << std::endl << std::endl
                           << "Drains messages from the specified address" << std::endl;
                 return false;
             } else {
@@ -179,7 +179,7 @@ int main(int argc, char ** argv)
             Duration timeout = opts.getTimeout();
             bool done = false;
             Reporter<ThroughputAndLatency> reporter(std::cout, opts.reportEvery, opts.reportHeader);
-            if (!opts.readyAddress.empty()) 
+            if (!opts.readyAddress.empty())
                 session.createSender(opts.readyAddress).send(msg);
             while (!done && receiver.fetch(msg, timeout)) {
                 reporter.message(msg);

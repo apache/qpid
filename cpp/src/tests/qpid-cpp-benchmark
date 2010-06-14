@@ -38,7 +38,7 @@ op.add_option("--queue-name", default="benchmark",
                help="base name for queues (default %default)")
 op.add_option("--send-rate", default=0, metavar="R",
               help="send rate limited to R messages/second, 0 means no limit (default %default)")
-op.add_option("--content-size", default=1024, type="int", metavar="BYTES", 
+op.add_option("--content-size", default=1024, type="int", metavar="BYTES",
               help="message size in bytes (default %default)")
 op.add_option("--ack-frequency", default=0, metavar="N", type="int",
               help="receiver ack's every N messages, 0 means unconfirmed")
@@ -54,7 +54,7 @@ op.add_option("--no-timestamp", dest="timestamp", default=True,
 
 def start_receive(queue, opts, ready_queue):
     address="%s;{%s}"%(queue,",".join(["create:always"]+opts.receive_option))
-    return Popen(["qpid_receive",
+    return Popen(["qpid-receive",
                   "-b", opts.broker,
                   "-a", address,
                   "--forever",
@@ -68,7 +68,7 @@ def start_receive(queue, opts, ready_queue):
 
 def start_send(queue, opts):
     address="%s;{%s}"%(queue,",".join(opts.send_option))
-    return Popen(["qpid_send",
+    return Popen(["qpid-send",
                   "-b", opts.broker,
                   "-a", address,
                   "--messages", str(opts.messages),
