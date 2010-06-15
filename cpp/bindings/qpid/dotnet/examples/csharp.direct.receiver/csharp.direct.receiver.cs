@@ -32,6 +32,7 @@ namespace CSharpDirect
         // Direct receiver example
         //
         // Receive 10 messages from localhost:5672, amq.direct/key
+        // Messages are assumed to be printable strings.
         //
         static void Main(string[] args)
         {
@@ -52,39 +53,27 @@ namespace CSharpDirect
             Console.WriteLine("nMsg : {0}", nMsg);
             Console.WriteLine();
 
-            Connection conn = new Connection(host);
-
-            conn.Open();
-
-            if (!conn.IsOpen())
+            Connection connection = null;
+            try
             {
-                Console.WriteLine("Failed to open connection to host : {0}", host);
-            }
-            else
-            {
-
-                Session sess = conn.CreateSession();
-
-                Duration dura = new Duration(3600000); // wait forever
-
-                Receiver rcv = sess.CreateReceiver(addr);
-
-                Message msg = new Message("");
-
-                for (int i = 0; i < nMsg; i++)
-                {
-                    try
-                    {
-                        Message msg2 = rcv.Fetch(dura);
+                connection = new Connection(host);
+                connection.Open();
+                if (!connection.IsOpen()) {
+                    Console.WriteLine("Failed to open connection to host : {0}", host);
+                } else {
+                    Session session = connection.CreateSession();
+                    Receiver receiver = session.CreateReceiver(addr);
+                    Message message = new Message("");
+                    for (int i = 0; i < nMsg; i++) {
+                        Message msg2 = receiver.Fetch(DurationConstants.FORVER);
                         Console.WriteLine("Rcvd msg {0} : {1}", i, msg2.GetContent());
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Exception {0}.", e);
-                    }
+                    connection.Close();
                 }
-
-                conn.Close();
+            } catch (Exception e) {
+                Console.WriteLine("Exception {0}.", e);
+                if (null != connection)
+                    connection.Close();
             }
         }
     }

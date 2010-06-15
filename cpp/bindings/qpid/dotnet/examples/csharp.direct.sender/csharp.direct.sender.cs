@@ -29,6 +29,11 @@ namespace csharp.direct.sender
 {
     class Program
     {
+        // Direct sender example
+        //
+        // Send 10 messages from localhost:5672, amq.direct/key
+        // Messages are assumed to be printable strings.
+        //
         static void Main(string[] args)
         {
             String host = "localhost:5672";
@@ -48,28 +53,27 @@ namespace csharp.direct.sender
             Console.WriteLine("nMsg : {0}", nMsg);
             Console.WriteLine();
 
-            Connection conn = new Connection(host);
-
-            conn.Open();
-
-            if (!conn.IsOpen())
+            Connection connection = null;
+            try
             {
-                Console.WriteLine("Failed to open connection to host : {0}", host);
-            }
-            else
-            {
-                Session sess = conn.CreateSession();
+                connection = new Connection(host);
+                connection.Open();
 
-                Sender snd = sess.CreateSender(addr);
-
-                for (int i = 0; i < nMsg; i++)
-                {
-                    Message msg = new Message(String.Format("Test Message {0}", i));
-
-                    snd.Send(msg);
+                if (!connection.IsOpen()) {
+                    Console.WriteLine("Failed to open connection to host : {0}", host);
+                } else {
+                    Session session = connection.CreateSession();
+                    Sender sender = session.CreateSender(addr);
+                    for (int i = 0; i < nMsg; i++) {
+                        Message message = new Message(String.Format("Test Message {0}", i));
+                        sender.Send(message);
+                    }
+                    connection.Close();
                 }
-
-                conn.Close();
+            } catch (Exception e) {
+                Console.WriteLine("Exception {0}.", e);
+                if (null != connection)
+                    connection.Close();
             }
         }
     }

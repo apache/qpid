@@ -24,6 +24,7 @@
 #include <string>
 #include <limits>
 #include <iostream>
+#include <stdlib.h>
 
 #include "qpid/messaging/Message.h"
 #include "qpid/types/Variant.h"
@@ -99,6 +100,25 @@ namespace Messaging {
             messagep->setContent(QpidMarshal::ToNative(theValue->ToString()));
         }
     }
+
+
+	// Create from bytes
+	Message::Message(array<System::Byte> ^ bytes)
+	{
+		pin_ptr<unsigned char> pBytes = &bytes[0];
+		messagep = new ::qpid::messaging::Message((char *)pBytes, bytes->Length);
+	}
+
+    // Create from byte array slice
+	Message::Message(array<System::Byte> ^ bytes, int offset, int size)
+	{
+        if ((offset + size) > bytes->Length)
+			throw gcnew QpidException("Message::Message Create from byte array slice: buffer length exceeded");
+
+		pin_ptr<unsigned char> pBytes = &bytes[offset];
+		messagep = new ::qpid::messaging::Message((char *)pBytes, size);
+	}
+
 
     // Create from received message
     Message::Message(::qpid::messaging::Message * msgp) :
@@ -278,7 +298,7 @@ namespace Messaging {
         messagep->setRedelivered(redelivered);
     }
 
-
+	// Properties
     System::Collections::Generic::Dictionary<
             System::String^, System::Object^> ^ Message::GetProperties()
     {
@@ -297,7 +317,29 @@ namespace Messaging {
     }
 
 
-    void Message::SetContent(System::String ^ content)
+	void Message::SetProperty(System::String ^ name, System::Object ^ value)
+	{
+        ::qpid::types::Variant entryValue;
+        TypeTranslator::ManagedToNativeObject(value, entryValue);
+
+		messagep->getProperties()[QpidMarshal::ToNative(name)] = entryValue;
+	}
+
+
+	void Message::SetProperties(System::Collections::Generic::Dictionary<
+            System::String^, System::Object^> ^ properties)
+	{
+		for each (System::Collections::Generic::KeyValuePair
+			     <System::String^, System::Object^> kvp in properties)
+        {
+			SetProperty(kvp.Key, kvp.Value);
+		}
+	}
+
+
+	
+	// Content
+	void Message::SetContent(System::String ^ content)
     {
         messagep->setContent(QpidMarshal::ToNative(content));
     }
@@ -342,8 +384,9 @@ namespace Messaging {
     }
 
     //
-    // User wants content as bytes.
-    // result array must be correct size already
+    // Return message content to raw byte array.
+    // On entry message size must not be zero and
+	// caller's byte array must be equal to message size.
     //
     void Message::GetRaw(array<System::Byte> ^ arr)
     {
@@ -353,16 +396,11 @@ namespace Messaging {
             throw gcnew QpidException("Message::GetRaw - message size is zero");
 
         if (arr->Length != size)
-            throw gcnew QpidException("Message::GetRaw - receive buffer is too small");
+            throw gcnew QpidException("Message::GetRaw - receive buffer is wrong size");
 
-        const char * ptr = messagep->getContentPtr();
-
-        // TODO: System::Runtime::InteropServices::Marshal::Copy(ptr, arr, 0, size);
-
-        for (UInt32 i = 0; i < size; i++)
-        {
-            arr[i] = ptr[i];
-        }
+        const char * pMsgSrc = messagep->getContentPtr();
+		pin_ptr<unsigned char> pArr = &arr[0];
+		memcpy(pArr, pMsgSrc, size);
     }
 
 
@@ -370,4 +408,86 @@ namespace Messaging {
     {
         return messagep->getContentSize();
     }
+
+
+	System::String ^ Message::MapAsString(System::Collections::Generic::Dictionary<
+					           System::String^, System::Object^> ^ dict)
+    {
+		System::String ^ leading = "";
+		System::Text::StringBuilder ^ sb = gcnew System::Text::StringBuilder("{");
+
+		for each (System::Collections::Generic::KeyValuePair
+			     <System::String^, System::Object^> kvp in dict)
+        {
+            sb->Append(leading);
+            leading = ", ";
+
+			if (QpidTypeCheck::ObjectIsMap(kvp.Value))
+            {
+				sb->AppendFormat(
+					"{0}={1}", 
+					kvp.Key,
+					MapAsString((System::Collections::Generic::Dictionary<System::String^, System::Object^> ^)kvp.Value));
+            }
+			else if (QpidTypeCheck::ObjectIsList(kvp.Value))
+            {
+                sb->AppendFormat(
+					"{0}={1}", 
+					kvp.Key,
+					ListAsString((System::Collections::ObjectModel::Collection<
+							System::Object^> ^)kvp.Value));
+            }
+            else
+                sb->AppendFormat("{0}={1}", kvp.Key, kvp.Value);
+        }
+		sb->Append("}");
+
+		System::String ^ result = gcnew System::String(sb->ToString());
+		return result;
+    }
+
+    /// <summary>
+    /// A function to display a ampq/list message packaged as a List.
+    /// </summary>
+    /// <param name="list">The AMQP list</param>
+	System::String ^ Message::ListAsString(System::Collections::ObjectModel::Collection<System::Object^> ^ list)
+    {
+		System::String ^ leading = "";
+		System::Text::StringBuilder ^ sb = gcnew System::Text::StringBuilder("[");
+
+		for each (System::Object ^ obj in list)
+        {
+            sb->Append(leading);
+            leading = ", ";
+
+			if (QpidTypeCheck::ObjectIsMap(obj))
+            {
+                sb->Append(MapAsString((System::Collections::Generic::Dictionary<
+                                System::String^, System::Object^> ^)obj));
+            }
+			else if (QpidTypeCheck::ObjectIsList(obj))
+            {
+                sb->Append(ListAsString((System::Collections::ObjectModel::Collection<
+                                System::Object^> ^)obj));
+            }
+            else
+                sb->Append(obj->ToString());
+        }
+        sb->Append("]");
+
+		System::String ^ result = gcnew System::String(sb->ToString());
+		return result;
+    }
+
+	System::String ^ Message::AsString(System::Object ^ obj)
+	{
+		if (QpidTypeCheck::ObjectIsMap(obj))
+			return MapAsString((System::Collections::Generic::Dictionary<
+                                System::String^, System::Object^> ^)obj);
+		else if (QpidTypeCheck::ObjectIsList(obj))
+			return ListAsString((System::Collections::ObjectModel::Collection<
+                                System::Object^> ^)obj);
+		else
+			return obj->ToString();
+	}
 }}}}

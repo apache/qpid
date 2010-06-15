@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{AF2FBC78-266C-430C-BC29-9477AB596A36}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -67,7 +67,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\org.apache.qpid.messaging.vcproj">
       <Project>{AA5A3B83-5F98-406D-A01C-5A921467A57D}</Project>
-      <Name>org.apache.qpid.messaging</Name>
+      <Name>Org.Apache.Qpid.Messaging</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -27,6 +27,11 @@ namespace Org.Apache.Qpid.Messaging.examples
 {
     class MapReceiver
     {
+        // csharp.map.receiver example
+        //
+        // Send an amqp/map message to amqp:tcp:localhost:5672 amq.direct/map_example
+        // The map message 
+        //
         static void Main(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
@@ -47,16 +52,16 @@ namespace Org.Apache.Qpid.Messaging.examples
             Receiver receiver = session.CreateReceiver("amq.direct/map_example");
 
             //
-            // Fetch the message from the broker (wait indefinitely by default)
+            // Fetch the message from the broker
             //
-            Message message = receiver.Fetch(new Duration(60000));
+            Message message = receiver.Fetch(DurationConstants.MINUTE);
 
             //
             // Extract the structured content from the message.
             //
             Dictionary<string, object> content = new Dictionary<string, object>();
             message.GetContent(content);
-            Console.WriteLine("Received: {0}", content);
+            Console.WriteLine("Received: {0}", message.AsString(content));
 
             //
             // Acknowledge the receipt of all received messages.
