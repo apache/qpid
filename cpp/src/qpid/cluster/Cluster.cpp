@@ -444,8 +444,10 @@ void Cluster::deliveredEvent(const Event& e) {
         EventFrame ef(e, e.getFrame());
         // Stop the deliverEventQueue on update offers.
         // This preserves the connection decoder fragments for an update.
+        // Only do this for the two brokers that are directly involved in this 
+        // offer: the one making the offer, or the one receiving it.
         const ClusterUpdateOfferBody* offer = castUpdateOffer(ef.frame.getBody());
-        if (offer) {
+        if (offer && ( e.getMemberId() == self || MemberId(offer->getUpdatee()) == self) ) {
             QPID_LOG(info, *this << " stall for update offer from " << e.getMemberId()
                      << " to " << MemberId(offer->getUpdatee()));
             deliverEventQueue.stop();
