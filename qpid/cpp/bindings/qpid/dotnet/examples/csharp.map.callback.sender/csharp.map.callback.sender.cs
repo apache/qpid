@@ -100,20 +100,55 @@ namespace Org.Apache.Qpid.Messaging.Examples
             Dictionary<string, object> subMap = new Dictionary<string, object>();
             Collection<object> colors = new Collection<object>();
 
+            // add simple types
             content["id"] = 987654321;
             content["name"] = "Widget";
             content["percent"] = 0.99;
 
+            // add nested amqp/map
             subMap["name"] = "Smith";
             subMap["number"] = 354;
+            content["nestedMap"] = subMap;
 
-            content["nested"] = subMap;
-
+            // add an amqp/list
             colors.Add("red");
             colors.Add("green");
             colors.Add("white");
+            content["colorsList"] = colors;
 
-            content["colors"] = colors;
+            // add one of each supported amqp data type
+            bool mybool = true;
+            content["mybool"] = mybool;
+
+            byte mybyte = 4;
+            content["mybyte"] = mybyte;
+
+            UInt16 myUInt16 = 5;
+            content["myUInt16"] = myUInt16;
+
+            UInt32 myUInt32 = 6;
+            content["myUInt32"] = myUInt32;
+
+            UInt64 myUInt64 = 7;
+            content["myUInt64"] = myUInt64;
+
+            char mychar = 'h';
+            content["mychar"] = mychar;
+
+            Int16 myInt16 = 9;
+            content["myInt16"] = myInt16;
+
+            Int32 myInt32 = 10;
+            content["myInt32"] = myInt32;
+
+            Int64 myInt64 = 11;
+            content["myInt64"] = myInt64;
+
+            Single mySingle = (Single)12.12;
+            content["mySingle"] = mySingle;
+
+            Double myDouble = 13.13;
+            content["myDouble"] = myDouble;
 
             //
             // Construct a message with the map content and send it synchronously

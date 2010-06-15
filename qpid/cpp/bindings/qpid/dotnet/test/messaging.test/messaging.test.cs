@@ -83,6 +83,37 @@ namespace Org.Apache.Qpid.Messaging
             Console.WriteLine("Got raw array size {0}", m2Size);
             for (UInt64 i = 0; i < m2Size; i++)
                 Console.Write("{0} ", myRaw[i].ToString());
+            Console.WriteLine();
+
+            //
+            // Raw message creation
+            //
+            byte[] rawData = new byte[10];
+            for (byte i=0; i<10; i++)
+                rawData[i] = i;
+            Message m3 = new Message(rawData);
+
+            byte[] rawDataReadback = new byte[m3.GetContentSize()];
+            m3.GetRaw(rawDataReadback);
+            for (UInt64 i = 0; i < m3.GetContentSize(); i++)
+                Console.Write("{0} ", rawDataReadback[i].ToString());
+            Console.WriteLine();
+
+            //
+            // Raw message from array slice
+            //
+            byte[] rawData4 = new byte[256];
+            for (int i = 0; i <= 255; i++)
+                rawData4[i] = (byte)i;
+
+            Message m4 = new Message(rawData4, 246, 10);
+
+            byte[] rawDataReadback4 = new byte[m4.GetContentSize()];
+            m4.GetRaw(rawDataReadback4);
+            for (UInt64 i = 0; i < m4.GetContentSize(); i++)
+                Console.Write("{0} ", rawDataReadback4[i].ToString());
+            Console.WriteLine();
+
         }
     }
 }
