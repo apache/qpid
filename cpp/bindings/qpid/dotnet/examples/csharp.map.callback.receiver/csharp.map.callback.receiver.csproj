@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{68A43817-2358-4A31-8FDF-FE21722BFBCF}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -67,7 +67,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\org.apache.qpid.messaging.vcproj">
       <Project>{AA5A3B83-5F98-406D-A01C-5A921467A57D}</Project>
-      <Name>org.apache.qpid.messaging</Name>
+      <Name>Org.Apache.Qpid.Messaging</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\src\sessionreceiver\org.apache.qpid.messaging.sessionreceiver.csproj">
       <Project>{B0A51CEC-30A2-4C2E-90BE-AE95107EAA05}</Project>

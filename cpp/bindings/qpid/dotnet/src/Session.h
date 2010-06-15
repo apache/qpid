@@ -45,6 +45,7 @@ namespace Messaging {
     /// Session is a managed wrapper for a ::qpid::messaging::Session
     /// </summary>
 
+	ref class Address;
     ref class Connection;
     ref class Duration;
     ref class Receiver;
@@ -99,8 +100,11 @@ namespace Messaging {
         Receiver ^ NextReceiver(Duration ^ timeout);
 
 
-        Sender   ^ CreateSender  (System::String ^ address);
+        Sender   ^ CreateSender(System::String ^ address);
+		Sender   ^ CreateSender(Address ^ address);
+
         Receiver ^ CreateReceiver(System::String ^ address);
+		Receiver ^ CreateReceiver(Address ^ address);
         Receiver ^ CreateReceiver();
 
         Sender   ^ GetSender(System::String ^ name);

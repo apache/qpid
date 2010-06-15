@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{52F880E7-D677-4C91-8516-D679CE0F46A8}</ProjectGuid>
+    <ProjectGuid>{090A081D-E8B5-4949-AA43-EE182B7101E3}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>csharp.direct.receiver</RootNamespace>
-    <AssemblyName>csharp.direct.receiver</AssemblyName>
+    <RootNamespace>csharp.example.server</RootNamespace>
+    <AssemblyName>csharp.example.server</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -61,7 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="csharp.direct.receiver.cs" />
+    <Compile Include="csharp.example.server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

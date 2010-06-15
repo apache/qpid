@@ -58,8 +58,11 @@ namespace Messaging {
         // Create from object
         Message(System::Object ^ theValue);
 
-        // TODO: Create from bytes
-        // Message(System::Byte [] ^ bytes);
+        // Create from byte array
+		Message(array<System::Byte> ^ bytes);
+
+        // Create from byte array slice
+		Message(array<System::Byte> ^ bytes, int offset, int size);
 
         // Create from received message
         Message(::qpid::messaging::Message * msgp);
@@ -108,6 +111,11 @@ namespace Messaging {
         System::Collections::Generic::Dictionary<
             System::String^, System::Object^> ^ GetProperties();
 
+		void SetProperty(System::String ^ name, System::Object ^ value);
+
+		void SetProperties(System::Collections::Generic::Dictionary<
+            System::String^, System::Object^> ^ properties);
+
         void SetContent(System::String ^ content);
 
         //TODO:: void setContent(Bytes{} bytes, offset, length);
@@ -128,6 +136,16 @@ namespace Messaging {
         void GetRaw(cli::array<System::Byte> ^ arr);
 
         System::UInt64 GetContentSize();
+
+		// A message has been returned to managed code through GetContent().
+		// Display the content of that System::Object as a string.
+		System::String ^ AsString(System::Object ^ obj);
+
+		System::String ^ MapAsString(System::Collections::Generic::Dictionary<
+						System::String^, System::Object^> ^ dict);
+		
+		System::String ^ ListAsString(System::Collections::ObjectModel::Collection<
+			            System::Object^> ^ list);
 
         //TODO: EncodingException
 
