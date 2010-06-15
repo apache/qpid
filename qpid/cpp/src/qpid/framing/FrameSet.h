@@ -46,6 +46,7 @@ public:
     typedef boost::shared_ptr<FrameSet> shared_ptr;
 
     QPID_COMMON_EXTERN FrameSet(const SequenceNumber& id);
+    QPID_COMMON_EXTERN FrameSet(const FrameSet&);
     QPID_COMMON_EXTERN void append(const AMQFrame& part);
     QPID_COMMON_EXTERN bool isComplete() const;
 
