@@ -260,7 +260,7 @@ namespace qpid {
             QPID_BROKER_EXTERN void setLastNodeFailure();
             QPID_BROKER_EXTERN void clearLastNodeFailure();
 
-            bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg, bool suppressPolicyCheck = false);
+            bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg, bool suppressPolicyCheck = false);
             void enqueueAborted(boost::intrusive_ptr<Message> msg);
             /**
              * dequeue from store (only done once messages is acknowledged)

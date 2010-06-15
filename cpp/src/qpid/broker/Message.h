@@ -53,6 +53,7 @@ public:
     typedef boost::function<void (const boost::intrusive_ptr<Message>&)> MessageCallback;
     
     QPID_BROKER_EXTERN Message(const framing::SequenceNumber& id = framing::SequenceNumber());
+    QPID_BROKER_EXTERN Message(const Message&);
     QPID_BROKER_EXTERN ~Message();
         
     uint64_t getPersistenceId() const { return persistenceId; }
