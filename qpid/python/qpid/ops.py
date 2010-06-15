@@ -25,10 +25,12 @@ class Primitive(object):
 class Enum(object):
 
   # XXX: for backwards compatibility
-  @classmethod
   def values(cls):
     print >> sys.stderr, "warning, please use .VALUES instead of .values()"
     return cls.VALUES
+  # we can't use the backport preprocessor here because this code gets
+  # called by setup.py
+  values = classmethod(values)
 
 class Field:
 
