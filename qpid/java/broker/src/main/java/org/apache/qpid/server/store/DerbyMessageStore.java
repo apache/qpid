@@ -629,49 +629,52 @@ public class DerbyMessageStore extends AbstractMessageStore
     {
         if (_state != State.RECOVERING)
         {
+            Connection conn = null;
+            PreparedStatement stmt = null;
+
             try
             {
-                Connection conn = null;
-                PreparedStatement stmt = null;
+                conn = newConnection();
 
-                try
+                stmt = conn.prepareStatement(FIND_EXCHANGE);
+                stmt.setString(1, exchange.getName().toString());
+
+                ResultSet rs = stmt.executeQuery();
+
+                // If we don't have any data in the result set then we can add this exchange
+                if (!rs.next())
                 {
-                    conn = newConnection();
-
-                    stmt = conn.prepareStatement(FIND_EXCHANGE);
+                    stmt = conn.prepareStatement(INSERT_INTO_EXCHANGE);
                     stmt.setString(1, exchange.getName().toString());
-
-                    ResultSet rs = stmt.executeQuery();
-
-                    // If we don't have any data in the result set then we can add this exchange
-                    if (!rs.next())
-                    {
-                        stmt = conn.prepareStatement(INSERT_INTO_EXCHANGE);
-                        stmt.setString(1, exchange.getName().toString());
-                        stmt.setString(2, exchange.getType().toString());
-                        stmt.setShort(3, exchange.isAutoDelete() ? (short) 1 : (short) 0);
-                        stmt.execute();
-                        stmt.close();
-                        conn.commit();
-                    }
-
-                }
-                finally
-                {
-                    if (stmt != null)
-                    {
-                        stmt.close();
-                    }
-
-                    if(conn != null)
-                    {
-                        conn.close();
-                    }
+                    stmt.setString(2, exchange.getType().toString());
+                    stmt.setShort(3, exchange.isAutoDelete() ? (short) 1 : (short) 0);
+                    stmt.execute();
+                    stmt.close();
+                    conn.commit();
                 }
             }
             catch (SQLException e)
             {
                 throw new AMQException("Error writing Exchange with name " + exchange.getName() + " to database: " + e, e);
+            }
+            finally
+            {
+                try
+                {
+                    if (stmt != null)
+                    {
+                    stmt.close();
+                    }
+
+                    if (conn != null)
+                    {
+                    conn.close();
+                    }
+                }
+                catch(SQLException e)
+                {
+                    throw new AMQException("Error closing database resources:" + e);
+                }
             }
         }
 
@@ -680,11 +683,11 @@ public class DerbyMessageStore extends AbstractMessageStore
     public void removeExchange(Exchange exchange) throws AMQException
     {
         Connection conn = null;
-
+        PreparedStatement stmt = null;
         try
         {
             conn = newConnection();
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_EXCHANGE);
+            stmt = conn.prepareStatement(DELETE_FROM_EXCHANGE);
             stmt.setString(1, exchange.getName().toString());
             int results = stmt.executeUpdate();
             if(results == 0)
@@ -703,19 +706,24 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
         finally
         {
-            if(conn != null)
+            try
             {
-               try
-               {
-                   conn.close();
-               }
-               catch (SQLException e)
-               {
-                    throw new AMQException("Error closing database resources:" + e);
-               }
-            }
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
 
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch(SQLException e)
+            {
+                throw new AMQException("Error closing database resources:" + e);
+            }
         }
+
     }
 
     public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
@@ -920,12 +928,12 @@ public class DerbyMessageStore extends AbstractMessageStore
         AMQShortString name = queue.getName();
         _logger.debug("public void removeQueue(AMQShortString name = " + name + "): called");
         Connection conn = null;
-
+        PreparedStatement stmt = null;
 
         try
         {
             conn = newConnection();
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_QUEUE);
+            stmt = conn.prepareStatement(DELETE_FROM_QUEUE);
             stmt.setString(1, name.toString());
             int results = stmt.executeUpdate();
 
@@ -944,21 +952,23 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
         finally
         {
-            if(conn != null)
+            try
             {
-               try
-               {
-                   conn.close();
-               }
-               catch (SQLException e)
-               {
-                   _logger.error(e);
-               }
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+
+                if (conn != null)
+                {
+                    conn.close();
+                }
             }
-
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
         }
-
-
     }
 
     public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
