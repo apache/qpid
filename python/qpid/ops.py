@@ -16,14 +16,19 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os, mllib, cPickle as pickle
+import os, mllib, cPickle as pickle, sys
 from util import fill
 
 class Primitive(object):
   pass
 
 class Enum(object):
-  pass
+
+  # XXX: for backwards compatibility
+  @classmethod
+  def values(cls):
+    print >> sys.stderr, "warning, please use .VALUES instead of .values()"
+    return cls.VALUES
 
 class Field:
 
