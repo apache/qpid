@@ -358,36 +358,53 @@ public class DerbyMessageStore extends AbstractMessageStore
 
     private Map<AMQShortString, AMQQueue> loadQueues() throws SQLException, AMQException
     {
-        Connection conn = newConnection();
-
-
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE);
+        Connection conn = null;
+        Statement stmt = null;
         Map<AMQShortString, AMQQueue> queueMap = new HashMap<AMQShortString, AMQQueue>();
-        while(rs.next())
+
+        try
         {
-            String queueName = rs.getString(1);
-            String owner = rs.getString(2);
-            AMQShortString queueNameShortString = new AMQShortString(queueName);
+            conn = newConnection();
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE);
 
-            AMQQueue q = _virtualHost.getQueueRegistry().getQueue(queueNameShortString);
-
-            if (q == null)
+            while(rs.next())
             {
-                q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
-                                                       null);
-                _virtualHost.getQueueRegistry().registerQueue(q);
+                String queueName = rs.getString(1);
+                String owner = rs.getString(2);
+                AMQShortString queueNameShortString = new AMQShortString(queueName);
+
+                AMQQueue q = _virtualHost.getQueueRegistry().getQueue(queueNameShortString);
+
+                if (q == null)
+                {
+                    q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
+                                                           null);
+                    _virtualHost.getQueueRegistry().registerQueue(q);
+                }
+
+                queueMap.put(queueNameShortString,q);
+
+                CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_RECOVERY_START(String.valueOf(q.getName()), true));
+
+                //Record that we have a queue for recovery
+                _queueRecoveries.put(new AMQShortString(queueName), 0);
             }
-            
-            queueMap.put(queueNameShortString,q);
-            
-            CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_RECOVERY_START(String.valueOf(q.getName()), true));
-
-            //Record that we have a queue for recovery
-            _queueRecoveries.put(new AMQShortString(queueName), 0);
-
         }
-        return queueMap;
+        finally
+        {
+            if (stmt != null)
+            {
+                stmt.close();
+            }
+
+            if (conn != null)
+            {
+                conn.close();
+            }        
+        }
+
+       return queueMap;
     }
 
     private void recoverExchanges() throws AMQException, SQLException
@@ -404,12 +421,13 @@ public class DerbyMessageStore extends AbstractMessageStore
 
         List<Exchange> exchanges = new ArrayList<Exchange>();
         Connection conn = null;
+        Statement stmt = null;
         try
         {
             conn = newConnection();
 
 
-            Statement stmt = conn.createStatement();
+            stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(SELECT_FROM_EXCHANGE);
 
             Exchange exchange;
@@ -434,6 +452,11 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
         finally
         {
+            if (stmt != null)
+            {
+                stmt.close();
+            }
+
             if(conn != null)
             {
                 conn.close();
@@ -449,11 +472,12 @@ public class DerbyMessageStore extends AbstractMessageStore
         QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
 
         Connection conn = null;
+        PreparedStatement stmt = null;
         try
         {
             conn = newConnection();
 
-            PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_BINDINGS);
+            stmt = conn.prepareStatement(SELECT_FROM_BINDINGS);
             stmt.setString(1, exchange.getName().toString());
 
             ResultSet rs = stmt.executeQuery();
@@ -493,6 +517,11 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
         finally
         {
+            if (stmt != null)
+            {
+                stmt.close();    
+            }
+
             if(conn != null)
             {
                 conn.close();
@@ -509,8 +538,7 @@ public class DerbyMessageStore extends AbstractMessageStore
 
     public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
     {
-
-        boolean localTx = getOrCreateTransaction(storeContext);
+         boolean localTx = getOrCreateTransaction(storeContext);
 
         Connection conn = getConnection(storeContext);
         ConnectionWrapper wrapper = (ConnectionWrapper) storeContext.getPayload();
@@ -523,9 +551,10 @@ public class DerbyMessageStore extends AbstractMessageStore
 
         // first we need to look up the header to get the chunk count
         MessageMetaData mmd = getMessageMetaData(storeContext, messageId);
+        PreparedStatement stmt = null;
         try
         {
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_MESSAGE_META_DATA);
+            stmt = conn.prepareStatement(DELETE_FROM_MESSAGE_META_DATA);
             stmt.setLong(1,messageId);
             wrapper.setRequiresCommit();
             int results = stmt.executeUpdate();
@@ -574,6 +603,25 @@ public class DerbyMessageStore extends AbstractMessageStore
 
             throw new AMQException("Error writing AMQMessage with id " + messageId + " to database: " + e, e);
         }
+        finally
+        {
+            try
+            {
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch(SQLException e)
+            {
+                throw new AMQException("Error closing database resources after removeMessage:" + e);
+            }
+        }
 
     }
 
@@ -584,12 +632,13 @@ public class DerbyMessageStore extends AbstractMessageStore
             try
             {
                 Connection conn = null;
+                PreparedStatement stmt = null;
 
                 try
                 {
                     conn = newConnection();
 
-                    PreparedStatement stmt = conn.prepareStatement(FIND_EXCHANGE);
+                    stmt = conn.prepareStatement(FIND_EXCHANGE);
                     stmt.setString(1, exchange.getName().toString());
 
                     ResultSet rs = stmt.executeQuery();
@@ -609,6 +658,11 @@ public class DerbyMessageStore extends AbstractMessageStore
                 }
                 finally
                 {
+                    if (stmt != null)
+                    {
+                        stmt.close();
+                    }
+
                     if(conn != null)
                     {
                         conn.close();
@@ -657,7 +711,7 @@ public class DerbyMessageStore extends AbstractMessageStore
                }
                catch (SQLException e)
                {
-                   _logger.error(e);
+                    throw new AMQException("Error closing database resources:" + e);
                }
             }
 
@@ -670,13 +724,13 @@ public class DerbyMessageStore extends AbstractMessageStore
         if (_state != State.RECOVERING)
         {
             Connection conn = null;
-
+            PreparedStatement stmt = null;
 
             try
             {
                 conn = newConnection();
 
-                PreparedStatement stmt = conn.prepareStatement(FIND_BINDING);
+                stmt = conn.prepareStatement(FIND_BINDING);
                 stmt.setString(1, exchange.getName().toString() );
                 stmt.setString(2, queue.getName().toString());
                 stmt.setString(3, routingKey == null ? null : routingKey.toString());
@@ -718,36 +772,38 @@ public class DerbyMessageStore extends AbstractMessageStore
             }
             finally
             {
-                if(conn != null)
+                try
                 {
-                   try
-                   {
-                       conn.close();
-                   }
-                   catch (SQLException e)
-                   {
-                       _logger.error(e);
-                   }
+                    if (stmt != null)
+                    {
+                        stmt.close();
+                    }
+
+                    if(conn != null)
+                    {
+                        conn.close();
+                    }
+
                 }
-
+                catch (SQLException e)
+                {
+                    throw new AMQException("Error closing database resources:" + e);
+                }
             }
-
         }
-
-
     }
 
     public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
             throws AMQException
     {
         Connection conn = null;
-
+        PreparedStatement stmt = null;
 
         try
         {
             conn = newConnection();
             // exchange_name varchar(255) not null, queue_name varchar(255) not null, binding_key varchar(255), arguments blob
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_BINDINGS);
+            stmt = conn.prepareStatement(DELETE_FROM_BINDINGS);
             stmt.setString(1, exchange.getName().toString() );
             stmt.setString(2, queue.getName().toString());
             stmt.setString(3, routingKey == null ? null : routingKey.toString());
@@ -768,21 +824,23 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
         finally
         {
-            if(conn != null)
+            try
             {
-               try
-               {
-                   conn.close();
-               }
-               catch (SQLException e)
-               {
-                   _logger.error(e);
-               }
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+
+                if (conn != null)
+                {
+                    conn.close();
+                }
             }
-
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
         }
-
-
     }
 
     public void createQueue(AMQQueue queue) throws AMQException
@@ -794,13 +852,16 @@ public class DerbyMessageStore extends AbstractMessageStore
     {
         _logger.debug("public void createQueue(AMQQueue queue = " + queue + "): called");
 
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
         if (_state != State.RECOVERING)
         {
             try
             {
-                Connection conn = newConnection();
+                conn = newConnection();
 
-                PreparedStatement stmt = conn.prepareStatement(FIND_QUEUE);
+                stmt = conn.prepareStatement(FIND_QUEUE);
                 stmt.setString(1, queue.getName().toString());
 
                 ResultSet rs = stmt.executeQuery();
@@ -825,6 +886,25 @@ public class DerbyMessageStore extends AbstractMessageStore
             catch (SQLException e)
             {
                 throw new AMQException("Error writing AMQQueue with name " + queue.getName() + " to database: " + e, e);
+            }
+            finally
+            {
+                try
+                {
+                    if (stmt != null)
+                    {
+                        stmt.close();
+                    }
+
+                    if (conn != null)
+                    {
+                        conn.close();
+                    }
+                }
+                catch (SQLException e)
+                {
+                   throw new AMQException("Error closing database resources:" + e);
+                }
             }
         }
     }
@@ -888,10 +968,11 @@ public class DerbyMessageStore extends AbstractMessageStore
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
+        PreparedStatement stmt = null;
 
         try
         {
-            PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_QUEUE_ENTRY);
+            stmt = conn.prepareStatement(INSERT_INTO_QUEUE_ENTRY);
             stmt.setString(1,name.toString());
             stmt.setLong(2,messageId);
             stmt.executeUpdate();
@@ -919,6 +1000,26 @@ public class DerbyMessageStore extends AbstractMessageStore
             throw new AMQException("Error writing enqueued message with id " + messageId + " for queue " + name
                 + " to database", e);
         }
+        finally
+        {
+            try
+            {
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
+        }
+
 
     }
 
@@ -929,10 +1030,11 @@ public class DerbyMessageStore extends AbstractMessageStore
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
+        PreparedStatement stmt = null;
 
         try
         {
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_QUEUE_ENTRY);
+            stmt = conn.prepareStatement(DELETE_FROM_QUEUE_ENTRY);
             stmt.setString(1,name.toString());
             stmt.setLong(2,messageId);
             int results = stmt.executeUpdate();
@@ -949,8 +1051,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 commitTran(context);
             }
 
-
-
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("Dequeuing message " + messageId + " on queue " + name );//+ "[Connection" + conn + "]");
@@ -965,6 +1065,25 @@ public class DerbyMessageStore extends AbstractMessageStore
             _logger.error("Failed to dequeue: " + e, e);
             throw new AMQException("Error deleting enqueued message with id " + messageId + " for queue " + name
                 + " from database", e);
+        }
+        finally
+        {
+            try
+            {
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
         }
 
     }
@@ -1105,10 +1224,10 @@ public class DerbyMessageStore extends AbstractMessageStore
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
-
+        PreparedStatement stmt = null;
         try
         {
-            PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_CONTENT);
+            stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_CONTENT);
             stmt.setLong(1,messageId);
             stmt.setInt(2, index);
             byte[] chunkData = new byte[contentBody.getSize()];
@@ -1137,6 +1256,25 @@ public class DerbyMessageStore extends AbstractMessageStore
 
             throw new AMQException("Error writing AMQMessage with id " + messageId + " to database: " + e, e);
         }
+        finally
+        {
+            try
+            {
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
+        }
 
     }
 
@@ -1147,11 +1285,11 @@ public class DerbyMessageStore extends AbstractMessageStore
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
-
+        PreparedStatement stmt = null;
         try
         {
 
-            PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_META_DATA);
+            stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_META_DATA);
             stmt.setLong(1,messageId);
             stmt.setString(2, mmd.getMessagePublishInfo().getExchange().toString());
             stmt.setString(3, mmd.getMessagePublishInfo().getRoutingKey().toString());
@@ -1190,7 +1328,25 @@ public class DerbyMessageStore extends AbstractMessageStore
 
             throw new AMQException("Error writing AMQMessage with id " + messageId + " to database: " + e, e);
         }
+        finally
+        {
+            try
+            {
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
 
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
+        }
 
     }
 
@@ -1198,12 +1354,12 @@ public class DerbyMessageStore extends AbstractMessageStore
     {
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
-
+        PreparedStatement stmt = null;
 
         try
         {
 
-            PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_MESSAGE_META_DATA);
+            stmt = conn.prepareStatement(SELECT_FROM_MESSAGE_META_DATA);
             stmt.setLong(1,messageId);
             ResultSet rs = stmt.executeQuery();
 
@@ -1275,7 +1431,25 @@ public class DerbyMessageStore extends AbstractMessageStore
 
             throw new AMQException("Error reading AMQMessage with id " + messageId + " from database: " + e, e);
         }
+        finally
+        {
+            try
+            {
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
 
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
+        }
 
     }
 
@@ -1283,72 +1457,88 @@ public class DerbyMessageStore extends AbstractMessageStore
     {
         boolean localTx = getOrCreateTransaction(context);
                 Connection conn = getConnection(context);
+        PreparedStatement stmt = null;
 
+        try
+        {
 
-                try
+            stmt = conn.prepareStatement(SELECT_FROM_MESSAGE_CONTENT);
+            stmt.setLong(1,messageId);
+            stmt.setInt(2, index);
+            ResultSet rs = stmt.executeQuery();
+
+            if(rs.next())
+            {
+                Blob dataAsBlob = rs.getBlob(1);
+
+                final int size = (int) dataAsBlob.length();
+                byte[] dataAsBytes = dataAsBlob.getBytes(1, size);
+                final ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
+
+                ContentChunk cb = new ContentChunk()
                 {
 
-                    PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_MESSAGE_CONTENT);
-                    stmt.setLong(1,messageId);
-                    stmt.setInt(2, index);
-                    ResultSet rs = stmt.executeQuery();
-
-                    if(rs.next())
+                    public int getSize()
                     {
-                        Blob dataAsBlob = rs.getBlob(1);
+                        return size;
+                    }
 
-                        final int size = (int) dataAsBlob.length();
-                        byte[] dataAsBytes = dataAsBlob.getBytes(1, size);
-                        final ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
+                    public ByteBuffer getData()
+                    {
+                        return buf;
+                    }
 
-                        ContentChunk cb = new ContentChunk()
-                        {
-
-                            public int getSize()
-                            {
-                                return size;
-                            }
-
-                            public ByteBuffer getData()
-                            {
-                                return buf;
-                            }
-
-                            public void reduceToFit()
-                            {
-
-                            }
-                        };
-
-                        if(localTx)
-                        {
-                            commitTran(context);
-                        }
-
-                        return cb;
+                    public void reduceToFit()
+                    {
 
                     }
-                    else
-                    {
-                        if(localTx)
-                        {
-                            abortTran(context);
-                        }
-                        throw new AMQException("Message not found for message with id " + messageId);
-                    }
-                }
-                catch (SQLException e)
+                };
+
+                if(localTx)
                 {
-                    if(localTx)
-                    {
-                        abortTran(context);
-                    }
-
-                    throw new AMQException("Error reading AMQMessage with id " + messageId + " from database: " + e, e);
+                    commitTran(context);
                 }
 
+                return cb;
 
+            }
+            else
+            {
+                if(localTx)
+                {
+                    abortTran(context);
+                }
+                throw new AMQException("Message not found for message with id " + messageId);
+            }
+        }
+        catch (SQLException e)
+        {
+            if(localTx)
+            {
+                abortTran(context);
+            }
 
+            throw new AMQException("Error reading AMQMessage with id " + messageId + " from database: " + e, e);
+        }
+        finally
+        {
+            try
+            {
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+               throw new AMQException("Error closing database resources:" + e);
+            }
+        }
     }
 
     public boolean isPersistent()
@@ -1395,6 +1585,7 @@ public class DerbyMessageStore extends AbstractMessageStore
 
         final boolean inLocaltran = inTran(context);
         Connection conn = null;
+        PreparedStatement stmt = null;
         try
         {
             if(inLocaltran)
@@ -1411,8 +1602,8 @@ public class DerbyMessageStore extends AbstractMessageStore
 
             TransactionalContext txnContext = new NonTransactionalContext(this, new StoreContext(), null, null);
 
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE_ENTRY);
+            stmt = conn.prepareStatement(SELECT_FROM_QUEUE_ENTRY);
+            ResultSet rs = stmt.executeQuery();
 
             while (rs.next())
             {
@@ -1487,6 +1678,11 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
         finally
         {
+            if (stmt != null)
+            {
+                stmt.close();
+            }
+
             if (inLocaltran && conn != null)
             {
                 conn.close();
