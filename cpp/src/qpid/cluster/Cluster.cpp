@@ -361,7 +361,6 @@ void Cluster::erase(const ConnectionId& id) {
 
 // Called by Connection::deliverClose() in deliverFrameQueue thread.
 void Cluster::erase(const ConnectionId& id, Lock&) {
-    QPID_LOG(info, *this << " connection closed " << id);
     connections.erase(id);
     decoder.erase(id);
 }
@@ -1024,7 +1023,7 @@ void Cluster::memberUpdate(Lock& l) {
         ConnectionMap::iterator j = i++;
         MemberId m = j->second->getId().getMember();
         if (m != self && !map.isMember(m)) {
-            j->second->getBrokerConnection().closed();
+            j->second->close();
             erase(j->second->getId(), l);
         }
     }
