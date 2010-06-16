@@ -150,7 +150,8 @@ void UpdateClient::update() {
     // longer on their original queue.
     session.queueDeclare(arg::queue=UPDATE, arg::autoDelete=true);
     session.sync();
-    std::for_each(connections.begin(), connections.end(), boost::bind(&UpdateClient::updateConnection, this, _1));
+    std::for_each(connections.begin(), connections.end(),
+                  boost::bind(&UpdateClient::updateConnection, this, _1));
     session.queueDelete(arg::queue=UPDATE);
     session.close();
 
@@ -167,15 +168,18 @@ void UpdateClient::update() {
     client::ConnectionAccess::getImpl(connection)->expand(frame.encodedSize(), false);
     client::ConnectionAccess::getImpl(connection)->handle(frame);
 
-    connection.close();
-    QPID_LOG(debug,  updaterId << " update completed to " << updateeId
-             << " at " << updateeUrl << ": " << membership);
+    // FIXME aconway 2010-06-16: Connection will be closed from the other end.
+    // connection.close();
+    
     // FIXME aconway 2010-03-15: This sleep avoids the race condition
     // described in // https://bugzilla.redhat.com/show_bug.cgi?id=568831.
     // It allows the connection to fully close before destroying the
     // Connection object. Remove when the bug is fixed.
     //
-    sys::usleep(10*1000);       // 100ms
+    sys::usleep(10*1000);
+
+    QPID_LOG(debug,  updaterId << " update completed to " << updateeId
+             << " at " << updateeUrl << ": " << membership);
 }
 
 namespace {
@@ -347,9 +351,11 @@ void UpdateClient::updateOutputTask(const sys::OutputTask* task) {
 
 void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& updateConnection) {
     QPID_LOG(debug, updaterId << " updating connection " << *updateConnection);
-
+    assert(updateConnection->getBrokerConnection());
+    broker::Connection& bc = *updateConnection->getBrokerConnection();
+    
     // Send the management ID first on the main connection.
-    std::string mgmtId = updateConnection->getBrokerConnection().getMgmtId();
+    std::string mgmtId = updateConnection->getBrokerConnection()->getMgmtId();
     ClusterConnectionProxy(session).shadowPrepare(mgmtId);
     // Make sure its received before opening shadow connection
     session.sync();
@@ -357,7 +363,6 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
     // Open shadow connection and update it.
     shadowConnection = catchUpConnection();
 
-    broker::Connection& bc = updateConnection->getBrokerConnection();
     connectionSettings.maxFrameSize = bc.getFrameMax();
     shadowConnection.open(updateeUrl, connectionSettings);
     bc.eachSessionHandler(boost::bind(&UpdateClient::updateSession, this, _1));
@@ -381,8 +386,7 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     broker::SessionState* ss = sh.getSession();
     if (!ss) return;            // no session.
 
-    QPID_LOG(debug, updaterId << " updating session " << &sh.getConnection()
-             << "[" << sh.getChannel() << "] = " << ss->getId());
+    QPID_LOG(debug, updaterId << " updating session " << ss->getId());
 
     // Create a client session to update session state. 
     boost::shared_ptr<client::ConnectionImpl> cimpl = client::ConnectionAccess::getImpl(shadowConnection);

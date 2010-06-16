@@ -83,7 +83,7 @@ void OutputInterceptor::deliverDoOutput(uint32_t limit) {
             newLimit = (sendMax + sent) / 2;
     }
     sent = 0;
-    while (sent < limit && parent.getBrokerConnection().doOutput())
+    while (sent < limit && parent.getBrokerConnection()->doOutput())
         ++sent;
     if (sent == limit) sendDoOutput(newLimit);
 }

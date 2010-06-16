@@ -75,7 +75,8 @@ class Connection :
     ~Connection();
     
     ConnectionId getId() const { return self; }
-    broker::Connection& getBrokerConnection() { return *connection; }
+    broker::Connection* getBrokerConnection() { return connection.get(); }
+    const broker::Connection* getBrokerConnection() const { return connection.get(); }
 
     /** Local connections may be clients or catch-up connections */
     bool isLocal() const;
@@ -167,6 +168,7 @@ class Connection :
     void announce(const std::string& mgmtId, uint32_t ssf, const std::string& authid,
                   bool nodict, const std::string& username,
                   const std::string& initFrames);
+    void close();
     void abort();
     void deliverClose();
 
@@ -227,6 +229,7 @@ class Connection :
     broker::SessionState& sessionState();
     broker::SemanticState& semanticState();
     broker::QueuedMessage getUpdateMessage();
+    void closeUpdated();
 
     Cluster& cluster;
     ConnectionId self;
