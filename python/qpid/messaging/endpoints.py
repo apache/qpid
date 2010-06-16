@@ -29,6 +29,7 @@ Areas that still need work:
 """
 
 from logging import getLogger
+from math import ceil
 from qpid.codec010 import StringCodec
 from qpid.concurrency import synchronized, Waiter, Condition
 from qpid.datatypes import Serial, uuid4
@@ -843,6 +844,7 @@ class Receiver(object):
     self._lock = self.session._lock
     self._capacity = 0
     self._set_capacity(options.get("capacity", 0), False)
+    self.threshold = 0.5
 
   @synchronized
   def _set_capacity(self, c, wakeup=True):
@@ -931,8 +933,9 @@ class Receiver(object):
       if msg is None:
         raise Empty()
     elif self._capacity not in (0, UNLIMITED.value):
-      self.granted += 1
-      self._wakeup()
+      if self.received - self.returned <= int(ceil(self.threshold * self._capacity)):
+        self.granted = self.received + self._capacity
+        self._wakeup()
     return msg
 
   def _grant(self):
