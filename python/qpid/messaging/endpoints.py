@@ -677,12 +677,20 @@ class Session:
     assert self.aborted
 
   @synchronized
+  def sync(self):
+    """
+    Sync the session.
+    """
+    for snd in self.senders:
+      snd.sync()
+    self._ewait(lambda: not self.outgoing and not self.acked)
+
+  @synchronized
   def close(self):
     """
     Close the session.
     """
-    # XXX: should be able to express this condition through API calls
-    self._ewait(lambda: not self.outgoing and not self.acked)
+    self.sync()
 
     for link in self.receivers + self.senders:
       link.close()
@@ -704,8 +712,10 @@ class Sender:
     self.target = target
     self.options = options
     self.capacity = options.get("capacity", UNLIMITED)
+    self.threshold = 0.5
     self.durable = options.get("durable")
     self.queued = Serial(0)
+    self.synced = Serial(0)
     self.acked = Serial(0)
     self.error = None
     self.linked = False
@@ -792,18 +802,25 @@ class Sender:
 
     # XXX: what if we send the same message to multiple senders?
     message._sender = self
+    if self.capacity is not UNLIMITED:
+      message._sync = sync or self.available() <= int(ceil(self.threshold*self.capacity))
+    else:
+      message._sync = sync
     self.session.outgoing.append(message)
     self.queued += 1
-
-    self._wakeup()
 
     if sync:
       self.sync()
       assert message not in self.session.outgoing
+    else:
+      self._wakeup()
 
   @synchronized
   def sync(self):
     mno = self.queued
+    if self.synced < mno:
+      self.synced = mno
+      self._wakeup()
     self._ewait(lambda: self.acked >= mno)
 
   @synchronized
