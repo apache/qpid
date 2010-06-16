@@ -673,7 +673,7 @@ main ( int argc, char const ** argv )
      // Get prefix for each queue name.
      stringstream queue_prefix;
      queue_prefix << "failover_soak_" << getpid();
-
+     string queue_prefix_str(queue_prefix.str());
 
      // Run the declareQueues child.
      int childStatus;
@@ -683,7 +683,7 @@ main ( int argc, char const ** argv )
                               declareQueuesPath, 
                               verbosity, 
                               durable,
-                              queue_prefix.str().c_str(),
+                              queue_prefix_str.c_str(),
                               n_queues
                             );
      if ( -1 == dqClientPid ) {
@@ -707,6 +707,7 @@ main ( int argc, char const ** argv )
 
          stringstream queue_name;
          queue_name << queue_prefix.str() << '_' << i;
+         string queue_name_str(queue_name.str());
 
          // Receiving client ---------------------------
          pid_t receivingClientPid =
@@ -715,7 +716,7 @@ main ( int argc, char const ** argv )
                                   receiverPath,
                                   reportFrequency,
                                   verbosity,
-                                  queue_name.str().c_str() );
+                                  queue_name_str.c_str() );
          if ( -1 == receivingClientPid ) {
              cerr << "END_OF_TEST ERROR_START_RECEIVER\n";
              return CANT_FORK_RECEIVER;
@@ -731,7 +732,7 @@ main ( int argc, char const ** argv )
                                 reportFrequency,
                                 verbosity,
                                 durable,
-                                queue_name.str().c_str() );
+                                queue_name_str.c_str() );
          if ( -1 == sendingClientPid ) {
              cerr << "END_OF_TEST ERROR_START_SENDER\n";
              return CANT_FORK_SENDER;
