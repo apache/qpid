@@ -114,6 +114,7 @@ class SessionState:
     self.min_completion = self.sent
     self.max_completion = self.sent
     self.results = {}
+    self.need_sync = False
 
     # receiver state
     self.received = None
@@ -131,12 +132,12 @@ class SessionState:
     for k, v in overrides.items():
       cmd[k.replace('-', '_')] = v
 
-  def write_cmd(self, cmd, action=noop, overrides=None):
+  def write_cmd(self, cmd, action=noop, overrides=None, sync=True):
     if overrides:
       self.apply_overrides(cmd, overrides)
 
-    if action != noop:
-      cmd.sync = True
+    if sync or action != noop:
+      cmd.sync = sync
     if self.detached:
       raise Exception("detached")
     cmd.id = self.sent
@@ -144,6 +145,7 @@ class SessionState:
     self.actions[cmd.id] = action
     self.max_completion = cmd.id
     self.write_op(cmd)
+    self.need_sync = not cmd.sync
 
   def write_cmds(self, cmds, action=noop):
     if cmds:
@@ -963,6 +965,10 @@ class Engine:
       else:
         break
 
+    for snd in ssn.senders:
+      if snd.synced >= snd.queued and sst.need_sync:
+        sst.write_cmd(ExecutionSync(), sync=True)
+
     for rcv in ssn.receivers:
       self.process_receiver(rcv)
 
@@ -1167,7 +1173,7 @@ class Engine:
       log.debug("RACK[%s]: %s", sst.session.log_id, msg)
       assert msg == m
     sst.write_cmd(MessageTransfer(destination=_snd._exchange, headers=(dp, mp),
-                                  payload=body), msg_acked)
+                                  payload=body), msg_acked, sync=msg._sync)
     log.debug("SENT[%s]: %s", sst.session.log_id, msg)
 
   def do_message_transfer(self, xfr):
