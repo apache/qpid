@@ -291,8 +291,6 @@ void DispatchHandle::processEvent(Poller::EventType type) {
         break;
     case Poller::INTERRUPTED:
         {
-        // We could only be interrupted if we also had a callback to do
-        assert(callbacks.size() > 0);
         // We'll actually do the interrupt below
         }
         break;
