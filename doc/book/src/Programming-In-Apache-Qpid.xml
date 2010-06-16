@@ -52,7 +52,7 @@
       </listitem>
       <listitem>
         <para>
-          For Python and C++, Qpid defines its own messaging API, the
+          For Python, C++, and .NET, Qpid defines its own messaging API, the
           <firstterm>Qpid Messaging API</firstterm>, which is
           conceptually similar in each supported language.
         </para>
@@ -264,6 +264,93 @@ finally:
 	</example>
 
     </section>
+
+
+
+
+    <section>
+      <title>A Simple Messaging Program in .NET C#</title>
+
+      <para>The following .NET C# program shows how to create a connection,
+        create a session, send messages using a sender, and receive
+        messages using a receiver.</para>
+
+	<example>
+	  <title>"Hello world!" in .NET C#</title>
+	  <programlisting lang="c++">
+using System;
+using Org.Apache.Qpid.Messaging;  <co id="hello-csharp-using" linkends="callout-csharp-using"/>
+
+namespace Org.Apache.Qpid.Messaging {
+    class Program {
+        static void Main(string[] args) {
+            String broker = args.Length > 0 ? args[0] : "localhost:5672";
+            String address = args.Length > 1 ? args[1] : "amq.topic";
+
+            Connection connection = null;
+            try {
+                connection = new Connection(broker);
+                connection.Open();   <co id="hello-csharp-open" linkends="callout-csharp-open"/>
+                Session session = connection.CreateSession();   <co id="hello-csharp-session" linkends="callout-csharp-session"/>
+
+                Receiver receiver = session.CreateReceiver(address);   <co id="hello-csharp-receiver" linkends="callout-csharp-receiver"/>
+                Sender sender = session.CreateSender(address);   <co id="hello-csharp-sender" linkends="callout-csharp-sender"/>
+
+                sender.Send(new Message("Hello world!"));
+
+                Message message = new Message();
+                message = receiver.Fetch(DurationConstants.SECOND * 1);   <co id="hello-csharp-fetch" linkends="callout-csharp-fetch"/>
+                Console.WriteLine("{0}", message.GetContent());
+                session.Acknowledge();   <co id="hello-csharp-acknowledge" linkends="callout-csharp-acknowledge"/>
+
+                connection.Close();   <co id="hello-csharp-close" linkends="callout-csharp-close"/>
+            } catch (Exception e) {
+                Console.WriteLine("Exception {0}.", e);
+                if (null != connection)
+                    connection.Close();
+            }
+        }
+    }
+}
+
+</programlisting>
+
+      <calloutlist>
+	<callout id="callout-csharp-using" arearefs="hello-csharp-using">
+	  <para>Selects the Qpid Messaging namespace. A project reference to the Org.Apache.Qpid.Messaging dll defines the Qpid Messaging namespace objects and methods.</para>
+	</callout>
+	<callout id="callout-csharp-open" arearefs="hello-csharp-open">
+	  <para>Establishes the connection with the messaging broker.</para>
+	</callout>
+	<callout id="callout-csharp-session" arearefs="hello-csharp-session">
+	  <para>Creates a session object, which maintains the state of all interactions with the messaging broker, and manages senders and receivers.</para>
+	</callout>
+	<callout id="callout-csharp-receiver" arearefs="hello-csharp-receiver">
+	  <para>Creates a receiver that reads from the given address.</para>
+	</callout>
+	<callout id="callout-csharp-sender" arearefs="hello-csharp-sender">
+	  <para>Creates a sender that sends to the given address.</para>
+	</callout>
+	<callout id="callout-csharp-fetch" arearefs="hello-csharp-fetch">
+	  <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
+	</callout>
+	<callout id="callout-csharp-acknowledge" arearefs="hello-csharp-acknowledge">
+	  <para>Acknowledges messages that have been read. To guarantee delivery, a message remains on the messaging broker until it is acknowledged by a client. session.acknowledge() acknowledges all unacknowledged messages for the given session&mdash;this allows acknowledgements to be batched, which is  more efficient than acknowledging messages individually.</para>
+	</callout>
+	<callout id="callout-csharp-close" arearefs="hello-csharp-close">
+	  <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
+	</callout>
+      </calloutlist>
+      </example>
+
+
+    </section>
+
+
+
+
+
+
     <section id="section-addresses">
       <title>Addresses</title>
       
@@ -295,10 +382,11 @@ finally:
 
       A queue stores each message until it has been received and
       acknowledged, and only one receiver can receive a given message
-      <footnote><para>There are exceptions to this rule; for instance,
-      a receiver can use <literal>browse</literal> mode, which leaves
-      messages on the queue for other receivers to
-      read.</para></footnote>
+
+            <footnote><para>There are exceptions to this rule; for instance,
+	    a receiver can use <literal>browse</literal> mode, which leaves
+	    messages on the queue for other receivers to
+	    read.</para></footnote>.
 
       A topic immediately delivers a message to all eligible
       receivers; if there are no eligible receivers, it discards the
@@ -325,14 +413,14 @@ finally:
       using two programs that take an address as a command line
       parameter.  <command>spout</command> sends messages to the
       target address, <command>drain</command> receives messages from
-      the source address.  The source code is available in both C++
-      and Python, and can be found in the examples directory for each
+      the source address.  The source code is available in C++, Python, and
+	.NET C# and can be found in the examples directory for each
       language. These programs can use any address string as a source
       or a destination, and have many command line options to
       configure behavior&mdash;use the <command>-h</command> option
       for documentation on these options. 
 
-      <footnote><para>Currently, the Python and C++
+      <footnote><para>Currently, the C++, Python, and .NET C#
       implementations of <command>drain</command> and
       <command>spout</command> have slightly different
       options. This tutorial uses the C++ implementation. The
@@ -1378,7 +1466,7 @@ enable("qpid.messaging.io", DEBUG)
       Messaging API, a program can ask a session for the <quote>next
       receiver</quote>; that is, the receiver that is responsible for
       the next available message. The following example shows how this
-      is done in C++ and Python.</para>
+      is done in C++, Python, and .NET C#.</para>
 
       <example>
 	<title>Receiving Messages from Multiple Sources</title>
@@ -1401,6 +1489,18 @@ receiver2 = session.receiver(address)
 message = session.next_receiver().fetch()
 print message.content
 ]]>	  </programlisting>
+
+	<para>.NET C#:</para>
+	<programlisting><![CDATA[
+Receiver receiver1 = session.CreateReceiver(address1);
+Receiver receiver2 = session.CreateReceiver(address2);
+
+Message message = new Message();
+message =  session.NextReceiver().Fetch();
+session.Acknowledge();
+Console.WriteLine("{0}", message.GetContent());
+]]>	  </programlisting>
+
       </example>
     </section>
 
