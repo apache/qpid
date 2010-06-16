@@ -178,7 +178,7 @@ bool OptionMatch::operator()(Option* option)
 
 bool OptionMatch::isOption()
 {
-    return name.size();
+    return name.size() > 0;
 }
 
 OptionParser::OptionParser(const std::string& s, const std::string& d) : summary(s), description(d), help(false)
