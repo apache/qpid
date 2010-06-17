@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import java.io.File;
 import java.security.Principal;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -33,8 +32,6 @@ import org.apache.qpid.server.security.SecurityPluginFactory;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.access.config.ConfigurationFile;
-import org.apache.qpid.server.security.access.config.PlainConfiguration;
 import org.apache.qpid.server.security.access.config.RuleSet;
 
 /**
