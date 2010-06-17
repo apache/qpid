@@ -33,11 +33,13 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
+import org.apache.qpid.server.security.access.logging.AccessControlMessages;
 
 /**
  * Models the rule configuration for the access control plugin.
@@ -183,6 +185,20 @@ public class RuleSet
 		}
 		return false;
     }
+    
+    private Permission noLog(Permission permission)
+    {
+        switch (permission)
+        {
+            case ALLOW:
+            case ALLOW_LOG:
+                return Permission.ALLOW;
+            case DENY:
+            case DENY_LOG:
+            default:
+                return Permission.DENY;
+        }
+    }
 
     // TODO make this work when group membership is not known at file parse time
     public void addRule(Integer number, String identity, Permission permission, Action action)
@@ -201,7 +217,7 @@ public class RuleSet
         {
             if (action.getOperation() == Operation.CREATE && action.getObjectType() == ObjectType.TOPIC)
             {
-                addRule(null, identity, permission, new Action(Operation.BIND, ObjectType.EXCHANGE,
+                addRule(null, identity, noLog(permission), new Action(Operation.BIND, ObjectType.EXCHANGE,
                         new ObjectProperties("amq.topic", action.getProperties().get(ObjectProperties.Property.NAME))));
                 ObjectProperties topicProperties = new ObjectProperties();
                 topicProperties.put(ObjectProperties.Property.DURABLE, true);
@@ -210,7 +226,7 @@ public class RuleSet
             }
             if (action.getOperation() == Operation.DELETE && action.getObjectType() == ObjectType.TOPIC)
             {
-                addRule(null, identity, permission, new Action(Operation.UNBIND, ObjectType.EXCHANGE,
+                addRule(null, identity, noLog(permission), new Action(Operation.UNBIND, ObjectType.EXCHANGE,
                         new ObjectProperties("amq.topic", action.getProperties().get(ObjectProperties.Property.NAME))));
                 ObjectProperties topicProperties = new ObjectProperties();
                 topicProperties.put(ObjectProperties.Property.DURABLE, true);
@@ -227,10 +243,10 @@ public class RuleSet
                 ObjectProperties exchProperties = new ObjectProperties(action.getProperties());
                 exchProperties.setName(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
                 exchProperties.put(ObjectProperties.Property.ROUTING_KEY, action.getProperties().get(ObjectProperties.Property.NAME));
-                addRule(null, identity, permission, new Action(Operation.BIND, ObjectType.EXCHANGE, exchProperties));
+                addRule(null, identity, noLog(permission), new Action(Operation.BIND, ObjectType.EXCHANGE, exchProperties));
 				if (action.getProperties().isSet(ObjectProperties.Property.AUTO_DELETE))
 				{
-					addRule(null, identity, permission, new Action(Operation.DELETE, ObjectType.QUEUE, action.getProperties()));
+					addRule(null, identity, noLog(permission), new Action(Operation.DELETE, ObjectType.QUEUE, action.getProperties()));
 				}
             }
             else if (action.getOperation() == Operation.DELETE && action.getObjectType() == ObjectType.QUEUE)
@@ -238,11 +254,11 @@ public class RuleSet
                 ObjectProperties exchProperties = new ObjectProperties(action.getProperties());
                 exchProperties.setName(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
                 exchProperties.put(ObjectProperties.Property.ROUTING_KEY, action.getProperties().get(ObjectProperties.Property.NAME));
-                addRule(null, identity, permission, new Action(Operation.UNBIND, ObjectType.EXCHANGE, exchProperties));
+                addRule(null, identity, noLog(permission), new Action(Operation.UNBIND, ObjectType.EXCHANGE, exchProperties));
             }
             else if (action.getOperation() != Operation.ACCESS && action.getObjectType() != ObjectType.VIRTUALHOST)
             {
-                addRule(null, identity, permission, new Action(Operation.ACCESS, ObjectType.VIRTUALHOST));
+                addRule(null, identity, noLog(permission), new Action(Operation.ACCESS, ObjectType.VIRTUALHOST));
             }
         }
         
@@ -409,11 +425,13 @@ public class RuleSet
                 switch (permission)
                 {
                     case ALLOW_LOG:
-                        _logger.info("ALLOWED " + action);
+                        CurrentActor.get().message(AccessControlMessages.ALLOWED(
+                                action.getOperation().toString(), action.getObjectType().toString(), action.getProperties().toString()));
                     case ALLOW:
                         return Result.ALLOWED;
                     case DENY_LOG:
-                        _logger.info("DENIED " + action);
+                        CurrentActor.get().message(AccessControlMessages.DENIED(
+                                action.getOperation().toString(), action.getObjectType().toString(), action.getProperties().toString()));
                     case DENY:
                         return Result.DENIED;
                 }

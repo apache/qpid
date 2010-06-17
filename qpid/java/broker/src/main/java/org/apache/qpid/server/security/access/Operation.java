@@ -46,4 +46,10 @@ public enum Operation
         }
         throw new IllegalArgumentException("Not a valid operation: " + text);
     }
+    
+    public String toString()
+    {
+        String name = name();
+        return name.charAt(0) + name.substring(1).toLowerCase();
+    }
 }

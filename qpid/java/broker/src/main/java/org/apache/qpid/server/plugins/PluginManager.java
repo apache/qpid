@@ -124,6 +124,7 @@ public class PluginManager implements Closeable
                 "org.apache.qpid.server.exchange; version=0.7," +
                 "org.apache.qpid.server.logging; version=0.7," +
                 "org.apache.qpid.server.logging.actors; version=0.7," +                
+                "org.apache.qpid.server.logging.subjects; version=0.7," +                
                 "org.apache.qpid.server.management; version=0.7," +
                 "org.apache.qpid.server.persistent; version=0.7," +
                 "org.apache.qpid.server.plugins; version=0.7," +
