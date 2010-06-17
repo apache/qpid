@@ -371,7 +371,7 @@ public class SimpleXML extends AbstractPlugin
         }
         
         // Authorise object access
-        if (objectType == ObjectType.BROKER || objectType == ObjectType.VIRTUALHOST)
+        if (objectType == ObjectType.VIRTUALHOST)
         {
             return principalPermissions.authorise(Permission.ACCESS);
         }
