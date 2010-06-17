@@ -356,7 +356,8 @@ bool AclReader::processGroupLine(tokList& toks, const bool cont) {
             addName(toks[i], citr->second);
         }
     } else {
-        if (toksSize < (cont ? 2 : 3)) {
+        const unsigned minimumSize = (cont ? 2 : 3);
+        if (toksSize < minimumSize) {
             errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Line : " << lineNumber 
                         << ", Insufficient tokens for group definition.";
             return false;
