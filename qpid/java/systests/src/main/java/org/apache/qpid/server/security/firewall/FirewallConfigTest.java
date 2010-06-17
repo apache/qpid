@@ -100,26 +100,26 @@ public class FirewallConfigTest extends QpidBrokerTestCase
         try 
         {
             //Try to get a connection to the 'test2' vhost
-            //This is expected to fail as it is denied at the broker level
-            conn = getConnection(new AMQConnectionURL("amqp://username:password@clientid/test2?brokerlist='" + getBroker() + "'"));
-            fail("We expected the connection to fail");
+            //This is expected to succeed as it is allowed at the vhost level
+            conn = getConnection(new AMQConnectionURL("amqp://guest:guest@clientid/test2?brokerlist='" + getBroker() + "'"));
         } 
         catch (JMSException e)
         {
-            //ignore
+            e.getLinkedException().printStackTrace();
+            fail("The connection was expected to succeed: " + e.getMessage());
         }
         
         conn = null;
         try 
         {
             //Try to get a connection to the 'test' vhost
-            //This is expected to succeed as it is allowed at the vhost level
+            //This is expected to fail as it is denied at the broker level
             conn = getConnection();
+            fail("We expected the connection to fail");
         } 
         catch (JMSException e)
         {
-            e.getLinkedException().printStackTrace();
-            fail("The connection was expected to succeed: " + e.getMessage());
+            //ignore
         }
     }
     
@@ -141,8 +141,8 @@ public class FirewallConfigTest extends QpidBrokerTestCase
         {
             //Try to get a connection to the 'test2' vhost
             //This is expected to fail as it is denied at the vhost level
-            conn = getConnection(new AMQConnectionURL(
-                    "amqp://username:password@clientid/test2?brokerlist='" + getBroker() + "'"));
+            conn = getConnection(new AMQConnectionURL("amqp://guest:guest@clientid/test2?brokerlist='" + getBroker() + "'"));
+            fail("The connection was expected to fail");
         } 
         catch (JMSException e)
         {

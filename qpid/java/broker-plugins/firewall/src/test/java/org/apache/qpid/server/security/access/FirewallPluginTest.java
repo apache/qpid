@@ -23,11 +23,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-
+import java.net.SocketAddress;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.plugins.Firewall;
 import org.apache.qpid.server.security.access.plugins.FirewallConfiguration;
@@ -73,8 +72,15 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
     }
 
     // IP address
-    private String _address= "127.0.0.1";
+    private SocketAddress _address;
 
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        
+        _address = new InetSocketAddress("127.0.0.1", 65535);
+    }
 
     private Firewall initialisePlugin(String defaultAction, RuleInfo[] rules) throws IOException, ConfigurationException
     {
@@ -139,7 +145,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
         // Set IP so that we're connected from the right address
-        _address = "192.168.23.23";
+        _address = new InetSocketAddress("192.168.23.23", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
@@ -154,7 +160,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
         // Set IP so that we're connected from the right address
-        _address = "192.168.23.23";
+        _address = new InetSocketAddress("192.168.23.23", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
 
@@ -167,7 +173,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         Firewall plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
         // Set IP so that we're connected from the right address
-        _address = "127.0.0.1";
+        _address = new InetSocketAddress("127.0.0.1", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
 
@@ -180,7 +186,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         Firewall plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
         // Set IP so that we're connected from the right address
-        _address = "127.0.0.1";
+        _address = new InetSocketAddress("127.0.0.1", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
@@ -203,7 +209,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
         // Set IP so that we're connected from the right address
-        _address = "192.168.23.23";
+        _address = new InetSocketAddress("192.168.23.23", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
@@ -226,7 +232,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
         // Set IP so that we're connected from the right address
-        _address = "192.168.23.23";
+        _address = new InetSocketAddress("192.168.23.23", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
 
@@ -240,7 +246,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
         // Set IP so that we're connected from the right address
-        _address = "192.168.23.23";
+        _address = new InetSocketAddress("192.168.23.23", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
@@ -254,7 +260,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
         // Set IP so that we're connected from the right address
-        _address = "192.168.23.23";
+        _address = new InetSocketAddress("192.168.23.23", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
     
@@ -266,11 +272,11 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         Firewall plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
         
         // Set IP so that we're connected from the right address
-        _address = "10.0.0.1";
+        _address = new InetSocketAddress("10.0.0.1", 65535);
         assertEquals(Result.DENIED, plugin.access(ObjectType.VIRTUALHOST, _address));
         
         // Set IP so that we're connected from the right address
-        _address = "127.0.0.1";
+        _address = new InetSocketAddress("127.0.0.1", 65535);
         assertEquals(Result.ALLOWED, plugin.access(ObjectType.VIRTUALHOST, _address));
     }
 }

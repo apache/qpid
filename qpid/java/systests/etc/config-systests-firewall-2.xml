@@ -23,6 +23,8 @@
     <prefix>${QPID_HOME}</prefix>
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
+    <plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>
+    <cache-directory>${QPID_WORK}/cache</cache-directory>
     <connector>
         <!-- To enable SSL edit the keystorePath and keystorePassword
 	     and set enabled to true. 
@@ -87,9 +89,7 @@
             <principal-database>passwordfile</principal-database>
         </jmx>
 
-        <firewall default-action="allow">
-            <rule access="deny" network="127.0.0.1"/>
-        </firewall>
+        <firewall default-action="deny"/>
     </security>
 
     <virtualhosts>${conf}/virtualhosts-systests-firewall-2.xml</virtualhosts>

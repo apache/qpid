@@ -28,9 +28,6 @@
             <store>
                 <class>org.apache.qpid.server.store.MemoryMessageStore</class>
             </store>
-            <security>
-                <firewall default-action="allow"/>
-            </security>
         </test>
     </virtualhost>
 
@@ -40,6 +37,11 @@
             <store>
                 <class>org.apache.qpid.server.store.MemoryMessageStore</class>
             </store>
+            <security>
+		        <firewall default-action="deny">
+		            <rule access="allow" network="127.0.0.1"/>
+		        </firewall>
+            </security>
         </test2>
     </virtualhost>
 </virtualhosts>
