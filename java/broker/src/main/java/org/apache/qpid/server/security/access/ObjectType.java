@@ -36,7 +36,6 @@ public enum ObjectType
     QUEUE(CREATE, DELETE, PURGE, CONSUME),
     TOPIC(CREATE, DELETE, PURGE, CONSUME),
     EXCHANGE(ACCESS, CREATE, DELETE, BIND, UNBIND, PUBLISH),
-    BROKER(ACCESS),
     LINK, // Not allowed in the Java broker
     ROUTE, // Not allowed in the Java broker
     METHOD(Operation.ALL, ACCESS, UPDATE, EXECUTE),
