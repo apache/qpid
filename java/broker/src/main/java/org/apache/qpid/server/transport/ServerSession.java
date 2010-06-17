@@ -256,7 +256,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
                     if(range != null && range.includes(next))
                     {
                         MessageDispositionChangeListener changeListener = _messageDispositionListenerMap.get(next);
-                        if(changeListener.acquire())
+                        if(changeListener != null && changeListener.acquire())
                         {
                             acquired.add(next);
                         }
