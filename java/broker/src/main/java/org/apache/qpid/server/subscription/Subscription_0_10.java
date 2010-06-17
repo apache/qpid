@@ -296,7 +296,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
         public void run()
         {
-            _session.onMessageDispositionChange(_xfr, _action);
+            if(_action != null)
+            {
+                _session.onMessageDispositionChange(_xfr, _action);
+            }
         }
     }
 
@@ -558,9 +561,13 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             {
                 _postIdSettingAction._action = new ExplicitAcceptDispositionChangeListener(entry, this);
             }
-            else
+            else if(_acquireMode != MessageAcquireMode.PRE_ACQUIRED)
             {
                 _postIdSettingAction._action = new ImplicitAcceptDispositionChangeListener(entry, this);
+            }
+            else
+            {
+                _postIdSettingAction._action = null;
             }
 
             _session.sendMessage(xfr, _postIdSettingAction);
