@@ -38,8 +38,8 @@
                 <class>org.apache.qpid.server.store.MemoryMessageStore</class>
             </store>
             <security>
-         <firewall default-action="deny"/>
-     </security>
+	            <firewall default-action="deny"/>
+	        </security>
         </test2>
     </virtualhost>
 </virtualhosts>

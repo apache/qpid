@@ -21,6 +21,7 @@ package org.apache.qpid.server.security;
 import static org.apache.qpid.server.security.access.ObjectType.*;
 import static org.apache.qpid.server.security.access.Operation.*;
 
+import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -312,7 +313,7 @@ public class SecurityManager
 		});
     }
 
-    public boolean accessVirtualhost(final String vhostname, final String remoteAddress)
+    public boolean accessVirtualhost(final String vhostname, final SocketAddress remoteAddress)
     {
         return checkAllPlugins(new AccessCheck()
         {

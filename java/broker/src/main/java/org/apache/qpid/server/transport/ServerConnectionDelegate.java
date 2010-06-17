@@ -22,6 +22,7 @@ package org.apache.qpid.server.transport;
 
 import org.apache.qpid.transport.*;
 
+import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -103,7 +104,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             sconn.setVirtualHost(vhost);
 
-            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, sconn.getConfig().getAddress()))
+            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, ((ProtocolEngine) sconn.getConfig()).getRemoteAddress()))
             {
                 sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
                 sconn.setState(Connection.State.CLOSING);
