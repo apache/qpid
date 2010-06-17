@@ -2147,8 +2147,6 @@ class Broker(Thread):
       self._setHeader(codec, 'B')
       msg = self._message(codec.encoded)
       self._send(msg)
-      if self.brokerSupportsV2:
-        self._v2SendAgentLocate()
 
       return True  # connection complete
 
@@ -2341,6 +2339,11 @@ class Broker(Thread):
               self.amqpSession.exchange_bind(exchange="qmf.default.topic",
                                              queue=self.v2_topic_queue_lo,
                                              binding_key=key)
+          # solicit an agent locate now, after we bind to agent.ind.data,
+          # because the agent locate will cause the agent to publish a
+          # data indication - and now we're able to receive it!
+          self._v2SendAgentLocate()
+
 
       if self.reqsOutstanding == 0 and self.syncInFlight:
         self.syncInFlight = False
