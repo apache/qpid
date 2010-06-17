@@ -37,4 +37,6 @@ if SUNOS
   acl_la_LIBADD +=  libqmfagent.la libqmfconsole.la libqpidcommon.la -lboost_program_options $(SUNCC_RUNTIME_LIBS)
 endif
 
-acl_la_LDFLAGS = $(PLUGINLDFLAGS)
+ACL_VERSION_INFO  = 2:0:0
+acl_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(ACL_VERSION_INFO)
+

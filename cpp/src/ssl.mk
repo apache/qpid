@@ -29,8 +29,9 @@ libsslcommon_la_SOURCES = \
   qpid/sys/ssl/SslIo.h \
   qpid/sys/ssl/SslIo.cpp
 
+SSLCOMMON_VERSION_INFO  = 2:0:0
+libsslcommon_la_LDFLAGS = -version-info $(SSLCOMMON_VERSION_INFO)
 libsslcommon_la_LIBADD= -lnss3 -lssl3 -lnspr4 libqpidcommon.la
-
 libsslcommon_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
 
 lib_LTLIBRARIES +=  libsslcommon.la
@@ -44,10 +45,10 @@ ssl_la_LIBADD= libqpidbroker.la libsslcommon.la
 
 ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
 
-ssl_la_LDFLAGS = $(PLUGINLDFLAGS)
+SSL_VERSION_INFO  = 2:0:0
+ssl_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(SSL_VERSION_INFO)
 
 dmodule_LTLIBRARIES += ssl.la
-
 
 sslconnector_la_SOURCES = \
   qpid/client/SslConnector.cpp
@@ -58,7 +59,8 @@ sslconnector_la_LIBADD = \
 
 sslconnector_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"  $(SSL_CFLAGS)
 
-sslconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
+SSLCONNECTOR_VERSION_INFO  = 2:0:0
+sslconnector_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(SSLCONNECTOR_VERSION_INFO)
 
 cmodule_LTLIBRARIES += \
   sslconnector.la
