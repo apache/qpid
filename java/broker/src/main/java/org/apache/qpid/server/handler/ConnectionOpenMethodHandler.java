@@ -77,7 +77,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         else
         {
             // Check virtualhost access
-            if (!virtualHost.getSecurityManager().accessVirtualhost(virtualHostName, session.getRemoteAddress().toString()))
+            if (!virtualHost.getSecurityManager().accessVirtualhost(virtualHostName, session.getRemoteAddress()))
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied: '" + virtualHost.getName() + "'");
             }

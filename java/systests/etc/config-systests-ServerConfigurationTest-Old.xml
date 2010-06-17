@@ -24,6 +24,8 @@
 <work>${QPID_WORK}</work>
 <conf>${QPID_HOME}/etc</conf>
 <passwordDir>${conf}</passwordDir>
+<plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>
+<cache-directory>${QPID_WORK}/cache</cache-directory>
 <connector>
 <transport>nio</transport>
 <port>5672</port>

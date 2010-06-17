@@ -21,13 +21,10 @@
 package org.apache.qpid.server.security.access.plugins;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
+import java.net.InetSocketAddress;
 
-import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.AbstractPlugin;
 import org.apache.qpid.server.security.Result;
@@ -87,39 +84,25 @@ public class Firewall extends AbstractPlugin
         {
             return Result.ABSTAIN; // We are only interested in access to virtualhosts
         }
-        
-        // TODO alter 0-10 code path to expose the SocketAddress object?
-        String address = (String) instance;
-        
-        if (address == null || address.trim().length() == 0)
+
+        if (!(instance instanceof InetSocketAddress))
         {
-            return Result.ABSTAIN; // We need an address
+            return Result.ABSTAIN; // We need an internet address
         }
 
+        InetAddress address = ((InetSocketAddress) instance).getAddress();
+        
         try
         {
-            int slash = address.indexOf('/');
-            int colon = address.indexOf(':');
-	        InetAddress addr = InetAddress.getByName(address.substring(slash == -1 ? 0 : slash + 1, colon == -1 ? address.length() : colon));
-            if (addr == null)
-            {
-                return Result.ABSTAIN; // Not a real address
-            }
-    
             for (FirewallRule rule : _rules)
             {
-                boolean match = rule.match(addr);
+                boolean match = rule.match(address);
                 if (match)
                 {
                     return rule.getAccess();
                 }
             }
             return getDefault();
-        }
-        catch (UnknownHostException uhe)
-        {
-            _logger.error("Address format invalid: " + address, uhe);
-            return Result.DENIED;
         }
         catch (FirewallException fe)
         {

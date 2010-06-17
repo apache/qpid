@@ -24,33 +24,16 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.server.protocol.AMQProtocolEngine;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.TestNetworkDriver;
 
-public class FirewallConfigurationTest extends TestCase
+public class FirewallConfigurationTest extends InternalBrokerBaseCase
 {
-    @Override
-    public void setUp()
-    {
-        //Highlight that this test will cause a new AR to be created
-        //ApplicationRegistry.getInstance();
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        //Correctly Close the AR we created
-        //ApplicationRegistry.remove();
-    }
-
     public void testFirewallConfiguration() throws Exception
     {
         // Write out config
@@ -65,8 +48,8 @@ public class FirewallConfigurationTest extends TestCase
             ApplicationRegistry.initialise(reg, 1);
 
             // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", "127.0.0.1"));
-            assertTrue(reg.getSecurityManager().accessVirtualhost("test", "127.1.2.3"));
+            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
+            assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.1.2.3", 65535)));
         }
         finally
         {
@@ -94,6 +77,7 @@ public class FirewallConfigurationTest extends TestCase
         out = new FileWriter(fileA);
         out.write("<broker>\n");
         out.write("\t<plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>\n");
+        out.write("\t<cache-directory>${QPID_WORK}/cache</cache-directory>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
         out.write("\t\t<principal-databases>\n");
@@ -137,7 +121,7 @@ public class FirewallConfigurationTest extends TestCase
             ApplicationRegistry.initialise(reg, 1);
 
             // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", "127.0.0.1"));
+            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
         }
         finally
         {
@@ -160,14 +144,14 @@ public class FirewallConfigurationTest extends TestCase
             ApplicationRegistry.initialise(reg, 1);
 
             // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", "127.0.0.1"));
+            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
 
             // Switch to deny the connection
             writeConfigFile(mainFile, true);
 
             reg.getConfiguration().reparseConfigFileSecuritySections();
 
-            assertTrue(reg.getSecurityManager().accessVirtualhost("test", "127.0.0.1"));
+            assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
         }
         finally
         {
@@ -238,7 +222,7 @@ public class FirewallConfigurationTest extends TestCase
             ApplicationRegistry.initialise(reg, 1);
 
             // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", "127.0.0.1"));
+            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
 
             RandomAccessFile fileBRandom = new RandomAccessFile(fileB, "rw");
             fileBRandom.setLength(0);
@@ -253,7 +237,7 @@ public class FirewallConfigurationTest extends TestCase
 
             reg.getConfiguration().reparseConfigFileSecuritySections();
 
-            assertTrue(reg.getSecurityManager().accessVirtualhost("test", "127.0.0.1"));
+            assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
 
             fileBRandom = new RandomAccessFile(fileB, "rw");
             fileBRandom.setLength(0);
@@ -268,7 +252,7 @@ public class FirewallConfigurationTest extends TestCase
 
             reg.getConfiguration().reparseConfigFileSecuritySections();
 
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", "127.0.0.1"));
+            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
         }
         finally
         {
