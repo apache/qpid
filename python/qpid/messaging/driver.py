@@ -480,6 +480,7 @@ class Driver:
       self._timeout = None
       self._attempts = 0
       self._host = 0
+      self._delay = self.connection.reconnect_interval_min
       self._retrying = False
     except socket.error, e:
       self._host = (self._host + 1) % len(self._hosts)
