@@ -98,8 +98,6 @@ public abstract class AbstractProxyPlugin extends AbstractPlugin
     {
         switch (objectType)
         {
-			case BROKER:
-				return accessBroker(instance);
 			case VIRTUALHOST:
 				return accessVirtualhost(instance);
         }

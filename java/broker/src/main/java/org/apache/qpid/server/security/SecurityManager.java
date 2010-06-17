@@ -300,18 +300,6 @@ public class SecurityManager
             }
         });
     }
-    
-    // TODO not implemented yet, awaiting consensus
-    public boolean accessBroker(final AMQProtocolSession session)
-    {
-        return checkAllPlugins(new AccessCheck()
-		{
-			Result allowed(SecurityPlugin plugin)
-			{
-                return plugin.access(BROKER, session);
-			}
-		});
-    }
 
     public boolean accessVirtualhost(final String vhostname, final SocketAddress remoteAddress)
     {
