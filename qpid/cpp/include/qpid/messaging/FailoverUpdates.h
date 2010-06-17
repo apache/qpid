@@ -26,7 +26,7 @@
 namespace qpid {
 namespace messaging {
 class Connection;
-class FailoverUpdatesImpl;
+struct FailoverUpdatesImpl;
 
 /**
  * A utility to listen for updates on cluster membership and update
