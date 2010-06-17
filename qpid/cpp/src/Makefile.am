@@ -107,7 +107,6 @@ include $(srcdir)/managementgen.mk
 
 ## Compiler flags
 AM_CXXFLAGS = $(WARNING_CFLAGS)
-AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(srcdir) -I=$(builddir)
 
 #
@@ -224,8 +223,8 @@ librdmawrap_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 lib_LTLIBRARIES += \
   librdmawrap.la
-librdmawrap_la_LDFLAGS = \
-  -no-undefined
+RDMAWRAP_VERSION_INFO  = 2:0:0
+librdmawrap_la_LDFLAGS = -version-info $(RDMAWRAP_VERSION_INFO) -no-undefined
 
 rdma_la_SOURCES = \
   qpid/sys/RdmaIOPlugin.cpp
@@ -233,7 +232,8 @@ rdma_la_LIBADD = \
   libqpidbroker.la \
   librdmawrap.la \
   -libverbs
-rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
+RDMA_VERSION_INFO  = 2:0:0
+rdma_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(RDMA_VERSION_INFO)
 rdma_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 dmodule_LTLIBRARIES += \
@@ -245,7 +245,8 @@ rdmaconnector_la_LIBADD = \
   libqpidclient.la \
   librdmawrap.la \
   -libverbs
-rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
+RDMACONNECTOR_VERSION_INFO = 2:0:0
+rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(RDMACONNECTOR_VERSION_INFO)
 rdmaconnector_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 cmodule_LTLIBRARIES += \
@@ -268,9 +269,6 @@ if SSL
 include ssl.mk
 endif
 
-
-# New 0-10 codec, to be integrated in future.
-# libqpidamqp_0_10_la_SOURCES= 
 EXTRA_DIST +=\
   CMakeLists.txt \
   cluster.cmake \
@@ -492,6 +490,9 @@ libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.cpp
 libqpidcommon_la_LIBADD += -lsasl2
 endif
 
+QPIDCOMMON_VERSION_INFO = 2:0:0
+libqpidcommon_la_LDFLAGS=-version-info $(QPIDCOMMON_VERSION_INFO)
+
 libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
 
 libqpidbroker_la_SOURCES = \
@@ -649,6 +650,9 @@ libqpidbroker_la_SOURCES = \
   qpid/management/ManagementTopicExchange.h \
   qpid/sys/TCPIOPlugin.cpp
 
+# Library Version Information:
+QPIDBROKER_VERSION_INFO = 2:0:0
+libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
 
 libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
@@ -710,6 +714,10 @@ libqpidclient_la_SOURCES =			\
   qpid/client/TCPConnector.cpp			\
   qpid/client/TCPConnector.h
 
+# Library Version Information:
+QPIDCLIENT_VERSION_INFO  = 2:0:0
+libqpidclient_la_LDFLAGS = -version-info $(QPIDCLIENT_VERSION_INFO)
+
 libqpidmessaging_la_LIBADD = libqpidclient.la
 
 libqpidmessaging_la_SOURCES =			\
@@ -751,6 +759,10 @@ libqpidmessaging_la_SOURCES =			\
   qpid/client/amqp0_10/SenderImpl.cpp           \
   qpid/client/amqp0_10/SimpleUrlParser.h	\
   qpid/client/amqp0_10/SimpleUrlParser.cpp
+
+# Library Version Information:
+QPIDMESSAGING_VERSION_INFO  = 2:0:0
+libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)
 
 # NOTE: only public header files (which should be in ../include)
 # should go in this list. Private headers should go in the SOURCES

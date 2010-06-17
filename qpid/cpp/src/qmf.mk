@@ -96,20 +96,8 @@ libqmfengine_la_SOURCES =			\
 libqmf_la_LIBADD = libqmfengine.la
 libqmfengine_la_LIBADD = libqpidclient.la
 
-# Library Version Information:
-#
-#  CURRENT  => API/ABI version.  Bump this if the interface changes
-#  REVISION => Version of underlying implementation.
-#              Bump if implementation changes but API/ABI doesn't
-#  AGE      => Number of API/ABI versions this is backward compatible with
-#
-QMF_CURRENT  = 1
-QMF_REVISION = 0
-QMF_AGE      = 0
+QMF_VERSION_INFO = 1:0:0
+QMFENGINE_VERSION_INFO  = 1:1:0
 
-QMF_ENGINE_CURRENT  = 1
-QMF_ENGINE_REVISION = 1
-QMF_ENGINE_AGE      = 0
-
-libqmf_la_LDFLAGS = -version-info $(QMF_CURRENT):$(QMF_REVISION):$(QMF_AGE)
-libqmfengine_la_LDFLAGS = -version-info $(QMF_ENGINE_CURRENT):$(QMF_ENGINE_REVISION):$(QMF_ENGINE_AGE)
+libqmf_la_LDFLAGS = -version-info $(QMF_VERSION_INFO)
+libqmfengine_la_LDFLAGS = -version-info $(QMFENGINE_VERSION_INFO)

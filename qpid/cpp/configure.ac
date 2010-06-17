@@ -114,13 +114,6 @@ gl_saved_libs=$LIBS
   AC_SUBST([LIB_DLOPEN])
 LIBS=$gl_saved_libs
 
-# Set the argument to be used in "libtool -version-info ARG".
-QPID_CURRENT=2
-QPID_REVISION=0
-QPID_AGE=0
-LIBTOOL_VERSION_INFO_ARG=$QPID_CURRENT:$QPID_REVISION:$QPID_AGE
-AC_SUBST(LIBTOOL_VERSION_INFO_ARG)
-
 gl_CLOCK_TIME
 
 # Enable Valgrind	

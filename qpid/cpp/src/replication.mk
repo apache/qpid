@@ -33,7 +33,10 @@ if SUNOS
   replicating_listener_la_LIBADD += libqpidcommon.la -lboost_program_options -luuid $(SUNCC_RUNTIME_LIBS)
 endif
 
-replicating_listener_la_LDFLAGS = $(PLUGINLDFLAGS)
+# Library Version Information:
+REPLICATING_LISTENER_VERSION_INFO = 2:0:0
+replicating_listener_la_LDFLAGS = $(PLUGINLDFLAGS) \
+  -version-info $(REPLICATING_LISTENER_VERSION_INFO)
 
 # a custom exchange plugin that allows an exchange to be created that
 # can process the messages from a replication queue (populated on the
@@ -49,4 +52,8 @@ replication_exchange_la_LIBADD = libqpidbroker.la
 if SUNOS
   replication_exchange_la_LIBADD += libqpidcommon.la -lboost_program_options $(SUNCC_RUNTIME_LIBS) -luuid
 endif
-replication_exchange_la_LDFLAGS = $(PLUGINLDFLAGS)
+# Library Version Information:
+REPLICATION_EXCHANGE_VERSION_INFO  = 2:0:0
+replication_exchange_la_LDFLAGS = $(PLUGINLDFLAGS) \
+  -version-info $(REPLICATION_EXCHANGE_VERSION_INFO)
+
