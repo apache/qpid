@@ -452,7 +452,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       /D "_CRT_NONSTDC_NO_WARNINGS"
       /D "NOMINMAX"
       /D "WIN32_LEAN_AND_MEAN"
-      /D "_SCL_SECURE_NO_WARNINGS"
       /wd4244
       /wd4800
       /wd4355
