@@ -232,8 +232,7 @@ rdma_la_LIBADD = \
   libqpidbroker.la \
   librdmawrap.la \
   -libverbs
-RDMA_VERSION_INFO  = 2:0:0
-rdma_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(RDMA_VERSION_INFO)
+rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 dmodule_LTLIBRARIES += \
@@ -245,8 +244,7 @@ rdmaconnector_la_LIBADD = \
   libqpidclient.la \
   librdmawrap.la \
   -libverbs
-RDMACONNECTOR_VERSION_INFO = 2:0:0
-rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(RDMACONNECTOR_VERSION_INFO)
+rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdmaconnector_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 cmodule_LTLIBRARIES += \
@@ -650,7 +648,6 @@ libqpidbroker_la_SOURCES = \
   qpid/management/ManagementTopicExchange.h \
   qpid/sys/TCPIOPlugin.cpp
 
-# Library Version Information:
 QPIDBROKER_VERSION_INFO = 2:0:0
 libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
 
@@ -714,7 +711,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/TCPConnector.cpp			\
   qpid/client/TCPConnector.h
 
-# Library Version Information:
 QPIDCLIENT_VERSION_INFO  = 2:0:0
 libqpidclient_la_LDFLAGS = -version-info $(QPIDCLIENT_VERSION_INFO)
 
@@ -760,7 +756,6 @@ libqpidmessaging_la_SOURCES =			\
   qpid/client/amqp0_10/SimpleUrlParser.h	\
   qpid/client/amqp0_10/SimpleUrlParser.cpp
 
-# Library Version Information:
 QPIDMESSAGING_VERSION_INFO  = 2:0:0
 libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)
 
