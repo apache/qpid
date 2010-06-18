@@ -25,6 +25,5 @@ xml_la_SOURCES =  \
 
 xml_la_LIBADD = -lxerces-c -lxqilla libqpidbroker.la
 
-XML_VERSION_INFO = 2:0:0
-xml_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(XML_VERSION_INFO)
+xml_la_LDFLAGS = $(PLUGINLDFLAGS)
 

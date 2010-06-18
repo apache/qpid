@@ -97,15 +97,13 @@ cluster_la_SOURCES =				\
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
-CLUSTER_VERSION_INFO = 2:0:0
-cluster_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(CLUSTER_VERSION_INFO)
+cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
 
 # The watchdog plugin and helper executable
 dmodule_LTLIBRARIES += watchdog.la
 watchdog_la_SOURCES = qpid/cluster/WatchDogPlugin.cpp
 watchdog_la_LIBADD = libqpidbroker.la
-WATCHDOG_VERSION_INFO  = 2:0:0
-watchdog_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(WATCHDOG_VERSION_INFO)
+watchdog_la_LDFLAGS = $(PLUGINLDFLAGS)
 
 qpidexec_PROGRAMS += qpidd_watchdog
 qpidd_watchdog_SOURCES = qpid/cluster/qpidd_watchdog.cpp
