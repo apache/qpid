@@ -53,6 +53,5 @@ libqmfconsole_la_SOURCES =			\
 
 libqmfconsole_la_LIBADD = libqpidclient.la
 
-# Library Version Information:
 QMFCONSOLE_VERSION_INFO  = 2:0:0
-libqmfconsole_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(QMFCONSOLE_VERSION_INFO)
+libqmfconsole_la_LDFLAGS = -version-info $(QMFCONSOLE_VERSION_INFO)

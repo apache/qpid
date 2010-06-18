@@ -45,8 +45,7 @@ ssl_la_LIBADD= libqpidbroker.la libsslcommon.la
 
 ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
 
-SSL_VERSION_INFO  = 2:0:0
-ssl_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(SSL_VERSION_INFO)
+ssl_la_LDFLAGS = $(PLUGINLDFLAGS)
 
 dmodule_LTLIBRARIES += ssl.la
 
@@ -59,8 +58,7 @@ sslconnector_la_LIBADD = \
 
 sslconnector_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"  $(SSL_CFLAGS)
 
-SSLCONNECTOR_VERSION_INFO  = 2:0:0
-sslconnector_la_LDFLAGS = $(PLUGINLDFLAGS) -version-info $(SSLCONNECTOR_VERSION_INFO)
+sslconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 
 cmodule_LTLIBRARIES += \
   sslconnector.la
