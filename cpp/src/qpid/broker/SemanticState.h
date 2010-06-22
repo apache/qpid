@@ -157,6 +157,7 @@ class SemanticState : private boost::noncopyable {
     const string userID;
     const string userName;
     const bool isDefaultRealm;
+    bool closeComplete;
 
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void checkDtxTimeout();
@@ -165,6 +166,8 @@ class SemanticState : private boost::noncopyable {
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
     void cancel(ConsumerImpl::shared_ptr);
+    void unsubscribe(ConsumerImpl::shared_ptr);
+    void disable(ConsumerImpl::shared_ptr);
 
   public:
     SemanticState(DeliveryAdapter&, SessionContext&);
@@ -220,6 +223,7 @@ class SemanticState : private boost::noncopyable {
 
     void attached();
     void detached();
+    void closed();
 
     // Used by cluster to re-create sessions
     template <class F> void eachConsumer(F f) {

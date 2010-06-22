@@ -88,6 +88,7 @@ SessionState::SessionState(
 }
 
 SessionState::~SessionState() {
+    semanticState.closed();
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
 
