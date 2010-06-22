@@ -21,28 +21,35 @@
 
 package org.apache.qpid.info.test;
 
+import junit.framework.TestCase;
+import org.apache.qpid.info.SystemInfo;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.info.SystemInfo;
-
+/** Test the SystemInfo component */
 public class SystemInfoTest extends TestCase
 {
 
+    /**
+     * Ensure the list of required properties are returned by the
+     * SystemInfo.getInfo call
+     */
     public void testGetInfo()
     {
         Map<String, String> sysInfoMap = SystemInfo.getInfo();
         assertNotNull("SystemInfo.getInfo() returned null", sysInfoMap);
-        List<String> sysInfoProps = Arrays.asList("java.class.path",
+        List<String> sysInfoProps = Arrays.asList(
+                "java.class.path",
                 "java.vm.name", "java.class.version", "os.arch", "os.name",
                 "os.version", "sun.arch.data.model", "user.dir", "user.name",
-                "user.timezone");
+                "user.timezone", "hostname", "ip", "CPUCores", "Maximum_Memory",
+                "Free_Memory");
+
         for (String tag : sysInfoProps)
         {
-            assertNotNull("Map does not contain the tag: "+tag, sysInfoMap.get(tag));
+            assertNotNull("Map does not contain the tag: " + tag, sysInfoMap.get(tag));
         }
     }
 

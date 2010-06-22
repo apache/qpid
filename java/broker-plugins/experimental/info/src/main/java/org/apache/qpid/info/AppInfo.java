@@ -21,34 +21,32 @@
 
 package org.apache.qpid.info;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.Map.Entry;
-
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
-/**
- * AppInfo class is gathering application specific informations
- *
- */
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.TreeMap;
+
+/** AppInfo class is gathering application specific information */
 public class AppInfo
 {
 
     private static final List<String> appProps = Arrays.asList("QPID_HOME",
-            "QPID_WORK");
+                                                               "QPID_WORK");
 
     private static Map<String, String> appInfoMap = new TreeMap<String, String>();
 
     /**
      * getInfo method retrieves a key-value map for specific application properties
+     *
      * @return Map<String,String>
-     */  
+     */
     public static Map<String, String> getInfo()
     {
 
@@ -76,8 +74,6 @@ public class AppInfo
                 appInfoMap.put("port", sc.getPorts().toString());
                 appInfoMap.put("version", QpidProperties.getReleaseVersion());
                 appInfoMap.put("vhosts", "standalone");
-                // brokerInfoMap.put("DefaultVirtualHost",
-                // sc.getDefaultVirtualHost());
                 appInfoMap.put("JMXPrincipalDatabase", sc
                         .getJMXPrincipalDatabase());
                 appInfoMap.put("KeystorePath", sc.getKeystorePath());
@@ -86,9 +82,10 @@ public class AppInfo
                 appInfoMap.put("QpidWork", sc.getQpidWork());
                 appInfoMap.put("Bind", sc.getBind());
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
-            // 
+            // drop everything to be silent
         }
         return appInfoMap;
 

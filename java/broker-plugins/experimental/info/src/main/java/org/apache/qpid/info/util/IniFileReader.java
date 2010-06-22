@@ -21,37 +21,42 @@
 
 package org.apache.qpid.info.util;
 
-import java.util.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
- * This class is simple implementation of an ini file reader. It expects a 
+ * This class is simple implementation of an ini file reader. It expects a
  * file with the following structure:
- * 
- * ; global values, can be overwritten in sections 
+ *
+ * ; global values, can be overwritten in sections
  * key1=value1
  * key2=value2
- * 
+ *
  * [Section1]
  * key1=value1_new  ; overwriting the global key1
  * key3=value3
  * key4=value4
- * 
+ *
  * [Section2]
  * key5=value5
  * key6=value6
  * key7=value7
- * 
+ *
  * Note: Commentaries are preceded by ; or # and are supported throughout
- *       A commentary line at the end of section is interpreted as 
- *       a section end marker
- * 
- * A structure <String,Properties> (section name, associated properties)  
- * is generated as a result of processing the ini file. 
+ * A commentary line at the end of section is interpreted as
+ * a section end marker
+ *
+ * A structure <String,Properties> (section name, associated properties)
+ * is generated as a result of processing the ini file.
  */
 public class IniFileReader
 {
-    private final Map<String, Properties> sections;
+    private final Map<String, Properties> _sections;
 
     private final String COMMENT_SEMICOLON = ";";
 
@@ -65,33 +70,45 @@ public class IniFileReader
     /*
      * IniFileReader constructor
      */
+
     public IniFileReader()
     {
-        sections = new HashMap<String, Properties>();
+        _sections = new HashMap<String, Properties>();
     }
 
     /**
      * Cleans up the after comments or the empty spaces/tabs surrounding the given string
-     * @param str   The String to be cleaned 
+     *
+     * @param str The String to be cleaned
+     *
      * @return String Cleanup Version
      */
     private String cleanUp(String str)
     {
         if (str.contains(COMMENT_SEMICOLON))
+        {
             str = str.substring(0, str.indexOf(COMMENT_SEMICOLON));
+        }
         if (str.contains(COMMENT_HASH))
+        {
             str = str.substring(0, str.indexOf(COMMENT_HASH));
+        }
         return str.trim();
     }
 
     /**
      * Loads and parses the ini file with the full path specified in the argument
-     * @param fileName  Full path to the ini file
-     * @throws IllegalArgumentException   If the file cannot be processed
+     *
+     * @param fileName Full path to the ini file
+     *
+     * @throws IllegalArgumentException If the file cannot be processed
      */
     public void load(String fileName) throws IllegalArgumentException
     {
-        if (! new File(fileName).isFile()) throw new IllegalArgumentException("File: "+fileName+ " does not exist or cannot be read.");
+        if (!new File(fileName).isFile())
+        {
+            throw new IllegalArgumentException("File: " + fileName + " does not exist or cannot be read.");
+        }
         State state = State.GLOBAL;
         String line;
         Properties sectionProps = new Properties();
@@ -104,12 +121,19 @@ public class IniFileReader
                 String str = cleanUp(line);
 
                 // Did we get a section header?
-                if (str.startsWith("[") && str.endsWith("]"))
+                if (str.startsWith("["))
                 {
+                    if (!str.endsWith("]"))
+                    {
+                        // Index of 1 to skip '['
+                        throw new IllegalArgumentException(str.substring(1)
+                                                           + " is not closed");
+                    }
+
                     // We encountered a new section header
                     if (state != State.IN_SECTION)
                     {
-                        sections.put(sectionName, sectionProps);
+                        _sections.put(sectionName, sectionProps);
                         sectionProps = new Properties();
                         sectionName = str.replace("[", "").replace("]", "")
                                 .trim();
@@ -125,10 +149,11 @@ public class IniFileReader
                     // mean we are off the section
                     if (state == State.IN_SECTION)
                     {
-                        sections.put(sectionName, sectionProps);
+                        _sections.put(sectionName, sectionProps);
                         state = State.OFF_SECTION;
                     }
-                } else
+                }
+                else
                 {
                     // proper line, add it to the props
                     if (state != State.OFF_SECTION)
@@ -143,25 +168,26 @@ public class IniFileReader
                 }
             }
             in.close();
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
-            sections.clear();
+            _sections.clear();
             return;
         }
         if (state != State.OFF_SECTION)
         {
-            sections.put(sectionName, sectionProps);
+            _sections.put(sectionName, sectionProps);
         }
     }
 
     /**
      * Getter for the Sections Map
+     *
      * @return Map<String,Properties> The parsed content of the ini file in this structure
      */
     public Map<String, Properties> getSections()
     {
-        return sections;
+        return _sections;
     }
 
-    
 }
