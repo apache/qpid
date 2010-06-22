@@ -19,13 +19,6 @@
  *
  */
 
-/**
- * 
- * @author sorin
- * 
- *  An simple Http post class for qpid info service
- */
-
 package org.apache.qpid.info.util;
 
 import java.util.ArrayList;
@@ -41,6 +34,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 
+/**
+ * 
+ *  An simple Http post class for qpid info service
+ */
 public class HttpPoster implements Runnable
 {
     private final String url;
