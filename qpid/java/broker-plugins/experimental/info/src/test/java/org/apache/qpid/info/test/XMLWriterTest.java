@@ -21,57 +21,106 @@
 
 package org.apache.qpid.info.test;
 
-import java.util.HashMap;
-
+import junit.framework.TestCase;
 import org.apache.qpid.info.util.XMLWriter;
 
-import junit.framework.TestCase;
+import java.util.HashMap;
 
 /*
  * This test verifies the XML writer custom class operations
  */
+
 public class XMLWriterTest extends TestCase
 {
 
     private XMLWriter xw = null;
 
+    /** Test constructor arg is returned via getXML() */
     public void testXMLWriter()
     {
-        xw = new XMLWriter(new StringBuffer("Test"));
+        StringBuffer input = new StringBuffer("Test");
+        xw = new XMLWriter(input);
         assertNotNull("XMLWriter could not instantiate", xw);
-        assertEquals("XMLWriter.toString() failed","Test", xw.getXML().toString());
+        assertEquals("XMLWriter.getXML() failed", input, xw.getXML());
     }
 
+    /** Test header generation */
     public void testWriteXMLHeader()
     {
         xw = new XMLWriter(new StringBuffer());
         assertNotNull(xw);
         xw.writeXMLHeader();
-        assertEquals("XMLWriter.writeXMLHeader(...) failed","<?xml version=\"1.0\"?>\n", xw.getXML().toString());
+        assertEquals("XMLWriter.writeXMLHeader(...) failed", "<?xml version=\"1.0\"?>\n", xw.getXML().toString());
     }
 
+    /** Test tag created and written correctly */
     public void testWriteTag()
     {
-        String INDEND = "    ";
+        String INDENT = "    ";
         xw = new XMLWriter(new StringBuffer());
         assertNotNull("XMLWriter could not instantiate", xw);
         xw.writeTag("test", new HashMap<String, String>(), "TEST");
-        assertEquals("XMLWriter.writeTag(...) failed","<test>\n" + INDEND + "TEST\n" + "</test>\n", xw.getXML()
+        assertEquals("XMLWriter.writeTag(...) failed", "<test>\n" + INDENT + "TEST\n" + "</test>\n", xw.getXML()
                 .toString());
     }
 
+    /** Test tag created and written correctly */
+    public void testWriteTagWithNullAttribute()
+    {
+        String INDENT = "    ";
+        xw = new XMLWriter(new StringBuffer());
+        assertNotNull("XMLWriter could not instantiate", xw);
+        xw.writeTag("test", null, "TEST");
+        assertEquals("XMLWriter.writeTag(...) failed", "<test>\n" + INDENT + "TEST\n" + "</test>\n", xw.getXML()
+                .toString());
+    }
+
+    /** Test tag created and written correctly with attribute */
+    public void testWriteTagWithAttribute()
+    {
+        String INDENT = "    ";
+        xw = new XMLWriter(new StringBuffer());
+        assertNotNull("XMLWriter could not instantiate", xw);
+        HashMap<String, String> attr = new HashMap<String, String>();
+        attr.put("id", "1");
+
+        xw.writeTag("test", attr, "TEST");
+        assertEquals("XMLWriter.writeTag(...) failed", "<test id=\"1\">\n" + INDENT + "TEST\n" + "</test>\n", xw.getXML()
+                .toString());
+    }
+
+    /** Test open tag with an empty attribute map. Just creates an open tag */
     public void testWriteOpenTag()
     {
         xw = new XMLWriter(new StringBuffer());
         assertNotNull(xw);
         HashMap<String, String> attr = new HashMap<String, String>();
         xw.writeOpenTag("test", attr);
-        assertEquals("XMLWriter.writeOpenTag(...) failed","<test>\n", xw.getXML().toString());
-        attr.put("id", "1");
-        xw.writeOpenTag("test1", attr);
-        assertEquals("XMLWriter.writeOpenTag(...) failed","<test>\n" + "<test1 id=\"1\">\n", xw.getXML().toString());
+        assertEquals("XMLWriter.writeOpenTag(...) failed", "<test>\n", xw.getXML().toString());
     }
 
+    /** Test open tag with a null attribute map. Just creates an open tag */
+    public void testNullAtrributeOnTag()
+    {
+        xw = new XMLWriter(new StringBuffer());
+        assertNotNull(xw);
+        xw.writeOpenTag("test", null);
+        assertEquals("XMLWriter.writeOpenTag(...) failed", "<test>\n", xw.getXML().toString());
+    }
+
+    /** Test that setting an attribute value on the tag is correctly outputted. */
+    public void testAtrributeOnTag()
+    {
+        xw = new XMLWriter(new StringBuffer());
+        assertNotNull(xw);
+        HashMap<String, String> attr = new HashMap<String, String>();
+
+        attr.put("id", "1");
+        xw.writeOpenTag("test1", attr);
+        assertEquals("XMLWriter.writeOpenTag(...) failed", "<test1 id=\"1\">\n", xw.getXML().toString());
+    }
+
+    /** Test Close Tag is correctly written */
     public void testWriteCloseTag()
     {
         xw = new XMLWriter(new StringBuffer());

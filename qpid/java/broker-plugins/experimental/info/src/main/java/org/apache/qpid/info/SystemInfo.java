@@ -32,7 +32,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 /**
- * Collector for system specific information    
+ * Collector for system specific information
  */
 public class SystemInfo
 {
@@ -46,8 +46,8 @@ public class SystemInfo
             "user.home", "user.dir", "user.name", "user.timezone");
 
     /**
-     * getInfo collects all the properties specified in sysprops list  
-     * @return A Map<String,String>   
+     * getInfo collects all the properties specified in sysprops list
+     * @return A Map<String,String>
      */
     public static Map<String, String> getInfo()
     {
@@ -59,9 +59,10 @@ public class SystemInfo
             String hostname = addr.getHostName();
             sysInfoMap.put("hostname", hostname);
             sysInfoMap.put("ip", addr.getHostAddress());
-        } catch (UnknownHostException e)
+        }
+        catch (UnknownHostException e)
         {
-            //
+            // drop everything to be silent
         }
         // Get the runtime info
         sysInfoMap.put("CPUCores", Runtime.getRuntime().availableProcessors()

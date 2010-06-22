@@ -32,23 +32,16 @@ import org.apache.qpid.info.Info;
  */
 public class InfoTest extends TestCase
 {
-    private HashMap<String, String> infoPayLoad = null;
+    private HashMap<String, String> _infoPayLoad = null;
 
-    private Info<HashMap<String, String>> info = null;
+    private Info<HashMap<String, String>> _info = null;
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        infoPayLoad = new HashMap<String, String>();
-        infoPayLoad.put("test", "Test");
-        info = new Info<HashMap<String, String>>(infoPayLoad);
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-        info = null;
-        infoPayLoad = null;
+        _infoPayLoad = new HashMap<String, String>();
+        _infoPayLoad.put("test", "Test");
+        _info = new Info<HashMap<String, String>>(_infoPayLoad);
     }
 
     /*
@@ -56,9 +49,9 @@ public class InfoTest extends TestCase
      */
     public void testToString()
     {
-        assertNotNull("toString() returned null", info.toString());
+        assertNotNull("toString() returned null", _info.toString());
         assertEquals("toString() did not return the proper string",
-                "test=Test\n", info.toString());
+                "test=Test\n", _info.toString());
     }
 
     /*
@@ -68,8 +61,8 @@ public class InfoTest extends TestCase
     {
         Properties props = new Properties();
         props.put("test", "Test");
-        assertNotNull("toProperties() returned null", info.toProps());
-        assertEquals("toProperties not returned the proper object", props, info
+        assertNotNull("toProperties() returned null", _info.toProps());
+        assertEquals("toProperties not returned the proper object", props, _info
                 .toProps());
     }
 
@@ -79,8 +72,8 @@ public class InfoTest extends TestCase
     public void testToStringBuffer()
     {
         StringBuffer sb = new StringBuffer("test=Test\n");
-        assertNotNull(info.toStringBuffer());
-        assertEquals(sb.toString(), info.toStringBuffer().toString());
+        assertNotNull(_info.toStringBuffer());
+        assertEquals(sb.toString(), _info.toStringBuffer().toString());
     }
 
     /*
@@ -88,15 +81,15 @@ public class InfoTest extends TestCase
      */
     public void testToXML()
     {
-        String INDEND = "    ";
+        String INDENT = "    ";
         StringBuffer sb = new StringBuffer();
         sb.append("<?xml version=\"1.0\"?>\n");
         sb.append("<qpidinfo>\n");
         sb.append("<test>\n");
-        sb.append(INDEND + "Test\n");
+        sb.append(INDENT + "Test\n");
         sb.append("</test>\n");
         sb.append("</qpidinfo>\n");
-        assertEquals("toString() does not return the proper string", info
+        assertEquals("toString() does not return the proper string", _info
                 .toXML().toString(), sb.toString());
     }
 
@@ -105,7 +98,7 @@ public class InfoTest extends TestCase
      */
     public void testToMap()
     {
-        HashMap<String, String> thm = info.toMap();
+        HashMap<String, String> thm = _info.toMap();
         assertFalse("toMap() returned empty map", thm.isEmpty());
         assertEquals("testToMap did not returned 1", 1, thm.size());
         assertTrue("toMap() returned a map not containing expected key: test",

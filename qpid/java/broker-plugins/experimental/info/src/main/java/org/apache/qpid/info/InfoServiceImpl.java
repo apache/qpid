@@ -20,9 +20,9 @@
  */
 
 /**
- * 
+ *
  * @author sorin
- * 
+ *
  *  Implementation for Info service
  */
 
@@ -39,28 +39,28 @@ public class InfoServiceImpl implements InfoService
 {
 
     SortedMap<String, String> infoMap = new TreeMap<String, String>();
-    
+
     /**
-     * invoke method collects all the informations from System and Application 
-     * and encapsulates them in an Info object  
-     * @return An instance of an Info object  
+     * invoke method collects all the information from System and Application
+     * and encapsulates them in an Info object
+     * @return An instance of an Info object
      */
     public Info<? extends Map<String,?>> invoke(String action)
     {
         // Record the action (STARTUP/SHUTDOWN)
         infoMap.put("action",action);
-        
+
         // Record the current time stamp
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
         infoMap.put("time", sdf.format(Calendar.getInstance().getTime()));
-        
+
         // Add the system specific properties 
         infoMap.putAll(SystemInfo.getInfo());
         
         // Add the application specific properties
         infoMap.putAll(AppInfo.getInfo());
-        
+
         return new Info<SortedMap<String, String>>(infoMap);
-    }  
+    }
 
 }

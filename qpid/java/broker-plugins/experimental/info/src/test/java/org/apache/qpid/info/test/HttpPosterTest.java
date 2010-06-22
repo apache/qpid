@@ -92,14 +92,14 @@ public class HttpPosterTest extends TestCase
         HttpPoster hp = getHttpPoster(baseURL + contextPath);
         assertNotNull(hp);
         hp.run();
-        List<String> response = hp.getResponse();
+        List<String> response = hp.get_response();
         assertTrue(response.size() > 0);
         assertEquals("OK <br>", response.get(0).toString());
 
         // Failure Test
         hp = getHttpPoster("http://localhost/nonexistent");
         hp.run();
-        response = hp.getResponse();
+        response = hp.get_response();
         assertTrue(response.size() == 0);
 
     }
