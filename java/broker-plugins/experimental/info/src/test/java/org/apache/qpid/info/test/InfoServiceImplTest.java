@@ -37,14 +37,14 @@ import junit.framework.TestCase;
 public class InfoServiceImplTest extends TestCase
 {
 
-    InfoServiceImpl isi = null;
+    InfoServiceImpl _isi = null;
 
     @SuppressWarnings("unchecked")
     public void testInvoke()
     {
-        isi = new InfoServiceImpl();
-        assertNotNull(isi);
-        Info<? extends Map<String, String>> info = (Info<? extends Map<String, String>>) isi
+        _isi = new InfoServiceImpl();
+        assertNotNull(_isi);
+        Info<? extends Map<String, String>> info = (Info<? extends Map<String, String>>) _isi
                 .invoke("START");
         assertNotNull(info);
         Properties props = info.toProps();

@@ -40,63 +40,67 @@ import java.net.UnknownHostException;
  */
 public class HttpPoster implements Runnable
 {
-    private final String url;
+    private final String _url;
 
-    private final Hashtable<String, String> header;
+    private final Hashtable<String, String> _header;
 
-    private final List<String> response = new ArrayList<String>();
+    private final List<String> _response = new ArrayList<String>();
 
     private final StringBuffer _buf;
 
     /**
      * Constructor
-     * @param props  Properties containing the URL 
-     * @param buf    Buffer containing the message to be posted
+     *
+     * @param props Properties containing the URL
+     * @param buf   Buffer containing the message to be posted
      */
     public HttpPoster(Properties props, StringBuffer buf)
     {
         _buf = buf;
         if (null != props)
         {
-            url = props.getProperty("http.url");
-            header = new Hashtable<String, String>();
+            _url = props.getProperty("http.url");
+            _header = new Hashtable<String, String>();
             try
             {
-              String hostname = InetAddress.getLocalHost().getHostName();
-              header.put("hostname", hostname);
-            } catch (UnknownHostException e)
-            {
-               // Silently ignoring the error ;)
+                String hostname = InetAddress.getLocalHost().getHostName();
+                _header.put("hostname", hostname);
             }
-        } else
+            catch (UnknownHostException e)
+            {
+                // Silently ignoring the error ;)
+            }
+        }
+        else
         {
-            url = null;
-            header = null;
+            _url = null;
+            _header = null;
         }
     }
-    /**
-     * Posts the message from the _buf StringBuffer to the http server
-     */
+
+    /** Posts the message from the _buf StringBuffer to the http server */
     public void run()
     {
-        if (null == url)
+        if (null == _url)
+        {
             return;
+        }
         String line;
         URL urlDest;
         URLConnection urlConn;
         try
         {
-            urlDest = new URL(url);
+            urlDest = new URL(_url);
             urlConn = urlDest.openConnection();
             urlConn.setDoOutput(true);
             urlConn.setUseCaches(false);
-            for (Iterator<String> it = header.keySet().iterator(); it.hasNext();)
+            for (Iterator<String> it = _header.keySet().iterator(); it.hasNext();)
             {
-                String prop = (String) it.next();
-                urlConn.setRequestProperty(prop, header.get(prop));
+                String prop = it.next();
+                urlConn.setRequestProperty(prop, _header.get(prop));
             }
-            OutputStreamWriter wr = new OutputStreamWriter(urlConn
-                    .getOutputStream());
+            OutputStreamWriter wr =
+                    new OutputStreamWriter(urlConn.getOutputStream());
             wr.write(_buf.toString());
             wr.flush();
             // Get the response
@@ -104,21 +108,23 @@ public class HttpPoster implements Runnable
                     urlConn.getInputStream()));
             while ((line = rd.readLine()) != null)
             {
-                response.add(line);
+                _response.add(line);
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
-            return;
+            // Silently ignoring the error ;)
         }
     }
-    
+
     /**
      * Retrieves the response from the http server
+     *
      * @return List<String> response received from the http server
      */
-    public List<String> getResponse()
+    public List<String> get_response()
     {
-        return response;
+        return _response;
     }
 
 }

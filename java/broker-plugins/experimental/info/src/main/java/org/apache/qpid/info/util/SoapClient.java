@@ -19,19 +19,16 @@
  *
  */
 /**
- * 
+ *
  * @author sorin
- * 
+ *
  *  An simple SOAP client for qpid info service
  */
 package org.apache.qpid.info.util;
 
 import java.io.BufferedWriter;
-
 import java.io.OutputStreamWriter;
-
 import java.net.InetAddress;
-
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Properties;
@@ -39,52 +36,56 @@ import java.util.Properties;
 public class SoapClient
 {
 
-    private final StringBuffer xmlData;
+    private final StringBuffer _xmlData;
 
     private final Properties _destprops;
 
-    private final String hostname;
+    private final String _hostname;
 
-    private final int port;
+    private final int _port;
 
-    private final String urlpath;
+    private final String _urlpath;
 
-    private final String soapenvelope;
+    private final String _soapenvelope;
     
-    private final String soapaction;
+    private final String _soapaction;
     
-    private final StringBuffer soapMessage = new StringBuffer();
+    private final StringBuffer _soapMessage = new StringBuffer();
     
 
     public SoapClient(HashMap<String, String> map, Properties destprops)
     {
         _destprops = destprops;
-        hostname = (String) _destprops.get("soap.hostname");
-        port = Integer.parseInt((String) _destprops.get("soap.port"));
-        urlpath = (String) destprops.get("soap.path");
-        soapenvelope = (String) destprops.get("soap.envelope");
-        soapaction = (String) destprops.get("soap.action");
-        xmlData = new StringBuffer(soapenvelope);
+        _hostname = (String) _destprops.get("soap.hostname");
+        _port = Integer.parseInt((String) _destprops.get("soap.port"));
+        _urlpath = (String) destprops.get("soap.path");
+        _soapenvelope = (String) destprops.get("soap.envelope");
+        _soapaction = (String) destprops.get("soap.action");
+        _xmlData = new StringBuffer(_soapenvelope);
         replaceVariables(map);
     }
 
     public StringBuffer getXMLData()
     {
-        return xmlData;
+        return _xmlData;
     }
 
     public StringBuffer getSoapMessage() {
-        return soapMessage;
+        return _soapMessage;
     }
    
     public String getSoapEnvelope() {
-        return soapenvelope;
+        return _soapenvelope;
     }
-  
+
+    /**
+     * Clears and sets new XML data
+     * @param sb the new data to set
+     */
     public void setXMLData(StringBuffer sb)
     {
-        xmlData.delete(0, xmlData.length());
-        xmlData.append(sb);
+        _xmlData.delete(0, _xmlData.length());
+        _xmlData.append(sb);
     }
     
 
@@ -93,9 +94,9 @@ public class SoapClient
         int ix = 0;
         for (String var : vars.keySet())
         {
-            while ((ix = xmlData.indexOf("@" + var.toUpperCase())) >= 0)
+            while ((ix = _xmlData.indexOf("@" + var.toUpperCase())) >= 0)
             {
-                xmlData.replace(ix, ix + 1 + var.length(), vars.get(var));
+                _xmlData.replace(ix, ix + 1 + var.length(), vars.get(var));
             }
         }
     }
@@ -103,13 +104,15 @@ public class SoapClient
     public void replaceVariables(Properties varProps)
     {
         if (varProps == null)
+        {
             return;
+        }
         int ix = 0;
         for (Object var : varProps.keySet())
         {
-            while ((ix = xmlData.indexOf("@" + var)) >= 0)
+            while ((ix = _xmlData.indexOf("@" + var)) >= 0)
             {
-                xmlData.replace(ix, ix + 1 + var.toString().length(), varProps
+                _xmlData.replace(ix, ix + 1 + var.toString().length(), varProps
                         .get(var).toString());
             }
         }
@@ -121,34 +124,32 @@ public class SoapClient
 
         try
         {
-            InetAddress addr = InetAddress.getByName(hostname);
-            Socket sock = new Socket(addr, port);
+            InetAddress addr = InetAddress.getByName(_hostname);
+            Socket sock = new Socket(addr, _port);
             StringBuffer sb = new StringBuffer();
-            sb.append("POST " + urlpath + " HTTP/1.1\r\n");
-            sb.append("Host: " + hostname + ":" + port + "\r\n");
-            sb.append("Content-Length: " + xmlData.length() + "\r\n");
+            sb.append("POST " + _urlpath + " HTTP/1.1\r\n");
+            sb.append("Host: " + _hostname + ":" + _port + "\r\n");
+            sb.append("Content-Length: " + _xmlData.length() + "\r\n");
             sb.append("Content-Type: text/xml; charset=\"utf-8\"\r\n");
-            sb.append("SOAPAction: \"urn:"+soapaction+"\"\r\n");
+            sb.append("SOAPAction: \"urn:"+ _soapaction +"\"\r\n");
             sb.append("User-Agent: Axis2\r\n");
             sb.append("\r\n");
             // Send header
             BufferedWriter wr = new BufferedWriter(new OutputStreamWriter(sock
                     .getOutputStream(), "UTF-8"));
-            synchronized(soapMessage) {
-                soapMessage.setLength(0);
-                soapMessage.append(sb);
-                soapMessage.append(xmlData);
+            synchronized(_soapMessage) {
+                _soapMessage.setLength(0);
+                _soapMessage.append(sb);
+                _soapMessage.append(_xmlData);
             }
-            System.out.println(soapMessage.toString());
-         // Send data
-            wr.write(soapMessage.toString());           
+            // Send data
+            wr.write(_soapMessage.toString());
             wr.flush();
             wr.close();
             
         } catch (Exception ex)
         {
             // Drop any exception
-            System.out.println("*** INFO Exception at sending SOAP msg: "+ex.getMessage());
         }
     }
 }

@@ -20,31 +20,32 @@
  */
 
 /**
- * 
+ *
  * @author sorin
- * 
+ *
  *  Info object
  */
 
 package org.apache.qpid.info;
+
+import org.apache.qpid.info.util.XMLWriter;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.qpid.info.util.XMLWriter;
-
 /**
- * The Info class encapsulates all the informations we are collecting
- * and it is able to render it in different data representations 
+ * The Info class encapsulates all the information we are collecting
+ * and it is able to render it in different data representations
  */
 public class Info<T extends Map<String, ?>>
 {
     private T _info;
 
     /**
-     * Constructor.   
+     * Constructor.
+     *
      * @param info instantiates the object with a Map<String,?>
      */
     public Info(T info)
@@ -65,24 +66,32 @@ public class Info<T extends Map<String, ?>>
     }
 
     /**
-     * Renders Info map to a property object  
-     * @return A Properties object representing the Info map  
+     * Renders Info map to a property object
+     *
+     * @return A Properties object representing the Info map
      */
-    public Properties toProps() {
+    public Properties toProps()
+    {
         Properties props = new Properties();
-        if (null==_info) return null;
-        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();) {
-          String key = it.next();
-          props.put(key, _info.get(key));  
+        if (null == _info)
+        {
+            return null;
+        }
+        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();)
+        {
+            String key = it.next();
+            props.put(key, _info.get(key));
         }
         return props;
     }
-    
+
     /**
-     * Renders Info map to a StringBuffer  
-     * @return A StringBuffer object representing the Info map  
+     * Renders Info map to a StringBuffer
+     *
+     * @return A StringBuffer object representing the Info map
      */
-    public StringBuffer toStringBuffer() {
+    public StringBuffer toStringBuffer()
+    {
         StringBuffer sb = new StringBuffer();
         for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();)
         {
@@ -91,37 +100,42 @@ public class Info<T extends Map<String, ?>>
         }
         return sb;
     }
-    
+
     /**
-     * Renders Info map to a StringBuffer containing an XML string  
-     * @return A StringBuffer object containing an XML representation of the Info map  
+     * Renders Info map to a StringBuffer containing an XML string
+     *
+     * @return A StringBuffer object containing an XML representation of the Info map
      */
-    public StringBuffer toXML() 
+    public StringBuffer toXML()
     {
         XMLWriter xw = new XMLWriter(new StringBuffer());
         xw.writeXMLHeader();
         Map<String, String> attr = new HashMap<String, String>();
         xw.writeOpenTag("qpidinfo", attr);
         String key;
-        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();) {
+        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();)
+        {
             attr.clear();
             key = it.next();
-            xw.writeTag(key, attr, _info.get(key).toString());  
-          }
+            xw.writeTag(key, attr, _info.get(key).toString());
+        }
         xw.writeCloseTag("qpidinfo");
         return xw.getXML();
     }
-    
+
     /**
-     * Renders Info map to a HashMap  
-     * @return A HashMap object representing the Info map  
+     * Renders Info map to a HashMap
+     *
+     * @return A HashMap object representing the Info map
      */
-    public HashMap<String,String> toMap() {
+    public HashMap<String, String> toMap()
+    {
         String key;
-        HashMap<String,String> infoMap = new HashMap<String,String>();
-        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();) {
+        HashMap<String, String> infoMap = new HashMap<String, String>();
+        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();)
+        {
             key = it.next();
-            infoMap.put(key, _info.get(key).toString());  
+            infoMap.put(key, _info.get(key).toString());
         }
         return infoMap;
     }
