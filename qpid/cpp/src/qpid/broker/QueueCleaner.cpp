@@ -46,9 +46,25 @@ void QueueCleaner::Task::fire()
     parent.fired();
 }
 
+namespace {
+struct CollectQueues
+{
+    std::vector<Queue::shared_ptr>* queues;
+    CollectQueues(std::vector<Queue::shared_ptr>* q) : queues(q) {}
+    void operator()(Queue::shared_ptr q)
+    {
+        queues->push_back(q);
+    }
+};
+}
+
 void QueueCleaner::fired()
 {
-    queues.eachQueue(boost::bind(&Queue::purgeExpired, _1));
+    //collect copy of list of queues to avoid holding registry lock while we perform purge
+    std::vector<Queue::shared_ptr> copy;
+    CollectQueues collect(&copy);
+    queues.eachQueue(collect);
+    std::for_each(copy.begin(), copy.end(), boost::bind(&Queue::purgeExpired, _1));
     task->setupNextFire();
     timer.add(task);
 }
