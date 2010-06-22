@@ -76,8 +76,14 @@ struct ConnectionTimeoutTask : public sys::TimerTask {
     }
 };
 
-Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_,
-                       const qpid::sys::SecuritySettings& external, bool isLink_, uint64_t objectId, bool shadow_) :
+Connection::Connection(ConnectionOutputHandler* out_,
+                       Broker& broker_, const
+                       std::string& mgmtId_,
+                       const qpid::sys::SecuritySettings& external,
+                       bool isLink_,
+                       uint64_t objectId_,
+                       bool shadow_,
+                       bool delayManagement) :
     ConnectionState(out_, broker_),
     securitySettings(external),
     adapter(*this, isLink_, shadow_),
@@ -89,26 +95,30 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     agent(0),
     timer(broker_.getTimer()),
     errorListener(0),
+    objectId(objectId_),
     shadow(shadow_)
 {
-    Manageable* parent = broker.GetVhostObject();
-
     if (isLink)
         links.notifyConnection(mgmtId, this);
+    // In a cluster, allow adding the management object to be delayed.
+    if (!delayManagement) addManagementObject();
+    if (!isShadow()) broker.getConnectionCounter().inc_connectionCount();
+}
 
-    if (parent != 0)
-    {
-        agent = broker_.getManagementAgent();
-
-        // TODO set last bool true if system connection
+void Connection::addManagementObject() {
+    assert(agent == 0);
+    assert(mgmtObject == 0);
+    Manageable* parent = broker.GetVhostObject();
+    if (parent != 0) {
+        agent = broker.getManagementAgent();
         if (agent != 0) {
+            // TODO set last bool true if system connection
             mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
             mgmtObject->set_shadow(shadow);
             agent->addObject(mgmtObject, objectId);
         }
         ConnectionState::setUrl(mgmtId);
     }
-    if (!isShadow()) broker.getConnectionCounter().inc_connectionCount();
 }
 
 void Connection::requestIOProcessing(boost::function0<void> callback)

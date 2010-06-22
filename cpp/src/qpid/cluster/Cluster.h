@@ -97,6 +97,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void leave();
 
     // Update completed - called in update thread
+    void updateInClosed();
     void updateInDone(const ClusterMap&);
     void updateInRetracted();
 
@@ -277,7 +278,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     bool lastBroker;
     sys::Thread updateThread;
     boost::optional<ClusterMap> updatedMap;
-    bool updateRetracted;
+    bool updateRetracted, updateClosed;
     ErrorCheck error;
     UpdateReceiver updateReceiver;
     ClusterTimer* timer;
