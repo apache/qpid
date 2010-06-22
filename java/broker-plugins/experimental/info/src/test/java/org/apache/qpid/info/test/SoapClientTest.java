@@ -38,7 +38,7 @@ import org.apache.qpid.info.util.SoapClient;
 public class SoapClientTest extends TestCase
 {
 
-    private final int port = 9000;
+    private final int port = 9900;
 
     private final String hostName = "localhost";
 

@@ -18,10 +18,10 @@ nn - or more contributor license agreements.  See the NOTICE file
  - under the License.
  -
  -->
-<project name="AMQ Broker-Plugins" default="build">
+<project name="AMQ Broker Info Plugin" default="build">
 
-    <property name="module.depends" value="common management/common broker broker-plugins"/>
-    <property name="module.test.depends" value="test broker/test"/>
+    <property name="module.depends" value="common broker broker-plugins"/>
+    <property name="module.test.depends" value="test broker/test management/common client systests"/>
     <property name="module.manifest" value="MANIFEST.MF"/>
     <property name="module.plugin" value="true"/>
 
