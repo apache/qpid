@@ -24,6 +24,31 @@ package org.apache.qpid.info.util;
 import java.util.*;
 import java.io.*;
 
+/**
+ * This class is simple implementation of an ini file reader. It expects a 
+ * file with the following structure:
+ * 
+ * ; global values, can be overwritten in sections 
+ * key1=value1
+ * key2=value2
+ * 
+ * [Section1]
+ * key1=value1_new  ; overwriting the global key1
+ * key3=value3
+ * key4=value4
+ * 
+ * [Section2]
+ * key5=value5
+ * key6=value6
+ * key7=value7
+ * 
+ * Note: Commentaries are preceded by ; or # and are supported throughout
+ *       A commentary line at the end of section is interpreted as 
+ *       a section end marker
+ * 
+ * A structure <String,Properties> (section name, associated properties)  
+ * is generated as a result of processing the ini file. 
+ */
 public class IniFileReader
 {
     private final Map<String, Properties> sections;

@@ -38,7 +38,7 @@ import org.apache.qpid.info.util.SoapClient;
 public class SoapClientTest extends TestCase
 {
 
-    private final int port = 9900;
+    private final int port = 9100;
 
     private final String hostName = "localhost";
 
@@ -148,12 +148,29 @@ public class SoapClientTest extends TestCase
         sc.sendSOAPMessage();
         socketAcceptor.join(2000);
     }
-
-    public void testSoapClientFailure() throws Exception
-    {
-        SoapClient sc = new SoapClient(null, null);
-        assertNull("No response expected for the failure test", sc
-                .sendSOAPMessage());
+    
+    public void testSoapClientXMLData() {
+        SoapClient sc = getSoapClient();
+        StringBuffer sb = new StringBuffer("<?xml version=\"1.0\"?><ip=@IP><port=@PORT>");
+        sc.setXMLData(sb);
+        assertEquals(sc.getXMLData().length(),sb.length());
+        assertEquals("getXMLData does not return the same StringBuffer set by setXMLData",sb.toString(),sc.getXMLData().toString());
     }
+    
+    public void testReplaceVariablesMap() {
+        Properties props = new Properties();        
+        props.setProperty("soap.hostname", hostName);
+        props.setProperty("soap.port", port + "");
+        props.setProperty("soap.urlpath", urlPath);     
+        props.setProperty("soap.action", "send");
+        props.setProperty("soap.envelope", "<addr>@IP:@PORT</addr>");
+        HashMap<String, String> soapmap = new HashMap<String, String>();
+        soapmap.put("IP", "127.0.0.1");
+        soapmap.put("PORT","8080");     
+        SoapClient sc = new SoapClient(soapmap,props);
+        assertNotNull("SoapClient is null",sc);
+        assertTrue("Replace variables did not work as expected","<addr>127.0.0.1:8080</addr>".equals(sc.getXMLData().toString()));
+    }
+    
 
 }
