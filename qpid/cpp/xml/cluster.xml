@@ -134,7 +134,9 @@
     </control>
 
     <!-- Marks the cluster-wide point when a connection is considered closed. -->
-    <control name="deliver-close" code="0x2"/>
+    <control name="deliver-close" code="0x2">
+      <field name="aborted" type="bit"/>
+    </control>
 
     <!-- Permission to generate output up to the limit. -->
     <control name="deliver-do-output" code="0x3">

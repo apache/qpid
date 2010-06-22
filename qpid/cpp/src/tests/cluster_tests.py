@@ -255,7 +255,7 @@ class LongTests(BrokerTest):
                 StoppableThread.stop(self)
 
         # def test_management
-        args=["--mgmt-pub-interval", 1] # Publish management information every second.
+        args = ["--mgmt-pub-interval", 1] # Publish management information every second.
         # Use store if present.
         if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
         cluster = self.cluster(3, args)

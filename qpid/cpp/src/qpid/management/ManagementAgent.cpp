@@ -2321,6 +2321,23 @@ void ManagementAgent::importAgents(qpid::framing::Buffer& inBuf) {
     }
 }
 
+namespace {
+bool isNotDeleted(const ManagementObjectMap::value_type& value) {
+    return !value.second->isDeleted();
+}
+
+size_t countNotDeleted(const ManagementObjectMap& map) {
+    return std::count_if(map.begin(), map.end(), isNotDeleted);
+}
+
+void dumpMap(std::ostream& o, const ManagementObjectMap& map) {
+    for (ManagementObjectMap::const_iterator i = map.begin(); i != map.end(); ++i) {
+        if (!i->second->isDeleted())
+            o << endl << "   " << i->second->getObjectId().getV2Key();
+    }
+}
+} // namespace
+
 string ManagementAgent::debugSnapshot() {
     ostringstream msg;
     msg << " management snapshot:";
@@ -2328,8 +2345,8 @@ string ManagementAgent::debugSnapshot() {
          i != remoteAgents.end(); ++i)
         msg << " " << i->second->routingKey;
     msg << " packages: " << packages.size();
-    msg << " objects: " << managementObjects.size();
-    msg << " new objects: " << newManagementObjects.size();
+    msg << " objects: " << countNotDeleted(managementObjects);
+    msg << " new objects: " << countNotDeleted(newManagementObjects);
     return msg.str();
 }
 

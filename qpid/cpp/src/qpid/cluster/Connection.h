@@ -170,7 +170,7 @@ class Connection :
                   const std::string& initFrames);
     void close();
     void abort();
-    void deliverClose();
+    void deliverClose(bool);
 
     OutputInterceptor& getOutput() { return output; }
 
@@ -194,6 +194,7 @@ class Connection :
         bool isLink;
         uint64_t objectId;
         bool shadow;
+        bool delayManagement;
 
         ConnectionCtor(
             sys::ConnectionOutputHandler* out_,
@@ -202,14 +203,19 @@ class Connection :
             const qpid::sys::SecuritySettings& external_,
             bool isLink_=false,
             uint64_t objectId_=0,
-            bool shadow_=false
+            bool shadow_=false,
+            bool delayManagement_=false
         ) : out(out_), broker(broker_), mgmtId(mgmtId_), external(external_),
-            isLink(isLink_), objectId(objectId_), shadow(shadow_)
+            isLink(isLink_), objectId(objectId_), shadow(shadow_),
+            delayManagement(delayManagement_)
         {}
 
         std::auto_ptr<broker::Connection> construct() {
             return std::auto_ptr<broker::Connection>(
-                new broker::Connection(out, broker, mgmtId, external, isLink, objectId, shadow));
+                new broker::Connection(
+                    out, broker, mgmtId, external, isLink, objectId,
+                    shadow, delayManagement)
+            );
         }
     };
 

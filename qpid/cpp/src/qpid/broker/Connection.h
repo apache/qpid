@@ -79,9 +79,15 @@ class Connection : public sys::ConnectionInputHandler,
         virtual void connectionError(const std::string&) = 0;
     };
 
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId,
+    Connection(sys::ConnectionOutputHandler* out,
+               Broker& broker,
+               const std::string& mgmtId,
                const qpid::sys::SecuritySettings&,
-               bool isLink = false, uint64_t objectId = 0, bool shadow=false);
+               bool isLink = false,
+               uint64_t objectId = 0,
+               bool shadow=false,
+               bool delayManagement = false);
+
     ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */
@@ -139,6 +145,9 @@ class Connection : public sys::ConnectionInputHandler,
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }
 
+    /** Cluster delays adding management object in the constructor then calls this. */
+    void addManagementObject();
+
     const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
     { 
         return securitySettings;
@@ -166,6 +175,7 @@ class Connection : public sys::ConnectionInputHandler,
     boost::intrusive_ptr<sys::TimerTask> heartbeatTimer;
     boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
     ErrorListener* errorListener;
+    uint64_t objectId;
     bool shadow;
 
   public:
