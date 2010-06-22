@@ -196,6 +196,46 @@ class AlternateExchangeTests(TestBase010):
         session.exchange_delete(exchange="onealternate")
         session.exchange_delete(exchange="alt1")
 
+    def test_queue_autodelete(self):
+        """
+        Test that messages in a queue being auto-deleted are delivered
+        to the alternate-exchange if specified, including messages
+        that are acquired but not accepted
+        """
+        session = self.session
+        #set up a 'dead letter queue':
+        session.exchange_declare(exchange="dlq", type="fanout")
+        session.queue_declare(queue="deleted", exclusive=True, auto_delete=True)
+        session.exchange_bind(exchange="dlq", queue="deleted")
+        session.message_subscribe(destination="dlq", queue="deleted")
+        session.message_flow(destination="dlq", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="dlq", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
+        dlq = session.incoming("dlq")
+
+        #on a separate session, create an auto-deleted queue using the
+        #dlq as its alternate exchange (handling of auto-delete is
+        #different for exclusive and non-exclusive queues, so test
+        #both modes):
+        for mode in [True, False]:
+            session2 = self.conn.session("another-session")
+            session2.queue_declare(queue="my-queue", alternate_exchange="dlq", exclusive=mode, auto_delete=True)
+            #send it some messages:
+            dp=session2.delivery_properties(routing_key="my-queue")
+            session2.message_transfer(message=Message(dp, "One"))
+            session2.message_transfer(message=Message(dp, "Two"))
+            session2.message_transfer(message=Message(dp, "Three"))
+            session2.message_subscribe(destination="incoming", queue="my-queue")
+            session2.message_flow(destination="incoming", unit=session.credit_unit.message, value=1)
+            session2.message_flow(destination="incoming", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
+            self.assertEqual("One", session2.incoming("incoming").get(timeout=1).body)
+            session2.close()
+
+            #check the messages were delivered to the dlq:
+            self.assertEqual("One", dlq.get(timeout=1).body)
+            self.assertEqual("Two", dlq.get(timeout=1).body)
+            self.assertEqual("Three", dlq.get(timeout=1).body)
+            self.assertEmpty(dlq)
+
 
     def assertEmpty(self, queue):
         try:
