@@ -61,9 +61,12 @@ QPID_COMMON_EXTERN bool isCluster();
  * and provides functions to assist detecting bugs in cluster
  * behavior.
  */
-struct ClusterSafeScope {
+class ClusterSafeScope {
+  public:
     ClusterSafeScope();
     ~ClusterSafeScope();
+  private:
+    bool save;
 };
 
 /**
