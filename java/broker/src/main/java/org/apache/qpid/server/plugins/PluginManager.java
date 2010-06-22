@@ -114,6 +114,7 @@ public class PluginManager implements Closeable
                 "org.osgi.util.tracker; version=1.0.0," +
                 "org.apache.qpid.junit.extensions.util; version=0.7," +
                 "org.apache.qpid; version=0.7," +
+                "org.apache.qpid.common; version=0.7," +
                 "org.apache.qpid.exchange; version=0.7," +
                 "org.apache.qpid.framing; version=0.7," +
                 "org.apache.qpid.protocol; version=0.7," +

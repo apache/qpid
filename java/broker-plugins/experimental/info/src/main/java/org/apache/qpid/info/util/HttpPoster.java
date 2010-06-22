@@ -36,62 +36,92 @@ import java.util.Properties;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 
-public class HttpPoster implements Runnable {
-    private final String url;       														  
-    private final Hashtable<String,String> header;
+public class HttpPoster implements Runnable
+{
+    private final String url;
+
+    private final Hashtable<String, String> header;
+
     private final List<String> response = new ArrayList<String>();
-    private final StringBuffer _buf; 
-    //
-    public HttpPoster(Properties props, StringBuffer buf) 
+
+    private final StringBuffer _buf;
+
+    /**
+     * Constructor
+     * @param props  Properties containing the URL 
+     * @param buf    Buffer containing the message to be posted
+     */
+    public HttpPoster(Properties props, StringBuffer buf)
     {
-    	_buf = buf;
-    	if (null!= props) {
-    	    url = props.getProperty("URL");
-    	    header = new Hashtable<String, String>();
-    	    String hostname = props.getProperty("hostname");
-    	    if (null!= hostname) header.put("hostname", hostname);
-    	} else {
-    	    url = null;
-    	    header = null;
-    	}
-    }	
-    //
-	@Override
-	public void run() 
+        _buf = buf;
+        if (null != props)
         {
-	    if (null==url) return;
-		String line;
-		URL urlDest;
-		URLConnection urlConn;
-		try {
-			urlDest = new URL(url);
-			urlConn = urlDest.openConnection();
-	       	urlConn.setDoOutput(true);
-	       	urlConn.setUseCaches(false);
-	       	for (Iterator<String> it=header.keySet().iterator(); it.hasNext();) {
-				String prop = (String)it.next();
-				urlConn.setRequestProperty(prop, header.get(prop));
-			}
-	       	OutputStreamWriter wr = new OutputStreamWriter(urlConn.getOutputStream());
+            url = props.getProperty("http.url");
+            header = new Hashtable<String, String>();
+            try
+            {
+              String hostname = InetAddress.getLocalHost().getHostName();
+              header.put("hostname", hostname);
+            } catch (UnknownHostException e)
+            {
+               // Silently ignoring the error ;)
+            }
+        } else
+        {
+            url = null;
+            header = null;
+        }
+    }
+    /**
+     * Posts the message from the _buf StringBuffer to the http server
+     */
+    public void run()
+    {
+        if (null == url)
+            return;
+        String line;
+        URL urlDest;
+        URLConnection urlConn;
+        try
+        {
+            urlDest = new URL(url);
+            urlConn = urlDest.openConnection();
+            urlConn.setDoOutput(true);
+            urlConn.setUseCaches(false);
+            for (Iterator<String> it = header.keySet().iterator(); it.hasNext();)
+            {
+                String prop = (String) it.next();
+                urlConn.setRequestProperty(prop, header.get(prop));
+            }
+            OutputStreamWriter wr = new OutputStreamWriter(urlConn
+                    .getOutputStream());
             wr.write(_buf.toString());
             wr.flush();
             // Get the response
-            BufferedReader rd = new BufferedReader(new InputStreamReader(urlConn.getInputStream()));
-            while ((line = rd.readLine()) != null) {
+            BufferedReader rd = new BufferedReader(new InputStreamReader(
+                    urlConn.getInputStream()));
+            while ((line = rd.readLine()) != null)
+            {
                 response.add(line);
-            }                 
-		} catch (Exception ex) {
-			return;
-		} 
-	}
-		
-	public List<String> getResponse() 
+            }
+        } catch (Exception ex)
         {
-	    return response;
-	}
-	
-}
+            return;
+        }
+    }
+    
+    /**
+     * Retrieves the response from the http server
+     * @return List<String> response received from the http server
+     */
+    public List<String> getResponse()
+    {
+        return response;
+    }
 
+}

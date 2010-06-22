@@ -35,52 +35,73 @@ import junit.framework.TestCase;
 public class HttpPosterTest extends TestCase
 {
 
-    private HttpPoster hp;
-
-    private Properties props;
-
-    private StringBuffer sb;
-
     private ServletTester tester;
 
     private String baseURL;
 
     private final String contextPath = "/info";
 
+    /*
+     * This method generates a dummy HttpPoster with a dummy body containing a
+     * single line. The url we are posting to can be controlled by the parameter
+     * url
+     * 
+     * @param url
+     */
+    private HttpPoster getHttpPoster(String url)
+    {
+        StringBuffer sb = new StringBuffer("test=TEST");
+        Properties props = new Properties();
+        props.put("http.url", url);
+        return new HttpPoster(props, sb);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see junit.framework.TestCase#setUp()
+     */
     protected void setUp() throws Exception
     {
-        super.setUp();
-
         tester = new ServletTester();
         tester.setContextPath("/");
         tester.addServlet(InfoServlet.class, contextPath);
         baseURL = tester.createSocketConnector(true);
         tester.start();
-        //       
-        props = new Properties();
-        props.put("URL", baseURL + contextPath);
-        props.put("hostname", "localhost");
-        sb = new StringBuffer("test=TEST");
-        hp = new HttpPoster(props, sb);
-
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see junit.framework.TestCase#tearDown()
+     */
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        hp = null;
-        props = null;
-        sb = null;
         tester.stop();
     }
 
-    public void testHttpPoster()
+    /*
+     * This test is posting a string to an embedded Jetty Servlet and captures
+     * the response message. If the servlet receives the message ok, it will
+     * print Ok. A failure test is following where we post to a non-existent URL
+     */
+    public void testHttpPoster() throws Exception
     {
+        // Test HttpPoster posts correctly to the servlet
+        HttpPoster hp = getHttpPoster(baseURL + contextPath);
         assertNotNull(hp);
         hp.run();
         List<String> response = hp.getResponse();
         assertTrue(response.size() > 0);
         assertEquals("OK <br>", response.get(0).toString());
+
+        // Failure Test
+        hp = getHttpPoster("http://localhost/nonexistent");
+        hp.run();
+        response = hp.getResponse();
+        assertTrue(response.size() == 0);
+
     }
 
 }
