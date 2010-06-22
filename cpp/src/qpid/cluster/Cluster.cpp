@@ -194,7 +194,7 @@ namespace _qmf = ::qmf::org::apache::qpid::cluster;
  * Currently use SVN revision to avoid clashes with versions from
  * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 904565;
+const uint32_t Cluster::CLUSTER_VERSION = 956001;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
@@ -269,6 +269,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     lastAliveCount(0),
     lastBroker(false),
     updateRetracted(false),
+    updateClosed(false),
     error(*this)
 {
     // We give ownership of the timer to the broker and keep a plain pointer.
@@ -863,6 +864,14 @@ void Cluster::updateStart(const MemberId& updatee, const Url& url, Lock& l) {
                          connectionSettings(settings)));
 }
 
+// Called in network thread
+void Cluster::updateInClosed() {
+    Lock l(lock);
+    assert(!updateClosed);
+    updateClosed = true;
+    checkUpdateIn(l);
+}
+
 // Called in update thread.
 void Cluster::updateInDone(const ClusterMap& m) {
     Lock l(lock);
@@ -879,6 +888,7 @@ void Cluster::updateInRetracted() {
 
 void Cluster::checkUpdateIn(Lock& l) {
     if (state != UPDATEE) return; // Wait till we reach the stall point.
+    if (!updateClosed) return;  // Wait till update connection closes.
     if (updatedMap) { // We're up to date
         map = *updatedMap;
         failoverExchange->setUrls(getUrls(l));
@@ -895,6 +905,7 @@ void Cluster::checkUpdateIn(Lock& l) {
     }
     else if (updateRetracted) { // Update was retracted, request another update
         updateRetracted = false;
+        updateClosed = false;
         state = JOINER;
         QPID_LOG(notice, *this << " update retracted, sending new update request.");
         mcast.mcastControl(ClusterUpdateRequestBody(ProtocolVersion(), myUrl.str()), self);

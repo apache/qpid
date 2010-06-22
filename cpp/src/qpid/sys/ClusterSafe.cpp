@@ -43,8 +43,15 @@ void assertClusterSafe()  {
     }
 }
 
-ClusterSafeScope::ClusterSafeScope() { inContext = true; }
-ClusterSafeScope::~ClusterSafeScope() { inContext = false; }
+ClusterSafeScope::ClusterSafeScope() {
+    assert(!inContext);
+    inContext = true;
+}
+
+ClusterSafeScope::~ClusterSafeScope() {
+    assert(inContext);
+    inContext = false;
+}
 
 void enableClusterSafe() { inCluster = true; }
 
