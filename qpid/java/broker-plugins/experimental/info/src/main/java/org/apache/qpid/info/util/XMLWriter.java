@@ -19,17 +19,16 @@
  *
  */
 
-/**
- * 
- * @author sorin
- * 
- *  Naive and rudimentary XML writer
- */
-
 package org.apache.qpid.info.util;
 
 import java.util.Map;
 
+/**
+ * 
+ *  Naive and rudimentary XML writer
+ *  It has methods to write the header, a tag with attributes 
+ *  and values. It escapes the XML special characters 
+ */
 public class XMLWriter
 {
 

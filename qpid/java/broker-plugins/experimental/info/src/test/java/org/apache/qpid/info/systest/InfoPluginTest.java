@@ -1,4 +1,4 @@
-package org.apache.qpid.info;
+package org.apache.qpid.info.systest;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
