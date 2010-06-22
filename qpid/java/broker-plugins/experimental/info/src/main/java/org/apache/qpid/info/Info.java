@@ -35,15 +35,24 @@ import java.util.Properties;
 
 import org.apache.qpid.info.util.XMLWriter;
 
+/**
+ * The Info class encapsulates all the informations we are collecting
+ * and it is able to render it in different data representations 
+ */
 public class Info<T extends Map<String, ?>>
 {
     private T _info;
 
+    /**
+     * Constructor.   
+     * @param info instantiates the object with a Map<String,?>
+     */
     public Info(T info)
     {
         _info = info;
     }
 
+    @Override
     public String toString()
     {
         String result = "";
@@ -55,21 +64,25 @@ public class Info<T extends Map<String, ?>>
         return result;
     }
 
-    public Properties toProps()
-    {
+    /**
+     * Renders Info map to a property object  
+     * @return A Properties object representing the Info map  
+     */
+    public Properties toProps() {
         Properties props = new Properties();
-        if (null == _info)
-            return null;
-        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();)
-        {
-            String key = it.next();
-            props.put(key, _info.get(key));
+        if (null==_info) return null;
+        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();) {
+          String key = it.next();
+          props.put(key, _info.get(key));  
         }
         return props;
     }
-
-    public StringBuffer toStringBuffer()
-    {
+    
+    /**
+     * Renders Info map to a StringBuffer  
+     * @return A StringBuffer object representing the Info map  
+     */
+    public StringBuffer toStringBuffer() {
         StringBuffer sb = new StringBuffer();
         for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();)
         {
@@ -78,22 +91,39 @@ public class Info<T extends Map<String, ?>>
         }
         return sb;
     }
-
-    public StringBuffer toXML()
+    
+    /**
+     * Renders Info map to a StringBuffer containing an XML string  
+     * @return A StringBuffer object containing an XML representation of the Info map  
+     */
+    public StringBuffer toXML() 
     {
         XMLWriter xw = new XMLWriter(new StringBuffer());
         xw.writeXMLHeader();
         Map<String, String> attr = new HashMap<String, String>();
         xw.writeOpenTag("qpidinfo", attr);
         String key;
-        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();)
-        {
+        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();) {
             attr.clear();
             key = it.next();
-            xw.writeTag(key, attr, _info.get(key).toString());
-        }
+            xw.writeTag(key, attr, _info.get(key).toString());  
+          }
         xw.writeCloseTag("qpidinfo");
         return xw.getXML();
+    }
+    
+    /**
+     * Renders Info map to a HashMap  
+     * @return A HashMap object representing the Info map  
+     */
+    public HashMap<String,String> toMap() {
+        String key;
+        HashMap<String,String> infoMap = new HashMap<String,String>();
+        for (Iterator<String> it = _info.keySet().iterator(); it.hasNext();) {
+            key = it.next();
+            infoMap.put(key, _info.get(key).toString());  
+        }
+        return infoMap;
     }
 
 }
