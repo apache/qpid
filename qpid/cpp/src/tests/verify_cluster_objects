@@ -46,17 +46,20 @@ class Broker:
 
     def get_objects(self):
         def ignore(name):
-            for m in (m for m in self.ignore_list if m.match(name)):
-                return True
+            for m in self.ignore_list:
+                if m.match(name): return True
         if self.objects is None:
             obj_list = []
+            ignored=0
             for c in self.qmf.all_classes():
                 for o in self.qmf.getObjects(_key=c, _broker=self.broker):
                     name=o.getObjectId().getObject()
                     if not ignore(name): obj_list.append(name)
+                    else: ignored += 1
             self.objects = set(obj_list)
             if (len(obj_list) != len(self.objects)):
                 raise Exception("Duplicates in object list for %s"%(self.url))
+            print "%d objects on %s, ignored %d."%(len(self.objects), self.url, ignored)
         return self.objects
 
     def compare(self,other):
@@ -81,7 +84,8 @@ class Broker:
         def first_address(url):
             """Python doesn't understand the brokers URL syntax. Extract a simple addres"""
             return re.compile("amqp:tcp:([^,]*)").match(url).group(1)
-        return [Broker(first_address(url), self.qmf) for url in clusters[0].members.split(";")]
+        return [Broker(first_address(url), self.qmf)
+                 for url in clusters[0].members.split(";")]
 
     def __del__(self): self.qmf.delBroker(self.broker)
 
@@ -89,12 +93,15 @@ def main(argv=None):
     if argv is None: argv = sys.argv
     qmf = Session()
     brokers = Broker(argv[1], qmf).get_cluster()
+    print "%d members in cluster."%(len(brokers))
     base = brokers.pop(0)
-    result = 0
-    for b in brokers:
-        if not base.compare(b): result = 1
-    del base
-    del brokers
-    return result
+    try:
+        for b in brokers:
+            if not base.compare(b): return 1
+        print "No differences."
+        return 0
+    finally:
+        del base
+        del brokers
 
 if __name__ == "__main__": sys.exit(main())
