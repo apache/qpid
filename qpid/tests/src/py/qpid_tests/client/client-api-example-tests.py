@@ -71,7 +71,7 @@ print "PYTHONPATH: " + os.environ["PYTHONPATH"]
 python_tools_path =  os.getenv("QPID_PYTHON_TOOLS", qpid_root + "/tools/src/py/")
 print "QPID_PYTHON_TOOLS: " + python_tools_path
 
-
+log = open('./client-api-example-tests.log', 'w')
 ############################################################################################
 
 # Paths to programs
@@ -113,7 +113,10 @@ class TestDrainSpout(unittest.TestCase):
   
     def cpp_receive(self, drainargs):
         args = shlex.split(cpp_drain + ' ' + drainargs)
-        return subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
+        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out = popen.communicate()[0]
+        popen.wait()
+        return out
 
     def cpp_start_listen(self, drainargs):
         args = shlex.split(cpp_drain + ' ' + drainargs)
@@ -125,7 +128,10 @@ class TestDrainSpout(unittest.TestCase):
 
     def python_receive(self, drainargs):
         args = shlex.split(python_drain + ' ' + drainargs)
-        return subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
+        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out = popen.communicate()[0]
+        popen.wait()
+        return out
 
     def python_start_listen(self, drainargs):
         args = shlex.split(python_drain + ' ' + drainargs)
@@ -137,7 +143,10 @@ class TestDrainSpout(unittest.TestCase):
   
     def java_receive(self, drainargs):
         args = shlex.split(java_drain + ' ' + drainargs)
-        return subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
+        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out = popen.communicate()[0]
+        popen.wait()
+        return out
 
     def java_start_listen(self, drainargs):
         args = shlex.split(java_drain + ' ' + drainargs)
@@ -147,7 +156,9 @@ class TestDrainSpout(unittest.TestCase):
 
     def test_hello_world(self):
         args = shlex.split(hello_world)
-        out = subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
+        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out = popen.communicate()[0]
+        popen.wait()
         self.assertTrue(out.find("world!") > 0)
 
     # Make sure qpid-config is working
@@ -188,24 +199,28 @@ class TestDrainSpout(unittest.TestCase):
         self.python_send(' hello-world')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_queue_listen_cpp_spout_cpp(self):
         popen = self.cpp_start_listen(' -t 5 "hello-world ; { create: always, delete:always }"')
         self.cpp_send(' hello-world')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_queue_listen_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "hello-world ; { create: always, delete:always }"')
         self.cpp_send(' hello-world')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_queue_listen_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "hello-world ; { create: always, delete:always }"')
         self.python_send(' hello-world')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     # Direct exchange
 
@@ -222,42 +237,49 @@ class TestDrainSpout(unittest.TestCase):
         self.cpp_send(' --content "xoxox" "amq.direct/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_direct_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.direct/hello"')
         self.cpp_send(' --content "xoxox" "amq.direct/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_direct_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.direct/hello"')
         self.python_send(' "amq.direct/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_direct_drain_cpp_spout_cpp(self):
         popen = self.cpp_start_listen(' -t 5 "amq.direct"')
         self.cpp_send(' --content "xoxox" "amq.direct"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_direct_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.direct"')
         self.cpp_send(' --content "xoxox" "amq.direct"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_direct_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.direct"')
         self.python_send(' "amq.direct"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_direct_drain_cpp_spout_cpp(self):
         popen = self.cpp_start_listen(' -t 5 "amq.direct/camel"')
         self.cpp_send(' --content "xoxox" "amq.direct/pig"')
         out = popen.communicate()[0]
         self.assertFalse(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_direct_drain_cpp_drain_cpp_spout_cpp(self):
         drain1 = self.cpp_start_listen(' -t 5 "amq.direct/camel"')
@@ -267,18 +289,22 @@ class TestDrainSpout(unittest.TestCase):
         out2 = drain2.communicate()[0]
         self.assertTrue(out1.find("xoxox") >= 0)
         self.assertTrue(out2.find("xoxox") >= 0)
+        drain1.wait()
+        drain2.wait()
 
     def test_direct_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.direct/camel"')
         self.cpp_send(' --content "xoxox" "amq.direct/pig"')
         out = popen.communicate()[0]
         self.assertFalse(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_direct_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.direct/camel"')
         self.python_send(' "amq.direct/pig"')
         out = popen.communicate()[0]
         self.assertFalse(out.find("Message") >= 0)
+        popen.wait()
 
     #  Fanout exchange
 
@@ -295,42 +321,49 @@ class TestDrainSpout(unittest.TestCase):
         self.cpp_send(' --content "xoxox" "amq.fanout/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_fanout_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.fanout/hello"')
         self.cpp_send(' --content "xoxox" "amq.fanout/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_fanout_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.fanout/hello"')
         self.python_send(' "amq.fanout/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_fanout_drain_cpp_spout_cpp(self):
         popen = self.cpp_start_listen(' -t 5 "amq.fanout"')
         self.cpp_send(' --content "xoxox" "amq.fanout"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_fanout_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.fanout"')
         self.cpp_send(' --content "xoxox" "amq.fanout"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_fanout_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.fanout"')
         self.python_send(' "amq.fanout"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_fanout_drain_cpp_spout_cpp(self):
         popen = self.cpp_start_listen(' -t 5 "amq.fanout/camel"')
         self.cpp_send(' --content "xoxox" "amq.fanout/pig"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_fanout_drain_cpp_drain_cpp_spout_cpp(self):
         drain1 = self.cpp_start_listen(' -t 5 "amq.fanout/camel"')
@@ -340,18 +373,22 @@ class TestDrainSpout(unittest.TestCase):
         out2 = drain2.communicate()[0]
         self.assertTrue(out1.find("xoxox") >= 0)
         self.assertTrue(out2.find("xoxox") >= 0)
+        drain1.wait()
+        drain2.wait()
 
     def test_fanout_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.fanout/camel"')
         self.cpp_send(' --content "xoxox" "amq.fanout/pig"')
         out = popen.communicate()[0]
         self.assertFalse(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_fanout_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.fanout/camel"')
         self.python_send(' "amq.fanout/pig"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
 
     #  Topic exchange
@@ -370,42 +407,49 @@ class TestDrainSpout(unittest.TestCase):
         self.cpp_send(' --content "xoxox" "amq.topic/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_topic_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.topic/hello"')
         self.cpp_send(' --content "xoxox" "amq.topic/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_topic_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.topic/hello"')
         self.python_send(' "amq.topic/hello"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_topic_drain_cpp_spout_cpp(self):
         popen = self.cpp_start_listen(' -t 5 "amq.topic"')
         self.cpp_send(' --content "xoxox" "amq.topic"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_topic_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.topic"')
         self.cpp_send(' --content "xoxox" "amq.topic"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_topic_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.topic"')
         self.python_send(' "amq.topic"')
         out = popen.communicate()[0]
         self.assertTrue(out.find("Message") >= 0)
+        popen.wait()
 
     def test_topic_drain_cpp_spout_cpp(self):
         popen = self.cpp_start_listen(' -t 5 "amq.topic/camel"')
         self.cpp_send(' --content "xoxox" "amq.topic/pig"')
         out = popen.communicate()[0]
         self.assertFalse(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_topic_drain_cpp_drain_cpp_spout_cpp(self):
         drain1 = self.cpp_start_listen(' -t 5 "amq.topic/camel"')
@@ -415,18 +459,22 @@ class TestDrainSpout(unittest.TestCase):
         out2 = drain2.communicate()[0]
         self.assertTrue(out1.find("xoxox") >= 0)
         self.assertTrue(out2.find("xoxox") >= 0)
+        drain1.wait()
+        drain2.wait()
 
     def test_topic_drain_python_spout_cpp(self):
         popen = self.python_start_listen(' -t 5 "amq.topic/camel"')
         self.cpp_send(' --content "xoxox" "amq.topic/pig"')
         out = popen.communicate()[0]
         self.assertFalse(out.find("xoxox") >= 0)
+        popen.wait()
 
     def test_topic_drain_cpp_spout_python(self):
         popen = self.cpp_start_listen(' -t 5 "amq.topic/camel"')
         self.python_send(' "amq.topic/pig"')
         out = popen.communicate()[0]
         self.assertFalse(out.find("Message") >= 0)
+        popen.wait()
 
     def test_topic_news_sports_weather_cpp(self):
         news = self.cpp_start_listen(' -t 10 "amq.topic/*.news"')
@@ -457,6 +505,11 @@ class TestDrainSpout(unittest.TestCase):
         self.assertTrue(out.find("europe.news") >= 0)        
         self.assertTrue(out.find("europe.sports") >= 0)        
         self.assertTrue(out.find("europe.weather") >= 0)        
+        news.wait()
+        weather.wait()
+        sports.wait()
+        usa.wait()
+        europe.wait()
 
 #    def test_topic_news_sports_weather_python(self):
 #    def test_topic_news_sports_weather_python_cpp(self):
@@ -470,6 +523,7 @@ class TestDrainSpout(unittest.TestCase):
         args = shlex.split(cpp_examples_path + 'client')
         client = subprocess.Popen(args, stdout=subprocess.PIPE)
         out = client.communicate()[0]
+        client.wait()
         self.assertTrue(out.find("BRILLIG") >= 0)
         server.terminate()
 
