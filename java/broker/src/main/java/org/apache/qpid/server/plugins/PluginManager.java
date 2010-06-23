@@ -35,7 +35,6 @@ import org.apache.felix.framework.util.StringMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.TopicConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
@@ -46,6 +45,7 @@ import org.apache.qpid.server.security.access.plugins.LegacyAccess;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.launch.Framework;
 import org.osgi.util.tracker.ServiceTracker;
 
 /**
@@ -59,7 +59,7 @@ public class PluginManager implements Closeable
     private static final int FELIX_STOP_TIMEOUT = 30000;
     private static final String VERSION = "2.6.0.4";
 
-    private Felix _felix;
+    private Framework _felix;
 
     private ServiceTracker _exchangeTracker = null;
     private ServiceTracker _securityTracker = null;
@@ -155,19 +155,6 @@ public class PluginManager implements Closeable
         _activator = new Activator();
         activators.add(_activator);
         configMap.put(SYSTEMBUNDLE_ACTIVATORS_PROP, activators);
-        
-        // Get the list of bundles to load
-        StringBuffer pluginJars = new StringBuffer();
-        if (pluginDir.isDirectory())
-        {
-            for (String file : pluginDir.list())            
-            {
-                if (file.endsWith(".jar"))
-                {
-                    pluginJars.append(String.format("file:%s%s%s ", pluginPath, File.separator, file));
-                }
-            }
-        }
 
         if (cachePath != null)
             {
@@ -180,19 +167,14 @@ public class PluginManager implements Closeable
             
             // Set plugin cache directory and empty it
             _logger.info("Cache bundles in directory " + cachePath);
-            configMap.put("org.osgi.framework.storage", cachePath);
+            configMap.put(FRAMEWORK_STORAGE, cachePath);
         }
-        configMap.put("org.osgi.framework.storage.clean", "onFirstInit");
+        configMap.put(FRAMEWORK_STORAGE_CLEAN, FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
         
-        // Set directory with plugins
-        _logger.info("Auto deploy bundles from directory " + pluginPath);
-
-        // Set list of auto-start plugin JAR files
-        configMap.put(AUTO_START_PROP + "." + FRAMEWORK_DEFAULT_STARTLEVEL, pluginJars.toString());
-        
-        // FIXME why does this not work?
+        // Set directory with plugins to auto-deploy
+        _logger.info("Auto deploying bundles from directory " + pluginPath);
         configMap.put(AUTO_DEPLOY_DIR_PROPERY, pluginPath);
-        configMap.put(AUTO_DEPLOY_ACTION_PROPERY, AUTO_DEPLOY_START_VALUE);        
+        configMap.put(AUTO_DEPLOY_ACTION_PROPERY, AUTO_DEPLOY_INSTALL_VALUE + "," + AUTO_DEPLOY_START_VALUE);        
         
         // Start plugin manager and trackers
         _felix = new Felix(configMap);
