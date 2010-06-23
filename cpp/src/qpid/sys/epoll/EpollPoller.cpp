@@ -262,7 +262,6 @@ class PollerPrivate {
     const int epollFd;
     bool isShutdown;
     InterruptHandle interruptHandle;
-    ::sigset_t sigMask;
     HandleSet registeredHandles;
     AtomicCount threadCount;
 
@@ -294,7 +293,6 @@ class PollerPrivate {
         epollFd(::epoll_create(DefaultFds)),
         isShutdown(false) {
         QPID_POSIX_CHECK(epollFd);
-        ::sigemptyset(&sigMask);
         // Add always readable fd into our set (but not listening to it yet)
         ::epoll_event epe;
         epe.events = 0;
@@ -562,17 +560,7 @@ Poller::Event Poller::wait(Duration timeout) {
     // Repeat until we weren't interrupted by signal
     do {
         PollerHandleDeletionManager.markAllUnusedInThisThread();
-        // Need to run on kernels without epoll_pwait()
-        // - fortunately in this case we don't really need the atomicity of epoll_pwait()
-#if 1
-        sigset_t os;
-        pthread_sigmask(SIG_SETMASK, &impl->sigMask, &os);
         int rc = ::epoll_wait(impl->epollFd, &epe, 1, timeoutMs);
-        pthread_sigmask(SIG_SETMASK, &os, 0);
-#else
-        int rc = ::epoll_pwait(impl->epollFd, &epe, 1, timeoutMs, &impl->sigMask);
-#endif
-
         if (rc ==-1 && errno != EINTR) {
             QPID_POSIX_CHECK(rc);
         } else if (rc > 0) {
