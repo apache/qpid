@@ -611,11 +611,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 {
                     stmt.close();
                 }
-
-                if (conn != null)
-                {
-                    conn.close();
-                }
             }
             catch(SQLException e)
             {
@@ -1018,11 +1013,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 {
                     stmt.close();
                 }
-
-                if (conn != null)
-                {
-                    conn.close();
-                }
             }
             catch (SQLException e)
             {
@@ -1083,11 +1073,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 if (stmt != null)
                 {
                     stmt.close();
-                }
-
-                if (conn != null)
-                {
-                    conn.close();
                 }
             }
             catch (SQLException e)
@@ -1274,11 +1259,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 {
                     stmt.close();
                 }
-
-                if (conn != null)
-                {
-                    conn.close();
-                }
             }
             catch (SQLException e)
             {
@@ -1345,11 +1325,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 if (stmt != null)
                 {
                     stmt.close();
-                }
-
-                if (conn != null)
-                {
-                    conn.close();
                 }
             }
             catch (SQLException e)
@@ -1449,11 +1424,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 {
                     stmt.close();
                 }
-
-                if (conn != null)
-                {
-                    conn.close();
-                }
             }
             catch (SQLException e)
             {
@@ -1537,11 +1507,6 @@ public class DerbyMessageStore extends AbstractMessageStore
                 if (stmt != null)
                 {
                     stmt.close();
-                }
-
-                if (conn != null)
-                {
-                    conn.close();
                 }
             }
             catch (SQLException e)
@@ -1693,7 +1658,7 @@ public class DerbyMessageStore extends AbstractMessageStore
                 stmt.close();
             }
 
-            if (inLocaltran && conn != null)
+            if (!inLocaltran && conn != null)
             {
                 conn.close();
             }
