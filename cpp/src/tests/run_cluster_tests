@@ -25,7 +25,7 @@ source $srcdir/ais_check
 test -x  $QPID_PYTHON_TEST || { echo Skipping test, $QPID_PYTHON_TEST not found; exit 0; }
 
 # Delete old cluster test data
-OUTDIR=brokertest.tmp
+OUTDIR=${OUTDIR:-brokertest.tmp}
 rm -rf $OUTDIR
 mkdir -p $OUTDIR
 
