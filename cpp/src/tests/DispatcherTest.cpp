@@ -161,12 +161,8 @@ int main(int /*argc*/, char** /*argv*/)
     wh->startWatch(poller);
 
     // Set up a regular itimer interupt
-
-    // Ignore signal in this thread
-    ::sigset_t sm;
-    ::sigemptyset(&sm);
-    ::sigaddset(&sm, SIGRTMIN);
-    ::pthread_sigmask(SIG_BLOCK, &sm, 0);
+    // We assume that this thread will handle the signals whilst sleeping
+    // as the Poller threads have signal handling blocked
 
     // Signal handling
     struct ::sigaction sa;
