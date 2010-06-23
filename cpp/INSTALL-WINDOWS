@@ -125,7 +125,7 @@ Now follow instruction for building from a source distribution in step (3).
 
 5. Tests
 ========
-See src/tests/README for details.
+See src/tests/README.txt for details.
 
 
 6. Doxygen
