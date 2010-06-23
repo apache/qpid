@@ -289,17 +289,18 @@
          <contains substring="${module.name}" string="${exclude.modules}" />
   </condition>
 
+  <property name="jvm.args" value=""/>
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
          unless="${dontruntest}" description="execute unit tests">
 
     <delete file="${module.failed}"/>
 
     <echo message="Using profile:${profile}" level="info"/>
-    <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
+    <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
-           failureproperty="test.failures" printsummary="on" timeout="600000" >
+           failureproperty="test.failures" printsummary="on" timeout="6000000" >
 
-      <jvmarg value="${jvm.args}"/>
+      <jvmarg line="${jvm.args}" />
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="amqj.server.logging.level" value="${amqj.server.logging.level}"/>
@@ -346,7 +347,7 @@
 
       <classpath refid="module.test.path"/>
 
-      <batchtest fork="${test.fork}" todir="${module.results}">
+      <batchtest todir="${module.results}">
         <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
           <include name="**/${test}.java"/>
         </fileset>
