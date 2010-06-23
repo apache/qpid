@@ -33,7 +33,7 @@ listener_SOURCES=listener.cpp
 listener_LDADD=$(CLIENT_LIB)
 
 EXTRA_DIST=                \
-	README             \
+	README.txt             \
 	CMakeLists.txt
 
 examples_DATA=             \
