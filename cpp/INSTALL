@@ -330,7 +330,7 @@ for qpid code outside the qpid/sys namespace should remain stable.
 
 6. Tests
 ========
-See src/tests/README for details.
+See src/tests/README.txt for details.
 
 
 7. Doxygen
