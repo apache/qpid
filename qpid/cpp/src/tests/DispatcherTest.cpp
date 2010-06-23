@@ -125,14 +125,10 @@ int main(int /*argc*/, char** /*argv*/)
     Poller::shared_ptr poller(new Poller);
 
     // Create dispatcher thread
-    Dispatcher d(poller);
-    Dispatcher d1(poller);
-    Dispatcher d2(poller);
-    Dispatcher d3(poller);
-    Thread dt(d);
-    Thread dt1(d1);
-    Thread dt2(d2);
-    Thread dt3(d3);
+    Thread dt(*poller);
+    Thread dt1(*poller);
+    Thread dt2(*poller);
+    Thread dt3(*poller);
 
     // Setup sender and receiver
     int sv[2];
