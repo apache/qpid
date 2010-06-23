@@ -260,34 +260,31 @@ class LongTests(BrokerTest):
         if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
         cluster = self.cluster(3, args)
         
-        clients = [] # Ordinary clients that only connect to one broker.
+        clients = [] # Per-broker list of clients that only connect to one broker.
         mclients = [] # Management clients that connect to every broker in the cluster.
 
-        def start_clients(broker, i):
-            """Start ordinary clients for a broker. Start one client per broker.
-            Round-robin on a colllection of different clients."""
+        def start_clients(broker):
+            """Start ordinary clients for a broker."""
             cmds=[
                 ["qpid-tool", "localhost:%s"%(broker.port())],
                 ["qpid-perftest", "--count", 50000,
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
                 ["testagent", "localhost", str(broker.port())] ]
-            clients.append([ClientLoop(broker, cmds[i%len(cmds)])])
+            clients.append([ClientLoop(broker, cmd) for cmd in cmds])
 
         def start_mclients(broker):
             """Start management clients that make multiple connections."""
             cmd = ["qpid-stat", "-b", "localhost:%s" %(broker.port())]
             mclients.append(ClientLoop(broker, cmd))
 
-        duration = max(self.duration(), 5)
-        endtime = time.time() + duration
+        endtime = time.time() + self.duration()
         alive = 0                       # First live cluster member
-        for i in range(len(cluster)):
-            start_clients(cluster[i], i)
+        for i in range(len(cluster)): start_clients(cluster[i])
         start_mclients(cluster[alive])
 
         while time.time() < endtime:
-            time.sleep(min(5,duration/2))
+            time.sleep(max(5,self.duration()/4))
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker, expect the clients to fail. 
             for c in clients[alive] + mclients: c.expect_fail()
@@ -301,7 +298,7 @@ class LongTests(BrokerTest):
             # Start another broker and clients
             alive += 1
             cluster.start()
-            start_clients(cluster[-1], len(cluster)-1)
+            start_clients(cluster[-1])
             start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()

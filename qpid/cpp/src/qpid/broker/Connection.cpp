@@ -71,7 +71,8 @@ struct ConnectionTimeoutTask : public sys::TimerTask {
     void fire() {
         // If we get here then we've not received any traffic in the timeout period
         // Schedule closing the connection for the io thread
-        QPID_LOG(error, "Connection timed out: closing");
+        QPID_LOG(error, "Connection " << connection.getMgmtId()
+                 << " timed out: closing");
         connection.abort();
     }
 };

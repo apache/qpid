@@ -240,10 +240,9 @@ class Popen(popen2.Popen3):
     def send_signal(self, sig):
         try: os.kill(self.pid,sig)
         except OSError,e: raise OSError("Kill failed %s: %s"%(self.pname, e))
-        self._cleanup()
 
-    def terminate(self): self.send_signal(signal.SIGTERM)
-    def kill(self): self.send_signal(signal.SIGKILL)
+    def terminate(self): self.send_signal(signal.SIGTERM); self._cleanup()
+    def kill(self): self.send_signal(signal.SIGKILL); self._cleanup()
 
     def cmd_str(self): return " ".join([str(s) for s in self.cmd])
 
