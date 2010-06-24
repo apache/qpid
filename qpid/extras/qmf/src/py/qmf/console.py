@@ -2381,7 +2381,7 @@ class Broker(Thread):
       #
       dp = msg.get("delivery_properties")
       rkey = None
-      if dp.routing_key:
+      if dp and dp.routing_key:
         rkey = dp.routing_key
         items = rkey.split('.')
         if len(items) >= 4:
