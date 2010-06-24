@@ -214,7 +214,7 @@ QPID_AUTO_TEST_CASE(testBadClientData) {
     ci->handle(poison);
     {
         ScopedSuppressLogging sl;
-        BOOST_CHECK_THROW(c0.session.queueQuery("q0"), TransportFailure);
+        BOOST_CHECK_THROW(c0.session.queueQuery("q0"), Exception);
     }
     Client c00(cluster[0]);
     BOOST_CHECK_EQUAL(c00.session.queueQuery("q00").getQueue(), "");
