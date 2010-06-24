@@ -114,6 +114,20 @@ namespace Org.Apache.Qpid.Messaging
                 Console.Write("{0} ", rawDataReadback4[i].ToString());
             Console.WriteLine();
 
+            //
+            // Guid factoids
+            //
+            Guid myGuid = new Guid("000102030405060708090a0b0c0d0e0f");
+            System.Type typeP = myGuid.GetType();
+            System.TypeCode typeCode = System.Type.GetTypeCode(typeP);
+
+            Console.WriteLine("Guid Type = {0}, TypeCode = {1}",
+                typeP.ToString(), typeCode.ToString());
+            // typeP="System.Guid", typeCode="Object"
+            byte[] guidReadback;
+            guidReadback = myGuid.ToByteArray();
+
+            Console.WriteLine("GuidReadback len = {0}", guidReadback.Length);
         }
     }
 }
