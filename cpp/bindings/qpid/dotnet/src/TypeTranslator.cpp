@@ -221,7 +221,25 @@ namespace Messaging {
             }
             break;
 
-            
+        case System::TypeCode::Object :
+            {
+                //
+                // Derived classes
+                //
+                if ("System.Guid" == typeP->ToString())
+                {
+                    cli::array<System::Byte> ^ guidBytes = ((System::Guid)managedValue).ToByteArray();
+                    pin_ptr<unsigned char> pinnedBuf = &guidBytes[0];
+                    ::qpid::types::Uuid newUuid = ::qpid::types::Uuid(pinnedBuf);
+                    qpidVariant = newUuid;
+                }
+                else
+                {
+                    throw gcnew System::NotImplementedException();
+                }
+            }
+            break;
+
         default:
 
             throw gcnew System::NotImplementedException();
@@ -318,6 +336,11 @@ namespace Messaging {
                 }
                 
             case ::qpid::types::VAR_UUID:
+                {
+                    System::String ^ elementValue = gcnew System::String(variant.asUuid().str().c_str());
+                    System::Guid ^ newGuid = System::Guid(elementValue);
+                    dict[elementName] = newGuid;
+                }
                 break;
             }
         }
@@ -406,6 +429,11 @@ namespace Messaging {
                 }
                 
             case ::qpid::types::VAR_UUID:
+                {
+                    System::String ^ elementValue = gcnew System::String(variant.asUuid().str().c_str());
+                    System::Guid ^ newGuid = System::Guid(elementValue);
+                    (*managedList).Add(newGuid);
+                }
                 break;
             }
         }

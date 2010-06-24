@@ -150,6 +150,9 @@ namespace Org.Apache.Qpid.Messaging.Examples
             Double myDouble = 13.13;
             content["myDouble"] = myDouble;
 
+            Guid myGuid = new Guid("000102030405060708090a0b0c0d0e0f");
+            content["myGuid"] = myGuid;
+
             //
             // Construct a message with the map content and send it synchronously
             // via the sender.
