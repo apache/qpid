@@ -685,6 +685,33 @@ class ReceiverTests(Base):
 
   # XXX: need testUnsettled()
 
+  def unreliabilityTest(self, mode="unreliable"):
+    msgs = [self.message("testUnreliable", i) for i in range(3)]
+    snd = self.ssn.sender("test-unreliability-queue; {create: sender, delete: receiver}")
+    rcv = self.ssn.receiver(snd.target)
+    for m in msgs:
+      snd.send(m)
+
+    # close without ack on reliable receiver, messages should be requeued
+    ssn = self.conn.session()
+    rrcv = ssn.receiver("test-unreliability-queue")
+    self.drain(rrcv, expected=msgs)
+    ssn.close()
+
+    # close without ack on unreliable receiver, messages should not be requeued
+    ssn = self.conn.session()
+    urcv = ssn.receiver("test-unreliability-queue; {link: {reliability: %s}}" % mode)
+    self.drain(urcv, expected=msgs, redelivered=True)
+    ssn.close()
+
+    self.assertEmpty(rcv)
+
+  def testUnreliable(self):
+    self.unreliabilityTest(mode="unreliable")
+
+  def testAtMostOnce(self):
+    self.unreliabilityTest(mode="at-most-once")
+
 class AddressTests(Base):
 
   def setup_connection(self):
