@@ -161,6 +161,7 @@ int main(int argc, char** argv)
                 message.getProperties()["spout-id"] = spoutid.str();
                 sender.send(message);
             }
+            session.sync();
             connection.close();
             return 0;
         } catch(const std::exception& error) {
