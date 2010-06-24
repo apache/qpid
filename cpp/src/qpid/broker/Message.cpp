@@ -55,8 +55,11 @@ Message::Message(const framing::SequenceNumber& id) :
 Message::Message(const Message& original) :
     PersistableMessage(), frames(original.frames), persistenceId(0), redelivered(false), loaded(false),
     staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
-    expiration(FAR_FUTURE), enqueueCallback(0), dequeueCallback(0),
-    inCallback(false), requiredCredit(0) {}
+    expiration(original.expiration), enqueueCallback(0), dequeueCallback(0),
+    inCallback(false), requiredCredit(0) 
+{
+    setExpiryPolicy(original.expiryPolicy);
+}
 
 Message::~Message()
 {
