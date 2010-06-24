@@ -141,7 +141,7 @@ bool Queue::isExcluded(boost::intrusive_ptr<Message>& msg)
     return traceExclude.size() && msg->isExcluded(traceExclude);
 }
 
-void Queue::deliver(boost::intrusive_ptr<Message>& msg){
+void Queue::deliver(boost::intrusive_ptr<Message> msg){
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg);

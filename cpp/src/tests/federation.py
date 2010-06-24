@@ -358,7 +358,7 @@ class FederationTests(TestBase010):
         for b, t in zip(body, trace):
             headers = {}
             if (t): headers["x-qpid.trace"]=t
-            dp = r_session.delivery_properties(routing_key="my-key")
+            dp = r_session.delivery_properties(routing_key="my-key", ttl=1000*60*5)
             mp = r_session.message_properties(application_headers=headers)
             r_session.message_transfer(destination="amq.direct", message=Message(dp, mp, b))
 
@@ -366,6 +366,8 @@ class FederationTests(TestBase010):
             msg = queue.get(timeout=5)
             self.assertEqual("yes", msg.body)
             self.assertEqual(e, self.getAppHeader(msg, "x-qpid.trace"))
+            assert(msg.get("delivery_properties").ttl > 0)
+            assert(msg.get("delivery_properties").ttl < 1000*60*50)
 
         try:
             extra = queue.get(timeout=1)

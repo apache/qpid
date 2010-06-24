@@ -211,7 +211,7 @@ namespace qpid {
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
              */
-            QPID_BROKER_EXTERN void deliver(boost::intrusive_ptr<Message>& msg);
+            QPID_BROKER_EXTERN void deliver(boost::intrusive_ptr<Message> msg);
             /**
              * Dispatches the messages immediately to a consumer if
              * one is available or stores it for later if not.
