@@ -262,7 +262,7 @@ void Connection::closed() {
             // until self-delivery of deliver-close.
             output.closeOutput();
             cluster.getMulticast().mcastControl(
-                ClusterConnectionDeliverCloseBody(ProtocolVersion(), false), self);
+                ClusterConnectionDeliverCloseBody(), self);
         }
     }
     catch (const std::exception& e) {
@@ -271,31 +271,26 @@ void Connection::closed() {
 }
 
 // Self-delivery of close message, close the connection.
-void Connection::deliverClose (bool aborted) {
-    QPID_LOG(debug, cluster << " replicated close of " << *this);
-    if (connection.get()) {
-        if (aborted) connection->abort();
-        else connection->closed();
-        connection.reset();
-    }
+void Connection::deliverClose () {
+    close();
     cluster.erase(self);
 }
 
 // Close the connection 
 void Connection::close() {
-    QPID_LOG(debug, cluster << " local close of " << *this);
     if (connection.get()) {
+        QPID_LOG(debug, cluster << " closed connection " << *this);
         connection->closed();
         connection.reset();
     }
 }
 
-// The connection has been killed for misbehaving, called in connection thread.
+// The connection has sent invalid data and should be aborted.
+// All members will get the same abort since they all process the same data.
 void Connection::abort() {
-    if (connection.get()) {
-        cluster.getMulticast().mcastControl(
-            ClusterConnectionDeliverCloseBody(ProtocolVersion(), true), self);
-    }
+    connection->abort();
+    // Aborting the connection will result in a call to ::closed()
+    // and allow the connection to close in an orderly manner.
 }
 
 // ConnectionCodec::decode receives read buffers from  directly-connected clients.

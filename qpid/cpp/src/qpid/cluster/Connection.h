@@ -170,7 +170,7 @@ class Connection :
                   const std::string& initFrames);
     void close();
     void abort();
-    void deliverClose(bool);
+    void deliverClose();
 
     OutputInterceptor& getOutput() { return output; }
 
