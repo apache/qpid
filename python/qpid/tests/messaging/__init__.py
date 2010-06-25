@@ -88,16 +88,22 @@ class Base(Test):
       self.assertEchos(expected, messages, redelivered)
     return messages
 
-  def diff(self, m1, m2):
+  def diff(self, m1, m2, excluded_properties=()):
     result = {}
     for attr in ("id", "subject", "user_id", "reply_to",
                  "correlation_id", "durable", "priority", "ttl",
-                 "redelivered", "properties", "content_type",
-                 "content"):
+                 "redelivered", "content_type", "content"):
       a1 = getattr(m1, attr)
       a2 = getattr(m2, attr)
       if a1 != a2:
         result[attr] = (a1, a2)
+    p1 = dict(m1.properties)
+    p2 = dict(m2.properties)
+    for ep in excluded_properties:
+      p1.pop(ep, None)
+      p2.pop(ep, None)
+    if p1 != p2:
+      result["properties"] = (p1, p2)
     return result
 
   def assertEcho(self, msg, echo, redelivered=False):
@@ -108,7 +114,7 @@ class Base(Test):
         echo = echo.content
         assert msg == echo, "expected %s, got %s" % (msg, echo)
     else:
-      delta = self.diff(msg, echo)
+      delta = self.diff(msg, echo, ("x-amqp-0-10.routing-key",))
       mttl, ettl = delta.pop("ttl", (0, 0))
       if redelivered:
         assert echo.redelivered, \

@@ -85,7 +85,9 @@ class MessageEchoTests(Base):
               "key6": -3.14,
               "key7": ["one", 2, 3.14],
               "key8": [],
-              "key9": {"sub-key0": 3}}
+              "key9": {"sub-key0": 3},
+              "x-amqp-0-10.app-id": "test-app-id",
+              "x-amqp-0-10.content-encoding": "test-content-encoding"}
 
   def testMapContent(self):
     self.check(Message(MessageEchoTests.TEST_MAP))
