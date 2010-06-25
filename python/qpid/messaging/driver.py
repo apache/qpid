@@ -1244,7 +1244,7 @@ class Engine:
     msg.priority = dp.priority
     msg.ttl = dp.ttl
     msg.redelivered = dp.redelivered
-    msg.properties = mp.application_headers
+    msg.properties = mp.application_headers or {}
     if mp.app_id is not None:
       msg.properties["x-amqp-0-10.app-id"] = mp.app_id
     if mp.content_encoding is not None:
