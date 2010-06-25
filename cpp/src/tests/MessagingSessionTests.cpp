@@ -712,6 +712,51 @@ QPID_AUTO_TEST_CASE(testOptionVerification)
     BOOST_CHECK_THROW(fix.session.createReceiver("my-queue; {invalid-option:blah}"), qpid::messaging::AddressError);    
 }
 
+QPID_AUTO_TEST_CASE(testReceiveSpecialProperties)
+{
+    QueueFixture fix;
+
+    qpid::client::Message out;
+    out.getDeliveryProperties().setRoutingKey(fix.queue);
+    out.getMessageProperties().setAppId("my-app-id");
+    out.getMessageProperties().setMessageId(qpid::framing::Uuid(true));
+    out.getMessageProperties().setContentEncoding("my-content-encoding");
+    fix.admin.send(out);
+
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(Duration::SECOND * 5);
+    BOOST_CHECK_EQUAL(in.getProperties()["x-amqp-0-10.routing-key"].asString(), out.getDeliveryProperties().getRoutingKey());
+    BOOST_CHECK_EQUAL(in.getProperties()["x-amqp-0-10.app-id"].asString(), out.getMessageProperties().getAppId());
+    BOOST_CHECK_EQUAL(in.getProperties()["x-amqp-0-10.content-encoding"].asString(), out.getMessageProperties().getContentEncoding());
+    BOOST_CHECK_EQUAL(in.getMessageId(), out.getMessageProperties().getMessageId().str());
+    fix.session.acknowledge(true);
+}
+
+QPID_AUTO_TEST_CASE(testSendSpecialProperties)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out("test-message");
+    std::string appId = "my-app-id";
+    std::string contentEncoding = "my-content-encoding";
+    out.getProperties()["x-amqp-0-10.app-id"] = appId;
+    out.getProperties()["x-amqp-0-10.content-encoding"] = contentEncoding;
+    out.setMessageId(qpid::framing::Uuid(true).str());
+    sender.send(out, true);
+
+    qpid::client::LocalQueue q;
+    qpid::client::SubscriptionManager subs(fix.admin.session);
+    qpid::client::Subscription s = subs.subscribe(q, fix.queue);
+    qpid::client::Message in = q.get();
+    s.cancel();
+    fix.admin.session.sync();
+
+    BOOST_CHECK_EQUAL(in.getMessageProperties().getAppId(), appId);
+    BOOST_CHECK_EQUAL(in.getMessageProperties().getContentEncoding(), contentEncoding);
+    BOOST_CHECK_EQUAL(in.getMessageProperties().getMessageId().str(), out.getMessageId());
+}
+
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
