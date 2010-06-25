@@ -129,7 +129,7 @@ public class AddressHelper
             options.setMaxSize(args.getInt(QpidQueueOptions.QPID_MAX_SIZE));
         }        
         
-        if (args.getInt(QpidQueueOptions.QPID_POLICY_TYPE) != null)
+        if (args.getString(QpidQueueOptions.QPID_POLICY_TYPE) != null)
         {
             options.setPolicyType(args.getString(QpidQueueOptions.QPID_POLICY_TYPE));
         }
@@ -278,7 +278,10 @@ public class AddressHelper
     
     private void fillInCommonNodeArgs(Node node,Map parent,MapAccessor argsMap)
     {
-        node.setDurable(nodeProps.getBoolean(DURABLE) == null? false : nodeProps.getBoolean(DURABLE));
+        if (nodeProps != null)
+        {
+            node.setDurable(nodeProps.getBoolean(DURABLE) == null? false : nodeProps.getBoolean(DURABLE));
+        }
         node.setAutoDelete(argsMap.getBoolean(AUTO_DELETE) == null? false : argsMap.getBoolean(AUTO_DELETE));
         node.setAlternateExchange(argsMap.getString(ALT_EXCHANGE));
         node.setBindings(getBindings(parent));
@@ -318,13 +321,16 @@ public class AddressHelper
             { 
                 MapAccessor capacityProps = new MapAccessor(
                         (Map)((Map)address.getOptions().get(LINK)).get(CAPACITY));
-                link.setConsumerCapacity(capacityProps.getInt(CAPACITY_SOURCE));
-                link.setProducerCapacity(capacityProps.getInt(CAPACITY_TARGET));
+                link.setConsumerCapacity(capacityProps.getInt(CAPACITY_SOURCE) == null ?
+                                         0 : capacityProps.getInt(CAPACITY_SOURCE));
+                link.setProducerCapacity(capacityProps.getInt(CAPACITY_TARGET) == null ?
+                                         0 : capacityProps.getInt(CAPACITY_TARGET));
             }
             else
             {
-                link.setConsumerCapacity(linkProps.getInt(CAPACITY));  
-                link.setProducerCapacity(linkProps.getInt(CAPACITY));
+                int cap = linkProps.getInt(CAPACITY) == null ? 0 : linkProps.getInt(CAPACITY);
+                link.setConsumerCapacity(cap);  
+                link.setProducerCapacity(cap);
             }
             link.setFilter(linkProps.getString(FILTER));
             // so far filter type not used
