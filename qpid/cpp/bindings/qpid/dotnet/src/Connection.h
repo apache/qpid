@@ -62,8 +62,15 @@ namespace Messaging {
         void SetOption(System::String ^ name, System::Object ^ value);
 
         void Open();
-        System::Boolean IsOpen();
         void Close();
+
+        property System::Boolean IsOpen
+        {
+            System::Boolean get ()
+            {
+                return connectionp->isOpen();
+            }
+        }
 
         // CreateTransactionalSession()
         Session ^ CreateTransactionalSession();

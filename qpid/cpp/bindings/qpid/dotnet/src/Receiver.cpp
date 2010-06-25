@@ -44,7 +44,7 @@ namespace Messaging {
     /// </summary>
 
     Receiver::Receiver(::qpid::messaging::Receiver * r,
-                       Session ^ sessRef) :
+                       Org::Apache::Qpid::Messaging::Session ^ sessRef) :
         receiverp(r),
         parentSession(sessRef)
     {
@@ -227,38 +227,8 @@ namespace Messaging {
         return newMessage;
     }
 
-    void Receiver::SetCapacity(System::UInt32 capacity)
-    {
-        receiverp->setCapacity(capacity);
-    }
-
-    System::UInt32 Receiver::GetCapacity()
-    {
-        return receiverp->getCapacity();
-    }
-
-    System::UInt32 Receiver::GetAvailable()
-    {
-        return receiverp->getAvailable();
-    }
-
-    System::UInt32 Receiver::GetUnsettled()
-    {
-        return receiverp->getUnsettled();
-    }
-
     void Receiver::Close()
     {
         receiverp->close();
-    }
-
-    System::String ^ Receiver::GetName()
-    {
-        return gcnew System::String(receiverp->getName().c_str());
-    }
-
-    Session ^ Receiver::GetSession()
-    {
-        return parentSession;
     }
 }}}}

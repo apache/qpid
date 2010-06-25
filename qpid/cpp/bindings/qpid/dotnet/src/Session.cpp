@@ -46,7 +46,8 @@ namespace Messaging {
     /// </summary>
 
     // constructor
-    Session::Session(::qpid::messaging::Session * sp, Connection ^ connRef) :
+    Session::Session(::qpid::messaging::Session * sp, 
+                     Org::Apache::Qpid::Messaging::Connection ^ connRef) :
         sessionp(sp),
         parentConnectionp(connRef)
     {
@@ -444,11 +445,10 @@ namespace Messaging {
 
     Sender ^ Session::GetSender(System::String ^ name)
     {
-        ::qpid::messaging::Sender * sender = new ::qpid::messaging::Sender;
+        ::qpid::messaging::Sender sender = ::qpid::messaging::Sender(
+            sessionp->::qpid::messaging::Session::getSender(QpidMarshal::ToNative(name)) );
 
-        *sender = sessionp->::qpid::messaging::Session::getSender(QpidMarshal::ToNative(name));
-
-        Sender ^ newSender = gcnew Sender(sender, this);
+        Sender ^ newSender = gcnew Sender(&sender, this);
 
         return newSender;
     }
@@ -457,21 +457,15 @@ namespace Messaging {
 
     Receiver ^ Session::GetReceiver(System::String ^ name)
     {
-        ::qpid::messaging::Receiver * receiver = new ::qpid::messaging::Receiver;
+        ::qpid::messaging::Receiver receiver = ::qpid::messaging::Receiver(
+            sessionp->::qpid::messaging::Session::getReceiver(QpidMarshal::ToNative(name)) );
 
-        *receiver = sessionp->::qpid::messaging::Session::getReceiver(QpidMarshal::ToNative(name));
-
-        Receiver ^ newReceiver = gcnew Receiver(receiver, this);
+        Receiver ^ newReceiver = gcnew Receiver(&receiver, this);
 
         return newReceiver;
     }
 
 
-
-    Connection ^ Session::GetConnection()
-    {
-        return parentConnectionp;
-    }
 
     void Session::CheckError()
     {

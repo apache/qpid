@@ -107,11 +107,6 @@ namespace Messaging {
         connectionp->open();
     }
 
-    System::Boolean Connection::IsOpen()
-    {
-        return connectionp->isOpen();
-    }
-
     void Connection::Close()
     {
         connectionp->close();

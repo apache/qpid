@@ -48,7 +48,7 @@ Namespace Org.Apache.Qpid.Messaging.Examples
                     s(3) = "And the mome raths outgrabe."
 
                     Dim request As Message = New Message("")
-                    request.SetReplyTo(responseQueue)
+                    request.ReplyTo = responseQueue
 
                     Dim i As Integer
                     For i = 0 To s.Length - 1

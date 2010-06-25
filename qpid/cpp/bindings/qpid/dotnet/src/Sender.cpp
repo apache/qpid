@@ -40,7 +40,7 @@ namespace Messaging {
     /// </summary>
 
     Sender::Sender(::qpid::messaging::Sender * s,
-                     Session ^ sessRef) :
+                     Org::Apache::Qpid::Messaging::Session ^ sessRef) :
         senderp(s),
         parentSession(sessRef)
     {
@@ -95,10 +95,5 @@ namespace Messaging {
     void Sender::Close()
     {
         senderp->close();
-    }
-
-    Session ^ Sender::GetSession()
-    {
-        return parentSession;
     }
 }}}}
