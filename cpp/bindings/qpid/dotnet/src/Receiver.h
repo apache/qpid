@@ -88,12 +88,66 @@ namespace Messaging {
         Message ^ Fetch();
         Message ^ Fetch(Duration ^ durationp);
 
-        void SetCapacity(System::UInt32 capacity);
-        System::UInt32 GetCapacity();
-        System::UInt32 GetAvailable();
-        System::UInt32 GetUnsettled();
+        //
+        // Capacity
+        //
+        property System::UInt32 Capacity
+        {
+            void set (System::UInt32 capacity)
+            {
+                receiverp->setCapacity(capacity);
+            }
+
+            System::UInt32 get ()
+            {
+                return receiverp->getCapacity();
+            }
+        }
+
+        //
+        // Available
+        //
+        property System::UInt32 Available
+        {
+            System::UInt32 get ()
+            {
+                return receiverp->getAvailable();
+            }
+        }
+
+        //
+        // Unsettled
+        //
+        property System::UInt32 Unsettled
+        {
+            System::UInt32 get ()
+            {
+                return receiverp->getUnsettled();
+            }
+        }
+
         void Close();
-        System::String ^ GetName();
-        Session ^ GetSession();
+        
+        //
+        // Name
+        //
+        property System::String ^ Name
+        {
+            System::String ^ get ()
+            {
+                return gcnew System::String(receiverp->getName().c_str());
+            }
+        }
+
+        //
+        // Session
+        //
+        property Org::Apache::Qpid::Messaging::Session ^ Session
+        {
+            Org::Apache::Qpid::Messaging::Session ^ get ()
+            {
+                return parentSession;
+            }
+        }
     };
 }}}}

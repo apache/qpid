@@ -158,190 +158,36 @@ namespace Messaging {
         }
     }
 
-
-    //
-    // ReplyTo
-    //
-    void Message::SetReplyTo(Address ^ address)
+	// Property
+    void Message::SetProperty(System::String ^ name, System::Object ^ value)
     {
-        messagep->setReplyTo(*(address->NativeAddress));
-    }
-
-    Address ^ Message::GetReplyTo()
-    {
-        const ::qpid::messaging::Address & addrp =
-            messagep->::qpid::messaging::Message::getReplyTo();
-
-        return gcnew Address(const_cast<::qpid::messaging::Address *>(&addrp));
-    }
-
-
-    //
-    // Subject
-    //
-    void Message::SetSubject(System::String ^ subject)
-    {
-        messagep->setSubject(QpidMarshal::ToNative(subject));
-    }
-    
-    System::String ^ Message::GetSubject()
-    {
-        return gcnew String(messagep->getSubject().c_str());
-    }
-    
-
-    //
-    // ContentType
-    //
-    void Message::SetContentType(System::String ^ ct)
-    {
-        messagep->setContentType(QpidMarshal::ToNative(ct));
-    }
-    
-	System::String ^ Message::GetContentType()
-    {
-		return gcnew String(messagep->::qpid::messaging::Message::getContentType().c_str());
-    }
-    
-    
-    //
-    // MessageId
-    //
-    void Message::SetMessageId(System::String ^ messageId)
-    {
-        messagep->setMessageId(QpidMarshal::ToNative(messageId));
-    }
-    
-    System::String ^ Message::GetMessageId()
-    {
-        return gcnew String(messagep->getMessageId().c_str());
-    }
-    
-    
-    //
-    // UserId
-    //
-    void Message::SetUserId(System::String ^ uId)
-    {
-        messagep->setUserId(QpidMarshal::ToNative(uId));
-    }
-    
-    System::String ^ Message::GetUserId()
-    {
-        return gcnew String(messagep->getUserId().c_str());
-    }
-    
-    
-    //
-    // CorrelationId
-    //
-    void Message::SetCorrelationId(System::String ^ correlationId)
-    {
-        messagep->setCorrelationId(QpidMarshal::ToNative(correlationId));
-    }
-    
-    System::String ^ Message::GetCorrelationId()
-    {
-        return gcnew String(messagep->getCorrelationId().c_str());
-    }
-    
-
-    //
-    // Priority
-    //
-    void Message::SetPriority(unsigned char priority)
-    {
-        messagep->setPriority(priority);
-    }
-    
-    unsigned char Message::GetPriority()
-    {
-        return messagep->getPriority();
-    }
-    
-
-    //
-    // Ttl
-    //
-    void Message::SetTtl(Duration ^ ttl)
-    {
-        ::qpid::messaging::Duration dur(ttl->Milliseconds);
-
-        messagep->setTtl(dur);
-    }
-    
-    Duration ^ Message::GetTtl()
-    {
-        Duration ^ dur = gcnew Duration(messagep->getTtl().getMilliseconds());
-
-        return dur;
-    }
-
-    void Message::SetDurable(bool durable)
-    {
-        messagep->setDurable(durable);
-    }
-    
-    bool Message::GetDurable()
-    {
-        return messagep->getDurable();
-    }
-
-
-    bool Message::GetRedelivered()
-    {
-        return messagep->getRedelivered();
-    }
-
-    void Message::SetRedelivered(bool redelivered)
-    {
-        messagep->setRedelivered(redelivered);
-    }
-
-	// Properties
-    System::Collections::Generic::Dictionary<
-            System::String^, System::Object^> ^ Message::GetProperties()
-    {
-        ::qpid::types::Variant::Map map;
-
-        map = messagep->getProperties();
-
-        System::Collections::Generic::Dictionary<
-            System::String^, System::Object^> ^ dict =
-            gcnew System::Collections::Generic::Dictionary<
-                      System::String^, System::Object^> ;
-
-        TypeTranslator::NativeToManaged(map, dict);
-
-        return dict;
-    }
-
-
-	void Message::SetProperty(System::String ^ name, System::Object ^ value)
-	{
         ::qpid::types::Variant entryValue;
         TypeTranslator::ManagedToNativeObject(value, entryValue);
 
-		messagep->getProperties()[QpidMarshal::ToNative(name)] = entryValue;
-	}
+        messagep->getProperties()[QpidMarshal::ToNative(name)] = entryValue;
+    }
 
-
-	void Message::SetProperties(System::Collections::Generic::Dictionary<
-            System::String^, System::Object^> ^ properties)
-	{
-		for each (System::Collections::Generic::KeyValuePair
-			     <System::String^, System::Object^> kvp in properties)
-        {
-			SetProperty(kvp.Key, kvp.Value);
-		}
-	}
-
-
-	
 	// Content
 	void Message::SetContent(System::String ^ content)
     {
         messagep->setContent(QpidMarshal::ToNative(content));
+    }
+
+
+    void Message::SetContent(cli::array<System::Byte> ^ bytes)
+    {
+		pin_ptr<unsigned char> pBytes = &bytes[0];
+		messagep->setContent((char *)pBytes, bytes->Length);
+    }
+
+
+    void Message::SetContent(cli::array<System::Byte> ^ bytes, int offset, int size)
+    {
+        if ((offset + size) > bytes->Length)
+			throw gcnew QpidException("Message::SetContent from byte array slice: buffer length exceeded");
+
+		pin_ptr<unsigned char> pBytes = &bytes[offset];
+		messagep->setContent((char *)pBytes, size);
     }
 
 
@@ -388,7 +234,7 @@ namespace Messaging {
     // On entry message size must not be zero and
 	// caller's byte array must be equal to message size.
     //
-    void Message::GetRaw(array<System::Byte> ^ arr)
+    void Message::GetContent(array<System::Byte> ^ arr)
     {
         System::UInt32 size = messagep->getContentSize();
      
@@ -401,12 +247,6 @@ namespace Messaging {
         const char * pMsgSrc = messagep->getContentPtr();
 		pin_ptr<unsigned char> pArr = &arr[0];
 		memcpy(pArr, pMsgSrc, size);
-    }
-
-
-    System::UInt64 Message::GetContentSize()
-    {
-        return messagep->getContentSize();
     }
 
 

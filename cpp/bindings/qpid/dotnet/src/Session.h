@@ -110,7 +110,14 @@ namespace Messaging {
         Sender   ^ GetSender(System::String ^ name);
         Receiver ^ GetReceiver(System::String ^ name);
 
-        Connection ^ GetConnection();
+        property Org::Apache::Qpid::Messaging::Connection ^ Connection
+        {
+            Org::Apache::Qpid::Messaging::Connection ^ get ()
+            {
+                return parentConnectionp;
+            }
+        }
+
 
         property System::Boolean HasError
         {

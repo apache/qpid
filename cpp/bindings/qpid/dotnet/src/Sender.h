@@ -95,6 +95,15 @@ namespace Messaging {
             }
         }
 
-        Session ^ GetSession();
+        //
+        // Session
+        //
+        property Org::Apache::Qpid::Messaging::Session ^ Session
+        {
+            Org::Apache::Qpid::Messaging::Session ^ get ()
+            {
+                return parentSession;
+            }
+        }
     };
 }}}}
