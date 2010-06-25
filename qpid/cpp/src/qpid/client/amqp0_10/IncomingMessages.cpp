@@ -290,6 +290,10 @@ namespace {
 //TODO: unify conversion to and from 0-10 message that is currently
 //split between IncomingMessages and OutgoingMessage
 const std::string SUBJECT("qpid.subject");
+
+const std::string X_APP_ID("x-amqp-0-10.app-id");
+const std::string X_ROUTING_KEY("x-amqp-0-10.routing-key");
+const std::string X_CONTENT_ENCODING("x-amqp-0-10.content-encoding");
 }
 
 void populateHeaders(qpid::messaging::Message& message, 
@@ -312,6 +316,21 @@ void populateHeaders(qpid::messaging::Message& message,
         translate(messageProperties->getApplicationHeaders(), message.getProperties());
         message.setCorrelationId(messageProperties->getCorrelationId());
         message.setUserId(messageProperties->getUserId());
+        if (messageProperties->hasMessageId()) {
+            message.setMessageId(messageProperties->getMessageId().str());
+        }
+        //expose 0-10 specific items through special properties: 
+        //    app-id, content-encoding
+        if (messageProperties->hasAppId()) {
+            message.getProperties()[X_APP_ID] = messageProperties->getAppId();
+        }
+        if (messageProperties->hasContentEncoding()) {
+            message.getProperties()[X_CONTENT_ENCODING] = messageProperties->getContentEncoding();
+        }
+        //    routing-key, others?
+        if (deliveryProperties && deliveryProperties->hasRoutingKey()) {
+            message.getProperties()[X_ROUTING_KEY] = deliveryProperties->getRoutingKey();
+        }
     }
 }
 
