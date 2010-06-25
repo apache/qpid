@@ -267,7 +267,7 @@ class TimeoutTests(Base):
     return self.ssn.sender("amq.topic")
 
   def setup_receiver(self):
-    return self.ssn.receiver("amq.topic")
+    return self.ssn.receiver("amq.topic; {link: {reliability: unreliable}}")
 
   def teardown_connection(self, conn):
     try:
