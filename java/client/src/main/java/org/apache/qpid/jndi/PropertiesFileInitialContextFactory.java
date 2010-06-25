@@ -233,27 +233,15 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     /**
      * Factory method to create new Destination instances from an AMQP BindingURL
      */
-    protected Destination createDestination(String bindingURL)
+    protected Destination createDestination(String str)
     {
-        AMQBindingURL binding;
         try
         {
-            binding = new AMQBindingURL(bindingURL);
+            return AMQDestination.createDestination(str);
         }
-        catch (URISyntaxException urlse)
+        catch (Exception e)
         {
-            _logger.warn("Unable to create destination:" + urlse, urlse);
-
-            return null;
-        }
-
-        try
-        {
-            return AMQDestination.createDestination(binding);
-        }
-        catch (IllegalArgumentException iaw)
-        {
-            _logger.warn("Binding: '" + binding + "' not supported");
+            _logger.warn("Unable to create destination:" + e, e);
 
             return null;
         }
