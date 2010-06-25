@@ -445,10 +445,44 @@ namespace Messaging {
 
     Sender ^ Session::GetSender(System::String ^ name)
     {
-        ::qpid::messaging::Sender sender = ::qpid::messaging::Sender(
-            sessionp->::qpid::messaging::Session::getSender(QpidMarshal::ToNative(name)) );
+        System::Exception           ^ newException = nullptr;
+        ::qpid::messaging::Sender   * senderp      = NULL;
+        Sender                      ^ newSender    = nullptr;
 
-        Sender ^ newSender = gcnew Sender(&sender, this);
+        try
+        {
+            senderp = new ::qpid::messaging::Sender;
+
+            *senderp = sessionp->::qpid::messaging::Session::getSender(QpidMarshal::ToNative(name));
+
+            newSender = gcnew Sender(senderp, this);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        finally 
+		{
+            if (newException != nullptr)
+			{
+				if (newSender != nullptr)
+				{
+					delete newSender;
+				}
+				else
+				{
+					if (senderp != NULL)
+					{
+						delete senderp;
+					}
+				}
+            }
+        }
+        if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 
         return newSender;
     }
@@ -457,10 +491,44 @@ namespace Messaging {
 
     Receiver ^ Session::GetReceiver(System::String ^ name)
     {
-        ::qpid::messaging::Receiver receiver = ::qpid::messaging::Receiver(
-            sessionp->::qpid::messaging::Session::getReceiver(QpidMarshal::ToNative(name)) );
+        System::Exception           ^ newException = nullptr;
+        ::qpid::messaging::Receiver * receiverp    = NULL;
+        Receiver                    ^ newReceiver  = nullptr;
 
-        Receiver ^ newReceiver = gcnew Receiver(&receiver, this);
+        try
+        {
+            receiverp = new ::qpid::messaging::Receiver;
+
+            *receiverp = sessionp->::qpid::messaging::Session::getReceiver(QpidMarshal::ToNative(name));
+
+            newReceiver = gcnew Receiver(receiverp, this);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        finally 
+		{
+            if (newException != nullptr)
+			{
+				if (newReceiver != nullptr)
+				{
+					delete newReceiver;
+				}
+				else
+				{
+					if (receiverp != NULL)
+					{
+						delete receiverp;
+					}
+				}
+            }
+        }
+        if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 
         return newReceiver;
     }
