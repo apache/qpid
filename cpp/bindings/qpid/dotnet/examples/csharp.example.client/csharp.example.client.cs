@@ -50,7 +50,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 };
 
                 Message request = new Message("");
-                request.SetReplyTo(responseQueue);
+                request.ReplyTo = responseQueue;
 
                 for (int i = 0; i < s.Length; i++) {
                     request.SetContent(s[i]);

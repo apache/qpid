@@ -26,6 +26,11 @@
 
 #include "qpid/messaging/Message.h"
 
+#include "QpidMarshal.h"
+#include "Address.h"
+#include "Duration.h"
+#include "TypeTranslator.h"
+
 namespace Org {
 namespace Apache {
 namespace Qpid {
@@ -78,45 +83,226 @@ namespace Messaging {
             ::qpid::messaging::Message * get () { return messagep; }
         }
 
-        void SetReplyTo(Address ^ address);
-        Address ^ GetReplyTo();
+        //
+        // ReplyTo
+        //
+        property Address ^ ReplyTo 
+        {
+            void set (Address ^ address)
+            {
+                 messagep->setReplyTo(*(address->NativeAddress));
+            }
 
-        void SetSubject(System::String ^ subject);
-        System::String ^ GetSubject();
+            Address ^ get () 
+            {
+                const ::qpid::messaging::Address & addrp =
+                    messagep->::qpid::messaging::Message::getReplyTo();
 
-        void SetContentType(System::String ^ ct);
-        System::String ^ GetContentType();
+                return gcnew Address(const_cast<::qpid::messaging::Address *>(&addrp));
+            }
+        }
+
+        //
+        // Subject
+        //
+        property System::String ^ Subject
+        {
+            void set (System::String ^ subject)
+            {
+                messagep->setSubject(QpidMarshal::ToNative(subject));
+            }
+            
+            
+            System::String ^ get ()
+            {
+                return gcnew String(messagep->getSubject().c_str());
+            }
+        }
+
+
+        //
+        // ContentType
+        //
+        property System::String ^ ContentType
+        {
+            void set (System::String ^ ct)
+            {
+                messagep->setContentType(QpidMarshal::ToNative(ct));
+            }
+            
+	        System::String ^ get ()
+            {
+		        return gcnew String(messagep->::qpid::messaging::Message::getContentType().c_str());
+            }
+        }
+    
+
+        //
+        // MessageId
+        //
+        property System::String ^ MessageId
+        {
+            void set (System::String ^ messageId)
+            {
+                messagep->setMessageId(QpidMarshal::ToNative(messageId));
+            }
+
+            System::String ^ get ()
+            {
+                return gcnew String(messagep->getMessageId().c_str());
+            }
+        }
+
         
-        void SetMessageId(System::String ^ messageId);
-        System::String ^ GetMessageId();
-        
-        void SetUserId(System::String ^ uId);
-        System::String ^ GetUserId();
-        
-        void SetCorrelationId(System::String ^ correlationId);
-        System::String ^ GetCorrelationId();
+        //
+        // UserId
+        //
+        property System::String ^ UserId
+        {
+            void set (System::String ^ uId)
+            {
+                messagep->setUserId(QpidMarshal::ToNative(uId));
+            }
+            
+            System::String ^ get ()
+            {
+                return gcnew String(messagep->getUserId().c_str());
+            }
+        }
 
-        void SetPriority(unsigned char priority);
-        unsigned char GetPriority();
+            
+        //
+        // CorrelationId
+        //
+        property System::String ^ CorrelationId
+        {
+            void set (System::String ^ correlationId)
+            {
+                messagep->setCorrelationId(QpidMarshal::ToNative(correlationId));
+            }
+            
+            System::String ^ get ()
+            {
+                return gcnew String(messagep->getCorrelationId().c_str());
+            }
+        }
 
-        void SetTtl(Duration ^ ttl);
-        Duration ^ GetTtl();
 
-        void SetDurable(bool durable);
-        bool GetDurable();
+        //
+        // Priority
+        //
+        property unsigned char Priority
+        {
+            void set (unsigned char priority)
+            {
+                messagep->setPriority(priority);
+            }
+            
+            unsigned char get ()
+            {
+                return messagep->getPriority();
+            }
+        }   
 
-        bool GetRedelivered();
-        void SetRedelivered(bool redelivered);
 
-        System::Collections::Generic::Dictionary<
-            System::String^, System::Object^> ^ GetProperties();
+        //
+        // Ttl
+        //
+        property Duration ^ Ttl
+        {
+            void set (Duration ^ ttl)
+            {
+                ::qpid::messaging::Duration dur(ttl->Milliseconds);
 
-		void SetProperty(System::String ^ name, System::Object ^ value);
+                messagep->setTtl(dur);
+            }
+            
+            Duration ^ get ()
+            {
+                Duration ^ dur = gcnew Duration(messagep->getTtl().getMilliseconds());
 
-		void SetProperties(System::Collections::Generic::Dictionary<
-            System::String^, System::Object^> ^ properties);
+                return dur;
+            }
+        }
+
+        //
+        // Durable
+        //
+        property bool Durable
+        {
+            void set (bool durable)
+            {
+                messagep->setDurable(durable);
+            }
+            
+            bool get ()
+            {
+                return messagep->getDurable();
+            }
+        }
+
+        //
+        // Redelivered
+        //
+        property bool Redelivered
+        {
+            bool get ()
+            {
+                return messagep->getRedelivered();
+            }
+
+            void set (bool redelivered)
+            {
+                messagep->setRedelivered(redelivered);
+            }
+        }
+
+        //
+        // Property
+        //
+        void Message::SetProperty(System::String ^ name, System::Object ^ value);
+
+        //
+        // Properties
+        //
+        property System::Collections::Generic::Dictionary<
+                    System::String^, System::Object^> ^ Properties
+        {
+            System::Collections::Generic::Dictionary<
+                    System::String^, System::Object^> ^ get ()
+            {
+                ::qpid::types::Variant::Map map;
+
+                map = messagep->getProperties();
+
+                System::Collections::Generic::Dictionary<
+                    System::String^, System::Object^> ^ dict =
+                    gcnew System::Collections::Generic::Dictionary<
+                              System::String^, System::Object^> ;
+
+                TypeTranslator::NativeToManaged(map, dict);
+
+                return dict;
+            }
+
+
+	        void set (System::Collections::Generic::Dictionary<
+                    System::String^, System::Object^> ^ properties)
+	        {
+		        for each (System::Collections::Generic::KeyValuePair
+			             <System::String^, System::Object^> kvp in properties)
+                {
+			        SetProperty(kvp.Key, kvp.Value);
+		        }
+	        }
+        }
+
 
         void SetContent(System::String ^ content);
+
+        void SetContent(cli::array<System::Byte> ^ bytes);
+
+        void SetContent(cli::array<System::Byte> ^ bytes, int offset, int size);
 
         //TODO:: void setContent(Bytes{} bytes, offset, length);
 
@@ -133,9 +319,19 @@ namespace Messaging {
                             System::Object^> ^);
 
         // get content as bytes
-        void GetRaw(cli::array<System::Byte> ^ arr);
+        void GetContent(cli::array<System::Byte> ^ arr);
 
-        System::UInt64 GetContentSize();
+        //
+        // ContentSize
+        //
+        property System::UInt64 ContentSize
+        {
+            System::UInt64 get ()
+            {
+                return messagep->getContentSize();
+            }
+        }
+
 
 		// A message has been returned to managed code through GetContent().
 		// Display the content of that System::Object as a string.

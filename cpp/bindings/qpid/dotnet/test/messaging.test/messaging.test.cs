@@ -74,12 +74,12 @@ namespace Org.Apache.Qpid.Messaging
             //
 
             Message m2 = new Message("rarey");
-            UInt64 m2Size = m2.GetContentSize();
+            UInt64 m2Size = m2.ContentSize;
 
 
             byte[] myRaw = new byte [m2Size];
 
-            m2.GetRaw(myRaw);
+            m2.GetContent(myRaw);
             Console.WriteLine("Got raw array size {0}", m2Size);
             for (UInt64 i = 0; i < m2Size; i++)
                 Console.Write("{0} ", myRaw[i].ToString());
@@ -93,9 +93,9 @@ namespace Org.Apache.Qpid.Messaging
                 rawData[i] = i;
             Message m3 = new Message(rawData);
 
-            byte[] rawDataReadback = new byte[m3.GetContentSize()];
-            m3.GetRaw(rawDataReadback);
-            for (UInt64 i = 0; i < m3.GetContentSize(); i++)
+            byte[] rawDataReadback = new byte[m3.ContentSize];
+            m3.GetContent(rawDataReadback);
+            for (UInt64 i = 0; i < m3.ContentSize; i++)
                 Console.Write("{0} ", rawDataReadback[i].ToString());
             Console.WriteLine();
 
@@ -108,10 +108,21 @@ namespace Org.Apache.Qpid.Messaging
 
             Message m4 = new Message(rawData4, 246, 10);
 
-            byte[] rawDataReadback4 = new byte[m4.GetContentSize()];
-            m4.GetRaw(rawDataReadback4);
-            for (UInt64 i = 0; i < m4.GetContentSize(); i++)
+            byte[] rawDataReadback4 = new byte[m4.ContentSize];
+            m4.GetContent(rawDataReadback4);
+            for (UInt64 i = 0; i < m4.ContentSize; i++)
                 Console.Write("{0} ", rawDataReadback4[i].ToString());
+            Console.WriteLine();
+
+            //
+            // Set content from array slice
+            //
+            m4.SetContent(rawData4, 100, 5);
+
+            byte[] rawDataReadback4a = new byte[m4.ContentSize];
+            m4.GetContent(rawDataReadback4a);
+            for (UInt64 i = 0; i < m4.ContentSize; i++)
+                Console.Write("{0} ", rawDataReadback4a[i].ToString());
             Console.WriteLine();
 
             //

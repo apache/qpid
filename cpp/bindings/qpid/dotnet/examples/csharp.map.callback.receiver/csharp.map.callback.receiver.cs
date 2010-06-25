@@ -93,14 +93,14 @@ namespace Org.Apache.Qpid.Messaging.Examples
         /// <param name="message">The Message</param>
         public static void ShowMessage(Message message)
         {
-            if ("amqp/map" == message.GetContentType())
+            if ("amqp/map" == message.ContentType)
             {
                 Console.WriteLine("Received a Dictionary");
                 Dictionary<string, object> content = new Dictionary<string, object>();
                 message.GetContent(content);
                 ShowDictionary(content, 0);
             }
-            else if ("amqp/list" == message.GetContentType())
+            else if ("amqp/list" == message.ContentType)
             {
                 Console.WriteLine("Received a List");
                 Collection<object> content = new Collection<object>();
@@ -148,7 +148,7 @@ namespace Org.Apache.Qpid.Messaging.Examples
             //
             // Acknowledge the receipt of all received messages.
             //
-            receiver.GetSession().Acknowledge();
+            receiver.Session.Acknowledge();
         }
 
 
@@ -241,7 +241,7 @@ namespace Org.Apache.Qpid.Messaging.Examples
             //
             // Establish a capacity
             //
-            receiver.SetCapacity(100);
+            receiver.Capacity = 100;
 
             //
             // Wait so many seconds for messages to arrive.

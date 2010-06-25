@@ -60,6 +60,9 @@ EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "visualbasic.example.client", "examples\visualbasic.example.client\visualbasic.example.client.vbproj", "{CFEA696E-115B-4AD1-AB56-804E360EDD51}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hello World", "Hello World", "{4408A2DA-ED2D-44AE-A465-0B6D75E1FF86}"
+	ProjectSection(SolutionItems) = preProject
+		examples\powershell.example.helloworld\powershell.example.helloworld.ps1 = examples\powershell.example.helloworld\powershell.example.helloworld.ps1
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csharp.example.helloworld", "examples\csharp.example.helloworld\csharp.example.helloworld.csproj", "{8CC1C265-0507-44A3-9483-8FAF48513F4D}"
 EndProject

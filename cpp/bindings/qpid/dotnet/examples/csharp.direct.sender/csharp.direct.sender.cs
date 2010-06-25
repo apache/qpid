@@ -59,7 +59,7 @@ namespace csharp.direct.sender
                 connection = new Connection(host);
                 connection.Open();
 
-                if (!connection.IsOpen()) {
+                if (!connection.IsOpen) {
                     Console.WriteLine("Failed to open connection to host : {0}", host);
                 } else {
                     Session session = connection.CreateSession();

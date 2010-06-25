@@ -38,7 +38,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
 
                 while (true) {
                     Message request = receiver.Fetch();
-                    Address address = request.GetReplyTo();
+                    Address address = request.ReplyTo;
 
                     if (null != address) {
                         Sender sender = session.CreateSender(address);

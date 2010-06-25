@@ -29,8 +29,8 @@ using Org.Apache.Qpid.Messaging;
 namespace Org.Apache.Qpid.Messaging.Examples {
     class Spout {
         //
-        // Sample invocation: csharp.example.drain.exe --broker localhost:5672 --timeout 30 my-queue
-        // This pro
+        // Sample invocation: csharp.example.spout.exe --broker localhost:5672 my-queue
+        // 
         static bool NameVal(string In, out string nameOut, out string valueOut)
         {
             int pos = In.IndexOf("=");
@@ -83,7 +83,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 else
                 {
                     message = new Message(options.Content);
-                    message.SetContentType("text/plain");
+                    message.ContentType = "text/plain";
                 }
                 Address replyToAddr = new Address(options.ReplyTo);
 
@@ -95,7 +95,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                     (0 == options.Timeout || stopwatch.Elapsed <= timespan);
                     count++) 
                 {
-                    if ("" != options.ReplyTo) message.SetReplyTo(replyToAddr);
+                    if ("" != options.ReplyTo) message.ReplyTo = replyToAddr;
                     string id = options.Id ;
                     if ("" == id) {
                         Guid g = Guid.NewGuid();

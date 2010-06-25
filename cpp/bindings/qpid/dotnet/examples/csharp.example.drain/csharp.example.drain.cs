@@ -47,17 +47,17 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 while (receiver.Fetch(message, timeout))
                 {
                     Dictionary<string, object> properties = new Dictionary<string, object>();
-                    properties = message.GetProperties();
+                    properties = message.Properties;
                     Console.Write("Message(properties={0}, content='", 
                                   message.MapAsString(properties));
 
-                    if ("amqp/map" == message.GetContentType())
+                    if ("amqp/map" == message.ContentType)
                     {
                         Dictionary<string, object> content = new Dictionary<string, object>();
                         message.GetContent(content);
                         Console.Write(message.MapAsString(content));
                     }
-                    else if ("amqp/list" == message.GetContentType())
+                    else if ("amqp/list" == message.ContentType)
                     {
                         Collection<object> content = new Collection<object>();
                         message.GetContent(content);
