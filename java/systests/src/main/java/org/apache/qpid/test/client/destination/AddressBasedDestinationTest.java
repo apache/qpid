@@ -23,19 +23,24 @@ package org.apache.qpid.test.client.destination;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.Context;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
@@ -79,7 +84,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         AMQDestination  dest = new AMQAnyDestination(addr1);
         try
         {
-            cons = jmsSession.createConsumer(dest); 
+            cons = jmsSession.createConsumer(dest);
         }
         catch(JMSException e)
         {
@@ -396,6 +401,48 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         {
             assertNotNull("Should have received the " + i + "th message as we acked the last 10",cons.receive(RECEIVE_TIMEOUT));
         }
+    }
+    
+    public void testLoadingFromPropertiesFile() throws Exception
+    {
+        Hashtable<String,String> map = new Hashtable<String,String>();        
+        map.put("destination.myQueue1", "ADDR:my-queue/hello; {create: always, node: " + 
+                "{x-declare: {auto-delete: true,'qpid.max_size': 1000}}}");
+        
+        map.put("destination.myQueue2", "ADDR:my-queue2; { create: receiver }");
+
+        map.put("destination.myQueue3", "BURL:direct://amq.direct/my-queue3?routingkey='test'");
+        
+        PropertiesFileInitialContextFactory props = new PropertiesFileInitialContextFactory();
+        Context ctx = props.getInitialContext(map);
+        
+        AMQDestination dest1 = (AMQDestination)ctx.lookup("myQueue1");      
+        AMQDestination dest2 = (AMQDestination)ctx.lookup("myQueue2");
+        AMQDestination dest3 = (AMQDestination)ctx.lookup("myQueue3");
+        
+        Session jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer cons1 = jmsSession.createConsumer(dest1); 
+        MessageConsumer cons2 = jmsSession.createConsumer(dest2);
+        MessageConsumer cons3 = jmsSession.createConsumer(dest3);
+        
+        assertTrue("Destination1 was not created as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest1,(QueueNode)dest1.getSourceNode(), true));              
+        
+        assertTrue("Destination1 was not bound as expected",(
+                (AMQSession_0_10)jmsSession).isQueueBound("", 
+                    dest1.getAddressName(),dest1.getAddressName(), null));
+        
+        assertTrue("Destination2 was not created as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest2,(QueueNode)dest2.getSourceNode(), true));              
+        
+        assertTrue("Destination2 was not bound as expected",(
+                (AMQSession_0_10)jmsSession).isQueueBound("", 
+                    dest2.getAddressName(),dest2.getAddressName(), null));
+        
+        MessageProducer producer = jmsSession.createProducer(dest3);
+        producer.send(jmsSession.createTextMessage("Hello"));
+        TextMessage msg = (TextMessage)cons3.receive(1000);
+        assertEquals("Destination3 was not created as expected.",msg.getText(),"Hello");
     }
     
     /*public void testBindQueueForXMLExchange() throws Exception
