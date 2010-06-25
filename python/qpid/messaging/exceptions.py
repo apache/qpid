@@ -17,6 +17,11 @@
 # under the License.
 #
 
+class Timeout(Exception):
+  pass
+
+## Messaging Errors
+
 class MessagingError(Exception):
 
   def __init__(self, code=None, text=None, **info):
