@@ -1159,12 +1159,15 @@ class Engine:
       rt = addr2reply_to(msg.reply_to)
     else:
       rt = None
+    content_encoding = msg.properties.get("x-amqp-0-10.content-encoding")
     dp = DeliveryProperties(routing_key=rk)
     mp = MessageProperties(message_id=msg.id,
                            user_id=msg.user_id,
                            reply_to=rt,
                            correlation_id=msg.correlation_id,
+                           app_id = msg.properties.get("x-amqp-0-10.app-id"),
                            content_type=msg.content_type,
+                           content_encoding=content_encoding,
                            application_headers=msg.properties)
     if subject is not None:
       if mp.application_headers is None:
@@ -1242,6 +1245,12 @@ class Engine:
     msg.ttl = dp.ttl
     msg.redelivered = dp.redelivered
     msg.properties = mp.application_headers
+    if mp.app_id is not None:
+      msg.properties["x-amqp-0-10.app-id"] = mp.app_id
+    if mp.content_encoding is not None:
+      msg.properties["x-amqp-0-10.content-encoding"] = mp.content_encoding
+    if dp.routing_key is not None:
+      msg.properties["x-amqp-0-10.routing-key"] = dp.routing_key
     msg.content_type = mp.content_type
     msg._transfer_id = xfr.id
     return msg
