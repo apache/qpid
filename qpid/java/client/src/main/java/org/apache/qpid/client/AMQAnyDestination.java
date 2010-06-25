@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 import java.net.URISyntaxException;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.messaging.Address;
 import org.apache.qpid.url.BindingURL;
 
 /**
@@ -44,6 +45,11 @@ public class AMQAnyDestination extends AMQDestination
     public AMQAnyDestination(String str) throws URISyntaxException
     {
         super(str);
+    }
+    
+    public AMQAnyDestination(Address addr) throws Exception
+    {
+        super(addr);
     }
     
     public AMQAnyDestination(AMQShortString exchangeName,AMQShortString exchangeClass,
