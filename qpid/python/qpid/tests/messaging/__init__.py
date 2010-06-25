@@ -51,7 +51,11 @@ class Base(Test):
 
   def teardown(self):
     if self.conn is not None and self.conn.attached():
-      self.conn.close()
+      self.teardown_connection(self.conn)
+      self.conn = None
+
+  def teardown_connection(self, conn):
+    conn.close()
 
   def content(self, base, count = None):
     if count is None:

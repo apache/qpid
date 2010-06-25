@@ -251,15 +251,18 @@ class Connection:
             if not (l.linked or l.error or l.closed)]
 
   @synchronized
-  def detach(self):
+  def detach(self, timeout=None):
     """
     Detach from the remote endpoint.
     """
     self._connected = False
     self._wakeup()
-    self._wait(lambda: not self._transport_connected)
-    self._driver.stop()
-    self._condition.gc()
+    try:
+      if not self._wait(lambda: not self._transport_connected, timeout=timeout):
+        raise Timeout("detach timed out")
+    finally:
+      self._driver.stop()
+      self._condition.gc()
 
   @synchronized
   def attached(self):
@@ -269,15 +272,15 @@ class Connection:
     return self._connected
 
   @synchronized
-  def close(self):
+  def close(self, timeout=None):
     """
     Close the connection and all sessions.
     """
     try:
       for ssn in self.sessions.values():
-        ssn.close()
+        ssn.close(timeout=timeout)
     finally:
-      self.detach()
+      self.detach(timeout=timeout)
       self._open = False
 
 class Session:
@@ -677,28 +680,32 @@ class Session:
     assert self.aborted
 
   @synchronized
-  def sync(self):
+  def sync(self, timeout=None):
     """
     Sync the session.
     """
     for snd in self.senders:
-      snd.sync()
-    self._ewait(lambda: not self.outgoing and not self.acked)
+      snd.sync(timeout=timeout)
+    if not self._ewait(lambda: not self.outgoing and not self.acked, timeout=timeout):
+      raise Timeout("session sync timed out")
 
   @synchronized
-  def close(self):
+  def close(self, timeout=None):
     """
     Close the session.
     """
-    self.sync()
+    self.sync(timeout=timeout)
 
     for link in self.receivers + self.senders:
-      link.close()
+      link.close(timeout=timeout)
 
     self.closing = True
     self._wakeup()
-    self._ewait(lambda: self.closed)
-    self.connection._remove_session(self)
+    try:
+      if not self._ewait(lambda: self.closed, timeout=timeout):
+        raise Timeout("session close timed out")
+    finally:
+      self.connection._remove_session(self)
 
 class Sender:
 
@@ -816,22 +823,29 @@ class Sender:
       self._wakeup()
 
   @synchronized
-  def sync(self):
+  def sync(self, timeout=None):
     mno = self.queued
     if self.synced < mno:
       self.synced = mno
       self._wakeup()
-    self._ewait(lambda: self.acked >= mno)
+    if not self._ewait(lambda: self.acked >= mno, timeout=timeout):
+      raise Timeout("sender sync timed out")
 
   @synchronized
-  def close(self):
+  def close(self, timeout=None):
     """
     Close the Sender.
     """
+    # avoid erroring out when closing a sender that was never
+    # established
+    if self.acked < self.queued:
+      self.sync(timeout=timeout)
+
     self.closing = True
     self._wakeup()
     try:
-      self.session._ewait(lambda: self.closed)
+      if not self.session._ewait(lambda: self.closed, timeout=timeout):
+        raise Timeout("sender close timed out")
     finally:
       self.session.senders.remove(self)
 
@@ -962,14 +976,15 @@ class Receiver(object):
       self.granted = self.received + self._capacity
 
   @synchronized
-  def close(self):
+  def close(self, timeout=None):
     """
     Close the receiver.
     """
     self.closing = True
     self._wakeup()
     try:
-      self.session._ewait(lambda: self.closed)
+      if not self.session._ewait(lambda: self.closed, timeout=timeout):
+        raise Timeout("receiver close timed out")
     finally:
       self.session.receivers.remove(self)
 
