@@ -79,6 +79,11 @@ struct BrokerAdmin
         return !result.getNotFound();
     }
 
+    void send(qpid::client::Message& message, const std::string& exchange=std::string())
+    {
+        session.messageTransfer(qpid::client::arg::destination=exchange, qpid::client::arg::content=message);
+    }
+
     ~BrokerAdmin()
     {
         session.close();

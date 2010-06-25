@@ -21,10 +21,12 @@
 #include "qpid/client/amqp0_10/OutgoingMessage.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/types/Variant.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/framing/enum.h"
+#include <sstream>
 
 namespace qpid {
 namespace client {
@@ -32,8 +34,18 @@ namespace amqp0_10 {
 
 using qpid::messaging::Address;
 using qpid::messaging::MessageImplAccess;
+using qpid::types::Variant;
 using namespace qpid::framing::message;
 using namespace qpid::amqp_0_10;
+
+namespace {
+//TODO: unify conversion to and from 0-10 message that is currently
+//split between IncomingMessages and OutgoingMessage
+const std::string SUBJECT("qpid.subject");
+const std::string X_APP_ID("x-amqp-0-10.app-id");
+const std::string X_ROUTING_KEY("x-amqp-0-10.routing-key");
+const std::string X_CONTENT_ENCODING("x-amqp-0-10.content-encoding");
+}
 
 void OutgoingMessage::convert(const qpid::messaging::Message& from)
 {
@@ -55,10 +67,24 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
         message.getDeliveryProperties().setRedelivered(true);
     }
     if (from.getPriority()) message.getDeliveryProperties().setPriority(from.getPriority());
-}
 
-namespace {
-const std::string SUBJECT("qpid.subject");
+    //allow certain 0-10 specific items to be set through special properties: 
+    //    message-id, app-id, content-encoding
+    if (from.getMessageId().size()) {
+        qpid::framing::Uuid uuid;
+        std::istringstream data(from.getMessageId());
+        data >> uuid;
+        message.getMessageProperties().setMessageId(uuid);
+    }
+    Variant::Map::const_iterator i;
+    i = from.getProperties().find(X_APP_ID);
+    if (i != from.getProperties().end()) {
+        message.getMessageProperties().setAppId(i->second.asString());
+    }
+    i = from.getProperties().find(X_CONTENT_ENCODING);
+    if (i != from.getProperties().end()) {
+        message.getMessageProperties().setContentEncoding(i->second.asString());
+    }
 }
 
 void OutgoingMessage::setSubject(const std::string& subject)
