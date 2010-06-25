@@ -357,6 +357,8 @@ class Driver:
 
   def stop(self):
     self._selector.unregister(self)
+    if self._transport:
+      self.st_closed()
 
   def fileno(self):
     return self._transport.fileno()
