@@ -710,7 +710,7 @@ class Session:
       self.connection._remove_session(self)
 
 def _mangle(addr):
-  if addr.startswith("#"):
+  if addr and addr.startswith("#"):
     return str(uuid4()) + addr
   else:
     return addr
