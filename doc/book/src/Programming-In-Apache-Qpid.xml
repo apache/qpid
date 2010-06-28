@@ -3049,7 +3049,7 @@ producer.send(m);
 
       <para>When using the log4j binding, please set the log level for org.apache.qpid explicitly. Otherwise log4j will default to DEBUG which will degrade performance considerably due to excessive logging. The recommended logging level for production is <literal>WARN</literal>.</para>
 
-      <para>The following example shows the logging properties used to configure client logging for slf4j using the log4j binding. These properties can be placed in a log4j.properties file and placed in the <varname>CLASSPATH</varname>, or they can be set explicitly using the -Dlog4j.configuration property.</para>
+      <para>The following example shows the logging properties used to configure client logging for slf4j using the log4j binding. These properties can be placed in a log4j.properties file and placed in the <varname>CLASSPATH</varname>, or they can be set explicitly using the <literal>-Dlog4j.configuration</literal> property.</para>
 
       <example>
 	<title>log4j Logging Properties</title>
