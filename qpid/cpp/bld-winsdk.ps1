@@ -53,11 +53,12 @@ cmake -G "Visual Studio 9 2008" "-DCMAKE_INSTALL_PREFIX=$install_dir" $qpid_cpp_
 # Need to build doxygen api docs separately as nothing depends on them
 devenv qpid-cpp.sln /build "Release|Win32" /project docs-user-api
 
-# Build both debug and release so we can ship both sets of libs
-# (Do release after debug  so that the release executables overwrite the
-# debug executables)
+# Build both Debug and Release builds so we can ship both sets of libs:
+# Make RelWithDebInfo for debuggable release code.
+# (Do Release after Debug so that the release executables overwrite the
+# debug executables. Don't skip Debug as it creates some needed content.)
 devenv qpid-cpp.sln /build "Debug|Win32" /project INSTALL
-devenv qpid-cpp.sln /build "Release|Win32" /project INSTALL
+devenv qpid-cpp.sln /build "RelWithDebInfo|Win32" /project INSTALL
 
 # This would be kludgy if we have only one entry as the array declaration syntax
 # can't cope with just one nested array
@@ -78,7 +79,9 @@ $preserve=(
 	'include/qpid/CommonImportExport.h')
 $remove=(
 	'bin/qpidd.exe', 'bin/qpidbroker*.*',
+	'bin/*PDB/qpidd.exe', 'bin/*PDB/qpidbroker*.*',
 	'bin/qmfengine*.*', 'bin/qpidxarm*.*',
+	'bin/*PDB/qmfengine*.*', 'bin/*PDB/qpidxarm*.*',
 	'bin/boost_regex*.*',
 	'bin/boost',
 	'conf',
@@ -101,6 +104,7 @@ foreach ($pattern in $move) {
 	New-Item -force -type directory $target
 	Move-Item -force -path "$install_dir/$($pattern[0])" -destination "$install_dir/$($pattern[1])"
 }
+
 # Copy aside the files to preserve
 New-Item -path $preserve_dir -type directory
 foreach ($pattern in $preserve) {
@@ -122,12 +126,20 @@ foreach ($pattern in $preserve) {
 }
 Remove-Item -recurse $preserve_dir
 
+# Zip the /bin PDB files into two zip files.
+# we previously arranged that the Debug pdbs go in the DebugPDB subdirectory
+# and the Release pdbs go in the ReleasePDB subdirectory
+&'7z' a -mx9 ".\$install_dir\bin\symbols-debug.zip" ".\$install_dir\bin\DebugPDB\*.pdb"
+&'7z' a -mx9 ".\$install_dir\bin\symbols-release.zip" ".\$install_dir\bin\ReleasePDB\*.pdb"
+
 # It would be very good to cut down on the shipped boost include files too, ideally by
 # starting with the qpid files and recursively noting all boost headers actually needed
 
-# Create a new zip
+
+# Create a new zip for the whole kit.
+# Exclude *.pdb so as not include the debug symbols twice
 if (Test-Path $zipfile) {Remove-Item $zipfile}
-&'7z' a $zipfile ".\$install_dir\*"
+&'7z' a $zipfile ".\$install_dir\*" -xr!*pdb
 
 # Remove temporary install area
 # Remove-Item -recurse $install_dir
