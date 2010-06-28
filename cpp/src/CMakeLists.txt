@@ -34,6 +34,37 @@ include(FindDoxygen)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
 
+#
+# Set up installation of .pdb files if the compiler is Visual Studio
+#
+# Sample: install_pdb (qpidcommon ${QPID_COMPONENT_COMMON})
+#
+MACRO (install_pdb theLibrary theComponent)
+    if (MSVC)
+        get_target_property(library_dll ${theLibrary} LOCATION)
+        string(REPLACE .dll .pdb library_pdb ${library_dll})
+        string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} library_pdb ${library_pdb})
+        string(REPLACE .pdb d.pdb libraryd_pdb ${library_pdb})
+        #message(STATUS "_pdb: ${library_pdb}, ${libraryd_pdb}")
+        install (PROGRAMS
+                ${library_pdb}
+                DESTINATION ${QPID_INSTALL_LIBDIR}/ReleasePDB
+                COMPONENT ${theComponent}
+				OPTIONAL
+                CONFIGURATIONS Release|MinSizeRel)
+        install (PROGRAMS
+                ${library_pdb}
+                DESTINATION ${QPID_INSTALL_LIBDIR}/ReleasePDB
+                COMPONENT ${theComponent}
+                CONFIGURATIONS RelWithDebInfo)
+        install (PROGRAMS
+                ${libraryd_pdb}
+                DESTINATION ${QPID_INSTALL_LIBDIR}/DebugPDB
+                COMPONENT ${theComponent}
+                CONFIGURATIONS Debug)
+    endif (MSVC)
+ENDMACRO (install_pdb)
+
 # check if we generate source as part of the build
 #   - rubygen generates the amqp spec and clustering
 #   - managementgen generates the broker management code
@@ -459,6 +490,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     if (MSVC80)
       add_definitions(/D "_WIN32_WINNT=0x0501")
     endif (MSVC80)
+
+    # set the RelWithDebInfo compile/link switchs to equal Release
+    set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
+    set (CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO")
   endif (MSVC)
 
   set (qpidcommon_platform_SOURCES
@@ -543,7 +578,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
     ${qpid_poller_module}
   )
-  set (qpidcommon_platform_LIBS      
+  set (qpidcommon_platform_LIBS
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     uuid
@@ -645,19 +680,8 @@ set_target_properties (qpidcommon PROPERTIES
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
+install_pdb (qpidcommon ${QPID_COMPONENT_COMMON})
 
-if (WIN32)
-    # Need the .pdb file, which isn't installed with the .dll/.lib
-    # Not built... if needed, add the build option then uncomment this.
-    #get_target_property(qpidcommon_dll qpidcommon LOCATION)
-    #string(REPLACE .dll .pdb qpidcommon_pdb ${qpidcommon_dll})
-    #string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} qpidcommon_pdb ${qpidcommon_pdb})
-    #message(STATUS "_pdb: ${qpidcommon_pdb}")
-    #install (PROGRAMS
-    #         ${qpidcommon_pdb}
-    #         DESTINATION ${QPID_INSTALL_LIBDIR}
-    #         COMPONENT ${QPID_COMPONENT_CLIENT})
-endif (WIN32)
 
 set (qpidclient_SOURCES
      ${rgen_client_srcs}
@@ -708,6 +732,8 @@ install (DIRECTORY ../include/qpid
          DESTINATION ${QPID_INSTALL_INCLUDEDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
          PATTERN ".svn" EXCLUDE)
+install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
+
 
 set (qpidmessaging_SOURCES
      qpid/messaging/Address.cpp
@@ -755,6 +781,7 @@ set_target_properties (qpidmessaging PROPERTIES VERSION ${qpidc_version})
 install (TARGETS qpidmessaging
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
+install_pdb (qpidmessaging ${QPID_COMPONENT_CLIENT})
 
 # Released source artifacts from Apache have the generated headers included in
 # the source tree, not the binary tree. So don't attempt to grab them when
@@ -765,17 +792,6 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
            COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
-if (WIN32)
-    # Need the .pdb file, which isn't installed with the .dll/.lib
-    #get_target_property(qpidclient_dll qpidclient LOCATION)
-    #string(REPLACE .dll .pdb qpidclient_pdb ${qpidclient_dll})
-    #string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} qpidclient_pdb ${qpidclient_pdb})
-    #message(STATUS "_pdb: ${qpidclient_pdb}")
-    #install (PROGRAMS
-    #         ${qpidclient_pdb}
-    #         DESTINATION ${QPID_INSTALL_LIBDIR}
-    #         COMPONENT ${QPID_COMPONENT_CLIENT})
-endif (WIN32)
 
 if (WIN32)
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
@@ -786,6 +802,7 @@ if (WIN32)
         install (TARGETS qpidxarm
                  DESTINATION ${QPID_INSTALL_LIBDIR}
                  COMPONENT ${QPID_COMPONENT_CLIENT})
+        install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${DTC_PLUGIN_SOURCE})
 endif (WIN32)
 
@@ -866,6 +883,8 @@ endif (MSVC)
 install (TARGETS qpidbroker
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
+install_pdb (qpidbroker ${QPID_COMPONENT_BROKER})
+
 
 set (qpidd_SOURCES
      ${qpidd_platform_SOURCES}
@@ -904,6 +923,7 @@ set_target_properties (qmf PROPERTIES
 install (TARGETS qmf OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
+install_pdb (qmf ${QPID_COMPONENT_QMF})
 
 set (qmfengine_SOURCES
      qmf/engine/Agent.cpp
@@ -943,6 +963,7 @@ set_target_properties (qmfengine PROPERTIES
 install (TARGETS qmfengine OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
+install_pdb (qmfengine ${QPID_COMPONENT_QMF})
 
 # QMF console library
 #module_hdr += \
@@ -992,17 +1013,7 @@ set_target_properties (qmfconsole PROPERTIES
 install (TARGETS qmfconsole
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
-if (WIN32)
-    # Need the .pdb file, which isn't installed with the .dll/.lib
-    #get_target_property(qmfconsole_dll qmfconsole LOCATION)
-    #string(REPLACE .dll .pdb qmfconsole_pdb ${qmfconsole_dll})
-    #string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} qmfconsole_pdb ${qmfconsole_pdb})
-    #message(STATUS "_pdb: ${qmfconsole_pdb}")
-    #install (PROGRAMS
-    #         ${qmfconsole_pdb}
-    #         DESTINATION ${QPID_INSTALL_LIBDIR}
-    #         COMPONENT ${QPID_COMPONENT_QMF})
-endif (WIN32)
+install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
