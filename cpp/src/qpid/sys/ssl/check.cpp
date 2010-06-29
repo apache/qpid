@@ -69,6 +69,7 @@ std::string getErrorString(int code)
       case PR_DIRECTORY_LOOKUP_ERROR: msg = "A directory lookup on a network address has failed"; break;
       case PR_CONNECT_RESET_ERROR: msg = "TCP connection reset by peer"; break;
       case PR_END_OF_FILE_ERROR: msg = "Encountered end of file"; break;
+      case SEC_ERROR_EXPIRED_CERTIFICATE: msg = "Peer's certificate has expired"; break;
       default: msg = (code < -6000) ? "NSS error" : "NSPR error"; break;
     }
     return str(format("%1% [%2%]") % msg % code);
