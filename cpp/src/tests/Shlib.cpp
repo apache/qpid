@@ -35,10 +35,10 @@ typedef void (*CallMe)(int*);
 
 
 QPID_AUTO_TEST_CASE(testShlib) {
-    // The CMake-based build passes in the module suffix; if it's not there,
-    // this is a Linux/UNIX libtool-based build.
-#if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
-    Shlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_POSTFIX QPID_MODULE_SUFFIX);
+    // The CMake-based build passes in the shared lib suffix; if it's not
+    // there, this is a Linux/UNIX libtool-based build.
+#if defined (QPID_SHLIB_PREFIX) && defined (QPID_SHLIB_SUFFIX)
+    Shlib sh("./" QPID_SHLIB_PREFIX "shlibtest" QPID_SHLIB_POSTFIX QPID_SHLIB_SUFFIX);
 #else
     Shlib sh(".libs/libshlibtest.so");
 #endif
@@ -59,8 +59,8 @@ QPID_AUTO_TEST_CASE(testShlib) {
 QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
-#if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
-        AutoShlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_POSTFIX QPID_MODULE_SUFFIX);
+#if defined (QPID_SHLIB_PREFIX) && defined (QPID_SHLIB_SUFFIX)
+        AutoShlib sh("./" QPID_SHLIB_PREFIX "shlibtest" QPID_SHLIB_POSTFIX QPID_SHLIB_SUFFIX);
 #else
         AutoShlib sh(".libs/libshlibtest.so");
 #endif
