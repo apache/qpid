@@ -756,6 +756,19 @@ QPID_AUTO_TEST_CASE(testSendSpecialProperties)
     BOOST_CHECK_EQUAL(in.getMessageProperties().getMessageId().str(), out.getMessageId());
 }
 
+QPID_AUTO_TEST_CASE(testExclusiveSubscriber)
+{
+    QueueFixture fix;
+    std::string address = (boost::format("%1%; { link: { x-subscribe : { exclusive:true } } }") % fix.queue).str();
+    Receiver receiver = fix.session.createReceiver(address);
+    ScopedSuppressLogging sl;
+    try {
+        fix.session.createReceiver(address);
+        fix.session.sync();
+        BOOST_FAIL("Expected exception.");
+    } catch (const MessagingException& e) {}
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 
