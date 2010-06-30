@@ -19,7 +19,7 @@
 dist_man_MANS = qpidd.1
 
 man_aux = $(dist_man_MANS:.1=.x) 
-EXTRA_DIST = $(man_aux) 
+EXTRA_DIST = $(man_aux) generate_manpage groffify_options.sed groffify_template.sed 
 DISTCLEANFILES = $(dist_man_MANS)
 CLEANFILES=qpidd.1
 
@@ -40,8 +40,8 @@ qpidd.1: $(srcdir)/qpidd.x $(top_builddir)/src/qpidd
 	@mv $@-t $@
 else
 qpidd.1:
-	@echo "Warning: help2man not available, man page lacks options."
-	@cp $(srcdir)/qpidd.x $@
+	@echo "Warning: help2man not available, using sed script instead."
+	$(srcdir)/generate_manpage $(srcdir)/qpidd.x $(top_builddir)/src/qpidd $@
 endif
 
 
