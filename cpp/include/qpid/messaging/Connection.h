@@ -78,7 +78,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
     QPID_MESSAGING_EXTERN Connection(const std::string& url, const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
     /**
      * Creates a connection using an option string of the form
-     * {name=value,name2=value2...}, see above for options supported.
+     * {name:value,name2:value2...}, see above for options supported.
      * 
      * @exception InvalidOptionString if the string does not match the correct syntax
      */
