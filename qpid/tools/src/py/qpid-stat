@@ -161,7 +161,8 @@ class BrokerManager(Console):
     def Disconnect(self):
         if self.broker:
             self.qmf.delBroker(self.broker)
-        for b in self.brokers: self.qmf.delBroker(b.broker)
+        else:
+            for b in self.brokers: self.qmf.delBroker(b.broker)
 
     def _getCluster(self):
         packages = self.qmf.getPackages()
