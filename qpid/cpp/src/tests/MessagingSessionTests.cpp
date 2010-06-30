@@ -769,6 +769,12 @@ QPID_AUTO_TEST_CASE(testExclusiveSubscriber)
     } catch (const MessagingException& e) {}
 }
 
+QPID_AUTO_TEST_CASE(testAuthenticatedUsername)
+{
+    MessagingFixture fix;
+    BOOST_CHECK_EQUAL(fix.connection.getAuthenticatedUsername(), std::string("anonymous"));
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 

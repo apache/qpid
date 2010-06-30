@@ -74,5 +74,8 @@ void Connection::setOption(const std::string& name, const Variant& value)
 { 
     impl->setOption(name, value);
 }
-
+std::string Connection::getAuthenticatedUsername()
+{
+    return impl->getAuthenticatedUsername();
+}
 }} // namespace qpid::messaging
