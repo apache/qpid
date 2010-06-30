@@ -137,6 +137,7 @@ class Connection(Endpoint):
     self.heartbeat = options.get("heartbeat")
     self.username = default(url.user, options.get("username", None))
     self.password = default(url.password, options.get("password", None))
+    self.auth_username = None
 
     self.sasl_mechanisms = options.get("sasl_mechanisms")
     self.sasl_service = options.get("sasl_service", "qpidd")

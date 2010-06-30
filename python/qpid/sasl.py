@@ -65,6 +65,9 @@ class WrapperClient:
     else:
       raise SASLError(self._cli.getError())
 
+  def auth_username(self):
+    return self._cli.getUserId()
+
 class PlainClient:
 
   def __init__(self):
@@ -91,6 +94,9 @@ class PlainClient:
 
   def decode(self, bytes):
     return bytes
+
+  def auth_username(self):
+    return self.attrs.get("username")
 
 try:
   from saslwrapper import Client as _Client
