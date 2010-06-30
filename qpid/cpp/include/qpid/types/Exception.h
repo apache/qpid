@@ -23,7 +23,7 @@
  */
 
 #include <string>
-#include "qpid/CommonImportExport.h"
+#include "qpid/types/ImportExport.h"
 
 namespace qpid {
 namespace types {
@@ -31,9 +31,9 @@ namespace types {
 class Exception : public std::exception
 {
   public:
-    QPID_COMMON_EXTERN explicit Exception(const std::string& message=std::string()) throw();
-    QPID_COMMON_EXTERN virtual ~Exception() throw();
-    QPID_COMMON_EXTERN virtual const char* what() const throw();
+    QPID_TYPES_EXTERN explicit Exception(const std::string& message=std::string()) throw();
+    QPID_TYPES_EXTERN virtual ~Exception() throw();
+    QPID_TYPES_EXTERN virtual const char* what() const throw();
 
   private:
     const std::string message;
