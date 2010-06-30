@@ -60,6 +60,9 @@ class VersionError(ConnectError):
 class AuthenticationFailure(ConnectError):
   pass
 
+class ConnectionClosed(ConnectionError):
+  pass
+
 ## Session Errors
 
 class SessionError(MessagingError):
@@ -91,6 +94,9 @@ class UnauthorizedAccess(SessionError):
 class ServerError(SessionError):
   pass
 
+class SessionClosed(SessionError):
+  pass
+
 ## Link Errors
 
 class LinkError(MessagingError):
@@ -115,6 +121,9 @@ class AssertionFailed(ResolutionError):
   pass
 
 class NotFound(ResolutionError):
+  pass
+
+class LinkClosed(LinkError):
   pass
 
 ## Sender Errors
