@@ -674,6 +674,7 @@ class Engine:
     self._sasl_encode = True
 
   def do_connection_open_ok(self, open_ok):
+    self.connection.auth_username = self._sasl.auth_username()
     self._connected = True
     self._sasl_decode = True
     self.connection._transport_connected = True
