@@ -31,11 +31,14 @@ import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
+import javax.management.MBeanException;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -222,6 +225,42 @@ public class HeadersExchange extends AbstractExchange
             }
 
             _bindings.add(new Registration(new HeadersBinding(bindingMap), queue));
+        }
+
+        /**
+         * Removes a queue binding from the exchange.
+         */
+        public void removeBinding(String queueName, String binding) throws JMException
+        {
+            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
+            if (queue == null)
+            {
+                throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+            }
+
+            String[] bindings = binding.split(",");
+            FieldTable bindingMap = new FieldTable();
+            for (int i = 0; i < bindings.length; i++)
+            {
+                String[] keyAndValue = bindings[i].split("=");
+                if (keyAndValue == null || keyAndValue.length == 0 || keyAndValue.length > 2)
+                {
+                    throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
+                }
+                
+                if(keyAndValue.length ==1)
+                {
+                    //no value was given, only a key. Use an empty value
+                    //to signal match on key presence alone
+                    bindingMap.setString(keyAndValue[0], "");
+                }
+                else
+                {
+                    bindingMap.setString(keyAndValue[0], keyAndValue[1]);
+                }
+            }
+
+            _bindings.remove(new Registration(new HeadersBinding(bindingMap), queue));
         }
 
     } // End of MBean class

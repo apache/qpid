@@ -368,6 +368,34 @@ public class TopicExchange extends AbstractExchange
             }
         }
 
+        /**
+         * Removes a queue binding from the exchange.
+         *
+         * @see AMQQueue#unBind(org.apache.qpid.server.exchange.Exchange, AMQShortString, org.apache.qpid.framing.FieldTable)
+         */
+        public void removeBinding(String queueName, String binding) throws JMException
+        {
+            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
+            if (queue == null)
+            {
+                throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+            }
+
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+            try
+            {
+                queue.unBind(TopicExchange.this, new AMQShortString(binding), (FieldTable) null);
+            }
+            catch (AMQException ex)
+            {
+                throw new MBeanException(ex);
+            }
+            finally
+            {
+                CurrentActor.remove();
+            }
+        }
+
     } // End of MBean class
 
     public AMQShortString getType()

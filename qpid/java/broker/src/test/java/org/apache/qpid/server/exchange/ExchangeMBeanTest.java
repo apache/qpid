@@ -125,6 +125,32 @@ public class ExchangeMBeanTest  extends TestCase
         assertTrue(!mbean.isDurable());
         assertTrue(mbean.isAutoDelete());
     }
+    
+    /**
+     * Test adding bindings and removing it via JMX.
+     * <p>
+     * QPID-2700
+     */
+    public void testBindings() throws Exception
+    {
+        int bindings = _queue.getExchangeBindings().size();
+        
+        Exchange exchange = _queue.getVirtualHost().getExchangeRegistry().getDefaultExchange();
+        ManagedExchange mbean = (ManagedExchange) ((AbstractExchange) exchange).getManagedObject();
+        
+        mbean.createNewBinding(_queue.getName().asString(), "robot");
+        mbean.createNewBinding(_queue.getName().asString(), "kitten");
+
+        assertEquals("Should have added two bindings", bindings + 2, _queue.getExchangeBindings().size());
+        
+        mbean.removeBinding(_queue.getName().asString(), "robot");
+
+        assertEquals("Should have one extra binding", bindings + 1, _queue.getExchangeBindings().size());
+        
+        mbean.removeBinding(_queue.getName().asString(), "kitten");
+
+        assertEquals("Should have original number of binding", bindings, _queue.getExchangeBindings().size());
+    }
 
     @Override
     protected void setUp() throws Exception
