@@ -452,8 +452,8 @@ QueueSource::QueueSource(const Address& address) :
     //extract subscription arguments from address options (nb: setting
     //of accept-mode/acquire-mode/destination controlled though other
     //options)
-    exclusive = Opt(address)/NODE/LINK/X_SUBSCRIBE/EXCLUSIVE;
-    (Opt(address)/NODE/LINK/X_SUBSCRIBE/ARGUMENTS).collect(options);
+    exclusive = Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE;
+    (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(options);
 }
 
 void QueueSource::subscribe(qpid::client::AsyncSession& session, const std::string& destination)
