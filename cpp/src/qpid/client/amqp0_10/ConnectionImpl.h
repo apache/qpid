@@ -51,6 +51,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     void detach();
     void setOption(const std::string& name, const qpid::types::Variant& value);
     bool backoff();
+    std::string getAuthenticatedUsername();
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
 

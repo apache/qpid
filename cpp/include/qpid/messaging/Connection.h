@@ -98,6 +98,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
     QPID_MESSAGING_EXTERN Session createSession(const std::string& name = std::string());
 
     QPID_MESSAGING_EXTERN Session getSession(const std::string& name) const;
+    QPID_MESSAGING_EXTERN std::string getAuthenticatedUsername();
   private:
   friend class qpid::messaging::PrivateImplRef<Connection>;
 
