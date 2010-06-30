@@ -1,15 +1,15 @@
 [NAME]
 
-qpidd \- the Qpid AMQP Broker Daemon
+qpidd \- the Qpid AMQP Message Broker Daemon
 
 [SYNOPSIS]
 
-qpidd [options]
+qpidd [-p port] [--config config_file] [--data-dir directory]
 
 [DESCRIPTION]
 
-An AMQP broker daemon that stores, routes and forwards messages using
-the Advanced Message Queueing Protocol (AMQP).
+An AMQP message broker daemon that stores, routes and forwards
+messages using the Advanced Message Queueing Protocol (AMQP).
 
 [OPTIONS]
 
@@ -28,7 +28,6 @@ Each line is a name=value pair. Blank lines and lines beginning with # are ignor
   # My qpidd configuration file.
   port=6000
   max-connections=10
-  log-to-stdout=yes
   log-to-file=/tmp/qpidd.log
 
 [ENVIRONMENT]
@@ -43,4 +42,10 @@ The environment variable is the option name in uppercase, prefixed with QPID_ an
   export QPID_MAX_CONNECTIONS=10
   export QPID_LOG_TO_FILE=/tmp/qpidd.log
 
+[AUTHOR]
 
+The Apache Qpid Project, dev@qpid.apache.org
+
+[REPORTING BUGS]
+
+Please report bugs to users@qpid.apache.org
