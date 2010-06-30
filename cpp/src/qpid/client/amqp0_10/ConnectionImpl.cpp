@@ -325,5 +325,9 @@ bool ConnectionImpl::backoff()
         return false;
     }
 }
+std::string ConnectionImpl::getAuthenticatedUsername()
+{
+    return connection.getNegotiatedSettings().username;
+}
 
 }}} // namespace qpid::client::amqp0_10

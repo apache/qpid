@@ -44,6 +44,7 @@ class ConnectionImpl : public virtual qpid::RefCounted
     virtual Session newSession(bool transactional, const std::string& name) = 0;
     virtual Session getSession(const std::string& name) const = 0;
     virtual void setOption(const std::string& name, const qpid::types::Variant& value) = 0;
+    virtual std::string getAuthenticatedUsername() = 0;
   private:
 };
 }} // namespace qpid::messaging
