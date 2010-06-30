@@ -28,7 +28,7 @@
 #include "Uuid.h"
 #include "qpid/types/Exception.h"
 #include "qpid/sys/IntegerTypes.h"
-#include "qpid/CommonImportExport.h"
+#include "qpid/types/ImportExport.h"
 
 namespace qpid {
 namespace types {
@@ -71,101 +71,101 @@ class Variant
     typedef std::map<std::string, Variant> Map;
     typedef std::list<Variant> List;
 
-    QPID_COMMON_EXTERN Variant();
-    QPID_COMMON_EXTERN Variant(bool);
-    QPID_COMMON_EXTERN Variant(uint8_t);
-    QPID_COMMON_EXTERN Variant(uint16_t);
-    QPID_COMMON_EXTERN Variant(uint32_t);
-    QPID_COMMON_EXTERN Variant(uint64_t);
-    QPID_COMMON_EXTERN Variant(int8_t);
-    QPID_COMMON_EXTERN Variant(int16_t);
-    QPID_COMMON_EXTERN Variant(int32_t);
-    QPID_COMMON_EXTERN Variant(int64_t);
-    QPID_COMMON_EXTERN Variant(float);
-    QPID_COMMON_EXTERN Variant(double);
-    QPID_COMMON_EXTERN Variant(const std::string&);
-    QPID_COMMON_EXTERN Variant(const char*);
-    QPID_COMMON_EXTERN Variant(const Map&);
-    QPID_COMMON_EXTERN Variant(const List&);
-    QPID_COMMON_EXTERN Variant(const Variant&);
-    QPID_COMMON_EXTERN Variant(const Uuid&);
+    QPID_TYPES_EXTERN Variant();
+    QPID_TYPES_EXTERN Variant(bool);
+    QPID_TYPES_EXTERN Variant(uint8_t);
+    QPID_TYPES_EXTERN Variant(uint16_t);
+    QPID_TYPES_EXTERN Variant(uint32_t);
+    QPID_TYPES_EXTERN Variant(uint64_t);
+    QPID_TYPES_EXTERN Variant(int8_t);
+    QPID_TYPES_EXTERN Variant(int16_t);
+    QPID_TYPES_EXTERN Variant(int32_t);
+    QPID_TYPES_EXTERN Variant(int64_t);
+    QPID_TYPES_EXTERN Variant(float);
+    QPID_TYPES_EXTERN Variant(double);
+    QPID_TYPES_EXTERN Variant(const std::string&);
+    QPID_TYPES_EXTERN Variant(const char*);
+    QPID_TYPES_EXTERN Variant(const Map&);
+    QPID_TYPES_EXTERN Variant(const List&);
+    QPID_TYPES_EXTERN Variant(const Variant&);
+    QPID_TYPES_EXTERN Variant(const Uuid&);
 
-    QPID_COMMON_EXTERN ~Variant();
+    QPID_TYPES_EXTERN ~Variant();
 
-    QPID_COMMON_EXTERN VariantType getType() const;
-    QPID_COMMON_EXTERN bool isVoid() const;
+    QPID_TYPES_EXTERN VariantType getType() const;
+    QPID_TYPES_EXTERN bool isVoid() const;
     
-    QPID_COMMON_EXTERN Variant& operator=(bool);
-    QPID_COMMON_EXTERN Variant& operator=(uint8_t);
-    QPID_COMMON_EXTERN Variant& operator=(uint16_t);
-    QPID_COMMON_EXTERN Variant& operator=(uint32_t);
-    QPID_COMMON_EXTERN Variant& operator=(uint64_t);
-    QPID_COMMON_EXTERN Variant& operator=(int8_t);
-    QPID_COMMON_EXTERN Variant& operator=(int16_t);
-    QPID_COMMON_EXTERN Variant& operator=(int32_t);
-    QPID_COMMON_EXTERN Variant& operator=(int64_t);
-    QPID_COMMON_EXTERN Variant& operator=(float);
-    QPID_COMMON_EXTERN Variant& operator=(double);
-    QPID_COMMON_EXTERN Variant& operator=(const std::string&);
-    QPID_COMMON_EXTERN Variant& operator=(const char*);
-    QPID_COMMON_EXTERN Variant& operator=(const Map&);
-    QPID_COMMON_EXTERN Variant& operator=(const List&);
-    QPID_COMMON_EXTERN Variant& operator=(const Variant&);
-    QPID_COMMON_EXTERN Variant& operator=(const Uuid&);
+    QPID_TYPES_EXTERN Variant& operator=(bool);
+    QPID_TYPES_EXTERN Variant& operator=(uint8_t);
+    QPID_TYPES_EXTERN Variant& operator=(uint16_t);
+    QPID_TYPES_EXTERN Variant& operator=(uint32_t);
+    QPID_TYPES_EXTERN Variant& operator=(uint64_t);
+    QPID_TYPES_EXTERN Variant& operator=(int8_t);
+    QPID_TYPES_EXTERN Variant& operator=(int16_t);
+    QPID_TYPES_EXTERN Variant& operator=(int32_t);
+    QPID_TYPES_EXTERN Variant& operator=(int64_t);
+    QPID_TYPES_EXTERN Variant& operator=(float);
+    QPID_TYPES_EXTERN Variant& operator=(double);
+    QPID_TYPES_EXTERN Variant& operator=(const std::string&);
+    QPID_TYPES_EXTERN Variant& operator=(const char*);
+    QPID_TYPES_EXTERN Variant& operator=(const Map&);
+    QPID_TYPES_EXTERN Variant& operator=(const List&);
+    QPID_TYPES_EXTERN Variant& operator=(const Variant&);
+    QPID_TYPES_EXTERN Variant& operator=(const Uuid&);
 
-    QPID_COMMON_EXTERN bool asBool() const;
-    QPID_COMMON_EXTERN uint8_t asUint8() const;
-    QPID_COMMON_EXTERN uint16_t asUint16() const;
-    QPID_COMMON_EXTERN uint32_t asUint32() const;
-    QPID_COMMON_EXTERN uint64_t asUint64() const;
-    QPID_COMMON_EXTERN int8_t asInt8() const;
-    QPID_COMMON_EXTERN int16_t asInt16() const;
-    QPID_COMMON_EXTERN int32_t asInt32() const;
-    QPID_COMMON_EXTERN int64_t asInt64() const;
-    QPID_COMMON_EXTERN float asFloat() const;
-    QPID_COMMON_EXTERN double asDouble() const;
-    QPID_COMMON_EXTERN std::string asString() const;
-    QPID_COMMON_EXTERN Uuid asUuid() const;
+    QPID_TYPES_EXTERN bool asBool() const;
+    QPID_TYPES_EXTERN uint8_t asUint8() const;
+    QPID_TYPES_EXTERN uint16_t asUint16() const;
+    QPID_TYPES_EXTERN uint32_t asUint32() const;
+    QPID_TYPES_EXTERN uint64_t asUint64() const;
+    QPID_TYPES_EXTERN int8_t asInt8() const;
+    QPID_TYPES_EXTERN int16_t asInt16() const;
+    QPID_TYPES_EXTERN int32_t asInt32() const;
+    QPID_TYPES_EXTERN int64_t asInt64() const;
+    QPID_TYPES_EXTERN float asFloat() const;
+    QPID_TYPES_EXTERN double asDouble() const;
+    QPID_TYPES_EXTERN std::string asString() const;
+    QPID_TYPES_EXTERN Uuid asUuid() const;
 
-    QPID_COMMON_EXTERN operator bool() const;
-    QPID_COMMON_EXTERN operator uint8_t() const;
-    QPID_COMMON_EXTERN operator uint16_t() const;
-    QPID_COMMON_EXTERN operator uint32_t() const;
-    QPID_COMMON_EXTERN operator uint64_t() const;
-    QPID_COMMON_EXTERN operator int8_t() const;
-    QPID_COMMON_EXTERN operator int16_t() const;
-    QPID_COMMON_EXTERN operator int32_t() const;
-    QPID_COMMON_EXTERN operator int64_t() const;
-    QPID_COMMON_EXTERN operator float() const;
-    QPID_COMMON_EXTERN operator double() const;
-    QPID_COMMON_EXTERN operator std::string() const;
-    QPID_COMMON_EXTERN operator Uuid() const;
+    QPID_TYPES_EXTERN operator bool() const;
+    QPID_TYPES_EXTERN operator uint8_t() const;
+    QPID_TYPES_EXTERN operator uint16_t() const;
+    QPID_TYPES_EXTERN operator uint32_t() const;
+    QPID_TYPES_EXTERN operator uint64_t() const;
+    QPID_TYPES_EXTERN operator int8_t() const;
+    QPID_TYPES_EXTERN operator int16_t() const;
+    QPID_TYPES_EXTERN operator int32_t() const;
+    QPID_TYPES_EXTERN operator int64_t() const;
+    QPID_TYPES_EXTERN operator float() const;
+    QPID_TYPES_EXTERN operator double() const;
+    QPID_TYPES_EXTERN operator std::string() const;
+    QPID_TYPES_EXTERN operator Uuid() const;
 
-    QPID_COMMON_EXTERN const Map& asMap() const;
-    QPID_COMMON_EXTERN Map& asMap();
-    QPID_COMMON_EXTERN const List& asList() const;
-    QPID_COMMON_EXTERN List& asList();
+    QPID_TYPES_EXTERN const Map& asMap() const;
+    QPID_TYPES_EXTERN Map& asMap();
+    QPID_TYPES_EXTERN const List& asList() const;
+    QPID_TYPES_EXTERN List& asList();
     /**
      * Unlike asString(), getString() will not do any conversions and
      * will throw InvalidConversion if the type is not STRING.
      */
-    QPID_COMMON_EXTERN const std::string& getString() const;
-    QPID_COMMON_EXTERN std::string& getString();
+    QPID_TYPES_EXTERN const std::string& getString() const;
+    QPID_TYPES_EXTERN std::string& getString();
 
-    QPID_COMMON_EXTERN void setEncoding(const std::string&);
-    QPID_COMMON_EXTERN const std::string& getEncoding() const;
+    QPID_TYPES_EXTERN void setEncoding(const std::string&);
+    QPID_TYPES_EXTERN const std::string& getEncoding() const;
 
-    QPID_COMMON_EXTERN bool isEqualTo(const Variant& a) const;
+    QPID_TYPES_EXTERN bool isEqualTo(const Variant& a) const;
 
-    QPID_COMMON_EXTERN void reset();    
+    QPID_TYPES_EXTERN void reset();
   private:
     VariantImpl* impl;
 };
 
-QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const Variant& value);
-QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::Map& map);
-QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::List& list);
-QPID_COMMON_EXTERN bool operator==(const Variant& a, const Variant& b);
+QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream& out, const Variant& value);
+QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::Map& map);
+QPID_TYPES_EXTERN std::ostream& operator<<(std::ostream& out, const Variant::List& list);
+QPID_TYPES_EXTERN bool operator==(const Variant& a, const Variant& b);
 }} // namespace qpid::types
 
 #endif  /*!QPID_TYPES_VARIANT_H*/

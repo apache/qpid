@@ -496,6 +496,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set (CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO")
   endif (MSVC)
 
+  set (qpidtypes_platform_SOURCES
+    qpid/sys/windows/uuid.cpp
+  )
+  set (qpidtypes_platform_LIBS
+    rpcrt4
+  )
+
   set (qpidcommon_platform_SOURCES
     qpid/log/windows/SinkOptions.cpp
     qpid/sys/windows/AsynchIO.cpp
@@ -512,11 +519,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/SystemInfo.cpp
     qpid/sys/windows/Thread.cpp
     qpid/sys/windows/Time.cpp
-    qpid/sys/windows/uuid.cpp
     ${sslcommon_windows_SOURCES}
   )
+
   set (qpidcommon_platform_LIBS
-    ${windows_ssl_libs} rpcrt4 ws2_32
+    ${windows_ssl_libs} ws2_32
   )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
@@ -559,6 +566,11 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     )
   endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
 
+  set (qpidtypes_platform_SOURCES)
+  set (qpidtypes_platform_LIBS
+    uuid
+  )
+
   set (qpidcommon_platform_SOURCES
     qpid/sys/posix/AsynchIO.cpp
     qpid/sys/posix/Fork.cpp
@@ -581,7 +593,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidcommon_platform_LIBS
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
-    uuid
     ${CMAKE_DL_LIBS}
   )
 
@@ -662,9 +673,6 @@ set (qpidcommon_SOURCES
      qpid/sys/Runnable.cpp
      qpid/sys/Shlib.cpp
      qpid/sys/Timer.cpp
-     qpid/types/Exception.cpp
-     qpid/types/Uuid.cpp
-     qpid/types/Variant.cpp
      qpid/amqp_0_10/Codecs.cpp
 )
 
@@ -672,7 +680,7 @@ add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
 if (CLOCK_GETTIME_IN_RT)
   set (qpidcommon_platform_LIBS ${qpidcommon_platform_LIBS} rt)
 endif (CLOCK_GETTIME_IN_RT)
-target_link_libraries (qpidcommon
+target_link_libraries (qpidcommon qpidtypes
                        ${qpidcommon_platform_LIBS}
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
@@ -682,6 +690,18 @@ install (TARGETS qpidcommon
          COMPONENT ${QPID_COMPONENT_COMMON})
 install_pdb (qpidcommon ${QPID_COMPONENT_COMMON})
 
+set(qpidtypes_SOURCES
+  qpid/types/Exception.cpp
+  qpid/types/Uuid.cpp
+  qpid/types/Variant.cpp
+  ${qpidtypes_platform_SOURCES}
+)
+add_library(qpidtypes SHARED ${qpidtypes_SOURCES})
+target_link_libraries(qpidtypes ${qpidtypes_platform_LIBS})
+set_target_properties (qpidtypes PROPERTIES VERSION ${qpidc_version})
+install(TARGETS qpidtypes
+  DESTINATION ${QPID_INSTALL_LIBDIR}
+  COMPONENT ${QPID_COMPONENT_COMMON})
 
 set (qpidclient_SOURCES
      ${rgen_client_srcs}

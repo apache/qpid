@@ -185,7 +185,7 @@ libqpidcommon_la_SOURCES += $(poller) $(systeminfo)
 posix_broker_src = \
   qpid/broker/posix/BrokerDefaults.cpp
 
-lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
+lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la libqpidtypes.la
 
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
@@ -309,6 +309,7 @@ EXTRA_DIST +=\
   qpid/store
 
 libqpidcommon_la_LIBADD = \
+  libqpidtypes.la \
   -lboost_program_options \
   -lboost_filesystem \
   -luuid \
@@ -477,10 +478,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Waitable.h				\
   qpid/sys/alloca.h				\
   qpid/sys/uuid.h				\
-  qpid/amqp_0_10/Codecs.cpp			\
-  qpid/types/Exception.cpp			\
-  qpid/types/Uuid.cpp				\
-  qpid/types/Variant.cpp
+  qpid/amqp_0_10/Codecs.cpp
 
 if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
@@ -491,8 +489,7 @@ endif
 QPIDCOMMON_VERSION_INFO = 2:0:0
 libqpidcommon_la_LDFLAGS=-version-info $(QPIDCOMMON_VERSION_INFO)
 
-libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
-
+libqpidbroker_la_LIBADD = libqpidcommon.la
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   $(posix_broker_src) \
@@ -714,8 +711,15 @@ libqpidclient_la_SOURCES =			\
 QPIDCLIENT_VERSION_INFO  = 2:0:0
 libqpidclient_la_LDFLAGS = -version-info $(QPIDCLIENT_VERSION_INFO)
 
-libqpidmessaging_la_LIBADD = libqpidclient.la
+libqpidtypes_la_libadd=-luuid
+libqpidtypes_la_SOURCES=			\
+  qpid/types/Exception.cpp			\
+  qpid/types/Uuid.cpp				\
+  qpid/types/Variant.cpp
+QPIDTYPES_VERSION_INFO  = 1:0:0
+libqpidtypes_la_LDFLAGS = -version-info $(QPIDTYPES_VERSION_INFO)
 
+libqpidmessaging_la_LIBADD = libqpidclient.la libqpidtypes.la
 libqpidmessaging_la_SOURCES =			\
   qpid/messaging/Address.cpp			\
   qpid/messaging/AddressParser.h		\
