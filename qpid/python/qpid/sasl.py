@@ -66,7 +66,11 @@ class WrapperClient:
       raise SASLError(self._cli.getError())
 
   def auth_username(self):
-    return self._cli.getUserId()
+    status, result = self._cli.getUserId()
+    if status:
+      return result
+    else:
+      raise SASLError(self._cli.getError())
 
 class PlainClient:
 
