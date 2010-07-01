@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /STACK:10000000 /machine:I386"
-				AdditionalDependencies="$(ProjectDir)..\..\..\..\src\Debug\qpidclientd.lib $(ProjectDir)..\..\..\..\src\Debug\qpidcommond.lib $(ProjectDir)..\..\..\..\src\Debug\qpidmessagingd.lib"
+				AdditionalDependencies="$(ProjectDir)..\..\..\..\src\Debug\qpidclientd.lib $(ProjectDir)..\..\..\..\src\Debug\qpidcommond.lib $(ProjectDir)..\..\..\..\src\Debug\qpidmessagingd.lib $(ProjectDir)..\..\..\..\src\Debug\qpidtypesd.lib"
 				OutputFile="$(ProjectDir)..\..\..\..\src\$(ConfigurationName)\org.apache.qpid.messagingd.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
@@ -141,7 +141,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /STACK:10000000 /machine:I386"
-				AdditionalDependencies="$(ProjectDir)..\..\..\..\src\$(ConfigurationName)\qpidclient.lib $(ProjectDir)..\..\..\..\src\$(ConfigurationName)\qpidcommon.lib $(ProjectDir)..\..\..\..\src\$(ConfigurationName)\qpidmessaging.lib"
+				AdditionalDependencies="$(ProjectDir)..\..\..\..\src\$(ConfigurationName)\qpidclient.lib $(ProjectDir)..\..\..\..\src\$(ConfigurationName)\qpidcommon.lib $(ProjectDir)..\..\..\..\src\$(ConfigurationName)\qpidmessaging.lib $(ProjectDir)..\..\..\..\src\$(ConfigurationName)\qpidtypes.lib"
 				OutputFile="$(ProjectDir)..\..\..\..\src\$(ConfigurationName)\org.apache.qpid.messaging.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
