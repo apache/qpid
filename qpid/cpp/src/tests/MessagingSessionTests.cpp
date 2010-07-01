@@ -775,6 +775,14 @@ QPID_AUTO_TEST_CASE(testAuthenticatedUsername)
     BOOST_CHECK_EQUAL(fix.connection.getAuthenticatedUsername(), std::string("anonymous"));
 }
 
+QPID_AUTO_TEST_CASE(testExceptionOnClosedConnection)
+{
+    MessagingFixture fix;
+    fix.connection.close();
+    BOOST_CHECK_THROW(fix.connection.createSession(), MessagingException);
+    Connection connection("blah");
+    BOOST_CHECK_THROW(connection.createSession(), MessagingException);
+}
 
 QPID_AUTO_TEST_SUITE_END()
 
