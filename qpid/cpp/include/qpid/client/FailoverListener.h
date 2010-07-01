@@ -60,6 +60,12 @@ class FailoverListener : private MessageListener, private qpid::sys::Runnable
     /** Subscribe to amq.failover exchange. */
     QPID_CLIENT_EXTERN FailoverListener(Connection);
 
+    /** Subscribe to amq.failover exchange.
+    *@param useInitial If true use the connection's initial brokers as
+    * the initial value of getKnownBrokers
+    */
+    QPID_CLIENT_EXTERN FailoverListener(Connection, bool useInitial);
+
     QPID_CLIENT_EXTERN ~FailoverListener();
 
     /** Returns the latest list of known broker URLs. */
@@ -68,7 +74,8 @@ class FailoverListener : private MessageListener, private qpid::sys::Runnable
   private:
     void received(Message& msg);
     void run();
-
+    void init(bool);
+    
     mutable sys::Mutex lock;
     Connection connection;
     Session session;
