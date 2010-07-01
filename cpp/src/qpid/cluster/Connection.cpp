@@ -95,7 +95,6 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
     updateIn(c.getUpdateReceiver()),
     secureConnection(0)
 {
-    cluster.addLocalConnection(this);
     if (isLocalClient()) {
         giveReadCredit(cluster.getSettings().readMax); // Flow control
         // Delay adding the connection to the management map until announce()
