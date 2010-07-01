@@ -128,6 +128,7 @@ struct QpiddDaemon : public Daemon {
         uint16_t port=brokerPtr->getPort(options->daemon.transport);
         ready(port);            // Notify parent.
         brokerPtr->run();
+        broker::SignalHandler::setBroker(0); // Delete broker in this thread.
     }
 };
 
@@ -174,6 +175,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
         if (options->broker.port == 0 || myOptions->daemon.transport != TCP)
             cout << uint16_t(brokerPtr->getPort(myOptions->daemon.transport)) << endl;
         brokerPtr->run();
+        broker::SignalHandler::setBroker(0); // Delete broker in this thread.
     }
     return 0;
 }
