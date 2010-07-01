@@ -33,8 +33,16 @@ FailoverListener::FailoverListener(Connection c) :
     connection(c),
     session(c.newSession(AMQ_FAILOVER+"."+framing::Uuid(true).str())),
     subscriptions(session)
-{
-    knownBrokers = c.getInitialBrokers();
+{ init(true); }
+
+FailoverListener::FailoverListener(Connection c, bool useInitial) :
+    connection(c),
+    session(c.newSession(AMQ_FAILOVER+"."+framing::Uuid(true).str())),
+    subscriptions(session)
+{ init(useInitial); }
+
+void FailoverListener::init(bool useInitial) {
+    if (useInitial) knownBrokers = connection.getInitialBrokers();
     if (session.exchangeQuery(arg::name=AMQ_FAILOVER).getNotFound()) {
         session.close();
         return;
