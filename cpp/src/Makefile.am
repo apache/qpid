@@ -715,7 +715,9 @@ libqpidtypes_la_libadd=-luuid
 libqpidtypes_la_SOURCES=			\
   qpid/types/Exception.cpp			\
   qpid/types/Uuid.cpp				\
-  qpid/types/Variant.cpp
+  qpid/types/Variant.cpp			\
+  ../include/qpid/types/ImportExport.h
+
 QPIDTYPES_VERSION_INFO  = 1:0:0
 libqpidtypes_la_LDFLAGS = -version-info $(QPIDTYPES_VERSION_INFO)
 
