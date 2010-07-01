@@ -213,6 +213,10 @@ qpid::messaging::Session ConnectionImpl::newSession(bool transactional, const st
             break;
         } catch (const qpid::TransportFailure&) {
             open();
+        } catch (const qpid::SessionException& e) {
+            throw qpid::messaging::SessionError(e.what());
+        } catch (const std::exception& e) {
+            throw qpid::messaging::MessagingException(e.what());            
         }
     }
     return impl;
