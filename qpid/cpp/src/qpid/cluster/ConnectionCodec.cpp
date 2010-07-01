@@ -58,6 +58,7 @@ ConnectionCodec::ConnectionCodec(
 ) : codec(out, logId, isLink),
     interceptor(new Connection(cluster, codec, logId, cluster.getId(), catchUp, isLink, external))
 {
+    cluster.addLocalConnection(interceptor);
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);
     codec.setVersion(v);
