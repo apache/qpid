@@ -107,6 +107,17 @@ void QpiddOptions::usage() const {
     cout << "Usage: qpidd [OPTIONS]" << endl << endl << *this << endl;
 }
 
+// Set the broker pointer on the signal handler, then reset at end of scope.
+// This is to ensure that the signal handler doesn't keep a broker
+// reference after main() has returned.
+// 
+struct ScopedSetBroker {
+    ScopedSetBroker(const boost::intrusive_ptr<Broker>& broker) {
+        qpid::broker::SignalHandler::setBroker(broker);
+    }
+    ~ScopedSetBroker() { qpid::broker::SignalHandler::setBroker(0); }
+};
+    
 struct QpiddDaemon : public Daemon {
     QpiddPosixOptions *options;
   
@@ -123,12 +134,11 @@ struct QpiddDaemon : public Daemon {
     /** Code for forked child process */
     void child() {
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->parent->broker));
-        qpid::broker::SignalHandler::setBroker(brokerPtr);
+        ScopedSetBroker ssb(brokerPtr);
         brokerPtr->accept();
         uint16_t port=brokerPtr->getPort(options->daemon.transport);
         ready(port);            // Notify parent.
         brokerPtr->run();
-        broker::SignalHandler::setBroker(0); // Delete broker in this thread.
     }
 };
 
@@ -170,12 +180,11 @@ int QpiddBroker::execute (QpiddOptions *options) {
     }
     else {                  // Non-daemon broker.
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
-        broker::SignalHandler::setBroker(brokerPtr);
+        ScopedSetBroker ssb(brokerPtr);
         brokerPtr->accept();
         if (options->broker.port == 0 || myOptions->daemon.transport != TCP)
             cout << uint16_t(brokerPtr->getPort(myOptions->daemon.transport)) << endl;
         brokerPtr->run();
-        broker::SignalHandler::setBroker(0); // Delete broker in this thread.
     }
     return 0;
 }
