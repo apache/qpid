@@ -26,3 +26,5 @@ org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithAsyncConsumer
 org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
 org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithAsyncConsumer
 org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithSyncConsumer
+
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#*
