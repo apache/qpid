@@ -69,6 +69,7 @@ class ManagementAgent
     //   product  - Product name (i.e. "qpid")
     //   instance - A unique identifier for this instance of the agent.
     //              If empty, the agent will create a GUID for the instance.
+    //   Note: the ":" character is reserved - do no use it in the vendor or product name.
     //
     virtual void setName(const std::string& vendor,
                          const std::string& product,
