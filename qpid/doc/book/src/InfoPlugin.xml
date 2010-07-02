@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
+-->
+
+<section xmlns="http://docbook.org/ns/docbook" version="5.0">
+<title>
+OSGI Info Plugin
+</title>
+ <para> The Info OSGI Plugin was developed as a mean of monitoring the qpid broker startup/shutdown
+      times along with selected JVM and OS details. It was written as a OSGI plugin so it can be
+      used as needed. </para>
+
+
+<section>
+ <title>How it works</title>
+ <para> Assuming the plugin is deployed, upon the Activator invocation (which happens when OSGI
+         loads the bundles), the plugin looks for its configuration file. If the file cannot be
+         found, the plugin does not perform any operation and will silently exit. If the
+         configuration is found, it is loaded and parsed. A predefined set of data is collected and
+         messages are generated as per the configuration templates (see below for details).</para>
+      <para> Further, the messages are sent using one of the supported protocols (currently http
+         post and soap) to the configured destination. The same scenario takes place on the plugin
+         unload phase which usually takes place upon broker shutdown. </para>
+</section>
+
+<section>
+ <title>Data Gathering</title>
+ <para>
+The info plugin collects a pre-defined set of data, and generates a  message according to a template
+defined in each section of the ini file. Data can be  of 2 categories: 
+<orderedlist numeration="loweralpha" spacing="normal">
+ <listitem>
+   <para>JVM specific</para>
+ </listitem>
+ <listitem>
+   <para>application specific</para> 
+ </listitem>
+ </orderedlist>
+ </para>
+ <para>
+Each data has a variable name associated which can be used for the message generation template.
+The convention chosen for template is: @[variable (in uppercase)] (eg @IP, @PORT) (see configuration section
+for message examples). 
+</para>
+<para>
+The following application specific info are gathered (variable names in round brackets):
+
+ <orderedlist numeration="arabic" spacing="normal">
+   <listitem>
+     <para>The JMX Port the application is listening to  (jmxport)</para>
+   </listitem>   
+   <listitem>
+     <para>The Port(s) the broker is listening to, comma delimited (port)</para>
+   </listitem>
+   <listitem>  
+       <para>The Broker Version (version)</para>
+   </listitem>
+   <listitem>
+       <para>The key store path  (KeystorePath)</para>
+   </listitem>
+   <listitem>
+       <para>The Plugin Directory (PluginDirectory)</para>
+   </listitem>
+   <listitem>
+       <para>The QPID work directory (QpidWork)</para>
+   </listitem>
+   <listitem>
+       <para>The JMX Principal Database (JMXPrincipalDatabase)</para>
+    </listitem>
+</orderedlist>
+</para>
+ <para>
+The following JVM specific info are collected (variable names in round brackets):
+
+  <orderedlist numeration="arabic" spacing="normal">
+  <listitem>
+      <para>Hostname (hostname)</para>
+  </listitem>
+   <listitem>
+      <para>IP address of the current machine (ip)</para>
+   </listitem>
+   <listitem>
+      <para>Number of CPU cores (CPUCores)</para>
+   </listitem>
+   <listitem>
+      <para>Maximum memory (Maximum_Memory)</para>
+   </listitem>
+   <listitem>
+      <para>Free Memory (Free_Memory)</para>
+   </listitem>
+   <listitem>
+      <para>Java Class Path (java.class.path)</para>
+   </listitem>
+   <listitem>
+      <para>Jave Home (java.home)</para>
+   </listitem>
+   <listitem>
+      <para>Java VM Name (java.vm.name)</para>
+   </listitem>
+   <listitem>
+      <para>Java VM Vendor (java.vm.vendor)</para>
+   </listitem>
+   <listitem>
+      <para>Java VM Version (java.vm.version)</para>
+   </listitem>
+   <listitem>
+      <para>Java Class Version (java.class.version)</para>
+   </listitem>
+   <listitem>
+      <para>Java Runtime Version (java.runtime.version)</para>
+   </listitem>
+   <listitem>
+      <para>OS Architecture (os.arch)</para>
+   </listitem>
+   <listitem>
+      <para>Sun Architecture Data Model (sun.arch.data.model)</para>
+   </listitem>
+   <listitem>
+      <para>User home directory (user.home)</para>
+   </listitem>
+   <listitem>
+      <para>User Name (user.name)</para>
+   </listitem>
+   <listitem>
+      <para>User Time Zone (user.timezone)</para>
+   </listitem>
+ </orderedlist>
+</para>
+</section>
+
+
+<section>
+ <title>Plugin Configuration</title>
+<para>
+The plugin configuration file is currently hardcoded to be: $QPID_HOME/etc/qpidinfo.ini
+We plan to provide a mean to change the configuration by using system property (eg -DInfoPluginConfig) but
+currently this is not available.
+</para>
+<para>
+As it might be useful to send more than 1 message, eventually to different destinations, 
+we chose an ini file layout for the plugin configuration that consists of  a global section 
+and set of individual sections, one for each message to be sent. 
+</para>
+ <para>
+  The configuration file has a global section composed of any key-value pairs placed before the start 
+  of an ini-type section (eg [section]). The role of the global section is to provide a set of values 
+  that would be inferred in each subsequent section. Any section from the config file can override any 
+  global variable by specifying the respective key-value pair inside. 
+ </para>
+ <para> The key protocol is mandatory, the plugin will not work if protocol=soap or protocol=http is
+         not specified. For soap, we expect the following keys to be present: <itemizedlist>
+            <listitem>
+               <para>soap.hostname</para>
+            </listitem>
+            <listitem>
+               <para>soap.port</para>
+            </listitem>
+            <listitem>
+               <para>soap.path</para>
+            </listitem>
+            <listitem>
+               <para>soap.envelope</para>
+            </listitem>
+         </itemizedlist> For http the following keys have to be present: <itemizedlist>
+            <listitem>
+               <para>http.url</para>
+            </listitem>
+            <listitem>
+               <para>http.envelope</para>
+            </listitem>
+         </itemizedlist> The names are self-explanatory, please see the example below. The protocol
+         key cannot be overwritten in the sections and it has to be chosen initially. </para>
+ </section>
+
+<section><title>Example Configuration</title>
+ <para>
+For soap messages, we will abbreviate the XML header by omitting the namespaces in the config, 
+in order to be more readable. A minimal  correct XML for the soap envelope would be
+  <programlisting>
+   <![CDATA[
+   <?xml version=\"1.0\"?>
+   <soap:Envelope 
+      xmlns:soap=\"http://www.w3.org/2001/12/soap-envelope\" 
+      soap:encodingStyle=\"http://www.w3.org/2001/12/soap-encoding\"> 
+      ...some content...
+   </soap:Envelope>
+   ]]>
+  </programlisting>
+ 
+ NB. On the ini file, there can be no text wrapping for any entry (as above), the whole text should come into 
+ a single line, irrespective of how long it is. 
+ 
+ </para>
+ 
+<programlisting>
+<![CDATA[
+## Ini file using SOAP
+protocol=soap
+soap.hostname=host1
+soap.port=8080
+
+[Message1]
+soap.path=/axis2/services/QpidInfo
+soap.action=qpidevent
+soap.envelope=<?xml version=\"1.0\"?><soap:Envelope>@ACTION-@VERSION</soap:Envelope>
+
+[Message2]
+soap.hostname=host2
+soap.port=9090
+soap.path=/axis1/services/Info
+soap.envelope=<?xml version=\"1.0\"?><soap:Envelope">@ACTION-@VERSION from @IP:@PORT</soap:Envelope>
+
+##  End of File
+]]>
+</programlisting>
+  
+<para>
+and another example, this time using http:
+
+<programlisting>
+<![CDATA[
+protocol=http
+http.url=http://mywebserver:8080/postServlet
+
+[Message1]
+http.envelope=Event from qpid broker at: @IP, running qpid version: @VERSION
+
+[Message2]
+http.url=http://myotherwebserver:9090/postServlet1
+http.envelope=Event for qpid broker @VERSION from @IP:@PORT running java @JAVA.VM.VERSION 
+]]>
+</programlisting>
+  </para>
+  <para>
+   The ini file is supporting comments starting with # or ; anywhere in the file. 
+   The global section is considered to be the first set of lines from the ini file before the first [Section] encountered. 
+  </para>
+ </section>
+ 
+</section>
+
+
+
