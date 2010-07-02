@@ -68,12 +68,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     
     public void testCreateOptions() throws Exception
     {
-        if (!isCppBroker())
-        {
-            _logger.info("Not C++ broker, exiting test");
-            return;
-        }
-        
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         MessageProducer prod;
         MessageConsumer cons;
@@ -197,11 +191,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     
     public void testCreateQueue() throws Exception
     {
-        if (!isCppBroker())
-        {
-            _logger.info("Not C++ broker, exiting test");
-            return;
-        }
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
         String addr = "ADDR:my-queue/hello; " +
@@ -258,11 +247,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     
     public void testCreateExchange() throws Exception
     {
-        if (!isCppBroker())
-        {
-            _logger.info("Not C++ broker, exiting test");
-            return;
-        }
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
         String addr = "ADDR:my-exchange/hello; " + 
@@ -295,12 +279,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     
     public void testBindQueueWithArgs() throws Exception
     {
-        if (!isCppBroker())
-        {
-            _logger.info("Not C++ broker, exiting test");
-            return;
-        }
-        
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
         String headersBinding = "{exchange: 'amq.match', arguments: {x-match: any, dep: sales, loc: CA}}";
