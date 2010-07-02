@@ -125,6 +125,12 @@ ManagementAgentImpl::~ManagementAgentImpl()
 
 void ManagementAgentImpl::setName(const string& vendor, const string& product, const string& instance)
 {
+    if (vendor.find(':') != vendor.npos) {
+        throw Exception("vendor string cannot contain a ':' character.");
+    }
+    if (product.find(':') != product.npos) {
+        throw Exception("product string cannot contain a ':' character.");
+    }
     attrMap["_vendor"] = vendor;
     attrMap["_product"] = product;
     string inst;
@@ -249,6 +255,7 @@ ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
         objectId.setV2Key(*object);  // let object generate the key
     else
         objectId.setV2Key(key);
+    objectId.setAgentName(name_address);
 
     object->setObjectId(objectId);
     newManagementObjects[objectId] = object;
