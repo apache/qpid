@@ -43,7 +43,7 @@ public class MINANetworkDriverTest extends TestCase
 {
  
     private static final String TEST_DATA = "YHALOTHAR";
-    private static final int TEST_PORT = 2323;
+    private static int TEST_PORT = 2323;
     private NetworkDriver _server;
     private NetworkDriver _client;
     private CountingProtocolEngine _countingEngine; // Keeps a count of how many bytes it's read
@@ -56,6 +56,9 @@ public class MINANetworkDriverTest extends TestCase
         _client = new MINANetworkDriver();
         _thrownEx = null;
         _countingEngine = new CountingProtocolEngine();
+        // increment the port to prevent tests clashing with each other when
+        // the port is in TIMED_WAIT state.
+        TEST_PORT++;
     }
 
     @Override
