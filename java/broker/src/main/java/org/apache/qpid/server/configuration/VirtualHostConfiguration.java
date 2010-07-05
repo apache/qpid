@@ -211,30 +211,30 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         ExchangeConfigurationPlugin exchangeConfiguration
                 = (ExchangeConfigurationPlugin) queue.getVirtualHost().getConfiguration().getConfiguration(exchangeClass);
 
-        // now need to perform the queue-topic-topics-queue magic.
+        // now need to perform the queue-topic-topics-queues magic.
         // So make a new ConfigurationObject that will hold all the configuration for this queue.
         ConfigurationPlugin queueConfig = new QueueConfiguration.QueueConfig();
 
         // Initialise the queue with any Global values we may have
-        QueueConfiguration config = getConfiguration(QueueConfiguration.class.getName());
-        if (config == null)
-        {
-            PropertiesConfiguration newQueueConfig = new PropertiesConfiguration();
-            newQueueConfig.setProperty("name", queue.getName());
+        PropertiesConfiguration newQueueConfig = new PropertiesConfiguration();
+        newQueueConfig.setProperty("name", queue.getName());
 
-            try
-            {
-                queueConfig.setConfiguration("", newQueueConfig);
-            }
-            catch (ConfigurationException e)
-            {
-                // This will not occur as queues only require a name. 
-                _logger.error("QueueConfiguration requirements have changed.");
-            }
-        }
-        else
+        try
         {
-            queueConfig.addConfiguration(config);
+            //Set the queue name
+            CompositeConfiguration mungedConf = new CompositeConfiguration();
+            //Set the queue name
+            mungedConf.addConfiguration(newQueueConfig);
+            //Set the global queue configuration
+            mungedConf.addConfiguration(getConfig().subset("queues"));
+
+            // Set configuration
+            queueConfig.setConfiguration("virtualhosts.virtualhost.queues", mungedConf);
+        }
+        catch (ConfigurationException e)
+        {
+            // This will not occur as queues only require a name.
+            _logger.error("QueueConfiguration requirements have changed.");
         }
 
         // Merge any configuration the Exchange wishes to apply        
