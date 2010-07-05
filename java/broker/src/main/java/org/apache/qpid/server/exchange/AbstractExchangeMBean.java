@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.server.management.AMQManagedObject;
@@ -28,6 +31,7 @@ import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
@@ -144,6 +148,33 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
         {
             JMException jme = new JMException(ex.toString());
             throw new MBeanException(jme, "Error creating new binding " + binding);
+        }
+        CurrentActor.remove();
+    }
+
+    /**
+     * Removes a queue binding from the exchange.
+     *
+     * @see BindingFactory#removeBinding(String, AMQQueue, Exchange, Map)
+     */
+    public void removeBinding(String queueName, String binding) throws JMException
+    {
+        VirtualHost vhost = getExchange().getVirtualHost();
+        AMQQueue queue = vhost.getQueueRegistry().getQueue(new AMQShortString(queueName));
+        if (queue == null)
+        {
+            throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+        }
+
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        try
+        {
+            vhost.getBindingFactory().removeBinding(binding, queue, _exchange, Collections.<String, Object>emptyMap());
+        }
+        catch (AMQException ex)
+        {
+            JMException jme = new JMException(ex.toString());
+            throw new MBeanException(jme, "Error removing binding " + binding);
         }
         CurrentActor.remove();
     }

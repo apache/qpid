@@ -32,9 +32,8 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 
 /**
  * The management interface exposed to allow management of an Exchange.
- * @author  Robert J. Greig
- * @author  Bhupendra Bhardwaj
- * @version 0.1
+ *
+ * @version 1.8
  */
 public interface ManagedExchange
 {
@@ -105,5 +104,20 @@ public interface ManagedExchange
     void createNewBinding(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue name") String queueName,
                           @MBeanOperationParameter(name="Binding", description="New binding")String binding)
         throws JMException;
-
+    
+    /**
+     * Removes an exchange binding from a queue.
+     * 
+     * @param exchangeName the Exchange name
+     * @param routingKey the routing key
+     * @throws IOException
+     * @throws JMException
+     * @since 1.8
+     */
+    @MBeanOperation(name="removeBinding",
+                    description="Removes an exchange binding from the Queue",
+                    impact= MBeanOperationInfo.ACTION)
+    void removeBinding(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue name") String queueName,
+                       @MBeanOperationParameter(name="Binding", description="New binding")String binding)
+            throws IOException, JMException;
 }
