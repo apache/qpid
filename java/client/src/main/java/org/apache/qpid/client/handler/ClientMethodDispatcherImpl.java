@@ -38,6 +38,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
     private static final BasicDeliverMethodHandler _basicDeliverMethodHandler = BasicDeliverMethodHandler.getInstance();
     private static final BasicReturnMethodHandler _basicReturnMethodHandler = BasicReturnMethodHandler.getInstance();
     private static final ChannelCloseMethodHandler _channelCloseMethodHandler = ChannelCloseMethodHandler.getInstance();
+    private static final ChannelCloseOkMethodHandler _channelCloseOkMethodHandler = ChannelCloseOkMethodHandler.getInstance();
     private static final ChannelFlowOkMethodHandler _channelFlowOkMethodHandler = ChannelFlowOkMethodHandler.getInstance();
     private static final ChannelFlowMethodHandler _channelFlowMethodHandler = ChannelFlowMethodHandler.getInstance();
     private static final ConnectionCloseMethodHandler _connectionCloseMethodHandler = ConnectionCloseMethodHandler.getInstance();
@@ -165,7 +166,8 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchChannelCloseOk(ChannelCloseOkBody body, int channelId) throws AMQException
     {
-        return false;
+        _channelCloseOkMethodHandler.methodReceived(_session, body, channelId);
+        return true;
     }
 
     public boolean dispatchChannelFlow(ChannelFlowBody body, int channelId) throws AMQException
