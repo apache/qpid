@@ -71,19 +71,6 @@ public class GlobalQueuesTest extends TestingBaseCase
 
      */
 
-    /**
-     * Test to write: Check that exclusive Transient Queues are not
-     * disconnected. i.e. JMS Temporary Queues
-     *
-     * @param ackMode
-     *
-     * @throws Exception
-     */
-    public void exclusiveTransientQueue(int ackMode) throws Exception
-    {
-
-    }
-
     public void setConfig(String property, String value, boolean deleteDurable) throws NamingException, IOException, ConfigurationException
     {
         setProperty(CONFIG_SECTION + ".slow-consumer-detection." +
