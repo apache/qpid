@@ -852,7 +852,8 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/FailoverUpdates.h	\
   ../include/qpid/types/Exception.h	 	\
   ../include/qpid/types/Uuid.h	 		\
-  ../include/qpid/types/Variant.h
+  ../include/qpid/types/Variant.h		\
+  ../include/qpid/types/ImportExport.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)
