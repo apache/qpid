@@ -507,6 +507,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         //Reconfigure the queue for to reflect this new binding.
         ConfigurationPlugin config = getVirtualHost().getConfiguration().getQueueConfiguration(this);
 
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Reconfiguring queue(" + this + ") with config:" + config + " was "+ _queueConfiguration);
+        }
+
         if (config != null)
         {
             // Reconfigure with new config.
