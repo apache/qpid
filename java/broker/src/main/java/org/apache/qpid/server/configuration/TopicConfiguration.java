@@ -204,14 +204,19 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
             config.addConfiguration(boundToTopics.get(0));
         }
 
+        // If we have a subscription then attempt to look it up.
+        String subscriptionName = queue.getName();
+
         // Apply subscription configurations
-        if (_subscriptions.containsKey(queue.getName()))
+        if (_subscriptions.containsKey(subscriptionName))
         {
-            Map<String, TopicConfig> topics = _subscriptions.get(queue.getName());
+
+            //Get all the Configuration that this subscription is bound to.
+            Map<String, TopicConfig> topics = _subscriptions.get(subscriptionName);
 
             TopicConfig subscriptionSpecificConfig = null;
 
-            // See if we have a TopicConfig in topics for a topic we are bound to. 
+            // See if we have a TopicConfig in topics for a topic we are bound to.
             for (Binding binding : queue.getBindings())
             {
                 if (binding.getExchange().getType().equals(TopicExchange.TYPE))
@@ -226,13 +231,12 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
                 }
             }
 
-            //todo we don't account for wild cards here. only explict matching and all subscriptions            
+            //todo we don't account for wild cards here. only explicit matching and all subscriptions
             if (subscriptionSpecificConfig == null)
             {
                 // lookup the binding to see if we have a match in the subscription configs
                 subscriptionSpecificConfig = topics.get("#");
             }
-
 
             // Apply subscription specific config.
             if (subscriptionSpecificConfig != null)
@@ -240,7 +244,6 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
                 config.addConfiguration(subscriptionSpecificConfig);
             }
         }
-
         return config;
     }
 
