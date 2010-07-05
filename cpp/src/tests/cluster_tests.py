@@ -157,7 +157,21 @@ acl allow all all
             self.fail("Expected exception")
         except messaging.exceptions.NotFound: pass
 
-        
+    def test_link_events(self):
+        """Regression test for https://bugzilla.redhat.com/show_bug.cgi?id=611543"""
+        args = ["--mgmt-pub-interval", 1] # Publish management information every second.
+        broker1 = self.cluster(1, args)[0]
+        broker2 = self.cluster(1, args)[0]
+        qp = self.popen(["qpid-printevents", broker1.host_port()], EXPECT_RUNNING)
+        qr = self.popen(["qpid-route", "route", "add",
+                         broker1.host_port(), broker2.host_port(),
+                         "amq.fanout", "key"
+                         ], EXPECT_EXIT_OK)
+        # Look for link event in printevents output.
+        retry(lambda: find_in_file("brokerLinkUp", qp.outfile("out")))
+        broker1.ready()
+        broker2.ready()
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):

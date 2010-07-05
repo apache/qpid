@@ -110,6 +110,12 @@
       <field name="shutdown-id" type="uuid"/>
     </control>
 
+    <!-- Deliver a message to a queue -->
+    <control name="deliver-to-queue" code="0x21">
+      <field name="queue" type="str16"/>
+      <field name="message" type="vbin32"/>
+    </control>
+
   </class>
 
   <!-- Controls associated with a specific connection. -->

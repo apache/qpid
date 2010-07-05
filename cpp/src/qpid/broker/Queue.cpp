@@ -142,6 +142,9 @@ bool Queue::isExcluded(boost::intrusive_ptr<Message>& msg)
 }
 
 void Queue::deliver(boost::intrusive_ptr<Message> msg){
+    // Check for deferred delivery in a cluster.
+    if (broker && broker->deferDelivery(name, msg))
+        return;
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg);

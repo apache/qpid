@@ -162,7 +162,8 @@ Broker::Broker(const Broker::Options& conf) :
     clusterUpdatee(false),
     expiryPolicy(new ExpiryPolicy),
     connectionCounter(conf.maxConnections),
-    getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
+    getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this)),
+    deferDelivery(boost::bind(&Broker::deferDeliveryImpl, this, _1, _2))
 {
     if (conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
@@ -491,6 +492,10 @@ Broker::getKnownBrokersImpl()
 {
     return knownBrokers;
 }
+
+bool Broker::deferDeliveryImpl(const std::string& ,
+                               const boost::intrusive_ptr<Message>& )
+{ return false; }
 
 void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
     clusterTimer = t;
