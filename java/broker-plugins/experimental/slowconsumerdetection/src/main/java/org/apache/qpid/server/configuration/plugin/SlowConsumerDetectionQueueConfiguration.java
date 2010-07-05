@@ -53,7 +53,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
                     "virtualhosts.virtualhost.queues.slow-consumer-detection",
                     "virtualhosts.virtualhost.queues.queue.slow-consumer-detection",
                     "virtualhosts.virtualhost.topics.slow-consumer-detection",
-                    "virtualhosts.virtualhost.queues.topics.topic.slow-consumer-detection");
+                    "virtualhosts.virtualhost.topics.topic.slow-consumer-detection");
         }
     }
 

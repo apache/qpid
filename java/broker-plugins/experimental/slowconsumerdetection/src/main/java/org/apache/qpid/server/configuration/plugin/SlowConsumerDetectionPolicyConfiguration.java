@@ -28,7 +28,7 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import java.util.Arrays;
 import java.util.List;
 
-public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
+public class    SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
 {
     public static class SlowConsumerDetectionPolicyConfigurationFactory implements ConfigurationPluginFactory
     {
@@ -45,7 +45,7 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
                     "virtualhosts.virtualhost.queues.slow-consumer-detection.policy",
                     "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy",
                     "virtualhosts.virtualhost.topics.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.queues.topics.topic.slow-consumer-detection.policy");
+                    "virtualhosts.virtualhost.topics.topic.slow-consumer-detection.policy");
         }
     }
 
