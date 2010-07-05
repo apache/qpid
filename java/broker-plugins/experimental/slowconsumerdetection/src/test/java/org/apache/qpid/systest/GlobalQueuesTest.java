@@ -113,7 +113,7 @@ public class GlobalQueuesTest extends TestingBaseCase
         setConfig("messageCount", String.valueOf(MAX_QUEUE_MESSAGE_COUNT - 1), false);
 
         //Start the broker
-        super.setUp();
+        startBroker();
 
         topicConsumer(Session.AUTO_ACKNOWLEDGE, false);
     }
@@ -134,7 +134,7 @@ public class GlobalQueuesTest extends TestingBaseCase
         setConfig("depth", String.valueOf(MESSAGE_SIZE * 9), false);
 
         //Start the broker
-        super.setUp();
+        startBroker();
 
         setMessageSize(MESSAGE_SIZE);
 
@@ -157,7 +157,7 @@ public class GlobalQueuesTest extends TestingBaseCase
         setConfig("messageAge", String.valueOf(DISCONNECTION_WAIT / 2), false);
 
         //Start the broker
-        super.setUp();
+        startBroker();
 
         topicConsumer(Session.AUTO_ACKNOWLEDGE, false);
     }
@@ -179,7 +179,7 @@ public class GlobalQueuesTest extends TestingBaseCase
         setConfig("messageCount", String.valueOf(MAX_QUEUE_MESSAGE_COUNT - 1), true);
 
         //Start the broker
-        super.setUp();
+        startBroker();
 
         topicConsumer(Session.AUTO_ACKNOWLEDGE, true);
     }
@@ -202,7 +202,7 @@ public class GlobalQueuesTest extends TestingBaseCase
         setConfig("depth", String.valueOf(MESSAGE_SIZE * 9), true);
 
         //Start the broker
-        super.setUp();
+        startBroker();
 
         setMessageSize(MESSAGE_SIZE);
 
@@ -227,7 +227,7 @@ public class GlobalQueuesTest extends TestingBaseCase
         setConfig("messageAge", String.valueOf(DISCONNECTION_WAIT / 5), true);
 
         //Start the broker
-        super.setUp();
+        startBroker();
 
         topicConsumer(Session.AUTO_ACKNOWLEDGE, true);
     }
