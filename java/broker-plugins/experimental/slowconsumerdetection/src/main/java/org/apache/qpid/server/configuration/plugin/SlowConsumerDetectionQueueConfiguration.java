@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.server.configuration.plugin;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
@@ -33,6 +28,11 @@ import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
 {
@@ -92,7 +92,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
             !containsPositiveLong("messageCount"))
         {
             throw new ConfigurationException("At least one configuration property" +
-                                             "('messageAge','depth' or 'messageCount') must be specified.");             
+                                             "('messageAge','depth' or 'messageCount') must be specified.");
         }
 
         SlowConsumerDetectionPolicyConfiguration policyConfig = getConfiguration(SlowConsumerDetectionPolicyConfiguration.class.getName());
@@ -116,12 +116,6 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
                 _logger.debug("Policy Keys:" + key);
             }
 
-            _logger.debug("Configured SCDQC");
-            _logger.debug("Age:" + getMessageAge());
-            _logger.debug("Depth:" + getDepth());
-            _logger.debug("Count:" + getMessageCount());
-            _logger.debug("Policy:" + policyConfig.getPolicyName());
-            _logger.debug("Available factories:" + factories);
         }
 
         SlowConsumerPolicyPluginFactory<SlowConsumerPolicyPlugin> pluginFactory = factories.get(policyConfig.getPolicyName().toLowerCase());
@@ -132,5 +126,28 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
         }
 
         _policyPlugin = pluginFactory.newInstance(policyConfig);
+
+        // Debug the creation of this Config
+        _logger.debug(this);
+    }
+
+    public String formatToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        if (getMessageAge() > 0)
+        {
+            sb.append("Age:").append(getMessageAge()).append(":");
+        }
+        if (getDepth() > 0)
+        {
+            sb.append("Depth:").append(getDepth()).append(":");
+        }
+        if (getMessageCount() > 0)
+        {
+            sb.append("Count:").append(getMessageCount()).append(":");
+        }
+
+        sb.append("Policy[").append(getPolicy()).append("]");
+        return sb.toString();
     }
 }

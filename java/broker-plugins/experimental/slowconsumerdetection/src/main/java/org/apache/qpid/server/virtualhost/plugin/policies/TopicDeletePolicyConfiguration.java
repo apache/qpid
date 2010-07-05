@@ -71,4 +71,11 @@ public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
         return (hasConfiguration() && contains("delete-persistent"));
     }
 
+    @Override
+    public String formatToString()
+    {
+        return (deletePersistent()?"delete-durable":"");
+    }
+
+
 }
