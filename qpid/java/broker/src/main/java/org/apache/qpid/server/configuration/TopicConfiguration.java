@@ -77,8 +77,6 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
 
         for (int index = 0; index < topics; index++)
         {
-            TopicConfig topic = new TopicConfig();
-
             Configuration topicSubset = _configuration.subset("topic(" + index + ")");
 
             // This will occur when we have a subscriptionName that is bound to a
@@ -87,6 +85,8 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
             {
                 break;
             }
+
+            TopicConfig topic = new TopicConfig();
 
             topic.setConfiguration(VIRTUALHOSTS_VIRTUALHOST_TOPICS + ".topic", topicSubset );
 
@@ -169,6 +169,7 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
      */
     public ConfigurationPlugin getConfiguration(AMQQueue queue)
     {
+        //Create config with global topic configuration
         TopicConfig config = new TopicConfig();
 
         // Add global topic configuration
@@ -225,7 +226,15 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
                 }
             }
 
-            // Apply subscription specfic config.
+            //todo we don't account for wild cards here. only explict matching and all subscriptions            
+            if (subscriptionSpecificConfig == null)
+            {
+                // lookup the binding to see if we have a match in the subscription configs
+                subscriptionSpecificConfig = topics.get("#");
+            }
+
+
+            // Apply subscription specific config.
             if (subscriptionSpecificConfig != null)
             {
                 config.addConfiguration(subscriptionSpecificConfig);
