@@ -126,7 +126,13 @@ org.apache.qpid.server.queue.ConflationQueueTest#*
 org.apache.qpid.test.unit.client.AMQConnectionTest#testHeartBeat
 
 //Excluded due to QPID-1447 : CPP broker does not have SlowConsumer Disconnection
-org.apache.qpid.systest.SlowConsumerTest#*
+// NOTE also excludes from the java.0.10 profile due to QPID-2657
+org.apache.qpid.systest.GlobalQueuesTest#*
+org.apache.qpid.systest.GlobalTopicsTest#*
+org.apache.qpid.systest.MergeConfigurationTest#*
+org.apache.qpid.systest.SubscriptionTest#*
+org.apache.qpid.systest.TopicTest#*
+
 
 org.apache.qpid.server.virtualhost.plugin.*
 org.apache.qpid.server.virtualhost.plugin.policies.*
