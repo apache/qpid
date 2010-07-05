@@ -251,6 +251,12 @@ def checkenv(name):
     if not value: raise Exception("Environment variable %s is not set" % name)
     return value
 
+def find_in_file(str, filename):
+    if not os.path.exists(filename): return False
+    f = open(filename)
+    try: return str in f.read()
+    finally: f.close()
+
 class Broker(Popen):
     "A broker process. Takes care of start, stop and logging."
     _broker_count = 0
@@ -367,15 +373,7 @@ class Broker(Popen):
     def log_ready(self):
         """Return true if the log file exists and contains a broker ready message"""
         if self._log_ready: return True
-        if not os.path.exists(self.log): return False
-        f = open(self.log)
-        try:
-            for l in f:
-                if "notice Broker running" in l:
-                    self._log_ready = True
-                    return True
-            return False
-        finally: f.close()
+        self._log_ready = find_in_file("notice Broker running", self.log)
 
     def ready(self, **kwargs):
         """Wait till broker is ready to serve clients"""

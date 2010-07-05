@@ -29,13 +29,15 @@ from qmf.console import Console, Session
 class EventConsole(Console):
   def event(self, broker, event):
     print event
+    sys.stdout.flush()
 
   def brokerConnected(self, broker):
     print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerConnected broker=%s" % broker.getUrl()
+    sys.stdout.flush()
 
   def brokerDisconnected(self, broker):
     print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerDisconnected broker=%s" % broker.getUrl()
-
+    sys.stdout.flush()
 
 ##
 ## Main Program
