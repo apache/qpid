@@ -28,7 +28,7 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import java.util.Arrays;
 import java.util.List;
 
-public class    SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
+public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
 {
     public static class SlowConsumerDetectionPolicyConfigurationFactory implements ConfigurationPluginFactory
     {
@@ -66,5 +66,11 @@ public class    SlowConsumerDetectionPolicyConfiguration extends ConfigurationPl
         {
             throw new ConfigurationException("No Slow consumer policy defined.");
         }
+    }
+
+    @Override
+    public String formatToString()
+    {
+        return "Policy:"+getPolicyName();
     }
 }
