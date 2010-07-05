@@ -127,11 +127,11 @@ public class ExchangeMBeanTest  extends TestCase
     }
     
     /**
-     * Test adding bindings and removing it via JMX.
+     * Test adding bindings and removing them from the default exchange via JMX.
      * <p>
      * QPID-2700
      */
-    public void testBindings() throws Exception
+    public void testDefaultBindings() throws Exception
     {
         int bindings = _queue.getExchangeBindings().size();
         
@@ -148,6 +148,31 @@ public class ExchangeMBeanTest  extends TestCase
         assertEquals("Should have one extra binding", bindings + 1, _queue.getExchangeBindings().size());
         
         mbean.removeBinding(_queue.getName().asString(), "kitten");
+
+        assertEquals("Should have original number of binding", bindings, _queue.getExchangeBindings().size());
+    }
+    
+    /**
+     * Test adding bindings and removing them from the topic exchange via JMX.
+     * <p>
+     * QPID-2700
+     */
+    public void testTopicBindings() throws Exception
+    {
+        int bindings = _queue.getExchangeBindings().size();
+        Exchange topic = _queue.getVirtualHost().getExchangeRegistry().getExchange(new AMQShortString("amq.topic"));
+        ManagedExchange mbean = (ManagedExchange) ((AbstractExchange) topic).getManagedObject();
+        
+        mbean.createNewBinding(_queue.getName().asString(), "robot.#");
+        mbean.createNewBinding(_queue.getName().asString(), "#.kitten");
+
+        assertEquals("Should have added two bindings", bindings + 2, _queue.getExchangeBindings().size());
+        
+        mbean.removeBinding(_queue.getName().asString(), "robot.#");
+
+        assertEquals("Should have one extra binding", bindings + 1, _queue.getExchangeBindings().size());
+        
+        mbean.removeBinding(_queue.getName().asString(), "#.kitten");
 
         assertEquals("Should have original number of binding", bindings, _queue.getExchangeBindings().size());
     }
