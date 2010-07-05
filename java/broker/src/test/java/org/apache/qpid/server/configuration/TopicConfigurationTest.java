@@ -30,6 +30,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
+/**
+ * Test of the new Topic configuration processing
+ */
 public class TopicConfigurationTest extends InternalBrokerBaseCase
 {
 
@@ -38,12 +41,19 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
     {
         _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic.name", "stocks.nyse.appl");
 
-        _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic(1).subscriptionName", "testSubscriptionCreation:stockSubscription");
+        _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic(1).subscriptionName", getName()+":stockSubscription");
 
         _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic(2).name", "stocks.nyse.orcl");
         _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic(2).subscriptionName", getName()+":stockSubscription");
    }
 
+    /**
+     * Test that a TopicConfig object is created and attached to the queue when it is bound to the topic exchange.
+     *
+
+     * @throws ConfigurationException
+     * @throws AMQSecurityException
+     */
     public void testTopicCreation() throws ConfigurationException, AMQSecurityException
     {
         Exchange topicExchange = _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
@@ -55,7 +65,14 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
         assertEquals("Configuration name not correct", "stocks.nyse.appl", config.getName());
     }
 
-    public void testSubscriptionCreation() throws ConfigurationException, AMQException
+    /**
+     * Test that a queue created for a subscription correctly has topic
+     * configuration selected based on the subscription and topic name.
+     *
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testSubscriptionWithTopicCreation() throws ConfigurationException, AMQException
     {
 
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()+":stockSubscription"), false, new AMQShortString("testowner"),
@@ -72,8 +89,41 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
         TopicConfig config = queue.getConfiguration().getConfiguration(TopicConfig.class.getName());
 
         assertNotNull("Queue should have topic configuration bound to it.", config);
-        assertEquals("Configuration name not correct", getName() + ":stockSubscription", config.getSubscriptionName());
+        assertEquals("Configuration subscription name not correct", getName() + ":stockSubscription", config.getSubscriptionName());
+        assertEquals("Configuration name not correct", "stocks.nyse.orcl", config.getName());
+
     }
+
+    /**
+     * Test that a queue created for a subscription correctly has topic
+     * configuration attached here this should be the generic topic section
+     * with just the subscriptionName
+     *
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testSubscriptionCreation() throws ConfigurationException, AMQException
+    {
+
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()+":stockSubscription"), false, new AMQShortString("testowner"),
+                                                    false, false, _virtualHost, null);
+
+        _virtualHost.getQueueRegistry().registerQueue(queue);
+        Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
+        _virtualHost.getBindingFactory().addBinding(getName(), queue, defaultExchange, null);
+
+
+        Exchange topicExchange = _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
+        _virtualHost.getBindingFactory().addBinding("stocks.nyse.ibm", queue, topicExchange, null);
+
+        TopicConfig config = queue.getConfiguration().getConfiguration(TopicConfig.class.getName());
+
+        assertNotNull("Queue should have topic configuration bound to it.", config);        
+        assertEquals("Configuration subscription name not correct", getName() + ":stockSubscription", config.getSubscriptionName());
+        assertEquals("Configuration name not correct", "#", config.getName());
+
+    }
+
 
 
 }
