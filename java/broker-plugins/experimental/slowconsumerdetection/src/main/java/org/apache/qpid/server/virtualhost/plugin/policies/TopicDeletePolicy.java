@@ -132,4 +132,10 @@ public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
     {
         _configuration = (TopicDeletePolicyConfiguration) config;
     }
+
+    @Override
+    public String toString()
+    {
+        return "TopicDelete" + (_configuration == null ? "" : "[" + _configuration + "]");
+    }
 }
