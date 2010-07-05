@@ -28,7 +28,7 @@ import java.io.IOException;
 public class GlobalTopicsTest extends GlobalQueuesTest
 {
     @Override
-    public void setUp() throws NamingException, IOException, ConfigurationException
+    public void setUp() throws Exception
     {
         CONFIG_SECTION = ".topics";
         super.setUp();
