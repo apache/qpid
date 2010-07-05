@@ -21,10 +21,16 @@
 package org.apache.qpid.server.configuration;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 public class TopicConfig extends ConfigurationPlugin
 {
+    public TopicConfig()
+    {
+        _configuration = new PropertiesConfiguration();
+    }
+
     @Override
     public String[] getElementsProcessed()
     {
