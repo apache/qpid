@@ -18,6 +18,13 @@
  */
 package org.apache.qpid.server.configuration.plugins;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConversionException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.ConfigurationManager;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,13 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.ConversionException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ConfigurationManager;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public abstract class ConfigurationPlugin
 {
@@ -45,20 +45,18 @@ public abstract class ConfigurationPlugin
 
     /**
      * The Elements that this Plugin can process.
-     * 
+     *
      * For a Queues plugin that would be a list containing:
      * <ul>
      * <li>queue - the queue entries
      * <li>the alerting values for defaults
      * <li>exchange - the default exchange
      * <li>durable - set the default durablity
-     * </ul> 
+     * </ul>
      */
     abstract public String[] getElementsProcessed();
-    
-    /**
-     * Performs configuration validation.
-     */
+
+    /** Performs configuration validation. */
     public void validateConfiguration() throws ConfigurationException
     {
         // Override in sub-classes
@@ -145,14 +143,20 @@ public abstract class ConfigurationPlugin
         {
             ConfigurationManager configurationManager = ApplicationRegistry.getInstance().getConfigurationManager();
             Configuration handled = element.length() == 0 ? configuration : configuration.subset(element);
-            
+
             String configurationElement = element;
             if (path.length() > 0)
             {
-                configurationElement =  path + "." + configurationElement;
+                configurationElement = path + "." + configurationElement;
             }
 
             List<ConfigurationPlugin> handlers = configurationManager.getConfigurationPlugins(configurationElement, handled);
+
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("For '" + element + "' found handlers (" + handlers.size() + "):" + handlers);
+            }
+            
             for (ConfigurationPlugin plugin : handlers)
             {
                 _pluginConfiguration.put(plugin.getClass().getName(), plugin);
@@ -161,10 +165,8 @@ public abstract class ConfigurationPlugin
 
         validateConfiguration();
     }
-    
-    /**
-     * Helper method to print out list of keys in a {@link Configuration}.
-     */
+
+    /** Helper method to print out list of keys in a {@link Configuration}. */
     public static final void showKeys(Configuration config)
     {
         if (config.isEmpty())
@@ -186,7 +188,7 @@ public abstract class ConfigurationPlugin
     {
         return _configuration != null;
     }
-    
+
     /// Getters
 
     protected double getDoubleValue(String property)
@@ -198,7 +200,6 @@ public abstract class ConfigurationPlugin
     {
         return _configuration.getDouble(property, defaultValue);
     }
-
 
     protected long getLongValue(String property)
     {
@@ -250,15 +251,12 @@ public abstract class ConfigurationPlugin
         return _configuration.getList(property, defaultValue);
     }
 
-
-
     /// Validation Helpers
 
     protected boolean contains(String property)
     {
         return _configuration.getProperty(property) != null;
     }
-
 
     /**
      * Provide mechanism to validate Configuration contains a Postiive Long Value
@@ -354,6 +352,102 @@ public abstract class ConfigurationPlugin
         }
     }
 
+    /**
+     * Given another configuration merge the configuration into our own config
+     *
+     * The new values being merged in will take precedence over existing values.
+     *
+     * In the simplistic case this means something like:
+     *
+     * So if we have configuration set
+     * name = 'fooo'
+     *
+     * And the new configuration contains a name then that will be reset.
+     * name = 'new'
+     *
+     * However this plugin will simply contain other plugins so the merge will
+     * be called until we end up at a base plugin that understand how to merge
+     * items. i.e Alerting values. Where the provided configuration will take
+     * precedence.
+     *
+     * @param configuration the config to merge in to our own.
+     */
+    public void addConfiguration(ConfigurationPlugin configuration)
+    {
+        // If given configuration is null then there is nothing to process.
+        if (configuration == null)
+        {
+            return;
+        }
+
+        // Merge all the sub configuration items
+        for (Map.Entry<String, ConfigurationPlugin> newPlugins : configuration._pluginConfiguration.entrySet())
+        {
+            String key = newPlugins.getKey();
+            ConfigurationPlugin config = newPlugins.getValue();
+
+            if (_pluginConfiguration.containsKey(key))
+            {
+                //Merge the configuration if we already have this type of config
+                _pluginConfiguration.get(key).mergeConfiguration(config);
+            }
+            else
+            {
+                //otherwise just add it to our config.
+                _pluginConfiguration.put(key, config);
+            }
+        }
+
+        //Merge the configuration itself
+        String key = configuration.getClass().getName();
+        if (_pluginConfiguration.containsKey(key))
+        {
+            //Merge the configuration if we already have this type of config
+            _pluginConfiguration.get(key).mergeConfiguration(configuration);
+        }
+        else
+        {
+            //If we are adding a configuration of our own type then merge
+            if (configuration.getClass() == this.getClass())
+            {
+                mergeConfiguration(configuration);
+            }
+            else
+            {
+                // just store this in case someone else needs it.
+                _pluginConfiguration.put(key, configuration);
+            }
+
+        }
+
+    }
+
+    protected void mergeConfiguration(ConfigurationPlugin configuration)
+    {
+         _configuration = configuration.getConfig();
+    }
+
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("\n").append(getClass().getSimpleName());
+        sb.append("=[ (").append(formatToString()).append(")");
+
+        for(Map.Entry<String,ConfigurationPlugin> item : _pluginConfiguration.entrySet())
+        {
+            sb.append("\n").append(item.getValue());
+        }
+
+        sb.append("]\n");
+
+        return sb.toString();
+    }
+
+    public String formatToString()
+    {
+        return super.toString();
+    }
 
 }
 
