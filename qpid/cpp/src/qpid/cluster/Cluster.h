@@ -54,6 +54,10 @@
 
 namespace qpid {
 
+namespace broker {
+class Message;
+}
+
 namespace framing {
 class AMQBody;
 class Uuid;
@@ -124,6 +128,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Generates a log message for debugging purposes.
     std::string debugSnapshot();
 
+    // Defer messages delivered in an unsafe context by multicasting.
+    bool deferDeliveryImpl(const std::string& queue,
+                           const boost::intrusive_ptr<broker::Message>& msg);
+
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
@@ -173,8 +181,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void errorCheck(const MemberId&, uint8_t type, SequenceNumber frameSeq, Lock&);
     void timerWakeup(const MemberId&, const std::string& name, Lock&);
     void timerDrop(const MemberId&, const std::string& name, Lock&);
-
     void shutdown(const MemberId&, const framing::Uuid& shutdownId, Lock&);
+    void deliverToQueue(const std::string& queue, const std::string& message, Lock&);
 
     // Helper functions
     ConnectionPtr getConnection(const EventFrame&, Lock&);

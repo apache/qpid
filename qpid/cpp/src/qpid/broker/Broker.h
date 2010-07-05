@@ -69,6 +69,7 @@ struct Url;
 namespace broker {
 
 class ExpiryPolicy;
+class Message;
 
 static const  uint16_t DEFAULT_PORT=5672;
 
@@ -168,6 +169,8 @@ public:
     QueueEvents queueEvents;
     std::vector<Url> knownBrokers;
     std::vector<Url> getKnownBrokersImpl();
+    bool deferDeliveryImpl(const std::string& queue,
+                           const boost::intrusive_ptr<Message>& msg);
     std::string federationTag;
     bool recovery;
     bool clusterUpdatee;
@@ -273,6 +276,16 @@ public:
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
     
     ConnectionCounter& getConnectionCounter() {return connectionCounter;}
+
+    /**
+     * Never true in a stand-alone broker. In a cluster, return true
+     * to defer delivery of messages deliveredg in a cluster-unsafe
+     * context.
+     *@return true if delivery of a message should be deferred.
+     */
+    boost::function<bool (const std::string& queue,
+                          const boost::intrusive_ptr<Message>& msg)> deferDelivery;
+
 };
 
 }}
