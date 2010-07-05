@@ -48,7 +48,9 @@ public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
         {
             return Arrays.asList(
                     "virtualhosts.virtualhost.queues.slow-consumer-detection.policy.topicDelete",
-                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy.topicDelete");
+                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy.topicDelete",
+                    "virtualhosts.virtualhost.topics.slow-consumer-detection.policy.topicDelete",
+                    "virtualhosts.virtualhost.topics.topic.slow-consumer-detection.policy.topicDelete");
         }
     }
 
