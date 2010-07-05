@@ -102,6 +102,17 @@ public class DiagnosticExchange extends AbstractExchange
         {
             // No Op
         }
+
+        /**
+         * This exchange type doesn't support queues.
+         * 
+         * @see #createNewBinding(String, String)
+         */
+        @Override
+        public void removeBinding(String queueName, String binding) throws JMException
+        {
+            // No Op
+        }
     }
 
 
