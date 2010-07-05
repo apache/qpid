@@ -503,6 +503,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 break;
             }
         }
+
+        //Reconfigure the queue for to reflect this new binding.
+        ConfigurationPlugin config = getVirtualHost().getConfiguration().getQueueConfiguration(this);
+
+        if (config != null)
+        {
+            // Reconfigure with new config.
+            configure(config);
+        }
     }
 
     public int getBindingCountHigh()

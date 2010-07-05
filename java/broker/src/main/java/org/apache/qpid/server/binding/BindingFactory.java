@@ -204,14 +204,6 @@ public class BindingFactory
             getConfigStore().addConfiguredObject(b);
             b.logCreation();
 
-            //Reconfigure the queue for to reflect this new binding.
-            ConfigurationPlugin config = queue.getVirtualHost().getConfiguration().getQueueConfiguration(queue);
-
-            if (config != null)
-            {
-                // Reconfigure with new config.
-                queue.configure(config);
-            }
             return true;
         }
         else
