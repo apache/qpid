@@ -23,7 +23,6 @@ package org.apache.qpid.server.configuration;
 import java.util.List;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
@@ -166,5 +165,44 @@ public class QueueConfiguration extends ConfigurationPlugin
     public String getLVQKey()
     {
         return getStringValue("lvqKey", null);
+    }
+
+
+    public static class QueueConfig extends ConfigurationPlugin
+    {
+        @Override
+        public String[] getElementsProcessed()
+        {
+            return new String[]{"name"};
+        }
+
+        public String getName()
+        {
+            return getStringValue("name");
+        }
+
+
+        public void validateConfiguration() throws ConfigurationException
+        {
+            if (_configuration.isEmpty())
+            {
+                throw new ConfigurationException("Queue section cannot be empty.");
+            }
+
+            if (getName() == null)
+            {
+                throw new ConfigurationException("Queue section must have a 'name' element.");
+            }
+
+        }
+
+
+        @Override
+        public String formatToString()
+        {
+            return "Name:"+getName();
+        }
+          
+
     }
 }

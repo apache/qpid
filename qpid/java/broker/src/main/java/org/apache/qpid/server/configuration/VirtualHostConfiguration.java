@@ -34,11 +34,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
@@ -212,15 +208,48 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
                                + exchangeName.substring(0, 1).toUpperCase()
                                + exchangeName.substring(1) + "Configuration";
 
-        ConfigurationPlugin configPlugin
-                = queue.getVirtualHost().getConfiguration().getConfiguration(exchangeClass);
-
+        ExchangeConfigurationPlugin exchangeConfiguration
+                = (ExchangeConfigurationPlugin) queue.getVirtualHost().getConfiguration().getConfiguration(exchangeClass);
 
         // now need to perform the queue-topic-topics-queue magic.
+        // So make a new ConfigurationObject that will hold all the configuration for this queue.
+        ConfigurationPlugin queueConfig = new QueueConfiguration.QueueConfig();
 
-        System.err.println("*********** Reconfiguring queue with config:"+configPlugin);
+        // Initialise the queue with any Global values we may have
+        QueueConfiguration config = getConfiguration(QueueConfiguration.class.getName());
+        if (config == null)
+        {
+            PropertiesConfiguration newQueueConfig = new PropertiesConfiguration();
+            newQueueConfig.setProperty("name", queue.getName());
 
-        return configPlugin;
+            try
+            {
+                queueConfig.setConfiguration("", newQueueConfig);
+            }
+            catch (ConfigurationException e)
+            {
+                // This will not occur as queues only require a name. 
+                _logger.error("QueueConfiguration requirements have changed.");
+            }
+        }
+        else
+        {
+            queueConfig.addConfiguration(config);
+        }
+
+        // Merge any configuration the Exchange wishes to apply        
+        if (exchangeConfiguration != null)
+        {
+            queueConfig.addConfiguration(exchangeConfiguration.getConfiguration(queue));
+        }
+
+        //Finally merge in any specific queue configuration we have.
+        if (_queues.containsKey(queue.getName()))
+        {
+            queueConfig.addConfiguration(_queues.get(queue.getName()));
+        }
+
+        return queueConfig;
     }
 
     public long getMemoryUsageMaximum()
