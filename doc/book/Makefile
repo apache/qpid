@@ -4,7 +4,7 @@
 #
 #  Apache FOP, version 0.95 or higher
 #  Docbook 4.5
-#  Docbook XSL stylesheets - tested with xsl-stylesheets-1.75.2
+#  Docbook XSL stylesheets - tested with xsl-stylesheets (1.75.2 and 1.65.1-2)
 #  xsltproc
 #  xmllint
 # 
@@ -27,4 +27,4 @@ build/Programming-In-Apache-Qpid:
 	./build-book.sh Programming-In-Apache-Qpid
 
 clean:
-	rm -rf build
+	rm -rf build pdf
