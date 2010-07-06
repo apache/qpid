@@ -54,6 +54,25 @@ struct ReceiveThread : public sys::Runnable {
     }
 };
 
+struct NextReceiverThread : public sys::Runnable {
+    Session session;
+    vector<string> received;
+    string error;
+
+    NextReceiverThread(Session s) : session(s) {}
+    void run() {
+        try {
+            while(true) {
+                Message m = session.nextReceiver(Duration::SECOND*5).fetch();
+                if (m.getContent() == "END") break;
+                received.push_back(m.getContent());
+            }
+        } catch (const std::exception& e) {
+            error = e.what();
+        }
+    }
+};
+
 
 QPID_AUTO_TEST_CASE(testConcurrentSendReceive) {
     MessagingFixture fix;
@@ -101,6 +120,24 @@ QPID_AUTO_TEST_CASE(testCloseSessionBusyReceiver) {
     Message m;
     BOOST_CHECK(!r.fetch(m, Duration(0)));
     BOOST_CHECK_THROW(r.fetch(Duration(0)), NoMessageAvailable);
+}
+
+QPID_AUTO_TEST_CASE(testConcurrentSendNextReceiver) {
+    MessagingFixture fix;
+    Receiver r = fix.session.createReceiver("concurrent;{create:always,link:{reliability:unreliable}}");
+    const size_t COUNT=100;
+    r.setCapacity(COUNT);
+    NextReceiverThread rt(fix.session);
+    sys::Thread thread(rt);
+    sys::usleep(1000);          // Give the receive thread time to block.
+    Sender s = fix.session.createSender("concurrent;{create:always}");
+    for (size_t i = 0; i < COUNT; ++i) {
+        s.send(Message());
+    }
+    s.send(Message("END"));
+    thread.join();
+    BOOST_CHECK_EQUAL(rt.error, string());
+    BOOST_CHECK_EQUAL(COUNT, rt.received.size());
 }
 
 QPID_AUTO_TEST_SUITE_END()
