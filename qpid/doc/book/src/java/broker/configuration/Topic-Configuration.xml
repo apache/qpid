@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
+-->
+
+<section> 
+    <title>Topic Configuration on Java Broker</title>
+
+    <para>New in 0.7 is the ability to define configuration for topics. Currently this is limited to
+        configuration for slow consumer detection. This configuration is based on the work
+        designed on the <ulink
+            url="http://cwiki.apache.org/confluence/display/qpid/Topic+Configuration+Design">design
+            wiki</ulink>.</para>
+
+    <section id="Topic Identification">
+    	<title>Topic Identification</title>
+        <para>A configuration section has two entries that can be used to identify how the
+            configuration will be applied: 'name' and 'subscriptionName'.  
+            
+            <programlisting>            
+                     &lt;topic&gt;
+                         &lt;name&gt;stocks.us&lt;/name&gt;        
+                </programlisting>
+            <programlisting>
+                     &lt;topic&gt;
+                         &lt;subscriptionName&gt;clientid:mysubscription&lt;/subscriptionName&gt;        
+            </programlisting>
+            
+            It is also possible to combine these two identifiers to specify a unique subscription to
+            a given topic.
+            
+            <programlisting>
+                    &lt;topic&gt;
+                        &lt;name&gt;stocks.us&lt;/name&gt;
+                        &lt;subscriptionName&gt;clientid:mysubscription&lt;/subscriptionName&gt;
+            </programlisting>
+        </para>
+    </section>
+
+    <section>
+        <title>Configuration Items</title>
+        <para> Currently only one element of the designed configuration is processed, that of the
+            slow consumer detection. This is setup as below using the 'slow-consumer-detection'
+            element. There are two required types of tag, first the trigger, which is one of
+            'depth', 'messageAge' or 'messageCount' and secondly the 'policy'. </para>
+        <programlisting>
+	    &lt;slow-consumer-detection&gt;
+                &lt;!-- The maximum depth before which the policy will be applied--&gt;
+                &lt;depth&gt;4235264&lt;/depth&gt;
+
+                &lt;!-- The maximum message age before which the policy will be applied--&gt;
+                &lt;messageAge&gt;600000&lt;/messageAge&gt;
+
+                &lt;!-- The maximum number of message before which the policy will be applied--&gt;
+                &lt;messageCount&gt;50&lt;/messageCount&gt;
+
+                &lt;!-- Policy Selection --&gt;
+                &lt;policy name="TopicDelete"/&gt;
+            &lt;/slow-consumer-detection&gt;
+        </programlisting>
+
+        <para> The trigger is used to determine when the policy should be applied. Currently we have
+            a simple policy 'topicdelete', this will disconnect consumers of topics where their
+            consumption rate falls sufficiently to hit one of the trigger values. </para>
+    </section>
+
+
+    <section id="Limitiations">
+    	<title>Limitiations</title>
+        <para> As of 0.7 the topic configuration is limited to straight string matching. This means
+            that given the following two topic configuring sections for 'stocks.us' and 'stocks.*' a
+            subscription for 'stocks.uk' will not match the expected 'stocks.*'. Nor will any
+            additional configuration listed in 'stocks.*' affect any 'stocks.us' subscriptions. </para>
+        <programlisting>
+            &lt;topics&gt;
+                &lt;topic&gt;
+            	    &lt;name&gt;stocks.us&lt;/name&gt;
+	                ...
+	            &lt;/topic&gt;
+    	        &lt;topic&gt;
+	               &lt;name&gt;stocks.*&lt;/name&gt;
+	               ...
+                &lt;/topic&gt;
+            &lt;/topics&gt;
+    </programlisting>
+        <para> A subscription for 'stocks.us' will only receive configuration settings that are
+            defined in the 'stocks.us' section. </para>
+    </section>
+
+</section>
