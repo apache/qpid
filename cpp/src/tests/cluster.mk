@@ -75,9 +75,7 @@ cluster_test_SOURCES =				\
 	ForkedBroker.h				\
 	ForkedBroker.cpp			\
 	PartialFailure.cpp			\
-	ClusterFailover.cpp			\
-	InitialStatusMap.cpp			\
-	StoreStatus.cpp
+	ClusterFailover.cpp
 
 cluster_test_LDADD=$(lib_client) $(lib_broker) ../cluster.la -lboost_unit_test_framework
 
