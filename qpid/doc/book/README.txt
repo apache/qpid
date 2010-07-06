@@ -7,7 +7,7 @@ You need the following to build the documentation:
 
 - Apache FOP, version 0.95 or higher
 - Docbook 4.5
-- Docbook XSL stylesheets - I have tested with xsl-stylesheets-1.75.2
+- Docbook XSL stylesheets - Tested with xsl-stylesheets (1.75.2 & 1.65.1-2)
 - xsltproc
 - xmllint
 
