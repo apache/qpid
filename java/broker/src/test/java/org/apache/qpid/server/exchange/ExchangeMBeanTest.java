@@ -129,32 +129,6 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     }
     
     /**
-     * Test adding bindings and removing them from the topic exchange via JMX.
-     * <p>
-     * QPID-2700
-     */
-    public void testTopicBindings() throws Exception
-    {
-        int bindings = _queue.getBindingCount();
-        
-        Exchange exchange = _queue.getVirtualHost().getExchangeRegistry().getExchange(new AMQShortString("amq.topic"));
-        ManagedExchange mbean = (ManagedExchange) ((AbstractExchange) exchange).getManagedObject();
-        
-        mbean.createNewBinding(_queue.getName(), "robot.#");
-        mbean.createNewBinding(_queue.getName(), "#.kitten");
-
-        assertEquals("Should have added two bindings", bindings + 2, _queue.getBindingCount());
-        
-        mbean.removeBinding(_queue.getName(), "robot.#");
-
-        assertEquals("Should have one extra binding", bindings + 1, _queue.getBindingCount());
-        
-        mbean.removeBinding(_queue.getName(), "#.kitten");
-
-        assertEquals("Should have original number of binding", bindings, _queue.getBindingCount());
-    }
-    
-    /**
      * Test adding bindings and removing them from the default exchange via JMX.
      * <p>
      * QPID-2700
