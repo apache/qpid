@@ -323,11 +323,11 @@ bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message,
 
 bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::messaging::Duration timeout)
 {
-    qpid::sys::Mutex::ScopedLock l(lock);
     while (true) {
         try {
             std::string destination;
             if (incoming.getNextDestination(destination, adjust(timeout))) {
+                qpid::sys::Mutex::ScopedLock l(lock);
                 Receivers::const_iterator i = receivers.find(destination);
                 if (i == receivers.end()) {
                     throw qpid::messaging::ReceiverError(QPID_MSG("Received message for unknown destination " << destination));
