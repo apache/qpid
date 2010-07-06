@@ -17,10 +17,10 @@ mkdir -p pdf
 
 
 # Create the .html
-xsltproc --stringparam  section.autolabel 1 /usr/share/sgml/docbook/xsl-stylesheets-1.75.2/html/docbook.xsl src/$1.xml >build/$1.html
+xsltproc --stringparam  section.autolabel 1 /usr/share/sgml/docbook/xsl-stylesheets/html/docbook.xsl src/$1.xml >build/$1.html
 
 # Create the .fo
-xsltproc --stringparam  section.autolabel 1 /usr/share/sgml/docbook/xsl-stylesheets-1.75.2/fo/docbook.xsl src/$1.xml >build/$1.fo
+xsltproc --stringparam  section.autolabel 1 /usr/share/sgml/docbook/xsl-stylesheets/fo/docbook.xsl src/$1.xml >build/$1.fo
 
 # Use Apache FOP to create the PDF
 fop build/$1.fo pdf/$1.pdf
