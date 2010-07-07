@@ -20,30 +20,34 @@
  */
 #include "qpid/broker/SignalHandler.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/sys/Mutex.h"
 #include <signal.h>
 
 namespace qpid {
 namespace broker {
 
-boost::intrusive_ptr<Broker> SignalHandler::broker;
+// Lock is to ensure that broker is not concurrently set to 0 and
+// deleted while we are in a call to broker->shutdown()
 
-void SignalHandler::setBroker(const boost::intrusive_ptr<Broker>& b) {
+sys::Mutex brokerLock;
+Broker* SignalHandler::broker;
+
+void SignalHandler::setBroker(Broker* b) {
+    sys::Mutex::ScopedLock l(brokerLock);
     broker = b;
-
     signal(SIGINT,shutdownHandler); 
     signal(SIGTERM, shutdownHandler);
-
-    signal(SIGHUP,SIG_IGN); // TODO aconway 2007-07-18: reload config.
-
+    signal(SIGHUP,SIG_IGN);
     signal(SIGCHLD,SIG_IGN); 
 }
 
 void SignalHandler::shutdown() { shutdownHandler(0); }
 
 void SignalHandler::shutdownHandler(int) {
-    if (broker.get()) {
+    sys::Mutex::ScopedLock l(brokerLock);
+    if (broker) {
         broker->shutdown();
-        broker = 0;             // Release the broker reference.
+        broker = 0;
     }
 }
 

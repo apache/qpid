@@ -113,7 +113,7 @@ void QpiddOptions::usage() const {
 // 
 struct ScopedSetBroker {
     ScopedSetBroker(const boost::intrusive_ptr<Broker>& broker) {
-        qpid::broker::SignalHandler::setBroker(broker);
+        qpid::broker::SignalHandler::setBroker(broker.get());
     }
     ~ScopedSetBroker() { qpid::broker::SignalHandler::setBroker(0); }
 };
