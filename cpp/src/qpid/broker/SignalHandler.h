@@ -22,8 +22,6 @@
  *
  */
 
-#include <boost/intrusive_ptr.hpp>
-
 namespace qpid {
 namespace broker {
 
@@ -35,15 +33,17 @@ class Broker;
 class SignalHandler
 {
   public:
-    /** Set the broker to be shutdown on signals */
-    static void setBroker(const boost::intrusive_ptr<Broker>& broker);
+    /** Set the broker to be shutdown on signals.
+     * Must be reset by calling setBroker(0) before the broker is deleted.
+     */
+    static void setBroker(Broker* broker);
 
     /** Initiate shut-down of broker */
     static void shutdown();
 
   private:
     static void shutdownHandler(int);
-    static boost::intrusive_ptr<Broker> broker;
+    static Broker* broker;
 };
 }} // namespace qpid::broker
 
