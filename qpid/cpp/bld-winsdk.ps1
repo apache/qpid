@@ -60,6 +60,10 @@ devenv qpid-cpp.sln /build "Release|Win32" /project docs-user-api
 devenv qpid-cpp.sln /build "Debug|Win32" /project INSTALL
 devenv qpid-cpp.sln /build "RelWithDebInfo|Win32" /project INSTALL
 
+# Build the .NET binding
+devenv .\bindings\qpid\dotnet\org.apache.qpid.messaging.sln /build "Debug|x86" /project org.apache.qpid.messaging
+devenv .\bindings\qpid\dotnet\org.apache.qpid.messaging.sln /build "Debug|x86" /project org.apache.qpid.messaging.sessionreceiver
+
 # This would be kludgy if we have only one entry as the array declaration syntax
 # can't cope with just one nested array
 # Target must be a directory
@@ -125,6 +129,10 @@ foreach ($pattern in $preserve) {
 	Move-Item -force -path "$preserve_dir/$pattern" -destination "$install_dir/$pattern"
 }
 Remove-Item -recurse $preserve_dir
+
+# Install the .NET binding
+Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.dll" -destination "$install_dir/bin"
+Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.pdb" -destination "$install_dir/bin/DebugPDB"
 
 # Zip the /bin PDB files into two zip files.
 # we previously arranged that the Debug pdbs go in the DebugPDB subdirectory
