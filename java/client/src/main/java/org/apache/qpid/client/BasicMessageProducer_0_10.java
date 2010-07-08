@@ -168,17 +168,31 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             deliveryProp.setRoutingKey(routingKey);
         }
         
-        if (destination.getSubject() != null && !destination.getSubject().equals(""))
+        if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR && 
+           (destination.getSubject() != null || 
+              (messageProps.getApplicationHeaders() != null && messageProps.getApplicationHeaders().get("qpid.subject") != null))
+           )
         {
             Map<String,Object> appProps = messageProps.getApplicationHeaders();
             if (appProps == null)
             {
                 appProps = new HashMap<String,Object>();
+                messageProps.setApplicationHeaders(appProps);          
             }
-            appProps.put("qpid.subject",destination.getSubject());
-            messageProps.setApplicationHeaders(appProps);
-        }        
-
+            
+            if (appProps.get("qpid.subject") == null)
+            {
+                // use default subject in address string
+                appProps.put("qpid.subject",destination.getSubject());
+            }
+                    
+            if (destination.getTargetNode().getType() == AMQDestination.TOPIC_TYPE)
+            {
+                deliveryProp.setRoutingKey((String)
+                        messageProps.getApplicationHeaders().get("qpid.subject"));                
+            }
+        }
+        
         messageProps.setContentLength(message.getContentLength());
 
         // send the message
