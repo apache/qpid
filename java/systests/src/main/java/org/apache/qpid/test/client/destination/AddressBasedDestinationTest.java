@@ -381,6 +381,11 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
     }
     
+    /**
+     * Test goal: Verifies if the new address format based destinations
+     *            can be specified and loaded correctly from the properties file.
+     * 
+     */
     public void testLoadingFromPropertiesFile() throws Exception
     {
         Hashtable<String,String> map = new Hashtable<String,String>();        
@@ -422,61 +427,61 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         TextMessage msg = (TextMessage)cons3.receive(1000);
         assertEquals("Destination3 was not created as expected.",msg.getText(),"Hello");
     }
-    
-    /*public void testBindQueueForXMLExchange() throws Exception
+
+    /**
+     * Test goal: Verifies the subject can be overridden using "qpid.subject" message property.
+     * Test strategy: Creates and address with a default subject "topic1"
+     *                Creates a message with "qpid.subject"="topic2" and sends it.
+     *                Verifies that the message goes to "topic2" instead of "topic1". 
+     */
+    public void testOverridingSubject() throws Exception
     {
-        if (!isCppBroker())
-        {
-            return;
-        }
+        Session jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
         
+        AMQDestination topic1 = new AMQAnyDestination("ADDR:amq.topic/topic1; {link:{name: queue1}}");
+        MessageProducer prod = jmsSession.createProducer(topic1);
+        
+        Message m = jmsSession.createTextMessage("Hello");
+        m.setStringProperty("qpid.subject", "topic2");
+        
+        MessageConsumer consForTopic1 = jmsSession.createConsumer(topic1);
+        MessageConsumer consForTopic2 = jmsSession.createConsumer(new AMQAnyDestination("ADDR:amq.topic/topic2; {link:{name: queue2}}"));
+        
+        prod.send(m);
+        Message msg = consForTopic1.receive(1000);
+        assertNull("message shouldn't have been sent to topic1",msg);
+        
+        msg = consForTopic2.receive(1000);
+        assertNotNull("message should have been sent to topic2",msg);        
+        
+    }
+    
+    public void testAddressBasedReplyTo() throws Exception
+    {
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
-        ((AMQSession_0_10)jmsSession).sendExchangeDeclare("xml", "xml",null,null,false);
         
-        String xQuery = "let $w := ./weather \n" +
-                        "return $w/station = \'Raleigh-Durham International Airport (KRDU)\' \n" +
-                            "and $w/temperature_f > 50 \n" + 
-                            "and $w/temperature_f - $w/dewpoint > 5 \n" + 
-                            "and $w/wind_speed_mph > 7 \n" +
-                            "and $w/wind_speed_mph < 20";
+        String addr = "ADDR:amq.direct/x512; {create: receiver, " +
+                      "link : {name : 'MY.RESP.QUEUE', " + 
+                      "x-declare : { auto-delete: true, exclusive: true, " +
+                                   "'qpid.max_size': 1000, 'qpid.policy_type': ring } } }";
         
-        String xmlExchangeBinding = "'xml; {xquery: " + xQuery + "} '";
+        Destination replyTo = new AMQAnyDestination(addr);
+        Destination dest =new AMQAnyDestination("ADDR:amq.direct/Hello");
         
-        String addr = "ADDR:my-queue/hello; { " + 
-                        "create: always, " +
-                        "node-properties: {" + 
-                             "durable: true ," +
-                             "x-properties: { " + 
-                                 "auto-delete: true," +
-                                 "'qpid.max_count': 100," + 
-                                 " bindings: ['amq.direct/test', 'amq.topic/a.#'," + xmlExchangeBinding + "]" +
-                                 
-                             "}" +
-                        "}" +
-                      "}";
+        MessageConsumer cons = jmsSession.createConsumer(dest);                
+        MessageProducer prod = jmsSession.createProducer(dest);
+        Message m = jmsSession.createTextMessage("Hello");
+        m.setJMSReplyTo(replyTo);
+        prod.send(m);
         
-        AMQDestination dest = new AMQAnyDestination(addr);
-        MessageConsumer cons = jmsSession.createConsumer(dest); 
+        Message msg = cons.receive(1000);
+        assertNotNull("consumer should have received the message",msg);
         
-        assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));              
+        MessageConsumer replyToCons = jmsSession.createConsumer(replyTo);
+        MessageProducer replyToProd = jmsSession.createProducer(msg.getJMSReplyTo());
+        replyToProd.send(jmsSession.createTextMessage("reply"));
         
-        assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("", 
-                    dest.getName(),dest.getName(), null));
-        
-        assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.direct", 
-                    dest.getName(),"test", null));  
-      
-        assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.topic", 
-                    dest.getName(),"a.#", null));
-        
-        Address a = Address.parse(xmlExchangeBinding);
-        assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("xml", 
-                    dest.getName(),null, a.getOptions()));
-        
-    }*/
+        Message replyToMsg = replyToCons.receive(1000);
+        assertNotNull("The reply to consumer should have got the message",replyToMsg);        
+    }
 }
