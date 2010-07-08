@@ -554,8 +554,8 @@ options ::=  { <key> : <value>, ... }
 	<xref linkend="section-address-string-bnf"/>.</para>
 
 
-	<para>So far, the address strings in this tutorial have used
-	only addresses. The following sections show how to use
+	<para>So far, the address strings in this tutorial have only
+	used simple names. The following sections show how to use
 	subjects and options.</para>
 
       </section>
@@ -579,18 +579,15 @@ options ::=  { <key> : <value>, ... }
 
       <para>
 	In AMQP 0-10, each exchange type has its own matching
-	algorithm, and queues do not provide filtering. This is
-	discussed in <xref linkend="section-amqp0-10-mapping"/>.
+	algorithm. This is discussed in
+	<xref linkend="section-amqp0-10-mapping"/>.
       </para>
 
       <note>
 	<para>
 	  Currently, a receiver bound to a queue ignores subjects,
-	  receiving messages from the queue without filtering.
-
-	  In the future, if a receiver is bound to a queue, and its
-	  address contains a subject, the subject will be used as a
-	  selector to filter messages.
+	  receiving messages from the queue without filtering. Support
+	  for subject filtering on queues will be implemented soon.
 	</para>
       </note>
 
@@ -739,7 +736,7 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
       <title>Address String Options</title>
 
       <para>
-        The options in an address string contain additional
+        The options in an address string can contain additional
         information for the senders or receivers created for it,
         including:
       </para>
@@ -780,13 +777,12 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
         </listitem>
         <listitem>
           <para>
-            Extension points that rely on the functionality of specific node types.
+            Extension points providing more direct control over the underlying protocol.
 	  </para>
 	  <para>
-	    For instance, the Qpid XML exchange can use XQuery to do
-	    content-based routing for XML messages, or to query
-	    message data using XQuery. Queries can be specified using
-	    options.
+	    For instance, the <literal>x-bindings</literal> property
+	    allows greater control over the AMQP 0-10 binding process
+	    when an address is resolved.
           </para>
         </listitem>
       </itemizedlist>
@@ -924,13 +920,17 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
       <section>
 	<title>x-bindings</title>
 
-	<para><literal>x-bindings</literal> allows an address string
-	to specify properties AMQP 0-10 bindings. For instance, the
-	XML Exchange is an AMQP 0-10 custom exchange provided by the
-	Apache Qpid C++ broker. It allows messages to be filtered
-	using XQuery; queries can address either message properties or
-	XML content in the body of the message. These queries can be
-	specified in addresses using x-bindings</para>
+	<para>By including an <literal>x-bindings</literal> option in
+        an address string, greater control over the AMQP 0-10 binding
+        process can be achieved. For instance, the XML Exchange is an
+        AMQP 0-10 custom exchange provided by the Apache Qpid C++
+        broker. It allows messages to be filtered using XQuery;
+        queries can address either message properties or XML content
+        in the body of the message. The xquery is specified in the
+        arguments field of the AMQP 0-10 command. When using the
+        messaging API an xquery can be specified in and address that
+        resolves to an XML exchange by using the x-bindings
+        property.</para>
 
 
 	<para>An instance of the XML Exchange must be added before it
