@@ -2012,7 +2012,7 @@ try:
 Sender sender = session.createSender("durable-queue");
 
 Message message("Hello world!");
-message.setDurable(1);
+message.setDurable(true);
 
 sender.send(message);
 ]]></programlisting>
