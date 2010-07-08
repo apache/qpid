@@ -1997,12 +1997,11 @@ try:
 
 	<para>If a queue is durable, the queue survives a messaging
 	broker crash, as well as any durable messages that have been
-	placed on the queue. These messages will be delivered when the
-	messaging broker is restarted. Delivery is guaranteed if and
-	only if both the message and the queue are durable. Guaranteed
-	delivery requires a persistence module, such as the one
-	available from <ulink
-	url="http://QpidComponents.org">QpidComponents.org</ulink>.</para>
+	placed on the queue. These messages will be recovered for
+	delivery to subscribers when the messaging broker is
+	restarted. Guaranteed delivery requires a persistence module,
+	such as the one available
+	from <ulink url="http://QpidComponents.org">QpidComponents.org</ulink>.</para>
 
 	<example>
 	  <title>Guaranteed Delivery</title>
@@ -2015,7 +2014,7 @@ Sender sender = session.createSender("durable-queue");
 Message message("Hello world!");
 message.setDurable(1);
 
-sender.send(Message("Hello world!"));
+sender.send(message);
 ]]></programlisting>
 <!--
 	  <para>Python:</para>
