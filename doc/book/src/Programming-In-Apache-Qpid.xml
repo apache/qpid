@@ -177,19 +177,21 @@ int main(int argc, char** argv) {
 	  <para>Establishes the connection with the messaging broker.</para>
 	</callout>
 	<callout id="callout-cpp-session" arearefs="hello-cpp-session">
-	  <para>Creates a session object, which maintains the state of all interactions with the messaging broker, and manages senders and receivers.</para>
+	  <para>Creates a session object on which messages will be sent and received.</para>
 	</callout>
 	<callout id="callout-cpp-receiver" arearefs="hello-cpp-receiver">
-	  <para>Creates a receiver that reads from the given address.</para>
+	  <para>Creates a receiver to receive messages from the given address.</para>
 	</callout>
 	<callout id="callout-cpp-sender" arearefs="hello-cpp-sender">
 	  <para>Creates a sender that sends to the given address.</para>
 	</callout>
 	<callout id="callout-cpp-fetch" arearefs="hello-cpp-fetch">
-	  <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
+	  <para>Receives the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
 	</callout>
 	<callout id="callout-cpp-acknowledge" arearefs="hello-cpp-acknowledge">
-	  <para>Acknowledges messages that have been read. To guarantee delivery, a message remains on the messaging broker until it is acknowledged by a client. session.acknowledge() acknowledges all unacknowledged messages for the given session&mdash;this allows acknowledgements to be batched, which is  more efficient than acknowledging messages individually.</para>
+	  <para>Acknowledges receipt of all fetched messages on the
+	  session. This informs the broker that the messages were
+	  transfered and processed by the client successfully.</para>
 	</callout>
 	<callout id="callout-cpp-close" arearefs="hello-cpp-close">
 	  <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
@@ -242,10 +244,10 @@ finally:
 	      <para>Establishes the connection with the messaging broker.</para>
 	    </callout>
 	    <callout id="callout-python-session" arearefs="hello-python-session">
-	      <para>Creates a session object, which maintains the state of all interactions with the messaging broker, and manages senders and receivers.</para>
+	      <para>Creates a session object on which messages will be sent and received.</para>
 	    </callout>
 	    <callout id="callout-python-receiver" arearefs="hello-python-receiver">
-	      <para>Creates a receiver that reads from the given address.</para>
+	      <para>Creates a receiver with which to receive messages from the given address.</para>
 	    </callout>
 	    <callout id="callout-python-sender" arearefs="hello-python-sender">
 	      <para>Creates a sender that sends to the given address.</para>
@@ -254,7 +256,9 @@ finally:
 	      <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
 	    </callout>
 	    <callout id="callout-python-acknowledge" arearefs="hello-python-acknowledge">
-	      <para>Acknowledges messages that have been read. To guarantee delivery, a message remains on the messaging broker until it is acknowledged by a client. session.acknowledge() acknowledges all unacknowledged messages for the given session&mdash;this allows acknowledgements to be batched, which is  more efficient than acknowledging messages individually.</para>
+	      <para>Acknowledges receipt of all fetched messages on
+	  the session. This informs the broker that the messages were
+	  transfered and processed by the client successfully.</para>
 	    </callout>
 	    <callout id="callout-python-close" arearefs="hello-python-close">
 	      <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
@@ -323,10 +327,10 @@ namespace Org.Apache.Qpid.Messaging {
 	  <para>Establishes the connection with the messaging broker.</para>
 	</callout>
 	<callout id="callout-csharp-session" arearefs="hello-csharp-session">
-	  <para>Creates a session object, which maintains the state of all interactions with the messaging broker, and manages senders and receivers.</para>
+	  <para>Creates a session object on which messages will be sent and received.</para>
 	</callout>
 	<callout id="callout-csharp-receiver" arearefs="hello-csharp-receiver">
-	  <para>Creates a receiver that reads from the given address.</para>
+	  <para>Creates a receiver with which to receive messages from the given address.</para>
 	</callout>
 	<callout id="callout-csharp-sender" arearefs="hello-csharp-sender">
 	  <para>Creates a sender that sends to the given address.</para>
@@ -335,7 +339,9 @@ namespace Org.Apache.Qpid.Messaging {
 	  <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
 	</callout>
 	<callout id="callout-csharp-acknowledge" arearefs="hello-csharp-acknowledge">
-	  <para>Acknowledges messages that have been read. To guarantee delivery, a message remains on the messaging broker until it is acknowledged by a client. session.acknowledge() acknowledges all unacknowledged messages for the given session&mdash;this allows acknowledgements to be batched, which is  more efficient than acknowledging messages individually.</para>
+	  <para>Acknowledges receipt of all fetched messages on the
+	  session. This informs the broker that the messages were
+	  transfered and processed by the client successfully.</para>
 	</callout>
 	<callout id="callout-csharp-close" arearefs="hello-csharp-close">
 	  <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
