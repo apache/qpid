@@ -1245,7 +1245,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 	      <entry>
 	        one of: unreliable, at-least-once, at-most-once, exactly-once
 	      </entry>
-	      <entry><!-- from https://issues.apache.org/jira/browse/QPID-2380 -->
+	      <entry>
 		Reliability indicates the level of reliability that
 		the sender or receiver.  <literal>unreliable</literal>
 		and <literal>at-most-once</literal> are currently
@@ -1255,7 +1255,14 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		a message is not lost, but duplicates may be
 		received. <literal>exactly-once</literal> guarantees
 		that a message is not lost, and is delivered precisely
-		once.
+		once. Currently only <literal>unreliable</literal>
+		and <literal>at-least-once</literal> are supported.
+                <footnote><para>If at-most-once is requested,
+                unreliable will be used and for durable messages on
+                durable queues there is the possibility that messages
+                will be redelivered; if exactly-once is requested,
+                at-most-once will be used and the application needs to
+                be able to deal with duplicates.</para></footnote>
 	      </entry>
 	    </row>
 	    <row>
@@ -1416,53 +1423,84 @@ options := map
 
 </section>
 
-<section>
-      <title>Logging</title>
+<section id="replay">
+    <title>Sender Capacity &amp; Replay</title>
 
-      <para>To simplify debugging, Qpid provides a logging facility
-      that prints out messaging events.</para>
+    <para>The send method of a sender has an optional second parameter
+    that controls whether the send call is synchronous or not. A
+    synchronous send call will block until the broker has confirmed
+    receipt of the message. An asynchronous send call will return
+    before the broker confirms receipt of the message, allowing for
+    example further send calls to be made without waiting for a
+    roundtrip to the broker for each message. This is desirable where
+    increased throughput is important.</para>
 
-      <section>
-	<title>Logging in C++</title>
-	<para>The Qpidd broker and C++ clients can both use environment
-	variables to enable logging. Use QPID_LOG_ENABLE to set the
-	level of logging you are interested in (trace, debug, info,
-	notice, warning, error, or critical):</para>
+    <para>The sender maintains a list of sent messages whose receipt
+    has yet to be confirmed by the broker. The maximum number of such
+    messages that it will hold is defined by the capacity of the
+    sender, which can be set by the application. If an application
+    tries to send with a sender whose capacity is already fully used
+    up, the send call will block waiting for capacity regardless of
+    the value of the sync flag.</para>
 
-<screen>
-$ export QPID_LOG_ENABLE="warning+"
-</screen>
+    <para>The sender can be queried for the available space (i.e. the
+    unused capacity), and for the current count of unsettled messages
+    (i.e. those held in the queue pending confirmation by the
+    server). When the unsettled count is zero, all messages on that
+    sender have been successfully sent.</para>
 
-      <para>The Qpidd broker and C++ clients use QPID_LOG_OUTPUT to
-      determine where logging output should be sent. This is either a
-      file name or the special values stderr, stdout, or syslog:</para>
+    <para>If the connection fails and is transparently reconnected
+    (see <xref linkend="connection-options"/> for details on how to control
+    this feature), the unsettled messages for each sender over that
+    connection will be re-transmitted. This provides a transparent
+    level of reliability. This feature can be controlled through the
+    link's reliability as defined in the address (see
+    <xref linkend="table-link-properties"/>). At present only
+    at-least-once guarantees are offered. </para>
+</section>
 
-<screen>
-export QPID_LOG_TO_FILE="/tmp/myclient.out"
-</screen>
+<section id="prefetch">
+    <title>Receiver Capacity i.e. Prefetch</title>
 
-      </section>
-	
-	<section>
-		<title>Logging in Python</title>
-		<para>
-			The Python client library supports logging using the standard Python logging module. The easiest way to do logging is to use the <command>basicConfig()</command>, which reports all warnings and errors:
-		</para>
-		
-<programlisting>from logging import basicConfig
-basicConfig()
-</programlisting>
-		<para>
-			Qpidd also provides a convenience method that makes it easy to specify the level of logging desired. For instance, the following code enables logging at the <command>DEBUG</command> level:
-		</para>
-		
-<programlisting>from qpid.log import enable, DEBUG
-enable("qpid.messaging.io", DEBUG)
-</programlisting>
-		<para>
-			For more information on Python logging, see <ulink url="http://docs.python.org/lib/node425.html">http://docs.python.org/lib/node425.html</ulink>. For more information on Qpid logging, use <command>$ pydoc qpid.log</command>.
-		</para>
-	</section>
+    <para>By default, a receiver requests the next message from the
+    server in response to each fetch call, resulting in messages being
+    sent to the receiver one at a time. As in the case of sending, it
+    is often desirable to avoid this roundtrip for each message. This
+    can be achieved by allowing the receiver
+    to <firstterm>prefetch</firstterm> messages in anticipation of
+    fetch calls being made. The receiver needs to be able to store
+    these prefetched messages, the number it can hold is controlled by
+    the receivers capacity.</para>
+
+</section>
+
+<section id="acknowledgements">
+    <title>Acknowledging Received Messages</title>
+
+    <para>Applications that receive messages should acknowledge their
+    receipt by calling the session's acknowledge method. As in the
+    case of sending messages, acknowledged transfer of messages to
+    receivers provides at-least-once reliability meaning that the loss
+    of the connection, a client crash or even in the case of durable
+    messages a broker restart does not result in lost messages. Some
+    cases may not require this however and the reliability can be
+    controlled through a link property in the address options (see
+    <xref linkend="table-link-properties"/>).</para>
+
+    <para>The acknowledge call acknowledges all messages received on
+    the session (i.e. all message that have been returned from a fetch
+    call on a receiver created on that session).</para>
+
+    <para>The acknowledge call also support an optional parameter
+    controlling whether the call is synchronous or not. A synchronous
+    acknowledge will block until the server has confirmed that it has
+    received the acknowledgement. In the asynchronous case, when the
+    call returns there is not yet any guarantee that the server has
+    received and processed the acknowledgement. The session may be
+    queried for the number of unsettled acknowledgements; when that
+    count is zero all acknowledgements made for received messages have
+    been successful.</para>
+
 </section>
 
     
@@ -1470,12 +1508,11 @@ enable("qpid.messaging.io", DEBUG)
       <title>Receiving Messages from Multiple Sources</title>
 
       <para>A receiver can only read from one source, but many
-      programs need to be able to read messages from many sources,
-      preserving the original sequence of the messages. In the Qpid
-      Messaging API, a program can ask a session for the <quote>next
-      receiver</quote>; that is, the receiver that is responsible for
-      the next available message. The following example shows how this
-      is done in C++, Python, and .NET C#.
+      programs need to be able to read messages from many sources. In
+      the Qpid Messaging API, a program can ask a session for
+      the <quote>next receiver</quote>; that is, the receiver that is
+      responsible for the next available message. The following
+      example shows how this is done in C++, Python, and .NET C#.
       </para>
 
       <para>Note that to use this pattern you must enable prefetching
@@ -1527,73 +1564,229 @@ session.Acknowledge();
     </section>
 
     <section>
-      <title>Request / Response</title>
-      <para>Request / Response applications use the reply-to property,
-      described in <xref
-      linkend="table-amqp0-10-message-properties"/>, to allow a server
-      to respond to the client that sent a message. A server sets up a
-      service queue, with a name known to clients. A client creates a
-      private queue for the server's response, creates a message for a
-      request, sets the request's reply-to property to the address of
-      the client's response queue, and sends the request to the
-      service queue. The server sends the response to the address
-      specified in the request's reply-to property.
-      </para>
+      <title>Transactions</title>
+
+      <para>Sometimes it is useful to be able to group messages
+      transfers - sent and/or received - on a session into atomic
+      grouping. This can be done be creating the session as
+      transactional. On a transactional session sent messages only
+      become available at the target address on commit. Likewise any
+      received and acknowledged messages are only discarded at their
+      source on commit
+
+      <footnote><para>Note that this currently is only true for
+      messages received using a reliable mode
+      e.g. at-least-once. Messages sent by a broker to a receiver in
+      unreliable receiver will be discarded immediately regardless of
+      transctionality.</para></footnote>
+
+      .</para>
+
       <example>
-	<title>Request / Response Applications in C++</title>
-
-	<para>This example shows the C++ code for a client and server
-	that use the request / response pattern.</para>
-
-	<para>The server creates a service queue and waits for a
-	message to arrive. If it receives a message, it sends a
-	message back to the sender.</para>
-
-	<programlisting><![CDATA[Receiver receiver = session.createReceiver("service_queue; {create: always}");
-
-Message request = receiver.fetch();
-const Address&amp; address = request.getReplyTo(); // Get "reply-to" from request ...
-if (address) {
-  Sender sender = session.createSender(address); // ... send response to "reply-to"
-  Message response("pong!");
-  sender.send(response);
-  session.acknowledge();
-}
-     ]]></programlisting>
-
-	<para>The client creates a sender for the service queue, and
-	also creates a response queue that is deleted when the
-	client closes the receiver for the response queue. In the C++
-	client, if the address starts with the character
-	<literal>#</literal>, it is given a unique name.</para>
-
+	<title>Transactions</title>
+	<para>C++:</para>
 	<programlisting><![CDATA[
-Sender sender = session.createSender("service_queue");
-
-Address responseQueue("#response-queue; {create:always, delete:always}");
-Receiver receiver = session.createReceiver(responseQueue);
-
-Message request;
-request.setReplyTo(responseQueue);
-request.setContent("ping");
-sender.send(request);
-Message response = receiver.fetch();
-std::cout << request.getContent() << " -> " << response.getContent() << std::endl;
-]]>	  </programlisting>
-
-	<para>The client sends the string <literal>ping</literal> to
-	the server. The server sends the response
-	<literal>pong</literal> back to the same client, using the
-	<varname>replyTo</varname> property.</para>
-
-      </example>
+Connection connection(broker);
+Session session =  connection.createTransactionalSession();
+...
+if (smellsOk())
+   session.commit();
+else 
+   session.rollback();
+   ]]></programlisting>
 <!--
-      <example>
-	<title>Request / Response Applications in Python</title>
-	<programlisting>### TODO</programlisting>
-      </example>
+	<para>Python</para>
+	<programlisting><![CDATA[
+### TODO
+   ]]></programlisting>
 -->
+      </example>
+
     </section>
+
+    <section id="connection-options">
+      <title>Connection Options</title>
+
+      <para>
+        Aspects of the connections behaviour can be controlled through
+        specifying connection options. For example, connections can be
+        configured to automatically reconnect if the connection to a
+        broker is lost.
+      </para>
+
+	<example>
+	  <title>Specifying Connection Options in C++ and Python</title>
+
+	  <para>In C++, these options can be set using <function>Connection::setOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:</para>
+
+	  <programlisting><![CDATA[
+Connection connection("localhost:5672", "{reconnect: true}");
+try {
+    connection.open();
+    !!! SNIP !!!
+    ]]></programlisting>
+
+or 
+
+	  <programlisting><![CDATA[
+Connection connection("localhost:5672");
+connection.setOption("reconnect", true);
+try {
+    connection.open();
+    !!! SNIP !!!
+    ]]></programlisting>
+
+	  <para>In Python, these options can be set as attributes of the connection or using named arguments in
+	  the <function>Connection</function> constructor:</para>
+
+	  <programlisting><![CDATA[
+connection = Connection("localhost:5672", reconnect=True)
+try:
+  connection.open()
+  !!! SNIP !!!
+  ]]></programlisting>
+
+or 
+
+	  <programlisting><![CDATA[
+connection = Connection("localhost:5672")
+connection.reconnect = True
+try:
+  connection.open()
+  !!! SNIP !!!
+  ]]></programlisting>
+
+	  <para>See the reference documentation for details in each language.</para>
+	</example>
+
+	<para>The following table lists the supported connection options.</para>
+
+	<table pgwide="1">
+	  <title>Connection Options</title>
+	  <tgroup cols="3">
+	    <thead>
+	      <colspec colnum="1" colwidth="1*"/>
+	      <colspec colnum="2" colwidth="1*"/>
+	      <colspec colnum="3" colwidth="3*"/>
+	      <row>
+		<entry>option name</entry>
+		<entry>value type</entry>
+		<entry>semantics</entry>
+	      </row>
+	    </thead>
+	    <tbody>
+
+	      <row>
+		<entry>
+		  username
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The username to use when authenticating to the broker.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  password
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The password to use when authenticating to the broker.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  sasl-mechanism
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The specific SASL mechanism to use when
+		  authenticating to the broker. In c++ only a single
+		  value can be specified at present. In python the
+		  value can be a space separated list in order of
+		  preference.
+		</entry>
+	      </row>
+
+
+	      <row>
+		<entry>
+		  reconnect
+		</entry>
+		<entry>
+		  boolean
+		</entry>
+		<entry>
+		  Transparently reconnect if the connection is lost.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_timeout
+		</entry>
+		<entry>
+		  integer
+		</entry>
+		<entry>
+		  Total number of seconds to continue reconnection attempts before giving up and raising an exception.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_limit
+		</entry>
+		<entry>
+		  integer
+		</entry>
+		<entry>
+		  Maximum number of reconnection attempts before giving up and raising an exception.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_interval_min
+		</entry>
+		<entry>
+		  integer representing time in seconds
+		</entry>
+		<entry>
+		  Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_interval_max
+		</entry>
+		<entry>
+		  integer representing time in seconds
+		</entry>
+		<entry>
+		  Maximum reconnect interval.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  reconnect_interval
+		</entry>
+		<entry>
+		  integer representing time in seconds
+		</entry>
+		<entry>
+		  Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+
+    </section>
+
     <section id="section-Maps">
       <title>Maps in Message Content</title>
       
@@ -1783,323 +1976,109 @@ sender.send(message, true);
 
       
 </section> 
-        <section>
-      <title>Performance</title>
-      <para>
-         Clients can often be made significantly faster by using asynchronous operations, batching acknowledgements and setting the capacity of receivers to allow prefetch. The size of a sender's replay buffer can also affect performance.
-      </para>
-
-      <section>
-	<title>Asynchronous Operations</title>
-
-	<para>The send method on a sender takes an optional second
-	argument that controls whether the call is synchronous or
-	not
-
-        <footnote><para>In C++ the send() is asynchronous by default. In python however it is synchronous by default.</para></footnote>  
-
-        . A synchronous send will block until the broker confirms
-	receipt of the message. Higher throughput is achieved if the
-	call returns before this point, allowing further send calls to
-	be made. The sender can be queried to find out how many
-	unsettled messages there are. Unsettled messages are those
-	that have been sent but not yet acknowledged by the broker. An
-	unsettled count of zero means that receipt of all messages
-	sent using that sender have been confirmed as received by the
-	broker.
-        </para>
-
-        <para>The acknowledge call on a session may also be
-        synchronous or asynchronous. The session can be queried for
-        the unsettled acknowledgements also, i.e. the number of
-        messages received on the session that have been acknowledged
-        by the application but for which the acknowledgements have not
-        been confirmed by the broker.</para>
-      </section>
-
-      <section>
-	<title>Batching Acknowledgements</title>
-
-	<para>Many of the simple examples we have shown retrieve a message and immediately acknowledge it. Because each acknowledgement results in network traffic, you can imporve efficiency and increase performance by acknowledging messages in batches. For instance, an application can receive and process a number of related messages, then acknowledge the entire batch, or an application can acknowledge after a certain number of messages have been received or a certain time period has elapsed.</para>
-      </section>
-
-
-      <section id="prefetch">
-	<title>Prefetch</title>   
-
-	<para>By default, a receiver retrieves the next message from the server, one message at a time, in response to each fetch() call. This provides intuitive results when writing and debugging programs, but does not provide optimum performance. By allowing the client to prefetch messages in anticipation of fetch() calls, round-trips to the broker can be avoided and the throughput for a receiver can be increased. To enable prefetching, set the capacity of the receiver to the size of the desired input buffer; for many applications, a capacity of 100 performs well.</para>
-
-<!--
-###	sender: capacity of replay buffer (not yet acknowledged messages), these are resent with failover
--->
-
-	<example>
-	  <title>Prefetch</title>
-	  
-	  <para>C++</para>
-	  <programlisting>
-Receiver receiver = session.createReceiver(address);
-receiver.setCapacity(100);
-Message message = receiver.fetch();
-	  </programlisting>
-<!--
-	  <para>Python</para>
-	  <programlisting>
-	  </programlisting>
--->
-  
-	</example>
-      </section>
-
-      <section>
-	<title>Sizing the Replay Buffer</title>
-
-	<para>In order to guarantee delivery, a sender automatically
-	keeps messages in a replay buffer until the messaging broker
-	acknowledges that they have been received. The replay buffer
-	is held in memory, and is never paged to disk. For most
-	applications, the default size of the replay buffer works
-	well. A large replay buffer requires more memory, a small
-	buffer can slow down the client because it can not send new
-	messages if the replay buffer is full, and must wait for
-	existing sends to be acknowledged.</para>
-
-	<example>
-	  <title>Sizing the Replay Buffer</title>
-	  <para>C++</para>
- 
-	  <programlisting>
-Sender sender = session.createSender(address);
-sender.setCapacity(100);
-	  </programlisting>
-	</example>
-	  
-      </section>
-
-    </section>
 
     <section>
-      <title>Connection Options</title>
-
-      <para>
-        Aspects of the connections behaviour can be controlled through
-        specifying connection options. For example, connections can be
-        configured to automatically reconnect if the connection to a
-        broker is lost.
+      <title>The Request / Response Pattern</title>
+      <para>Request / Response applications use the reply-to property,
+      described in <xref
+      linkend="table-amqp0-10-message-properties"/>, to allow a server
+      to respond to the client that sent a message. A server sets up a
+      service queue, with a name known to clients. A client creates a
+      private queue for the server's response, creates a message for a
+      request, sets the request's reply-to property to the address of
+      the client's response queue, and sends the request to the
+      service queue. The server sends the response to the address
+      specified in the request's reply-to property.
       </para>
+      <example>
+	<title>Request / Response Applications in C++</title>
 
-	<example>
-	  <title>Specifying Connection Options in C++ and Python</title>
+	<para>This example shows the C++ code for a client and server
+	that use the request / response pattern.</para>
 
-	  <para>In C++, these options can be set using <function>Connection::setOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:</para>
+	<para>The server creates a service queue and waits for a
+	message to arrive. If it receives a message, it sends a
+	message back to the sender.</para>
 
-	  <programlisting><![CDATA[
-Connection connection("localhost:5672", "{reconnect: true}");
-try {
-    connection.open();
-    !!! SNIP !!!
-    ]]></programlisting>
+	<programlisting><![CDATA[Receiver receiver = session.createReceiver("service_queue; {create: always}");
 
-or 
+Message request = receiver.fetch();
+const Address&amp; address = request.getReplyTo(); // Get "reply-to" from request ...
+if (address) {
+  Sender sender = session.createSender(address); // ... send response to "reply-to"
+  Message response("pong!");
+  sender.send(response);
+  session.acknowledge();
+}
+     ]]></programlisting>
 
-	  <programlisting><![CDATA[
-Connection connection("localhost:5672");
-connection.setOption("reconnect", true);
-try {
-    connection.open();
-    !!! SNIP !!!
-    ]]></programlisting>
+	<para>The client creates a sender for the service queue, and
+	also creates a response queue that is deleted when the
+	client closes the receiver for the response queue. In the C++
+	client, if the address starts with the character
+	<literal>#</literal>, it is given a unique name.</para>
 
-	  <para>In Python, these options can be set as attributes of the connection or using named arguments in
-	  the <function>Connection</function> constructor:</para>
+	<programlisting><![CDATA[
+Sender sender = session.createSender("service_queue");
 
-	  <programlisting><![CDATA[
-connection = Connection("localhost:5672", reconnect=True)
-try:
-  connection.open()
-  !!! SNIP !!!
-  ]]></programlisting>
+Address responseQueue("#response-queue; {create:always, delete:always}");
+Receiver receiver = session.createReceiver(responseQueue);
 
-or 
+Message request;
+request.setReplyTo(responseQueue);
+request.setContent("ping");
+sender.send(request);
+Message response = receiver.fetch();
+std::cout << request.getContent() << " -> " << response.getContent() << std::endl;
+]]>	  </programlisting>
 
-	  <programlisting><![CDATA[
-connection = Connection("localhost:5672")
-connection.reconnect = True
-try:
-  connection.open()
-  !!! SNIP !!!
-  ]]></programlisting>
+	<para>The client sends the string <literal>ping</literal> to
+	the server. The server sends the response
+	<literal>pong</literal> back to the same client, using the
+	<varname>replyTo</varname> property.</para>
 
-	  <para>See the reference documentation for details in each language.</para>
-	</example>
-
-	<para>The following table lists the supported connection options.</para>
-
-	<table pgwide="1">
-	  <title>Connection Options</title>
-	  <tgroup cols="3">
-	    <thead>
-	      <colspec colnum="1" colwidth="1*"/>
-	      <colspec colnum="2" colwidth="1*"/>
-	      <colspec colnum="3" colwidth="3*"/>
-	      <row>
-		<entry>option name</entry>
-		<entry>value type</entry>
-		<entry>semantics</entry>
-	      </row>
-	    </thead>
-	    <tbody>
-
-	      <row>
-		<entry>
-		  username
-		</entry>
-		<entry>
-		  string
-		</entry>
-		<entry>
-		  The username to use when authenticating to the broker.
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  password
-		</entry>
-		<entry>
-		  string
-		</entry>
-		<entry>
-		  The password to use when authenticating to the broker.
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  sasl-mechanism
-		</entry>
-		<entry>
-		  string
-		</entry>
-		<entry>
-		  The specific SASL mechanism to use when
-		  authenticating to the broker. In c++ only a single
-		  value can be specified at present. In python the
-		  value can be a space separated list in order of
-		  preference.
-		</entry>
-	      </row>
-
-
-	      <row>
-		<entry>
-		  reconnect
-		</entry>
-		<entry>
-		  boolean
-		</entry>
-		<entry>
-		  Transparently reconnect if the connection is lost.
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  reconnect_timeout
-		</entry>
-		<entry>
-		  integer
-		</entry>
-		<entry>
-		  Total number of seconds to continue reconnection attempts before giving up and raising an exception.
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  reconnect_limit
-		</entry>
-		<entry>
-		  integer
-		</entry>
-		<entry>
-		  Maximum number of reconnection attempts before giving up and raising an exception.
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  reconnect_interval_min
-		</entry>
-		<entry>
-		  integer representing time in seconds
-		</entry>
-		<entry>
-		  Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  reconnect_interval_max
-		</entry>
-		<entry>
-		  integer representing time in seconds
-		</entry>
-		<entry>
-		  Maximum reconnect interval.
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  reconnect_interval
-		</entry>
-		<entry>
-		  integer representing time in seconds
-		</entry>
-		<entry>
-		  Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
-		</entry>
-	      </row>
-	    </tbody>
-	  </tgroup>
-	</table>
-
+      </example>
+<!--
+      <example>
+	<title>Request / Response Applications in Python</title>
+	<programlisting>### TODO</programlisting>
+      </example>
+-->
     </section>
 
+
     <section>
-      <title>Reliability</title>
+      <title>Performance Tips</title>
 
-	<para>When creating a sender or a receiver, you can specify a reliability option in the address string. For instance, the following specifies <literal>at-least-once</literal> as the reliability mode for a sender:</para>
-
-	<programlisting>
-Sender = session.createSender("topic;{link:{reliability:at-least-once}}");
-	</programlisting>
-
-	<para>The recognised modes are <literal>unreliable</literal>, <literal>at-most-once</literal>, <literal>at-least-once</literal>, and <literal>exactly-once</literal>. These modes govern the transfer of messages. Currently only <literal>unreliable</literal> and <literal>at-least-once</literal> are supported.
-
-            <footnote><para>If at-most-once is requested, unreliable will be used and for durable messages on durable queues there is the possibility that messages will be redelivered; if exactly-once is requested, at-most-once will be used and the application needs to be able to deal with duplicates.</para></footnote>
-
-        </para>
-
-        <para>The <literal>unreliable</literal> mode means that
-        messages may be lost in the event of a client, connection or
-        broker failure. The broker will not wait for unreliable
-        receivers to acknowledge receipt before discarding
-        messages. Likewise an unreliable sender will not wait for
-        broker acknowledgement before considering the message
-        sent.</para>
-
-	<para>The <literal>at-least-once</literal> mode ensures that
-	messages are not lost in the event of client, connection or
-	broker failure
-        <footnote><para>To survive broker failure a message must be durably recorded.</para></footnote>
-        . Duplicates of a message may delivered
-	however. The broker will not dequeue messages it sends to
-	receivers in at-least-once mode until they are
-	acknowledged. Messages sent by senders configure with
-	at-least-once mode are kept in a replay buffer until the
-	broker acknowledges receipt; in the event of a broker or
-	connection failure, messages in the replay buffer are resent
-	upon reconnection.</para>
-
-	<!-- What is the default? ### -->
-
-      </section>
+      <itemizedlist>
+          <listitem>
+          <para>Consider prefetching messages for receivers (see
+          <xref linkend="prefetch"/>). This helps eliminate roundtrips
+          and increases throughput. Prefetch is disabled by default,
+          and enabling it is the most effective means of improving
+          throughput of received messages.</para>
+          </listitem>
+          <listitem>
+          <para>Send messages asynchronously. Again, this helps
+          eliminate roundtrips and increases throughput. The C++ and
+          .NET clients send asynchronously by default, however the
+          python client defaults to synchronous sends.  </para>
+          </listitem>
+          <listitem>
+          <para>Acknowledge messages in batches (see
+          <xref linkend="acknowledgements"/>). Rather than
+          acknowledging each message individually, consider issuing
+          acknowledgements after n messages and/or after a particular
+          duration has elapsed.</para>
+          </listitem>
+          <listitem>
+          <para>Tune the sender capacity (see
+          <xref linkend="replay"/>). If the capacity is too low the
+          sender may block waiting for the broker to confirm receipt
+          of messages, before it can free up more capacity.</para>
+          </listitem>
+      </itemizedlist>
+    </section>
 
       <section>
 	<title>Cluster Failover</title>
@@ -2145,48 +2124,56 @@ try:
 	</example>
       </section>
 
-    <section>
-      <title>Transactions</title>
-
-      <para>Sometimes it is useful to be able to group messages
-      transfers - sent and/or received - on a session into atomic
-      grouping. This can be done be creating the session as
-      transactional. On a transactional session sent messages only
-      become available at the target address on commit. Likewise any
-      received and acknowledged messages are only discarded at their
-      source on commit
-
-      <footnote><para>Note that this currently is only true for
-      messages received using a reliable mode
-      e.g. at-least-once. Messages sent by a broker to a receiver in
-      unreliable receiver will be discarded immediately regardless of
-      transctionality.</para></footnote>
-
-      .</para>
-
-      <example>
-	<title>Transactions</title>
-	<para>C++:</para>
-	<programlisting><![CDATA[
-Connection connection(broker);
-Session session =  connection.createTransactionalSession();
-...
-if (smellsOk())
-   session.commit();
-else 
-   session.rollback();
-   ]]></programlisting>
-<!--
-	<para>Python</para>
-	<programlisting><![CDATA[
-### TODO
-   ]]></programlisting>
--->
-      </example>
-
-    </section>
 
 
+<section>
+      <title>Logging</title>
+
+      <para>To simplify debugging, Qpid provides a logging facility
+      that prints out messaging events.</para>
+
+      <section>
+	<title>Logging in C++</title>
+	<para>The Qpidd broker and C++ clients can both use environment
+	variables to enable logging. Use QPID_LOG_ENABLE to set the
+	level of logging you are interested in (trace, debug, info,
+	notice, warning, error, or critical):</para>
+
+<screen>
+$ export QPID_LOG_ENABLE="warning+"
+</screen>
+
+      <para>The Qpidd broker and C++ clients use QPID_LOG_OUTPUT to
+      determine where logging output should be sent. This is either a
+      file name or the special values stderr, stdout, or syslog:</para>
+
+<screen>
+export QPID_LOG_TO_FILE="/tmp/myclient.out"
+</screen>
+
+      </section>
+	
+	<section>
+		<title>Logging in Python</title>
+		<para>
+			The Python client library supports logging using the standard Python logging module. The easiest way to do logging is to use the <command>basicConfig()</command>, which reports all warnings and errors:
+		</para>
+		
+<programlisting>from logging import basicConfig
+basicConfig()
+</programlisting>
+		<para>
+			Qpidd also provides a convenience method that makes it easy to specify the level of logging desired. For instance, the following code enables logging at the <command>DEBUG</command> level:
+		</para>
+		
+<programlisting>from qpid.log import enable, DEBUG
+enable("qpid.messaging.io", DEBUG)
+</programlisting>
+		<para>
+			For more information on Python logging, see <ulink url="http://docs.python.org/lib/node425.html">http://docs.python.org/lib/node425.html</ulink>. For more information on Qpid logging, use <command>$ pydoc qpid.log</command>.
+		</para>
+	</section>
+</section>
 
 
 
