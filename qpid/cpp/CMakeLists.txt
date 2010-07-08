@@ -68,13 +68,6 @@ endif (WIN32)
 
 # set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_subdirectory(managementgen)
-add_subdirectory(etc)
-add_subdirectory(src)
-add_subdirectory(docs/api)
-# add_subdirectory(docs/man)
-add_subdirectory(examples)
-
 set(CPACK_PACKAGE_NAME "qpid-cpp")
 set(CPACK_PACKAGE_VENDOR "Apache Software Foundation")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apache Qpid C++")
@@ -83,5 +76,12 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${QPID_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${QPID_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "qpidc-${qpidc_version}")
+
+add_subdirectory(managementgen)
+add_subdirectory(etc)
+add_subdirectory(src)
+add_subdirectory(docs/api)
+# add_subdirectory(docs/man)
+add_subdirectory(examples)
 
 include (CPack)
