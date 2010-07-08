@@ -34,10 +34,13 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
+import javax.jms.Session;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.collections.ReferenceMap;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Message;
@@ -248,6 +251,29 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
         final AMQDestination amqd = (AMQDestination) destination;
 
+        if (amqd.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+           try
+           {
+               int type = ((AMQSession_0_10)_session).resolveAddressType(amqd);
+               if (type == AMQDestination.QUEUE_TYPE)
+               {
+                   ((AMQSession_0_10)_session).setLegacyFiledsForQueueType(amqd);
+               }
+               else
+               {
+                   ((AMQSession_0_10)_session).setLegacyFiledsForTopicType(amqd);
+               }
+           }
+           catch(AMQException ex)
+           {
+               JMSException e = new JMSException("Error occured while figuring out the node type");
+               e.initCause(ex);
+               e.setLinkedException(ex);
+               throw e;
+           }
+        }
+        
         final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());
         _destinationCache.put(replyTo, destination);
         _messageProps.setReplyTo(replyTo);
@@ -772,14 +798,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
         // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
-        if (_session != null)
+        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             if (_session.getAMQConnection().isClosed())
             {
                 throw new javax.jms.IllegalStateException("Connection is already closed");
             }
 
-            // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
+            // we set multiple to true here since acknowledgment implies acknowledge of all previous messages
             // received on the session
             _session.acknowledgeMessage(_deliveryTag, true);
         }
@@ -787,7 +813,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
     public void acknowledge() throws JMSException
     {
-        if (_session != null)
+        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             _session.acknowledge();
         }
