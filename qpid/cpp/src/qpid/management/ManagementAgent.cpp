@@ -197,6 +197,12 @@ void ManagementAgent::pluginsInitialized() {
 
 void ManagementAgent::setName(const string& vendor, const string& product, const string& instance)
 {
+    if (vendor.find(':') != vendor.npos) {
+        throw Exception("vendor string cannot contain a ':' character.");
+    }
+    if (product.find(':') != product.npos) {
+        throw Exception("product string cannot contain a ':' character.");
+    }
     attrMap["_vendor"] = vendor;
     attrMap["_product"] = product;
     string inst;
@@ -215,6 +221,20 @@ void ManagementAgent::setName(const string& vendor, const string& product, const
 
    vendorNameKey = keyifyNameStr(vendor);
    productNameKey = keyifyNameStr(product);
+}
+
+
+void ManagementAgent::getName(string& vendor, string& product, string& instance)
+{
+    vendor = std::string(attrMap["_vendor"]);
+    product = std::string(attrMap["_product"]);
+    instance = std::string(attrMap["_instance"]);
+}
+
+
+const std::string& ManagementAgent::getAddress()
+{
+    return name_address;
 }
 
 

@@ -54,6 +54,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void setName(const std::string& vendor,
                  const std::string& product,
                  const std::string& instance="");
+    void getName(std::string& vendor, std::string& product, std::string& instance);
+    const std::string& getAddress();
     void init(const std::string& brokerHost = "localhost",
               uint16_t brokerPort = 5672,
               uint16_t intervalSeconds = 10,

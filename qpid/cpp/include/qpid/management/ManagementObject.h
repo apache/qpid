@@ -65,6 +65,10 @@ public:
     QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq);
     QPID_COMMON_EXTERN ObjectId(std::istream&);
     QPID_COMMON_EXTERN ObjectId(const std::string&);
+    QPID_COMMON_EXTERN ObjectId(const std::string& agentAddress, const std::string& key,
+                                uint64_t epoch=0) : agent(0), first(0), second(0),
+      agentEpoch(epoch), v2Key(key), agentName(agentAddress) {}
+
     // Deprecated:
     QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint64_t object);
     QPID_COMMON_EXTERN bool operator==(const ObjectId &other) const;

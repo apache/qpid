@@ -75,6 +75,16 @@ class ManagementAgent
                          const std::string& product,
                          const std::string& instance="") = 0;
 
+    // Retrieve the name of the agent as assigned by setName()
+    //
+    virtual void getName(std::string& vendor,
+                         std::string& product,
+                         std::string& instance) = 0;
+
+    // Obtain the fully qualified name of the agent
+    //
+    virtual const std::string& getAddress() = 0;
+
     // Connect to a management broker
     //
     //   brokerHost        - Hostname or IP address (dotted-quad) of broker.

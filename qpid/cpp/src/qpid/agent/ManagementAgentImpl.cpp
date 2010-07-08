@@ -144,6 +144,21 @@ void ManagementAgentImpl::setName(const string& vendor, const string& product, c
    attrMap["_name"] = name_address;
 }
 
+
+void ManagementAgentImpl::getName(string& vendor, string& product, string& instance)
+{
+    vendor = std::string(attrMap["_vendor"]);
+    product = std::string(attrMap["_product"]);
+    instance = std::string(attrMap["_instance"]);
+}
+
+
+const std::string& ManagementAgentImpl::getAddress()
+{
+    return name_address;
+}
+
+
 void ManagementAgentImpl::init(const string& brokerHost,
                                uint16_t brokerPort,
                                uint16_t intervalSeconds,
