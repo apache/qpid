@@ -40,7 +40,8 @@
   <property name="module.classes"      location="${module.build}/classes"/>
   <property name="module.instrumented" location="${module.build}/classes-instrumented"/>
   <property name="module.precompiled"  location="${module.build}/src"/>
-  <property name="module.api"          location="${module.build}/api"/>
+  <property name="module.api"          location="${build.api}/${module}/"/>
+  <property name="module.test.api"     location="${build.test.api}/${module}"/>
   <property name="module.test.classes" location="${module.build}/test/classes"/>
   <property name="module.results"      location="${build.results}/${module}"/>
   <property name="module.failed"       location="${module.results}/FAILED"/>
@@ -139,6 +140,10 @@
     <pathelement location="${module.src}"/>
     <pathelement location="${module.precompiled}"/>
   </path>
+	
+  <path id="module.test.src.path">
+    <pathelement location="${module.test.src}"/>
+  </path>
 
   <condition property="module.jar"
              value="${build.plugins}/${project.name}-${module.name}-${project.version}.jar"
@@ -196,6 +201,7 @@
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.api}"/>
+    <mkdir dir="${module.test.api}"/>
     <mkdir dir="${module.test.classes}"/>
     <mkdir dir="${module.results}"/>
   </target>
@@ -458,9 +464,38 @@
     <srcfiles dir="${module.src}" includes="**/*.java"/>
   </uptodate>
 
+  <property name="module.doc.access" value="package"/>
   <target name="doc" depends="prepare" unless="doc.done" description="generate api-doc">
-    <javadoc destdir="${module.api}" sourcepathref="module.src.path"
-             classpathref="module.class.path" packagenames="*"/>
+    <javadoc access="${module.doc.access}" destdir="${module.api}" author="false" version="true" use="true"
+        windowtitle="${project.name} - ${module.name} - API Documentation"
+   		sourcepathref="module.src.path" classpathref="module.class.path" packagenames="*">
+      <arg value="-J-Dhttp.proxyHost=${http.proxyHost}"/>
+      <arg value="-J-Dhttp.proxyPort=${http.proxyPort}"/>
+      <bottom><![CDATA[<em><a href="http://www.apache.org/licenses/LICENSE-2.0">Licensed to the Apache Software Foundation</a></em>]]></bottom>
+      <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
+      <link href="http://download.oracle.com/docs/cd/E17477_01/javaee/5/api/"/>
+      <link href="http://commons.apache.org/configuration/apidocs/"/>
+      <tag name="todo" scope="all" description="Todo:" />
+    </javadoc>
+  </target>
+
+  <uptodate property="test-doc.done" targetfile="${module.test.api}/index.html">
+    <srcfiles dir="${module.test.src}" includes="**/*.java"/>
+  </uptodate>
+
+  <property name="module.test.doc.access" value="public"/>
+  <target name="test-doc" depends="prepare" unless="testdoc.done" if="module.test.src.exists" description="generate test api-doc">
+    <javadoc access="${module.test.doc.access}" destdir="${module.test.api}" author="false" version="true" use="true"
+        windowtitle="${project.name} - ${module.name} - Test API Documentation"
+   		sourcepathref="module.test.src.path" classpathref="module.test.path" packagenames="*">
+      <arg value="-J-Dhttp.proxyHost=${http.proxyHost}"/>
+      <arg value="-J-Dhttp.proxyPort=${http.proxyPort}"/>
+      <bottom><![CDATA[<em><a href="http://www.apache.org/licenses/LICENSE-2.0">Licensed to the Apache Software Foundation</a></em>]]></bottom>
+      <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
+      <link href="http://download.oracle.com/docs/cd/E17477_01/javaee/5/api/"/>
+      <link href="http://commons.apache.org/configuration/apidocs/"/>
+      <tag name="todo" scope="all" description="Todo:" />
+    </javadoc>
   </target>
   
   <target name="release-bin-prepare">

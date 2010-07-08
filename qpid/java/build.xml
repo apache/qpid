@@ -106,6 +106,10 @@
     <iterate target="doc"/>
   </target>
 
+  <target name="test-doc" description="generate api-doc">
+    <iterate target="test-doc"/>
+  </target>
+
   <target name="bundle" description="create OSGi bundles">
     <iterate target="bundle"/>
   </target>
