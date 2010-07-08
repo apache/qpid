@@ -3050,7 +3050,7 @@ producer.send(m);
     
     <section id="section-JMS-Logging">
       <title>JMS Client Logging</title>
-      <para>The JMS Client logging is handled using the Simple Logging Facade for Java (<ulink url="http://www.slf4j.org/">SLF4J</ulink>). As the name implies, slf4j is a facade that delegates to other logging systems like log4j or JDK 1.4 logging. For more information on how to configure log4j for specific logging systems, please consult the log4j documentation.</para>
+      <para>The JMS Client logging is handled using the Simple Logging Facade for Java (<ulink url="http://www.slf4j.org/">SLF4J</ulink>). As the name implies, slf4j is a facade that delegates to other logging systems like log4j or JDK 1.4 logging. For more information on how to configure slf4j for specific logging systems, please consult the slf4j documentation.</para>
 
       <para>When using the log4j binding, please set the log level for org.apache.qpid explicitly. Otherwise log4j will default to DEBUG which will degrade performance considerably due to excessive logging. The recommended logging level for production is <literal>WARN</literal>.</para>
 
