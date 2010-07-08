@@ -1849,16 +1849,15 @@ sender.setCapacity(100);
 
     </section>
 
-
     <section>
-      <title>Reliability</title>
-      <para>The Qpid Messaging API supports automatic reconnect, guaranteed delivery via persistent messages, and acknowledged message transfer. This section shows how programs can take advantage of these features.</para>
-      <section>
-	<title>Reconnect</title>
-	<para>Connections in the Qpid Messaging API support automatic
-	reconnect if a connection is lost. This is controlled using
-	connection options. The following example shows how to use
-	connection options in C++ and Python.</para>
+      <title>Connection Options</title>
+
+      <para>
+        Aspects of the connections behaviour can be controlled through
+        specifying connection options. For example, connections can be
+        configured to automatically reconnect if the connection to a
+        broker is lost.
+      </para>
 
 	<example>
 	  <title>Specifying Connection Options in C++ and Python</title>
@@ -1902,32 +1901,71 @@ try:
   !!! SNIP !!!
   ]]></programlisting>
 
-	  <para>See the reference documentation for details on how to set
-	  these on connections for each language.</para>
+	  <para>See the reference documentation for details in each language.</para>
 	</example>
 
-	<para>The following table lists the connection options that control the reconnect behaviour.</para>
+	<para>The following table lists the supported connection options.</para>
 
 	<table pgwide="1">
-	  <title>Reconnect Options</title>
+	  <title>Connection Options</title>
 	  <tgroup cols="3">
 	    <thead>
 	      <colspec colnum="1" colwidth="1*"/>
 	      <colspec colnum="2" colwidth="1*"/>
 	      <colspec colnum="3" colwidth="3*"/>
 	      <row>
-		<entry>option</entry>
-		<entry>value</entry>
+		<entry>option name</entry>
+		<entry>value type</entry>
 		<entry>semantics</entry>
 	      </row>
 	    </thead>
 	    <tbody>
+
+	      <row>
+		<entry>
+		  username
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The username to use when authenticating to the broker.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  password
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The password to use when authenticating to the broker.
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  sasl-mechanism
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The specific SASL mechanism to use when
+		  authenticating to the broker. In c++ only a single
+		  value can be specified at present. In python the
+		  value can be a space separated list in order of
+		  preference.
+		</entry>
+	      </row>
+
+
 	      <row>
 		<entry>
 		  reconnect
 		</entry>
 		<entry>
-		  True, False
+		  boolean
 		</entry>
 		<entry>
 		  Transparently reconnect if the connection is lost.
@@ -1938,7 +1976,7 @@ try:
 		  reconnect_timeout
 		</entry>
 		<entry>
-		  N
+		  integer
 		</entry>
 		<entry>
 		  Total number of seconds to continue reconnection attempts before giving up and raising an exception.
@@ -1949,7 +1987,7 @@ try:
 		  reconnect_limit
 		</entry>
 		<entry>
-		  N
+		  integer
 		</entry>
 		<entry>
 		  Maximum number of reconnection attempts before giving up and raising an exception.
@@ -1960,7 +1998,7 @@ try:
 		  reconnect_interval_min
 		</entry>
 		<entry>
-		  N
+		  integer representing time in seconds
 		</entry>
 		<entry>
 		  Minimum number of seconds between reconnection attempts. The first reconnection attempt is made immediately; if that fails, the first reconnection delay is set to the value of <literal>reconnect_interval_min</literal>; if that attempt fails, the reconnect interval increases exponentially until a reconnection attempt succeeds or <literal>reconnect_interval_max</literal> is reached.
@@ -1971,7 +2009,7 @@ try:
 		  reconnect_interval_max
 		</entry>
 		<entry>
-		  N
+		  integer representing time in seconds
 		</entry>
 		<entry>
 		  Maximum reconnect interval.
@@ -1982,7 +2020,7 @@ try:
 		  reconnect_interval
 		</entry>
 		<entry>
-		  N
+		  integer representing time in seconds
 		</entry>
 		<entry>
 		  Sets both <literal>reconnection_interval_min</literal> and <literal>reconnection_interval_max</literal> to the same value.
@@ -1991,41 +2029,11 @@ try:
 	    </tbody>
 	  </tgroup>
 	</table>
-      </section>
-      <section>
-	<title>Guaranteed Delivery</title>
 
-	<para>If a queue is durable, the queue survives a messaging
-	broker crash, as well as any durable messages that have been
-	placed on the queue. These messages will be recovered for
-	delivery to subscribers when the messaging broker is
-	restarted. Guaranteed delivery requires a persistence module,
-	such as the one available
-	from <ulink url="http://QpidComponents.org">QpidComponents.org</ulink>.</para>
+    </section>
 
-	<example>
-	  <title>Guaranteed Delivery</title>
-
-	  <para>C++:</para>
-
-	  <programlisting><![CDATA[
-Sender sender = session.createSender("durable-queue");
-
-Message message("Hello world!");
-message.setDurable(true);
-
-sender.send(message);
-]]></programlisting>
-<!--
-	  <para>Python:</para>
--->
-	</example>
-
-      </section>
-
-
-      <section>
-	<title>Reliability Options in Senders and Receivers</title>
+    <section>
+      <title>Reliability</title>
 
 	<para>When creating a sender or a receiver, you can specify a reliability option in the address string. For instance, the following specifies <literal>at-least-once</literal> as the reliability mode for a sender:</para>
 
@@ -2107,102 +2115,6 @@ try:
 
 	</example>
       </section>
-
-    </section>
-
-
-    <section>
-      <title>Security</title>
-
-      <para>Qpid provides authentication, rule-based authorization, encryption, and digital signing.</para>
-
-      <para>Authentication is done using Simple Authentication and
-      Security Layer (SASL) to authenticate client connections to the
-      broker. SASL is a framework that supports a variety of
-      authentication methods. For secure applications, we suggest
-      CRAM-MD5, DIGEST-MD5, or GSSAPI (Kerberos). The ANONYMOUS method
-      is not secure. The PLAIN method is secure only when used
-      together with SSL.</para>
-
-      <para>To enable Kerberos in a client, set the <varname>sasl-mechanism</varname> connection option to <literal>GSSAPI</literal>:</para>
-
-
-      <programlisting>
-Connection connection(broker);
-connection.setOption("sasl-mechanism", "GSSAPI");
-try {
-    connection.open();
-    ...
-      </programlisting>
-
-      <para>For Kerberos authentication, if the user running the
-      program is already authenticated, e.g. using
-      <command>kinit</command>, there is no need to supply a user name
-      or password. If you are using another form of authentication, or are not already authenticated with Kerberos, you can supply these as connection options:</para>
-
-      <programlisting>
-connection.setOption("username", "mick");
-connection.setOption("password", "pa$$word");
-      </programlisting>
-
-      <para>Encryption and signing are done using SSL (they can also be done using SASL, but SSL provides stronger encryption). To enable SSL, set the <varname>protocol</varname> connection option to <literal>ssl</literal>:</para>
-
-      <programlisting>
-connection.setOption("protocol", "ssl");
-      </programlisting>
-
-      <para>Use the following environment variables to configure the SSL client:</para>
-
-      <table>
-	<title>SSL Client Environment Variables for C++ clients</title>
-	<tgroup align="left" cols="2" colsep="1" rowsep="1">
-	  <colspec colname="c1"></colspec>
-	  <colspec colname="c2"></colspec>
-	  <thead>
-	    <row>
-	      <entry align="center" nameend="c2" namest="c1">
-		SSL Client Options for C++ clients
-	      </entry>
-	    </row>
-	  </thead>
-	  <tbody>
-	    <row>
-	      <entry>
-		<command>SSL_USE_EXPORT_POLICY</command>
-	      </entry>
-	      <entry>
-		Use NSS export policy
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<command>SSL_CERT_PASSWORD_FILE <replaceable>PATH</replaceable></command>
-	      </entry>
-	      <entry>
-		File containing password to use for accessing certificate database
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<command>SSL_CERT_DB <replaceable>PATH</replaceable></command>
-	      </entry>
-	      <entry>
-		Path to directory containing certificate database
-	      </entry>
-	    </row>
-	    <row>
-	      <entry>
-		<command>SSL_CERT_NAME <replaceable>NAME</replaceable></command>
-	      </entry>
-	      <entry>
-		Name of the certificate to use. When SSL client authentication is enabled, a certificate name should normally be provided.
-	      </entry>
-	    </row>
-	  </tbody>
-	</tgroup>
-      </table>
-
-    </section>
 
     <section>
       <title>Transactions</title>
