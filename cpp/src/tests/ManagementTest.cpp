@@ -86,6 +86,13 @@ QPID_AUTO_TEST_CASE(testObjectIdAttach) {
     BOOST_CHECK_EQUAL(out2.str(), "10-20-30-MrSmith-0(GabbaGabbaHey)");
 }
 
+QPID_AUTO_TEST_CASE(testObjectIdCreate) {
+    ObjectId          oid("some-agent-name", "an-object-name");
+
+    BOOST_CHECK_EQUAL(oid.getAgentName(), "some-agent-name");
+    BOOST_CHECK_EQUAL(oid.getV2Key(), "an-object-name");
+}
+
 QPID_AUTO_TEST_CASE(testConsoleObjectId) {
     qpid::console::ObjectId oid1, oid2;
 

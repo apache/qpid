@@ -1782,6 +1782,13 @@ class ObjectId:
       self.agentEpoch = (first & 0x0FFF000000000000) >> 48
       self.objectName = str(second)
 
+  def _create(cls, agent_name, object_name, epoch=0):
+    oid = {"_agent_name": agent_name,
+           "_object_name": object_name,
+           "_agent_epoch": epoch}
+    return cls(oid)
+  create = classmethod(_create)
+
   def __cmp__(self, other):    
     if other == None or not isinstance(other, ObjectId) :
       return 1
