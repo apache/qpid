@@ -79,8 +79,7 @@ public class PlainSaslServer implements SaslServer
             AuthorizeCallback authzCb = new AuthorizeCallback(authzid, authzid);
             Callback[] callbacks = new Callback[]{nameCb, passwordCb, authzCb};
             _cbh.handle(callbacks);
-            String storedPwd = new String(passwordCb.getPassword());
-            if (storedPwd.equals(pwd))
+            if (validatePassword(pwd, passwordCb))
             {
                 _complete = true;
             }
@@ -102,6 +101,20 @@ public class PlainSaslServer implements SaslServer
         {
             throw new SaslException("Unable to obtain data from callback handler: " + e, e);
         }
+    }
+
+    /**
+     * Compares the incoming plain text password with that contained in the given PasswordCallback
+     *  
+     * @param incomingPwd The incoming plain text password
+     * @param storedPwdCb PasswordCallback containing the stored password
+     * @return Whether the incoming password authenticates against the stored password
+     */
+    protected boolean validatePassword(String incomingPwd, PasswordCallback storedPwdCb)
+    {
+        String storedPwd = new String(storedPwdCb.getPassword());
+
+        return incomingPwd.equals(storedPwd);
     }
 
     private int findNullPosition(byte[] response, int startPosition)
