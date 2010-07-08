@@ -74,12 +74,20 @@ class Message:
 
   @type id: str
   @ivar id: the message id
+  @type subject: str
+  @ivar subject: message subject
   @type user_id: str
   @ivar user_id: the user-id of the message producer
   @type reply_to: str
   @ivar reply_to: the address to send replies
   @type correlation_id: str
   @ivar correlation_id: a correlation-id for the message
+  @type durable: bool
+  @ivar durable: message durability
+  @type priority: int
+  @ivar priority: message priority
+  @type ttl: float
+  @ivar ttl: time-to-live measured in seconds
   @type properties: dict
   @ivar properties: application specific message properties
   @type content_type: str

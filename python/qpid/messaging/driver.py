@@ -980,6 +980,7 @@ class Engine:
         break
 
     for snd in ssn.senders:
+      # XXX: should included snd.acked in this
       if snd.synced >= snd.queued and sst.need_sync:
         sst.write_cmd(ExecutionSync(), sync_noop)
 
@@ -1182,9 +1183,11 @@ class Engine:
     if msg.priority is not None:
       dp.priority = msg.priority
     if msg.ttl is not None:
-      dp.ttl = msg.ttl
+      dp.ttl = long(msg.ttl*1000)
     enc, dec = get_codec(msg.content_type)
     body = enc(msg.content)
+
+    # XXX: this is not safe for out of order, can this be triggered by pre_ack?
     def msg_acked():
       # XXX: should we log the ack somehow too?
       snd.acked += 1
@@ -1243,7 +1246,8 @@ class Engine:
     if dp.delivery_mode is not None:
       msg.durable = dp.delivery_mode == delivery_mode.persistent
     msg.priority = dp.priority
-    msg.ttl = dp.ttl
+    if dp.ttl is not None:
+      msg.ttl = dp.ttl/1000.0
     msg.redelivered = dp.redelivered
     msg.properties = mp.application_headers or {}
     if mp.app_id is not None:
