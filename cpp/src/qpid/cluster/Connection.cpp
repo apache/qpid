@@ -41,6 +41,7 @@
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/ClusterSafe.h"
 #include "qpid/management/ManagementAgent.h"
 #include <boost/current_function.hpp>
 
@@ -168,6 +169,11 @@ void Connection::announce(
 
 Connection::~Connection() {
     if (connection.get()) connection->setErrorListener(0);
+    // Don't trigger cluster-safe asserts in broker:: ~Connection as
+    // it may be called in an IO thread context during broker
+    // shutdown.
+    sys::ClusterSafeScope css;
+    connection.reset();
 }
 
 bool Connection::doOutput() {
