@@ -38,20 +38,6 @@
     <itemizedlist>
       <listitem>
         <para>
-          On the Java platform, Qpid uses the
-          established <ulink url="http://java.sun.com/products/jms/">Java JMS
-            API</ulink>. 
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          On the .NET platform, Qpid defines
-          a <ulink url="http://qpid.apache.org/wcf.html">WCF
-            binding</ulink>.
-        </para>
-      </listitem>
-      <listitem>
-        <para>
           For Python, C++, and .NET, Qpid defines its own messaging API, the
           <firstterm>Qpid Messaging API</firstterm>, which is
           conceptually similar in each supported language.
@@ -59,9 +45,23 @@
       </listitem>
       <listitem>
         <para>
-          Support for this API in Ruby will be added
-          soon (Ruby currently uses an API that is closely
-	  tied to the AMQP version).
+          Support for this API in Ruby will be added soon (Ruby
+          currently uses an API that is closely tied to the AMQP
+          version).
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          On the .NET platform, Qpid also defines provides
+          a <ulink url="http://qpid.apache.org/wcf.html">WCF
+          binding</ulink>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          On the Java platform, Qpid implements the
+          established <ulink url="http://java.sun.com/products/jms/">Java
+          JMS API</ulink>.
         </para>
       </listitem>
     </itemizedlist>
