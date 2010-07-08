@@ -26,7 +26,6 @@
 
 * Next steps:
 
-** TODO Allow port of running broker to be passed in
 ** TODO Support all exchange types
 ** TODO Find problem with 'suscribe/listen' tests (see scrp)
 ** TODO Add XML Exchange tests
@@ -40,6 +39,7 @@ import shlex
 import subprocess
 import unittest
 import uuid
+import re
 
 import logging
 
@@ -63,6 +63,9 @@ logging.basicConfig(level=logging.DEBUG,
 qpid_root = os.getenv("QPID_ROOT", os.path.abspath("../../../../../../qpid"))
 print "Qpid Root: " + qpid_root
 
+qpid_broker = os.getenv("QPID_BROKER", "localhost:5672")
+print "Qpid Broker: " + qpid_broker
+
 ## If your examples are installed somewhere else, you have to tell us
 ## where examples in each language are kept
 
@@ -84,15 +87,15 @@ print "QPID_PYTHON_TOOLS: " + python_tools_path
 ############################################################################################
 
 # Paths to programs
-hello_world = cpp_examples_path + "hello_world"
-cpp_drain = cpp_examples_path + "drain"
-cpp_spout = cpp_examples_path + "spout"
-cpp_map_send = cpp_examples_path + "map_sender"
-cpp_map_receive = cpp_examples_path + "map_receiver"
-cpp_client = cpp_examples_path + "map_sender"
-cpp_server = cpp_examples_path + "map_receiver"
-python_drain = python_examples_path + "drain"
-python_spout = python_examples_path + "spout"
+hello_world = cpp_examples_path + "hello_world" + " "  + qpid_broker
+cpp_drain = cpp_examples_path + "drain" + " -b " + qpid_broker
+cpp_spout = cpp_examples_path + "spout" + " -b " + qpid_broker
+# cpp_map_send = cpp_examples_path + "map_sender"
+# cpp_map_receive = cpp_examples_path + "map_receiver"
+# cpp_client = cpp_examples_path + "map_sender"
+# cpp_server = cpp_examples_path + "map_receiver"
+python_drain = python_examples_path + "drain" + " -b " + qpid_broker
+python_spout = python_examples_path + "spout" + " -b " + qpid_broker
 java_drain = java_examples_path + "src/main/java/runSample.sh org.apache.qpid.example.Drain"
 java_spout = java_examples_path + "src/main/java/runSample.sh org.apache.qpid.example.Spout"
 
@@ -102,12 +105,11 @@ JAVA = object()
 
 class TestDrainSpout(unittest.TestCase):
 
-    _broker = 0
-
     # setUp / tearDown
 
     def setUp(self):
-        logging.debug('--- START TEST ----')
+        logging.debug('----------------------------')
+        logging.debug('START: ' + self.tcaseName())
 
     def tearDown(self):
         pass
@@ -117,6 +119,9 @@ class TestDrainSpout(unittest.TestCase):
     #  Lemmas
     #
     #############################################################################
+
+    def tcaseName(self):
+        return  re.split('[.]', self.id())[-1]
 
     # Python utilities
 
@@ -159,7 +164,6 @@ class TestDrainSpout(unittest.TestCase):
         args = shlex.split(commandS)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         out, err  = popen.communicate()
-        popen.wait()
         logging.debug("receive() - out=" + str(out) + ", err=" + str(err))
         return out
 
@@ -180,7 +184,6 @@ class TestDrainSpout(unittest.TestCase):
 
     def listen(self, popen):
         out,err = popen.communicate()
-        popen.wait()
         logging.debug("listen(): out=" + str(out) + ", err=" + str(err))
         return out
     
@@ -196,7 +199,7 @@ class TestDrainSpout(unittest.TestCase):
         args = shlex.split(hello_world)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         out = popen.communicate()[0]
-        popen.wait()
+        logging.debug(out)
         self.assertTrue(out.find("world!") > 0)
 
     # Make sure qpid-config is working
@@ -209,24 +212,24 @@ class TestDrainSpout(unittest.TestCase):
     ## send / receive
 
     def test_queue_cpp2cpp(self):
-        self.send(lang=CPP, content="xoxox", destination="hello-world", create=1)
+        self.send(lang=CPP, content=self.tcaseName(), destination="hello-world", create=1)
         out = self.receive(lang=CPP, destination="hello-world", delete=1)
-        self.assertTrue(out.find("xoxox") >= 0)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_queue_cpp2python(self):
-        self.send(lang=CPP, content="xoxox", destination="hello-world", create=1)
+        self.send(lang=CPP, content=self.tcaseName(), destination="hello-world", create=1)
         out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
-        self.assertTrue(out.find("xoxox") > 0)
+        self.assertTrue(out.find(self.tcaseName()) > 0)
 
     def test_queue_python2cpp(self):
-        self.send(lang=PYTHON, content="xoxox", destination="hello-world", create=1)
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="hello-world", create=1)
         out = self.receive(lang=CPP, destination="hello-world", delete=1)
-        self.assertTrue(out.find("xoxox") >= 0)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_queue_python2python(self):
-        self.send(lang=PYTHON, content="xoxox", destination="hello-world", create=1)
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="hello-world", create=1)
         out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
-        self.assertTrue(out.find("xoxox") >= 0)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
 
 
     # Direct Exchange
@@ -234,57 +237,57 @@ class TestDrainSpout(unittest.TestCase):
     ## send / receive
 
     def test_amqdirect_cpp2cpp(self):
-        popen = self.subscribe(lang=CPP, destination="amq.direct")
-        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
         out = self.listen(popen)
-        self.assertTrue(out.find("xoxox") >= 0)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_python2cpp(self):
-        popen = self.subscribe(lang=CPP, destination="amq.direct")
-        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
+        popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
         out = self.listen(popen)
-        self.assertTrue(out.find("xoxox") >= 0)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_cpp2python(self):
-        popen = self.subscribe(lang=PYTHON, destination="amq.direct")
-        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
         out = self.listen(popen)
-        self.assertTrue(out.find("xoxox") >= 0)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_python2python(self):
-        popen = self.subscribe(lang=PYTHON, destination="amq.direct")
-        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
+        popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
         out = self.listen(popen)
-        self.assertTrue(out.find("xoxox") >= 0)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_cpp2cpp_tworeceivers(self):
-        popen1 = self.subscribe(lang=CPP, destination="amq.direct")
-        popen2 = self.subscribe(lang=PYTHON, destination="amq.direct")
-        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        popen1 = self.subscribe(lang=CPP, destination="amq.direct/subject")
+        popen2 = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
         out1 = self.listen(popen1)
         out2 = self.listen(popen2)
-        self.assertTrue(out1.find("xoxox") >= 0)
-        self.assertTrue(out2.find("xoxox") >= 0)
+        self.assertTrue(out1.find(self.tcaseName()) >= 0)
+        self.assertTrue(out2.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_cpp2cpp_nosubscription(self):
-        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
-        out = self.receive(lang=CPP, destination="amq.direct", delete=0)
-        self.assertFalse(out.find("xoxox") >= 0)
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        out = self.receive(lang=CPP, destination="amq.direct/subject", delete=0)
+        self.assertFalse(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_cpp2python_nosubscription(self):
-        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
-        out = self.receive(lang=PYTHON, destination="amq.direct", delete=0)
-        self.assertFalse(out.find("xoxox") > 0)
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        out = self.receive(lang=PYTHON, destination="amq.direct/subject", delete=0)
+        self.assertFalse(out.find(self.tcaseName()) > 0)
 
     def test_amqdirect_python2cpp_nosubscription(self):
-        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
-        out = self.receive(lang=CPP, destination="amq.direct", delete=0)
-        self.assertFalse(out.find("xoxox") >= 0)
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        out = self.receive(lang=CPP, destination="amq.direct/subject", delete=0)
+        self.assertFalse(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_python2python_nosubscription(self):
-        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
-        out = self.receive(lang=PYTHON, destination="amq.direct", delete=0)
-        self.assertFalse(out.find("xoxox") >= 0)
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        out = self.receive(lang=PYTHON, destination="amq.direct/subject", delete=0)
+        self.assertFalse(out.find(self.tcaseName()) >= 0)
 
 
     #  Request / Response
@@ -295,9 +298,54 @@ class TestDrainSpout(unittest.TestCase):
         args = shlex.split(cpp_examples_path + 'client')
         client = subprocess.Popen(args, stdout=subprocess.PIPE)
         out = client.communicate()[0]
-        client.wait()
+        logging.debug(out)
         self.assertTrue(out.find("BRILLIG") >= 0)
         server.terminate()
+
+    def test_topic_news_sports_weather_cpp(self):
+        news = self.subscribe(lang=CPP, destination="amq.topic/*.news")
+        deepnews = self.subscribe(lang=CPP, destination="amq.topic/#.news")
+        weather = self.subscribe(lang=PYTHON, destination="amq.topic/*.weather")
+        sports = self.subscribe(lang=CPP, destination="amq.topic/*.sports")
+        usa = self.subscribe(lang=PYTHON, destination="amq.topic/usa.*")
+        europe = self.subscribe(lang=PYTHON, destination="amq.topic/europe.*")
+        self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.news", create=0)
+        self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.faux.news", create=0)
+        self.send(lang=CPP, content="europe.news", destination="amq.topic/europe.news", create=0)
+        self.send(lang=CPP, content="usa.weather", destination="amq.topic/usa.weather", create=0)
+        self.send(lang=CPP, content="europe.weather", destination="amq.topic/europe.weather", create=0)
+        self.send(lang=CPP, content="usa.sports", destination="amq.topic/usa.sports", create=0)
+        self.send(lang=CPP, content="europe.sports", destination="amq.topic/europe.sports", create=0)
+        out = self.listen(news)
+        self.assertTrue(out.find("usa.news") >= 0)        
+        self.assertTrue(out.find("europe.news") >= 0)        
+        self.assertTrue(out.find("usa.news") >= 0)        
+        self.assertFalse(out.find("usa.faux.news") >= 0)        
+        out = self.listen(weather)
+        self.assertTrue(out.find("usa.weather") >= 0)        
+        self.assertTrue(out.find("europe.weather") >= 0)        
+        out = self.listen(sports)
+        self.assertTrue(out.find("usa.sports") >= 0)        
+        self.assertTrue(out.find("europe.sports") >= 0)        
+        out = self.listen(usa)
+        self.assertTrue(out.find("usa.news") >= 0)        
+        self.assertTrue(out.find("usa.sports") >= 0)        
+        self.assertTrue(out.find("usa.weather") >= 0)        
+        out = self.listen(europe)
+        self.assertTrue(out.find("europe.news") >= 0)        
+        self.assertTrue(out.find("europe.sports") >= 0)        
+        self.assertTrue(out.find("europe.weather") >= 0)        
+        out = self.listen(deepnews)
+        self.assertTrue(out.find("usa.news") >= 0)        
+        self.assertTrue(out.find("europe.news") >= 0)        
+        self.assertTrue(out.find("usa.news") >= 0)        
+        self.assertTrue(out.find("usa.faux.news") >= 0)        
+        news.wait()
+        weather.wait()
+        sports.wait()
+        usa.wait()
+        europe.wait()
+        deepnews.wait()
 
 
 if __name__ == '__main__':
