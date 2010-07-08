@@ -27,6 +27,9 @@
 * Next steps:
 
 ** TODO Allow port of running broker to be passed in
+** TODO Support all exchange types
+** TODO Find problem with 'suscribe/listen' tests (see scrp)
+** TODO Add XML Exchange tests
 ** TODO Convert to "qpid-python-test" framework
 ** TODO Add Java client tests and interop
 
@@ -38,6 +41,12 @@ import subprocess
 import unittest
 import uuid
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    filename='./client-api-example-tests.log',
+                    filemode='w')
 
 #######################################################################################
 # 
@@ -71,7 +80,7 @@ print "PYTHONPATH: " + os.environ["PYTHONPATH"]
 python_tools_path =  os.getenv("QPID_PYTHON_TOOLS", qpid_root + "/tools/src/py/")
 print "QPID_PYTHON_TOOLS: " + python_tools_path
 
-log = open('./client-api-example-tests.log', 'w')
+
 ############################################################################################
 
 # Paths to programs
@@ -87,6 +96,10 @@ python_spout = python_examples_path + "spout"
 java_drain = java_examples_path + "src/main/java/runSample.sh org.apache.qpid.example.Drain"
 java_spout = java_examples_path + "src/main/java/runSample.sh org.apache.qpid.example.Spout"
 
+CPP = object()
+PYTHON = object()
+JAVA = object()
+
 class TestDrainSpout(unittest.TestCase):
 
     _broker = 0
@@ -94,66 +107,91 @@ class TestDrainSpout(unittest.TestCase):
     # setUp / tearDown
 
     def setUp(self):
-        pass
+        logging.debug('--- START TEST ----')
 
     def tearDown(self):
         pass
 
+    #############################################################################
+    #
+    #  Lemmas
+    #
+    #############################################################################
+
     # Python utilities
 
     def qpid_config(self, args):
-        args = shlex.split(python_tools_path + "qpid-config" + ' ' + args)
+        commandS = python_tools_path + "qpid-config" + ' ' + args
+        args = shlex.split(commandS)
+        logging.debug("qpid_config(): " + commandS)
         subprocess.Popen(args).wait()
 
     # Send / receive methods in various languages
 
-    def cpp_send(self, spoutargs):
-        args = shlex.split(cpp_spout + ' ' + spoutargs)
-        subprocess.Popen(args).wait()
-  
-    def cpp_receive(self, drainargs):
-        args = shlex.split(cpp_drain + ' ' + drainargs)
-        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
-        out = popen.communicate()[0]
-        popen.wait()
-        return out
-
-    def cpp_start_listen(self, drainargs):
-        args = shlex.split(cpp_drain + ' ' + drainargs)
-        return subprocess.Popen(args, stdout=subprocess.PIPE)
-
-    def python_send(self, spoutargs):
-        args = shlex.split(python_spout + ' ' + spoutargs)
+    def send(self, lang=CPP, content="", destination="amq.topic", create=1):
+        createS = ";{create:always}" if create else ""
+        addressS = '"' + destination + createS + '"'
+        if lang==CPP:
+            contentS = " ".join(['--content','"'+content+'"']) if content else ""
+            commandS = " ".join([cpp_spout, contentS, addressS])
+        elif lang==PYTHON:
+            commandS = " ".join([python_spout, addressS, content])
+        elif lang==JAVA:
+            pass
+        else:  
+            raise "Ain't no such language ...."
+        logging.debug("send(): " + commandS)
+        args = shlex.split(commandS)
         subprocess.Popen(args).wait()
 
-    def python_receive(self, drainargs):
-        args = shlex.split(python_drain + ' ' + drainargs)
+    def receive(self, lang=CPP, destination="amq.topic", delete=1):
+        deleteS = ";{delete:always}" if delete else ""
+        addressS = '"' + destination + deleteS + '"'
+        if lang==CPP:
+            commandS = " ".join([cpp_drain, addressS])
+        elif lang==PYTHON:
+            commandS = " ".join([python_drain, addressS])
+        elif lang==JAVA:
+            pass
+        else:  
+            raise "Ain't no such language ...."
+        logging.debug("receive() " + commandS)
+        args = shlex.split(commandS)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
-        out = popen.communicate()[0]
+        out, err  = popen.communicate()
         popen.wait()
+        logging.debug("receive() - out=" + str(out) + ", err=" + str(err))
         return out
 
-    def python_start_listen(self, drainargs):
-        args = shlex.split(python_drain + ' ' + drainargs)
+    def subscribe(self, lang=CPP, destination="amq.topic", create=0):
+        time = "-t 5"
+        if lang==CPP:
+            commandS = " ".join([cpp_drain, time, destination])
+        elif lang==PYTHON:
+            commandS = " ".join([python_drain, time, destination])
+        elif lang==JAVA:
+            pass
+        else:
+            logging.debug("subscribe() - no such language!")  
+            raise "Ain't no such language ...."
+        logging.debug("subscribe() " + commandS)
+        args = shlex.split(commandS)
         return subprocess.Popen(args, stdout=subprocess.PIPE)
 
-    def java_send(self, spoutargs):
-        args = shlex.split(java_spout + ' ' + spoutargs)
-        subprocess.Popen(args).wait()
-  
-    def java_receive(self, drainargs):
-        args = shlex.split(java_drain + ' ' + drainargs)
-        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
-        out = popen.communicate()[0]
+    def listen(self, popen):
+        out,err = popen.communicate()
         popen.wait()
+        logging.debug("listen(): out=" + str(out) + ", err=" + str(err))
         return out
-
-    def java_start_listen(self, drainargs):
-        args = shlex.split(java_drain + ' ' + drainargs)
-        return subprocess.Popen(args, stdout=subprocess.PIPE)
+    
+    #############################################################################
+    #
+    #  Tests
+    #
+    #############################################################################
 
     # Hello world!
-
+ 
     def test_hello_world(self):
         args = shlex.split(hello_world)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
@@ -168,352 +206,86 @@ class TestDrainSpout(unittest.TestCase):
 
     # Simple queue tests
 
-    def test_queue_spout_cpp_create_drain_cpp_delete(self):
-        self.cpp_send(' --content "xoxox" "hello-world;{create:always}"')
-        out = self.cpp_receive(' "hello-world;{delete:always}"')
+    ## send / receive
+
+    def test_queue_cpp2cpp(self):
+        self.send(lang=CPP, content="xoxox", destination="hello-world", create=1)
+        out = self.receive(lang=CPP, destination="hello-world", delete=1)
         self.assertTrue(out.find("xoxox") >= 0)
 
-    def test_queue_spout_python_create_drain_python_delete(self):
-        self.python_send(' "hello-world;{create:always}"')
-        out = self.python_receive(' "hello-world;{delete:always}"')
-        self.assertTrue(out.find("Message") >= 0)
-
-    def test_queue_spout_cpp_create_drain_python_delete(self):
-        self.cpp_send(' --content "xoxox" "hello-world;{create:always}"')
-        out = self.python_receive(' "hello-world;{delete:always}"')
+    def test_queue_cpp2python(self):
+        self.send(lang=CPP, content="xoxox", destination="hello-world", create=1)
+        out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
         self.assertTrue(out.find("xoxox") > 0)
 
-    def test_queue_spout_python_create_drain_cpp_delete(self):
-        self.python_send(' "hello-world ; { create:always }"')
-        out = self.cpp_receive(' "hello-world ; { delete:always }"')
-        self.assertTrue(out.find("Message") >= 0)
-
-    def test_queue_spout_python_create_drain_twice_cpp_delete(self):
-        self.python_send(' "hello-world ; { create:always }"')
-        out = self.cpp_receive(' "hello-world ; { delete:always }"')
-        out = self.cpp_receive(' "hello-world ; { delete:always }"')
-        self.assertFalse(out.find("Message") >= 0)
-
-    def test_queue_listen_python_spout_python(self):
-        popen = self.python_start_listen(' -t 5 "hello-world ; { create: always, delete:always }"')
-        self.python_send(' hello-world')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_queue_listen_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "hello-world ; { create: always, delete:always }"')
-        self.cpp_send(' hello-world')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_queue_listen_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "hello-world ; { create: always, delete:always }"')
-        self.cpp_send(' hello-world')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_queue_listen_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "hello-world ; { create: always, delete:always }"')
-        self.python_send(' hello-world')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    # Direct exchange
-
-    def test_direct_spout_cpp_drain_cpp_empty(self):
-        self.cpp_send(' --content "xoxox" "amq.direct/hello"')
-        out = self.cpp_receive(' "amq.direct"')
-        self.assertFalse(out.find("xoxox") >= 0)
-
-    def test_send_nonexistent_queue_cpp(self):
-        self.assertFalse(self.cpp_send(' --content "xoxox" "xoxox"'))
-
-    def test_direct_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.direct/hello"')
-        self.cpp_send(' --content "xoxox" "amq.direct/hello"')
-        out = popen.communicate()[0]
+    def test_queue_python2cpp(self):
+        self.send(lang=PYTHON, content="xoxox", destination="hello-world", create=1)
+        out = self.receive(lang=CPP, destination="hello-world", delete=1)
         self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
 
-    def test_direct_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.direct/hello"')
-        self.cpp_send(' --content "xoxox" "amq.direct/hello"')
-        out = popen.communicate()[0]
+    def test_queue_python2python(self):
+        self.send(lang=PYTHON, content="xoxox", destination="hello-world", create=1)
+        out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
         self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
 
-    def test_direct_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.direct/hello"')
-        self.python_send(' "amq.direct/hello"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
 
-    def test_direct_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.direct"')
-        self.cpp_send(' --content "xoxox" "amq.direct"')
-        out = popen.communicate()[0]
+    # Direct Exchange
+
+    ## send / receive
+
+    def test_amqdirect_cpp2cpp(self):
+        popen = self.subscribe(lang=CPP, destination="amq.direct")
+        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        out = self.listen(popen)
         self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
 
-    def test_direct_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.direct"')
-        self.cpp_send(' --content "xoxox" "amq.direct"')
-        out = popen.communicate()[0]
+    def test_amqdirect_python2cpp(self):
+        popen = self.subscribe(lang=CPP, destination="amq.direct")
+        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
+        out = self.listen(popen)
         self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
 
-    def test_direct_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.direct"')
-        self.python_send(' "amq.direct"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
+    def test_amqdirect_cpp2python(self):
+        popen = self.subscribe(lang=PYTHON, destination="amq.direct")
+        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        out = self.listen(popen)
+        self.assertTrue(out.find("xoxox") >= 0)
 
-    def test_direct_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.direct/camel"')
-        self.cpp_send(' --content "xoxox" "amq.direct/pig"')
-        out = popen.communicate()[0]
-        self.assertFalse(out.find("xoxox") >= 0)
-        popen.wait()
+    def test_amqdirect_python2python(self):
+        popen = self.subscribe(lang=PYTHON, destination="amq.direct")
+        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
+        out = self.listen(popen)
+        self.assertTrue(out.find("xoxox") >= 0)
 
-    def test_direct_drain_cpp_drain_cpp_spout_cpp(self):
-        drain1 = self.cpp_start_listen(' -t 5 "amq.direct/camel"')
-        drain2 = self.cpp_start_listen(' -t 5 "amq.direct/camel"')
-        self.cpp_send(' --content "xoxox" "amq.direct/camel"')
-        out1 = drain1.communicate()[0]
-        out2 = drain2.communicate()[0]
+    def test_amqdirect_cpp2cpp_tworeceivers(self):
+        popen1 = self.subscribe(lang=CPP, destination="amq.direct")
+        popen2 = self.subscribe(lang=PYTHON, destination="amq.direct")
+        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        out1 = self.listen(popen1)
+        out2 = self.listen(popen2)
         self.assertTrue(out1.find("xoxox") >= 0)
         self.assertTrue(out2.find("xoxox") >= 0)
-        drain1.wait()
-        drain2.wait()
 
-    def test_direct_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.direct/camel"')
-        self.cpp_send(' --content "xoxox" "amq.direct/pig"')
-        out = popen.communicate()[0]
-        self.assertFalse(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_direct_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.direct/camel"')
-        self.python_send(' "amq.direct/pig"')
-        out = popen.communicate()[0]
-        self.assertFalse(out.find("Message") >= 0)
-        popen.wait()
-
-    #  Fanout exchange
-
-    def test_fanout_spout_cpp_drain_cpp_empty(self):
-        self.cpp_send(' --content "xoxox" "amq.fanout/hello"')
-        out = self.cpp_receive(' "amq.fanout"')
+    def test_amqdirect_cpp2cpp_nosubscription(self):
+        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        out = self.receive(lang=CPP, destination="amq.direct", delete=0)
         self.assertFalse(out.find("xoxox") >= 0)
 
-    def test_send_nonexistent_queue_cpp(self):
-        self.assertFalse(self.cpp_send(' --content "xoxox" "xoxox"'))
+    def test_amqdirect_cpp2python_nosubscription(self):
+        self.send(lang=CPP, content="xoxox", destination="amq.direct", create=0)
+        out = self.receive(lang=PYTHON, destination="amq.direct", delete=0)
+        self.assertFalse(out.find("xoxox") > 0)
 
-    def test_fanout_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.fanout/hello"')
-        self.cpp_send(' --content "xoxox" "amq.fanout/hello"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.fanout/hello"')
-        self.cpp_send(' --content "xoxox" "amq.fanout/hello"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.fanout/hello"')
-        self.python_send(' "amq.fanout/hello"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.fanout"')
-        self.cpp_send(' --content "xoxox" "amq.fanout"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.fanout"')
-        self.cpp_send(' --content "xoxox" "amq.fanout"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.fanout"')
-        self.python_send(' "amq.fanout"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.fanout/camel"')
-        self.cpp_send(' --content "xoxox" "amq.fanout/pig"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_cpp_drain_cpp_spout_cpp(self):
-        drain1 = self.cpp_start_listen(' -t 5 "amq.fanout/camel"')
-        drain2 = self.cpp_start_listen(' -t 5 "amq.fanout/camel"')
-        self.cpp_send(' --content "xoxox" "amq.fanout/camel"')
-        out1 = drain1.communicate()[0]
-        out2 = drain2.communicate()[0]
-        self.assertTrue(out1.find("xoxox") >= 0)
-        self.assertTrue(out2.find("xoxox") >= 0)
-        drain1.wait()
-        drain2.wait()
-
-    def test_fanout_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.fanout/camel"')
-        self.cpp_send(' --content "xoxox" "amq.fanout/pig"')
-        out = popen.communicate()[0]
-        self.assertFalse(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_fanout_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.fanout/camel"')
-        self.python_send(' "amq.fanout/pig"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-
-    #  Topic exchange
-
-
-    def test_topic_spout_cpp_drain_cpp_empty(self):
-        self.cpp_send(' --content "xoxox" "amq.topic/hello"')
-        out = self.cpp_receive(' "amq.topic"')
+    def test_amqdirect_python2cpp_nosubscription(self):
+        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
+        out = self.receive(lang=CPP, destination="amq.direct", delete=0)
         self.assertFalse(out.find("xoxox") >= 0)
 
-    def test_send_nonexistent_queue_cpp(self):
-        self.assertFalse(self.cpp_send(' --content "xoxox" "xoxox"'))
-
-    def test_topic_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.topic/hello"')
-        self.cpp_send(' --content "xoxox" "amq.topic/hello"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_topic_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.topic/hello"')
-        self.cpp_send(' --content "xoxox" "amq.topic/hello"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_topic_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.topic/hello"')
-        self.python_send(' "amq.topic/hello"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_topic_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.topic"')
-        self.cpp_send(' --content "xoxox" "amq.topic"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_topic_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.topic"')
-        self.cpp_send(' --content "xoxox" "amq.topic"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_topic_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.topic"')
-        self.python_send(' "amq.topic"')
-        out = popen.communicate()[0]
-        self.assertTrue(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_topic_drain_cpp_spout_cpp(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.topic/camel"')
-        self.cpp_send(' --content "xoxox" "amq.topic/pig"')
-        out = popen.communicate()[0]
+    def test_amqdirect_python2python_nosubscription(self):
+        self.send(lang=PYTHON, content="xoxox", destination="amq.direct", create=0)
+        out = self.receive(lang=PYTHON, destination="amq.direct", delete=0)
         self.assertFalse(out.find("xoxox") >= 0)
-        popen.wait()
 
-    def test_topic_drain_cpp_drain_cpp_spout_cpp(self):
-        drain1 = self.cpp_start_listen(' -t 5 "amq.topic/camel"')
-        drain2 = self.cpp_start_listen(' -t 5 "amq.topic/camel"')
-        self.cpp_send(' --content "xoxox" "amq.topic/camel"')
-        out1 = drain1.communicate()[0]
-        out2 = drain2.communicate()[0]
-        self.assertTrue(out1.find("xoxox") >= 0)
-        self.assertTrue(out2.find("xoxox") >= 0)
-        drain1.wait()
-        drain2.wait()
-
-    def test_topic_drain_python_spout_cpp(self):
-        popen = self.python_start_listen(' -t 5 "amq.topic/camel"')
-        self.cpp_send(' --content "xoxox" "amq.topic/pig"')
-        out = popen.communicate()[0]
-        self.assertFalse(out.find("xoxox") >= 0)
-        popen.wait()
-
-    def test_topic_drain_cpp_spout_python(self):
-        popen = self.cpp_start_listen(' -t 5 "amq.topic/camel"')
-        self.python_send(' "amq.topic/pig"')
-        out = popen.communicate()[0]
-        self.assertFalse(out.find("Message") >= 0)
-        popen.wait()
-
-    def test_topic_news_sports_weather_cpp(self):
-        news = self.cpp_start_listen(' -t 10 "amq.topic/*.news"')
-        weather = self.cpp_start_listen(' -t 10 "amq.topic/*.weather"')
-        sports = self.cpp_start_listen(' -t 10 "amq.topic/*.sports"')
-        usa = self.cpp_start_listen(' -t 10 "amq.topic/usa.*"')
-        europe  = self.cpp_start_listen(' -t 10 "amq.topic/europe.*"')
-        self.cpp_send(' --content "usa.news" "amq.topic/usa.news"')
-        self.cpp_send(' --content "europe.news" "amq.topic/europe.news"')
-        self.cpp_send(' --content "usa.weather" "amq.topic/usa.weather"')
-        self.cpp_send(' --content "europe.weather" "amq.topic/europe.weather"')
-        self.cpp_send(' --content "usa.sports" "amq.topic/usa.sports"')
-        self.cpp_send(' --content "europe.sports" "amq.topic/europe.sports"')
-        out = news.communicate()[0]
-        self.assertTrue(out.find("usa.news") >= 0)        
-        self.assertTrue(out.find("europe.news") >= 0)        
-        out = weather.communicate()[0]
-        self.assertTrue(out.find("usa.weather") >= 0)        
-        self.assertTrue(out.find("europe.weather") >= 0)        
-        out = sports.communicate()[0]
-        self.assertTrue(out.find("usa.sports") >= 0)        
-        self.assertTrue(out.find("europe.sports") >= 0)        
-        out = usa.communicate()[0]
-        self.assertTrue(out.find("usa.news") >= 0)        
-        self.assertTrue(out.find("usa.sports") >= 0)        
-        self.assertTrue(out.find("usa.weather") >= 0)        
-        out = europe.communicate()[0]
-        self.assertTrue(out.find("europe.news") >= 0)        
-        self.assertTrue(out.find("europe.sports") >= 0)        
-        self.assertTrue(out.find("europe.weather") >= 0)        
-        news.wait()
-        weather.wait()
-        sports.wait()
-        usa.wait()
-        europe.wait()
-
-#    def test_topic_news_sports_weather_python(self):
-#    def test_topic_news_sports_weather_python_cpp(self):
-#    def test_topic_news_sports_weather_cpp_python(self):
 
     #  Request / Response
 
@@ -526,23 +298,6 @@ class TestDrainSpout(unittest.TestCase):
         client.wait()
         self.assertTrue(out.find("BRILLIG") >= 0)
         server.terminate()
-
-
-    #  XML Exchange
-
-    #  Map messages
-
-    ## java - java
-    ## java - cpp
-    ## java - python
-
-    ## cpp - java
-    ## cpp - cpp
-    ## cpp - python
-
-    ## python - java
-    ## python - cpp
-    ## python - python
 
 
 if __name__ == '__main__':
