@@ -1786,8 +1786,37 @@ sender.send(message, true);
         <section>
       <title>Performance</title>
       <para>
-         Clients can often be made significantly faster by batching acknowledgements and setting the capacity of receivers to allow prefetch. The size of a sender's replay buffer can also affect performance.
+         Clients can often be made significantly faster by using asynchronous operations, batching acknowledgements and setting the capacity of receivers to allow prefetch. The size of a sender's replay buffer can also affect performance.
       </para>
+
+      <section>
+	<title>Asynchronous Operations</title>
+
+	<para>The send method on a sender takes an optional second
+	argument that controls whether the call is synchronous or
+	not
+
+        <footnote><para>In C++ the send() is asynchronous by default. In python however it is synchronous by default.</para></footnote>  
+
+        . A synchronous send will block until the broker confirms
+	receipt of the message. Higher throughput is achieved if the
+	call returns before this point, allowing further send calls to
+	be made. The sender can be queried to find out how many
+	unsettled messages there are. Unsettled messages are those
+	that have been sent but not yet acknowledged by the broker. An
+	unsettled count of zero means that receipt of all messages
+	sent using that sender have been confirmed as received by the
+	broker.
+        </para>
+
+        <para>The acknowledge call on a session may also be
+        synchronous or asynchronous. The session can be queried for
+        the unsettled acknowledgements also, i.e. the number of
+        messages received on the session that have been acknowledged
+        by the application but for which the acknowledgements have not
+        been confirmed by the broker.</para>
+      </section>
+
       <section>
 	<title>Batching Acknowledgements</title>
 
