@@ -2363,6 +2363,17 @@ enable("qpid.messaging.io", DEBUG)
           </tbody>
         </tgroup>
       </table>
+
+      <para>The 0-10 mapping also recognises certain special property
+      keys. If the properties contain entries for <literal>x-amqp-0-10.app-id</literal>
+      or <literal>x-amqp-0-10.content-encoding</literal>, the values will be used to
+      set <literal>message-properties.app-id</literal> and
+      <literal>message-properties.content-encoding</literal> on the
+      resulting 0-10 message transfer. Likewise if an incoming
+      transfer has those properties set, they will be exposed in the
+      same manner. In addition the routing key on incoming transfers
+      will be exposed directly via the custom property with key
+      <literal>x-amqp-0-10.routing-key</literal>.</para>
       
     </section>
   </chapter>
