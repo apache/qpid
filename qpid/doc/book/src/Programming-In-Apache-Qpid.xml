@@ -2075,6 +2075,14 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
           sender may block waiting for the broker to confirm receipt
           of messages, before it can free up more capacity.</para>
           </listitem>
+          <listitem>
+          <para>If you are setting a reply-to address on messages
+          being sent by the c++ client, make sure the address type is
+          set to either queue or topic as appropriate. This avoids the
+          client having to determine which type of node is being
+          refered to, which is required when hanling reply-to in AMQP
+          0-10. </para>
+          </listitem>
       </itemizedlist>
     </section>
 
