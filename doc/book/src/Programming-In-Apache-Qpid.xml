@@ -1852,27 +1852,37 @@ sender.setCapacity(100);
 
     <section>
       <title>Reliability</title>
-      <para>The Qpid Messaging API supports automatic reconnect, guaranteed delivery via persistent messages, reliability options in senders and receivers, and cluster failover. This section shows how programs can take advantage of these features.</para>
+      <para>The Qpid Messaging API supports automatic reconnect, guaranteed delivery via persistent messages, and acknowledged message transfer. This section shows how programs can take advantage of these features.</para>
       <section>
 	<title>Reconnect</title>
 	<para>Connections in the Qpid Messaging API support automatic
-	reconnect if a connection is lost. This is done using connection
-	options. The following example shows how to use connection options in C++ and Python.</para>
+	reconnect if a connection is lost. This is controlled using
+	connection options. The following example shows how to use
+	connection options in C++ and Python.</para>
 
 	<example>
 	  <title>Specifying Connection Options in C++ and Python</title>
 
-	  <para>In C++, these options are set using <function>Connection::setOption()</function>:</para>
+	  <para>In C++, these options can be set using <function>Connection::setOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:</para>
 
 	  <programlisting><![CDATA[
-Connection connection(broker);
+Connection connection("localhost:5672", "{reconnect: true}");
+try {
+    connection.open();
+    !!! SNIP !!!
+    ]]></programlisting>
+
+or 
+
+	  <programlisting><![CDATA[
+Connection connection("localhost:5672");
 connection.setOption("reconnect", true);
 try {
     connection.open();
     !!! SNIP !!!
     ]]></programlisting>
 
-	  <para>In Python, these options are set using named arguments in
+	  <para>In Python, these options can be set as attributes of the connection or using named arguments in
 	  the <function>Connection</function> constructor:</para>
 
 	  <programlisting><![CDATA[
@@ -1882,15 +1892,24 @@ try:
   !!! SNIP !!!
   ]]></programlisting>
 
+or 
+
+	  <programlisting><![CDATA[
+connection = Connection("localhost:5672")
+connection.reconnect = True
+try:
+  connection.open()
+  !!! SNIP !!!
+  ]]></programlisting>
+
 	  <para>See the reference documentation for details on how to set
 	  these on connections for each language.</para>
 	</example>
 
-	<para>The following table lists the connection options that can
-	be used.</para>
+	<para>The following table lists the connection options that control the reconnect behaviour.</para>
 
 	<table pgwide="1">
-	  <title>Connection Options</title>
+	  <title>Reconnect Options</title>
 	  <tgroup cols="3">
 	    <thead>
 	      <colspec colnum="1" colwidth="1*"/>
@@ -2012,14 +2031,35 @@ sender.send(Message("Hello world!"));
 	<para>When creating a sender or a receiver, you can specify a reliability option in the address string. For instance, the following specifies <literal>at-least-once</literal> as the reliability mode for a sender:</para>
 
 	<programlisting>
-Sender = session.createSender("topic;{create:always,link:{reliability:at-least-once}}");
+Sender = session.createSender("topic;{link:{reliability:at-least-once}}");
 	</programlisting>
 
-	<para>The modes <literal>unreliable</literal>, <literal>at-most-once</literal>, <literal>at-least-once</literal>, and <literal>exactly-once</literal> are supported. These modes govern the reliability of the connection between the client and the messaging broker.</para>
+	<para>The recognised modes are <literal>unreliable</literal>, <literal>at-most-once</literal>, <literal>at-least-once</literal>, and <literal>exactly-once</literal>. These modes govern the transfer of messages. Currently only <literal>unreliable</literal> and <literal>at-least-once</literal> are supported.
 
-	<para>The modes <literal>unreliable</literal> and <literal>at-most-once</literal> are currently synonyms. In a receiver, this mode means that messages received on an auto-delete subscription queue may be lost in the event of a broker failure. In a sender, this mode means that the sender can consider a message sent as soon as it is written to the wire, and need not wait for broker acknowledgement before considering the message sent.</para>
+            <footnote><para>If at-most-once is requested, unreliable will be used and for durable messages on durable queues there is the possibility that messages will be redelivered; if exactly-once is requested, at-most-once will be used and the application needs to be able to deal with duplicates.</para></footnote>
 
-	<para>The mode <literal>at-most-once</literal> ensures that messages are not lost, but duplicates of a message may occur. In a receiver, this mode ensures that messages are not lost in event of a broker failure. In a sender, this means that messages are kept in a replay buffer after they have been sent, and removed from this buffer only after the broker acknowledges receipt; if a broker failure occurs, messages in the replay buffer are resent upon reconnection. The mode <literal>exactly-once</literal> is similar to <literal>at-most-once</literal>, but eliminates duplicate messages.</para>
+        </para>
+
+        <para>The <literal>unreliable</literal> mode means that
+        messages may be lost in the event of a client, connection or
+        broker failure. The broker will not wait for unreliable
+        receivers to acknowledge receipt before discarding
+        messages. Likewise an unreliable sender will not wait for
+        broker acknowledgement before considering the message
+        sent.</para>
+
+	<para>The <literal>at-least-once</literal> mode ensures that
+	messages are not lost in the event of client, connection or
+	broker failure
+        <footnote><para>To survive broker failure a message must be durably recorded.</para></footnote>
+        . Duplicates of a message may delivered
+	however. The broker will not dequeue messages it sends to
+	receivers in at-least-once mode until they are
+	acknowledged. Messages sent by senders configure with
+	at-least-once mode are kept in a replay buffer until the
+	broker acknowledges receipt; in the event of a broker or
+	connection failure, messages in the replay buffer are resent
+	upon reconnection.</para>
 
 	<!-- What is the default? ### -->
 
@@ -2028,21 +2068,44 @@ Sender = session.createSender("topic;{create:always,link:{reliability:at-least-o
       <section>
 	<title>Cluster Failover</title>
 
-	<para>The messaging broker can be run in clustering mode, which provides high reliability at-least-once messaging. If one broker in a cluster fails, clients can choose another broker in the cluster and continue their work.</para>
+	<para>The messaging broker can be run in clustering mode, which provides high reliability through replicating state between brokers in the cluster. If one broker in a cluster fails, clients can choose another broker in the cluster and continue their work. Each broker in the cluster also advertises the addresses of all known brokers
 
-	<para>In C++, the <classname>FailoverUpdates</classname> class keeps track of the brokers in a cluster, so a reconnect can select another broker in the cluster to connect to:</para>
+<footnote><para>This is done via the amq.failover exchange in AMQP 0-10</para></footnote>
+
+. A client can use this information to dynamically keep the list of reconnection urls up to date.</para>
+
+	<para>In C++, the <classname>FailoverUpdates</classname> class provides this functionality:</para>
 
 	<example>
-	  <title>Cluster Failover in C++</title>
+	  <title>Tracking cluster membership</title>
+  
+            <para>In C++:</para> 
+
 	    <programlisting><![CDATA[
 #include <qpid/messaging/FailoverUpdates.h>
 ...
-Connection connection(broker);
+Connection connection("localhost:5672");
 connection.setOption("reconnect", true);
 try {
     connection.open();
-    std::auto_ptr<FailoverUpdates> updates(new FailoverUpdates(connection));]]>
+    std::auto_ptr<FailoverUpdates> updates(new FailoverUpdates(connection));
+]]>
 	</programlisting>
+
+            <para>In python:</para> 
+
+	    <programlisting><![CDATA[
+import qpid.messaging.util
+...
+connection = Connection("localhost:5672")
+connection.reconnect = True
+try:
+  connection.open()
+  auto_fetch_reconnect_urls(connection)
+]]>
+	</programlisting>
+
+
 	</example>
       </section>
 
@@ -2062,7 +2125,7 @@ try {
       is not secure. The PLAIN method is secure only when used
       together with SSL.</para>
 
-      <para>To enable Kerberos in a client, set the <varname>sals-mechanism</varname> connection option to <literal>GSSAPI</literal>:</para>
+      <para>To enable Kerberos in a client, set the <varname>sasl-mechanism</varname> connection option to <literal>GSSAPI</literal>:</para>
 
 
       <programlisting>
