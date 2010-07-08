@@ -77,6 +77,9 @@ public:
     void setName(const std::string& vendor,
                  const std::string& product,
                  const std::string& instance="");
+    void getName(std::string& vendor, std::string& product, std::string& instance);
+    const std::string& getAddress();
+
     void setInterval(uint16_t _interval) { interval = _interval; }
     void setExchange(qpid::broker::Exchange::shared_ptr mgmtExchange,
                      qpid::broker::Exchange::shared_ptr directExchange);
