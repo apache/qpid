@@ -2207,19 +2207,22 @@ connection.setOption("protocol", "ssl");
 
     <section>
       <title>Transactions</title>
-      <para>In AMQP, transactions cover the semantics of enqueues and
-      dequeues.</para>
 
-      <para>When sending messages, a transaction tracks enqueues
-      without actually delivering the messages, a commit places
-      messages on their queues, and a rollback discards the
-      enqueues.</para>
+      <para>Sometimes it is useful to be able to group messages
+      transfers - sent and/or received - on a session into atomic
+      grouping. This can be done be creating the session as
+      transactional. On a transactional session sent messages only
+      become available at the target address on commit. Likewise any
+      received and acknowledged messages are only discarded at their
+      source on commit
 
-      <para>When receiving messages, a transaction tracks dequeues
-      without actually removing acknowledged messages, a commit
-      removes all acknowledged messages, and a rollback discards
-      acknowledgements. A rollback does not release the message, it
-      must be explicitly released to return it to the queue.</para>
+      <footnote><para>Note that this currently is only true for
+      messages received using a reliable mode
+      e.g. at-least-once. Messages sent by a broker to a receiver in
+      unreliable receiver will be discarded immediately regardless of
+      transctionality.</para></footnote>
+
+      .</para>
 
       <example>
 	<title>Transactions</title>
