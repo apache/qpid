@@ -2359,32 +2359,19 @@ else
     <section>
       <title>A Simple Messaging Program in Java JMS</title>
       
-      <para>The following program shows how to use address strings and
-      JNDI for Qpid programs that use Java JMS.</para>
+      <para>The following program shows how to send and receive a
+      message using the Qpid JMS client. JMS programs typically use
+      JNDI to obtain connection factory and destination objects which
+      the application needs. In this way the configuration is kept
+      separate from the application code itself.</para>
 
-      <para>The Qpid JMS client uses Qpid Messaging API <xref
-      linkend="section-addresses"/> to identify sources and
-      targets. This program uses a JNDI properties file that defines a
-      connection factory for the broker we are using, and the address
-      of the topic exchange node that we bind the sender and receiver
-      to. (The syntax of a ConnectionURL is given in <xref
-      linkend="QpidJNDI"/>.)</para>
-
-      <example>
-	<title>JNDI Properties File for "Hello world!" example</title>
-      <programlisting><![CDATA[
-java.naming.factory.initial 
-  = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
-
-# connectionfactory.[jndiname] = [ConnectionURL]
-connectionfactory.qpidConnectionfactory 
-  = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'
-# destination.[jndiname] = [address_string]
-destination.topicExchange = amq.topic
-]]></programlisting>
-      </example>
-
-      <para>In the Java JMS code, we use create a JNDI context, use the context to find a connection factory and create and start a connection, create a session, and create a destination that corresponds to the topic exchange. Then we create a sender and a receiver, send a message with the sender, and receive it with the receiver. This code should be straightforward for anyone familiar with Java JMS.</para>
+      <para>In this example, we create a JNDI context using a
+      properties file, use the context to lookup a connection factory,
+      create and start a connection, create a session, and lookup a
+      destination from the JNDI context. Then we create a producer and
+      a consumer, send a message with the producer and receive it with
+      the consumer. This code should be straightforward for anyone
+      familiar with Java JMS.</para>
 
       <example>
 	<title>"Hello world!" in Java</title>
@@ -2479,6 +2466,39 @@ public class Hello {
 	</callout>
       </calloutlist>
 
+      <para>The contents of the hello.properties file are shown below.</para>
+
+      <example>
+	<title>JNDI Properties File for "Hello world!" example</title>
+      <programlisting>
+java.naming.factory.initial 
+  = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+
+# connectionfactory.[jndiname] = [ConnectionURL]
+connectionfactory.qpidConnectionfactory 
+  = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672' <co id="hello-properties-connectionfactory" linkends="callout-hello-properties-connectionfactory"/>
+# destination.[jndiname] = [address_string]
+destination.topicExchange = amq.topic <co id="hello-properties-destination" linkends="callout-hello-properties-destination"/>
+     </programlisting>
+      </example>
+
+      <calloutlist>
+	<callout id="callout-hello-properties-connectionfactory" arearefs="hello-properties-connectionfactory">
+	  <para>Defines a connection factory from which connections
+	  can be created. The syntax of a ConnectionURL is given in
+	  <xref linkend="QpidJNDI"/>.</para>
+	</callout>
+	<callout id="callout-hello-properties-destination" arearefs="hello-properties-destination">
+	  <para>Defines a destination for which MessageProducers
+	  and/or MessageConsumers can be created to send and receive
+	  messages. The value for the destination in the properties
+	  file is an address string as described in
+	  <xref linkend="section-addresses"/>. In the JMS
+	  implementation MessageProducers are analogous to senders in
+	  the Qpid Message API, and MessageConsumers are analogous to
+	  receivers.</para>
+	</callout>
+      </calloutlist>
 
     </section>
 
