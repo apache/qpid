@@ -1458,7 +1458,7 @@ options := map
 </section>
 
 <section id="prefetch">
-    <title>Receiver Capacity i.e. Prefetch</title>
+    <title>Receiver Capacity (Prefetch)</title>
 
     <para>By default, a receiver requests the next message from the
     server in response to each fetch call, resulting in messages being
