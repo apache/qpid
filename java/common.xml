@@ -33,6 +33,8 @@
   <property name="build.bin"             location="${build}/bin"/>
   <property name="build.etc"             location="${build}/etc"/>
   <property name="build.lib"             location="${build}/lib"/>
+  <property name="build.api"             location="${build}/api"/>
+  <property name="build.test.api"        location="${build}/test-api"/>
   <property name="build.results"         location="${build}/results"/>
   <property name="build.failed"          location="${build.results}/FAILED"/>
   <property name="build.report"          location="${build}/report"/>
