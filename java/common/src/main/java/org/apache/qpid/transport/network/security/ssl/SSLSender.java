@@ -44,6 +44,7 @@ public class SSLSender implements Sender<ByteBuffer>
     
     private final Object engineState = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final AtomicBoolean error = new AtomicBoolean(false);
 
     private static final Logger log = Logger.get(SSLSender.class);
 
@@ -70,6 +71,7 @@ public class SSLSender implements Sender<ByteBuffer>
                 return;
             }
             log.debug("Closing SSL connection");
+            
             engine.closeOutbound();
             try
             {
@@ -144,9 +146,8 @@ public class SSLSender implements Sender<ByteBuffer>
         HandshakeStatus handshakeStatus;
         Status status;
 
-        while(appData.hasRemaining())
+        while(appData.hasRemaining() && !error.get())
         {
-
             int read = 0;
             try
             {
@@ -154,7 +155,6 @@ public class SSLSender implements Sender<ByteBuffer>
                 read   = result.bytesProduced();
                 status = result.getStatus();
                 handshakeStatus = result.getHandshakeStatus();
-
             }
             catch(SSLException e)
             {
@@ -221,7 +221,7 @@ public class SSLSender implements Sender<ByteBuffer>
                             }
 
                             if (System.currentTimeMillis()- start >= timeout)
-                            {
+                            {                                
                                 throw new SenderException(
                                                           "SSL Engine timed out waiting for a response." +
                                                           "To get more info,run with -Djavax.net.debug=ssl");
@@ -241,7 +241,7 @@ public class SSLSender implements Sender<ByteBuffer>
                     break; //do  nothing
 
                 default:
-                    throw new IllegalStateException("SSLReceiver: Invalid State " + status);
+                    throw new IllegalStateException("SSLSender: Invalid State " + status);
             }
 
         }
@@ -258,6 +258,11 @@ public class SSLSender implements Sender<ByteBuffer>
     public Object getNotificationToken()
     {
         return engineState;
+    }
+    
+    public void setErrorFlag()
+    {
+        error.set(true);
     }
 
     public void setIdleTimeout(int i)
