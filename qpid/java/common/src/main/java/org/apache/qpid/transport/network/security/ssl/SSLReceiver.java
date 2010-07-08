@@ -188,7 +188,13 @@ public class SSLReceiver implements Receiver<ByteBuffer>
             }
             catch(SSLException e)
             {
-                throw new TransportException("Error in SSLReceiver",e);
+                log.error(e, "Error caught in SSLReceiver");
+                sender.setErrorFlag();
+                synchronized(notificationToken)
+                {
+                    notificationToken.notifyAll();
+                }                
+                exception(new TransportException("Error in SSLReceiver",e));
             }
 
         }
