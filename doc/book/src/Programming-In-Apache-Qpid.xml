@@ -1126,7 +1126,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
                 that resolve to a queue. If browse is specified the
                 messages delivered to the receiver are left on the queue
                 rather than being removed. If consume is specified the
-                normal behaviour applies; messages are removed from teh
+                normal behaviour applies; messages are removed from the
                 queue once the client acknoweldges their receipt.
 	      </entry>
 	    </row>
@@ -1487,8 +1487,8 @@ Receiver receiver1 = session.createReceiver(address1);
 Receiver receiver2 = session.createReceiver(address2);
 
 Message message =  session.nextReceiver().fetch();
-session.acknowledge(); // acknowledge message receipt
 std::cout << message.getContent() << std::endl;
+session.acknowledge(); // acknowledge message receipt
 ]]>	  </programlisting>
 
 	<para>Python:</para>
@@ -1497,6 +1497,7 @@ receiver1 = session.receiver(address1)
 receiver2 = session.receiver(address)
 message = session.next_receiver().fetch()
 print message.content
+session.acknowledge()
 ]]>	  </programlisting>
 
 	<para>.NET C#:</para>
@@ -1506,8 +1507,8 @@ Receiver receiver2 = session.CreateReceiver(address2);
 
 Message message = new Message();
 message =  session.NextReceiver().Fetch();
-session.Acknowledge();
 Console.WriteLine("{0}", message.GetContent());
+session.Acknowledge();
 ]]>	  </programlisting>
 
       </example>
