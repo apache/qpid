@@ -1475,7 +1475,13 @@ enable("qpid.messaging.io", DEBUG)
       Messaging API, a program can ask a session for the <quote>next
       receiver</quote>; that is, the receiver that is responsible for
       the next available message. The following example shows how this
-      is done in C++, Python, and .NET C#.</para>
+      is done in C++, Python, and .NET C#.
+      </para>
+
+      <para>Note that to use this pattern you must enable prefetching
+      for each receiver of interest so that thebroker will send
+      messages before a fetch call is made. See
+      <xref linkend="prefetch"/> for more on this.</para>
 
       <example>
 	<title>Receiving Messages from Multiple Sources</title>
@@ -1484,7 +1490,9 @@ enable("qpid.messaging.io", DEBUG)
 
 	<programlisting><![CDATA[
 Receiver receiver1 = session.createReceiver(address1);
+receiver1.setCapacity(10);
 Receiver receiver2 = session.createReceiver(address2);
+receiver2.setCapacity(10);
 
 Message message =  session.nextReceiver().fetch();
 std::cout << message.getContent() << std::endl;
@@ -1494,7 +1502,9 @@ session.acknowledge(); // acknowledge message receipt
 	<para>Python:</para>
 	<programlisting><![CDATA[
 receiver1 = session.receiver(address1)
+receiver1.capacity = 10
 receiver2 = session.receiver(address)
+receiver2.capacity = 10
 message = session.next_receiver().fetch()
 print message.content
 session.acknowledge()
@@ -1503,7 +1513,9 @@ session.acknowledge()
 	<para>.NET C#:</para>
 	<programlisting><![CDATA[
 Receiver receiver1 = session.CreateReceiver(address1);
+receiver1.SetCapacity(10);
 Receiver receiver2 = session.CreateReceiver(address2);
+receiver2.SetCapacity(10);
 
 Message message = new Message();
 message =  session.NextReceiver().Fetch();
@@ -1587,17 +1599,23 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
       
       <para>Many messaging applications need to exchange data across
       languages and platforms, using the native datatypes of each
-      programming language. AMQP provides a set of portable datatypes,
-      but does not directly support a set of named type/value
-      pairs. Java JMS provides the <classname>MapMessage</classname>
-      interface, which allows sets of named type/value pairs, but does
-      not provide a set of portable datatypes.</para> 
+      programming language.</para> 
 
       <para>The Qpid Messaging API supports maps in message
-      content. Unlike JMS, any message can contain maps. These maps
-      are supported in each language using the conventions of the
-      language. In Java, we implement the
-      <classname>MapMessage</classname> interface; in Python, we
+      content. 
+
+      <footnote><para>Unlike JMS, there is not a specific message type for
+      map messages.</para></footnote>
+
+      These maps are supported in each language using
+      the conventions of the language. In Java, we implement the
+      <classname>MapMessage</classname> interface
+  
+      <footnote><para>Note that the Qpid JMS client supports
+      MapMessages whose values can be nested maps or lists. This is
+      not standard JMS behaviour.</para></footnote>
+
+      ; in Python, we
       support <classname>dict</classname> and
       <classname>list</classname> in message content; in C++, we
       provide the <classname>Variant::Map</classname> and
@@ -1773,14 +1791,14 @@ sender.send(message, true);
       <section>
 	<title>Batching Acknowledgements</title>
 
-	<para>Many of the simple examples we have shown retrieve a message and immediately acknowledge it. Because each acknowledgement results in network traffic, you can dramatically increase performance by acknowledging messages in batches. For instance, an application can read a number of related messages, then acknowledge the entire batch, or an application can acknowledge after a certain number of messages have been received or a certain time period has elapsed. Messages are not removed from the broker until they are acknowledged, so guaranteed delivery is still available when batching acknowledgements.</para>
+	<para>Many of the simple examples we have shown retrieve a message and immediately acknowledge it. Because each acknowledgement results in network traffic, you can imporve efficiency and increase performance by acknowledging messages in batches. For instance, an application can receive and process a number of related messages, then acknowledge the entire batch, or an application can acknowledge after a certain number of messages have been received or a certain time period has elapsed.</para>
       </section>
 
 
-      <section>
+      <section id="prefetch">
 	<title>Prefetch</title>   
 
-	<para>By default, a receiver retrieves the next message from the server, one message at a time, which provides intuitive results when writing and debugging programs, but does not provide optimum performance. To create an input buffer, set the capacity of the receiver to the size of the desired input buffer; for many applications, a capacity of 100 performs well. </para>
+	<para>By default, a receiver retrieves the next message from the server, one message at a time, in response to each fetch() call. This provides intuitive results when writing and debugging programs, but does not provide optimum performance. By allowing the client to prefetch messages in anticipation of fetch() calls, round-trips to the broker can be avoided and the throughput for a receiver can be increased. To enable prefetching, set the capacity of the receiver to the size of the desired input buffer; for many applications, a capacity of 100 performs well.</para>
 
 <!--
 ###	sender: capacity of replay buffer (not yet acknowledged messages), these are resent with failover
