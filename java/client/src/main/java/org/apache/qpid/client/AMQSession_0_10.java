@@ -1190,7 +1190,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
     
-    int resolveAddressType(AMQDestination dest) throws AMQException
+    public int resolveAddressType(AMQDestination dest) throws AMQException
     {
        int type = dest.getAddressType();
        String name = dest.getAddressName();
@@ -1254,7 +1254,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                                     Collections.<String,Object>emptyMap()));
     }
     
-    private void setLegacyFiledsForQueueType(AMQDestination dest)
+    public void setLegacyFiledsForQueueType(AMQDestination dest)
     {
         // legacy support
         dest.setQueueName(new AMQShortString(dest.getAddressName()));
@@ -1263,7 +1263,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         dest.setRoutingKey(dest.getAMQQueueName());
     }
 
-    private void setLegacyFiledsForTopicType(AMQDestination dest)
+    public void setLegacyFiledsForTopicType(AMQDestination dest)
     {
         // legacy support
         dest.setQueueName(null);

@@ -30,6 +30,7 @@ import java.util.UUID;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageNotWriteableException;
+import javax.jms.Session;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -523,7 +524,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
         // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
-        if (_session != null)
+        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             if (_session.getAMQConnection().isClosed())
             {
@@ -538,7 +539,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
     public void acknowledge() throws JMSException
     {
-        if (_session != null)
+        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             _session.acknowledge();
         }

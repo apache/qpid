@@ -549,7 +549,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public BytesMessage createBytesMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSBytesMessage(getMessageDelegateFactory());
+        JMSBytesMessage msg = new JMSBytesMessage(getMessageDelegateFactory());
+        msg.setAMQSession(this);
+        return msg;
     }
 
     /**
@@ -1014,11 +1016,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkNotClosed();
         if (USE_AMQP_ENCODED_MAP_MESSAGE)
         {
-            return new AMQPEncodedMapMessage(getMessageDelegateFactory());
+            AMQPEncodedMapMessage msg = new AMQPEncodedMapMessage(getMessageDelegateFactory());
+            msg.setAMQSession(this);
+            return msg;
         }
         else
         {
-            return new JMSMapMessage(getMessageDelegateFactory());
+            JMSMapMessage msg = new JMSMapMessage(getMessageDelegateFactory());
+            msg.setAMQSession(this);
+            return msg;
         }
     }
 
@@ -1030,7 +1036,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public ObjectMessage createObjectMessage() throws JMSException
     {
         checkNotClosed();
-        return (ObjectMessage) new JMSObjectMessage(getMessageDelegateFactory());
+         JMSObjectMessage msg = new JMSObjectMessage(getMessageDelegateFactory());
+         msg.setAMQSession(this);
+         return msg;
     }
 
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException
@@ -1240,7 +1248,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             checkNotClosed();
 
-            return new JMSStreamMessage(getMessageDelegateFactory());
+            JMSStreamMessage msg = new JMSStreamMessage(getMessageDelegateFactory());
+            msg.setAMQSession(this);
+            return msg;
         }
     }
 
@@ -1319,7 +1329,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             checkNotClosed();
 
-            return new JMSTextMessage(getMessageDelegateFactory());
+            JMSTextMessage msg = new JMSTextMessage(getMessageDelegateFactory());
+            msg.setAMQSession(this);
+            return msg;
         }
     }
 
