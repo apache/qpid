@@ -361,9 +361,12 @@ namespace Org.Apache.Qpid.Messaging {
       <title>Addresses</title>
       
       <para>An <firstterm>address</firstterm> is the name of a message
-      target or message source. In the programs we have just seen, we
-      used the address <literal>amq.topic</literal> (which is the name
-      of an exchange on an AMQP 0-10 messaging broker).
+      target or message source. 
+
+      <footnote><para>In the programs we have just seen, we used
+      <literal>amq.topic</literal> as the default address if none is
+      passed in. This is the name of a standard exchange that always
+      exists on an AMQP 0-10 messaging broker.</para></footnote>
       
       The methods that create senders and receivers require an
       address. The details of sending to a particular target or
