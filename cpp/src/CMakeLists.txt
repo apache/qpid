@@ -65,6 +65,103 @@ MACRO (install_pdb theLibrary theComponent)
     endif (MSVC)
 ENDMACRO (install_pdb)
 
+#
+# inherit_value - if the symbol is undefined then set it to the given value.
+# Set flag to indicate this symbol was defined here.
+#
+MACRO (inherit_value theSymbol theValue)
+    if (NOT DEFINED ${theSymbol})
+        set (${theSymbol} ${theValue})
+        # message ("Set symbol '${theSymbol}' to value '${theValue}'")
+        set (${theSymbol}_inherited = "true")
+    endif (NOT DEFINED ${theSymbol})
+ENDMACRO (inherit_value)
+
+#
+# If compiler is Visual Studio then create a "version resource" for the project.
+# Use this call to override CPACK and file global settings but not file per-project settings.
+# Two groups of four version numbers specify "file" and "product" versions separately.
+#
+# Sample: add_msvc_version_full (qmfengine library dll 1 0 0 1 1 0 0 1)
+#
+MACRO (add_msvc_version_full verProject verProjectType verProjectFileExt verFN1 verFN2 verFN3 verFN4 verPN1 verPN2 verPN3 verPN4)
+    if (MSVC)
+        # Create project-specific version strings
+        inherit_value ("winver_${verProject}_FileVersionBinary"    "${verFN1},${verFN2},${verFN3},${verFN4}")
+        inherit_value ("winver_${verProject}_ProductVersionBinary" "${verPN1},${verPN2},${verPN3},${verPN4}")
+        inherit_value ("winver_${verProject}_FileVersionString"    "${verFN1}, ${verFN2}, ${verFN3}, ${verFN4}")
+        inherit_value ("winver_${verProject}_ProductVersionString" "${verPN1}, ${verPN2}, ${verPN3}, ${verPN4}")
+        inherit_value ("winver_${verProject}_FileDescription"      "${winver_PACKAGE_NAME}-${verProject} ${verProjectType}")
+        inherit_value ("winver_${verProject}_LegalCopyright"       "${winver_LEGAL_COPYRIGHT}")
+        inherit_value ("winver_${verProject}_InternalName"         "${verProject}")
+        inherit_value ("winver_${verProject}_OriginalFilename"     "${verProject}.${verProjectFileExt}")
+        inherit_value ("winver_${verProject}_ProductName"          "${winver_DESCRIPTION_SUMMARY}")
+        
+        # Create strings to be substituted into the template file
+        set ("winverFileVersionBinary"     "${winver_${verProject}_FileVersionBinary}")
+        set ("winverProductVersionBinary"  "${winver_${verProject}_ProductVersionBinary}")
+        set ("winverFileVersionString"     "${winver_${verProject}_FileVersionString}")
+        set ("winverProductVersionString"  "${winver_${verProject}_ProductVersionString}")
+        set ("winverFileDescription"       "${winver_${verProject}_FileDescription}")
+        set ("winverLegalCopyright"        "${winver_${verProject}_LegalCopyright}")
+        set ("winverInternalName"          "${winver_${verProject}_InternalName}")
+        set ("winverOriginalFilename"      "${winver_${verProject}_OriginalFilename}")
+        set ("winverProductName"           "${winver_${verProject}_ProductName}")
+
+        configure_file(windows/resources/template-resource.rc
+                         windows/resources/${verProject}-resource.rc)
+        set (${verProject}_SOURCES
+            ${${verProject}_SOURCES}
+            windows/resources/${verProject}-resource.rc
+        )
+    endif (MSVC)
+ENDMACRO (add_msvc_version_full)
+
+#
+# If compiler is Visual Studio then create a "version resource" for the project.
+# Use this call to accept file override version settings or
+#  inherited CPACK_PACKAGE_VERSION version settings.
+#
+# Sample: add_msvc_version (qpidcommon library dll)
+#
+MACRO (add_msvc_version verProject verProjectType verProjectFileExt)
+    if (MSVC)
+        add_msvc_version_full (${verProject} 
+                               ${verProjectType}
+                               ${verProjectFileExt}
+                               ${winver_FILE_VERSION_N1}
+                               ${winver_FILE_VERSION_N2}
+                               ${winver_FILE_VERSION_N3}
+                               ${winver_FILE_VERSION_N4}
+                               ${winver_PRODUCT_VERSION_N1}
+                               ${winver_PRODUCT_VERSION_N2}
+                               ${winver_PRODUCT_VERSION_N3}
+                               ${winver_PRODUCT_VERSION_N4})
+    endif (MSVC)
+ENDMACRO (add_msvc_version)
+
+
+#
+# Install optional windows version settings. Override variables are specified in a file.
+#
+include (./CMakeWinVersions.cmake OPTIONAL)
+
+#
+# Inherit global windows version settings from CPACK settings.
+#
+inherit_value ("winver_PACKAGE_NAME"         "${CPACK_PACKAGE_NAME}")
+inherit_value ("winver_DESCRIPTION_SUMMARY"  "${CPACK_PACKAGE_DESCRIPTION_SUMMARY}")
+inherit_value ("winver_FILE_VERSION_N1"      "${CPACK_PACKAGE_VERSION_MAJOR}")
+inherit_value ("winver_FILE_VERSION_N2"      "${CPACK_PACKAGE_VERSION_MINOR}")
+inherit_value ("winver_FILE_VERSION_N3"      "${CPACK_PACKAGE_VERSION_PATCH}")
+inherit_value ("winver_FILE_VERSION_N4"      "1")
+inherit_value ("winver_PRODUCT_VERSION_N1"   "${winver_FILE_VERSION_N1}")
+inherit_value ("winver_PRODUCT_VERSION_N2"   "${winver_FILE_VERSION_N2}")
+inherit_value ("winver_PRODUCT_VERSION_N3"   "${winver_FILE_VERSION_N3}")
+inherit_value ("winver_PRODUCT_VERSION_N4"   "${winver_FILE_VERSION_N4}")
+inherit_value ("winver_LEGAL_COPYRIGHT"      "")
+
+
 # check if we generate source as part of the build
 #   - rubygen generates the amqp spec and clustering
 #   - managementgen generates the broker management code
@@ -675,6 +772,7 @@ set (qpidcommon_SOURCES
      qpid/sys/Timer.cpp
      qpid/amqp_0_10/Codecs.cpp
 )
+add_msvc_version (qpidcommon library dll)
 
 add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
 if (CLOCK_GETTIME_IN_RT)
@@ -696,6 +794,7 @@ set(qpidtypes_SOURCES
   qpid/types/Variant.cpp
   ${qpidtypes_platform_SOURCES}
 )
+add_msvc_version (qpidtypes library dll)
 add_library(qpidtypes SHARED ${qpidtypes_SOURCES})
 target_link_libraries(qpidtypes ${qpidtypes_platform_LIBS})
 set_target_properties (qpidtypes PROPERTIES VERSION ${qpidc_version})
@@ -740,7 +839,7 @@ set (qpidclient_SOURCES
      qpid/client/SubscriptionManagerImpl.cpp
      qpid/client/TCPConnector.cpp
 )
-
+add_msvc_version (qpidclient library dll)
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
 target_link_libraries (qpidclient qpidcommon ${qpidclient_platform_LIBS})
@@ -794,6 +893,7 @@ set (qpidmessaging_SOURCES
      qpid/client/amqp0_10/SimpleUrlParser.h
      qpid/client/amqp0_10/SimpleUrlParser.cpp
 )
+add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
 target_link_libraries (qpidmessaging qpidclient)
@@ -814,16 +914,18 @@ endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
 
 if (WIN32)
+    # Install the DtcPlugin project and call it qpidxarm.
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
-    set(DTC_PLUGIN_SOURCE ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
-    if (EXISTS ${DTC_PLUGIN_SOURCE})
-        add_library (qpidxarm SHARED ${DTC_PLUGIN_SOURCE})
+    set(qpidxarm_SOURCES ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
+    if (EXISTS ${qpidxarm_SOURCES})
+        add_msvc_version (qpidxarm library dll)
+        add_library (qpidxarm SHARED ${qpidxarm_SOURCES})
         target_link_libraries (qpidxarm qpidclient qpidcommon)
         install (TARGETS qpidxarm
                  DESTINATION ${QPID_INSTALL_LIBDIR}
                  COMPONENT ${QPID_COMPONENT_CLIENT})
         install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
-    endif (EXISTS ${DTC_PLUGIN_SOURCE})
+    endif (EXISTS ${qpidxarm_SOURCES})
 endif (WIN32)
 
 set (qpidbroker_SOURCES
@@ -894,6 +996,7 @@ set (qpidbroker_SOURCES
      qpid/management/ManagementTopicExchange.cpp
      qpid/sys/TCPIOPlugin.cpp
 )
+add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 target_link_libraries (qpidbroker qpidcommon ${qpidbroker_platform_LIBS})
 set_target_properties (qpidbroker PROPERTIES VERSION ${qpidc_version})
@@ -911,6 +1014,7 @@ set (qpidd_SOURCES
      qpidd.cpp
      qpidd.h
 )
+add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
 target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
                           ${Boost_FILESYSTEM_LIBRARY})
@@ -936,6 +1040,7 @@ set (qmf_SOURCES
     qpid/agent/ManagementAgentImpl.cpp
     qpid/agent/ManagementAgentImpl.h
     )
+add_msvc_version (qmf library dll)
 add_library (qmf SHARED ${qmf_SOURCES})
 target_link_libraries (qmf qpidclient)
 set_target_properties (qmf PROPERTIES
@@ -975,6 +1080,7 @@ set (qmfengine_SOURCES
 if (NOT WIN32)
 	list(APPEND qmfengine_SOURCES qmf/engine/ResilientConnection.cpp)
 endif (NOT WIN32)
+add_msvc_version_full (qmfengine library dll 1 0 0 1 1 0 0 1)
 
 add_library (qmfengine SHARED ${qmfengine_SOURCES})
 target_link_libraries (qmfengine qpidclient)
@@ -1026,6 +1132,7 @@ set (qmfconsole_SOURCES
      qpid/console/SessionManager.cpp
      qpid/console/Value.cpp
     )
+add_msvc_version (qmfconsole library dll)
 add_library (qmfconsole SHARED ${qmfconsole_SOURCES})
 target_link_libraries (qmfconsole qpidclient)
 set_target_properties (qmfconsole PROPERTIES
@@ -1037,11 +1144,13 @@ install_pdb (qmfconsole ${QPID_COMPONENT_QMF})
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
-add_library (replicating_listener MODULE
-             qpid/replication/constants.h
-             qpid/replication/ReplicatingEventListener.cpp
-             qpid/replication/ReplicatingEventListener.h
-            )
+set (replicating_listener_SOURCES
+     qpid/replication/constants.h
+     qpid/replication/ReplicatingEventListener.cpp
+     qpid/replication/ReplicatingEventListener.h
+    )
+add_msvc_version (replicating_listener library dll)
+add_library (replicating_listener MODULE ${replicating_listener_SOURCES})
 target_link_libraries (replicating_listener qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
 set_target_properties (replicating_listener PROPERTIES PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -1056,11 +1165,13 @@ install (TARGETS replicating_listener
 # can process the messages from a replication queue (populated on the
 # source system by the replicating listener plugin above) and take the
 # corresponding action on the local queues
-add_library (replication_exchange MODULE
-             qpid/replication/constants.h
-             qpid/replication/ReplicationExchange.cpp
-             qpid/replication/ReplicationExchange.h
-            )
+set (replication_exchange_SOURCES
+     qpid/replication/constants.h
+     qpid/replication/ReplicationExchange.cpp
+     qpid/replication/ReplicationExchange.h
+    )
+add_msvc_version (replication_exchange library dll)
+add_library (replication_exchange MODULE ${replication_exchange_SOURCES})
 target_link_libraries (replication_exchange qpidbroker)
 set_target_properties (replication_exchange PROPERTIES PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
