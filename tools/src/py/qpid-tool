@@ -28,7 +28,7 @@ from shlex       import split
 from threading   import Lock
 from qpid.disp   import Display
 from qpid.peer   import Closed
-from qmf.console import Session, Console, SchemaClass
+from qmf.console import Session, Console, SchemaClass, ObjectId
 
 class Mcli(Cmd):
   """ Management Command Interpreter """
@@ -265,7 +265,15 @@ class QmfData(Console):
     finally:
       self.lock.release()
 
-    self.session._sendMethodRequest(self.broker, obj.getClassKey(), obj.getObjectId(), methodName, args)
+    object_id = obj.getObjectId();
+    if not object_id.isV2 and obj.getAgent().isV2:
+        object_key = ",".join([str(v) for p, v in obj.getProperties() if p.name != "vhostRef" and p.index == 1])
+        class_key = obj.getClassKey();
+        object_name = class_key.getPackageName() + ":" + class_key.getClassName() + ":" + object_key
+        object_id = ObjectId.create(object_id.agentName, object_name)
+
+    self.session._sendMethodRequest(self.broker, obj.getClassKey(), object_id, methodName, args)
+
 
   def do_exit(self):
     pass
