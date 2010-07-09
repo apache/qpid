@@ -165,6 +165,7 @@ Broker::Broker(const Broker::Options& conf) :
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this)),
     deferDelivery(boost::bind(&Broker::deferDeliveryImpl, this, _1, _2))
 {
+    try {
     if (conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
         managementAgent->configure(dataDir.isEnabled() ? dataDir.getPath() : string(),
@@ -288,6 +289,10 @@ Broker::Broker(const Broker::Options& conf) :
         }
     } else if (conf.knownHosts != knownHostsNone) {
         knownBrokers.push_back(Url(conf.knownHosts));
+    }
+    } catch (const std::exception& e) {
+        finalize();
+        throw;
     }
 }
 
