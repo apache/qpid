@@ -70,16 +70,19 @@ public class PlainSaslServer implements SaslServer
             // String authcid = new String(response, 0, authzidNullPosition, "utf8");
             String authzid = new String(response, authzidNullPosition + 1, authcidNullPosition - authzidNullPosition - 1, "utf8");
 
-            // we do not care about the prompt but it throws if null
-            NameCallback nameCb = new NameCallback("prompt", authzid);
-            PasswordCallback passwordCb = new PasswordCallback("prompt", false);
             // TODO: should not get pwd as a String but as a char array...
             int passwordLen = response.length - authcidNullPosition - 1;
             String pwd = new String(response, authcidNullPosition + 1, passwordLen, "utf8");
+            
+            // we do not care about the prompt but it throws if null
+            NameCallback nameCb = new NameCallback("prompt", authzid);
+            PlainPasswordCallback passwordCb = new PlainPasswordCallback("prompt", false, pwd);
             AuthorizeCallback authzCb = new AuthorizeCallback(authzid, authzid);
+
             Callback[] callbacks = new Callback[]{nameCb, passwordCb, authzCb};
             _cbh.handle(callbacks);
-            if (validatePassword(pwd, passwordCb))
+
+            if (passwordCb.isAuthenticated())
             {
                 _complete = true;
             }
@@ -103,19 +106,7 @@ public class PlainSaslServer implements SaslServer
         }
     }
 
-    /**
-     * Compares the incoming plain text password with that contained in the given PasswordCallback
-     *  
-     * @param incomingPwd The incoming plain text password
-     * @param storedPwdCb PasswordCallback containing the stored password
-     * @return Whether the incoming password authenticates against the stored password
-     */
-    protected boolean validatePassword(String incomingPwd, PasswordCallback storedPwdCb)
-    {
-        String storedPwd = new String(storedPwdCb.getPassword());
 
-        return incomingPwd.equals(storedPwd);
-    }
 
     private int findNullPosition(byte[] response, int startPosition)
     {
