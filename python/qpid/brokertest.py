@@ -147,14 +147,15 @@ class Popen(popen2.Popen3):
         expect - if set verify expectation at end of test.
         drain  - if true (default) drain stdout/stderr to files.
         """
+        self._clean = False
         assert find_exe(cmd[0]), "executable not found: "+cmd[0]
         if type(cmd) is type(""): cmd = [cmd] # Make it a list.
         self.cmd  = [ str(x) for x in cmd ]
         self.returncode = None
-        popen2.Popen3.__init__(self, self.cmd, True)
         self.expect = expect
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
         msg = "Process %s" % self.pname
+        popen2.Popen3.__init__(self, self.cmd, True)
         self.stdin = ExceptionWrapper(self.tochild, msg)
         self.stdout = Popen.OutStream(self.fromchild, self.outfile("out"), msg)
         self.stderr = Popen.OutStream(self.childerr, self.outfile("err"), msg)
@@ -163,7 +164,6 @@ class Popen(popen2.Popen3):
         finally: f.close()
         log.debug("Started process %s: %s" % (self.pname, " ".join(self.cmd)))
         if drain: self.drain()
-        self._clean = False
 
         def __str__(self): return "Popen<%s>"%(self.pname)
 
