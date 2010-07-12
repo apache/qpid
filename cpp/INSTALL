@@ -281,7 +281,7 @@ optimization:
 =====================================
 To get the source code from the subversion repository (trunk) do:
 
- # svn checkout https://svn.apache.org/repos/asf/incubator/qpid/trunk/.
+ # svn checkout http://svn.apache.org/repos/asf/qpid/trunk/qpid/.
 
 To build a fresh checkout:
 

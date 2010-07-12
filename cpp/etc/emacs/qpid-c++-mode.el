@@ -32,7 +32,7 @@
 ;; Written by Alan Conway: aconway@redhat.com
 ;;
 ;; For latest version, check
-;;  http://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/cpp/etc/emacs/qpid-c++.el   
+;;  http://svn.apache.org/repos/asf/qpid/trunk/qpid/cpp/etc/emacs/qpid-c++-mode.el
 ;;
 
 (require 'cc-mode)

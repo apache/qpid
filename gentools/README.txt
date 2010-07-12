@@ -56,6 +56,6 @@ For a more detaild description of the generator, see the Qpid Wiki
 (http://cwiki.apache.org/qpid/multiple-amqp-version-support.html).
 
 Please send comments and bugs to me (kim.vdriet [at] redhat.com) or via the
-Apache Qpid list (qpid-dev [at] incubator.apache.org).
+Apache Qpid list (dev [at] qpid.apache.org).
 
 Kim van der Riet
