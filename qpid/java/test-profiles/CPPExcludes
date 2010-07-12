@@ -133,6 +133,8 @@ org.apache.qpid.systest.MergeConfigurationTest#*
 org.apache.qpid.systest.SubscriptionTest#*
 org.apache.qpid.systest.TopicTest#*
 
+// This plugin is not available in the CPP broker
+org.apache.qpid.info.systest.InfoPluginTest#*
 
 org.apache.qpid.server.virtualhost.plugin.*
 org.apache.qpid.server.virtualhost.plugin.policies.*
