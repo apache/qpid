@@ -32,6 +32,7 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/PipeHandle.h"
+#include "qpid/sys/Time.h"
 #include "qpid/framing/Uuid.h"
 #include <iostream>
 #include <sstream>
@@ -166,6 +167,9 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     bool              connected;
     bool              useMapMsg;
     std::string       lastFailure;
+    std::string       topicExchange;
+    std::string       directExchange;
+    qpid::sys::Duration schemaTimestamp;
 
     bool              clientWasAdded;
     uint32_t          requestedBrokerBank;
@@ -258,7 +262,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void encodeHeader (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
     qpid::types::Variant::Map mapEncodeSchemaId(const std::string& pname,
                                                 const std::string& cname,
-                                                const uint8_t *md5Sum);
+                                                const uint8_t *md5Sum,
+                                                uint8_t type=ManagementItem::CLASS_KIND_TABLE);
     bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void sendHeartbeat();
     void sendException(const std::string& replyToKey, const std::string& cid,
@@ -272,6 +277,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void handleLocateRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
     void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
     void handleConsoleAddedIndication();
+    void getHeartbeatContent  (qpid::types::Variant::Map& map);
 };
 
 }}
