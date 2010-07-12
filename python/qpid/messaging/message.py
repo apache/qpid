@@ -49,11 +49,23 @@ TYPE_MAPPINGS={
 
 DEFAULT_CODEC = (lambda x: x, lambda x: x)
 
+def encode_text_plain(x):
+  if x is None:
+    return None
+  else:
+    return x.encode("utf8")
+
+def decode_text_plain(x):
+  if x is None:
+    return None
+  else:
+    return x.decode("utf8")
+
 TYPE_CODEC={
   "amqp/map": codec("map"),
   "amqp/list": codec("list"),
-  "text/plain; charset=utf8": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
-  "text/plain": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
+  "text/plain; charset=utf8": (encode_text_plain, decode_text_plain),
+  "text/plain": (encode_text_plain, decode_text_plain),
   "": DEFAULT_CODEC,
   None: DEFAULT_CODEC
   }
