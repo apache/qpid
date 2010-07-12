@@ -111,3 +111,9 @@ class MessageEchoTests(Base):
   def testContentTypeUnknown(self):
     msg = Message(content_type = "this-content-type-does-not-exist")
     self.check(msg)
+
+  def testTextPlain(self):
+    self.check(Message(content_type="text/plain", content="asdf"))
+
+  def testTextPlainEmpty(self):
+    self.check(Message(content_type="text/plain"))
