@@ -153,9 +153,9 @@ class Popen(popen2.Popen3):
         self.cmd  = [ str(x) for x in cmd ]
         self.returncode = None
         self.expect = expect
+        popen2.Popen3.__init__(self, self.cmd, True)
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
         msg = "Process %s" % self.pname
-        popen2.Popen3.__init__(self, self.cmd, True)
         self.stdin = ExceptionWrapper(self.tochild, msg)
         self.stdout = Popen.OutStream(self.fromchild, self.outfile("out"), msg)
         self.stderr = Popen.OutStream(self.childerr, self.outfile("err"), msg)
