@@ -275,7 +275,10 @@ finally:
 
       <para>The following .NET C# program shows how to create a connection,
         create a session, send messages using a sender, and receive
-        messages using a receiver.</para>
+        messages using a receiver. The .NET binding for the Qpid C++ Messaging API
+        applies to all .NET Framework managed code languages. C# was chosen
+        for illustration purposes only.
+      </para>
 
 	<example>
 	  <title>"Hello world!" in .NET C#</title>
@@ -1970,6 +1973,127 @@ sender.send(message, true);
 	  </tbody>
 	</tgroup>
       </table>
+      </section>
+
+      <section id="section-dotnet-Maps">
+	<title>Qpid Maps in .NET</title>
+
+
+	<para>
+	  The .NET binding for the Qpid Messaging API binds .NET managed data types
+	  to C++ <classname>Variant</classname> data types.  The following code shows how to
+	  send Map and List structures in a message:
+	</para>
+
+	<example>
+	  <title>Sending Qpid Maps in .NET C#</title>
+	<programlisting><![CDATA[
+using System;
+using Org.Apache.Qpid.Messaging;
+
+// !!! SNIP !!!
+
+Dictionary<string, object> content = new Dictionary<string, object>();
+Dictionary<string, object> subMap = new Dictionary<string, object>();
+Collection<object> colors = new Collection<object>();
+
+// add simple types
+content["id"] = 987654321;
+content["name"] = "Widget";
+content["percent"] = 0.99;
+
+// add nested amqp/map
+subMap["name"] = "Smith";
+subMap["number"] = 354;
+content["nestedMap"] = subMap;
+
+// add an amqp/list
+colors.Add("red");
+colors.Add("green");
+colors.Add("white");
+content["colorsList"] = colors;
+
+// add one of each supported amqp data type
+bool mybool = true;
+content["mybool"] = mybool;
+
+byte mybyte = 4;
+content["mybyte"] = mybyte;
+
+UInt16 myUInt16 = 5;
+content["myUInt16"] = myUInt16;
+
+UInt32 myUInt32 = 6;
+content["myUInt32"] = myUInt32;
+
+UInt64 myUInt64 = 7;
+content["myUInt64"] = myUInt64;
+
+char mychar = 'h';
+content["mychar"] = mychar;
+
+Int16 myInt16 = 9;
+content["myInt16"] = myInt16;
+
+Int32 myInt32 = 10;
+content["myInt32"] = myInt32;
+
+Int64 myInt64 = 11;
+content["myInt64"] = myInt64;
+
+Single mySingle = (Single)12.12;
+content["mySingle"] = mySingle;
+
+Double myDouble = 13.13;
+content["myDouble"] = myDouble;
+
+Guid myGuid = new Guid("000102030405060708090a0b0c0d0e0f");
+content["myGuid"] = myGuid;
+
+Message message = new Message(content);
+Send(message, true);
+]]>     </programlisting>
+	</example>
+
+	<para>
+	  The following table shows the mapping between datatypes in .NET and C++.
+	</para>
+      
+	<table  id="table-dotnet-Maps">
+	<title>Datatype Mapping between C++ and .NET binding</title>
+	<tgroup cols="2">
+	  <thead>
+	    <row>
+	      <entry>C++ Datatype</entry>
+	      <entry>&rarr; .NET binding</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+   	    <row><entry>bool</entry><entry>bool</entry></row>
+   	    <row><entry>uint8</entry><entry>byte</entry></row>
+	    <row><entry>uint16</entry><entry>UInt16</entry></row>
+	    <row><entry>uint32</entry><entry>UInt32</entry></row>
+	    <row><entry>uint64</entry><entry>UInt64</entry></row>
+   	    <row><entry>uint8</entry><entry>char</entry></row>
+	    <row><entry>int16</entry><entry>Int16</entry></row>
+	    <row><entry>int32</entry><entry>Int32</entry></row>
+	    <row><entry>int64</entry><entry>Int64</entry></row>
+	    <row><entry>float</entry><entry>Single</entry></row>
+	    <row><entry>double</entry><entry>Double</entry></row>
+	    <row><entry>string</entry><entry>string  <co id="mapping-dotnet-string" linkends="callout-dotnet-string"/></entry></row>
+	    <row><entry>qpid::types::Uuid</entry><entry>Guid</entry></row>
+	    <row><entry>Variant::Map</entry><entry><![CDATA[Dictionary<string, object>]]>  <co id="mapping-dotnet-dict-index" linkends="callout-dotnet-string"/></entry></row>
+	    <row><entry>Variant::List</entry><entry><![CDATA[Collection<object>]]>  <co id="mapping-dotnet-list-value" linkends="callout-dotnet-string"/></entry></row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      <calloutlist>
+	<callout id="callout-dotnet-string" arearefs="mapping-dotnet-string">
+	  <para>Strings are currently interpreted only with UTF-8 encoding.</para>
+	</callout>
+      </calloutlist>
+
       </section>
 
       
