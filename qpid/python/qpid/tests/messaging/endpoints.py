@@ -39,6 +39,13 @@ class SetupTests(Base):
     self.conn.open()
     self.ping(self.conn.session())
 
+  def testOpenReconnectURLs(self):
+    options = self.connection_options()
+    options["reconnect_urls"] = [self.broker, self.broker]
+    self.conn = Connection(self.broker, **options)
+    self.conn.open()
+    self.ping(self.conn.session())
+
   def testConnectError(self):
     try:
       # Specifying port 0 yields a bad address on Windows; port 4 is unassigned
