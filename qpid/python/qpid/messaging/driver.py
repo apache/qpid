@@ -463,7 +463,7 @@ class Driver:
   def dispatch(self):
     try:
       if self._transport is None:
-        if self.connection._connected:
+        if self.connection._connected and not self.connection.error:
           self.connect()
       else:
         self.engine.dispatch()
