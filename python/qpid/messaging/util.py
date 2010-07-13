@@ -21,6 +21,7 @@
 Add-on utilities for the L{qpid.messaging} API.
 """
 
+from qpid.messaging import *
 from logging import getLogger
 from threading import Thread
 
@@ -33,7 +34,10 @@ def auto_fetch_reconnect_urls(conn):
 
   def main():
     while True:
-      msg = rcv.fetch()
+      try:
+        msg = rcv.fetch()
+      except LinkClosed:
+        return
       set_reconnect_urls(conn, msg)
       ssn.acknowledge(msg, sync=False)
 
