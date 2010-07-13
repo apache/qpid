@@ -118,7 +118,7 @@ On Fedora 12 they changed again:
  # yum install corosynclib-devel clusterlib-devel
 
 For SASL and SSL, include
- # yum install cyrus-sasl-devel
+ # yum install cyrus-sasl-devel nss-devel nspr-devel
 
 For the XML Exchange, include:
 
