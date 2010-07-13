@@ -108,7 +108,7 @@ MACRO (add_msvc_version_full verProject verProjectType verProjectFileExt verFN1 
         set ("winverOriginalFilename"      "${winver_${verProject}_OriginalFilename}")
         set ("winverProductName"           "${winver_${verProject}_ProductName}")
 
-        configure_file(windows/resources/template-resource.rc
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/windows/resources/template-resource.rc
                          windows/resources/${verProject}-resource.rc)
         set (${verProject}_SOURCES
             ${${verProject}_SOURCES}
@@ -437,6 +437,7 @@ if (MSVC)
    set(Boost_FILESYSTEM_LIBRARY "")
    set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
    set(Boost_REGEX_LIBRARY "")
+   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/windows/resources )
 endif (MSVC)
 
 include_directories( ${Boost_INCLUDE_DIR} )
