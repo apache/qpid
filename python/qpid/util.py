@@ -109,14 +109,21 @@ class URL:
   AMQP = "amqp"
 
   def __init__(self, s):
-    match = URL.RE.match(s)
-    if match is None:
-      raise ValueError(s)
-    self.scheme, self.user, self.password, self.host, port = match.groups()
-    if port is None:
-      self.port = None
+    if isinstance(s, URL):
+      self.scheme = s.scheme
+      self.user = s.user
+      self.password = s.password
+      self.host = s.host
+      self.port = s.port
     else:
-      self.port = int(port)
+      match = URL.RE.match(s)
+      if match is None:
+        raise ValueError(s)
+      self.scheme, self.user, self.password, self.host, port = match.groups()
+      if port is None:
+        self.port = None
+      else:
+        self.port = int(port)
 
   def __repr__(self):
     return "URL(%r)" % str(self)
