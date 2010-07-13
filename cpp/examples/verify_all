@@ -19,8 +19,7 @@
 # under the License.
 #
 
-# Verify all C++/python example combinations.
-#
+# Verify all examples
 
 verify=`dirname $0`/verify
 topsrcdir=$1
@@ -28,20 +27,13 @@ topbuilddir=$2
 qpidd=$topbuilddir/src/qpidd
 broker_args=$3
 exclude_regexp=$4
-python=${QPID_PYTHON_DIR:-$topsrcdir/python}
 
 trap "$qpidd -q" exit
 QPID_PORT=`$qpidd -dp0 $broker_args` || { echo "Can't run qpidd" ; exit 1; }
-PYTHON_EXAMPLES=$python/examples
-PYTHONPATH=$python:$PYTHONPATH
-export QPID_PORT PYTHON_EXAMPLES PYTHONPATH
+export QPID_PORT
 
-test -d $PYTHON_EXAMPLES || echo "WARNING: No python examples. $PYTHON_EXAMPLES not found."
 find="find $topsrcdir/cpp/examples"
-test -d $PYTHON_EXAMPLES && find="$find $PYTHON_EXAMPLES"
 find="$find -mindepth 2 -name verify"
-test -d $PYTHON_EXAMPLES && \
-    find="$find -o -name verify_cpp_python -o -name verify_python_cpp"
 all_examples=`$find`
 
 if test -z "$exclude_regexp"; then

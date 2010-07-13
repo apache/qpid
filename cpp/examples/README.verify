@@ -22,14 +22,12 @@ For more information read examples/README.
 
 == The Verify All Script ==
 
-The verify_all script will run C++ examples against itself and against the
-Python examples. The success of the script is determined by comparing its output
+The verify_all script will run each C++ example and compare its output
 against what is expected.
 
 === Arguments ===
 
-The verify_all script expects the path to Qpid trunk as an argument, in order to
-setup the environment for Python examples.
+The verify_all script expects the path to Qpid trunk as an argument.
 
 == The Verify Script ==
 
