@@ -38,9 +38,5 @@ EXTRA_DIST=                  \
 	CMakeLists.txt       \
 	verify               \
 	verify.in            \
-	verify_cpp_python    \
-	verify_cpp_python.in \
-	verify_python_cpp    \
-	verify_python_cpp.in \
 	fanout_fanout_producer.vcproj \
 	fanout_listener.vcproj
