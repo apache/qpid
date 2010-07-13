@@ -31,6 +31,7 @@ from qpid.messaging.exceptions import *
 from qpid.messaging.message import get_codec, Disposition, Message
 from qpid.ops import *
 from qpid.selector import Selector
+from qpid.util import URL
 from qpid.validator import And, Context, List, Map, Types, Values
 from threading import Condition, Thread
 
