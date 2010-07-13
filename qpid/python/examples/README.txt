@@ -17,13 +17,13 @@ api/spout                  -- A simple messaging client that sends
 api/server                 -- An example server that process incoming
                               messages and sends replies.
 
-
 api/hello                  -- An example client that sends a message
                               and then receives it.
 
 api/hello_xml              -- An example client that sends a message
                               to the xml exchange and then receives
                               it.
+
 
 reservations               -- Directory containing an example machine
                               reservation system.
