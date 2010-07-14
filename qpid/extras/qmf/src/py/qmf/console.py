@@ -1504,13 +1504,17 @@ class SchemaCache(object):
         new_package = True
       packageMap = self.packages[pname]
       if pkey not in packageMap:
-        new_class = True
-      # hack: if no classDef given, store the class type code until we get
-      # the full schema:
-      if classDef is None:
-        packageMap[pkey] = classKey.getType()
-      else:
-        packageMap[pkey] = classDef
+        if classDef is not None:
+          new_class = True
+          packageMap[pkey] = classDef
+        elif classKey.getType() is not None:
+          # hack: don't indicate "new_class" to caller unless the classKey type
+          # information is present.  "new_class" causes the console.newClass()
+          # callback to be invoked, which -requires- a valid classKey type!
+          new_class = True
+          # store the type for the getClasses() method:
+          packageMap[pkey] = classKey.getType()
+
     finally:
       self.lock.release()
     return (new_package, new_class)
@@ -1557,9 +1561,9 @@ class ClassKey:
         self.pname = constructor['_package_name']
         self.cname = constructor['_class_name']
         self.hash  = constructor['_hash']
-        self.type  = constructor['_type']
+        self.type  = constructor.get('_type')
       except:
-        raise Exception("Invalid ClassKey map format")
+        raise Exception("Invalid ClassKey map format %s" % str(constructor))
     else:
       # construct from codec
       codec = constructor
@@ -1576,10 +1580,12 @@ class ClassKey:
     codec.write_bin128(self.hash.bytes)
 
   def asMap(self):
-    return {'_package_name': self.pname,
+    m = {'_package_name': self.pname,
             '_class_name': self.cname,
-            '_hash': self.hash,
-            '_type': self.type}
+            '_hash': self.hash}
+    if self.type is not None:
+      m['_type'] = self.type
+    return m
 
   def getPackageName(self):
     return self.pname
