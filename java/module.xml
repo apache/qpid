@@ -748,12 +748,12 @@ qpid.name=${project.name}
 
       <pathconvert property="logmessages"
                    refid="logmessages.path"
-                   pathsep=" "/>
+                   pathsep="' '"/>
 
       <echo message="logmessages is ${logmessages}"/>
 
       <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.home}/src" failonerror="true">
-        <arg line="${logmessages}"/>
+        <arg line="'${logmessages}'"/>
           <arg value="-j"/>
           <arg value="-o"/>
           <arg value="${generated.dir}"/>
