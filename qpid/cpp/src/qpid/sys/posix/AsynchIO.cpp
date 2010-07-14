@@ -400,10 +400,14 @@ AsynchIO::BufferBase* AsynchIO::getQueuedBuffer() {
 }
 
 /*
- * We keep on reading as long as we have something to read and a buffer to put
- * it in
+ * We keep on reading as long as we have something to read, a buffer
+ * to put it in and reading is not stopped by flow control.
  */
 void AsynchIO::readable(DispatchHandle& h) {
+    if (readingStopped) {
+        // We have been flow controlled.
+        return;
+    }
     int readTotal = 0;
     AbsTime readStartTime = AbsTime::now();
     do {
