@@ -109,10 +109,10 @@ MACRO (add_msvc_version_full verProject verProjectType verProjectFileExt verFN1 
         set ("winverProductName"           "${winver_${verProject}_ProductName}")
 
         configure_file(${CMAKE_CURRENT_SOURCE_DIR}/windows/resources/template-resource.rc
-                         windows/resources/${verProject}-resource.rc)
+                       ${CMAKE_CURRENT_BINARY_DIR}/windows/resources/${verProject}-resource.rc)
         set (${verProject}_SOURCES
             ${${verProject}_SOURCES}
-            windows/resources/${verProject}-resource.rc
+            ${CMAKE_CURRENT_BINARY_DIR}/windows/resources/${verProject}-resource.rc
         )
     endif (MSVC)
 ENDMACRO (add_msvc_version_full)
