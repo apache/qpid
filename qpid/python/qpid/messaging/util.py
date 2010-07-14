@@ -50,10 +50,11 @@ def set_reconnect_urls(conn, msg):
   reconnect_urls = []
   urls = msg.properties["amq.failover"]
   for u in urls:
-    if u.startswith("amqp:tcp:"):
-      parts = u.split(":")
-      host, port = parts[2:4]
-      reconnect_urls.append("%s:%s" % (host, port))
+    if u.startswith("amqp:"):
+      for p in u[5:].split(","):
+        parts = p.split(":")
+        host, port = parts[1:3]
+        reconnect_urls.append("%s:%s" % (host, port))
   conn.reconnect_urls = reconnect_urls
   log.warn("set reconnect_urls for conn %s: %s", conn, reconnect_urls)
 
