@@ -336,9 +336,6 @@ class Driver:
     self._selector = Selector.default()
     self._attempts = 0
     self._delay = self.connection.reconnect_interval_min
-    urls = [URL(u) for u in self.connection.reconnect_urls]
-    self._hosts = [(self.connection.host, self.connection.port)] + \
-        [(u.host, u.port) for u in urls]
     self._reconnect_log = self.connection.reconnect_log
     self._host = 0
     self._retrying = False
@@ -347,6 +344,21 @@ class Driver:
     self._timeout = None
 
     self.engine = None
+
+  def _next_host(self):
+    urls = [URL(u) for u in self.connection.reconnect_urls]
+    hosts = [(self.connection.host, self.connection.port)] + \
+        [(u.host, u.port) for u in urls]
+    if self._host >= len(hosts):
+      self._host = 0
+    result = hosts[self._host]
+    if self._host == 0:
+      self._attempts += 1
+    self._host = self._host + 1
+    return result
+
+  def _num_hosts(self):
+    return len(self.connection.reconnect_urls) + 1
 
   @synchronized
   def wakeup(self):
@@ -409,7 +421,7 @@ class Driver:
         (self.connection.reconnect_limit is None or
          self.connection.reconnect_limit <= 0 or
          self._attempts <= self.connection.reconnect_limit)):
-      if self._host > 0:
+      if self._host < self._num_hosts():
         delay = 0
       else:
         delay = self._delay
@@ -475,9 +487,7 @@ class Driver:
   def connect(self):
     try:
       # XXX: should make this non blocking
-      if self._host == 0:
-        self._attempts += 1
-      host, port = self._hosts[self._host]
+      host, port = self._next_host()
       if self._retrying and self._reconnect_log:
         log.warn("trying: %s:%s", host, port)
       self.engine = Engine(self.connection)
@@ -496,7 +506,6 @@ class Driver:
       self._delay = self.connection.reconnect_interval_min
       self._retrying = False
     except socket.error, e:
-      self._host = (self._host + 1) % len(self._hosts)
       self.close_engine(ConnectError(text=str(e)))
 
 DEFAULT_DISPOSITION = Disposition(None)
