@@ -236,7 +236,7 @@ void ConnectionImpl::incoming(framing::AMQFrame& frame)
         s = sessions[frame.getChannel()].lock();
     }
     if (!s) {
-        QPID_LOG(info, "Dropping frame received on invalid channel: " << frame);
+        QPID_LOG(info, *this << " dropping frame received on invalid channel: " << frame);
     } else {
         s->in(frame);
     }
@@ -252,7 +252,6 @@ void ConnectionImpl::open()
     const std::string& protocol = handler.protocol;
     const std::string& host = handler.host;
     int port = handler.port;
-    QPID_LOG(info, "Connecting to " << protocol << ":" << host << ":" << port);
 
     theIO().add();
     connector.reset(Connector::create(protocol, theIO().poller(), version, handler, this));
@@ -267,6 +266,7 @@ void ConnectionImpl::open()
         throw;
     }
     connector->init();
+    QPID_LOG(info, *this << " connected to " << protocol << ":" << host << ":" << port);
  
     // Enable heartbeat if requested
     uint16_t heartbeat = static_cast<ConnectionSettings&>(handler).heartbeat;
@@ -291,10 +291,10 @@ void ConnectionImpl::open()
     //enable security layer if one has been negotiated:
     std::auto_ptr<SecurityLayer> securityLayer = handler.getSecurityLayer();
     if (securityLayer.get()) {
-        QPID_LOG(debug, "Activating security layer");
+        QPID_LOG(debug, *this << " activating security layer");
         connector->activateSecurityLayer(securityLayer);
     } else {
-        QPID_LOG(debug, "No security layer in place");
+        QPID_LOG(debug, *this << " no security layer in place");
     }
 }
 
@@ -401,17 +401,20 @@ void ConnectionImpl::failedConnection() {
     bool isClosing = handler.isClosing();
     bool isOpen = handler.isOpen();
 
+    std::ostringstream msg;
+    msg << *this << " closed";
+
     // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
     // an appropriate close-code. connection-forced is not right.
-    handler.fail(CONN_CLOSED);//ensure connection is marked as failed before notifying sessions
+    handler.fail(msg.str());//ensure connection is marked as failed before notifying sessions
 
     // At this point if the object isn't open and isn't closing it must have failed to open
     // so we can't do the rest of the cleanup
     if (!isClosing && !isOpen) return;
 
     Mutex::ScopedLock l(lock);
-    closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CONN_CLOSED));
-    setException(new TransportFailure(CONN_CLOSED));
+    closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, msg.str()));
+    setException(new TransportFailure(msg.str()));
 }
 
 void ConnectionImpl::erase(uint16_t ch) {
@@ -434,5 +437,13 @@ boost::shared_ptr<SessionImpl>  ConnectionImpl::newSession(const std::string& na
     simpl->open(timeout);
     return simpl;
 }
+
+std::ostream& operator<<(std::ostream& o, const ConnectionImpl& c) {
+    if (c.connector)
+        return o << "Connection " << c.connector->getIdentifier();
+    else
+        return o << "Connection <not connected>";
+}
+
 
 }} // namespace qpid::client

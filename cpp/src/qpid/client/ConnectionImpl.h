@@ -31,6 +31,7 @@
 #include "qpid/sys/TimeoutHandler.h"
 
 #include <map>
+#include <iosfwd>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -95,8 +96,9 @@ class ConnectionImpl : public Bounds,
 
     std::vector<Url> getInitialBrokers();
     void registerFailureCallback ( boost::function<void ()> fn ) { failureCallback = fn; }
-
     framing::ProtocolVersion getVersion() { return version; }
+
+  friend std::ostream& operator<<(std::ostream&, const ConnectionImpl&);
 };
 
 }}
