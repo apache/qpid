@@ -772,7 +772,12 @@ QPID_AUTO_TEST_CASE(testExclusiveSubscriber)
 QPID_AUTO_TEST_CASE(testAuthenticatedUsername)
 {
     MessagingFixture fix;
-    BOOST_CHECK_EQUAL(fix.connection.getAuthenticatedUsername(), std::string("anonymous"));
+    Connection connection = fix.newConnection();
+    connection.setOption("sasl-mechanism", "PLAIN");
+    connection.setOption("username", "test-user");
+    connection.setOption("password", "ignored");
+    connection.open();
+    BOOST_CHECK_EQUAL(connection.getAuthenticatedUsername(), std::string("test-user"));
 }
 
 QPID_AUTO_TEST_CASE(testExceptionOnClosedConnection)
