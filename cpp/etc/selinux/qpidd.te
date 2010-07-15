@@ -1,0 +1,16 @@
+# selinux policy module needed to run a qpid cluster with selinux in enforcing mode.
+
+policy_module(qpidd, 1.1)
+require {
+        type initrc_t;
+        type ccs_t;
+	type aisexec_t;
+}
+#============= ccs_t ==============
+fs_rw_tmpfs_files(ccs_t)
+allow ccs_t initrc_t:sem rw_sem_perms;
+allow ccs_t initrc_t:shm rw_shm_perms;
+allow ccs_t self:capability ipc_owner;
+allow aisexec_t initrc_t:sem rw_sem_perms;
+allow aisexec_t initrc_t:shm rw_shm_perms;
+allow aisexec_t self:capability { ipc_owner dac_override };
