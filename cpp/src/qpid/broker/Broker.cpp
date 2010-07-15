@@ -290,7 +290,7 @@ Broker::Broker(const Broker::Options& conf) :
     } else if (conf.knownHosts != knownHostsNone) {
         knownBrokers.push_back(Url(conf.knownHosts));
     }
-    } catch (const std::exception& e) {
+    } catch (const std::exception& /*e*/) {
         finalize();
         throw;
     }
