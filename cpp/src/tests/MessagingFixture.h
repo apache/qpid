@@ -113,6 +113,14 @@ struct MessagingFixture : public BrokerFixture
         return connection;
     }
 
+    /** Open a connection to the broker. */
+    qpid::messaging::Connection newConnection()
+    {
+        qpid::messaging::Connection connection(
+            (boost::format("amqp:tcp:localhost:%1%") % (broker->getPort(qpid::broker::Broker::TCP_TRANSPORT))).str());
+        return connection;
+    }
+
     void ping(const qpid::messaging::Address& address)
     {
         messaging::Receiver r = session.createReceiver(address);
