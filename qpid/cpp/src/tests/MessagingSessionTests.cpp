@@ -766,7 +766,7 @@ QPID_AUTO_TEST_CASE(testExclusiveSubscriber)
         fix.session.createReceiver(address);
         fix.session.sync();
         BOOST_FAIL("Expected exception.");
-    } catch (const MessagingException& e) {}
+    } catch (const MessagingException& /*e*/) {}
 }
 
 QPID_AUTO_TEST_CASE(testAuthenticatedUsername)
