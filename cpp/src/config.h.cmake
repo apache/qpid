@@ -54,11 +54,8 @@
 
 #cmakedefine QPID_HAS_CLOCK_GETTIME
 
-#cmakedefine QPID_HAS_SASL
 #cmakedefine BROKER_SASL_NAME "${BROKER_SASL_NAME}"
-#ifdef QPID_HAS_SASL
-#  define HAVE_SASL 1
-#endif
+#cmakedefine HAVE_SASL ${HAVE_SASL}
 
 #cmakedefine HAVE_OPENAIS_CPG_H ${HAVE_OPENAIS_CPG_H}
 #cmakedefine HAVE_COROSYNC_CPG_H ${HAVE_COROSYNC_CPG_H}
