@@ -426,6 +426,15 @@ public class MBeanUtility
             }
             newValue = new Integer(Integer.parseInt(value));
         }
+        else if (attribute.getDataType().equals(Boolean.class.getName()))
+        {
+            if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false"))
+            {
+                throw new ManagementConsoleException("Entered value was not true or false");
+            }
+
+            newValue = new Boolean(Boolean.valueOf(value)); 
+        }
         
         mbsc.setAttribute(jmxbean.getObjectName(), new Attribute(attribute.getName(), newValue));           
         // Update the value in the registry, to avoid refreshing from mbsc

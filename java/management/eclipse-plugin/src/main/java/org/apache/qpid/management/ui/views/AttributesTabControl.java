@@ -502,7 +502,10 @@ public class AttributesTabControl extends TabControl
                 if (attribute.isWritable())
                 {
                     value = _toolkit.createText(parent, "", SWT.BEGINNING | SWT.BORDER);
-                    value.addVerifyListener(new NumberVerifyListener());
+                    if(attribute.isNumber())
+                    {
+                        value.addVerifyListener(new NumberVerifyListener());
+                    }
                     
                     // set data to access in the listener
                     parent.setData(attribute);
