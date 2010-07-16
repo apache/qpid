@@ -41,8 +41,8 @@ public interface ServerInformation
      *  indicates that version. If it is not present then a null value will be returned upon inspection and 
      *  Qpid JMX API 1.1 can be assumed.
      */
-    int QPID_JMX_API_MAJOR_VERSION = 1;
-    int QPID_JMX_API_MINOR_VERSION = 8;
+    int QPID_JMX_API_MAJOR_VERSION = 2;
+    int QPID_JMX_API_MINOR_VERSION = 0;
     
     
     /**

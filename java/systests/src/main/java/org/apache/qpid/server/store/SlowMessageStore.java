@@ -309,5 +309,12 @@ public class SlowMessageStore implements MessageStore
         }
     }
 
+    public void updateQueue(AMQQueue queue) throws AMQException
+    {
+        doPreDelay("updateQueue");
+        _realStore.updateQueue(queue);
+        doPostDelay("updateQueue");
+    }
+
 
 }

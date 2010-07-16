@@ -53,6 +53,8 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -327,6 +329,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public boolean isExclusive()
     {
         return _exclusive;
+    }
+    
+    public void setExclusive(boolean exclusive) throws AMQException
+    {
+        _exclusive = exclusive;
+
+        if(isDurable())
+        {
+            getVirtualHost().getDurableConfigurationStore().updateQueue(this);
+        }
     }
 
     public Exchange getAlternateExchange()
