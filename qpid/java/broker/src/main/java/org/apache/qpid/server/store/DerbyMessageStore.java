@@ -520,6 +520,22 @@ public class DerbyMessageStore implements MessageStore
     {
         CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
         _closed.getAndSet(true);
+
+        try
+        {
+            DriverManager.getConnection(_connectionURL + ";shutdown=true");
+        }
+        catch (SQLException e)
+        { 
+            if (e.getSQLState().equalsIgnoreCase("XJ015")) 
+            {     
+                //XJ015 is expected and represents a clean shutdown, do nothing.
+            }
+            else
+            {
+                _logger.error("Exception whilst shutting down the store: " + e);
+            }
+        }
     }
 
     public StoredMessage addMessage(StorableMessageMetaData metaData)
