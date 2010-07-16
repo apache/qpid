@@ -51,6 +51,11 @@ public class VirtualHostRegistry implements Closeable
         }
         _registry.put(host.getName(),host);
     }
+    
+    public synchronized void unregisterVirtualHost(VirtualHost host)
+    {
+        _registry.remove(host.getName());
+    }
 
     public VirtualHost getVirtualHost(String name)
     {
