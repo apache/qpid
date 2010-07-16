@@ -765,6 +765,10 @@ public class VirtualHostImpl implements VirtualHost
                 arguments = args;
             }
         }
+
+        public void updateQueue(AMQQueue queue) throws AMQException
+        {
+        }
     }
 
     @Override

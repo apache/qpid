@@ -148,6 +148,11 @@ public class MemoryMessageStore implements MessageStore
     {
         // Not required to do anything
     }
+    
+    public void updateQueue(final AMQQueue queue) throws AMQException
+    {
+        // Not required to do anything
+    }
 
     public void configureTransactionLog(String name,
                                         TransactionLogRecoveryHandler recoveryHandler,

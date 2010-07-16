@@ -112,7 +112,7 @@ public interface ManagedExchange
      * @param routingKey the routing key
      * @throws IOException
      * @throws JMException
-     * @since 1.8
+     * @since Qpid JMX API 1.8
      */
     @MBeanOperation(name="removeBinding",
                     description="Removes an exchange binding from the Queue",

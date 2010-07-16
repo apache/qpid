@@ -274,6 +274,23 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return _queue.isOverfull();
     }
 
+    public boolean isExclusive()
+    {
+        return _queue.isExclusive();
+    }
+
+    public void setExclusive(boolean exclusive) throws JMException
+    {
+        try
+        {
+            _queue.setExclusive(exclusive);
+        }
+        catch (AMQException e)
+        {
+            throw new JMException(e.toString());
+        }
+    }
+
     /**
      * Checks if there is any notification to be send to the listeners
      */

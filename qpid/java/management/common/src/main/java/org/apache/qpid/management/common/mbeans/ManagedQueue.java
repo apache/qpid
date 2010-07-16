@@ -70,6 +70,7 @@ public interface ManagedQueue
     String ATTR_CAPACITY = "Capacity";
     String ATTR_FLOW_OVERFULL = "FlowOverfull";
     String ATTR_FLOW_RESUME_CAPACITY = "FlowResumeCapacity";
+    String ATTR_EXCLUSIVE = "Exclusive";
     
     //All attribute names constant
     String[] QUEUE_ATTRIBUTES = new String[]{
@@ -88,7 +89,8 @@ public interface ManagedQueue
             ATTR_RCVD_MSG_COUNT,
             ATTR_CAPACITY,
             ATTR_FLOW_OVERFULL,
-            ATTR_FLOW_RESUME_CAPACITY
+            ATTR_FLOW_RESUME_CAPACITY,
+            ATTR_EXCLUSIVE
     };
     
     /**
@@ -285,6 +287,26 @@ public interface ManagedQueue
      */
     @MBeanAttribute(name="FlowOverfull", description="true if the queue is considered overfull by the Flow Control system")
     boolean isFlowOverfull() throws IOException;
+    
+    /**
+     * Returns whether the queue is exclusive or not.
+     * 
+     * @since Qpid JMX API 2.0
+     * @return whether the queue is exclusive.
+     * @throws IOException
+     */
+    boolean isExclusive() throws IOException;
+
+    /**
+     * Sets whether the queue is exclusive or not.
+     * 
+     * @since Qpid JMX API 2.0
+     * @param exclusive the capacity in bytes
+     * @throws IOException
+     * @throws JMException 
+     */
+    @MBeanAttribute(name="Exclusive", description="Whether the queue is Exclusive or not")
+    void setExclusive(boolean exclusive) throws IOException, JMException;
 
     //********** Operations *****************//
 

@@ -599,4 +599,9 @@ public class MockAMQQueue implements AMQQueue
     {
         return 0;
     }
+
+    public void setExclusive(boolean exclusive)
+    {
+
+    }
 }

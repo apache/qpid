@@ -197,7 +197,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         assertTrue(_queueMBean.getConsumerCount() == 3);
     }
 
-    public void testGeneralProperties()
+    public void testGeneralProperties() throws Exception
     {
         long maxQueueDepth = 1000; // in bytes
         _queueMBean.setMaximumMessageCount(50000l);
@@ -211,7 +211,14 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         assertEquals("Queue Name does not match", new AMQShortString(getName()), _queueMBean.getName());
         assertFalse("AutoDelete should not be set.",_queueMBean.isAutoDelete());
         assertFalse("Queue should not be durable.",_queueMBean.isDurable());
-        //TODO add isExclusive when supported
+        
+        //set+get exclusivity using the mbean, and also verify it is actually updated in the queue
+        _queueMBean.setExclusive(true);
+        assertTrue("Exclusive property should be true.",_queueMBean.isExclusive());
+        assertTrue("Exclusive property should be true.",_queue.isExclusive());
+        _queueMBean.setExclusive(false);
+        assertFalse("Exclusive property should be false.",_queueMBean.isExclusive());
+        assertFalse("Exclusive property should be false.",_queue.isExclusive());
     }
 
     public void testExceptions() throws Exception

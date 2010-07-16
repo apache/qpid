@@ -118,4 +118,13 @@ public interface DurableConfigurationStore
      * @throws org.apache.qpid.AMQException If the operation fails for any reason.
      */
     void removeQueue(AMQQueue queue) throws AMQException;
+    
+    /**
+     * Updates the specified queue in the persistent store, IF it is already present. If the queue
+     * is not present in the store, it will not be added.
+     *
+     * @param queue The queue to update the entry for.
+     * @throws org.apache.qpid.AMQException  If the operation fails for any reason.
+     */
+    void updateQueue(AMQQueue queue) throws AMQException;
 }

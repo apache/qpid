@@ -46,8 +46,8 @@ public abstract class ApplicationRegistry
     public static final long timeout = Long.parseLong(System.getProperty("timeout", "15000"));
 
     //max supported broker management interface supported by this release of the management console
-    public static final int SUPPORTED_QPID_JMX_API_MAJOR_VERSION = 1;
-    public static final int SUPPORTED_QPID_JMX_API_MINOR_VERSION = 8;
+    public static final int SUPPORTED_QPID_JMX_API_MAJOR_VERSION = 2;
+    public static final int SUPPORTED_QPID_JMX_API_MINOR_VERSION = 0;
     
     public static final String DATA_DIR = System.getProperty("user.home") + File.separator + ".qpidmc";
     
