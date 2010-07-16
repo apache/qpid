@@ -33,6 +33,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 import javax.naming.Context;
 
 import org.apache.qpid.client.AMQAnyDestination;
@@ -456,6 +457,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         
     }
     
+    /**
+    * Test goal: Verifies that and address based destination can be used successfully 
+    *            as a reply to.
+    */
     public void testAddressBasedReplyTo() throws Exception
     {
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
@@ -483,5 +488,122 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         
         Message replyToMsg = replyToCons.receive(1000);
         assertNotNull("The reply to consumer should have got the message",replyToMsg);        
+    }
+    
+    /**
+     * Test goal: Verifies that session.createQueue method
+     *            works as expected both with the new and old addressing scheme.
+     */
+    public void testSessionCreateQueue() throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        
+        // Using the BURL method
+        Destination queue = ssn.createQueue("my-queue");
+        MessageProducer prod = ssn.createProducer(queue); 
+        MessageConsumer cons = ssn.createConsumer(queue);
+        assertTrue("my-queue was not created as expected",(
+                (AMQSession_0_10)ssn).isQueueBound("amq.direct", 
+                    "my-queue","my-queue", null));
+        
+        prod.send(ssn.createTextMessage("test"));
+        assertNotNull("consumer should receive a message",cons.receive(1000));
+        cons.close();
+        
+        // Using the ADDR method
+        queue = ssn.createQueue("ADDR:my-queue2");
+        prod = ssn.createProducer(queue); 
+        cons = ssn.createConsumer(queue);
+        assertTrue("my-queue2 was not created as expected",(
+                (AMQSession_0_10)ssn).isQueueBound("", 
+                    "my-queue2","my-queue2", null));
+        
+        prod.send(ssn.createTextMessage("test"));
+        assertNotNull("consumer should receive a message",cons.receive(1000));
+        cons.close();
+        
+        // Using the ADDR method to create a more complicated queue
+        String addr = "ADDR:amq.direct/x512; {create: receiver, " +
+        "link : {name : 'MY.RESP.QUEUE', " + 
+        "x-declare : { auto-delete: true, exclusive: true, " +
+                     "'qpid.max_size': 1000, 'qpid.policy_type': ring } } }";
+        queue = ssn.createQueue(addr);
+        
+        prod = ssn.createProducer(queue); 
+        cons = ssn.createConsumer(queue);
+        assertTrue("MY.RESP.QUEUE was not created as expected",(
+                (AMQSession_0_10)ssn).isQueueBound("amq.direct", 
+                    "MY.RESP.QUEUE","x512", null));
+        cons.close();
+    }
+    
+    /**
+     * Test goal: Verifies that session.creatTopic method
+     *            works as expected both with the new and old addressing scheme.
+     */
+    public void testSessionCreateTopic() throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        
+        // Using the BURL method
+        Topic topic = ssn.createTopic("ACME");
+        MessageProducer prod = ssn.createProducer(topic); 
+        MessageConsumer cons = ssn.createConsumer(topic);
+        
+        prod.send(ssn.createTextMessage("test"));
+        assertNotNull("consumer should receive a message",cons.receive(1000));
+        cons.close();
+     
+        // Using the ADDR method
+        topic = ssn.createTopic("ADDR:ACME");
+        prod = ssn.createProducer(topic); 
+        cons = ssn.createConsumer(topic);
+        
+        prod.send(ssn.createTextMessage("test"));
+        assertNotNull("consumer should receive a message",cons.receive(1000));
+        cons.close();
+        
+        String addr = "ADDR:vehicles/bus; " + 
+        "{ " + 
+          "create: always, " +                        
+          "node: " + 
+          "{" +
+               "type: topic, " +
+               "x-declare: " +
+               "{ " + 
+                   "type:direct, " + 
+                   "auto-delete: true, " +
+                   "'qpid.msg_sequence': 1, " +
+                   "'qpid.ive': 1" + 
+               "}" +
+          "}, " +
+          "link: {name : my-topic, " +
+              "x-bindings: [{exchange : 'vehicles', key : car}, " +
+                           "{exchange : 'vehicles', key : van}]" + 
+          "}" + 
+        "}";
+        
+        // Using the ADDR method to create a more complicated topic
+        topic = ssn.createTopic(addr);
+        prod = ssn.createProducer(topic); 
+        cons = ssn.createConsumer(topic);
+        
+        assertTrue("The queue was not bound to vehicle exchange using bus as the binding key",(
+                (AMQSession_0_10)ssn).isQueueBound("vehicles", 
+                    "my-topic","bus", null));
+        
+        assertTrue("The queue was not bound to vehicle exchange using car as the binding key",(
+                (AMQSession_0_10)ssn).isQueueBound("vehicles", 
+                    "my-topic","car", null));
+        
+        assertTrue("The queue was not bound to vehicle exchange using van as the binding key",(
+                (AMQSession_0_10)ssn).isQueueBound("vehicles", 
+                    "my-topic","van", null));
+        
+        Message msg = ssn.createTextMessage("test");
+        msg.setStringProperty("qpid.subject", "van");
+        prod.send(msg);
+        assertNotNull("consumer should receive a message",cons.receive(1000));
+        cons.close();
     }
 }
