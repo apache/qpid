@@ -22,6 +22,10 @@ package org.apache.qpid.client;
 
 import java.net.URISyntaxException;
 
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.Topic;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.url.BindingURL;
@@ -35,7 +39,7 @@ import org.apache.qpid.url.BindingURL;
  * The abstract class AMQDestination has most of the functionality
  * to support any destination defined in AMQP 0-10 spec.
  */
-public class AMQAnyDestination extends AMQDestination
+public class AMQAnyDestination extends AMQDestination implements Queue, Topic
 {    
     public AMQAnyDestination(BindingURL binding)
     {
@@ -66,4 +70,8 @@ public class AMQAnyDestination extends AMQDestination
         return getAMQQueueName() == null;
     }
 
+    public String getTopicName() throws JMSException
+    {
+        return super.getRoutingKey().toString();
+    }
 }
