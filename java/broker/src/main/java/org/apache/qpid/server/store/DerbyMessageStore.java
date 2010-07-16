@@ -618,17 +618,17 @@ public class DerbyMessageStore implements MessageStore
 
                     PreparedStatement stmt = conn.prepareStatement(FIND_EXCHANGE);
                     stmt.setString(1, exchange.getNameShortString().toString());
-                    stmt.execute();
-                    stmt.close();
 
                     ResultSet rs = stmt.executeQuery();
 
                     // If we don't have any data in the result set then we can add this exchange
                     if (!rs.next())
                     {
+                        stmt.close();
+                        
                         stmt = conn.prepareStatement(INSERT_INTO_EXCHANGE);
                         stmt.setString(1, exchange.getName().toString());
-                        stmt.setString(2, exchange.getType().toString());
+                        stmt.setString(2, exchange.getTypeShortString().asString());
                         stmt.setShort(3, exchange.isAutoDelete() ? (short) 1 : (short) 0);
                         stmt.execute();
                         stmt.close();
