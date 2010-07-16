@@ -40,6 +40,7 @@ import subprocess
 import unittest
 import uuid
 import re
+from time import sleep
 
 import logging
 
@@ -103,6 +104,9 @@ CPP = object()
 PYTHON = object()
 JAVA = object()
 
+shortWait = 0.5
+longWait = 1
+
 class TestDrainSpout(unittest.TestCase):
 
     # setUp / tearDown
@@ -129,11 +133,16 @@ class TestDrainSpout(unittest.TestCase):
         commandS = python_tools_path + "qpid-config" + ' ' + args
         args = shlex.split(commandS)
         logging.debug("qpid_config(): " + commandS)
-        subprocess.Popen(args).wait()
+        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out, err  = popen.communicate()
+        logging.debug("qpid-config() - out=" + str(out) + ", err=" + str(err))
 
     # Send / receive methods in various languages
 
-    def send(self, lang=CPP, content="", destination="amq.topic", create=1):
+    def send(self, lang=CPP, content="", destination="amq.topic", create=1, wait=0):
+        if wait:
+            sleep(wait)
+
         createS = ";{create:always}" if create else ""
         addressS = '"' + destination + createS + '"'
         if lang==CPP:
@@ -147,7 +156,10 @@ class TestDrainSpout(unittest.TestCase):
             raise "Ain't no such language ...."
         logging.debug("send(): " + commandS)
         args = shlex.split(commandS)
-        subprocess.Popen(args).wait()
+        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out, err  = popen.communicate()
+        logging.debug("send() - out=" + str(out) + ", err=" + str(err))
+
 
     def receive(self, lang=CPP, destination="amq.topic", delete=1):
         deleteS = ";{delete:always}" if delete else ""
@@ -238,32 +250,32 @@ class TestDrainSpout(unittest.TestCase):
 
     def test_amqdirect_cpp2cpp(self):
         popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
         out = self.listen(popen)
         self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_python2cpp(self):
         popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
         out = self.listen(popen)
         self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_cpp2python(self):
         popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
         out = self.listen(popen)
         self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_python2python(self):
         popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
         out = self.listen(popen)
         self.assertTrue(out.find(self.tcaseName()) >= 0)
 
     def test_amqdirect_cpp2cpp_tworeceivers(self):
         popen1 = self.subscribe(lang=CPP, destination="amq.direct/subject")
         popen2 = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
         out1 = self.listen(popen1)
         out2 = self.listen(popen2)
         self.assertTrue(out1.find(self.tcaseName()) >= 0)
@@ -309,7 +321,7 @@ class TestDrainSpout(unittest.TestCase):
         sports = self.subscribe(lang=CPP, destination="amq.topic/*.sports")
         usa = self.subscribe(lang=PYTHON, destination="amq.topic/usa.*")
         europe = self.subscribe(lang=PYTHON, destination="amq.topic/europe.*")
-        self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.news", create=0)
+        self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.news", create=0, wait=longWait)
         self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.faux.news", create=0)
         self.send(lang=CPP, content="europe.news", destination="amq.topic/europe.news", create=0)
         self.send(lang=CPP, content="usa.weather", destination="amq.topic/usa.weather", create=0)
