@@ -151,6 +151,11 @@ public abstract class AMQDestination implements Destination, Referenceable
         
     }
     
+    public static DestSyntax getDefaultDestSyntax()
+    {
+        return defaultDestSyntax;
+    }
+
     protected AMQDestination(Address address) throws Exception
     {
         this._address = address;
@@ -159,21 +164,41 @@ public abstract class AMQDestination implements Destination, Referenceable
         _logger.debug("Based on " + address + " the selected destination syntax is " + _destSyntax);
     }
     
-    protected AMQDestination(String str) throws URISyntaxException
+    public  static DestSyntax getDestType(String str)
     {
         if (str.startsWith("BURL:") || 
-           (!str.startsWith("ADDR:") && defaultDestSyntax == DestSyntax.BURL))
+                (!str.startsWith("ADDR:") && defaultDestSyntax == DestSyntax.BURL))
+        {
+            return DestSyntax.BURL;
+        }
+        else
+        {
+            return DestSyntax.ADDR;
+        }
+    }
+    
+    public static String stripSyntaxPrefix(String str)
+    {
+        if (str.startsWith("BURL:") || str.startsWith("ADDR:"))
+        {
+            return str.substring(5,str.length());
+        }
+        else
+        {
+            return str;
+        }
+    }
+    
+    protected AMQDestination(String str) throws URISyntaxException
+    {
+        _destSyntax = getDestType(str);
+        str = stripSyntaxPrefix(str);
+        if (_destSyntax == DestSyntax.BURL)
         {    
-            if (str.startsWith("BURL:"))
-            {
-                str = str.substring(5,str.length());
-            }
-            _destSyntax = DestSyntax.BURL;
             getInfoFromBindingURL(new AMQBindingURL(str));            
         }
         else
         {
-            _destSyntax = DestSyntax.ADDR;
             this._address = createAddressFromString(str);
             try
             {
@@ -654,13 +679,10 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     public static Destination createDestination(String str) throws Exception
     {
-         if (str.startsWith("BURL:") || 
-            (!str.startsWith("ADDR:") && defaultDestSyntax == DestSyntax.BURL))
+         DestSyntax syntax = getDestType(str);
+         str = stripSyntaxPrefix(str);
+         if (syntax == DestSyntax.BURL)
          {          
-             if (str.startsWith("BURL:"))
-             {
-                 str = str.substring(5,str.length());
-             }
              return createDestination(new AMQBindingURL(str));         
          }
          else
@@ -738,6 +760,10 @@ public abstract class AMQDestination implements Destination, Referenceable
     public AddressOption getCreate() {
         return _create;
     }
+    
+    public void setCreate(AddressOption option) {
+        _create = option;
+    }
 
     public AddressOption getAssert() {
         return _assert;
@@ -794,11 +820,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     
     private static Address createAddressFromString(String str)
     {
-        if (str.startsWith("ADDR:"))
-        {
-            str = str.substring(5,str.length());
-        }
-       return Address.parse(str);
+        return Address.parse(str);
     }
     
     private void getInfoFromAddress() throws Exception

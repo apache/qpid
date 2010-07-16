@@ -1081,25 +1081,37 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public Queue createQueue(String queueName) throws JMSException
     {
         checkNotClosed();
-        
-        if (queueName.indexOf('/') == -1)
+        try
         {
-            return new AMQQueue(getDefaultQueueExchangeName(), new AMQShortString(queueName));
+            if (queueName.indexOf('/') == -1 && queueName.indexOf(';') == -1)
+            {
+                DestSyntax syntax = AMQDestination.getDestType(queueName);
+                if (syntax == AMQDestination.DestSyntax.BURL)
+                {
+                    // For testing we may want to use the prefix
+                    return new AMQQueue(getDefaultQueueExchangeName(), 
+                                        new AMQShortString(AMQDestination.stripSyntaxPrefix(queueName)));
+                }
+                else
+                {
+                    AMQQueue queue = new AMQQueue(queueName);
+                    queue.setCreate(AddressOption.ALWAYS);
+                    return queue;
+                    
+                }
+            }
+            else
+            {
+                return new AMQQueue(queueName);            
+            }
         }
-        else
+        catch (URISyntaxException urlse)
         {
-            try
-            {
-                return new AMQQueue(queueName);
-            }
-            catch (URISyntaxException urlse)
-            {
-                _logger.error("", urlse);
-                JMSException jmse = new JMSException(urlse.getReason());
-                jmse.setLinkedException(urlse);
-                jmse.initCause(urlse);
-                throw jmse;
-            }
+            _logger.error("", urlse);
+            JMSException jmse = new JMSException(urlse.getReason());
+            jmse.setLinkedException(urlse);
+            jmse.initCause(urlse);
+            throw jmse;
         }
 
     }
@@ -1352,24 +1364,35 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public Topic createTopic(String topicName) throws JMSException
     {
         checkNotClosed();
-
-        if (topicName.indexOf('/') == -1)
+        try
         {
-            return new AMQTopic(getDefaultTopicExchangeName(), new AMQShortString(topicName));
+            if (topicName.indexOf('/') == -1 && topicName.indexOf(';') == -1)
+            {
+                DestSyntax syntax = AMQDestination.getDestType(topicName);
+                // for testing we may want to use the prefix to indicate our choice.
+                topicName = AMQDestination.stripSyntaxPrefix(topicName);
+                if (syntax == AMQDestination.DestSyntax.BURL)
+                {
+                    return new AMQTopic(getDefaultTopicExchangeName(), new AMQShortString(topicName));
+                }
+                else
+                {
+                    return new AMQTopic("ADDR:" + getDefaultTopicExchangeName() + "/" + topicName);
+                }
+            }
+            else
+            {
+                return new AMQTopic(topicName);            
+            }
+        
         }
-        else
+        catch (URISyntaxException urlse)
         {
-            try
-            {
-                return new AMQTopic(topicName);
-            }
-            catch (URISyntaxException urlse)
-            {
-                JMSException jmse = new JMSException(urlse.getReason());
-                jmse.setLinkedException(urlse);
-                jmse.initCause(urlse);
-                throw jmse;
-            }
+            _logger.error("", urlse);
+            JMSException jmse = new JMSException(urlse.getReason());
+            jmse.setLinkedException(urlse);
+            jmse.initCause(urlse);
+            throw jmse;
         }
     }
 
