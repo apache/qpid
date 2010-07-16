@@ -217,4 +217,9 @@ public class SkeletonMessageStore implements MessageStore
         };
     }
 
+    public void updateQueue(AMQQueue queue) throws AMQException
+    {
+
+    }
+
 }

@@ -94,6 +94,7 @@ public class DerbyMessageStore implements MessageStore
     private static final String CREATE_BINDINGS_TABLE = "CREATE TABLE "+BINDINGS_TABLE_NAME+" ( exchange_name varchar(255) not null, queue_name varchar(255) not null, binding_key varchar(255) not null, arguments blob , PRIMARY KEY ( exchange_name, queue_name, binding_key ) )";
     private static final String SELECT_FROM_QUEUE = "SELECT name, owner, exclusive, arguments FROM " + QUEUE_TABLE_NAME;
     private static final String FIND_QUEUE = "SELECT name, owner FROM " + QUEUE_TABLE_NAME + " WHERE name = ?";
+    private static final String UPDATE_QUEUE_EXCLUSIVITY = "UPDATE " + QUEUE_TABLE_NAME + " SET exclusive = ? WHERE name = ?";
     private static final String SELECT_FROM_EXCHANGE = "SELECT name, type, autodelete FROM " + EXCHANGE_TABLE_NAME;
     private static final String SELECT_FROM_BINDINGS =
             "SELECT exchange_name, queue_name, binding_key, arguments FROM " + BINDINGS_TABLE_NAME + " ORDER BY exchange_name";
@@ -844,6 +845,50 @@ public class DerbyMessageStore implements MessageStore
                 throw new AMQException("Error writing AMQQueue with name " + queue.getNameShortString() + " to database: " + e, e);
             }
         }
+    }
+    
+    /**
+     * Updates the specified queue in the persistent store, IF it is already present. If the queue
+     * is not present in the store, it will not be added.
+     *
+     * NOTE: Currently only updates the exclusivity.
+     *
+     * @param queue The queue to update the entry for.
+     * @throws org.apache.qpid.AMQException  If the operation fails for any reason.
+     */
+    public void updateQueue(final AMQQueue queue) throws AMQException
+    {
+        if (_state != State.RECOVERING)
+        {
+            try
+            {
+                Connection conn = newAutoCommitConnection();
+
+                PreparedStatement stmt = conn.prepareStatement(FIND_QUEUE);
+                stmt.setString(1, queue.getNameShortString().toString());
+
+                ResultSet rs = stmt.executeQuery();
+
+                if (rs.next())
+                {
+                    PreparedStatement stmt2 = conn.prepareStatement(UPDATE_QUEUE_EXCLUSIVITY);
+                    
+                    stmt2.setBoolean(1,queue.isExclusive());
+                    stmt2.setString(2, queue.getNameShortString().toString());
+
+                    stmt2.execute();
+                    stmt2.close();
+                }
+                
+                stmt.close();
+                conn.close();
+            }
+            catch (SQLException e)
+            {
+                throw new AMQException("Error updating AMQQueue with name " + queue.getNameShortString() + " to database: " + e, e);
+            }
+        }
+        
     }
 
     /**

@@ -38,6 +38,7 @@ import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.UserManagement;
 
 /**
@@ -329,6 +330,12 @@ public class JMXTestUtils
     {
 		ObjectName objectName = getExchangeObjectName("test", exchangeName);
         return MBeanServerInvocationHandler.newProxyInstance(_mbsc, objectName, ManagedExchange.class, false);
+    }
+    
+    public ManagedQueue getManagedQueue(String queueName)
+    {
+        ObjectName objectName = getQueueObjectName("test", queueName);
+        return getManagedObject(ManagedQueue.class, objectName);
     }
 
 	public LoggingManagement getLoggingManagement() throws MalformedObjectNameException

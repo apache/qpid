@@ -280,4 +280,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     ConfigurationPlugin getConfiguration();
 
     ManagedObject getManagedObject();
+
+    void setExclusive(boolean exclusive) throws AMQException;
 }
