@@ -1219,15 +1219,15 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }        
     }
     
-    @SuppressWarnings("deprecation")
     private void verifySubject(AMQDestination dest) throws AMQException
     {
         if (dest.getSubject() == null || dest.getSubject().trim().equals(""))
         {
-            if (dest.getExchangeClass() == ExchangeDefaults.TOPIC_EXCHANGE_CLASS)
+            
+            if ("topic".equals(dest.getExchangeClass().toString()))
             {
-                dest.setRoutingKey(ExchangeDefaults.WILDCARD_ANY);
-                dest.setSubject(ExchangeDefaults.WILDCARD_ANY.toString());
+                dest.setRoutingKey(new AMQShortString("#"));
+                dest.setSubject(dest.getRoutingKey().toString());
             }
             else
             {
