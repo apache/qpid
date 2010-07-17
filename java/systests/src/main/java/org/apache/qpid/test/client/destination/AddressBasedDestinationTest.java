@@ -606,4 +606,33 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         assertNotNull("consumer should receive a message",cons.receive(1000));
         cons.close();
     }
+    
+    /**
+     * The default for amq.topic is "#" and for the rest it's ""
+     */
+    public void testDefaultSubjects() throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        
+        MessageConsumer queueCons = ssn.createConsumer(new AMQAnyDestination("ADDR:amq.direct"));
+        MessageConsumer topicCons = ssn.createConsumer(new AMQAnyDestination("ADDR:amq.topic"));
+        
+        MessageProducer queueProducer = ssn.createProducer(new AMQAnyDestination("ADDR:amq.direct"));
+        MessageProducer topicProducer1 = ssn.createProducer(new AMQAnyDestination("ADDR:amq.topic/usa.weather"));
+        MessageProducer topicProducer2 = ssn.createProducer(new AMQAnyDestination("ADDR:amq.topic/sales"));
+        
+        queueProducer.send(ssn.createBytesMessage());
+        assertNotNull("The consumer subscribed to amq.direct " +
+        		"with empty binding key should have received the message ",queueCons.receive(1000));
+        
+        topicProducer1.send(ssn.createTextMessage("25c"));
+        assertEquals("The consumer subscribed to amq.topic " +
+                "with '#' binding key should have received the message ",
+                ((TextMessage)topicCons.receive(1000)).getText(),"25c");
+        
+        topicProducer2.send(ssn.createTextMessage("1000"));
+        assertEquals("The consumer subscribed to amq.topic " +
+                "with '#' binding key should have received the message ",
+                ((TextMessage)topicCons.receive(1000)).getText(),"1000");
+    }
 }
