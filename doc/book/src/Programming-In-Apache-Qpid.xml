@@ -3702,6 +3702,1752 @@ using (TransactionScope ts = new TransactionScope())
     </section>
   </chapter>
 
+  <chapter>
+    <title>The .NET Binding for the C++ Messaging Client</title>
+    <para>
+      The C++ Messaging Client unmanaged code is exposed to .NET
+      code through an interoperability DLL. This DLL wrapper 
+      is a thin layer that serves primarily by translating between
+      the managed .NET programs and the unmanaged C++ libraries.
+    </para>
+    <para>
+      This chapter describes the mapping provided by the .NET binding classes.
+    </para>
+    <section>
+      <title>.NET Binding Class: Address</title>
+      <table id="table-Dotnet-Binding-Address">
+        <title>.NET Binding Class: Address</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Address</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class Address</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class Address</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Address();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Address();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Address(const std::string&amp; address);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Address(string address);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Address(const std::string&amp; name, const std::string&amp; subject, const qpid::types::Variant::Map&amp; options, const std::string&amp; type = "");</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Address(string name, string subject, Dictionary&lt;string, object&gt; options);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Address(string name, string subject, Dictionary&lt;string, object&gt; options, string type);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Address(const Address&amp; address);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Address(Address address);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>~Address();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>~Address();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>!Address();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy assignment operator</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Address&amp; operator=(const Address&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Address op_Assign(Address rhs);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Name</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getName() const;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setName(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string Name { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Subject</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getSubject() const;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setSubject(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string Subject { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Options</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const qpid::types::Variant::Map&amp; getOptions() const;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>qpid::types::Variant::Map&amp; getOptions();</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setOptions(const qpid::types::Variant::Map&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Dictionary&lt;string, object&gt; Options { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Type</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>std::string getType() const;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setType(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string Type { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Miscellaneous</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>std::string str() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string ToStr();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Miscellaneous</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>operator bool() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Miscellaneous</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool operator !() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>n/a</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>.NET Binding Class: Connection</title>
+      <table id="table-Dotnet-Binding-Connection">
+        <title>.NET Binding Class: Connection</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Connection</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class Connection : public qpid::messaging::Handle&lt;ConnectionImpl&gt;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class Connection</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Connection(ConnectionImpl* impl);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Connection();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>TODO:</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Connection(const std::string&amp; url, const qpid::types::Variant::Map&amp; options = qpid::types::Variant::Map());</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Connection(string url);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Connection(string url, Dictionary&lt;string, object&gt; options);</entry>
+            </row>
+            <row>
+             <entry>  </entry>
+             <entry>Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Connection(const std::string&amp; url, const std::string&amp; options);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Connection(string url, string options);  </entry>
+            </row>
+            <row>
+             <entry>  </entry>
+             <entry>Copy constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Connection(const Connection&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Connection(Connection connection);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>~Connection();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>~Connection();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>!Connection();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy assignment operator</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Connection&amp; operator=(const Connection&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Connection op_Assign(Connection rhs);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: SetOption</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setOption(const std::string&amp; name, const qpid::types::Variant&amp; value);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void SetOption(string name, object value);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: open</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void open();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Open();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: isOpen</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool isOpen();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool IsOpen { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: close</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void close();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Close();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: createTransactionalSession</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Session createTransactionalSession(const std::string&amp; name = std::string());</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session CreateTransactionalSession();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session CreateTransactionalSession(string name);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: createSession</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Session createSession(const std::string&amp; name = std::string());</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session CreateSession();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session CreateSession(string name);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: getSession</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Session getSession(const std::string&amp; name) const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session GetSession(string name);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: AuthenticatedUsername</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>std::string getAuthenticatedUsername();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string GetAuthenticatedUsername();</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>.NET Binding Class: Duration</title>
+      <table id="table-Dotnet-Binding-Duration">
+        <title>.NET Binding Class: Duration</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Duration</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class Duration</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class Duration</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>explicit Duration(uint64_t milliseconds);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Duration(ulong mS);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Duration(Duration rhs);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>default</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>default</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>default</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Milliseconds</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint64_t getMilliseconds() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ulong Milliseconds { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Operator: *</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Duration operator*(const Duration&amp; duration, uint64_t multiplier);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration operator *(Duration dur, ulong multiplier);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration Multiply(Duration dur, ulong multiplier);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Duration operator*(uint64_t multiplier, const Duration&amp; duration);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration operator *(ulong multiplier, Duration dur);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration Multiply(ulong multiplier, Duration dur);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constants</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>static const Duration FOREVER;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>static const Duration IMMEDIATE;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>static const Duration SECOND;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>static const Duration MINUTE;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public sealed class DurationConstants</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration FORVER;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration IMMEDIATE;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration MINUTE;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public static Duration SECOND;</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>.NET Binding Class: Message</title>
+      <table id="table-Dotnet-Binding-Message">
+        <title>.NET Binding Class: Message</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Message</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class Message</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class Message</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Message(const std::string&amp; bytes = std::string());</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>Message();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>Message(System::String ^ theStr);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>Message(System::Object ^ theValue);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>Message(array&lt;System::Byte&gt; ^ bytes);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Message(const char*, size_t);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Message(byte[] bytes, int offset, int size);</entry>
+            </row>
+            <row>
+             <entry>	</entry>
+             <entry>Copy constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Message(const Message&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Message(Message message);</entry>
+            </row>
+            <row>
+             <entry>	</entry>
+             <entry>Copy assignment operator</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Message&amp; operator=(const Message&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Message op_Assign(Message rhs);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>~Message();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>~Message();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>!Message()</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: ReplyTo</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setReplyTo(const Address&amp;);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const Address&amp; getReplyTo() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Address ReplyTo { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Subject</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setSubject(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getSubject() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string Subject { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: ContentType</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setContentType(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getContentType() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string ContentType { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: MessageId</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setMessageId(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getMessageId() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string MessageId { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: UserId</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setUserId(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getUserId() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string UserId { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: CorrelationId</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setCorrelationId(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getCorrelationId() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string CorrelationId { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Priority</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setPriority(uint8_t);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint8_t getPriority() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public byte Priority { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Ttl</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setTtl(Duration ttl);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Duration getTtl() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Duration Ttl { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Durable</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setDurable(bool durable);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool getDurable() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool Durable { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Redelivered</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool getRedelivered() const;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setRedelivered(bool);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool Redelivered { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: SetProperty</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void SetProperty(string name, object value);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Properties</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const qpid::types::Variant::Map&amp; getProperties() const;</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>qpid::types::Variant::Map&amp; getProperties();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Dictionary&lt;string, object&gt; Properties { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: SetContent</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setContent(const std::string&amp;);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setContent(const char* chars, size_t count);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void SetContent(byte[] bytes);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void SetContent(string content);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void SetContent(byte[] bytes, int offset, int size);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: GetContent</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>std::string getContent() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string GetContent();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void GetContent(byte[] arr);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void GetContent(Collection&lt;object&gt; __p1);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void GetContent(Dictionary&lt;string, object&gt; dict);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: GetContentPtr</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const char* getContentPtr() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: ContentSize</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>size_t getContentSize() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ulong ContentSize { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Struct: EncodingException</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>struct EncodingException : qpid::types::Exception</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: decode</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void decode(const Message&amp; message, qpid::types::Variant::Map&amp; map,	const std::string&amp; encoding = std::string());</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void decode(const Message&amp; message, qpid::types::Variant::List&amp; list, const std::string&amp; encoding = std::string());</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>TODO:</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: encode</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void encode(const qpid::types::Variant::Map&amp; map, Message&amp; message, const std::string&amp; encoding = std::string());</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void encode(const qpid::types::Variant::List&amp; list, Message&amp; message, const std::string&amp; encoding = std::string());</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>TODO:</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: AsString</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string AsString(object obj);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string ListAsString(Collection&lt;object&gt; list);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string MapAsString(Dictionary&lt;string, object&gt; dict);</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>.NET Binding Class: Receiver</title>
+      <table id="table-Dotnet-Binding-Receiver">
+        <title>.NET Binding Class: Receiver</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Receiver</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class Receiver</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class Receiver</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>Constructed object is returned by Session.CreateReceiver</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Receiver(const Receiver&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Receiver(Receiver receiver);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>~Receiver();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>~Receiver();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>!Receiver()</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy assignment operator</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Receiver&amp; operator=(const Receiver&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Receiver op_Assign(Receiver rhs);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Get</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool get(Message&amp; message, Duration timeout=Duration::FOREVER);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool Get(Message mmsgp);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool Get(Message mmsgp, Duration durationp);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Get</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Message get(Duration timeout=Duration::FOREVER);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Message Get();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Message Get(Duration durationp);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Fetch</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool fetch(Message&amp; message, Duration timeout=Duration::FOREVER);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool Fetch(Message mmsgp);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool Fetch(Message mmsgp, Duration duration);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Fetch</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Message fetch(Duration timeout=Duration::FOREVER);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Message Fetch();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Message Fetch(Duration durationp);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Capacity</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setCapacity(uint32_t);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getCapacity();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint Capacity { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Available</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getAvailable();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint Available { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Unsettled</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getUnsettled();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint Unsettled { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Close</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void close();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Close();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: IsClosed</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool isClosed() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool IsClosed { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Name</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getName() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string Name { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Session</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Session getSession() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session Session { get; }</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>.NET Binding Class: Sender</title>
+      <table id="table-Dotnet-Binding-Sender">
+        <title>.NET Binding Class: Sender</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Sender</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class Sender</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class Sender</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>Constructed object is returned by Session.CreateSender</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Sender(const Sender&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Sender(Sender sender);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>~Sender();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>~Sender();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>!Sender()</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy assignment operator</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Sender&amp; operator=(const Sender&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Sender op_Assign(Sender rhs);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Send</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void send(const Message&amp; message, bool sync=false);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Send(Message mmsgp);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Send(Message mmsgp, bool sync);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Close</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void close();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Close();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Capacity</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void setCapacity(uint32_t);</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getCapacity();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint Capacity { get; set; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Available</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getAvailable();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint Available { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Unsettled</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getUnsettled();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint Unsettled { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Name</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>const std::string&amp; getName() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public string Name { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Session</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Session getSession() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session Session { get; }</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>.NET Binding Class: Session</title>
+      <table id="table-Dotnet-Binding-Session">
+        <title>.NET Binding Class: Session</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Session</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class Session</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class Session</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>Constructed object is returned by Connection.CreateSession</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Session(const Session&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session(Session session);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>~Session();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>~Session();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>!Session()</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Copy assignment operator</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Session&amp; operator=(const Session&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Session op_Assign(Session rhs);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Close</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void close();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Close();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Commit</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void commit();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Commit();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Rollback</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void rollback();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Rollback();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Acknowledge</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void acknowledge(bool sync=false);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Acknowledge();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Acknowledge(bool sync);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Reject</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void reject(Message&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Reject(Message __p1);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Release</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void release(Message&amp;);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Release(Message __p1);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: Sync</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void sync(bool block=true);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Sync();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Sync(bool block);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Receivable</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getReceivable();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint Receivable { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: UnsettledAcks</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>uint32_t getUnsettledAcks();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public uint UnsetledAcks { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: NextReceiver</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool nextReceiver(Receiver&amp;, Duration timeout=Duration::FOREVER);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool NextReceiver(Receiver rcvr);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool NextReceiver(Receiver rcvr, Duration timeout);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: NextReceiver</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Receiver nextReceiver(Duration timeout=Duration::FOREVER);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Receiver NextReceiver();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Receiver NextReceiver(Duration timeout);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: CreateSender</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Sender createSender(const Address&amp; address);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Sender CreateSender(Address address);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: CreateSender</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Sender createSender(const std::string&amp; address);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Sender CreateSender(string address);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: CreateReceiver</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Receiver createReceiver(const Address&amp; address);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Receiver CreateReceiver(Address address);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: CreateReceiver</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Receiver createReceiver(const std::string&amp; address);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Receiver CreateReceiver(string address);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: GetSender</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Sender getSender(const std::string&amp; name) const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Sender GetSender(string name);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: GetReceiver</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Receiver getReceiver(const std::string&amp; name) const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Receiver GetReceiver(string name);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: Connection</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>Connection getConnection() const;</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public Connection Connection { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Property: HasError</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>bool hasError();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public bool HasError { get; }</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Method: CheckError</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>void checkError();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void CheckError();</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>.NET Binding Class: SessionReceiver</title>
+      <para>
+	The SessionReceiver class provides a convenient callback
+	mechanism for Messages received by all Receivers on a given
+	Session.
+      </para>
+      <para>
+	<programlisting><![CDATA[
+using Org.Apache.Qpid.Messaging;
+using System;
+
+namespace Org.Apache.Qpid.Messaging.SessionReceiver
+{
+    public interface ISessionReceiver
+    {
+        void SessionReceiver(Receiver receiver, Message message);
+    }
+
+    public class CallbackServer
+    {
+        public CallbackServer(Session session, ISessionReceiver callback);
+
+        public void Close();
+    }
+}
+]]>
+	</programlisting>
+      </para>
+      <para>
+	To use this class a client program includes references to both
+	Org.Apache.Qpid.Messaging and Org.Apache.Qpid.Messaging.SessionReceiver.
+	The calling program creates a function that implements the 
+	ISessionReceiver interface. This function will be called whenever
+	message is received by the session. The callback process is started
+	by creating a CallbackServer and will continue to run until the 
+	client program calls the CallbackServer.Close function.
+      </para>
+      <para>
+	A complete operating example of using the SessionReceiver callback
+	is contained in cpp/bindings/qpid/dotnet/examples/csharp.map.callback.receiver.
+      </para>
+    </section>
+  </chapter>
 </book>
 
 <!--
