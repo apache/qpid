@@ -665,7 +665,7 @@
       +---------+------------------------+
       |  size   |       characters       |
       +---------+------------------------+
-        uint16    iso-8859-15 characters
+        uint8     iso-8859-15 characters
     </doc>
 
     <doc type="bnf">
