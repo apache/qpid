@@ -157,7 +157,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="qpidmessaging.lib qpidcommon.lib"
-				OutputFile="$(OutDir)\drain.exe"
+				OutputFile="$(OutDir)\spout.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(QPID_ROOT)\bin;..\..\lib"
