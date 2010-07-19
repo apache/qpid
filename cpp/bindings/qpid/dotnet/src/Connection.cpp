@@ -68,6 +68,14 @@ namespace Messaging {
     }
 
 
+    // Copy constructor
+    Connection::Connection(const Connection ^ connection)
+        : connectionp(new ::qpid::messaging::Connection(
+                        *(const_cast<Connection ^>(connection)->NativeConnection)))
+    {
+    }
+
+
     // Destructor
     Connection::~Connection()
     {

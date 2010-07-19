@@ -141,10 +141,10 @@ namespace Messaging {
     }
 
     // Copy constructor
-    // TODO: prevent copy
-    Message::Message(const Message % rhs)
+    Message::Message(const Message ^ message)
+        : messagep(new ::qpid::messaging::Message(
+                        *(const_cast<Message ^>(message)->NativeMessage)))
     {
-        messagep      = rhs.messagep;
     }
 
     // Destroys kept object

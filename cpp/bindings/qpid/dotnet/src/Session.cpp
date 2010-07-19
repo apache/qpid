@@ -67,11 +67,12 @@ namespace Messaging {
         Cleanup();
     }
 
-    // copy constructor
-    Session::Session(const Session % rhs)
+    // Copy constructor
+    Session::Session(const Session ^ session)
+        : sessionp(new ::qpid::messaging::Session(
+                        *(const_cast<Session ^>(session)->NativeSession))),
+          parentConnectionp(session->parentConnectionp)
     {
-        sessionp = rhs.sessionp;
-        parentConnectionp = rhs.parentConnectionp;
     }
 
 

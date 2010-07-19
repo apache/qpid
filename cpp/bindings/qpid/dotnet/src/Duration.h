@@ -45,13 +45,13 @@ namespace Messaging {
         Duration(const Duration % rhs) :
             milliseconds(rhs.milliseconds)
         {
-        };
+        }
 
         explicit Duration(System::UInt64 mS) : 
-            milliseconds(mS) {};
+            milliseconds(mS) {}
         
         Duration()                           : 
-            milliseconds(System::UInt64::MaxValue) {};
+            milliseconds(System::UInt64::MaxValue) {}
 
         property System::UInt64 Milliseconds
         {

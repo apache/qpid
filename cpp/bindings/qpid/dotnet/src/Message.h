@@ -76,8 +76,27 @@ namespace Messaging {
         !Message();
 
         // Copy constructor
-        Message(const Message % rhs);
+        Message(const Message ^ message);
 
+        // assignment operator
+        Message % operator=(const Message % rhs)
+        {
+            if (this == %rhs)
+            {
+                // Self assignment, do nothing
+            }
+            else
+            {
+                delete messagep;
+                messagep = new ::qpid::messaging::Message(
+                    *(const_cast<Message %>(rhs).NativeMessage) );
+            }
+            return *this;
+        }
+
+        //
+        // NativeMessage
+        //
         property ::qpid::messaging::Message * NativeMessage
         {
             ::qpid::messaging::Message * get () { return messagep; }
