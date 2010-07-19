@@ -62,10 +62,10 @@ logging.basicConfig(level=logging.DEBUG,
 ## etc. to the directories below.
 
 qpid_root = os.getenv("QPID_ROOT", os.path.abspath("../../../../../../qpid"))
-print "Qpid Root: " + qpid_root
+logging.debug("Qpid Root: " + qpid_root)
 
 qpid_broker = os.getenv("QPID_BROKER", "localhost:5672")
-print "Qpid Broker: " + qpid_broker
+logging.debug("Qpid Broker: " + qpid_broker)
 
 ## If your examples are installed somewhere else, you have to tell us
 ## where examples in each language are kept
@@ -74,15 +74,21 @@ cpp_examples_path =  os.getenv("QPID_CPP_EXAMPLES", qpid_root + "/cpp/examples/m
 python_examples_path =  os.getenv("QPID_PYTHON_EXAMPLES", qpid_root + "/python/examples/api/")
 java_qpid_home = os.getenv("QPID_HOME", qpid_root + "/java/build/lib/")
 os.environ["QPID_HOME"] = java_qpid_home
-print "Java's QPID_HOME: " + os.environ["QPID_HOME"]
+logging.debug("Java's QPID_HOME: " + os.environ["QPID_HOME"])
 java_examples_path =  os.getenv("QPID_JAVA_EXAMPLES", qpid_root + "/java/client/example/")
+find = "find " + java_qpid_home + " -name '*.jar'"
+args = shlex.split(find)
+popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+out, err  = popen.communicate()
+os.environ["CLASSPATH"] = java_examples_path + ":" + re.sub("\\n", ":", out)
+logging.debug("Java CLASSPATH = " + os.environ["CLASSPATH"])
 
 python_path = os.getenv("PYTHONPATH", qpid_root+"/python:" + qpid_root+"/extras/qmf/src/py")
 os.environ["PYTHONPATH"] = python_path
-print "PYTHONPATH: " + os.environ["PYTHONPATH"]
+logging.debug("PYTHONPATH: " + os.environ["PYTHONPATH"])
 
 python_tools_path =  os.getenv("QPID_PYTHON_TOOLS", qpid_root + "/tools/src/py/")
-print "QPID_PYTHON_TOOLS: " + python_tools_path
+logging.debug("QPID_PYTHON_TOOLS: " + python_tools_path)
 
 
 ############################################################################################
@@ -97,15 +103,15 @@ cpp_spout = cpp_examples_path + "spout" + " -b " + qpid_broker
 # cpp_server = cpp_examples_path + "map_receiver"
 python_drain = python_examples_path + "drain" + " -b " + qpid_broker
 python_spout = python_examples_path + "spout" + " -b " + qpid_broker
-java_drain = java_examples_path + "src/main/java/runSample.sh org.apache.qpid.example.Drain"
-java_spout = java_examples_path + "src/main/java/runSample.sh org.apache.qpid.example.Spout"
+java_drain = "java " + "org.apache.qpid.example.Drain"
+java_spout = "java " + "org.apache.qpid.example.Spout"
 
 CPP = object()
 PYTHON = object()
 JAVA = object()
 
 shortWait = 0.5
-longWait = 1
+longWait = 3   # use sparingly!
 
 class TestDrainSpout(unittest.TestCase):
 
@@ -144,14 +150,14 @@ class TestDrainSpout(unittest.TestCase):
             sleep(wait)
 
         createS = ";{create:always}" if create else ""
-        addressS = '"' + destination + createS + '"'
+        addressS = "'" + destination + createS + "'"
         if lang==CPP:
-            contentS = " ".join(['--content','"'+content+'"']) if content else ""
+            contentS = " ".join(['--content',"'"+content+"'"]) if content else ""
             commandS = " ".join([cpp_spout, contentS, addressS])
         elif lang==PYTHON:
             commandS = " ".join([python_spout, addressS, content])
         elif lang==JAVA:
-            pass
+            commandS = " ".join([java_spout, "--content="+"'"+content+"'", addressS])            
         else:  
             raise "Ain't no such language ...."
         logging.debug("send(): " + commandS)
@@ -163,13 +169,13 @@ class TestDrainSpout(unittest.TestCase):
 
     def receive(self, lang=CPP, destination="amq.topic", delete=1):
         deleteS = ";{delete:always}" if delete else ""
-        addressS = '"' + destination + deleteS + '"'
+        addressS = "'" + destination + deleteS + "'"
         if lang==CPP:
             commandS = " ".join([cpp_drain, addressS])
         elif lang==PYTHON:
             commandS = " ".join([python_drain, addressS])
         elif lang==JAVA:
-            pass
+            commandS = " ".join([java_drain, addressS])
         else:  
             raise "Ain't no such language ...."
         logging.debug("receive() " + commandS)
@@ -186,7 +192,8 @@ class TestDrainSpout(unittest.TestCase):
         elif lang==PYTHON:
             commandS = " ".join([python_drain, time, destination])
         elif lang==JAVA:
-            pass
+            logging.debug("Java working directory: ")
+            commandS = " ".join([java_drain, time, destination])
         else:
             logging.debug("subscribe() - no such language!")  
             raise "Ain't no such language ...."
@@ -205,6 +212,11 @@ class TestDrainSpout(unittest.TestCase):
     #
     #############################################################################
 
+    # incubator
+
+    def test_call_drain(self):
+        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world")
+
     # Hello world!
  
     def test_hello_world(self):
@@ -218,6 +230,7 @@ class TestDrainSpout(unittest.TestCase):
 
     def test_qpid_config(self):
         self.qpid_config("add exchange topic weather")
+        self.qpid_config("del exchange topic weather")
 
     # Simple queue tests
 
@@ -241,6 +254,31 @@ class TestDrainSpout(unittest.TestCase):
     def test_queue_python2python(self):
         self.send(lang=PYTHON, content=self.tcaseName(), destination="hello-world", create=1)
         out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_queue_java2java(self):
+        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world", create=1)
+        out = self.receive(lang=JAVA, destination="hello-world", delete=1)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_queue_java2python(self):
+        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world", create=1)
+        out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_queue_java2cpp(self):
+        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world", create=1)
+        out = self.receive(lang=CPP, destination="hello-world", delete=1)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_queue_cpp2java(self):
+        self.send(lang=CPP, content=self.tcaseName(), destination="hello-world", create=1)
+        out = self.receive(lang=JAVA, destination="hello-world", delete=1)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_queue_python2java(self):
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="hello-world", create=1)
+        out = self.receive(lang=JAVA, destination="hello-world", delete=1)
         self.assertTrue(out.find(self.tcaseName()) >= 0)
 
 
@@ -269,6 +307,36 @@ class TestDrainSpout(unittest.TestCase):
     def test_amqdirect_python2python(self):
         popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
         self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
+        out = self.listen(popen)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_amqdirect_java2java(self):
+        popen = self.subscribe(lang=JAVA, destination="amq.direct/subject")
+        self.send(lang=JAVA, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
+        out = self.listen(popen)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_amqdirect_java2python(self):
+        popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
+        self.send(lang=JAVA, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
+        out = self.listen(popen)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_amqdirect_java2cpp(self):
+        popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
+        self.send(lang=JAVA, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
+        out = self.listen(popen)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_amqdirect_cpp2java(self):
+        popen = self.subscribe(lang=JAVA, destination="amq.direct/subject")
+        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=longWait)
+        out = self.listen(popen)
+        self.assertTrue(out.find(self.tcaseName()) >= 0)
+
+    def test_amqdirect_python2java(self):
+        popen = self.subscribe(lang=JAVA, destination="amq.direct/subject")
+        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=longWait)
         out = self.listen(popen)
         self.assertTrue(out.find(self.tcaseName()) >= 0)
 
@@ -316,17 +384,17 @@ class TestDrainSpout(unittest.TestCase):
 
     def test_topic_news_sports_weather_cpp(self):
         news = self.subscribe(lang=CPP, destination="amq.topic/*.news")
-        deepnews = self.subscribe(lang=CPP, destination="amq.topic/#.news")
-        weather = self.subscribe(lang=PYTHON, destination="amq.topic/*.weather")
+        deepnews = self.subscribe(lang=PYTHON, destination="amq.topic/#.news")
+        weather = self.subscribe(lang=JAVA, destination="amq.topic/*.weather")
         sports = self.subscribe(lang=CPP, destination="amq.topic/*.sports")
         usa = self.subscribe(lang=PYTHON, destination="amq.topic/usa.*")
-        europe = self.subscribe(lang=PYTHON, destination="amq.topic/europe.*")
+        europe = self.subscribe(lang=JAVA, destination="amq.topic/europe.*")
         self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.news", create=0, wait=longWait)
-        self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.faux.news", create=0)
-        self.send(lang=CPP, content="europe.news", destination="amq.topic/europe.news", create=0)
+        self.send(lang=PYTHON, content="usa.news", destination="amq.topic/usa.faux.news", create=0)
+        self.send(lang=JAVA, content="europe.news", destination="amq.topic/europe.news", create=0)
         self.send(lang=CPP, content="usa.weather", destination="amq.topic/usa.weather", create=0)
-        self.send(lang=CPP, content="europe.weather", destination="amq.topic/europe.weather", create=0)
-        self.send(lang=CPP, content="usa.sports", destination="amq.topic/usa.sports", create=0)
+        self.send(lang=PYTHON, content="europe.weather", destination="amq.topic/europe.weather", create=0)
+        self.send(lang=JAVA, content="usa.sports", destination="amq.topic/usa.sports", create=0)
         self.send(lang=CPP, content="europe.sports", destination="amq.topic/europe.sports", create=0)
         out = self.listen(news)
         self.assertTrue(out.find("usa.news") >= 0)        
