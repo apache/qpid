@@ -56,8 +56,42 @@ namespace Messaging {
                        System::String ^, System::Object ^> ^ options);
 
         Connection(System::String ^ url, System::String ^ options);
+
+        // copy constructor
+        Connection(const Connection ^ connection);
+
         ~Connection();
         !Connection();
+
+        // assignment operator
+        Connection % operator=(const Connection % rhs)
+        {
+            if (this == %rhs)
+            {
+                // Self assignment, do nothing
+            }
+            else
+            {
+                delete connectionp;
+                connectionp = new ::qpid::messaging::Connection(
+                    *(const_cast<Connection %>(rhs).NativeConnection) );
+            }
+            return *this;
+        }
+
+        property ::qpid::messaging::Connection * NativeConnection
+        {
+            ::qpid::messaging::Connection * get () { return connectionp; }
+        }
+
+        property System::String ^ NPAddress
+        {
+            System::String ^ get () 
+            {
+                System::IntPtr i((void *)connectionp);
+                return gcnew System::String(i.ToString());
+            }
+        }
 
         void SetOption(System::String ^ name, System::Object ^ value);
 

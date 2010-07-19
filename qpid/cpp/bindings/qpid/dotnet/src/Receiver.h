@@ -63,9 +63,29 @@ namespace Messaging {
     public:
         Receiver(::qpid::messaging::Receiver * r,
             Session ^ sessRef);
+
+        // copy constructor
+        Receiver(const Receiver ^ receiver);
+
         ~Receiver();
         !Receiver();
-        Receiver(const Receiver ^ rhs);
+
+        // assignment operator
+        Receiver % operator=(const Receiver % rhs)
+        {
+            if (this == %rhs)
+            {
+                // Self assignment, do nothing
+            }
+            else
+            {
+                delete receiverp;
+                receiverp = new ::qpid::messaging::Receiver(
+                    *(const_cast<Receiver %>(rhs).NativeReceiver));
+                parentSession = rhs.parentSession;
+            }
+            return *this;
+        }
 
         property ::qpid::messaging::Receiver * NativeReceiver
         {

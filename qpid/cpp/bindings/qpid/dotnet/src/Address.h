@@ -65,12 +65,31 @@ namespace Messaging {
                     System::String ^, System::Object ^> ^ options,
                 System::String ^ type);
 
+        // copy constructor
+        Address(const Address ^ address);
+
         // Create from received address
+        // The new Address object consumes the unmanaged pointer
         Address(::qpid::messaging::Address * addrp);
 
         ~Address();
         !Address();
-//        Address(const Address % rhs);
+
+        // assignment operator
+        Address % operator=(const Address % rhs)
+        {
+            if (this == %rhs)
+            {
+                // Self assignment, do nothing
+            }
+            else
+            {
+                delete addressp;
+                addressp = new ::qpid::messaging::Address(
+                    *(const_cast<Address %>(rhs).NativeAddress) );
+            }
+            return *this;
+        }
 
         property ::qpid::messaging::Address * NativeAddress
         {

@@ -67,9 +67,33 @@ namespace Messaging {
     public:
         Session(::qpid::messaging::Session * sessionp,
             Connection ^ connRef);
+
+        // copy constructor
+        Session(const Session ^ session);
+
         ~Session();
         !Session();
-        Session(const Session % rhs);
+
+        // assignment operator
+        Session % operator=(const Session % rhs)
+        {
+            if (this == %rhs)
+            {
+                // Self assignment, do nothing
+            }
+            else
+            {
+                delete sessionp;
+                sessionp = new ::qpid::messaging::Session(
+                    *(const_cast<Session %>(rhs).NativeSession) );
+            }
+            return *this;
+        }
+
+        property ::qpid::messaging::Session * NativeSession
+        {
+            ::qpid::messaging::Session * get () { return sessionp; }
+        }
 
         void Close();
         void Commit();
