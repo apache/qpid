@@ -37,11 +37,12 @@ using std::string;
 
 int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
+    const char* address = argc>2 ? argv[2] : "message_queue; {create: always}";
     Connection connection(url);
     try {
         connection.open();
         Session session = connection.createSession();
-        Sender sender = session.createSender("message_queue");
+        Sender sender = session.createSender(address);
 
         Message message;
         Variant::Map content;
