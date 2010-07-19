@@ -115,5 +115,13 @@ namespace Messaging {
         Session ^ CreateSession(System::String ^ name);
 
         Session ^ GetSession(System::String ^ name);
+
+        property System::String ^ AuthenticatedUsername
+        {
+            System::String ^ get ()
+            {
+                return gcnew System::String(connectionp->getAuthenticatedUsername().c_str());
+            }
+        }
     };
 }}}}
