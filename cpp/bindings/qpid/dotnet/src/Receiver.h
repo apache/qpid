@@ -149,6 +149,17 @@ namespace Messaging {
         void Close();
         
         //
+        // IsClosed
+        //
+        property System::Boolean IsClosed
+        {
+            System::Boolean get ()
+            {
+                return receiverp->isClosed();
+            }
+        }
+
+        //
         // Name
         //
         property System::String ^ Name

@@ -110,7 +110,7 @@ namespace Messaging {
             System::UInt32 get () { return sessionp->getReceivable(); }
         }
 
-        property System::UInt32 UnsetledAcks
+        property System::UInt32 UnsettledAcks
         {
             System::UInt32 get () { return sessionp->getUnsettledAcks(); }
         }
