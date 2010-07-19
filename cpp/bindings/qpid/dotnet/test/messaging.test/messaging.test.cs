@@ -139,6 +139,68 @@ namespace Org.Apache.Qpid.Messaging
             guidReadback = myGuid.ToByteArray();
 
             Console.WriteLine("GuidReadback len = {0}", guidReadback.Length);
+
+            //
+            // Set/Get some properties of a message
+            //
+            Message msgGetSet = new Message("12345");
+
+            msgGetSet.Subject = "Subject";
+            msgGetSet.MessageId = "MessageId";
+            msgGetSet.UserId = "UserId";
+            msgGetSet.CorrelationId = "CorrelationId";
+            msgGetSet.Ttl = DurationConstants.SECOND;
+            msgGetSet.Priority = (byte)'z';
+            msgGetSet.Durable = false;
+            msgGetSet.Redelivered = true;
+
+            Dictionary<string, object> props = new Dictionary<string,object>();
+            props.Add("firstProperty", 1);
+            props.Add("secondProperty", 2);
+            msgGetSet.Properties = props;
+
+
+
+            Console.WriteLine("Message Subject = {0}", msgGetSet.Subject);
+            Console.WriteLine("Message ContentType = {0}", msgGetSet.ContentType);
+            Console.WriteLine("Message MessageId = {0}", msgGetSet.MessageId);
+            Console.WriteLine("Message UserId = {0}", msgGetSet.UserId);
+            Console.WriteLine("Message CorrelationId = {0}", msgGetSet.CorrelationId);
+            Console.WriteLine("Message Ttl mS = {0}", msgGetSet.Ttl.Milliseconds);
+            Console.WriteLine("Message Priority = {0}", msgGetSet.Priority);
+            Console.WriteLine("Message Durable = {0}", msgGetSet.Durable);
+            Console.WriteLine("Message Redelivered = {0}", msgGetSet.Redelivered);
+
+            Dictionary<string, object> gotProps = msgGetSet.Properties;
+            foreach (KeyValuePair<string, object> kvp in gotProps)
+            {
+                Console.WriteLine("Message Property {0} = {1}", kvp.Key, kvp.Value.ToString());
+            }
+
+            Console.WriteLine("Cycle through a million address copy constructions...");
+            Address a1 = new Address("abc");
+            Address a2 = new Address("def");
+            Address a3 = new Address(a2);
+            for (int i = 0; i < 1000000; i++)
+            {
+                a1 = a2;
+                a2 = a3;
+                a3 = new Address(a1);
+            }
+            Console.WriteLine("                                                  ...done.");
+
+            Console.WriteLine("Use each object's copy constructor");
+
+            Address Address1 = new Address("abc");
+            Address Address2 = new Address(Address1);
+
+            Connection Connection1 = new Connection("abc");
+            Connection Connection2 = new Connection(Connection1);
+
+            Message Message1 = new Message("abc");
+            Message Message2 = new Message(Message1);
+
+
         }
     }
 }

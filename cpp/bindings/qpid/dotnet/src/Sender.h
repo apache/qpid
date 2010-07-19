@@ -61,9 +61,35 @@ namespace Messaging {
     public:
         Sender(::qpid::messaging::Sender * s,
             Session ^ sessRef);
+        
+        // copy constructor
+        Sender(const Sender ^ sender);
+
         ~Sender();
         !Sender();
-        Sender(const Sender % rhs);
+
+        // assignment operator
+        Sender % operator=(const Sender % rhs)
+        {
+            if (this == %rhs)
+            {
+                // Self assignment, do nothing
+            }
+            else
+            {
+                delete senderp;
+                senderp = new ::qpid::messaging::Sender(
+                    *(const_cast<Sender %>(rhs).NativeSender));
+                parentSession = rhs.parentSession;
+            }
+            return *this;
+        }
+
+        property ::qpid::messaging::Sender * NativeSender
+        {
+            ::qpid::messaging::Sender * get () { return senderp; }
+        }
+
 
         // Send(message)
         void Send(Message ^ mmsgp);

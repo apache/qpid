@@ -61,11 +61,13 @@ namespace Messaging {
     }
 
     // Copy constructor
-    Sender::Sender(const Sender % rhs)
+    Sender::Sender(const Sender ^ sender)
+        : senderp(new ::qpid::messaging::Sender(
+                        *(const_cast<Sender ^>(sender)->NativeSender))),
+          parentSession(sender->parentSession)
     {
-        senderp       = rhs.senderp;
-        parentSession = rhs.parentSession;
     }
+
 
     // Destroys kept object
     // TODO: add lock

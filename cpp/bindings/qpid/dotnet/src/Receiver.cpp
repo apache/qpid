@@ -66,10 +66,11 @@ namespace Messaging {
 
 
     // Copy constructor
-    Receiver::Receiver(const Receiver ^ rhs)
+    Receiver::Receiver(const Receiver ^ receiver)
+        : receiverp(new ::qpid::messaging::Receiver(
+                        *(const_cast<Receiver ^>(receiver)->NativeReceiver))),
+          parentSession(receiver->parentSession)
     {
-        receiverp     = rhs->receiverp;
-        parentSession = rhs->parentSession;
     }
 
 
