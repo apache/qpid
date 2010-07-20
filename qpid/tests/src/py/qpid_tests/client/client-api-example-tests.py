@@ -91,17 +91,6 @@ out, err  = popen.communicate()
 os.environ["CLASSPATH"] = java_examples_path + ":" + re.sub("\\n", ":", out)
 logging.debug("Java CLASSPATH = " + os.environ["CLASSPATH"])
 
-"""
-log4j.logger.org.apache.qpid=WARN, console
-log4j.additivity.org.apache.qpid=false
-
-log4j.appender.console=org.apache.log4j.ConsoleAppender
-log4j.appender.console.Threshold=all
-log4j.appender.console.layout=org.apache.log4j.PatternLayout
-log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
-"""
-
-
 ############################################################################################
 
 # Paths to programs
@@ -114,8 +103,8 @@ cpp_spout = cpp_examples_path + "spout" + " -b " + qpid_broker
 # cpp_server = cpp_examples_path + "map_receiver"
 python_drain = python_examples_path + "drain" + " -b " + qpid_broker
 python_spout = python_examples_path + "spout" + " -b " + qpid_broker
-java_drain = "java " + "org.apache.qpid.example.Drain"
-java_spout = "java " + "org.apache.qpid.example.Spout"
+java_drain = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Drain"
+java_spout = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Spout"
 
 CPP = object()
 PYTHON = object()
