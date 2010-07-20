@@ -114,6 +114,8 @@ class Connection :
     // State update methods.
     void shadowPrepare(const std::string&);
 
+    void shadowSetUser(const std::string&);
+
     void sessionState(const framing::SequenceNumber& replayStart,
                       const framing::SequenceNumber& sendCommandPoint,
                       const framing::SequenceSet& sentIncomplete,

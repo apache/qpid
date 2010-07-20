@@ -159,11 +159,16 @@
 	 - send shadow-ready to mark end of shadow update.
 	 - send membership when entire update is complete.
     -->
+    <!-- Send the user-id for an update connection. -->
+    <control name="shadow-set-user" code="0x0E">
+      <field name="user-id" type="str16"/>
+    </control>
+
     <!-- Prepare to send a shadow connection with the given ID. -->
     <control name="shadow-prepare" code="0x0F">
       <field name="management-id" type="str16"/>
     </control>
-    
+
     <!-- Consumer state that cannot be set by standard AMQP controls. -->
     <control name="consumer-state" code="0x10">
       <field name="name" type="str8"/>

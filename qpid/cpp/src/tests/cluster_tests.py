@@ -157,6 +157,19 @@ acl allow all all
             self.fail("Expected exception")
         except messaging.exceptions.NotFound: pass
 
+    def test_user_id_update(self):
+        """Ensure that user-id of an open session is updated to new cluster members"""
+        sasl_config=os.path.join(self.rootdir, "sasl_config")
+        cluster = self.cluster(1, args=["--auth", "yes", "--sasl-config", sasl_config,])
+        c = cluster[0].connect(username="zig", password="zig")
+        s = c.session().sender("q;{create:always}")
+        s.send(Message("x", user_id="zig")) # Message sent before start new broker
+        cluster.start()
+        s.send(Message("y", user_id="zig")) # Messsage sent after start of new broker
+        # Verify brokers are healthy and messages are on the queue.
+        self.assertEqual("x", cluster[0].get_message("q").content)
+        self.assertEqual("y", cluster[1].get_message("q").content)
+
     def test_link_events(self):
         """Regression test for https://bugzilla.redhat.com/show_bug.cgi?id=611543"""
         args = ["--mgmt-pub-interval", 1] # Publish management information every second.
