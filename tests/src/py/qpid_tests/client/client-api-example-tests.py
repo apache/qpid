@@ -71,7 +71,15 @@ logging.debug("Qpid Broker: " + qpid_broker)
 ## where examples in each language are kept
 
 cpp_examples_path =  os.getenv("QPID_CPP_EXAMPLES", qpid_root + "/cpp/examples/messaging/")
+
 python_examples_path =  os.getenv("QPID_PYTHON_EXAMPLES", qpid_root + "/python/examples/api/")
+python_path = os.getenv("PYTHONPATH", qpid_root+"/python:" + qpid_root+"/extras/qmf/src/py")
+os.environ["PYTHONPATH"] = python_path
+logging.debug("PYTHONPATH: " + os.environ["PYTHONPATH"])
+
+python_tools_path =  os.getenv("QPID_PYTHON_TOOLS", qpid_root + "/tools/src/py/")
+logging.debug("QPID_PYTHON_TOOLS: " + python_tools_path)
+
 java_qpid_home = os.getenv("QPID_HOME", qpid_root + "/java/build/lib/")
 os.environ["QPID_HOME"] = java_qpid_home
 logging.debug("Java's QPID_HOME: " + os.environ["QPID_HOME"])
@@ -83,12 +91,15 @@ out, err  = popen.communicate()
 os.environ["CLASSPATH"] = java_examples_path + ":" + re.sub("\\n", ":", out)
 logging.debug("Java CLASSPATH = " + os.environ["CLASSPATH"])
 
-python_path = os.getenv("PYTHONPATH", qpid_root+"/python:" + qpid_root+"/extras/qmf/src/py")
-os.environ["PYTHONPATH"] = python_path
-logging.debug("PYTHONPATH: " + os.environ["PYTHONPATH"])
+"""
+log4j.logger.org.apache.qpid=WARN, console
+log4j.additivity.org.apache.qpid=false
 
-python_tools_path =  os.getenv("QPID_PYTHON_TOOLS", qpid_root + "/tools/src/py/")
-logging.debug("QPID_PYTHON_TOOLS: " + python_tools_path)
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+log4j.appender.console.Threshold=all
+log4j.appender.console.layout=org.apache.log4j.PatternLayout
+log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
+"""
 
 
 ############################################################################################
@@ -212,11 +223,6 @@ class TestDrainSpout(unittest.TestCase):
     #
     #############################################################################
 
-    # incubator
-
-    def test_call_drain(self):
-        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world")
-
     # Hello world!
  
     def test_hello_world(self):
@@ -230,7 +236,7 @@ class TestDrainSpout(unittest.TestCase):
 
     def test_qpid_config(self):
         self.qpid_config("add exchange topic weather")
-        self.qpid_config("del exchange topic weather")
+        self.qpid_config("del exchange weather")
 
     # Simple queue tests
 
@@ -394,7 +400,7 @@ class TestDrainSpout(unittest.TestCase):
         self.send(lang=JAVA, content="europe.news", destination="amq.topic/europe.news", create=0)
         self.send(lang=CPP, content="usa.weather", destination="amq.topic/usa.weather", create=0)
         self.send(lang=PYTHON, content="europe.weather", destination="amq.topic/europe.weather", create=0)
-        self.send(lang=JAVA, content="usa.sports", destination="amq.topic/usa.sports", create=0)
+        self.send(lang=JAVA, content="usa.sports", destination="amq.topic/usa.sports", create=0) 
         self.send(lang=CPP, content="europe.sports", destination="amq.topic/europe.sports", create=0)
         out = self.listen(news)
         self.assertTrue(out.find("usa.news") >= 0)        
@@ -403,7 +409,7 @@ class TestDrainSpout(unittest.TestCase):
         self.assertFalse(out.find("usa.faux.news") >= 0)        
         out = self.listen(weather)
         self.assertTrue(out.find("usa.weather") >= 0)        
-        self.assertTrue(out.find("europe.weather") >= 0)        
+        self.assertTrue(out.find("europe.weather") >= 0) 
         out = self.listen(sports)
         self.assertTrue(out.find("usa.sports") >= 0)        
         self.assertTrue(out.find("europe.sports") >= 0)        
