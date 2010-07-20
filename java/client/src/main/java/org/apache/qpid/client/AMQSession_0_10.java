@@ -1246,6 +1246,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             {
                 dest.setQueueName(new AMQShortString(dest.getLink().getName())); 
             }
+            node.setExclusive(true);
+            node.setAutoDelete(true);
             send0_10QueueDeclare(dest,null,false,false);
         }
         node.addBinding(new Binding(dest.getAddressName(),
