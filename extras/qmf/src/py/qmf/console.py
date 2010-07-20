@@ -2221,18 +2221,10 @@ class Broker(Thread):
 
       return True  # connection complete
 
-    except socket.error, e:
-      self.error = "Socket Error %s - %s" % (e.__class__.__name__, e)
-    except Closed, e:
-      self.error = "Connect Failed %s - %s" % (e.__class__.__name__, e)
-    except ConnectionFailed, e:
-      self.error = "Connect Failed %s - %s" % (e.__class__.__name__, e)
-    except:
-      e = Exception("Unknown connection exception")
-      self.error = str(e)
-
-    self.conn_exc = e
-    return False     # connection failed
+    except Exception, e:
+      self.error = "Exception during connection setup: %s - %s" % (e.__class__.__name__, e)
+      self.conn_exc = e
+      return False     # connection failed
 
   def _updateAgent(self, obj):
     bankKey = str(obj.agentBank)
