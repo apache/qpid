@@ -365,6 +365,8 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
 
     connectionSettings.maxFrameSize = bc.getFrameMax();
     shadowConnection.open(updateeUrl, connectionSettings);
+    ClusterConnectionProxy(shadowConnection).shadowSetUser(bc.getUserId());
+
     bc.eachSessionHandler(boost::bind(&UpdateClient::updateSession, this, _1));
     // Safe to use decoder here because we are stalled for update.
     std::pair<const char*, size_t> fragment = decoder.get(updateConnection->getId()).getFragment();

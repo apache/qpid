@@ -304,10 +304,17 @@ size_t Connection::decode(const char* data, size_t size) {
     const char* ptr = data;
     const char* end = data + size;
     if (catchUp) {              // Handle catch-up locally.
+        bool wasOpen = connection->isOpen();
         Buffer buf(const_cast<char*>(ptr), size);
         ptr += size;
         while (localDecoder.decode(buf))
             received(localDecoder.getFrame());
+        if (!wasOpen && connection->isOpen()) {
+            // Connections marked as federation links are allowed to proxy
+            // messages with user-ID that doesn't match the connection's
+            // authenticated ID. This is important for updates.
+            connection->setFederationLink(isCatchUp());
+        }
     }
     else {                      // Multicast local connections.
         assert(isLocalClient());
@@ -382,6 +389,10 @@ broker::SemanticState& Connection::semanticState() {
 
 void Connection::shadowPrepare(const std::string& mgmtId) {
     updateIn.nextShadowMgmtId = mgmtId;
+}
+
+void Connection::shadowSetUser(const std::string& userId) {
+    connection->setUserId(userId);
 }
 
 void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled, const SequenceNumber& position)
