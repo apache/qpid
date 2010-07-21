@@ -1,6 +1,10 @@
-# selinux policy needed to run a qpid cluster with selinux in enforcing mode.
-# To build the compiled .pp file in this directory do:
-#   make -f /usr/share/selinux/devel/Makefile 
+# selinux policy needed to run the qpidd service with clustering
+# enabled and selinux in enforcing mode.
+#
+# To build the qpid.pp module in this directory do:
+#   sudo make -f /usr/share/selinux/devel/Makefile
+# To install the compiled qpidd.pp
+#   sudo semodule -i qpidd.pp
 
 policy_module(qpidd, 1.1)
 require {
