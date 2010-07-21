@@ -24,13 +24,7 @@
 
 """ 
 
-* Next steps:
-
-** TODO Support all exchange types
-** TODO Find problem with 'suscribe/listen' tests (see scrp)
 ** TODO Add XML Exchange tests
-** TODO Convert to "qpid-python-test" framework
-** TODO Add Java client tests and interop
 
 """
 
@@ -67,8 +61,15 @@ logging.debug("Qpid Root: " + qpid_root)
 qpid_broker = os.getenv("QPID_BROKER", "localhost:5672")
 logging.debug("Qpid Broker: " + qpid_broker)
 
-## If your examples are installed somewhere else, you have to tell us
-## where examples in each language are kept
+########################################################################################
+#
+#  If you are working from a source tree, setting the above paths is
+#  sufficient.
+# 
+#  If your examples are installed somewhere else, you have to tell us
+#  where examples in each language are kept
+#
+########################################################################################
 
 cpp_examples_path =  os.getenv("QPID_CPP_EXAMPLES", qpid_root + "/cpp/examples/messaging/")
 
@@ -97,14 +98,15 @@ logging.debug("Java CLASSPATH = " + os.environ["CLASSPATH"])
 hello_world = cpp_examples_path + "hello_world" + " "  + qpid_broker
 cpp_drain = cpp_examples_path + "drain" + " -b " + qpid_broker
 cpp_spout = cpp_examples_path + "spout" + " -b " + qpid_broker
+python_drain = python_examples_path + "drain" + " -b " + qpid_broker
+python_spout = python_examples_path + "spout" + " -b " + qpid_broker
+java_drain = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Drain " + "-b guest:guest@" + qpid_broker
+java_spout = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Spout " + "-b guest:guest@" + qpid_broker
+
 # cpp_map_send = cpp_examples_path + "map_sender"
 # cpp_map_receive = cpp_examples_path + "map_receiver"
 # cpp_client = cpp_examples_path + "map_sender"
 # cpp_server = cpp_examples_path + "map_receiver"
-python_drain = python_examples_path + "drain" + " -b " + qpid_broker
-python_spout = python_examples_path + "spout" + " -b " + qpid_broker
-java_drain = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Drain"
-java_spout = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Spout"
 
 CPP = object()
 PYTHON = object()
@@ -186,7 +188,7 @@ class TestDrainSpout(unittest.TestCase):
         return out
 
     def subscribe(self, lang=CPP, destination="amq.topic", create=0):
-        time = "-t 5"
+        time = "-t 10"
         if lang==CPP:
             commandS = " ".join([cpp_drain, time, destination])
         elif lang==PYTHON:
@@ -377,7 +379,7 @@ class TestDrainSpout(unittest.TestCase):
         self.assertTrue(out.find("BRILLIG") >= 0)
         server.terminate()
 
-    def test_topic_news_sports_weather_cpp(self):
+    def test_topic_news_sports_weather(self):
         news = self.subscribe(lang=CPP, destination="amq.topic/*.news")
         deepnews = self.subscribe(lang=PYTHON, destination="amq.topic/#.news")
         weather = self.subscribe(lang=JAVA, destination="amq.topic/*.weather")
