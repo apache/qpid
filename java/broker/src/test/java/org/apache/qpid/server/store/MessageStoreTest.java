@@ -85,7 +85,8 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     {
         PropertiesConfiguration config = new PropertiesConfiguration();
 
-        config.addProperty("store.environment-path", "derbyDB_MST");
+        config.addProperty("store.environment-path", 
+                            System.getProperty("QPID_WORK") + "/derbyDB_MessageStoreTest");
         config.addProperty("store.class", "org.apache.qpid.server.store.DerbyMessageStore");
 
         runTestWithStore(config);
