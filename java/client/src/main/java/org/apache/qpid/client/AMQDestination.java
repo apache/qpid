@@ -121,8 +121,6 @@ public abstract class AMQDestination implements Destination, Referenceable
       }
     }
     
-    
-    
     protected static DestSyntax defaultDestSyntax;
     
     protected DestSyntax _destSyntax;
@@ -140,6 +138,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected Node _sourceNode;
     protected Link _targetLink;
     protected Link _link;    
+        
     // ----- / Fields required to support new address syntax -------
     
     static
@@ -390,7 +389,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         return _isExclusive;
     }
-
+    
     public boolean isAutoDelete()
     {
         return _isAutoDelete;
@@ -838,6 +837,8 @@ public abstract class AMQDestination implements Destination, Referenceable
 
         _delete = _addrHelper.getDelete() != null ?
                  AddressOption.getOption(_addrHelper.getDelete()):AddressOption.NEVER;
+                 
+        _browseOnly = _addrHelper.isBrowseOnly();
                         
         _addressType = _addrHelper.getTargetNodeType();         
         _targetNode =  _addrHelper.getTargetNode(_addressType);

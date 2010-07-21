@@ -56,7 +56,8 @@ public class AddressHelper
     public static final String TYPE = "type";
     public static final String ALT_EXCHANGE = "alt-exchange";
     public static final String BINDINGS = "bindings";
-    public static final String BROWSE_ONLY = "browse";
+    public static final String BROWSE = "browse";
+    public static final String MODE = "mode";
     public static final String CAPACITY = "capacity";
     public static final String CAPACITY_SOURCE = "source";
     public static final String CAPACITY_TARGET = "target";
@@ -112,8 +113,8 @@ public class AddressHelper
    
     public boolean isBrowseOnly()
     {
-        Boolean b = nodeProps.getBoolean(BROWSE_ONLY);
-        return b == null ? false : b ;
+        String mode = addressProps.getString(MODE);
+        return mode != null && mode.equals(BROWSE) ? true : false ;
     }
   
     public QpidQueueOptions getQpidQueueOptions(MapAccessor args)

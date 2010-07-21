@@ -608,6 +608,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     }
     
     /**
+     * Test Goal : Verify the default subjects used for each exchange type.
      * The default for amq.topic is "#" and for the rest it's ""
      */
     public void testDefaultSubjects() throws Exception
@@ -634,5 +635,44 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         assertEquals("The consumer subscribed to amq.topic " +
                 "with '#' binding key should have received the message ",
                 ((TextMessage)topicCons.receive(1000)).getText(),"1000");
+    }
+    
+    /**
+     * Test Goal : Verify that 'mode : browse' works as expected using a regular consumer.
+     *             This indirectly tests ring queues as well.
+     */
+    public void testBrowseMode() throws Exception
+    {
+        
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        
+        String addr = "ADDR:my-ring-queue; {create: always, mode: browse, " +
+            "node: {x-bindings: [{exchange : 'amq.direct', key : test}], " +
+                   "x-declare:{'qpid.policy_type':ring, 'qpid.max_count':2}}}";
+        
+        Destination dest = ssn.createQueue(addr);
+        MessageConsumer browseCons = ssn.createConsumer(dest);
+        MessageProducer prod = ssn.createProducer(ssn.createQueue("ADDR:amq.direct/test"));
+        
+        prod.send(ssn.createTextMessage("Test1"));
+        prod.send(ssn.createTextMessage("Test2"));
+        
+        TextMessage msg = (TextMessage)browseCons.receive(1000);
+        assertEquals("Didn't receive the first message",msg.getText(),"Test1");
+        
+        msg = (TextMessage)browseCons.receive(1000);
+        assertEquals("Didn't receive the first message",msg.getText(),"Test2");
+        
+        browseCons.close();                
+        prod.send(ssn.createTextMessage("Test3"));
+        browseCons = ssn.createConsumer(dest);
+        
+        msg = (TextMessage)browseCons.receive(1000);
+        assertEquals("Should receive the second message again",msg.getText(),"Test2");
+     
+        msg = (TextMessage)browseCons.receive(1000);
+        assertEquals("Should receive the third message since it's a ring queue",msg.getText(),"Test3");
+        
+        assertNull("Should not receive anymore messages",browseCons.receive(500));
     }
 }
