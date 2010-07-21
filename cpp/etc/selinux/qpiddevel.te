@@ -1,0 +1,23 @@
+# selinux policy for qpid developers.
+# If you have configured a qpid source tree with cluster support, you will need
+# this policy to run the make check tests with with selinux in enforcing mode.
+#
+# To build the qpid.pp module in this directory do:
+#   sudo make -f /usr/share/selinux/devel/Makefile
+# To install the compiled qpiddevel.pp
+#   sudo semodule -i qpiddevel.pp
+
+module qpiddevel 1.0;
+
+require {
+	type unconfined_t;
+	type aisexec_t;
+	class capability sys_admin;
+	class sem { write unix_read unix_write associate read destroy };
+	class shm { unix_read write unix_write associate read destroy };
+}
+
+#============= aisexec_t ==============
+allow aisexec_t self:capability sys_admin;
+allow aisexec_t unconfined_t:sem { write unix_read unix_write associate read destroy };
+allow aisexec_t unconfined_t:shm { unix_read write unix_write associate read destroy };
