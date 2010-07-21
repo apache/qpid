@@ -693,23 +693,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             {
                 _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
             }
-            // synchronized (_closed)
-
-            {
-                // if (!_closed.get())
-                {
-
-                    //preDeliver(jmsMessage);
-
-                    notifyMessage(jmsMessage);
-                }
-                // else
-                // {
-                // _logger.error("MESSAGE REJECTING!");
-                // _session.rejectMessage(jmsMessage, true);
-                // //_logger.error("MESSAGE JUST DROPPED!");
-                // }
-            }
+            notifyMessage(jmsMessage);
         }
         catch (Exception e)
         {
@@ -973,7 +957,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     public boolean isNoConsume()
     {
-        return _noConsume;
+        return _noConsume || _destination.isBrowseOnly() ;
     }
 
     public void rollback()
