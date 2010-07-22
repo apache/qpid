@@ -1,6 +1,5 @@
 /*
  *
- * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -20,12 +19,16 @@
  */
 package org.apache.qpid.server.virtualhost.plugin;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
 import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.plugin.logging.SlowConsumerDetectionMessages;
@@ -35,6 +38,7 @@ import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
 {
     private SlowConsumerDetectionConfiguration _config;
+    private ConfiguredQueueBindingListener _listener;
 
     public static class SlowConsumerFactory implements VirtualHostPluginFactory
     {
@@ -53,9 +57,21 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
         }
     }
 
+    /**
+     * Configures the slow consumer disconnect plugin by adding a listener to each exchange on this
+     * cirtual host to record all the configured queues in a cache for processing by the housekeeping
+     * thread.
+     * 
+     * @see Plugin#configure(ConfigurationPlugin)
+     */
     public void configure(ConfigurationPlugin config)
     {        
         _config = (SlowConsumerDetectionConfiguration) config;
+        _listener = new ConfiguredQueueBindingListener(_virtualhost.getName());
+        for (AMQShortString exchangeName : _virtualhost.getExchangeRegistry().getExchangeNames())
+        {
+            _virtualhost.getExchangeRegistry().getExchange(exchangeName).addBindingListener(_listener);
+        }
     }
     
     public SlowConsumerDetection(VirtualHost vhost)
@@ -63,19 +79,19 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
         super(vhost);
     }
 
-    @Override
     public void execute()
     {
-        SlowConsumerDetectionMessages.RUNNING();
-
-        for (AMQQueue q : _virtualhost.getQueueRegistry().getQueues())
+        CurrentActor.get().message(SlowConsumerDetectionMessages.RUNNING());
+        
+        Set<AMQQueue> cache = _listener.getQueueCache();
+        for (AMQQueue q : cache)
         {
-            SlowConsumerDetectionMessages.CHECKING_QUEUE(q.getName());
+            CurrentActor.get().message(SlowConsumerDetectionMessages.CHECKING_QUEUE(q.getName()));
+            
             try
             {
                 SlowConsumerDetectionQueueConfiguration config =
-                            q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class.getName());
-
+                    q.getConfiguration().getConfiguration(SlowConsumerDetectionQueueConfiguration.class.getName());
                 if (checkQueueStatus(q, config))
                 {
                     config.getPolicy().performPolicy(q);
@@ -83,15 +99,12 @@ class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
             }
             catch (Exception e)
             {
-                _logger.error("Exception in SlowConsumersDetection " +
-                              "for queue: " +
-                              q.getNameShortString().toString(), e);
-                //Don't throw exceptions as this will stop the
-                // house keeping task from running.
+                // Don't throw exceptions as this will stop the house keeping task from running.
+                _logger.error("Exception in SlowConsumersDetection for queue: " + q.getName(), e);
             }
         }
 
-        SlowConsumerDetectionMessages.COMPLETE();
+        CurrentActor.get().message(SlowConsumerDetectionMessages.COMPLETE());
     }
 
     public long getDelay()

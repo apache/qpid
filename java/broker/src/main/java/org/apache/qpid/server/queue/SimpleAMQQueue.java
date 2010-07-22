@@ -515,7 +515,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 break;
             }
         }
-
+        
+        reconfigure();
+    }
+    
+    private void reconfigure()
+    {
         //Reconfigure the queue for to reflect this new binding.
         ConfigurationPlugin config = getVirtualHost().getConfiguration().getQueueConfiguration(this);
 
@@ -539,6 +544,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public void removeBinding(final Binding binding)
     {
         _bindings.remove(binding);
+        
+        reconfigure();
     }
 
     public List<Binding> getBindings()
