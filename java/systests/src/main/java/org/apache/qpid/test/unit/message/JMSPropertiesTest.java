@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.test.unit.message;
 
+import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
@@ -52,6 +54,7 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
     public static final String JMS_CORR_ID = "QPIDID_01";
     public static final int JMS_DELIV_MODE = 1;
     public static final String JMS_TYPE = "test.jms.type";
+    protected static final String NULL_OBJECT_PROPERTY = "NullObject";
 
     protected void setUp() throws Exception
     {
@@ -88,6 +91,28 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         
         int JMSXGroupSeq_VALUE = 1;
         sentMsg.setIntProperty("JMSXGroupSeq", JMSXGroupSeq_VALUE);
+
+        try
+        {
+            sentMsg.setObjectProperty(NULL_OBJECT_PROPERTY, null);
+            fail("Null Object Property value set");
+        }
+        catch (MessageFormatException mfe)
+        {
+            // Check the cause
+            Throwable cause = mfe.getCause();
+            assertNotNull(cause);
+            assertEquals("Incorrect cause ", AMQPInvalidClassException.class, cause.getClass());
+            assertEquals("Null values are not allowed to be set",
+                         "Only Primitives objects allowed Object is:null", cause.getMessage());
+
+            // Also check the linked exception
+            cause = mfe.getLinkedException();
+            assertNotNull(cause);
+            assertEquals("Incorrect cause ", AMQPInvalidClassException.class, cause.getClass());
+            assertEquals("Null values are not allowed to be set",
+                         "Only Primitives objects allowed Object is:null", cause.getMessage());
+        }
 
         // send it
         producer.send(sentMsg);
@@ -130,6 +155,9 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
 
         assertTrue("JMSXGroupID not available.",JMSXGroupID_Available);
         assertTrue("JMSXGroupSeq not available.",JMSXGroupSeq_Available);
+
+        // Check that the NULL_OBJECT_PROPERTY was not set or transmitted.
+        assertFalse(NULL_OBJECT_PROPERTY + " was not set.", rm.propertyExists(NULL_OBJECT_PROPERTY));
 
         con.close();
     }
