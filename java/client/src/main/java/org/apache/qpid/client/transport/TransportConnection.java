@@ -52,7 +52,7 @@ public class TransportConnection
 {
     private static ITransportConnection _instance;
 
-    private static Map _inVmPipeAddress = new HashMap();
+    private static final Map _inVmPipeAddress = new HashMap();
     private static VmPipeAcceptor _acceptor;
     private static int _currentInstance = -1;
     private static int _currentVMPort = -1;
@@ -177,16 +177,8 @@ public class TransportConnection
             {
                 if (AutoCreate)
                 {
-                    if (AutoCreate)
-                    {
-                        _logger.warn("Auto Creating InVM Broker on port:" + port);
-                        createVMBroker(port);
-                    }
-                    else
-                    {
-                        throw new AMQVMBrokerCreationException(null, port, "VM Broker on port " + port
-                                                                           + " does not exist. Auto create disabled.", null);
-                    }
+                    _logger.warn("Auto Creating InVM Broker on port:" + port);
+                    createVMBroker(port);
                 }
                 else
                 {
