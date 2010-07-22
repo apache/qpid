@@ -1,11 +1,9 @@
 // Those tests are not finished
 org.apache.qpid.test.testcases.TTLTest#*
 org.apache.qpid.test.testcases.FailoverTest#*
+
 // This is a long running test so should exclude from normal runs
 org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
-// Those tests are written against the 0.10 path
-org.apache.qpid.test.unit.message.UTF8Test#*
-org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait
 
 //QPID-1818 : Client code path does not correctly restore a transacted session after failover.
 org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
@@ -26,5 +24,3 @@ org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithAsyncConsumer
 org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
 org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithAsyncConsumer
 org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithSyncConsumer
-
-org.apache.qpid.test.client.destination.AddressBasedDestinationTest#*
