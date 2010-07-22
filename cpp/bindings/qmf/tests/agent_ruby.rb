@@ -231,7 +231,7 @@ class App < Qmf::AgentHandler
     @settings.set_attr("host", ARGV[0]) if ARGV.size > 0
     @settings.set_attr("port", ARGV[1].to_i) if ARGV.size > 1
     @connection = Qmf::Connection.new(@settings)
-    @agent = Qmf::Agent.new(self)
+    @agent = Qmf::Agent.new(self, "agent_test_label")
 
     @model = Model.new
     @model.register(@agent)

@@ -263,7 +263,7 @@ class App(qmf.AgentHandler):
         self._connection = qmf.Connection(self._settings)
 
         # Instantiate an Agent to serve me queries and method calls
-        self._agent = qmf.Agent(self)
+        self._agent = qmf.Agent(self, "agent_test_label")
 
         # Dynamically define the parent and child schemas, then
         # register them with the agent

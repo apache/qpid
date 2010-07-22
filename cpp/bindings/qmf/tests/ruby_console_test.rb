@@ -204,7 +204,7 @@ class ConsoleTest < ConsoleTestBase
   def test_D_get_with_agent
     agents = @qmfc.agents
     agents.each do |agent|
-      if agent.label == "qmfa"
+      if agent.label == "agent_test_label"
         parent = @qmfc.object(:class => "parent", :agent => agent)
         assert(parent, "Number of parent objects")
         return
