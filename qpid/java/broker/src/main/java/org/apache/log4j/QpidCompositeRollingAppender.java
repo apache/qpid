@@ -629,6 +629,11 @@ public class QpidCompositeRollingAppender extends FileAppender
             return;
         }
 
+        if (backupFilesToPath != null)
+        {
+            to = backupFilesToPath + System.getProperty("file.separator") + new File(to).getName();
+        }
+
         File target = new File(to);
 
         File file = new File(from);
@@ -690,16 +695,9 @@ public class QpidCompositeRollingAppender extends FileAppender
         // for the file we are trying to delete
         if (backupFilesToPath != null)
         {
-            int index = relativeFileName.lastIndexOf(File.separator);
-            if (index != -1)
-            {
-                fileName = backupFilesToPath + File.separator
-                           + relativeFileName.substring(index);
-            }
-            else
-            {
-                fileName = relativeFileName;
-            }
+            File file = new File(relativeFileName);
+
+            fileName = backupFilesToPath + System.getProperty("file.separator") + file.getName();            
         }
 
         // If we are compressing the at the extension
@@ -1025,14 +1023,8 @@ public class QpidCompositeRollingAppender extends FileAppender
     protected synchronized void doCompress(File from, File to)
     {
         String toFile;
-        if (backupFilesToPath == null)
-        {
-            toFile = to.getPath() + COMPRESS_EXTENSION;
-        }
-        else
-        {
-            toFile = backupFilesToPath + System.getProperty("file.separator") + to.getName() + COMPRESS_EXTENSION;
-        }
+
+        toFile = to.getPath() + COMPRESS_EXTENSION;
 
         File target = new File(toFile);
         if (target.exists())
