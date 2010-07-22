@@ -35,6 +35,9 @@ import org.apache.felix.framework.util.StringMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.TopicConfiguration;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration.SlowConsumerDetectionConfigurationFactory;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration.SlowConsumerDetectionPolicyConfigurationFactory;
+import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration.SlowConsumerDetectionQueueConfigurationFactory;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
@@ -43,6 +46,9 @@ import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.access.plugins.DenyAll;
 import org.apache.qpid.server.security.access.plugins.LegacyAccess;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
+import org.apache.qpid.server.virtualhost.plugin.SlowConsumerDetection;
+import org.apache.qpid.server.virtualhost.plugin.policies.TopicDeletePolicy;
+import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.launch.Framework;
@@ -57,7 +63,6 @@ public class PluginManager implements Closeable
     private static final Logger _logger = Logger.getLogger(PluginManager.class);
 
     private static final int FELIX_STOP_TIMEOUT = 30000;
-    private static final String VERSION = "2.6.0.4";
 
     private Framework _felix;
 
@@ -65,11 +70,14 @@ public class PluginManager implements Closeable
     private ServiceTracker _securityTracker = null;
     private ServiceTracker _configTracker = null;
     private ServiceTracker _virtualHostTracker = null;
+    private ServiceTracker _policyTracker = null;
 
     private Activator _activator;
 
     private Map<String, SecurityPluginFactory> _securityPlugins = new HashMap<String, SecurityPluginFactory>();
     private Map<List<String>, ConfigurationPluginFactory> _configPlugins = new IdentityHashMap<List<String>, ConfigurationPluginFactory>();
+    private Map<String, VirtualHostPluginFactory> _vhostPlugins = new HashMap<String, VirtualHostPluginFactory>();
+    private Map<String, SlowConsumerPolicyPluginFactory> _policyPlugins = new HashMap<String, SlowConsumerPolicyPluginFactory>();
 
     public PluginManager(String pluginPath, String cachePath) throws Exception
     {
@@ -85,9 +93,22 @@ public class PluginManager implements Closeable
                 SecurityManager.SecurityConfiguration.FACTORY,
                 AllowAll.AllowAllConfiguration.FACTORY,
                 DenyAll.DenyAllConfiguration.FACTORY,
-                LegacyAccess.LegacyAccessConfiguration.FACTORY))
+                LegacyAccess.LegacyAccessConfiguration.FACTORY,
+                new SlowConsumerDetectionConfigurationFactory(),
+                new SlowConsumerDetectionPolicyConfigurationFactory(),
+                new SlowConsumerDetectionQueueConfigurationFactory()))
         {
             _configPlugins.put(configFactory.getParentPaths(), configFactory);
+        }
+        for (SlowConsumerPolicyPluginFactory pluginFactory : Arrays.asList(
+                new TopicDeletePolicy.TopicDeletePolicyFactory()))
+        {
+            _policyPlugins.put(pluginFactory.getPluginName(), pluginFactory);
+        }
+        for (VirtualHostPluginFactory pluginFactory : Arrays.asList(
+                new SlowConsumerDetection.SlowConsumerFactory()))
+        {
+            _vhostPlugins.put(pluginFactory.getClass().getName(), pluginFactory);
         }
 
         // Check the plugin directory path is set and exist
@@ -117,6 +138,7 @@ public class PluginManager implements Closeable
                 "org.apache.qpid.common; version=0.7," +
                 "org.apache.qpid.exchange; version=0.7," +
                 "org.apache.qpid.framing; version=0.7," +
+                "org.apache.qpid.management.common.mbeans.annotations; version=0.7," +
                 "org.apache.qpid.protocol; version=0.7," +
                 "org.apache.qpid.server.binding; version=0.7," +
                 "org.apache.qpid.server.configuration; version=0.7," +
@@ -157,7 +179,7 @@ public class PluginManager implements Closeable
         configMap.put(SYSTEMBUNDLE_ACTIVATORS_PROP, activators);
 
         if (cachePath != null)
-            {
+        {
             File cacheDir = new File(cachePath);
             if (!cacheDir.exists() && cacheDir.canWrite())
             {
@@ -204,12 +226,11 @@ public class PluginManager implements Closeable
 
         _virtualHostTracker = new ServiceTracker(_activator.getContext(), VirtualHostPluginFactory.class.getName(), null);
         _virtualHostTracker.open();
-
-        _logger.info("Opened service trackers");
+ 
+        _policyTracker = new ServiceTracker(_activator.getContext(), SlowConsumerPolicyPluginFactory.class.getName(), null);
+        _policyTracker.open();
         
-        // Load security and configuration plugins from their trackers for access
-        _configPlugins.putAll(getConfigurationServices());
-        _securityPlugins.putAll(getPlugins(SecurityPluginFactory.class));
+        _logger.info("Opened service trackers");
     }
 
     private static <T> Map<String, T> getServices(ServiceTracker tracker)
@@ -234,11 +255,18 @@ public class PluginManager implements Closeable
         return services;
     }
 
-    private Map<List<String>, ConfigurationPluginFactory> getConfigurationServices()
+    public static <T> Map<String, T> getServices(ServiceTracker tracker, Map<String, T> plugins)
+    {   
+        Map<String, T> services = getServices(tracker);
+        services.putAll(plugins);
+        return services;
+    }
+
+    public Map<List<String>, ConfigurationPluginFactory> getConfigurationPlugins()
     {   
         Map<List<String>, ConfigurationPluginFactory> services = new IdentityHashMap<List<String>, ConfigurationPluginFactory>();
         
-        if (_configTracker.getServices() != null)
+        if (_configTracker != null && _configTracker.getServices() != null)
         {
             for (Object service : _configTracker.getServices())
             {
@@ -246,49 +274,30 @@ public class PluginManager implements Closeable
                 services.put(factory.getParentPaths(), factory);
             }
         }
+        
+        services.putAll(_configPlugins);
 
         return services;
+    }
+
+    public Map<String, VirtualHostPluginFactory> getVirtualHostPlugins()
+    {   
+        return getServices(_virtualHostTracker, _vhostPlugins);
+    }
+
+    public Map<String, SlowConsumerPolicyPluginFactory> getSlowConsumerPlugins()
+    {   
+        return getServices(_policyTracker, _policyPlugins);
     }
 
     public Map<String, ExchangeType<?>> getExchanges()
     {
         return getServices(_exchangeTracker);
     }
-
-    public Map<String, VirtualHostPluginFactory> getVirtualHostPlugins()
-    {
-        return getServices(_virtualHostTracker);
-    }
-
-    public <P extends PluginFactory<?>> Map<String, P> getPlugins(Class<P> plugin)
-    {
-        // If plugins are not configured then return an empty set
-        if (_activator == null)
-        {
-            return new HashMap<String, P>();
-        }
-
-        ServiceTracker tracker = new ServiceTracker(_activator.getContext(), plugin.getName(), null);
-        tracker.open();
-
-        try
-        {
-            return getServices(tracker);
-        }
-        finally
-        {
-            tracker.close();
-        }
-    }
     
     public Map<String, SecurityPluginFactory> getSecurityPlugins()
     {
-        return _securityPlugins;
-    }
-    
-    public Map<List<String>, ConfigurationPluginFactory> getConfigurationPlugins()
-    {
-        return _configPlugins;
+        return getServices(_securityTracker, _securityPlugins);
     }
 
     public void close()
@@ -302,6 +311,7 @@ public class PluginManager implements Closeable
                 _securityTracker.close();
                 _configTracker.close();
                 _virtualHostTracker.close();
+                _policyTracker.close();
             }
             finally
             {
