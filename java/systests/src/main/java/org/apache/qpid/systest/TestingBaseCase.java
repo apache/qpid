@@ -172,22 +172,8 @@ public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionList
         startPublisher(_destination);
 
         boolean disconnected = _disconnectionLatch.await(DISCONNECTION_WAIT, TimeUnit.SECONDS);
-
-        if (!disconnected && isBroker010())
-        {
-            try
-            {
-                ((AMQSession_0_10) session).sync();
-            }
-            catch (AMQException amqe)
-            {
-                JMSException jmsException = new JMSException(amqe.getMessage());
-                jmsException.setLinkedException(amqe);
-                jmsException.initCause(amqe);
-                _connectionException = jmsException;
-            }
-        }
-
+        
+        assertTrue("Client was not disconnected", disconnected);
         assertTrue("Client was not disconnected.", _connectionException != null);
 
         Exception linked = _connectionException.getLinkedException();
@@ -209,11 +195,11 @@ public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionList
 
         assertNotNull("No linked exception set on:" + _connectionException.getMessage(), linked);
 
-        assertEquals("Incorrect linked exception received.", AMQChannelClosedException.class, linked.getClass());
+        assertTrue("Incorrect linked exception received.", linked instanceof AMQException);
 
-        AMQChannelClosedException ccException = (AMQChannelClosedException) linked;
+        AMQException amqException = (AMQException) linked;
 
-        assertEquals("Channel was not closed with correct code.", AMQConstant.RESOURCE_ERROR, ccException.getErrorCode());
+        assertEquals("Channel was not closed with correct code.", AMQConstant.RESOURCE_ERROR, amqException.getErrorCode());
     }
 
 

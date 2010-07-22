@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -233,8 +232,13 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                     catch (AMQException e)
                     {
-                        // TODO
-                        throw new RuntimeException(e);
+                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                        if (e.getErrorCode() != null)
+                        {
+                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                        }
+                        String description = "Cannot subscribe to '" + destination + "': " + e.getMessage();
+                        exception(session, method, errorCode, description);
                     }
                 }
             }
@@ -259,7 +263,7 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exchange = exchangeRegistry.getDefaultExchange();
         }
-
+        
 
         DeliveryProperties delvProps = null;
         if(xfr.getHeader() != null && (delvProps = xfr.getHeader().get(DeliveryProperties.class)) != null && delvProps.hasTtl() && !delvProps.hasExpiration())
@@ -268,6 +272,17 @@ public class ServerSessionDelegate extends SessionDelegate
         }
 
         MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
+        
+        if (!getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName()))
+        {
+            ExecutionErrorCode errorCode = ExecutionErrorCode.UNAUTHORIZED_ACCESS;
+            String description = "Permission denied: exchange-name '" + exchange.getName() + "'";
+            exception(ssn, xfr, errorCode, description);
+            
+	        ssn.processed(xfr);
+            return;
+        }
+        
         final MessageStore store = getVirtualHost(ssn).getMessageStore();
         StoredMessage<MessageMetaData_0_10> storeMessage = store.addMessage(messageMetaData);
         ByteBuffer body = xfr.getBody();
@@ -365,8 +380,13 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             catch (AMQException e)
             {
-                //TODO
-                throw new RuntimeException(e);
+                ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                if (e.getErrorCode() != null)
+                {
+                    errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                }
+                String description = "Cannot flush subscription '" + destination + "': " + e.getMessage();
+                exception(session, method, errorCode, description);
             }
         }
     }
@@ -453,17 +473,15 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
                 }
-                catch (AMQSecurityException e)
-                {
-                    ExecutionErrorCode errorCode = ExecutionErrorCode.NOT_ALLOWED;
-                    String description = "Permission denied: exchange-name '" + exchangeName + "'";
-
-                    exception(session, method, errorCode, description);
-                }
                 catch (AMQException e)
                 {
-                    //TODO
-                    throw new RuntimeException(e);
+                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                    if (e.getErrorCode() != null)
+                    {
+                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                    }
+                    String description = "Cannot declare exchange '" + exchangeName + "': " + e.getMessage();
+                    exception(session, method, errorCode, description);
                 }
             }
             else
@@ -486,6 +504,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         session.invoke(ex);
 
+        session.close();
     }
 
     private Exchange getExchange(Session session, String exchangeName)
@@ -543,14 +562,15 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.PRECONDITION_FAILED, "Exchange in use");
         }
-        catch (AMQSecurityException e)
-        {
-            exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Permission denied: " + method.getExchange());
-        }
         catch (AMQException e)
         {
-            // TODO
-            throw new RuntimeException(e);
+            ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+            if (e.getErrorCode() != null)
+            {
+                errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+            }
+            String description = "Cannot delete exchange '" + method.getExchange() + "': " + e.getMessage();
+            exception(session, method, errorCode, description);
         }
     }
 
@@ -630,10 +650,15 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         virtualHost.getBindingFactory().addBinding(method.getBindingKey(), queue, exchange, method.getArguments());
                     }
-                    catch (AMQSecurityException e)
+                    catch (AMQException e)
                     {
-                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Bind Exchange: '" + method.getExchange()
-                                + "' to Queue: '" + method.getQueue() + "' not allowed");
+                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                        if (e.getErrorCode() != null)
+                        {
+                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                        }
+                        String description = "Cannot add binding '" + method.getBindingKey() + "': " + e.getMessage();
+                        exception(session, method, errorCode, description);
                     }
                 }
                 else
@@ -686,9 +711,15 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     virtualHost.getBindingFactory().removeBinding(method.getBindingKey(), queue, exchange, null);
                 }
-                catch (AMQSecurityException e)
+                catch (AMQException e)
                 {
-                    exception(session,method, ExecutionErrorCode.NOT_ALLOWED, "Permission denied");
+                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                    if (e.getErrorCode() != null)
+                    {
+                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                    }
+                    String description = "Cannot remove binding '" + method.getBindingKey() + "': " + e.getMessage();
+                    exception(session, method, errorCode, description);
                 }
             }
         }
@@ -801,7 +832,7 @@ public class ServerSessionDelegate extends SessionDelegate
     }
 
     @Override
-    public void queueDeclare(Session session, QueueDeclare method)
+    public void queueDeclare(Session session, final QueueDeclare method)
     {
 
         VirtualHost virtualHost = getVirtualHost(session);
@@ -909,8 +940,13 @@ public class ServerSessionDelegate extends SessionDelegate
                                         }
                                         catch (AMQException e)
                                         {
-                                            // TODO
-                                            throw new RuntimeException(e);
+                                            ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                                            if (e.getErrorCode() != null)
+                                            {
+                                                errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                                            }
+                                            String description = "Cannot delete '" + method.getQueue() + "': " + e.getMessage();
+                                            exception(session, method, errorCode, description);
                                         }
                                     }
                                 };
@@ -948,16 +984,15 @@ public class ServerSessionDelegate extends SessionDelegate
                             });
                         }
                     }
-                    catch (AMQSecurityException e)
-                    {
-                        String description = "Cannot declare queue('" + queueName + "'), permission denied";
-                        ExecutionErrorCode errorCode = ExecutionErrorCode.NOT_ALLOWED;
-                        exception(session, method, errorCode, description);
-                    }
                     catch (AMQException e)
                     {
-                        // TODO
-                        throw new RuntimeException(e);
+                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                        if (e.getErrorCode() != null)
+                        {
+                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                        }
+                        String description = "Cannot declare queue '" + queueName + "': " + e.getMessage();
+                        exception(session, method, errorCode, description);
                     }
                 }
             }
@@ -976,7 +1011,7 @@ public class ServerSessionDelegate extends SessionDelegate
     }
 
     protected AMQQueue createQueue(final String queueName,
-                                   QueueDeclare body,
+                                   final QueueDeclare body,
                                    VirtualHost virtualHost,
                                    final ServerSession session)
             throws AMQException
@@ -1003,8 +1038,13 @@ public class ServerSessionDelegate extends SessionDelegate
                                 }
                                 catch (AMQException e)
                                 {
-                                    //TODO
-                                    throw new RuntimeException(e);
+                                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                                    if (e.getErrorCode() != null)
+                                    {
+                                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                                    }
+                                    String description = "Cannot delete queue '" + body.getQueue() + "': " + e.getMessage();
+                                    exception(session, body, errorCode, description);
                                 }
                             }
                         }
@@ -1071,14 +1111,15 @@ public class ServerSessionDelegate extends SessionDelegate
                             store.removeQueue(queue);
                         }
                     }
-                    catch (AMQSecurityException e)
-                    {
-                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Permission denied: " + queueName);
-                    }
                     catch (AMQException e)
                     {
-                        // TODO
-                        throw new RuntimeException(e);
+                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                        if (e.getErrorCode() != null)
+                        {
+                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                        }
+                        String description = "Cannot delete queue '" + queueName + "': " + e.getMessage();
+                        exception(session, method, errorCode, description);
                     }
                 }
             }
@@ -1107,14 +1148,15 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     queue.clearQueue();
                 }
-                catch (AMQSecurityException e)
-                {
-                    exception(session,method, ExecutionErrorCode.NOT_ALLOWED, "Permission denied: " + queueName);
-                }
                 catch (AMQException e)
                 {
-                    // TODO
-                    throw new RuntimeException(e);
+                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+                    if (e.getErrorCode() != null)
+                    {
+                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
+                    }
+                    String description = "Cannot purge queue '" + queueName + "': " + e.getMessage();
+                    exception(session, method, errorCode, description);
                 }
             }
         }

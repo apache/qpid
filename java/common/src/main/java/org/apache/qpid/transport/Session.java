@@ -734,11 +734,7 @@ public class Session extends SessionInvoker
 
             if (lt(maxComplete, point))
             {
-                if (state == CLOSED)
-                {
-                    throw new SessionException(getException());
-                }
-                else
+                if (state != CLOSED)
                 {
                     throw new SessionException
                         (String.format

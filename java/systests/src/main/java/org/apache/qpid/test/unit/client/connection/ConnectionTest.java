@@ -145,7 +145,7 @@ public class ConnectionTest extends QpidBrokerTestCase
         catch (AMQConnectionFailureException amqe)
         {
             assertNotNull("No cause set:" + amqe.getMessage(), amqe.getCause());
-            assertEquals("Exception was wrong type", AMQAuthenticationException.class, amqe.getCause().getClass());
+            assertTrue("Exception was wrong type", amqe.getCause() instanceof AMQException);
         }
         finally
         {

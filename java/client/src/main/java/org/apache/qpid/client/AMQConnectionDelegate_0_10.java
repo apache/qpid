@@ -165,13 +165,20 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             _conn._connected = true;
             _conn.setUsername(_qpidConnection.getUserID());
             _conn._failoverPolicy.attainedConnection();
-        } catch (ProtocolVersionException pe)
+        }
+        catch (ProtocolVersionException pe)
         {
             return new ProtocolVersion(pe.getMajor(), pe.getMinor());
-        } catch (ConnectionException e)
+        }
+        catch (ConnectionException ce)
         {
-            throw new AMQException(AMQConstant.CHANNEL_ERROR,
-                    "cannot connect to broker", e);
+            AMQConstant code = AMQConstant.REPLY_SUCCESS;
+            if (ce.getClose() != null && ce.getClose().getReplyCode() != null)
+            {
+                code = AMQConstant.getConstant(ce.getClose().getReplyCode().getValue());
+            }
+            String msg = "Cannot connect to broker: " + ce.getMessage();
+            throw new AMQException(code, msg, ce);
         }
 
         return null;

@@ -139,6 +139,7 @@ public class SessionDelegate
     @Override public void executionException(Session ssn, ExecutionException exc)
     {
         ssn.setException(exc);
+        ssn.getSessionListener().exception(ssn, new SessionException(exc));
     }
 
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
