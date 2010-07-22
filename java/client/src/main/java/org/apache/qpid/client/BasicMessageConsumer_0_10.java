@@ -139,36 +139,24 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      */
     @Override public void notifyMessage(AbstractJMSMessage jmsMessage)
     {
-        boolean messageOk = false;
         try
         {
-            messageOk = checkPreConditions(jmsMessage);
+            if (checkPreConditions(jmsMessage))
+            {
+                if (isMessageListenerSet() && capacity == 0)
+                {
+                    _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                              MessageCreditUnit.MESSAGE, 1,
+                                                              Option.UNRELIABLE);
+                }
+                _logger.debug("messageOk, trying to notify");
+                super.notifyMessage(jmsMessage);
+            }
         }
         catch (AMQException e)
         {
             _logger.error("Receivecd an Exception when receiving message",e);
-            try
-            {
-
-                getSession().getAMQConnection().getExceptionListener()
-                        .onException(new JMSAMQException("Error when receiving message", e));
-            }
-            catch (Exception e1)
-            {
-                // we should silently log thie exception as it only hanppens when the connection is closed
-                _logger.error("Exception when receiving message", e1);
-            }
-        }
-        if (messageOk)
-        {
-            if (isMessageListenerSet() && capacity == 0)
-            {
-                _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
-                                                          MessageCreditUnit.MESSAGE, 1,
-                                                          Option.UNRELIABLE);
-            }
-            _logger.debug("messageOk, trying to notify");
-            super.notifyMessage(jmsMessage);
+            getSession().getAMQConnection().exceptionReceived(e);
         }
     }
 

@@ -22,6 +22,7 @@ package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
@@ -72,11 +73,17 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
 
             if (errorCode != AMQConstant.REPLY_SUCCESS)
             {
-                if (errorCode == AMQConstant.NOT_ALLOWED || (errorCode == AMQConstant.ACCESS_REFUSED))
+                if (errorCode == AMQConstant.NOT_ALLOWED)
                 {
                     _logger.info("Error :" + errorCode + ":" + Thread.currentThread().getName());
 
                     error = new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString(), null);
+                }
+                else if (errorCode == AMQConstant.ACCESS_REFUSED)
+                {
+                    _logger.info("Error :" + errorCode + ":" + Thread.currentThread().getName());
+
+                    error = new AMQSecurityException(reason == null ? null : reason.toString(), null);
                 }
                 else
                 {

@@ -29,6 +29,7 @@ import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -220,11 +221,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             if (sync)
             {
                 ssn.sync();
+                ((AMQSession_0_10) getSession()).getCurrentException();
             }
             
-            
         }
-        catch (RuntimeException e)
+        catch (Exception e)
         {
             JMSException jmse = new JMSException("Exception when sending message");
             jmse.setLinkedException(e);
