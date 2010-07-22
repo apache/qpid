@@ -469,7 +469,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         
         String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
-
+        _logger.debug("AMQP version " + amqpVersion);
+        
         _failoverPolicy = new FailoverPolicy(connectionURL, this);
         BrokerDetails brokerDetails = _failoverPolicy.getCurrentBrokerDetails();
         if (brokerDetails.getTransport().equals(BrokerDetails.VM) || "0-8".equals(amqpVersion)) 
