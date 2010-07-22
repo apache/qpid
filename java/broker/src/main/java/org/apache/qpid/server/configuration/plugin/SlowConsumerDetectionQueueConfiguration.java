@@ -98,7 +98,7 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
         SlowConsumerDetectionPolicyConfiguration policyConfig = getConfiguration(SlowConsumerDetectionPolicyConfiguration.class.getName());
 
         PluginManager pluginManager = ApplicationRegistry.getInstance().getPluginManager();
-        Map<String, SlowConsumerPolicyPluginFactory> factories = pluginManager.getPlugins(SlowConsumerPolicyPluginFactory.class);
+        Map<String, SlowConsumerPolicyPluginFactory> factories = pluginManager.getSlowConsumerPlugins();
 
         if (policyConfig == null)
         {

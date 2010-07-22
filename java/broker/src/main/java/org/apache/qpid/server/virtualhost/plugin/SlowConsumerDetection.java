@@ -35,7 +35,7 @@ import org.apache.qpid.server.virtualhost.plugin.logging.SlowConsumerDetectionMe
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
-class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
+public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
 {
     private SlowConsumerDetectionConfiguration _config;
     private ConfiguredQueueBindingListener _listener;
