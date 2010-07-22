@@ -38,6 +38,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
 
 /**
@@ -59,7 +60,7 @@ import org.apache.qpid.url.URLSyntaxException;
  */
 public class SimpleACLTest extends AbstractACLTestCase
 {    
-    public void testAccessAuthorized() throws AMQException, URLSyntaxException, Exception
+    public void testAccessAuthorizedSuccess() throws AMQException, URLSyntaxException, Exception
     {
         try
         {
@@ -78,7 +79,7 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
     }
     
-    public void testAccessVhostAuthorisedGuest() throws IOException, Exception
+    public void testAccessVhostAuthorisedGuestSuccess() throws IOException, Exception
     {
         //The 'guest' user has no access to the 'test' vhost, as tested below in testAccessNoRights(), and so
         //is unable to perform actions such as connecting (and by extension, creating a queue, and consuming 
@@ -117,8 +118,7 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
     }
     
-    // XXX one
-    public void testAccessNoRights() throws Exception
+    public void testAccessNoRightsFailure() throws Exception
     {
         try
         {
@@ -131,13 +131,14 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
         catch (JMSException e)
         {
-            // XXX JMSException -> linkedException -> cause = AMQException.403
+            // JMSException -> linkedException -> cause = AMQException (403 or 320)
             Exception linkedException = e.getLinkedException();
             assertNotNull("There was no linked exception", linkedException);
             Throwable cause = linkedException.getCause();
             assertNotNull("Cause was null", cause);
-            assertTrue("Wrong linked exception type",cause instanceof AMQException);
-            assertEquals("Incorrect error code received", 403, ((AMQException) cause).getErrorCode().getCode());
+            assertTrue("Wrong linked exception type", cause instanceof AMQException);
+            AMQConstant errorCode = isBroker010() ? AMQConstant.CONTEXT_IN_USE : AMQConstant.ACCESS_REFUSED;
+            assertEquals("Incorrect error code received", errorCode, ((AMQException) cause).getErrorCode());
         }
     }
     
@@ -166,7 +167,6 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
     }
     
-    // XXX two
     public void testServerDeleteQueueFailure() throws Exception
     {
         try
@@ -188,12 +188,12 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
         catch (JMSException e)
         {
-            // XXX JMSException -> linedException = AMQException.403
+            // JMSException -> linedException = AMQException.403
             check403Exception(e.getLinkedException());
         }
     }
 
-    public void testClientConsumeFromTempQueueValid() throws AMQException, URLSyntaxException, Exception
+    public void testClientConsumeFromTempQueueSuccess() throws AMQException, URLSyntaxException, Exception
     {
         try
         {
@@ -213,7 +213,7 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
     }
 
-    public void testClientConsumeFromNamedQueueInvalid() throws NamingException, Exception
+    public void testClientConsumeFromNamedQueueFailure() throws NamingException, Exception
     {
         try
         {
@@ -225,8 +225,6 @@ public class SimpleACLTest extends AbstractACLTestCase
 
             sess.createConsumer(sess.createQueue("IllegalQueue"));
             
-            conn.close();
-
             fail("Test failed as consumer was created.");
         }
         catch (JMSException e)
@@ -235,7 +233,7 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
     }
 
-    public void testClientCreateTemporaryQueue() throws JMSException, URLSyntaxException, Exception
+    public void testClientCreateTemporaryQueueSuccess() throws JMSException, URLSyntaxException, Exception
     {
         try
         {
@@ -257,7 +255,7 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
     }
 
-    public void testClientCreateNamedQueue() throws NamingException, JMSException, AMQException, Exception
+    public void testClientCreateNamedQueueFailure() throws NamingException, JMSException, AMQException, Exception
     {
         try
         {
@@ -275,7 +273,6 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
         catch (AMQException e)
         {
-            // XXX AMQException.403
             check403Exception(e);
         }
     }
@@ -405,8 +402,6 @@ public class SimpleACLTest extends AbstractACLTestCase
             conn.start();
 
             sess.createConsumer(sess.createQueue("Invalid"));
-            
-            conn.close();
 
             fail("Test failed as consumer was created.");
         }
@@ -520,7 +515,7 @@ public class SimpleACLTest extends AbstractACLTestCase
 
     /**
      * This test uses both the cilent and sender to validate that the Server is able to publish to a temporary queue.
-     * The reason the client must be in volved is that the Serve is unable to create its own Temporary Queues.
+     * The reason the client must be involved is that the Server is unable to create its own Temporary Queues.
      *
      * @throws AMQException
      * @throws URLSyntaxException

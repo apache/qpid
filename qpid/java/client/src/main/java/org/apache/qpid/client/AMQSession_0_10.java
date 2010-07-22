@@ -128,7 +128,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * The latest qpid Exception that has been raised.
      */
     private Object _currentExceptionLock = new Object();
-    private SessionException _currentException;
+    private AMQException _currentException;
 
     // a ref on the qpid connection
     protected org.apache.qpid.transport.Connection _qpidConnection;
@@ -827,20 +827,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         {
             if (_currentException != null)
             {
-                SessionException se = _currentException;
+                AMQException amqe = _currentException;
                 _currentException = null;
-                ExecutionException ee = se.getException();
-                int code;
-                if (ee == null)
-                {
-                    code = 0;
-                }
-                else
-                {
-                    code = ee.getErrorCode().getValue();
-                }
-                throw new AMQException
-                    (AMQConstant.getConstant(code), se.getMessage(), se);
+                throw amqe;
             }
         }
     }
@@ -869,7 +858,19 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         synchronized (_currentExceptionLock)
         {
-            _currentException = exc;
+            ExecutionException ee = exc.getException();
+            int code;
+            if (ee == null)
+            {
+                code = AMQConstant.INTERNAL_ERROR.getCode();
+            }
+            else
+            {
+                code = ee.getErrorCode().getValue();
+            }
+            AMQException amqe = new AMQException(AMQConstant.getConstant(code), exc.getMessage(), exc.getCause());
+            _connection.exceptionReceived(amqe);
+            _currentException = amqe;
         }
     }
 

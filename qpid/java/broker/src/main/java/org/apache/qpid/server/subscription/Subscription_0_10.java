@@ -79,7 +79,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
                                                 public void stateChange(Subscription sub, State oldState, State newState)
                                                 {
-
+                                                    // TODO something ? log a message here ?
                                                 }
                                             };
     private AMQQueue _queue;

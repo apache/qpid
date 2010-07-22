@@ -105,7 +105,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
         ExecutionException ex = new ExecutionException();
-        ex.setErrorCode(ExecutionErrorCode.RESOURCE_LIMIT_EXCEEDED);
+        ex.setErrorCode(ExecutionErrorCode.get(cause.getCode()));
         ex.setDescription(message);
         ((ServerSession)session).invoke(ex);
 

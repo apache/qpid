@@ -1037,7 +1037,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     {
                         long startCloseTime = System.currentTimeMillis();
 
-                        closeAllSessions(null, timeout, startCloseTime);
+	                    closeAllSessions(null, timeout, startCloseTime);
 
                         //This MUST occur after we have successfully closed all Channels/Sessions
                         _taskPool.shutdown();
@@ -1433,39 +1433,44 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _protocolHandler.getProtocolSession().notifyError(je);
         }
 
-        if (_exceptionListener != null)
+        // get the failover mutex before trying to close
+        synchronized (getFailoverMutex())
         {
-            _exceptionListener.onException(je);
-        }
-        else
-        {
-            _logger.error("Throwable Received but no listener set: " + cause.getMessage());
-        }
-
-        if (hardError(cause))
-        {
-            try
+            // decide if we are going to close the session
+            if (hardError(cause))
             {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Closing AMQConnection due to :" + cause.getMessage());
-                }
-
                 closer = (!_closed.getAndSet(true)) || closer;
-                if (closer)
+                {
+                    _logger.info("Closing AMQConnection due to :" + cause);
+                }
+            }
+            else
+            {
+                _logger.info("Not a hard-error connection not closing: " + cause);
+            }
+            
+            // deliver the exception if there is a listener
+            if (_exceptionListener != null)
+            {
+                _exceptionListener.onException(je);
+            }
+            else
+            {
+                _logger.error("Throwable Received but no listener set: " + cause);
+            }
+    
+            // if we are closing the connection, close sessions first
+            if (closer)
+            {
+                try
                 {
                     closeAllSessions(cause, -1, -1); // FIXME: when doing this end up with RejectedExecutionException from executor.
                 }
+                catch (JMSException e)
+                {
+                    _logger.error("Error closing all sessions: " + e, e);
+                }
             }
-            catch (JMSException e)
-            {
-                _logger.error("Error closing all sessions: " + e, e);
-            }
-
-        }
-        else
-        {
-            _logger.info("Not a hard-error connection not closing: " + cause.getMessage());
         }
     }
 

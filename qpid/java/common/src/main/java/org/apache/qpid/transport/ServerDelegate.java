@@ -20,27 +20,17 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.transport.Connection.State.*;
+
 import java.util.Collections;
-
-
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-
-import java.io.UnsupportedEncodingException;
 
 import org.apache.qpid.QpidException;
 
 import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
-
-import static org.apache.qpid.transport.Connection.State.*;
 
 
 /**
@@ -96,8 +86,7 @@ public class ServerDelegate extends ConnectionDelegate
             SaslServer ss = createSaslServer(mechanism);
             if (ss == null)
             {
-                conn.connectionClose
-                    (ConnectionCloseCode.CONNECTION_FORCED,
+                conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED,
                      "null SASL mechanism: " + mechanism);
                 return;
             }
@@ -107,14 +96,14 @@ public class ServerDelegate extends ConnectionDelegate
         catch (SaslException e)
         {
             conn.exception(e);
+            conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
         }
     }
 
     protected SaslServer createSaslServer(String mechanism)
             throws SaslException
     {
-        SaslServer ss = Sasl.createSaslServer
-            (mechanism, "AMQP", "localhost", null, null);
+        SaslServer ss = Sasl.createSaslServer(mechanism, "AMQP", "localhost", null, null);
         return ss;
     }
 
@@ -141,6 +130,7 @@ public class ServerDelegate extends ConnectionDelegate
         catch (SaslException e)
         {
             conn.exception(e);
+            conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
         }
     }
 
