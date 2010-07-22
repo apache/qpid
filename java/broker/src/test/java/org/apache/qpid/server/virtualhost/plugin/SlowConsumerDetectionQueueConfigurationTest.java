@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,7 +15,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package org.apache.qpid.server.virtualhost.plugin;
 
@@ -29,21 +27,21 @@ import org.apache.qpid.server.util.InternalBrokerBaseCase;
 /**
  * Unit test the QueueConfiguration processing.
  *
- * This is slightly awkward as the SCDQC requries that a policy be available.
- *
- * So all the Valid test much catch the ensuing ConfigurationException and
- * validate that the error is due to a lack of a valid Policy
+ * This is slightly awkward as the {@link SlowConsumerDetectionQueueConfiguration}
+ * requries that a policy be available.
+ * <p>
+ * So all the Valid test much catch the ensuing {@link ConfigurationException} and
+ * validate that the error is due to a lack of a valid policy.
  */
 public class SlowConsumerDetectionQueueConfigurationTest extends InternalBrokerBaseCase
 {
-
     /**
      * Test a fully loaded configuration file.
      *
      * It is not an error to have all control values specified.
-     *
-     * Here we need to catch the ConfigurationException that ensures due to lack
-     * of a Policy Plugin
+     * <p>
+     * Here we need to catch the {@link ConfigurationException} that ensues due to lack
+     * of a policy plugin.
      */
     public void testConfigLoadingValidConfig()
     {
@@ -66,13 +64,13 @@ public class SlowConsumerDetectionQueueConfigurationTest extends InternalBrokerB
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
-                         e.getMessage());
+            assertTrue("Exception message incorrect, was: " + e.getMessage(),
+                    e.getMessage().startsWith("No Slow Consumer Policy specified. Known Policies:["));
         }
     }
 
     /**
-     * When we do not specify any control value then a ConfigurationException
+     * When we do not specify any control value then a {@link ConfigurationException}
      * must be thrown to remind us.
      */
     public void testConfigLoadingMissingConfig()
@@ -101,8 +99,8 @@ public class SlowConsumerDetectionQueueConfigurationTest extends InternalBrokerB
     /**
      * Setting messageAge on its own is enough to have a valid configuration
      *
-     * Here we need to catch the ConfigurationException that ensures due to lack
-     * of a Policy Plugin
+     * Here we need to catch the {@link ConfigurationException} that ensues due to lack
+     * of a policy plugin.
      */
     public void testConfigLoadingMessageAgeOk()
     {
@@ -122,16 +120,16 @@ public class SlowConsumerDetectionQueueConfigurationTest extends InternalBrokerB
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
-                         e.getMessage());
+            assertTrue("Exception message incorrect, was: " + e.getMessage(),
+                    e.getMessage().startsWith("No Slow Consumer Policy specified. Known Policies:["));
         }
     }
 
     /**
-     * Setting depth on its own is enough to have a valid configuration
+     * Setting depth on its own is enough to have a valid configuration.
      *
-     * Here we need to catch the ConfigurationException that ensures due to lack
-     * of a Policy Plugin
+     * Here we need to catch the {@link ConfigurationException} that ensues due to lack
+     * of a policy plugin.
      */
     public void testConfigLoadingDepthOk()
     {
@@ -151,16 +149,16 @@ public class SlowConsumerDetectionQueueConfigurationTest extends InternalBrokerB
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
-                         e.getMessage());
+            assertTrue("Exception message incorrect, was: " + e.getMessage(),
+                    e.getMessage().startsWith("No Slow Consumer Policy specified. Known Policies:["));
         }
     }
 
     /**
-     * Setting messageCount on its own is enough to have a valid configuration
+     * Setting messageCount on its own is enough to have a valid configuration.
      *
-     * Here we need to catch the ConfigurationException that ensures due to lack
-     * of a Policy Plugin
+     * Here we need to catch the {@link ConfigurationException} that ensues due to lack
+     * of a policy plugin.
      */
     public void testConfigLoadingMessageCountOk()
     {
@@ -180,8 +178,8 @@ public class SlowConsumerDetectionQueueConfigurationTest extends InternalBrokerB
         }
         catch (ConfigurationException e)
         {
-            assertEquals("No Slow Consumer Policy specified. Known Policies:[]",
-                         e.getMessage());
+            assertTrue("Exception message incorrect, was: " + e.getMessage(),
+                    e.getMessage().startsWith("No Slow Consumer Policy specified. Known Policies:["));
         }
     }
 }
