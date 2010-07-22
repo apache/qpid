@@ -674,10 +674,43 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
     }
 
-    /** Delete's the specified file if it exists */
-    protected void deleteFile(String fileName)
+    /**
+     * Delete the given file that is prepended with the relative path to the log
+     * directory.
+     *
+     * Compress is enabled check for file with COMPRESS_EXTENSION(.gz)
+     *
+     * if backupFilesToPath is set then check in this directory not the
+     * main log directory.
+     */
+    protected void deleteFile(String relativeFileName)
     {
-        File file = compress ? new File(fileName + COMPRESS_EXTENSION) : new File(fileName);
+        String fileName="";
+        // If we have configured a backup location then we should look in there
+        // for the file we are trying to delete
+        if (backupFilesToPath != null)
+        {
+            int index = relativeFileName.lastIndexOf(File.separator);
+            if (index != -1)
+            {
+                fileName = backupFilesToPath + File.separator
+                           + relativeFileName.substring(index);
+            }
+            else
+            {
+                fileName = relativeFileName;
+            }
+        }
+
+        // If we are compressing the at the extension
+        if (compress)
+        {
+            fileName += COMPRESS_EXTENSION;
+        }
+
+
+        File file = new File(fileName);
+
         if (file.exists())
         {
             file.delete();
