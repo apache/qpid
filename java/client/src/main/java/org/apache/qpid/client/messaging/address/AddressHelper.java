@@ -66,6 +66,7 @@ public class AddressHelper
     public static final String QUEUE = "queue";
     public static final String KEY = "key";
     public static final String ARGUMENTS = "arguments";
+    public static final String RELIABILITY = "reliability";
     
     private Address address;
     private Accessor addressProps;
@@ -142,13 +143,11 @@ public class AddressHelper
         
         if (args.getString(QpidQueueOptions.QPID_LAST_VALUE_QUEUE) != null)
         {
-            options.setOrderingPolicy(args.getString(QpidQueueOptions.QPID_LAST_VALUE_QUEUE));
-            options.setLvqKey(args.getString(QpidQueueOptions.QPID_LVQ_KEY));
+            options.setOrderingPolicy(QpidQueueOptions.QPID_LAST_VALUE_QUEUE);
         }
         else if (args.getString(QpidQueueOptions.QPID_LAST_VALUE_QUEUE_NO_BROWSE) != null)
         {
-            options.setOrderingPolicy(args.getString(QpidQueueOptions.QPID_LAST_VALUE_QUEUE_NO_BROWSE));
-            options.setLvqKey(args.getString(QpidQueueOptions.QPID_LVQ_KEY));
+            options.setOrderingPolicy(QpidQueueOptions.QPID_LAST_VALUE_QUEUE_NO_BROWSE);
         }
         
         if (args.getString(QpidQueueOptions.QPID_QUEUE_EVENT_GENERATION) != null)

@@ -67,18 +67,19 @@ public class QpidQueueOptions extends HashMap<String,Object>
     
     public void setOrderingPolicy(String s)
     {
-        if ("lvq".equals(s))
+        if (QpidQueueOptions.QPID_LAST_VALUE_QUEUE.equals(s))
         {
             this.put(QPID_LAST_VALUE_QUEUE, 1);
         }
-        else if ("lvq_no_browse".equals(s))
+        else if (QpidQueueOptions.QPID_LAST_VALUE_QUEUE_NO_BROWSE.equals(s))
         {
             this.put(QPID_LAST_VALUE_QUEUE_NO_BROWSE,1);
         }
         else
         {
             throw new IllegalArgumentException("Invalid Ordering Policy" +
-            " should be one of {lvq|lvq_no_browse}");
+            " should be one of {" + QpidQueueOptions.QPID_LAST_VALUE_QUEUE + "|" + 
+            QPID_LAST_VALUE_QUEUE_NO_BROWSE + "}");
         }
     }
     
@@ -87,20 +88,16 @@ public class QpidQueueOptions extends HashMap<String,Object>
         this.put(QPID_LVQ_KEY, key);
     }
     
-    public void setQueueEvents(String s)
+    public void setQueueEvents(String value)
     {
-        if (s.equals("enque_only"))
+        if (value != null &&  (value.equals("1") || value.equals("2")))
         {
-            this.put(QPID_QUEUE_EVENT_GENERATION, 1);
-        }
-        else if (s.equals("enque_and_dequeue"))
-        {
-            this.put(QPID_QUEUE_EVENT_GENERATION,2);
+            this.put(QPID_QUEUE_EVENT_GENERATION, value);
         }
         else
         {
-            throw new IllegalArgumentException("Invalid value" +
-            " should be one of {enqueue_only|enqueue_and_dequeue}");
+            throw new IllegalArgumentException("Invalid value for " + 
+                    QPID_QUEUE_EVENT_GENERATION + " should be one of {1|2}");
         }
     }
 }

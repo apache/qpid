@@ -130,7 +130,14 @@ public interface Accessor
         {
             if (source != null && source.containsKey(name))
             {
-                return (String)source.get(name);
+                if (source.get(name) instanceof String)
+                {
+                    return (String)source.get(name);
+                }
+                else
+                {
+                    return String.valueOf(source.get(name));
+                }
             }
             else
             {
