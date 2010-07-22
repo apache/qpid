@@ -238,7 +238,7 @@ AgentImpl::AgentImpl(char* _label, bool i) :
     assignedBrokerBank(0), assignedAgentBank(0),
     bootSequence(1), nextObjectId(1), nextContextNum(1), attachComplete(false)
 {
-    queueName += label;
+    queueName += Uuid(true).str();
 }
 
 AgentImpl::~AgentImpl()
@@ -334,7 +334,7 @@ void AgentImpl::startProtocol()
     Buffer  buffer(rawbuffer, 512);
 
     Protocol::encodeHeader(buffer, Protocol::OP_ATTACH_REQUEST);
-    buffer.putShortString("qmfa");
+    buffer.putShortString(label);
     systemId.encode(buffer);
     buffer.putLong(requestedBrokerBank);
     buffer.putLong(requestedAgentBank);
