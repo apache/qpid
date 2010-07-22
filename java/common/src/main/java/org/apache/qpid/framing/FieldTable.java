@@ -675,7 +675,7 @@ public class FieldTable
             return setBytes(string, (byte[]) object);
         }
 
-        throw new AMQPInvalidClassException("Only Primatives objects allowed Object is:" + object.getClass());
+        throw new AMQPInvalidClassException("Only Primitives objects allowed Object is:" + (object == null ? "null" : object.getClass()));
     }
 
     public boolean isNullStringValue(String name)

@@ -25,6 +25,7 @@ import junit.framework.TestCase;
 
 import org.apache.mina.common.ByteBuffer;
 
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQPInvalidClassException;
 
 import org.slf4j.Logger;
@@ -519,6 +520,18 @@ public class PropertyFieldTableTest extends TestCase
         table.setObject("object-long", Long.MAX_VALUE);
         table.setObject("object-short", Short.MAX_VALUE);
         table.setObject("object-string", "Hello");
+
+        try
+        {
+            table.setObject("Null-object", null);
+            fail("null values are not allowed");
+        }
+        catch (AMQPInvalidClassException aice)
+        {
+            assertEquals("Null values are not allowed to be set",
+                         "Only Primitives objects allowed Object is:null", aice.getMessage());
+        }
+
 
         Assert.assertEquals((Boolean) true, table.getBoolean("bool"));
         Assert.assertEquals((Byte) Byte.MAX_VALUE, table.getByte("byte"));
