@@ -1,0 +1,68 @@
+// Those tests are testing 0.8 specific semantics
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteNoTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxPubSub
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxPubSub
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteNoTxPubSub
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteTxPubSub
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxP2P
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxP2P
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxPubSub
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxPubSub
+
+//this test checks explicitly for 0-8 flow control semantics
+org.apache.qpid.test.client.FlowControlTest#*
+
+// 0-10 protocol doesn't support message bouncing
+org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
+
+// QPID-1727 , QPID-1726 :c++ broker does not support flow to disk on transient queues. Also it requries a persistent store impl. for Apache
+org.apache.qpid.test.client.QueueBrowsingFlowToDiskTest#*
+
+// 0-10 Broker does not follow the same Logging convention as the Java broker
+org.apache.qpid.server.logging.*
+org.apache.qpid.server.logging.messages.*
+org.apache.qpid.server.logging.subjects.*
+org.apache.qpid.server.logging.actors.*
+
+// 0-10 Broker does not have a JMX connection MBean
+org.apache.qpid.management.jmx.ManagementActorLoggingTest#testConnectionCloseViaManagement
+
+// 0-10 has different ideas about clientid and ownership of queues
+org.apache.qpid.server.queue.ModelTest#*
+
+// 0-10 is not supported by the MethodRegistry
+org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*
+
+// QPID-2084 : this test needs more work for 0-10
+org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
+
+//QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
+org.apache.qpid.server.queue.ProducerFlowControlTest#*
+
+//QPID-1950 : Commit to test this failure. This is a MINA only failure so it cannot be tested when using 010.
+org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
+
+// Temporarily disabling until properly investigated.
+org.apache.qpid.test.unit.publish.DirtyTrasactedPubilshTest#*
+
+//rollback with subscriptions does not work in 0-10 yet
+org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage
+org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
+
+//Temporarily adding the following until the issues are sorted out.
+//Should probably raise JIRAs for them.
+org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
+org.apache.qpid.test.unit.basic.LargeMessageTest#*
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode
+org.apache.qpid.systest.GlobalQueuesTest#testTopicDurableConsumerMessageAge
+
+//QPID-2418 : Not yet implemented on 0-10
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testResubscribeWithChangedSelector
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubSameMessageSelector
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testResubscribeWithChangedSelectorNoClose
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubAddMessageSelectorNoClose
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubNoSelectorResubscribeNoClose

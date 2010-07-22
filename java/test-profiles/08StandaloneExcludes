@@ -7,3 +7,10 @@ org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 
 // QPID-2478 test fails when run against broker using 0-8/9
 org.apache.qpid.test.client.message.JMSDestinationTest#testGetDestinationWithCustomExchange
+
+// The new addressing based sytanx is not supported for AMQP 0-8/0-9 versions
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#*
+
+// Those tests are written against the 0.10 path
+org.apache.qpid.test.unit.message.UTF8Test#*
+org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait

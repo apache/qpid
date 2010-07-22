@@ -3,7 +3,7 @@ java.naming.provider.url=${test.profiles}/test-provider.properties
 
 broker.version=0-8
 broker=vm
-broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work/derbyDB
+broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=Listening on TCP port
 broker.config=${project.root}/build/etc/config-systests.xml
 broker.start=${test.profiles}/start-broker
@@ -30,7 +30,7 @@ test.port.alt=25672
 test.port.alt.ssl=25671
 
 test.exclude=true
-profile.excludes=JavaTransientExcludes JavaInVMExcludes
+profile.excludes=JavaTransientExcludes JavaInVMExcludes 08StandaloneExcludes
 test.excludes=Excludes XAExcludes JavaExcludes ${profile}.excludes ${profile.excludes}
 test.fork=no
 test.mem=512M
