@@ -253,7 +253,7 @@ ManagementObject::ManagementObject(Manageable* _core) :
 createTime(qpid::sys::Duration(sys::EPOCH, sys::now())),
         destroyTime(0), updateTime(createTime), configChanged(true),
         instChanged(true), deleted(false),
-        coreObject(_core), forcePublish(false) {}
+        coreObject(_core), flags(0), forcePublish(false) {}
 
 void ManagementObject::setUpdateTime()
 {

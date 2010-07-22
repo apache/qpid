@@ -288,6 +288,9 @@ private:
     bool qmf1Support;
     bool qmf2Support;
 
+    // Maximum # of objects allowed in a single V2 response
+    // message.
+    uint32_t maxV2ReplyObjs;
 
 #   define MA_BUFFER_SIZE 65536
     char inputBuffer[MA_BUFFER_SIZE];
@@ -323,8 +326,9 @@ private:
     void encodePackageIndication (framing::Buffer&     buf,
                                   PackageMap::iterator pIter);
     void encodeClassIndication (framing::Buffer&     buf,
-                                PackageMap::iterator pIter,
-                                ClassMap::iterator   cIter);
+                                const std::string packageName,
+                                const struct SchemaClassKey key,
+                                uint8_t kind);
     bool     bankInUse (uint32_t bank);
     uint32_t allocateNewBank ();
     uint32_t assignBankLH (uint32_t requestedPrefix);
