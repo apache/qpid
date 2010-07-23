@@ -37,32 +37,35 @@
 
     <itemizedlist>
       <listitem>
-        <para>
-          For Python, C++, and .NET, Qpid defines its own messaging API, the
-          <firstterm>Qpid Messaging API</firstterm>, which is
-          conceptually similar in each supported language.
-        </para>
+	<para>
+	  On the Java platform, Qpid uses the
+	  established <ulink url="http://java.sun.com/products/jms/">Java JMS
+	  API</ulink>. 
+	</para>
       </listitem>
       <listitem>
-        <para>
-          Support for this API in Ruby will be added soon (Ruby
-          currently uses an API that is closely tied to the AMQP
-          version).
-        </para>
+	<para>
+	  On the .NET platform, Qpid defines
+	  a <ulink url="http://qpid.apache.org/wcf.html">WCF
+	  binding</ulink>.
+	</para>
       </listitem>
       <listitem>
-        <para>
-          On the .NET platform, Qpid also provides a WCF binding.
-        </para>
+	<para>
+	  For Python and C++, Qpid defines its own messaging API, the
+	  <firstterm>Qpid Messaging API</firstterm>, which is
+	  conceptually similar in each supported language.
+	</para>
       </listitem>
       <listitem>
-        <para>
-          On the Java platform, Qpid implements the
-          established <ulink url="http://java.sun.com/products/jms/">Java
-          JMS API</ulink>.
-        </para>
+	<para>
+	  Support for this API in Ruby will be added
+	  soon (Ruby currently uses an API that is closely
+	  tied to the AMQP version).
+	</para>
       </listitem>
     </itemizedlist>
+
   </chapter>
 
   <chapter>
@@ -178,7 +181,7 @@ int main(int argc, char** argv) {
 	  <para>Creates a session object on which messages will be sent and received.</para>
 	</callout>
 	<callout id="callout-cpp-receiver" arearefs="hello-cpp-receiver">
-	  <para>Creates a receiver to receive messages from the given address.</para>
+	  <para>Creates a receiver that receives messages from the given address.</para>
 	</callout>
 	<callout id="callout-cpp-sender" arearefs="hello-cpp-sender">
 	  <para>Creates a sender that sends to the given address.</para>
@@ -189,7 +192,7 @@ int main(int argc, char** argv) {
 	<callout id="callout-cpp-acknowledge" arearefs="hello-cpp-acknowledge">
 	  <para>Acknowledges receipt of all fetched messages on the
 	  session. This informs the broker that the messages were
-	  transfered and processed by the client successfully.</para>
+	  transferred and processed by the client successfully.</para>
 	</callout>
 	<callout id="callout-cpp-close" arearefs="hello-cpp-close">
 	  <para>Closes the connection, all sessions managed by the connection, and all senders and receivers managed by each session.</para>
@@ -245,13 +248,13 @@ finally:
 	      <para>Creates a session object on which messages will be sent and received.</para>
 	    </callout>
 	    <callout id="callout-python-receiver" arearefs="hello-python-receiver">
-	      <para>Creates a receiver with which to receive messages from the given address.</para>
+	      <para>Creates a receiver that receives messages from the given address.</para>
 	    </callout>
 	    <callout id="callout-python-sender" arearefs="hello-python-sender">
 	      <para>Creates a sender that sends to the given address.</para>
 	    </callout>
 	    <callout id="callout-python-fetch" arearefs="hello-python-fetch">
-	      <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
+	      <para>Receives the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
 	    </callout>
 	    <callout id="callout-python-acknowledge" arearefs="hello-python-acknowledge">
 	      <para>Acknowledges receipt of all fetched messages on
@@ -331,13 +334,13 @@ namespace Org.Apache.Qpid.Messaging {
 	  <para>Creates a session object on which messages will be sent and received.</para>
 	</callout>
 	<callout id="callout-csharp-receiver" arearefs="hello-csharp-receiver">
-	  <para>Creates a receiver with which to receive messages from the given address.</para>
+	  <para>Creates a receiver that receives messages from the given address.</para>
 	</callout>
 	<callout id="callout-csharp-sender" arearefs="hello-csharp-sender">
 	  <para>Creates a sender that sends to the given address.</para>
 	</callout>
 	<callout id="callout-csharp-fetch" arearefs="hello-csharp-fetch">
-	  <para>Reads the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
+	  <para>Receives the next message. The duration is optional, if omitted, will wait indefinitely for the next message.</para>
 	</callout>
 	<callout id="callout-csharp-acknowledge" arearefs="hello-csharp-acknowledge">
 	  <para>Acknowledges receipt of all fetched messages on the
@@ -921,17 +924,18 @@ Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='t
       <section>
 	<title>x-bindings</title>
 
-	<para>By including an <literal>x-bindings</literal> option in
-        an address string, greater control over the AMQP 0-10 binding
-        process can be achieved. For instance, the XML Exchange is an
-        AMQP 0-10 custom exchange provided by the Apache Qpid C++
-        broker. It allows messages to be filtered using XQuery;
-        queries can address either message properties or XML content
-        in the body of the message. The xquery is specified in the
-        arguments field of the AMQP 0-10 command. When using the
-        messaging API an xquery can be specified in and address that
-        resolves to an XML exchange by using the x-bindings
-        property.</para>
+	<para>Greater control over the AMQP 0-10 binding process can
+	be achieved by including an <literal>x-bindings</literal>
+	option in an address string.
+
+	For instance, the XML Exchange is an AMQP 0-10 custom exchange
+	provided by the Apache Qpid C++ broker. It allows messages to
+	be filtered using XQuery; queries can address either message
+	properties or XML content in the body of the message. The
+	xquery is specified in the arguments field of the AMQP 0-10
+	command. When using the messaging API an xquery can be
+	specified in and address that resolves to an XML exchange by
+	using the x-bindings property.</para>
 
 
 	<para>An instance of the XML Exchange must be added before it
@@ -1128,7 +1132,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
                 messages delivered to the receiver are left on the queue
                 rather than being removed. If consume is specified the
                 normal behaviour applies; messages are removed from the
-                queue once the client acknoweldges their receipt.
+                queue once the client acknowledges their receipt.
 	      </entry>
 	    </row>
           </tbody>
@@ -1425,7 +1429,7 @@ options := map
 </section>
 
 <section id="replay">
-    <title>Sender Capacity &amp; Replay</title>
+    <title>Sender Capacity and Replay</title>
 
     <para>The send method of a sender has an optional second parameter
     that controls whether the send call is synchronous or not. A
@@ -1481,10 +1485,12 @@ options := map
     <para>Applications that receive messages should acknowledge their
     receipt by calling the session's acknowledge method. As in the
     case of sending messages, acknowledged transfer of messages to
-    receivers provides at-least-once reliability meaning that the loss
-    of the connection, a client crash or even in the case of durable
-    messages a broker restart does not result in lost messages. Some
-    cases may not require this however and the reliability can be
+    receivers provides at-least-once reliability, which means that the
+    loss of the connection or a client crash does not result in lost
+    messages; durable messages are not lost even if the broker is
+    restarted.
+
+    Some cases may not require this however and the reliability can be
     controlled through a link property in the address options (see
     <xref linkend="table-link-properties"/>).</para>
 
@@ -1517,7 +1523,7 @@ options := map
       </para>
 
       <para>Note that to use this pattern you must enable prefetching
-      for each receiver of interest so that thebroker will send
+      for each receiver of interest so that the broker will send
       messages before a fetch call is made. See
       <xref linkend="prefetch"/> for more on this.</para>
 
@@ -1627,7 +1633,7 @@ try {
     !!! SNIP !!!
     ]]></programlisting>
 
-or 
+<para>or</para>
 
 	  <programlisting><![CDATA[
 Connection connection("localhost:5672");
