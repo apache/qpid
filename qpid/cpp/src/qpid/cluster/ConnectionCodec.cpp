@@ -36,8 +36,17 @@ namespace cluster {
 using namespace framing;
 
 sys::ConnectionCodec*
-ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id,
-                                 const qpid::sys::SecuritySettings& external) {
+ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out,
+                                 const std::string& id,
+                                 const qpid::sys::SecuritySettings& external)
+{
+    broker::Broker& broker = cluster.getBroker();
+    if (broker.getConnectionCounter().allowConnection())
+    {
+        QPID_LOG(error, "Client max connection count limit exceeded: "
+                 << broker.getOptions().maxConnections << " connection refused");
+        return 0;
+    }
     if (v == ProtocolVersion(0, 10))
         return new ConnectionCodec(v, out, id, cluster, false, false, external);
     else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10)) // Catch-up connection
