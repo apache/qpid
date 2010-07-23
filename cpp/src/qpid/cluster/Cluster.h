@@ -196,6 +196,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void requestUpdate(Lock& );
     void initMapCompleted(Lock&);
     void becomeElder(Lock&);
+    void setMgmtStatus(Lock&);
+    void updateMgmtMembership(Lock&);
 
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 
