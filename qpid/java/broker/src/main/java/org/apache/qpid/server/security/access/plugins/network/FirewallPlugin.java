@@ -147,7 +147,7 @@ public class FirewallPlugin extends AbstractACLPlugin
                }
             });
 
-            thread.run();
+            thread.start();
             long endTime = System.currentTimeMillis() + DNS_TIMEOUT;
             
             while (System.currentTimeMillis() < endTime && !done.get())
