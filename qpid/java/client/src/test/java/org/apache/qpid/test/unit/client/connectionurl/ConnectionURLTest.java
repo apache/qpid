@@ -536,6 +536,18 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getOption("timeout").equals("200"));
         assertTrue(connectionurl.getOption("immediatedelivery").equals("true"));
     }
+    
+    /**
+     * Test that options other than failover and brokerlist are returned in the string representation.
+     * <p>
+     * QPID-2697
+     */
+    public void testOptionToString() throws Exception
+    {
+        ConnectionURL url = new AMQConnectionURL("amqp://user:pass@temp/test?maxprefetch='12345'&brokerlist='tcp://localhost:5672'");
+        
+        assertTrue("String representation should contain options and values", url.toString().contains("maxprefetch='12345'"));
+    }
 
     public static junit.framework.Test suite()
     {
