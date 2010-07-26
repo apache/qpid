@@ -22,7 +22,12 @@ package org.apache.qpid.server.security.access.config;
 
 import java.net.InetAddress;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 import org.apache.qpid.server.security.Result;
@@ -34,6 +39,8 @@ public class FirewallRule
 	public static final String DENY = "DENY";
 	
     private static final long DNS_TIMEOUT = 30000;
+    private static final ExecutorService DNS_LOOKUP = Executors.newCachedThreadPool();
+    
     private Result _access;
     private NetMatcher _network;
     private Pattern[] _hostnamePatterns;
@@ -77,7 +84,7 @@ public class FirewallRule
             String hostname = getHostname(remote);
             if (hostname == null)
             {
-                throw new FirewallException();
+                throw new FirewallException("DNS lookup failed");
             }
             for (Pattern pattern : _hostnamePatterns)
             {
@@ -96,44 +103,31 @@ public class FirewallRule
 
     /**
      * @param remote the InetAddress to look up
-     * @return the hostname, null if not found or takes longer than 30s to find
+     * @return the hostname, null if not found, takes longer than 30s to find or otherwise fails
      */
-    private String getHostname(final InetAddress remote)
+    private String getHostname(final InetAddress remote) throws FirewallException
     {
-        final String[] hostname = new String[]{null};
-        final AtomicBoolean done = new AtomicBoolean(false);
-        // Spawn thread
-        Thread thread = new Thread(new Runnable()
+        FutureTask<String> lookup = new FutureTask<String>(new Callable<String>()
         {
-           public void run()
+           public String call()
            {
-               hostname[0] = remote.getCanonicalHostName();
-               done.getAndSet(true);
-               synchronized (done)
-               {
-                   done.notifyAll();
-               }
+               return remote.getCanonicalHostName();
            }
         });
-
-        thread.run();
-        long endTime = System.currentTimeMillis() + DNS_TIMEOUT;
-
-        while (System.currentTimeMillis() < endTime && !done.get())
+        DNS_LOOKUP.execute(lookup);
+        
+        try
         {
-            try
-            {
-                synchronized (done)
-                {
-                    done.wait(endTime - System.currentTimeMillis());
-                }
-            }
-            catch (InterruptedException e)
-            {
-                // Check the time and if necessary sleep for a bit longer
-            }
+            return lookup.get(DNS_TIMEOUT, TimeUnit.MILLISECONDS);
         }
-        return hostname[0];
+        catch (Exception e)
+        {
+            return null; 
+        }
+        finally
+        {
+            lookup.cancel(true);
+        }
     }
 
     public Result getAccess()
