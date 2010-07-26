@@ -57,6 +57,12 @@ public class SessionDelegate
         log.warn("UNHANDLED: [%s] %s", ssn, method);
     }
 
+    @Override public void sessionRequestTimeout(Session ssn, SessionRequestTimeout t)
+    {
+        ssn.setExpiry(t.getTimeout());
+        ssn.sessionTimeout(t.getTimeout());
+    }
+
     @Override public void sessionAttached(Session ssn, SessionAttached atc)
     {
         ssn.setState(Session.State.OPEN);
@@ -64,9 +70,7 @@ public class SessionDelegate
 
     @Override public void sessionTimeout(Session ssn, SessionTimeout t)
     {
-        // XXX: we ignore this right now, we should uncomment this
-        // when full session resume is supported:
-        // ssn.setExpiry(t.getTimeout());
+        ssn.setExpiry(t.getTimeout());
     }
 
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)

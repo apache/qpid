@@ -237,9 +237,7 @@ public class Session extends SessionInvoker
     {
         initReceiver();
         sessionAttach(name.getBytes());
-        // XXX: when the broker and client support full session
-        // recovery we should use expiry as the requested timeout
-        sessionRequestTimeout(0);
+        sessionRequestTimeout(expiry);
     }
 
     void resume()
