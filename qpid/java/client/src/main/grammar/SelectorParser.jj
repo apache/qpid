@@ -66,7 +66,7 @@ package org.apache.qpid.filter.selector;
 import java.io.StringReader;
 import java.util.ArrayList;
 
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.filter.ArithmeticExpression;
 import org.apache.qpid.filter.BooleanExpression;
 import org.apache.qpid.filter.ComparisonExpression;
@@ -87,14 +87,14 @@ public class SelectorParser {
         this(new StringReader(""));
     }
 
-    public BooleanExpression parse(String sql) throws QpidException {
+    public BooleanExpression parse(String sql) throws AMQInternalException {
         this.ReInit(new StringReader(sql));
 
         try {
             return this.JmsSelector();
         }
         catch (Throwable e) {
-	        throw new QpidException(sql,null,e);
+	        throw new AMQInternalException(sql,e);
         }
 
     }

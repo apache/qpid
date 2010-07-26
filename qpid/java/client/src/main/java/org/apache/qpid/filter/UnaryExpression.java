@@ -17,14 +17,14 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.QpidException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
 /**
  * An expression which performs an operation on two expression values
@@ -39,7 +39,7 @@ public abstract class UnaryExpression implements Expression
     {
         return new UnaryExpression(left)
         {
-            public Object evaluate(AbstractJMSMessage message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
                 Object rvalue = right.evaluate(message);
                 if (rvalue == null)
@@ -84,7 +84,7 @@ public abstract class UnaryExpression implements Expression
 
         return new BooleanUnaryExpression(right)
         {
-            public Object evaluate(AbstractJMSMessage message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
 
                 Object rvalue = right.evaluate(message);
@@ -156,7 +156,7 @@ public abstract class UnaryExpression implements Expression
             super(left);
         }
 
-        public boolean matches(AbstractJMSMessage message) throws QpidException
+        public boolean matches(AbstractJMSMessage message) throws AMQInternalException
         {
             Object object = evaluate(message);
 
@@ -170,7 +170,7 @@ public abstract class UnaryExpression implements Expression
     {
         return new BooleanUnaryExpression(left)
         {
-            public Object evaluate(AbstractJMSMessage message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
                 Boolean lvalue = (Boolean) right.evaluate(message);
                 if (lvalue == null)
@@ -191,7 +191,7 @@ public abstract class UnaryExpression implements Expression
     {
         return new BooleanUnaryExpression(left)
         {
-            public Object evaluate(AbstractJMSMessage message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
             {
                 Object rvalue = right.evaluate(message);
                 if (rvalue == null)

@@ -21,7 +21,7 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.dtx.XidImpl;
 import org.apache.qpid.transport.*;
 
@@ -350,19 +350,8 @@ public class XAResourceImpl implements XAResource
     
     private void setDtxTimeout(int timeout) throws XAException
     {
-        try
-        {
-            _xaSession.getQpidSession()
+        _xaSession.getQpidSession()
                     .dtxSetTimeout(XidImpl.convert(_xid), timeout);
-        }
-        catch (QpidException e)
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Cannot convert Xid into String format ", e);
-            }
-            throw new XAException(XAException.XAER_PROTO);
-        }
     }
 
     /**
@@ -518,7 +507,7 @@ public class XAResourceImpl implements XAResource
      * convert a generic xid into qpid format
      * @param xid xid to be converted
      * @return the qpid formated xid
-     * @throws XAException when xid is null or when it cannot be converted. 
+     * @throws XAException when xid is null 
      */
     private org.apache.qpid.transport.Xid convertXid(Xid xid) throws XAException
     {
@@ -527,19 +516,7 @@ public class XAResourceImpl implements XAResource
             // Invalid arguments were given.
             throw new XAException(XAException.XAER_INVAL);
         }
-        try
-        {
-            return XidImpl.convert(xid);
-        }
-        catch (QpidException e)
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Cannot convert Xid into String format ", e);
-            }
-            //A resource manager error has occured in the transaction branch.
-            throw new XAException(XAException.XAER_RMERR);
-        }
+        return XidImpl.convert(xid);
     }
 
 }

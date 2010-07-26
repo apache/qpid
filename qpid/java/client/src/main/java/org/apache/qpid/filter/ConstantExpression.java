@@ -17,10 +17,10 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.QpidException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-
 import java.math.BigDecimal;
+
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
 /**
  * Represents a constant expression
@@ -35,7 +35,7 @@ public class ConstantExpression implements Expression
             super(value);
         }
 
-        public boolean matches(AbstractJMSMessage message) throws QpidException
+        public boolean matches(AbstractJMSMessage message) throws AMQInternalException
         {
             Object object = evaluate(message);
 
@@ -114,7 +114,7 @@ public class ConstantExpression implements Expression
         this.value = value;
     }
 
-    public Object evaluate(AbstractJMSMessage message) throws QpidException
+    public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
     {
         return value;
     }
