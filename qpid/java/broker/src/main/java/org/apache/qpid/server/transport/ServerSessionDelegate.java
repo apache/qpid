@@ -279,7 +279,6 @@ public class ServerSessionDelegate extends SessionDelegate
             String description = "Permission denied: exchange-name '" + exchange.getName() + "'";
             exception(ssn, xfr, errorCode, description);
             
-	        ssn.processed(xfr);
             return;
         }
         
