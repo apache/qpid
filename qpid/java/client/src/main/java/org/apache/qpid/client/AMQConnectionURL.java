@@ -254,14 +254,22 @@ public class AMQConnectionURL implements ConnectionURL
 
     private String optionsToString()
     {
-        StringBuffer sb = new StringBuffer();
-
-        sb.append("?" + OPTIONS_BROKERLIST + "='");
-
+        StringBuffer sb = new StringBuffer("?");
+        
+        if (!_options.isEmpty())
+        {
+            for (Map.Entry<String, String> option : _options.entrySet())
+            {
+                sb.append(option.getKey()).append("='").append(option.getValue()).append("'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+        }
+        
+        sb.append(OPTIONS_BROKERLIST).append("='");
         for (BrokerDetails service : _brokers)
         {
             sb.append(service.toString());
-            sb.append(';');
+            sb.append(URLHelper.BROKER_SEPARATOR);
         }
 
         sb.deleteCharAt(sb.length() - 1);
