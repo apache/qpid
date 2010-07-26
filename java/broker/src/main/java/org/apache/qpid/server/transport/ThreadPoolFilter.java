@@ -280,30 +280,23 @@ public class ThreadPoolFilter extends IoFilterAdapter
 
     private SessionBuffer getSessionBuffer(IoSession session)
     {
-        final Map buffers = this.buffers;
-        SessionBuffer buf = (SessionBuffer) buffers.get(session);
-        if (buf == null)
+        synchronized (buffers)
         {
-            synchronized (buffers)
+            SessionBuffer buf = (SessionBuffer) buffers.get(session);
+            if (buf == null)
             {
-                buf = (SessionBuffer) buffers.get(session);
-                if (buf == null)
-                {
-                    buf = new SessionBuffer(session);
-                    buffers.put(session, buf);
-                }
+                buf = new SessionBuffer(session);
+                buffers.put(session, buf);
             }
+            return buf;
         }
-        return buf;
     }
 
     private void removeSessionBuffer(SessionBuffer buf)
     {
-        final Map buffers = this.buffers;
-        final IoSession session = buf.session;
         synchronized (buffers)
         {
-            buffers.remove(session);
+            buffers.remove(buf.session);
         }
     }
 
