@@ -26,5 +26,21 @@ package org.apache.qpid.server.security.access.config;
 public class FirewallException extends Exception
 {
     /** serialVersionUID */
-    private static final long serialVersionUID = -1L;
+    private static final long serialVersionUID = 4526157149690917805L;
+    
+    public FirewallException() {
+	    super();
+    }
+
+    public FirewallException(String message) {
+	    super(message);
+    }
+
+    public FirewallException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public FirewallException(Throwable cause) {
+        super(cause);
+    }
 }
