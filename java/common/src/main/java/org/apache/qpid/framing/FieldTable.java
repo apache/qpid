@@ -62,10 +62,8 @@ public class FieldTable
      *
      * @param buffer the buffer from which to read data. The length byte must be read already
      * @param length the length of the field table. Must be > 0.
-     *
-     * @throws AMQFrameDecodingException if there is an error decoding the table
      */
-    public FieldTable(ByteBuffer buffer, long length) throws AMQFrameDecodingException
+    public FieldTable(ByteBuffer buffer, long length)
     {
         this();
         ByteBuffer encodedForm = buffer.slice();

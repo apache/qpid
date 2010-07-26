@@ -583,28 +583,19 @@ public class PropertyFieldTableTest extends TestCase
 
         long length = buffer.getUnsignedInt();
 
-        try
-        {
-            FieldTable table2 = new FieldTable(buffer, length);
+        FieldTable table2 = new FieldTable(buffer, length);
 
-            Assert.assertEquals((Boolean) true, table2.getBoolean("bool"));
-            Assert.assertEquals((Byte) Byte.MAX_VALUE, table2.getByte("byte"));
-            assertBytesEqual(bytes, table2.getBytes("bytes"));
-            Assert.assertEquals((Character) 'c', table2.getCharacter("char"));
-            Assert.assertEquals(Double.MAX_VALUE, table2.getDouble("double"));
-            Assert.assertEquals(Float.MAX_VALUE, table2.getFloat("float"));
-            Assert.assertEquals((Integer) Integer.MAX_VALUE, table2.getInteger("int"));
-            Assert.assertEquals((Long) Long.MAX_VALUE, table2.getLong("long"));
-            Assert.assertEquals((Short) Short.MAX_VALUE, table2.getShort("short"));
-            Assert.assertEquals("hello", table2.getString("string"));
-            Assert.assertEquals(null, table2.getString("null-string"));
-
-        }
-        catch (AMQFrameDecodingException e)
-        {
-            e.printStackTrace();
-            fail("PFT should be instantiated from bytes." + e.getCause());
-        }
+        Assert.assertEquals((Boolean) true, table2.getBoolean("bool"));
+        Assert.assertEquals((Byte) Byte.MAX_VALUE, table2.getByte("byte"));
+        assertBytesEqual(bytes, table2.getBytes("bytes"));
+        Assert.assertEquals((Character) 'c', table2.getCharacter("char"));
+        Assert.assertEquals(Double.MAX_VALUE, table2.getDouble("double"));
+        Assert.assertEquals(Float.MAX_VALUE, table2.getFloat("float"));
+        Assert.assertEquals((Integer) Integer.MAX_VALUE, table2.getInteger("int"));
+        Assert.assertEquals((Long) Long.MAX_VALUE, table2.getLong("long"));
+        Assert.assertEquals((Short) Short.MAX_VALUE, table2.getShort("short"));
+        Assert.assertEquals("hello", table2.getString("string"));
+        Assert.assertEquals(null, table2.getString("null-string"));
     }
 
     public void testEncodingSize()
