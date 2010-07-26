@@ -22,6 +22,7 @@ package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
@@ -76,31 +77,31 @@ public class SkeletonMessageStore implements MessageStore
     {
     }
 
-    public void createExchange(Exchange exchange) throws AMQException
+    public void createExchange(Exchange exchange) throws AMQStoreException
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void removeExchange(Exchange exchange) throws AMQException
+    public void removeExchange(Exchange exchange) throws AMQStoreException
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void createQueue(AMQQueue queue) throws AMQException
+    public void createQueue(AMQQueue queue) throws AMQStoreException
     {
     }
 
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
     {
     }
 
@@ -161,7 +162,7 @@ public class SkeletonMessageStore implements MessageStore
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void removeQueue(final AMQQueue queue) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQStoreException
     {
 
     }
@@ -179,22 +180,22 @@ public class SkeletonMessageStore implements MessageStore
         return new Transaction()
         {
 
-            public void enqueueMessage(TransactionLogResource  queue, Long messageId) throws AMQException
+            public void enqueueMessage(TransactionLogResource  queue, Long messageId) throws AMQStoreException
             {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
 
-            public void dequeueMessage(TransactionLogResource  queue, Long messageId) throws AMQException
+            public void dequeueMessage(TransactionLogResource  queue, Long messageId) throws AMQStoreException
             {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
 
-            public void commitTran() throws AMQException
+            public void commitTran() throws AMQStoreException
             {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
 
-            public StoreFuture commitTranAsync() throws AMQException
+            public StoreFuture commitTranAsync() throws AMQStoreException
             {
                 return new StoreFuture()
                             {
@@ -210,14 +211,14 @@ public class SkeletonMessageStore implements MessageStore
                             };
             }
 
-            public void abortTran() throws AMQException
+            public void abortTran() throws AMQStoreException
             {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
         };
     }
 
-    public void updateQueue(AMQQueue queue) throws AMQException
+    public void updateQueue(AMQQueue queue) throws AMQStoreException
     {
 
     }

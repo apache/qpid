@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.commons.configuration.Configuration;
 
 public interface TransactionLog
@@ -35,40 +34,40 @@ public interface TransactionLog
          *
          * @param queue     The queue to place the message on.
          * @param messageId The message to enqueue.
-         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         * @throws AMQStoreException If the operation fails for any reason.
          */
-        void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQException;
+        void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException;
 
         /**
          * Extracts a message from a specified queue, in a given transactional context.
          *
          * @param queue     The queue to place the message on.
          * @param messageId The message to dequeue.
-         * @throws org.apache.qpid.AMQException If the operation fails for any reason, or if the specified message does not exist.
+         * @throws AMQStoreException If the operation fails for any reason, or if the specified message does not exist.
          */
-        void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQException;
+        void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException;
 
 
         /**
          * Commits all operations performed within a given transactional context.
          *
-         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         * @throws AMQStoreException If the operation fails for any reason.
          */
-        void commitTran() throws AMQException;
+        void commitTran() throws AMQStoreException;
 
         /**
          * Commits all operations performed within a given transactional context.
          *
-         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         * @throws AMQStoreException If the operation fails for any reason.
          */
-        StoreFuture commitTranAsync() throws AMQException;
+        StoreFuture commitTranAsync() throws AMQStoreException;
 
         /**
          * Abandons all operations performed within a given transactional context.
          *
-         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         * @throws AMQStoreException If the operation fails for any reason.
          */
-        void abortTran() throws AMQException;
+        void abortTran() throws AMQStoreException;
 
 
 

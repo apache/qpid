@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.AMQException;
+import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.queue.AMQQueue;
 
 public interface DurableConfigurationStore
 {
@@ -55,18 +55,18 @@ public interface DurableConfigurationStore
      *
      * @param exchange The exchange to persist.
      *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void createExchange(Exchange exchange) throws AMQException;
+    void createExchange(Exchange exchange) throws AMQStoreException;
 
     /**
      * Removes the specified persistent exchange.
      *
      * @param exchange The exchange to remove.
      *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void removeExchange(Exchange exchange) throws AMQException;
+    void removeExchange(Exchange exchange) throws AMQStoreException;
 
     /**
      * Binds the specified queue to an exchange with a routing key.
@@ -76,9 +76,9 @@ public interface DurableConfigurationStore
      * @param queue      The queue to bind.
      * @param args       Additional parameters.
      *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+     * @throws AMQStoreException if the operation fails for any reason.
      */
-    void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
+    void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException;
 
     /**
      * Unbinds the specified from an exchange under a particular routing key.
@@ -88,43 +88,44 @@ public interface DurableConfigurationStore
      * @param queue      The queue to unbind.
      * @param args       Additonal parameters.
      *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
+    void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException;
 
     /**
      * Makes the specified queue persistent.
      *
      * @param queue The queue to store.
      *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void createQueue(AMQQueue queue) throws AMQException;
+    void createQueue(AMQQueue queue) throws AMQStoreException;
 
     /**
      * Makes the specified queue persistent.
      *
      * @param queue The queue to store.
-     *
      * @param arguments The additional arguments to the binding
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+     *
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException;
+    void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException;
 
     /**
      * Removes the specified queue from the persistent store.
      *
      * @param queue The queue to remove.
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+     * 
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void removeQueue(AMQQueue queue) throws AMQException;
+    void removeQueue(AMQQueue queue) throws AMQStoreException;
     
     /**
      * Updates the specified queue in the persistent store, IF it is already present. If the queue
      * is not present in the store, it will not be added.
      *
      * @param queue The queue to update the entry for.
-     * @throws org.apache.qpid.AMQException  If the operation fails for any reason.
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    void updateQueue(AMQQueue queue) throws AMQException;
+    void updateQueue(AMQQueue queue) throws AMQStoreException;
 }
