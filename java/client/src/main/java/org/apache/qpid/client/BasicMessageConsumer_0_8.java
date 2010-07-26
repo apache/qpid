@@ -25,7 +25,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -54,7 +54,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
                 JMSSelectorFilter _filter = new JMSSelectorFilter(messageSelector);
             }
         }
-        catch (QpidException e)
+        catch (AMQInternalException e)
         {
             throw new InvalidSelectorException("cannot create consumer because of selector issue");
         }

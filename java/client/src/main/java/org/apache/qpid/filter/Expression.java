@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 
 
@@ -29,6 +29,7 @@ public interface Expression
     /**
      * @param message The message to evaluate
      * @return the value of this expression
+     * @throws AMQInternalException 
      */
-    public Object evaluate(AbstractJMSMessage message) throws QpidException;
+    public Object evaluate(AbstractJMSMessage message) throws AMQInternalException;
 }

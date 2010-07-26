@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 
 
@@ -28,6 +28,6 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 public interface BooleanExpression extends Expression
 {
 
-    public boolean matches(AbstractJMSMessage message) throws QpidException;
+    public boolean matches(AbstractJMSMessage message) throws AMQInternalException;
 
 }

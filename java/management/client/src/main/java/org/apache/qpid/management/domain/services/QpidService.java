@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.qpid.QpidException;
 import org.apache.qpid.api.Message;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;

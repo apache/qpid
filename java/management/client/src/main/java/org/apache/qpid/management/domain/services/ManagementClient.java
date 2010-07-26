@@ -22,7 +22,6 @@ package org.apache.qpid.management.domain.services;
 
 import java.util.UUID;
 
-import org.apache.qpid.QpidException;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.configuration.BrokerConnectionData;
@@ -152,7 +151,7 @@ public final class ManagementClient
     /**
      * Registers a consumer (listener) on the management queue.
      */
-    private void registerConsumerOnManagementQueue () throws QpidException
+    private void registerConsumerOnManagementQueue ()
     {  
         BrokerMessageListener managementChannelListener = new BrokerMessageListener(_domainModel);
         managementChannelListener.setHandlers(Configuration.getInstance().getManagementQueueHandlers());        

@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 
 
@@ -32,7 +32,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         return new LogicExpression(lvalue, rvalue)
             {
 
-                public Object evaluate(AbstractJMSMessage message) throws QpidException
+                public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
                 {
 
                     Boolean lv = (Boolean) left.evaluate(message);
@@ -59,7 +59,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         return new LogicExpression(lvalue, rvalue)
             {
 
-                public Object evaluate(AbstractJMSMessage message) throws QpidException
+                public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
                 {
 
                     Boolean lv = (Boolean) left.evaluate(message);
@@ -96,9 +96,9 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         super(left, right);
     }
 
-    public abstract Object evaluate(AbstractJMSMessage message) throws QpidException;
+    public abstract Object evaluate(AbstractJMSMessage message) throws AMQInternalException;
 
-    public boolean matches(AbstractJMSMessage message) throws QpidException
+    public boolean matches(AbstractJMSMessage message) throws AMQInternalException
     {
         Object object = evaluate(message);
 
