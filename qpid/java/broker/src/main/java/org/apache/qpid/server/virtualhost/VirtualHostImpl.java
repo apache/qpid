@@ -36,6 +36,8 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
@@ -696,7 +698,7 @@ public class VirtualHostImpl implements VirtualHost
             //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public void createExchange(Exchange exchange) throws AMQException
+        public void createExchange(Exchange exchange) throws AMQStoreException
         {
             if (exchange.isDurable())
             {
@@ -704,11 +706,11 @@ public class VirtualHostImpl implements VirtualHost
             }
         }
 
-        public void removeExchange(Exchange exchange) throws AMQException
+        public void removeExchange(Exchange exchange) throws AMQStoreException
         {
         }
 
-        public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+        public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
         {
             if (exchange.isDurable() && queue.isDurable())
             {
@@ -716,16 +718,16 @@ public class VirtualHostImpl implements VirtualHost
             }
         }
 
-        public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+        public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
         {
         }
 
-        public void createQueue(AMQQueue queue) throws AMQException
+        public void createQueue(AMQQueue queue) throws AMQStoreException
         {
             createQueue(queue, null);
         }
 
-        public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+        public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
         {
             if (queue.isDurable())
             {
@@ -733,7 +735,7 @@ public class VirtualHostImpl implements VirtualHost
             }
         }
 
-        public void removeQueue(AMQQueue queue) throws AMQException
+        public void removeQueue(AMQQueue queue) throws AMQStoreException
         {
         }
 
@@ -766,7 +768,7 @@ public class VirtualHostImpl implements VirtualHost
             }
         }
 
-        public void updateQueue(AMQQueue queue) throws AMQException
+        public void updateQueue(AMQQueue queue) throws AMQStoreException
         {
         }
     }

@@ -20,21 +20,22 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.commons.configuration.Configuration;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
+import org.apache.qpid.server.queue.AMQQueue;
 
 /** A simple message store that stores the messages in a threadsafe structure in memory. */
 public class MemoryMessageStore implements MessageStore
@@ -52,24 +53,24 @@ public class MemoryMessageStore implements MessageStore
 
     private static final Transaction IN_MEMORY_TRANSACTION = new Transaction()
     {
-        public void enqueueMessage(TransactionLogResource  queue, Long messageId) throws AMQException
+        public void enqueueMessage(TransactionLogResource  queue, Long messageId) throws AMQStoreException
         {
         }
 
-        public void dequeueMessage(TransactionLogResource  queue, Long messageId) throws AMQException
+        public void dequeueMessage(TransactionLogResource  queue, Long messageId) throws AMQStoreException
         {
         }
 
-        public void commitTran() throws AMQException
+        public void commitTran() throws AMQStoreException
         {
         }
 
-        public StoreFuture commitTranAsync() throws AMQException
+        public StoreFuture commitTranAsync() throws AMQStoreException
         {
             return IMMEDIATE_FUTURE;
         }
 
-        public void abortTran() throws AMQException
+        public void abortTran() throws AMQStoreException
         {
         }
 
@@ -113,43 +114,43 @@ public class MemoryMessageStore implements MessageStore
     }
 
 
-    public void createExchange(Exchange exchange) throws AMQException
+    public void createExchange(Exchange exchange) throws AMQStoreException
     {
 
     }
 
-    public void removeExchange(Exchange exchange) throws AMQException
+    public void removeExchange(Exchange exchange) throws AMQStoreException
     {
 
     }
 
-    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
 
     }
 
-    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
 
     }
 
 
-    public void createQueue(AMQQueue queue) throws AMQException
+    public void createQueue(AMQQueue queue) throws AMQStoreException
     {
         // Not requred to do anything
     }
 
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
     {
         // Not required to do anything
     }
 
-    public void removeQueue(final AMQQueue queue) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQStoreException
     {
         // Not required to do anything
     }
     
-    public void updateQueue(final AMQQueue queue) throws AMQException
+    public void updateQueue(final AMQQueue queue) throws AMQStoreException
     {
         // Not required to do anything
     }
