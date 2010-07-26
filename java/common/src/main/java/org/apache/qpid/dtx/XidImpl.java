@@ -19,7 +19,7 @@ package org.apache.qpid.dtx;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInvalidArgumentException;
 
 import javax.transaction.xa.Xid;
 
@@ -107,9 +107,9 @@ public class XidImpl implements Xid
      * Note - The sum of the two lengths must equal the length of the data field.
      *
      * @param xid an XID STring Form
-     * @throws QpidException If the string does not represent a valid Xid
+     * @throws AMQInvalidArgumentException If the string does not represent a valid Xid
      */
-    public XidImpl(String xid) throws QpidException
+    public XidImpl(String xid) throws AMQInvalidArgumentException
     {
         if (_logger.isDebugEnabled())
         {
@@ -125,16 +125,16 @@ public class XidImpl implements Xid
             _branchQualifier = new byte[b];
             if (input.read(_globalTransactionID, 0, g) != g)
             {
-                throw new QpidException("Cannot convert the string " + xid + " into an Xid", null, null);
+                throw new AMQInvalidArgumentException("Cannot convert the string " + xid + " into an Xid", null);
             }
             if (input.read(_branchQualifier, 0, b) != b)
             {
-                throw new QpidException("Cannot convert the string " + xid + " into an Xid", null, null);
+                throw new AMQInvalidArgumentException("Cannot convert the string " + xid + " into an Xid", null);
             }
         }
         catch (IOException e)
         {
-            throw new QpidException("cannot convert the string " + xid + " into an Xid", null, e);
+            throw new AMQInvalidArgumentException("cannot convert the string " + xid + " into an Xid", e);
         }
     }
 
@@ -239,9 +239,8 @@ public class XidImpl implements Xid
      *
      * @param xid an Xid to convert.
      * @return The String representation of this Xid
-     * @throws QpidException In case of problem when converting this Xid into a string.
      */
-    public static org.apache.qpid.transport.Xid convert(Xid xid) throws QpidException
+    public static org.apache.qpid.transport.Xid convert(Xid xid)
     {
         return new org.apache.qpid.transport.Xid(xid.getFormatId(),
                                                     xid.getGlobalTransactionId(),

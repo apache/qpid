@@ -17,14 +17,14 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.QpidException;
-import org.apache.qpid.ErrorCode;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
+import java.util.HashMap;
 
 import javax.jms.JMSException;
-import java.util.HashMap;
+
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a property  expression
@@ -234,7 +234,7 @@ public class PropertyExpression implements Expression
         jmsPropertyExpression = JMS_PROPERTY_EXPRESSIONS.get(name);
     }
 
-    public Object evaluate(AbstractJMSMessage message) throws QpidException
+    public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
     {
 
         if (jmsPropertyExpression != null)
@@ -256,7 +256,7 @@ public class PropertyExpression implements Expression
             }
             catch(JMSException e)
             {
-                throw new QpidException("Exception evaluating properties for filter", ErrorCode.INTERNAL_ERROR, e);
+                throw new AMQInternalException("Exception evaluating properties for filter", e);
             }
         }
     }

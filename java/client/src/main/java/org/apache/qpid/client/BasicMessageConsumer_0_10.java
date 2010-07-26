@@ -24,9 +24,9 @@ import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.*;
-import org.apache.qpid.QpidException;
 import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.filter.JMSSelectorFilter;
 
@@ -93,7 +93,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             {
                 _filter = new JMSSelectorFilter(messageSelector);
             }
-            catch (QpidException e)
+            catch (AMQInternalException e)
             {
                 throw new InvalidSelectorException("cannot create consumer because of selector issue");
             }

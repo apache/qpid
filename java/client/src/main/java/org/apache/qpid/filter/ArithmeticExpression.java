@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.QpidException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 
 
@@ -241,7 +241,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
         }
     }
 
-    public Object evaluate(AbstractJMSMessage message) throws QpidException
+    public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
     {
         Object lvalue = left.evaluate(message);
         if (lvalue == null)

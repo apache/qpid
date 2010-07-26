@@ -17,12 +17,12 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.QpidException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
 /**
  * A filter performing a comparison of two objects
@@ -131,7 +131,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          *  org.apache.activemq.filter.Expression#evaluate(MessageEvaluationContext)
          */
-        public Object evaluate(AbstractJMSMessage message) throws QpidException
+        public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
         {
 
             Object rv = this.getRight().evaluate(message);
@@ -151,7 +151,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 
-        public boolean matches(AbstractJMSMessage message) throws QpidException
+        public boolean matches(AbstractJMSMessage message) throws AMQInternalException
         {
             Object object = evaluate(message);
 
@@ -234,7 +234,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         return new ComparisonExpression(left, right)
             {
 
-                public Object evaluate(AbstractJMSMessage message) throws QpidException
+                public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
                 {
                     Object lv = left.evaluate(message);
                     Object rv = right.evaluate(message);
@@ -417,7 +417,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         super(left, right);
     }
 
-    public Object evaluate(AbstractJMSMessage message) throws QpidException
+    public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
     {
         Comparable lv = (Comparable) left.evaluate(message);
         if (lv == null)
@@ -579,7 +579,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     protected abstract boolean asBoolean(int answer);
 
-    public boolean matches(AbstractJMSMessage message) throws QpidException
+    public boolean matches(AbstractJMSMessage message) throws AMQInternalException
     {
         Object object = evaluate(message);
 

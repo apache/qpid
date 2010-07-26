@@ -17,11 +17,11 @@
  */
 package org.apache.qpid.filter;
 
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.filter.selector.SelectorParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpid.QpidException;
-import org.apache.qpid.filter.selector.SelectorParser;
-import org.apache.qpid.client.message.AbstractJMSMessage;
 
 
 public class JMSSelectorFilter implements MessageFilter
@@ -34,7 +34,7 @@ public class JMSSelectorFilter implements MessageFilter
     private String _selector;
     private BooleanExpression _matcher;
 
-    public JMSSelectorFilter(String selector) throws QpidException
+    public JMSSelectorFilter(String selector) throws AMQInternalException
     {
         _selector = selector;
         if (JMSSelectorFilter._logger.isDebugEnabled())
@@ -56,7 +56,7 @@ public class JMSSelectorFilter implements MessageFilter
             }
             return match;
         }
-        catch (QpidException e)
+        catch (AMQInternalException e)
         {
             JMSSelectorFilter._logger.warn("Caght exception when evaluating message selector for message  " + message, e);
         }
