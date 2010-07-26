@@ -425,6 +425,10 @@ public class ConnectionTest extends TestCase implements SessionListener
         }
     }
 
+    /**
+     * The 0-10 {@code executionSync} command should set the exception status in the session,
+     * so that the client session object can then throw it as an {@link AMQException}.
+     */
     public void testExecutionExceptionSync() throws Exception
     {
         startServer();
@@ -433,14 +437,11 @@ public class ConnectionTest extends TestCase implements SessionListener
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession();
         send(ssn, "EXCP 0", true);
-        try
-        {
-            ssn.sync();
-        }
-        catch (SessionException exc)
-        {
-            assertNotNull(exc.getException());
-        }
+        ExecutionException before = ssn.getException();
+        assertNull("There should not be an exception stored in the session", before);
+        ssn.sync();
+        ExecutionException after = ssn.getException();
+        assertNotNull("There should be an exception stored in the session", after);
     }
 
 }

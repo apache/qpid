@@ -1029,6 +1029,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void sync() throws AMQException
     {
         _qpidSession.sync();
+        getCurrentException();
     }
 
     public AMQMessageDelegateFactory getMessageDelegateFactory()
