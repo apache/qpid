@@ -130,6 +130,9 @@ foreach ($pattern in $preserve) {
 }
 Remove-Item -recurse $preserve_dir
 
+# Install the README
+Copy-Item -force -path "$qpid_cpp_src/README-winsdk.txt" -destination "$install_dir/README-winsdk.txt"
+
 # Install the .NET binding
 Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.dll" -destination "$install_dir/bin"
 Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.pdb" -destination "$install_dir/bin/DebugPDB"
