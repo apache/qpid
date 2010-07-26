@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -54,7 +55,7 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
      * @throws ConfigurationException
      * @throws AMQSecurityException
      */
-    public void testTopicCreation() throws ConfigurationException, AMQSecurityException
+    public void testTopicCreation() throws ConfigurationException, AMQSecurityException, AMQInternalException
     {
         Exchange topicExchange = _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
         _virtualHost.getBindingFactory().addBinding("stocks.nyse.appl", _queue, topicExchange, null);

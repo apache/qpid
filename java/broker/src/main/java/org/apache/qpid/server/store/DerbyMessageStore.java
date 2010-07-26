@@ -20,20 +20,6 @@
 */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.messages.TransactionLogMessages;
-import org.apache.qpid.server.queue.AMQQueue;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.lang.ref.SoftReference;
@@ -52,7 +38,26 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
+import org.apache.qpid.server.logging.messages.TransactionLogMessages;
+import org.apache.qpid.server.queue.AMQQueue;
 
+/**
+ * An implementation of a {@link MessageStore} that uses Apache Derby as the persistance
+ * mechanism.
+ * 
+ * TODO extract the SQL statements into a generic JDBC store
+ */
 public class DerbyMessageStore implements MessageStore
 {
 
@@ -221,7 +226,8 @@ public class DerbyMessageStore implements MessageStore
 
         //Update to pick up QPID_WORK and use that as the default location not just derbyDB
 
-        final String databasePath = storeConfiguration.getString(ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")+"/derbyDB");
+        final String databasePath = storeConfiguration.getString(ENVIRONMENT_PATH_PROPERTY, System.getProperty("QPID_WORK")
+                + File.separator + "derbyDB");
 
         File environmentPath = new File(databasePath);
         if (!environmentPath.exists())
@@ -387,13 +393,13 @@ public class DerbyMessageStore implements MessageStore
         catch (SQLException e)
         {
 
-            throw new AMQException("Error recovering persistent state: " + e, e);
+            throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
         }
 
 
     }
 
-    private List<String> loadQueues(ConfigurationRecoveryHandler.QueueRecoveryHandler qrh) throws SQLException, AMQException
+    private List<String> loadQueues(ConfigurationRecoveryHandler.QueueRecoveryHandler qrh) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
 
@@ -432,7 +438,7 @@ public class DerbyMessageStore implements MessageStore
     }
 
 
-    private List<String> loadExchanges(ConfigurationRecoveryHandler.ExchangeRecoveryHandler erh) throws AMQException, SQLException
+    private List<String> loadExchanges(ConfigurationRecoveryHandler.ExchangeRecoveryHandler erh) throws SQLException
     {
 
         List<String> exchanges = new ArrayList<String>();
@@ -468,7 +474,7 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    private void recoverBindings(ConfigurationRecoveryHandler.BindingRecoveryHandler brh, List<String> exchanges) throws AMQException, SQLException
+    private void recoverBindings(ConfigurationRecoveryHandler.BindingRecoveryHandler brh, List<String> exchanges) throws SQLException
     {
         _logger.info("Recovering bindings...");
 
@@ -552,7 +558,7 @@ public class DerbyMessageStore implements MessageStore
 
     public StoredMessage getMessage(long messageNumber)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void removeMessage(long messageId)
@@ -599,12 +605,12 @@ public class DerbyMessageStore implements MessageStore
                 }
             }
 
-            throw new RuntimeException("Error removing message with id " + messageId + " from database: " + e, e);
+            throw new RuntimeException("Error removing message with id " + messageId + " from database: " + e.getMessage(), e);
         }
 
     }
 
-    public void createExchange(Exchange exchange) throws AMQException
+    public void createExchange(Exchange exchange) throws AMQStoreException
     {
         if (_state != State.RECOVERING)
         {
@@ -645,13 +651,13 @@ public class DerbyMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new AMQException("Error adding Exchange with name " + exchange.getNameShortString() + " to database: " + e, e);
+                throw new AMQStoreException("Error writing Exchange with name " + exchange.getNameShortString() + " to database: " + e.getMessage(), e);
             }
         }
 
     }
 
-    public void removeExchange(Exchange exchange) throws AMQException
+    public void removeExchange(Exchange exchange) throws AMQStoreException
     {
         Connection conn = null;
 
@@ -664,12 +670,12 @@ public class DerbyMessageStore implements MessageStore
             stmt.close();
             if(results == 0)
             {
-                throw new AMQException("Exchange " + exchange.getNameShortString() + " not found");
+                throw new AMQStoreException("Exchange " + exchange.getNameShortString() + " not found");
             }
         }
         catch (SQLException e)
         {
-            throw new AMQException("Error deleting exchange with name " + exchange.getNameShortString() + " from database: " + e, e);
+            throw new AMQStoreException("Error deleting Exchange with name " + exchange.getNameShortString() + " from database: " + e.getMessage(), e);
         }
         finally
         {
@@ -689,7 +695,7 @@ public class DerbyMessageStore implements MessageStore
     }
 
     public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
-            throws AMQException
+            throws AMQStoreException
     {
         if (_state != State.RECOVERING)
         {
@@ -735,8 +741,8 @@ public class DerbyMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new AMQException("Error writing binding for AMQQueue with name " + queue.getNameShortString() + " to exchange "
-                    + exchange.getNameShortString() + " to database: " + e, e);
+                throw new AMQStoreException("Error writing binding for AMQQueue with name " + queue.getNameShortString() + " to exchange "
+                    + exchange.getNameShortString() + " to database: " + e.getMessage(), e);
             }
             finally
             {
@@ -760,7 +766,7 @@ public class DerbyMessageStore implements MessageStore
     }
 
     public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
-            throws AMQException
+            throws AMQStoreException
     {
         Connection conn = null;
 
@@ -778,14 +784,14 @@ public class DerbyMessageStore implements MessageStore
             
             if(result != 1)
             {
-                 throw new AMQException("Queue binding for queue with name " + queue.getNameShortString() + " to exchange "
+                 throw new AMQStoreException("Queue binding for queue with name " + queue.getNameShortString() + " to exchange "
                 + exchange.getNameShortString() + "  not found");
             }
         }
         catch (SQLException e)
         {
-            throw new AMQException("Error removing binding for AMQQueue with name " + queue.getNameShortString() + " to exchange "
-                + exchange.getNameShortString() + " in database: " + e, e);
+            throw new AMQStoreException("Error removing binding for AMQQueue with name " + queue.getNameShortString() + " to exchange "
+                + exchange.getNameShortString() + " in database: " + e.getMessage(), e);
         }
         finally
         {
@@ -806,12 +812,12 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    public void createQueue(AMQQueue queue) throws AMQException
+    public void createQueue(AMQQueue queue) throws AMQStoreException
     {
         createQueue(queue, null);
     }
 
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
     {
         _logger.debug("public void createQueue(AMQQueue queue = " + queue + "): called");
 
@@ -858,7 +864,7 @@ public class DerbyMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new AMQException("Error writing AMQQueue with name " + queue.getNameShortString() + " to database: " + e, e);
+                throw new AMQStoreException("Error writing AMQQueue with name " + queue.getNameShortString() + " to database: " + e.getMessage(), e);
             }
         }
     }
@@ -870,9 +876,9 @@ public class DerbyMessageStore implements MessageStore
      * NOTE: Currently only updates the exclusivity.
      *
      * @param queue The queue to update the entry for.
-     * @throws org.apache.qpid.AMQException  If the operation fails for any reason.
+     * @throws AMQStoreException If the operation fails for any reason.
      */
-    public void updateQueue(final AMQQueue queue) throws AMQException
+    public void updateQueue(final AMQQueue queue) throws AMQStoreException
     {
         if (_state != State.RECOVERING)
         {
@@ -901,7 +907,7 @@ public class DerbyMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new AMQException("Error updating AMQQueue with name " + queue.getNameShortString() + " to database: " + e, e);
+                throw new AMQStoreException("Error updating AMQQueue with name " + queue.getNameShortString() + " to database: " + e.getMessage(), e);
             }
         }
         
@@ -931,7 +937,7 @@ public class DerbyMessageStore implements MessageStore
         return connection;
     }
 
-    public void removeQueue(final AMQQueue queue) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQStoreException
     {
         AMQShortString name = queue.getNameShortString();
         _logger.debug("public void removeQueue(AMQShortString name = " + name + "): called");
@@ -947,12 +953,12 @@ public class DerbyMessageStore implements MessageStore
             
             if (results == 0)
             {
-                throw new AMQException("Queue " + name + " not found");
+                throw new AMQStoreException("Queue " + name + " not found");
             }
         }
         catch (SQLException e)
         {
-            throw new AMQException("Error writing deleting with name " + name + " from database: " + e, e);
+            throw new AMQStoreException("Error deleting AMQQueue with name " + name + " from database: " + e.getMessage(), e);
         }
         finally
         {
@@ -978,7 +984,7 @@ public class DerbyMessageStore implements MessageStore
         return new DerbyTransaction();
     }
 
-    public void enqueueMessage(ConnectionWrapper connWrapper, final TransactionLogResource queue, Long messageId) throws AMQException
+    public void enqueueMessage(ConnectionWrapper connWrapper, final TransactionLogResource queue, Long messageId) throws AMQStoreException
     {
         String name = queue.getResourceName();
 
@@ -1000,14 +1006,14 @@ public class DerbyMessageStore implements MessageStore
         }
         catch (SQLException e)
         {
-            _logger.error("Failed to enqueue: " + e, e);
-            throw new AMQException("Error writing enqueued message with id " + messageId + " for queue " + name
+            _logger.error("Failed to enqueue: " + e.getMessage(), e);
+            throw new AMQStoreException("Error writing enqueued message with id " + messageId + " for queue " + name
                 + " to database", e);
         }
 
     }
 
-    public void dequeueMessage(ConnectionWrapper connWrapper, final TransactionLogResource  queue, Long messageId) throws AMQException
+    public void dequeueMessage(ConnectionWrapper connWrapper, final TransactionLogResource  queue, Long messageId) throws AMQStoreException
     {
         String name = queue.getResourceName();
 
@@ -1025,7 +1031,7 @@ public class DerbyMessageStore implements MessageStore
 
             if(results != 1)
             {
-                throw new AMQException("Unable to find message with id " + messageId + " on queue " + name);
+                throw new AMQStoreException("Unable to find message with id " + messageId + " on queue " + name);
             }
 
             if (_logger.isDebugEnabled())
@@ -1035,8 +1041,8 @@ public class DerbyMessageStore implements MessageStore
         }
         catch (SQLException e)
         {
-            _logger.error("Failed to dequeue: " + e, e);
-            throw new AMQException("Error deleting enqueued message with id " + messageId + " for queue " + name
+            _logger.error("Failed to dequeue: " + e.getMessage(), e);
+            throw new AMQStoreException("Error deleting enqueued message with id " + messageId + " for queue " + name
                 + " from database", e);
         }
 
@@ -1058,7 +1064,7 @@ public class DerbyMessageStore implements MessageStore
     }
 
 
-    public void commitTran(ConnectionWrapper connWrapper) throws AMQException
+    public void commitTran(ConnectionWrapper connWrapper) throws AMQStoreException
     {
 
         try
@@ -1075,7 +1081,7 @@ public class DerbyMessageStore implements MessageStore
         }
         catch (SQLException e)
         {
-            throw new AMQException("Error commit tx: " + e, e);
+            throw new AMQStoreException("Error commit tx: " + e.getMessage(), e);
         }
         finally
         {
@@ -1083,7 +1089,7 @@ public class DerbyMessageStore implements MessageStore
         }
     }
 
-    public StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws AMQException
+    public StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws AMQStoreException
     {
         commitTran(connWrapper);
         return new StoreFuture()
@@ -1101,11 +1107,11 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    public void abortTran(ConnectionWrapper connWrapper) throws AMQException
+    public void abortTran(ConnectionWrapper connWrapper) throws AMQStoreException
     {
         if (connWrapper == null)
         {
-            throw new AMQException("Fatal internal error: transactional context is empty at abortTran");
+            throw new AMQStoreException("Fatal internal error: transactional context is empty at abortTran");
         }
 
         if (_logger.isDebugEnabled())
@@ -1121,7 +1127,7 @@ public class DerbyMessageStore implements MessageStore
         }
         catch (SQLException e)
         {
-            throw new AMQException("Error aborting transaction: " + e, e);
+            throw new AMQStoreException("Error aborting transaction: " + e.getMessage(), e);
         }
 
     }
@@ -1310,7 +1316,7 @@ public class DerbyMessageStore implements MessageStore
                 }
             }
 
-            throw new RuntimeException("Error adding content chunk offset " + offset + " for message " + messageId + ": " + e, e);
+            throw new RuntimeException("Error adding content chunk offset " + offset + " for message " + messageId + ": " + e.getMessage(), e);
         }
 
     }
@@ -1375,7 +1381,7 @@ public class DerbyMessageStore implements MessageStore
                 }
             }
 
-            throw new RuntimeException("Error retrieving content from offset " + offset + " for message " + messageId + ": " + e, e);
+            throw new RuntimeException("Error retrieving content from offset " + offset + " for message " + messageId + ": " + e.getMessage(), e);
         }
 
 
@@ -1388,11 +1394,11 @@ public class DerbyMessageStore implements MessageStore
     }
 
 
-    private synchronized void stateTransition(State requiredState, State newState) throws AMQException
+    private synchronized void stateTransition(State requiredState, State newState) throws AMQStoreException
     {
         if (_state != requiredState)
         {
-            throw new AMQException("Cannot transition to the state: " + newState + "; need to be in state: " + requiredState
+            throw new AMQStoreException("Cannot transition to the state: " + newState + "; need to be in state: " + requiredState
                 + "; currently in state: " + _state);
         }
 
@@ -1417,28 +1423,28 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
-        public void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQException
+        public void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
         {
             DerbyMessageStore.this.enqueueMessage(_connWrapper, queue, messageId);
         }
 
-        public void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQException
+        public void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
         {
             DerbyMessageStore.this.dequeueMessage(_connWrapper, queue, messageId);
 
         }
 
-        public void commitTran() throws AMQException
+        public void commitTran() throws AMQStoreException
         {
             DerbyMessageStore.this.commitTran(_connWrapper);
         }
 
-        public StoreFuture commitTranAsync() throws AMQException
+        public StoreFuture commitTranAsync() throws AMQStoreException
         {
             return DerbyMessageStore.this.commitTranAsync(_connWrapper);
         }
 
-        public void abortTran() throws AMQException
+        public void abortTran() throws AMQStoreException
         {
             DerbyMessageStore.this.abortTran(_connWrapper);
         }

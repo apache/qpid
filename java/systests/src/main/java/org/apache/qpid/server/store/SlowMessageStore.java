@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
@@ -174,47 +175,47 @@ public class SlowMessageStore implements MessageStore
     }
 
 
-    public void createExchange(Exchange exchange) throws AMQException
+    public void createExchange(Exchange exchange) throws AMQStoreException
     {
         doPreDelay("createExchange");
         _realStore.createExchange(exchange);
         doPostDelay("createExchange");
     }
 
-    public void removeExchange(Exchange exchange) throws AMQException
+    public void removeExchange(Exchange exchange) throws AMQStoreException
     {
         doPreDelay("removeExchange");
         _realStore.removeExchange(exchange);
         doPostDelay("removeExchange");
     }
 
-    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
         doPreDelay("bindQueue");
         _realStore.bindQueue(exchange, routingKey, queue, args);
         doPostDelay("bindQueue");
     }
 
-    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
         doPreDelay("unbindQueue");
         _realStore.unbindQueue(exchange, routingKey, queue, args);
         doPostDelay("unbindQueue");
     }
 
-    public void createQueue(AMQQueue queue) throws AMQException
+    public void createQueue(AMQQueue queue) throws AMQStoreException
     {
         createQueue(queue, null);
     }
 
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
     {
         doPreDelay("createQueue");
         _realStore.createQueue(queue, arguments);
         doPostDelay("createQueue");
     }
 
-    public void removeQueue(AMQQueue queue) throws AMQException
+    public void removeQueue(AMQQueue queue) throws AMQStoreException
     {
         doPreDelay("removeQueue");
         _realStore.removeQueue(queue);
@@ -268,7 +269,7 @@ public class SlowMessageStore implements MessageStore
         }
 
         public void enqueueMessage(TransactionLogResource queue, Long messageId)
-                throws AMQException
+                throws AMQStoreException
         {
             doPreDelay("enqueueMessage");
             _underlying.enqueueMessage(queue, messageId);
@@ -276,7 +277,7 @@ public class SlowMessageStore implements MessageStore
         }
 
         public void dequeueMessage(TransactionLogResource queue, Long messageId)
-                throws AMQException
+                throws AMQStoreException
         {
             doPreDelay("dequeueMessage");
             _underlying.dequeueMessage(queue, messageId);
@@ -284,7 +285,7 @@ public class SlowMessageStore implements MessageStore
         }
 
         public void commitTran()
-                throws AMQException
+                throws AMQStoreException
         {
             doPreDelay("commitTran");
             _underlying.commitTran();
@@ -292,7 +293,7 @@ public class SlowMessageStore implements MessageStore
         }
 
         public StoreFuture commitTranAsync()
-                throws AMQException
+                throws AMQStoreException
         {
             doPreDelay("commitTran");
             StoreFuture future = _underlying.commitTranAsync();
@@ -301,7 +302,7 @@ public class SlowMessageStore implements MessageStore
         }
 
         public void abortTran()
-                throws AMQException
+                throws AMQStoreException
         {
             doPreDelay("abortTran");
             _underlying.abortTran();
@@ -309,7 +310,7 @@ public class SlowMessageStore implements MessageStore
         }
     }
 
-    public void updateQueue(AMQQueue queue) throws AMQException
+    public void updateQueue(AMQQueue queue) throws AMQStoreException
     {
         doPreDelay("updateQueue");
         _realStore.updateQueue(queue);

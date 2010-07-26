@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -96,7 +97,7 @@ public class BindingFactory
             removeBinding(this);
         }
 
-        public void onClose(final Exchange exchange) throws AMQSecurityException
+        public void onClose(final Exchange exchange) throws AMQSecurityException, AMQInternalException
         {
             removeBinding(this);
         }
@@ -140,7 +141,7 @@ public class BindingFactory
 
 
 
-    public boolean addBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException
+    public boolean addBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException 
     {
         return makeBinding(bindingKey, queue, exchange, arguments, false, false);
     }
@@ -149,12 +150,12 @@ public class BindingFactory
     public boolean replaceBinding(final String bindingKey,
                                final AMQQueue queue,
                                final Exchange exchange,
-                               final Map<String, Object> arguments) throws AMQSecurityException
+                               final Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException
     {
         return makeBinding(bindingKey, queue, exchange, arguments, false, true);
     }
 
-    private boolean makeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force) throws AMQSecurityException
+    private boolean makeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force) throws AMQSecurityException, AMQInternalException
     {
         assert queue != null;
         if (bindingKey == null)
@@ -187,14 +188,7 @@ public class BindingFactory
 
             if (b.isDurable() && !restore)
             {
-                try
-                {
-                    _configSource.getDurableConfigurationStore().bindQueue(exchange,new AMQShortString(bindingKey),queue,FieldTable.convertToFieldTable(arguments));
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException(e); // FIXME
-                }
+                _configSource.getDurableConfigurationStore().bindQueue(exchange,new AMQShortString(bindingKey),queue,FieldTable.convertToFieldTable(arguments));
             }
 
             queue.addQueueDeleteTask(b);
@@ -217,18 +211,18 @@ public class BindingFactory
         return getVirtualHost().getConfigStore();
     }
 
-    public void restoreBinding(final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap) throws AMQSecurityException
+    public void restoreBinding(final String bindingKey, final AMQQueue queue, final Exchange exchange, final Map<String, Object> argumentMap) throws AMQSecurityException, AMQInternalException
     {
         makeBinding(bindingKey,queue,exchange,argumentMap,true, false);
     }
 
-    public void removeBinding(final Binding b) throws AMQSecurityException
+    public void removeBinding(final Binding b) throws AMQSecurityException, AMQInternalException
     {
         removeBinding(b.getBindingKey(), b.getQueue(), b.getExchange(), b.getArguments());
     }
 
 
-    public Binding removeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException
+    public Binding removeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException
     {
         assert queue != null;
         if (bindingKey == null)
@@ -261,17 +255,10 @@ public class BindingFactory
 
             if (b.isDurable())
             {
-                try
-                {
-                    _configSource.getDurableConfigurationStore().unbindQueue(exchange,
-                                             new AMQShortString(bindingKey),
-                                             queue,
-                                             FieldTable.convertToFieldTable(arguments));
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException(e); // FIXME
-                }
+                _configSource.getDurableConfigurationStore().unbindQueue(exchange,
+                                         new AMQShortString(bindingKey),
+                                         queue,
+                                         FieldTable.convertToFieldTable(arguments));
             }
             b.logDestruction();
             getConfigStore().removeConfiguredObject(b);

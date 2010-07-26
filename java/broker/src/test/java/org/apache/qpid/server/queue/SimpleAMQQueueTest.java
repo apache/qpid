@@ -21,10 +21,10 @@ package org.apache.qpid.server.queue;
  */
 
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -149,7 +149,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         assertEquals("Virtual host was wrong", _virtualHost, _queue.getVirtualHost());
     }
 
-    public void testBinding() throws AMQSecurityException
+    public void testBinding() throws AMQSecurityException, AMQInternalException
     {
         _virtualHost.getBindingFactory().addBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
 

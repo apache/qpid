@@ -21,6 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -139,6 +140,6 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
 
     public static interface Task
     {
-        public void onClose(Exchange exchange) throws AMQSecurityException;
+        public void onClose(Exchange exchange) throws AMQSecurityException, AMQInternalException;
     }
 }
