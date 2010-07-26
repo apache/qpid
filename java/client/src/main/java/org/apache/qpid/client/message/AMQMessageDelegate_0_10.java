@@ -731,7 +731,11 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         checkPropertyName(propertyName);
         checkWritableProperties();
-        if (object != null && !ALLOWED.contains(object.getClass()))
+        if (object == null)
+        {
+            throw new MessageFormatException("Object is null");            
+        }
+        else if (!ALLOWED.contains(object.getClass()))
         {
             throw new MessageFormatException
                 (String.format
