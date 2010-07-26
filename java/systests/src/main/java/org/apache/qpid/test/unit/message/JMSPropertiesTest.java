@@ -99,19 +99,8 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         }
         catch (MessageFormatException mfe)
         {
-            // Check the cause
-            Throwable cause = mfe.getCause();
-            assertNotNull(cause);
-            assertEquals("Incorrect cause ", AMQPInvalidClassException.class, cause.getClass());
-            assertEquals("Null values are not allowed to be set",
-                         "Only Primitives objects allowed Object is:null", cause.getMessage());
-
-            // Also check the linked exception
-            cause = mfe.getLinkedException();
-            assertNotNull(cause);
-            assertEquals("Incorrect cause ", AMQPInvalidClassException.class, cause.getClass());
-            assertEquals("Null values are not allowed to be set",
-                         "Only Primitives objects allowed Object is:null", cause.getMessage());
+            // Check the error message
+            assertTrue("Incorrect error message: " + mfe.getMessage(), mfe.getMessage().contains("Object is null"));
         }
 
         // send it
