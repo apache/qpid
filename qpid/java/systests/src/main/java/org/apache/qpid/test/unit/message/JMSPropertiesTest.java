@@ -100,7 +100,8 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         catch (MessageFormatException mfe)
         {
             // Check the error message
-            assertTrue("Incorrect error message: " + mfe.getMessage(), mfe.getMessage().contains("Object is null"));
+            assertEquals("Incorrect error message",
+                    isBroker010() ? "Object is null" : "Only Primitives objects allowed Object is:null", mfe.getMessage());
         }
 
         // send it
