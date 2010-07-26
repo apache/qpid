@@ -141,7 +141,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 else
                 {
                     //TODO Convert AMQP 0-10 message
-                    throw new RuntimeException("Not implemented conversion of 0-10 message");
+                    throw new AMQException(AMQConstant.NOT_IMPLEMENTED, "Not implemented conversion of 0-10 message", null);
                 }
 
             }
