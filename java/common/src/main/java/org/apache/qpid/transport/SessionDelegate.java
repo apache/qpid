@@ -144,6 +144,7 @@ public class SessionDelegate
     {
         ssn.setException(exc);
         ssn.getSessionListener().exception(ssn, new SessionException(exc));
+        ssn.closed();
     }
 
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
