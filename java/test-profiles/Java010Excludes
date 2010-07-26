@@ -58,7 +58,6 @@ org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
 org.apache.qpid.test.unit.basic.LargeMessageTest#*
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode
-org.apache.qpid.systest.GlobalQueuesTest#testTopicDurableConsumerMessageAge
 
 //QPID-2418 : Not yet implemented on 0-10
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testResubscribeWithChangedSelector
