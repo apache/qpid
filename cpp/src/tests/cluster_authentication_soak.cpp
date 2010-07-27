@@ -93,7 +93,7 @@ startBroker ( brokerVector & brokers , int brokerNumber, string const & clusterN
     argv.push_back ("../qpidd");
     argv.push_back ("--no-module-dir");
     argv.push_back ("--load-module=../.libs/cluster.so");
-    argv.push_back (clusterArg.str().c_str());
+    argv.push_back (clusterArg.str());
     argv.push_back ("--cluster-username=zig");
     argv.push_back ("--cluster-password=zig");
     argv.push_back ("--cluster-mechanism=ANONYMOUS");
