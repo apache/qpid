@@ -56,6 +56,8 @@
 #   Macro released by the Autoconf Archive. When you make and distribute a
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
+#
+# Fixed by Sandro Santilli to consider 2.0.0 > 1.3.37 (2010-06-15)
 
 AC_DEFUN([AC_PROG_SWIG],[
         AC_PATH_PROG([SWIG],[swig])
@@ -99,9 +101,9 @@ AC_DEFUN([AC_PROG_SWIG],[
                         if test -z "$available_patch" ; then
                                 [available_patch=0]
                         fi
-                        if test $available_major -ne $required_major \
-                                -o $available_minor -ne $required_minor \
-                                -o $available_patch -lt $required_patch ; then
+			[required_full=`printf %2.2d%2.2d%2.2d%2.2d $required_major $required_minor $required_patch]`
+			[available_full=`printf %2.2d%2.2d%2.2d%2.2d $available_major $available_minor $available_patch]`
+                        if test $available_full -lt $required_full; then
                                 AC_MSG_WARN([SWIG version >= $1 is required.  You have $swig_version.  You should look at http://www.swig.org])
                                 SWIG='echo "Error: SWIG version >= $1 is required.  You have '"$swig_version"'.  You should look at http://www.swig.org" ; false'
                         else
