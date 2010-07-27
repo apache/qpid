@@ -240,9 +240,9 @@ class QmfData(Console):
     if len(tokens) == 0:
       print "Missing Class or ID"
       return
-    key = self.classKeyByToken(tokens[0])
-    if key:
-      self.showObjectsByKey(key)
+    keys = self.classKeysByToken(tokens[0])
+    if keys:
+      self.showObjectsByKey(keys)
     elif tokens[0].isdigit():
       self.showObjectById(int(tokens[0]))
 
@@ -359,25 +359,26 @@ class QmfData(Console):
       for dispId in self.objects:
         obj = self.objects[dispId]
         key = obj.getClassKey()
-        if key in totals:
-          stats = totals[key]
+        index = (key.getPackageName(), key.getClassName())
+        if index in totals:
+          stats = totals[index]
         else:
           stats = (0, 0)
         if obj.isDeleted():
           stats = (stats[0], stats[1] + 1)
         else:
           stats = (stats[0] + 1, stats[1])
-        totals[key] = stats
+        totals[index] = stats
     finally:
       self.lock.release()
 
-    for key in totals:
-      stats = totals[key]
-      rows.append((key.getPackageName(), key.getClassName(), stats[0], stats[1]))
+    for index in totals:
+      stats = totals[index]
+      rows.append((index[0], index[1], stats[0], stats[1]))
     self.disp.table(title, heads, rows)
 
   def listObjects(self, tokens):
-    ckey = self.classKeyByToken(tokens[0])
+    ckeys = self.classKeysByToken(tokens[0])
     show_deleted = True
     if len(tokens) > 1 and tokens[1] == 'active':
       show_deleted = None
@@ -387,7 +388,7 @@ class QmfData(Console):
       self.lock.acquire()
       for dispId in self.objects:
         obj = self.objects[dispId]
-        if obj.getClassKey() == ckey:
+        if obj.getClassKey() in ckeys:
           utime, ctime, dtime = obj.getTimestamps()
           dtimestr = self.disp.timestamp(dtime)
           if dtime == 0:
@@ -422,9 +423,9 @@ class QmfData(Console):
       self.lock.release()
     self.disp.table(caption, heads, rows)
 
-  def classKeyByToken(self, token):
+  def classKeysByToken(self, token):
     """
-    Given a token, find the matching class key (if found):
+    Given a token, return a list of matching class keys (if found):
     token formats:  <class-name>
                     <package-name>:<class-name>
     """
@@ -439,14 +440,15 @@ class QmfData(Console):
     else:
       raise ValueError("Invalid Class Name: %s" % token)
 
+    keys = []
     packages = self.session.getPackages()
     for p in packages:
       if pname == None or pname == p:
         classes = self.session.getClasses(p)
         for key in classes:
           if key.getClassName() == cname:
-            return key
-    return None
+            keys.append(key)
+    return keys
 
   def typeName (self, typecode):
     """ Convert type-codes to printable strings """
