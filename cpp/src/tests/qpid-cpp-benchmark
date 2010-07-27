@@ -41,7 +41,7 @@ op.add_option("--send-rate", default=0, metavar="R",
 op.add_option("--content-size", default=1024, type="int", metavar="BYTES",
               help="message size in bytes (default %default)")
 op.add_option("--ack-frequency", default=0, metavar="N", type="int",
-              help="receiver ack's every N messages, 0 means unconfirmed")
+              help="receiver ack's every N messages, 0 means unconfirmed (default %d)")
 op.add_option("--no-report-header", dest="report_header", default=True,
               action="store_false", help="don't print header on report")
 op.add_option("--repeat", default=1, metavar="N", help="repeat N times", type="int")
