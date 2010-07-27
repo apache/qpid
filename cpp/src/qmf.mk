@@ -29,13 +29,7 @@ lib_LTLIBRARIES +=	\
 #
 QMF_API =					\
   ../include/qpid/agent/ManagementAgent.h	\
-  ../include/qpid/agent/QmfAgentImportExport.h	\
-  ../include/qmf/Agent.h			\
-  ../include/qmf/Connection.h			\
-  ../include/qmf/QmfImportExport.h		\
-  ../include/qmf/ConnectionSettings.h		\
-  ../include/qmf/AgentObject.h
-
+  ../include/qpid/agent/QmfAgentImportExport.h
 #
 # Public headers for the QMF Engine API
 #
