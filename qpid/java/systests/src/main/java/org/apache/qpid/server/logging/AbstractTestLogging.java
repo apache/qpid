@@ -21,12 +21,15 @@
 package org.apache.qpid.server.logging;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
@@ -66,7 +69,15 @@ public class AbstractTestLogging extends QpidBrokerTestCase
                     _serverConfiguration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "off");
 
                     _configuration = _serverConfiguration;
-                    _registry = new TestApplicationRegistry(_configuration);
+                    _registry = new TestApplicationRegistry(_configuration)
+                    {
+                        @Override
+                        public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
+                        {
+                            vhostConfig.setMessageStoreClass(SkeletonMessageStore.class.getName());
+                            return super.createVirtualHost(vhostConfig);
+                        }
+                    };
                     ApplicationRegistry.initialise(_registry);
 
                 }
