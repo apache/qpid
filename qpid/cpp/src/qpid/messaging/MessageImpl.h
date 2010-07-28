@@ -60,6 +60,7 @@ struct MessageImpl
     
     const qpid::types::Variant::Map& getHeaders() const;
     qpid::types::Variant::Map& getHeaders();
+    void setHeader(const std::string& key, const qpid::types::Variant& val);
     
     void setBytes(const std::string& bytes);
     void setBytes(const char* chars, size_t count);
