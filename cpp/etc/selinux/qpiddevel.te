@@ -12,6 +12,7 @@ module qpiddevel 1.0;
 require {
 	type unconfined_t;
 	type aisexec_t;
+	type unconfined_execmem_t;
 	class capability sys_admin;
 	class sem { write unix_read unix_write associate read destroy };
 	class shm { unix_read write unix_write associate read destroy };
@@ -21,3 +22,5 @@ require {
 allow aisexec_t self:capability sys_admin;
 allow aisexec_t unconfined_t:sem { write unix_read unix_write associate read destroy };
 allow aisexec_t unconfined_t:shm { unix_read write unix_write associate read destroy };
+allow aisexec_t unconfined_execmem_t:sem { write unix_read unix_write associate read destroy };
+allow aisexec_t unconfined_execmem_t:shm { write unix_read unix_write associate read destroy };
