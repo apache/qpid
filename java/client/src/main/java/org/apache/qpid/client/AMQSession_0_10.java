@@ -565,9 +565,25 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         
         try
         {
-            preAcquire = ( ! consumer.isNoConsume()  &&
-                    (consumer.getMessageSelector() == null || consumer.getMessageSelector().equals("")) )
-                    || !(consumer.getDestination() instanceof AMQQueue);
+            boolean isTopic;
+            
+            if (consumer.getDestination().getDestSyntax() == AMQDestination.DestSyntax.BURL)
+            {
+                isTopic = consumer.getDestination() instanceof AMQTopic ||
+                          consumer.getDestination().getExchangeClass().equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS) ;
+                
+                preAcquire = isTopic || (!consumer.isNoConsume()  && 
+                        (consumer.getMessageSelector() == null || consumer.getMessageSelector().equals("")));
+            }
+            else
+            {
+                isTopic = consumer.getDestination().getAddressType() == AMQDestination.TOPIC_TYPE;
+                
+                preAcquire = !consumer.isNoConsume() && 
+                             (isTopic || consumer.getMessageSelector() == null || 
+                              consumer.getMessageSelector().equals(""));
+            }
+                
             getQpidSession().messageSubscribe
                 (queueName.toString(), String.valueOf(tag),
                  getAcknowledgeMode() == NO_ACKNOWLEDGE ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
