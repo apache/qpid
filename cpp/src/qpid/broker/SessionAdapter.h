@@ -42,14 +42,15 @@ class Broker;
 class Queue;
 
 /**
- * Per-channel protocol adapter.
+ * SessionAdapter translates protocol-specific AMQP commands for one
+ * specific version of AMQP into calls on the core broker objects. It
+ * is a container for a collection of adapters.
  *
- * A container for a collection of AMQP-class adapters that translate
- * AMQP method bodies into calls on the core Broker objects. Each
- * adapter class also provides a client proxy to send methods to the
- * peer.
+ * Each adapter class provides a client proxy to send methods to the
+ * peer broker or client.
  * 
  */
+
  class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
 {
   public:
