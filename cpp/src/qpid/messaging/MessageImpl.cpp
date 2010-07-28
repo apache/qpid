@@ -56,6 +56,7 @@ const std::string& MessageImpl::getContentType() const { return contentType; }
 
 const Variant::Map& MessageImpl::getHeaders() const { return headers; }
 Variant::Map& MessageImpl::getHeaders() { return headers; }
+void MessageImpl::setHeader(const std::string& key, const qpid::types::Variant& val) { headers[key] = val; }
 
 //should these methods be on MessageContent?
 void MessageImpl::setBytes(const std::string& c) { bytes = c; }
