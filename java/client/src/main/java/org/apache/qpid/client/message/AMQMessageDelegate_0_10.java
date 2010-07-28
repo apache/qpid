@@ -599,7 +599,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             try
             {
-                return Double.valueOf(getFloatProperty(propertyName));
+                return Double.valueOf(getStringProperty(propertyName));
             }
             catch(MessageFormatException e)
             {
