@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQDestination.Binding;
+import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.messaging.address.Node.UnknownNodeType;
@@ -257,7 +258,7 @@ public class AddressHelper
         MapAccessor argsMap = new MapAccessor(declareArgs);
         ExchangeNode node = new ExchangeNode();
         node.setExchangeType(argsMap.getString(TYPE) == null?
-                             "topic":argsMap.getString(TYPE));
+                             null:argsMap.getString(TYPE));
         node.setDeclareArgs(getQpidExchangeOptions(argsMap));
         fillInCommonNodeArgs(node,parent,argsMap);
         return node;
@@ -316,7 +317,7 @@ public class AddressHelper
         {            
             link.setDurable(linkProps.getBoolean(DURABLE)== null? false : linkProps.getBoolean(DURABLE));
             link.setName(linkProps.getString(NAME));
-            
+           
             if (((Map)address.getOptions().get(LINK)).get(CAPACITY) instanceof Map)
             { 
                 MapAccessor capacityProps = new MapAccessor(
