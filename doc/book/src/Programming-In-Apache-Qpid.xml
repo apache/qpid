@@ -45,22 +45,18 @@
       </listitem>
       <listitem>
 	<para>
-	  On the .NET platform, Qpid defines
-	  a <ulink url="http://qpid.apache.org/wcf.html">WCF
-	  binding</ulink>.
-	</para>
-      </listitem>
-      <listitem>
-	<para>
-	  For Python and C++, Qpid defines its own messaging API, the
+	  For Python, C++, and .NET, Qpid defines its own messaging API, the
 	  <firstterm>Qpid Messaging API</firstterm>, which is
-	  conceptually similar in each supported language.
+	  conceptually similar in each.
+	</para>
+	<para>
+	  On the .NET platform, Qpid also provides a WCF binding. 
 	</para>
       </listitem>
       <listitem>
 	<para>
-	  Support for this API in Ruby will be added
-	  soon (Ruby currently uses an API that is closely
+	  Ruby will also use the Qpid Messaging API, which will soon
+	  be implemented. (Ruby currently uses an API that is closely
 	  tied to the AMQP version).
 	</para>
       </listitem>
