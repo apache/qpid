@@ -31,8 +31,14 @@ namespace qpid {
 namespace sys {
 
 /**
- * Poller: abstract class to encapsulate a file descriptor poll to be used
- * by a reactor.
+ * Poller is an abstract base class that registers callbacks to be
+ * called when there is IO activity. Concrete derived classes
+ * implement polling APIs such as epoll or equivalents on other
+ * operating systems.
+ *
+ * On the broker, Connection::received() is called with incoming
+ * frames from clients, and Connection::doOutput() is called when a
+ * connection is writeable.
  *
  * @see DispatchHandler for more details of normal use.
  */
