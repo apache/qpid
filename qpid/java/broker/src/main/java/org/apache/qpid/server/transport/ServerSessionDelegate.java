@@ -232,13 +232,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                     catch (AMQException e)
                     {
-                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                        if (e.getErrorCode() != null)
-                        {
-                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                        }
-                        String description = "Cannot subscribe to '" + destination + "': " + e.getMessage();
-                        exception(session, method, errorCode, description);
+                        exception(session, method, e, "Cannot subscribe to '" + destination);
                     }
                 }
             }
@@ -379,13 +373,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             catch (AMQException e)
             {
-                ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                if (e.getErrorCode() != null)
-                {
-                    errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                }
-                String description = "Cannot flush subscription '" + destination + "': " + e.getMessage();
-                exception(session, method, errorCode, description);
+                exception(session, method, e, "Cannot flush subscription '" + destination);
             }
         }
     }
@@ -474,13 +462,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 catch (AMQException e)
                 {
-                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                    if (e.getErrorCode() != null)
-                    {
-                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                    }
-                    String description = "Cannot declare exchange '" + exchangeName + "': " + e.getMessage();
-                    exception(session, method, errorCode, description);
+                    exception(session, method, e, "Cannot declare exchange '" + exchangeName);
                 }
             }
             else
@@ -492,6 +474,26 @@ public class ServerSessionDelegate extends SessionDelegate
             }
 
         }
+    }
+
+    // TODO decouple AMQException and AMQConstant error codes 
+    private void exception(Session session, Method method, AMQException exception, String message)
+    {
+        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
+        if (exception.getErrorCode() != null)
+        {
+            try
+            {
+                errorCode = ExecutionErrorCode.get(exception.getErrorCode().getCode());
+            }
+            catch (IllegalArgumentException iae)
+            {
+                // ignore, already set to INTERNAL_ERROR
+            }
+        }
+        String description = message + "': " + exception.getMessage();
+        
+        exception(session, method, errorCode, description);
     }
 
     private void exception(Session session, Method method, ExecutionErrorCode errorCode, String description)
@@ -563,13 +565,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         catch (AMQException e)
         {
-            ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-            if (e.getErrorCode() != null)
-            {
-                errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-            }
-            String description = "Cannot delete exchange '" + method.getExchange() + "': " + e.getMessage();
-            exception(session, method, errorCode, description);
+            exception(session, method, e, "Cannot delete exchange '" + method.getExchange() );
         }
     }
 
@@ -651,13 +647,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                     catch (AMQException e)
                     {
-                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                        if (e.getErrorCode() != null)
-                        {
-                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                        }
-                        String description = "Cannot add binding '" + method.getBindingKey() + "': " + e.getMessage();
-                        exception(session, method, errorCode, description);
+                        exception(session, method, e, "Cannot add binding '" + method.getBindingKey());
                     }
                 }
                 else
@@ -712,13 +702,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 catch (AMQException e)
                 {
-                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                    if (e.getErrorCode() != null)
-                    {
-                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                    }
-                    String description = "Cannot remove binding '" + method.getBindingKey() + "': " + e.getMessage();
-                    exception(session, method, errorCode, description);
+                    exception(session, method, e, "Cannot remove binding '" + method.getBindingKey());
                 }
             }
         }
@@ -939,13 +923,7 @@ public class ServerSessionDelegate extends SessionDelegate
                                         }
                                         catch (AMQException e)
                                         {
-                                            ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                                            if (e.getErrorCode() != null)
-                                            {
-                                                errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                                            }
-                                            String description = "Cannot delete '" + method.getQueue() + "': " + e.getMessage();
-                                            exception(session, method, errorCode, description);
+                                            exception(session, method, e, "Cannot delete '" + method.getQueue());
                                         }
                                     }
                                 };
@@ -985,13 +963,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                     catch (AMQException e)
                     {
-                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                        if (e.getErrorCode() != null)
-                        {
-                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                        }
-                        String description = "Cannot declare queue '" + queueName + "': " + e.getMessage();
-                        exception(session, method, errorCode, description);
+                        exception(session, method, e, "Cannot declare queue '" + queueName);
                     }
                 }
             }
@@ -1037,13 +1009,7 @@ public class ServerSessionDelegate extends SessionDelegate
                                 }
                                 catch (AMQException e)
                                 {
-                                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                                    if (e.getErrorCode() != null)
-                                    {
-                                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                                    }
-                                    String description = "Cannot delete queue '" + body.getQueue() + "': " + e.getMessage();
-                                    exception(session, body, errorCode, description);
+                                    exception(session, body, e, "Cannot delete queue '" + body.getQueue());
                                 }
                             }
                         }
@@ -1112,13 +1078,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                     catch (AMQException e)
                     {
-                        ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                        if (e.getErrorCode() != null)
-                        {
-                            errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                        }
-                        String description = "Cannot delete queue '" + queueName + "': " + e.getMessage();
-                        exception(session, method, errorCode, description);
+                        exception(session, method, e, "Cannot delete queue '" + queueName);
                     }
                 }
             }
@@ -1149,13 +1109,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 catch (AMQException e)
                 {
-                    ExecutionErrorCode errorCode = ExecutionErrorCode.INTERNAL_ERROR;
-                    if (e.getErrorCode() != null)
-                    {
-                        errorCode = ExecutionErrorCode.get(e.getErrorCode().getCode());
-                    }
-                    String description = "Cannot purge queue '" + queueName + "': " + e.getMessage();
-                    exception(session, method, errorCode, description);
+                    exception(session, method, e, "Cannot purge queue '" + queueName);
                 }
             }
         }
