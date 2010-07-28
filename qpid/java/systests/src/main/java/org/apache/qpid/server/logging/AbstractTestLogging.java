@@ -71,11 +71,18 @@ public class AbstractTestLogging extends QpidBrokerTestCase
                     _configuration = _serverConfiguration;
                     _registry = new TestApplicationRegistry(_configuration)
                     {
+                        /**
+                         * Create a virtualhost with a {@link SkeletonMessageStore} instead
+                         * of the configured one, but remember the original configuration.
+                         */
                         @Override
                         public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
                         {
+                            String oldClass = vhostConfig.getMessageStoreClass();
                             vhostConfig.setMessageStoreClass(SkeletonMessageStore.class.getName());
-                            return super.createVirtualHost(vhostConfig);
+                            VirtualHost host = super.createVirtualHost(vhostConfig);
+                            vhostConfig.setMessageStoreClass(oldClass);
+                            return host;
                         }
                     };
                     ApplicationRegistry.initialise(_registry);
