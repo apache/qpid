@@ -595,11 +595,15 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return ((Double)o).doubleValue();
         }
+        else if (o instanceof String)
+        {
+            return Double.valueOf((String)o);
+        }
         else
         {
             try
             {
-                return Double.valueOf(getStringProperty(propertyName));
+                return Double.valueOf(getFloatProperty(propertyName));
             }
             catch(MessageFormatException e)
             {
