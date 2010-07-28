@@ -53,8 +53,17 @@ namespace broker {
 class SessionContext;
 
 /**
- * SemanticState holds the L3 and L4 state of an open session, whether
- * attached to a channel or suspended. 
+ *
+ * SemanticState implements the behavior of a Session, especially the
+ * state of consumers subscribed to queues. The code for ConsumerImpl
+ * is also in SemanticState.cpp
+ *
+ * SemanticState holds the AMQP Execution and Model state of an open
+ * session, whether attached to a channel or suspended.
+ *
+ * Message delivery is driven by ConsumerImpl::doOutput(), which is
+ * called when a client's socket is ready to write data.
+ * 
  */
 class SemanticState : private boost::noncopyable {
   public:
