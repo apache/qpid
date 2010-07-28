@@ -59,7 +59,8 @@ class SessionContext;
  * is also in SemanticState.cpp
  *
  * SemanticState holds the AMQP Execution and Model state of an open
- * session, whether attached to a channel or suspended.
+ * session, whether attached to a channel or suspended. It is not
+ * dependent on any specific AMQP version.
  *
  * Message delivery is driven by ConsumerImpl::doOutput(), which is
  * called when a client's socket is ready to write data.
