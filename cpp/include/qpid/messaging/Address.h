@@ -155,7 +155,9 @@ class Address
     AddressImpl* impl;
 };
 
+#ifndef SWIG
 QPID_MESSAGING_EXTERN std::ostream& operator<<(std::ostream& out, const Address& address);
+#endif
 
 }} // namespace qpid::messaging
 

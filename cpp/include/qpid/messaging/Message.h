@@ -100,6 +100,8 @@ class Message
     QPID_MESSAGING_EXTERN const char* getContentPtr() const;
     /** Get the size of content in bytes. */
     QPID_MESSAGING_EXTERN size_t getContentSize() const;
+
+    QPID_MESSAGING_EXTERN void setProperty(const std::string&, const qpid::types::Variant&);
   private:
     MessageImpl* impl;
     friend struct MessageImplAccess;
