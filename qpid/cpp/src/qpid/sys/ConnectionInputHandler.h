@@ -28,6 +28,14 @@
 namespace qpid {
 namespace sys {
 
+
+/**
+ * ConnectionInputHandler provides methods to process incoming frames
+ * using InputHandler::receive() and to generate outgoing messages in
+ * OutputTask::doOutput()
+ *
+ */
+
     class ConnectionInputHandler :
         public qpid::framing::InputHandler, 
         public TimeoutHandler, public OutputTask
