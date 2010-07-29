@@ -24,6 +24,7 @@
 /** \mainpage Qpid Developer Documentation
  *
  * <h2>Starting Points: Broker</h2>
+ *
  *  
  * <p>Message flow generally starts from the following methods:</p>
  *
@@ -52,6 +53,15 @@
  *   <li><p>qpid::broker::Exchange</p></li>
  *   <li><p>Subclasses of Queue and Exchange</p></li>
  * </ul>
+ *
+ *
+ * <h2>Starting Points: Client</h2>
+ *
+ * <p>TBD</p>
+ *
+ * <h2>Starting Points: Management</h2>
+ *
+ * <p>TBD</p>
  *
  */
 
