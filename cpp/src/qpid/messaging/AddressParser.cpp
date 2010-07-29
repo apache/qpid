@@ -42,11 +42,8 @@ bool AddressParser::parse(Address& address)
         address.setName(name);
         if (readChar('/')) {
             std::string subject;
-            if (readSubject(subject)) {
-                address.setSubject(subject);
-            } else {
-                return error("Expected subject after /");
-            }
+            readSubject(subject);
+            address.setSubject(subject);
         }
         if (readChar(';')) {
             Variant options = Variant::Map();
