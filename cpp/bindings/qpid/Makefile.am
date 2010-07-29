@@ -17,19 +17,17 @@
 # under the License.
 #
 
-LIBTOOL_DEPS = @LIBTOOL_DEPS@
+if HAVE_SWIG
 
-AUTOMAKE_OPTIONS = 1.9.2 foreign
-ACLOCAL_AMFLAGS = -I m4
+EXTRA_DIST = qpid.i
+SUBDIRS =
 
-EXTRA_DIST = \
-  LICENSE NOTICE README.txt SSL RELEASE_NOTES DESIGN \
-  xml/cluster.xml INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
-  packaging/NSIS QPID_VERSION.txt bindings/swig_python_typemaps.i \
-  bindings/swig_ruby_typemaps.i
+if HAVE_RUBY_DEVEL
+SUBDIRS += ruby
+endif
 
-SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf bindings/qpid
+if HAVE_PYTHON_DEVEL
+SUBDIRS += python
+endif
 
-# Update libtool, if needed.
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status --recheck
+endif
