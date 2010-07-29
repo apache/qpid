@@ -178,6 +178,8 @@ namespace Apache.Qpid.Integration.Tests.interop
             testCaseClasses.Add(typeof(TestCase1DummyRun));
             testCaseClasses.Add(typeof(TestCase2BasicP2P));
             testCaseClasses.Add(typeof(TestCase3BasicPubSub));
+            testCaseClasses.Add(typeof(TestCase4P2PMessageSize));
+            testCaseClasses.Add(typeof(TestCase5PubSubMessageSize));
 
             // Create all the test case implementations and index them by the test names.
             foreach (Type testClass in testCaseClasses)
