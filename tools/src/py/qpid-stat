@@ -34,6 +34,7 @@ _types = ""
 _limit = 50
 _increasing = False
 _sortcol = None
+_cluster_detail = False
 
 def Usage (short=False):
     print "Usage:  qpid-stat [OPTIONS] [broker-addr]"
@@ -60,6 +61,7 @@ def Usage (short=False):
     print "     -S [--sort-by] COLNAME  Sort by column name"
     print "     -I [--increasing]       Sort by increasing value (default = decreasing)"
     print "     -L [--limit] NUM        Limit output to NUM rows (default = 50)"
+    print "     -C [--cluster]          Display per-broker cluster detail."
     print
     sys.exit (1)
 
@@ -437,7 +439,9 @@ class BrokerManager(Console):
         elif main == 'u': self.displaySubscriptions(subs)
 
     def display(self):
-        self._getCluster()
+        if _cluster_detail or _types[0] == 'b':
+            # always show cluster detail when dumping broker stats
+            self._getCluster()
         if self.cluster:
             memberList = self.cluster.members.split(";")
             hostList = self._getHostList(memberList)
@@ -461,8 +465,9 @@ class BrokerManager(Console):
 ##
 
 try:
-    longOpts = ("help", "top", "numeric", "sort-by=", "limit=", "increasing", "timeout=")
-    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "hbcequS:L:I", longOpts)
+    longOpts = ("help", "top", "numeric", "sort-by=", "limit=", "increasing",
+                "timeout=", "cluster")
+    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "hbcequCS:L:I", longOpts)
 except Exception, e:
     Usage(short=True)
     # make output match optparse-based tools' output, for consistent scripting
@@ -492,6 +497,8 @@ for opt in optlist:
         _increasing = True
     elif opt[0] == "-L" or opt[0] == "--limit":
         _limit = int(opt[1])
+    elif opt[0] == "-C" or opt[0] == "--cluster":
+        _cluster_detail = True
     elif len(opt[0]) == 2:
         char = opt[0][1]
         if "bcequ".find(char) != -1:
