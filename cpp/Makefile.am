@@ -28,7 +28,7 @@ EXTRA_DIST = \
   packaging/NSIS QPID_VERSION.txt bindings/swig_python_typemaps.i \
   bindings/swig_ruby_typemaps.i
 
-SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf bindings/qpid
+SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
