@@ -19,8 +19,6 @@
 
 %module qpidw
 %include "std_string.i"
-%include "std_map.i"
-%include "std_list.i"
 %include "../../swig_python_typemaps.i"
 
 /* Define the general-purpose exception handling */
