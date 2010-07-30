@@ -1,48 +1,94 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
 Qpid.cpp.bindings.qpid.dotnet binding package.
 
 1. Features
 ===========
 
-A. This binding package provides a .NET Interop wrapper around the C++ 
-   Qpid Messaging interface. It exposes the Messaging interface through 
+A. This binding package provides a .NET Interop wrapper around the 
+   Qpid C++ Messaging interface. It exposes the Messaging interface through 
    a series of managed code classes that may be used by any .NET language.
 
-B. A sessionreceiver assembly provides session callback functionality
-   above the C++ layer.
+B. A sessionreceiver assembly provides session message callback functionality.
 
 2. Prerequisites
 ================
 
-A. A build of the Qpid C++ libraries is available. 
+A. From a fresh check-out of Qpid sources, execute an in-source CMake.
+   This command puts the CMake output files in the same directories
+   as the Qpid source files.
+  
+   > cd cpp
+   > cmake -i
 
-B. Refer to this library using environment variable QPID_BUILD_ROOT.
 
-   for example: SET QPID_BUILD_ROOT=D:\users\submitter\svn\qpid\cpp
+B. Build the qpid-cpp solution.
 
-3. Building the solution
-========================
+   > qpid-cpp.sln
+     Select Configuration Debug
+     Select Platform Win32
+     Compile the ALL_BUILD project
 
-A. The solution is cpp\bindings\qpid\dotnet\org.apache.qpid.messaging.sln
+3. Building the Dotnet Binding solution
+=======================================
 
-B. Build the solution (Debug only - Release is not set up yet).
+A. Open solution file cpp\bindings\qpid\dotnet\org.apache.qpid.messaging.sln
+   Select Configuration Debug
+   Select Platform x86
+   Compile the solution
 
-C. Project output goes to %QPID_BUILD_ROOT%\src\Debug. This puts all the
-   solution artifacts is the same directory as the C++ DLLs.
-   
 
 4. Running the examples
-======================
+=======================
 
 A. csharp.direct.receiver
 B. csharp.direct.sender
+
 C. csharp.map.receiver
 D. csharp.map.sender
+
 E. csharp.map.callback.receiver
 F. csharp.map.callback.sender
+
+G. csharp.example.server
+H. visualbasic.example.server
+I. csharp.example.client
+
+J. csharp.example.drain
+K. csharp.example.spout
+L. csharp.example.declare_queues
+
+M. csharp.example.helloworld
+N. powershell.example.helloworld
 
 
 5. Running the tests
 ====================
 
-A. messaging.test
+A. TBD
 
+
+6. Notes
+========
+
+A. Directory cpp\bindings\qpid\dotnet\bld holds a solution file and two
+   project files that are executed during automated winsdk builds. 
+   These are not meant to be run interactively.
+   

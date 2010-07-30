@@ -61,8 +61,8 @@ devenv qpid-cpp.sln /build "Debug|Win32" /project INSTALL
 devenv qpid-cpp.sln /build "RelWithDebInfo|Win32" /project INSTALL
 
 # Build the .NET binding
-devenv .\bindings\qpid\dotnet\org.apache.qpid.messaging.sln /build "Debug|x86" /project org.apache.qpid.messaging
-devenv .\bindings\qpid\dotnet\org.apache.qpid.messaging.sln /build "Debug|x86" /project org.apache.qpid.messaging.sessionreceiver
+devenv $qpid_cpp_src\bindings\qpid\dotnet\bld\bld-org.apache.qpid.messaging.sln /build "Debug|x86" /project bld-org.apache.qpid.messaging
+devenv $qpid_cpp_src\bindings\qpid\dotnet\bld\bld-org.apache.qpid.messaging.sln /build "Debug|x86" /project bld-org.apache.qpid.messaging.sessionreceiver
 
 # This would be kludgy if we have only one entry as the array declaration syntax
 # can't cope with just one nested array
@@ -136,6 +136,11 @@ Copy-Item -force -path "$qpid_cpp_src/README-winsdk.txt" -destination "$install_
 # Install the .NET binding
 Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.dll" -destination "$install_dir/bin"
 Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.pdb" -destination "$install_dir/bin/DebugPDB"
+
+New-Item -path $(Join-Path $(Get-Location) $install_dir) -name dotnet_examples -type directory
+Dir -recurse $qpid_cpp_src/bindings/qpid/dotnet/examples      csharp*.cs  | Copy -destination $install_dir/dotnet_examples
+Dir -recurse $qpid_cpp_src/bindings/qpid/dotnet/examples visualbasic*.vb  | Copy -destination $install_dir/dotnet_examples
+Dir -recurse $qpid_cpp_src/bindings/qpid/dotnet/examples            *.ps1 | Copy -destination $install_dir/dotnet_examples
 
 # Zip the /bin PDB files into two zip files.
 # we previously arranged that the Debug pdbs go in the DebugPDB subdirectory
