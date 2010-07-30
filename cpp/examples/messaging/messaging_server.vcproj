@@ -91,7 +91,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidmessagingd.lib qpidcommond.lib"
+				AdditionalDependencies="qpidmessagingd.lib qpidcommond.lib qpidtypesd.lib"
 				OutputFile="$(OutDir)\server.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -174,7 +174,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidmessaging.lib qpidcommon.lib"
+				AdditionalDependencies="qpidmessaging.lib qpidcommon.lib qpidtypes.lib"
 				OutputFile="$(OutDir)\server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
