@@ -174,7 +174,7 @@ DISPATCH() {
     echo "CLASSPATH=${CLASSPATH}"
     echo "${COMMAND[@]}"
   fi
-
+  echo $$ > ${QPID_WORK}/qpid.pid
   exec "${COMMAND[@]}"
 }
 
