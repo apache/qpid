@@ -259,7 +259,7 @@ public class QpidLog4JConfigurator
                 //let log4j replace any properties in the string
                 String log4jConfiguredString = domConfig.subst(levelString);
                 
-                if(log4jConfiguredString.equals("") & ! log4jConfiguredString.equals(levelString))
+                if(log4jConfiguredString.equals("") && ! log4jConfiguredString.equals(levelString))
                 {
                     //log4j has returned an empty string but this isnt what we gave it.
                     //There may have been an undefined property. Unlike an incorrect
