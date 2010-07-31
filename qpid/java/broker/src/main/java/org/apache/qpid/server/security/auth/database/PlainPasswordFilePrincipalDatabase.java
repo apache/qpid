@@ -179,38 +179,27 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
             throw new AccountNotFoundException(principal.getName());
         }
 
+        char[] orig = user.getPassword();
+        _userUpdate.lock();
         try
         {
-            try
-            {
-                _userUpdate.lock();
-                char[] orig = user.getPassword();
-                user.setPassword(password);
+            user.setPassword(password);
 
-                try
-                {
-                    savePasswordFile();
-                }
-                catch (IOException e)
-                {
-                    _logger.error("Unable to save password file, password change for user '" + principal + "' discarded");
-                    //revert the password change
-                    user.setPassword(orig);
-                    return false;
-                }
-                return true;
-            }
-            finally
-            {
-                if (_userUpdate.isHeldByCurrentThread())
-                {
-                    _userUpdate.unlock();
-                }
-            }
+            savePasswordFile();
+
+            return true;
         }
-        catch (Exception e)
+        catch (IOException e)
         {
+            _logger.error("Unable to save password file due to '"+e.getMessage()
+                          +"', password change for user '" + principal + "' discarded");
+            //revert the password change
+            user.setPassword(orig);
             return false;
+        }
+        finally
+        {                                   
+            _userUpdate.unlock();
         }
     }
 
