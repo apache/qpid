@@ -400,7 +400,7 @@ public final class JMSHeaderAdapter
         }
         catch (AMQPInvalidClassException aice)
         {
-            MessageFormatException mfe = new MessageFormatException("Only Primitives objects allowed Object is:" + (object == null ? "null" : object.getClass()));
+            MessageFormatException mfe = new MessageFormatException(AMQPInvalidClassException.INVALID_OBJECT_MSG + (object == null ? "null" : object.getClass()));
             mfe.setLinkedException(aice);
             mfe.initCause(aice);
             throw mfe;
