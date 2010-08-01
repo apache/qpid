@@ -55,6 +55,7 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
     public static final int JMS_DELIV_MODE = 1;
     public static final String JMS_TYPE = "test.jms.type";
     protected static final String NULL_OBJECT_PROPERTY = "NullObject";
+    protected static final String INVALID_OBJECT_PROPERTY = "InvalidObject";
 
     protected void setUp() throws Exception
     {
@@ -100,8 +101,18 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         catch (MessageFormatException mfe)
         {
             // Check the error message
-            assertEquals("Incorrect error message",
-                    isBroker010() ? "Object is null" : "Only Primitives objects allowed Object is:null", mfe.getMessage());
+            assertEquals("Incorrect error message", AMQPInvalidClassException.INVALID_OBJECT_MSG + "null", mfe.getMessage());
+        }
+
+        try
+        {
+            sentMsg.setObjectProperty(INVALID_OBJECT_PROPERTY, new Exception());
+            fail("Non primitive Object Property value set");
+        }
+        catch (MessageFormatException mfe)
+        {
+            // Check the error message
+            assertEquals("Incorrect error message: " + mfe.getMessage(), AMQPInvalidClassException.INVALID_OBJECT_MSG + Exception.class, mfe.getMessage());
         }
 
         // send it
