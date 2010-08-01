@@ -283,6 +283,7 @@ private:
     std::string       name_address;
     std::string vendorNameKey;  // "." --> "_"
     std::string productNameKey; // "." --> "_"
+    std::string instanceNameKey; // "." --> "_"
 
     // supported management protocol
     bool qmf1Support;

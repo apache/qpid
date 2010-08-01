@@ -221,6 +221,7 @@ void ManagementAgent::setName(const string& vendor, const string& product, const
 
    vendorNameKey = keyifyNameStr(vendor);
    productNameKey = keyifyNameStr(product);
+   instanceNameKey = keyifyNameStr(inst);
 }
 
 
@@ -393,11 +394,14 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
         headers["qmf.agent"] = name_address;
 
         stringstream key;
-        key << "agent.ind.event." << vendorNameKey
-            << "." << productNameKey
+        key << "agent.ind.event." << keyifyNameStr(event.getPackageName())
+            << "." << keyifyNameStr(event.getEventName())
             << "." << severityStr[sev]
-            << "." << keyifyNameStr(event.getPackageName())
-            << "." << keyifyNameStr(event.getEventName());
+            << "." << vendorNameKey
+            << "." << productNameKey;
+        if (!instanceNameKey.empty())
+            key << "." << instanceNameKey;
+
 
         string content;
         MapCodec::encode(map_, content);
@@ -753,7 +757,13 @@ void ManagementAgent::periodicProcessing (void)
                 if (content.length()) {
                     stringstream key;
                     Variant::Map  headers;
-                    key << "agent.ind.data." << packageName << "." << className;
+                    key << "agent.ind.data." << keyifyNameStr(packageName)
+                        << "." << keyifyNameStr(className)
+                        << "." << vendorNameKey
+                        << "." << productNameKey;
+                    if (!instanceNameKey.empty())
+                        key << "." << instanceNameKey;
+
                     headers["method"] = "indication";
                     headers["qmf.opcode"] = "_data_indication";
                     headers["qmf.content"] = "_data";
@@ -800,6 +810,8 @@ void ManagementAgent::periodicProcessing (void)
         std::stringstream addr_key;
 
         addr_key << "agent.ind.heartbeat." << vendorNameKey << "." << productNameKey;
+        if (!instanceNameKey.empty())
+            addr_key << "." << instanceNameKey;
 
         Variant::Map map;
         Variant::Map headers;
@@ -860,7 +872,12 @@ void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
         object->mapEncodeValues(values, true, false);
         map_["_values"] = values;
         list_.push_back(map_);
-        v2key << "agent.ind.data." << object->getPackageName() << "." << object->getClassName();
+        v2key << "agent.ind.data." << keyifyNameStr(object->getPackageName())
+              << "." << keyifyNameStr(object->getClassName())
+              << "." << vendorNameKey
+              << "." << productNameKey;
+        if (!instanceNameKey.empty())
+            v2key << "." << instanceNameKey;
     }
 
     object = 0;
