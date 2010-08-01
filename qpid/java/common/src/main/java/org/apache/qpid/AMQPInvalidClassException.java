@@ -32,6 +32,9 @@ package org.apache.qpid;
  */
 public class AMQPInvalidClassException extends RuntimeException
 {
+    /** Error message text when trying to store an unsupported class or null object */
+    public static final String INVALID_OBJECT_MSG = "Only Primitive objects allowed. Object is: ";
+    
     public AMQPInvalidClassException(String s)
     {
         super(s);

@@ -529,9 +529,19 @@ public class PropertyFieldTableTest extends TestCase
         catch (AMQPInvalidClassException aice)
         {
             assertEquals("Null values are not allowed to be set",
-                         "Only Primitives objects allowed Object is:null", aice.getMessage());
+                    AMQPInvalidClassException.INVALID_OBJECT_MSG + "null", aice.getMessage());
         }
 
+        try
+        {
+            table.setObject("Unsupported-object", new Exception());
+            fail("Non primitive values are not allowed");
+        }
+        catch (AMQPInvalidClassException aice)
+        {
+            assertEquals("Non primitive values are not allowed to be set",
+                    AMQPInvalidClassException.INVALID_OBJECT_MSG + Exception.class, aice.getMessage());
+        }
 
         Assert.assertEquals((Boolean) true, table.getBoolean("bool"));
         Assert.assertEquals((Byte) Byte.MAX_VALUE, table.getByte("byte"));

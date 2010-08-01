@@ -37,6 +37,7 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.Session;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.collections.ReferenceMap;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
@@ -730,22 +731,19 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         ALLOWED.add(String.class);
         ALLOWED.add(byte[].class);
     }
-
+    
     public void setObjectProperty(String propertyName, Object object) throws JMSException
     {
-        checkPropertyName(propertyName);
-        checkWritableProperties();
         if (object == null)
         {
-            throw new MessageFormatException("Object is null");            
+            throw new MessageFormatException(AMQPInvalidClassException.INVALID_OBJECT_MSG + "null");
         }
         else if (!ALLOWED.contains(object.getClass()))
         {
-            throw new MessageFormatException
-                (String.format
-                 ("Cannot set a %s, allowed property types are: %s",
-                  object.getClass(), ALLOWED));
+            throw new MessageFormatException(AMQPInvalidClassException.INVALID_OBJECT_MSG + object.getClass());
         }
+        checkPropertyName(propertyName);
+        checkWritableProperties();
         setApplicationHeader(propertyName, object);
     }
 
