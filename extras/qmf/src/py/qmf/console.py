@@ -663,27 +663,38 @@ class Session:
 
 
   def bindPackage(self, packageName):
-    """ Request object updates for all table classes within a package. """
+    """ Request object updates and events for all elements of a package. Only
+    valid if userBindings is True."""
     if not self.userBindings or not self.rcvObjects:
       raise Exception("userBindings option not set for Session")
-    v1key = "console.obj.*.*.%s.#" % packageName
-    v2key = "agent.ind.data.%s.#" % packageName
-    self.v1BindingKeyList.append(v1key)
-    self.v2BindingKeyList.append(v2key)
+    v1keys = ["console.obj.*.*.%s.#" % packageName, "console.event.*.*.%s.#" % packageName]
+    v2keys = ["agent.ind.data.%s.#" % packageName.replace(".", "_"),
+              "agent.ind.event.%s.#" % packageName.replace(".", "_"),]
+    self.v1BindingKeyList.extend(v1keys)
+    self.v2BindingKeyList.extend(v2keys)
     for broker in self.brokers:
       if broker.isConnected():
-        broker.amqpSession.exchange_bind(exchange="qpid.management", queue=broker.topicName, binding_key=v1key)
+        for v1key in v1keys:
+          broker.amqpSession.exchange_bind(exchange="qpid.management", queue=broker.topicName, binding_key=v1key)
         if broker.brokerSupportsV2:
-          # data indications should arrive on the lo priority queue
-          broker.amqpSession.exchange_bind(exchange="qmf.default.topic", queue=broker.v2_topic_queue_lo, binding_key=v2key)
+          for v2key in v2keys:
+            # data indications should arrive on the lo priority queue
+            broker.amqpSession.exchange_bind(exchange="qmf.default.topic", queue=broker.v2_topic_queue_lo, binding_key=v2key)
 
 
-  def bindClass(self, pname, cname):
-    """ Request object updates for a particular table class by package and class name. """
+  def bindClass(self, pname, cname=None):
+    """ Request object updates for a particular class given package and class
+    name, or all classes of a particular package if cname=None.  Only valid if
+    userBindings is True.
+    """
     if not self.userBindings or not self.rcvObjects:
       raise Exception("userBindings option not set for Session")
-    v1key = "console.obj.*.*.%s.%s.#" % (pname, cname)
-    v2key = "agent.ind.data.%s.%s" % (pname, cname)
+    if cname is not None:
+      v1key = "console.obj.*.*.%s.%s.#" % (pname, cname)
+      v2key = "agent.ind.data.%s.%s.#" % (pname.replace(".", "_"), cname.replace(".", "_"))
+    else:
+      v1key = "console.obj.*.*.%s.#" % pname
+      v2key = "agent.ind.data.%s.#" % pname.replace(".", "_")
     self.v1BindingKeyList.append(v1key)
     self.v2BindingKeyList.append(v2key)
     for broker in self.brokers:
@@ -695,11 +706,59 @@ class Session:
 
       
   def bindClassKey(self, classKey):
-    """ Request object updates for a particular table class by class key. """
+    """ Request object updates for a particular table class by class key.  Only
+    valid if userBindings is True.
+    """
     pname = classKey.getPackageName()
     cname = classKey.getClassName()
     self.bindClass(pname, cname)
 
+  def bindEvent(self, pname, ename=None):
+    """ Request events from a particular class by package and event name, or
+    all events is ename=None.  Only valid if userBindings is True.
+    """
+    if not self.userBindings or not self.rcvEvents:
+      raise Exception("userBindings option not set for Session")
+    if ename is not None:
+      v1key = "console.event.*.*.%s.%s.#" % (pname, ename)
+      v2key = "agent.ind.event.%s.%s.#" % (pname.replace(".", "_"), ename.replace(".", "_"))
+    else:
+      v1key = "console.event.*.*.%s.#" % pname
+      v2key = "agent.ind.event.%s.#" % pname.replace(".", "_")
+    self.v1BindingKeyList.append(v1key)
+    self.v2BindingKeyList.append(v2key)
+    for broker in self.brokers:
+      if broker.isConnected():
+        broker.amqpSession.exchange_bind(exchange="qpid.management", queue=broker.topicName, binding_key=v1key)
+        if broker.brokerSupportsV2:
+          # event indications should arrive on the lo priority queue
+          broker.amqpSession.exchange_bind(exchange="qmf.default.topic", queue=broker.v2_topic_queue_lo, binding_key=v2key)
+
+  def bindEventKey(self, eventKey):
+    """ Request events for a particular class by class key. Only valid if
+    userBindings is True. """
+    pname = eventKey.getPackageName()
+    ename = eventKey.getClassName()
+    self.bindEvent(pname, ename)
+
+  def bindAgent(self, vendor, product=None, instance=None):
+    """ Listen for heartbeats/events/data indications only for those agent(s)
+    that match the vendor and, optionally, the product strings.  Only valid if
+    userBindings is True.
+    """
+    if not self.userBindings:
+      raise Exception("Session not configured for binding specific agents.")
+    self.agent_filter.append((vendor, product, instance))
+    if product is not None:
+      v2key = "agent.ind.heartbeat.%s.%s.#" % (vendor.replace(".", "_"), product.replace(".", "_"))
+    else:
+      v2key = "agent.ind.heartbeat.%s.#" % vendor.replace(".", "_")
+    self.v2BindingKeyList.append(v2key)
+    for broker in self.brokers:
+      if broker.isConnected():
+        if broker.brokerSupportsV2:
+          # heartbeats should arrive on the hi priority queue
+          broker.amqpSession.exchange_bind(exchange="qmf.default.topic", queue=broker.v2_topic_queue_hi, binding_key=v2key)
 
   def getAgents(self, broker=None):
     """ Get a list of currently known agents """
@@ -853,11 +912,12 @@ class Session:
 
     # V2 key - escape any "." in the filter strings
 
-    key = "agent.ind.event." + str(vendor).replace(".", "_") \
-        + "." + str(product).replace(".", "_") \
+    key = "agent.ind.event." + str(package).replace(".", "_") \
+        + "." + str(event).replace(".", "_") \
         + "." + str(severity).replace(".", "_") \
-        + "." + str(package).replace(".", "_") \
-        + "." + str(event).replace(".", "_") + ".#"
+        + "." + str(vendor).replace(".", "_") \
+        + "." + str(product).replace(".", "_") \
+        + ".#"
 
     if key not in self.v2BindingKeyList:
       self.v2BindingKeyList.append(key)
@@ -894,7 +954,8 @@ class Session:
       self.agent_filter.append((vendor, product, None))
 
     # be sure we don't ever filter the local broker
-    local_broker_key = "agent.ind.heartbeat.apache.org.qpidd"
+    local_broker_key = "agent.ind.heartbeat." + "org.apache".replace(".", "_") \
+        + "." + "qpidd".replace(".", "_") + ".#"
     if local_broker_key not in self.v2BindingKeyList:
       self.v2BindingKeyList.append(local_broker_key)
 
@@ -905,29 +966,36 @@ class Session:
       pass
 
   def _bindingKeys(self):
-    """ Construct the initial set of default key bindings.  These keys can be
-    overridden using the add{Event,Heartbeat}Filter() api calls _prior_ to
-    adding a broker with addBroker()
-    """
     v1KeyList = []
     v2KeyList = []
     v1KeyList.append("schema.#")
-    v2KeyList.append("agent.ind.heartbeat.#")
-    if self.rcvObjects and self.rcvEvents and self.rcvHeartbeats and not self.userBindings:
-      v1KeyList.append("console.#")
-      v2KeyList.append("agent.ind.data.#")
-      v2KeyList.append("agent.ind.event.#")
-    else:
-      if self.rcvObjects and not self.userBindings:
-        v1KeyList.append("console.obj.#")
-        v2KeyList.append("agent.ind.data.#")
+    if not self.userBindings:
+      if self.rcvObjects and self.rcvEvents and self.rcvHeartbeats:
+        v1KeyList.append("console.#")
+        v2KeyList.append("agent.ind.#")
       else:
-        v1KeyList.append("console.obj.*.*.org.apache.qpid.broker.agent")
-      if self.rcvEvents:
-        v1KeyList.append("console.event.#")
-        v2KeyList.append("agent.ind.event.#")
-      if self.rcvHeartbeats:
-        v1KeyList.append("console.heartbeat.#")
+        if self.rcvObjects:
+          v1KeyList.append("console.obj.#")
+          v2KeyList.append("agent.ind.data.#")
+        else:
+          v1KeyList.append("console.obj.*.*.org.apache.qpid.broker.agent")
+        if self.rcvEvents:
+          v1KeyList.append("console.event.#")
+          v2KeyList.append("agent.ind.event.#")
+        else:
+          v1KeyList.append("console.event.*.*.org.apache.qpid.broker.agent")
+        if self.rcvHeartbeats:
+          v1KeyList.append("console.heartbeat.#")
+          v2KeyList.append("agent.ind.heartbeat.#")
+        else:
+          v2KeyList.append("agent.ind.heartbeat.org_apache.qpidd.#")
+    else:
+      # mandatory bindings
+      v1KeyList.append("console.obj.*.*.org.apache.qpid.broker.agent")
+      v1KeyList.append("console.event.*.*.org.apache.qpid.broker.agent")
+      v1KeyList.append("console.heartbeat.#")  # no way to turn this on later
+      v2KeyList.append("agent.ind.heartbeat.org_apache.qpidd.#")
+
     return (v1KeyList, v2KeyList)
 
 
@@ -1081,6 +1149,14 @@ class Session:
     if '_vendor' in values and values['_vendor'] == 'apache.org' and \
           '_product' in values and values['_product'] == 'qpidd':
       return
+
+    if self.agent_filter:
+      # only allow agents that satisfy the filter
+      v = agentName.split(":", 2)
+      if len(v) != 3 or ((v[0], None, None) not in self.agent_filter
+                         and (v[0], v[1], None) not in self.agent_filter
+                         and (v[0], v[1], v[2]) not in self.agent_filter):
+        return
 
     agent = broker.getAgent(1, agentName)
     if agent == None:
@@ -2285,6 +2361,7 @@ class Broker(Thread):
     """
     Broadcast an agent-locate request to cause all agents in the domain to tell us who they are.
     """
+    # @todo: send locate only to those agents in agent_filter?
     dp = self.amqpSession.delivery_properties()
     dp.routing_key = "console.request.agent_locate"
     mp = self.amqpSession.message_properties()

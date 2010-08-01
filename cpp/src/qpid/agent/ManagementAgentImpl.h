@@ -150,6 +150,9 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     qpid::types::Variant::Map attrMap;
     std::string       name_address;
+    std::string       vendorNameKey;    // vendor name with "." --> "_"
+    std::string       productNameKey;   // product name with "." --> "_"
+    std::string       instanceNameKey;  // agent instance with "." --> "_"
     uint16_t          interval;
     bool              extThread;
     sys::PipeHandle*  pipeHandle;

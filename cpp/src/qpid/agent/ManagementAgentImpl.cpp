@@ -53,6 +53,20 @@ namespace {
 
     const string defaultVendorName("vendor");
     const string defaultProductName("product");
+
+    // Create a valid binding key substring by
+    // replacing all '.' chars with '_'
+    const string keyifyNameStr(const string& name)
+    {
+        string n2 = name;
+
+        size_t pos = n2.find('.');
+        while (pos != n2.npos) {
+            n2.replace(pos, 1, "_");
+            pos = n2.find('.', pos);
+        }
+        return n2;
+    }
 }
 
 ManagementAgent::Singleton::Singleton(bool disableManagement)
@@ -142,6 +156,9 @@ void ManagementAgentImpl::setName(const string& vendor, const string& product, c
         inst = instance;
 
    name_address = vendor + ":" + product + ":" + inst;
+   vendorNameKey = keyifyNameStr(vendor);
+   productNameKey = keyifyNameStr(product);
+   instanceNameKey = keyifyNameStr(inst);
    attrMap["_instance"] = inst;
    attrMap["_name"] = name_address;
 }
@@ -282,13 +299,23 @@ ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
 
 void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t severity)
 {
+    static const std::string severityStr[] = {
+        "emerg", "alert", "crit", "error", "warn",
+        "note", "info", "debug"
+    };
     sys::Mutex::ScopedLock lock(agentLock);
     Buffer outBuffer(eventBuffer, MA_BUFFER_SIZE);
     uint8_t sev = (severity == SEV_DEFAULT) ? event.getSeverity() : (uint8_t) severity;
     stringstream key;
 
-    key << "console.event." << assignedBrokerBank << "." << assignedAgentBank << "." <<
-        event.getPackageName() << "." << event.getEventName();
+    // key << "console.event." << assignedBrokerBank << "." << assignedAgentBank << "." <<
+    // event.getPackageName() << "." << event.getEventName();
+    key << "agent.ind.event." << keyifyNameStr(event.getPackageName())
+        << "." << keyifyNameStr(event.getEventName())
+        << "." << severityStr[sev]
+        << "." << vendorNameKey
+        << "." << productNameKey
+        << "." << instanceNameKey;
 
     Variant::Map map_;
     Variant::Map schemaId;
@@ -407,25 +434,16 @@ void ManagementAgentImpl::retrieveData()
 
 void ManagementAgentImpl::sendHeartbeat()
 {
-    static const string addr_key_base("agent.ind.heartbeat");
+    static const string addr_key_base("agent.ind.heartbeat.");
 
     Variant::Map map;
     Variant::Map headers;
     string content;
     std::stringstream addr_key;
 
-    addr_key << addr_key_base;
-
-    // append .<vendor>.<product> to address key if present.
-    Variant::Map::const_iterator v;
-    if ((v = attrMap.find("_vendor")) != attrMap.end() &&
-        v->second.getString() != defaultVendorName) {
-        addr_key << "." << v->second.getString();
-        if ((v = attrMap.find("_product")) != attrMap.end() &&
-            v->second.getString() != defaultProductName) {
-            addr_key << "." << v->second.getString();
-        }
-    }
+    addr_key << addr_key_base << vendorNameKey
+             << "." << productNameKey
+             << "." << instanceNameKey;
 
     headers["method"] = "indication";
     headers["qmf.opcode"] = "_agent_heartbeat_indication";
@@ -946,6 +964,7 @@ void ManagementAgentImpl::encodeClassIndication(Buffer&              buf,
 
 void ManagementAgentImpl::periodicProcessing()
 {
+    string addr_key_base = "agent.ind.data.";
     sys::Mutex::ScopedLock lock(agentLock);
     list<pair<ObjectId, ManagementObject*> > deleteList;
 
@@ -986,6 +1005,9 @@ void ManagementAgentImpl::periodicProcessing()
              !baseObject->getForcePublish() &&
              !baseObject->isDeleted()))
             continue;
+
+        std::string packageName = baseObject->getPackageName();
+        std::string className = baseObject->getClassName();
 
         Variant::List list_;
 
@@ -1033,7 +1055,15 @@ void ManagementAgentImpl::periodicProcessing()
             headers["qmf.content"] = "_data";
             headers["qmf.agent"] = name_address;
 
-            connThreadBody.sendBuffer(content, "", headers, topicExchange, "agent.ind.data", "amqp/list");
+            std::stringstream addr_key;
+            addr_key << addr_key_base;
+            addr_key << keyifyNameStr(packageName)
+                     << "." << keyifyNameStr(className)
+                     << "." << vendorNameKey
+                     << "." << productNameKey
+                     << "." << instanceNameKey;
+
+            connThreadBody.sendBuffer(content, "", headers, topicExchange, addr_key.str(), "amqp/list");
             QPID_LOG(trace, "SENT DataIndication");
         }
     }
