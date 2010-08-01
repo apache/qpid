@@ -553,7 +553,7 @@
   <target name="bundle" description="Build module osgi artifact. Override and depend on bundle-tasks to use"/>
 
   <target name="bundle-tasks" depends="jar">
-   <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/lib/bnd-0.0.249.jar"/>
+   <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/lib/bnd-0.0.384.jar"/>
    <echo message="Bundling ${build}/lib/${module.namever}.jar with ${module.src}/${module.name}.bnd"/>
    <bnd 
       classpath="${build}/lib/${module.namever}.jar"
