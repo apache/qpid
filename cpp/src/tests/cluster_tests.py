@@ -185,6 +185,35 @@ acl allow all all
         broker1.ready()
         broker2.ready()
 
+    def test_queue_cleaner(self):
+        """ Regression test to ensure that cleanup of expired messages works correctly """
+        cluster = self.cluster(2, args=["--queue-purge-interval", 3])
+
+        s0 = cluster[0].connect().session()
+        sender = s0.sender("my-lvq; {create: always, node:{x-declare:{arguments:{'qpid.last_value_queue':1}}}}")
+        #send 10 messages that will all expire and be cleaned up
+        for i in range(1, 10):
+            msg = Message("message-%s" % i)
+            msg.properties["qpid.LVQ_key"] = "a"
+            msg.ttl = 0.1
+            sender.send(msg)
+        #wait for queue cleaner to run
+        time.sleep(3)
+
+        #test all is ok by sending and receiving a message
+        msg = Message("non-expiring")
+        msg.properties["qpid.LVQ_key"] = "b"
+        sender.send(msg)
+        s0.connection.close()
+        s1 = cluster[1].connect().session()
+        m = s1.receiver("my-lvq", capacity=1).fetch(timeout=1)
+        s1.acknowledge()
+        self.assertEqual("non-expiring", m.content)
+        s1.connection.close()
+
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):

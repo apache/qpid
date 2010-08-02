@@ -35,8 +35,9 @@ class QueueRegistry;
 class QueueCleaner
 {
   public:
-    QPID_BROKER_EXTERN QueueCleaner(QueueRegistry& queues, sys::Timer& timer);
+    QPID_BROKER_EXTERN QueueCleaner(QueueRegistry& queues, sys::Timer* timer);
     QPID_BROKER_EXTERN ~QueueCleaner();
+    QPID_BROKER_EXTERN void setTimer(sys::Timer* timer);
     QPID_BROKER_EXTERN void start(qpid::sys::Duration period);
   private:
     class Task : public sys::TimerTask
@@ -50,7 +51,7 @@ class QueueCleaner
 
     boost::intrusive_ptr<sys::TimerTask> task;
     QueueRegistry& queues;
-    sys::Timer& timer;
+    sys::Timer* timer;
 
     void fired();
 };
