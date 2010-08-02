@@ -1579,7 +1579,7 @@ class SchemaCache(object):
         self.packages[pname] = {}
         new_package = True
       packageMap = self.packages[pname]
-      if pkey not in packageMap:
+      if pkey not in packageMap or not isinstance(packageMap[pkey], SchemaClass):
         if classDef is not None:
           new_class = True
           packageMap[pkey] = classDef
