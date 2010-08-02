@@ -46,7 +46,7 @@ void QueueCleaner::start(qpid::sys::Duration p)
     }
 }
 
-QueueCleaner::Task::Task(QueueCleaner& p, qpid::sys::Duration d) : sys::TimerTask(d), parent(p) {}
+QueueCleaner::Task::Task(QueueCleaner& p, qpid::sys::Duration d) : sys::TimerTask(d, "QueueCleaner::fired"), parent(p) {}
 
 void QueueCleaner::Task::fire()
 {
