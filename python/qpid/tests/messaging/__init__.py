@@ -18,6 +18,7 @@
 #
 
 import time
+from math import ceil
 from qpid.harness import Skipped
 from qpid.messaging import *
 from qpid.tests import Test
@@ -134,9 +135,23 @@ class Base(Test):
     contents = self.drain(rcv)
     assert len(contents) == 0, "%s is supposed to be empty: %s" % (rcv, contents)
 
-  def assertAvailable(self, rcv, expected):
+  def assertAvailable(self, rcv, expected=None, lower=None, upper=None):
+    if expected is not None:
+      if lower is not None or upper is not None:
+        raise ValueError("cannot specify lower or upper when specifying expected")
+      lower = expected
+      upper = expected
+    else:
+      if lower is None:
+        lower = int(ceil(rcv.threshold*rcv.capacity))
+      if upper is None:
+        upper = rcv.capacity
+
     p = rcv.available()
-    assert p == expected, "expected %s, got %s" % (expected, p)
+    if upper == lower:
+      assert p == lower, "expected %s, got %s" % (lower, p)
+    else:
+      assert lower <= p <= upper, "expected %s to be in range [%s, %s]" % (p, lower, upper)
 
   def sleep(self):
     time.sleep(self.delay())

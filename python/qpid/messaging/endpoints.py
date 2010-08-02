@@ -1009,8 +1009,9 @@ class Receiver(Endpoint, object):
       if msg is None:
         raise Empty()
     elif self._capacity not in (0, UNLIMITED.value):
-      if self.received - self.returned <= int(ceil(self.threshold * self._capacity)):
-        self.granted = self.received + self._capacity
+      t = int(ceil(self.threshold * self._capacity))
+      if self.received - self.returned <= t:
+        self.granted = self.returned + self._capacity
         self._wakeup()
     return msg
 
@@ -1018,7 +1019,7 @@ class Receiver(Endpoint, object):
     if self._capacity == UNLIMITED.value:
       self.granted = UNLIMITED
     else:
-      self.granted = self.received + self._capacity
+      self.granted = self.returned + self._capacity
 
   @synchronized
   def close(self, timeout=None):

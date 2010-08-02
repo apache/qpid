@@ -659,9 +659,9 @@ class ReceiverTests(Base):
   def setup_receiver(self):
     return self.ssn.receiver(RECEIVER_Q)
 
-  def send(self, base, count = None):
+  def send(self, base, count = None, sync=True):
     content = self.content(base, count)
-    self.snd.send(content)
+    self.snd.send(content, sync=sync)
     return content
 
   def testFetch(self):
@@ -762,24 +762,50 @@ class ReceiverTests(Base):
 
     self.ssn.acknowledge()
 
-  def testCapacity(self):
-    self.rcv.capacity = 5
+  def capacityTest(self, capacity, threshold=None):
+    if threshold is not None:
+      self.rcv.threshold = threshold
+    self.rcv.capacity = capacity
     self.assertAvailable(self.rcv, 0)
 
-    for i in range(15):
-      self.send("testCapacity", i)
+    for i in range(2*capacity):
+      self.send("capacityTest(%s, %s)" % (capacity, threshold), i, sync=False)
+    self.snd.sync()
     self.sleep()
-    self.assertAvailable(self.rcv, 5)
+    self.assertAvailable(self.rcv)
 
-    self.drain(self.rcv, limit = 5)
+    first = capacity/2
+    second = capacity - first
+    self.drain(self.rcv, limit = first)
     self.sleep()
-    self.assertAvailable(self.rcv, 5)
+    self.assertAvailable(self.rcv)
+    self.drain(self.rcv, limit = second)
+    self.sleep()
+    self.assertAvailable(self.rcv)
 
     drained = self.drain(self.rcv)
-    assert len(drained) == 10, "%s, %s" % (len(drained), drained)
+    assert len(drained) == capacity, "%s, %s" % (len(drained), drained)
     self.assertAvailable(self.rcv, 0)
 
     self.ssn.acknowledge()
+
+  def testCapacity5(self):
+    self.capacityTest(5)
+
+  def testCapacity5Threshold1(self):
+    self.capacityTest(5, 1)
+
+  def testCapacity10(self):
+    self.capacityTest(10)
+
+  def testCapacity10Threshold1(self):
+    self.capacityTest(10, 1)
+
+  def testCapacity100(self):
+    self.capacityTest(100)
+
+  def testCapacity100Threshold1(self):
+    self.capacityTest(100, 1)
 
   def testCapacityUNLIMITED(self):
     self.rcv.capacity = UNLIMITED
