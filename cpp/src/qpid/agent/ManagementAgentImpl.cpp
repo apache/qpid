@@ -1208,7 +1208,6 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
     for (i = headers.begin(); i != headers.end(); ++i) {
         msg.getHeaders().setString(i->first, i->second.asString());
     }
-    msg.getHeaders().setString("app_id", "qmf2");
 
     msg.setData(data);
     sendMessage(msg, exchange, routingKey);
@@ -1233,6 +1232,7 @@ void ManagementAgentImpl::ConnectionThread::sendMessage(Message msg,
     msg.getDeliveryProperties().setRoutingKey(routingKey);
     msg.getMessageProperties().setReplyTo(ReplyTo("amq.direct", queueName.str()));
     msg.getMessageProperties().getApplicationHeaders().setString("qmf.agent", agent.name_address);
+    msg.getMessageProperties().setAppId("qmf2");
     try {
         session.messageTransfer(arg::content=msg, arg::destination=exchange);
     } catch(exception& e) {
