@@ -325,7 +325,7 @@ class RouteManager:
                     res = link.close()
                     if res.status != 0:
                         raise Exception("Error closing link: %d - %s" % (res.status, res.text))
-                sys.exit(0)
+                return
         if not _quiet:
             raise Exception("Route not found")
 
