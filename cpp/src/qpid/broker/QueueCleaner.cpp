@@ -26,17 +26,24 @@
 namespace qpid {
 namespace broker {
 
-QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer& t) : queues(q), timer(t) {}
+QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer* t) : queues(q), timer(t) {}
 
 QueueCleaner::~QueueCleaner()
 {
     if (task) task->cancel();
 }
 
+void QueueCleaner::setTimer(sys::Timer* t)
+{
+    timer = t;
+}
+
 void QueueCleaner::start(qpid::sys::Duration p)
 {
-    task = new Task(*this, p);
-    timer.add(task);
+    if (timer) {
+        task = new Task(*this, p);
+        timer->add(task);
+    }
 }
 
 QueueCleaner::Task::Task(QueueCleaner& p, qpid::sys::Duration d) : sys::TimerTask(d), parent(p) {}
@@ -66,7 +73,7 @@ void QueueCleaner::fired()
     queues.eachQueue(collect);
     std::for_each(copy.begin(), copy.end(), boost::bind(&Queue::purgeExpired, _1));
     task->setupNextFire();
-    timer.add(task);
+    if (timer) timer->add(task);
 }
 
 
