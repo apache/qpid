@@ -428,10 +428,26 @@ void ManagementAgent::clientAdded (const string& routingKey)
 {
     sys::Mutex::ScopedLock lock(userLock);
 
-    if (routingKey.find("console") != 0)
+    //
+    // If this routing key is not relevant to object updates, exit.
+    //
+    if ((routingKey.compare(0, 1,  "#") != 0) &&
+        (routingKey.compare(0, 9,  "console.#") != 0) &&
+        (routingKey.compare(0, 12, "console.obj.") != 0))
         return;
 
+    //
+    // Mark local objects for full-update.
+    //
     clientWasAdded = true;
+
+    //
+    // If the routing key is relevant for local objects only, don't involve
+    // any of the remote agents.
+    //
+    if (routingKey.compare(0, 39, "console.obj.*.*.org.apache.qpid.broker.") == 0)
+        return;
+
     std::list<std::string> rkeys;
 
     for (RemoteAgentMap::iterator aIter = remoteAgents.begin();
@@ -570,11 +586,11 @@ void ManagementAgent::sendBufferLH(const string& data,
         props->setCorrelationId(cid);
     }
     props->setContentType(content_type);
+    props->setAppId("qmf2");
 
     for (i = headers.begin(); i != headers.end(); ++i) {
         msg->getOrInsertHeaders().setString(i->first, i->second.asString());
     }
-    msg->getOrInsertHeaders().setString("app_id", "qmf2");
 
     DeliveryProperties* dp =
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
