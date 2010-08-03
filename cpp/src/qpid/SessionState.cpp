@@ -95,6 +95,9 @@ SessionState::SendState::SendState() : unflushedSize(), replaySize(), bytesSince
 
 SessionState::ReceiveState::ReceiveState() : bytesSinceKnownCompleted() {}
 
+uint32_t SessionState::getTimeout() const { return timeout; }
+void SessionState::setTimeout(uint32_t seconds) { timeout = seconds; }
+
 SessionPoint SessionState::senderGetCommandPoint() { return sender.sendPoint; }
 SequenceSet  SessionState::senderGetIncomplete() const { return sender.incomplete; }
 SessionPoint SessionState::senderGetReplayPoint() const { return sender.replayPoint; }
@@ -240,7 +243,7 @@ SessionState::Configuration::Configuration(size_t flush, size_t hard) :
     replayFlushLimit(flush), replayHardLimit(hard) {}
 
 SessionState::SessionState(const SessionId& i, const Configuration& c)
-    : id(i), timeout(), config(c), stateful(), receiverTrackingDisabled(false)
+    : id(i), timeout(0), config(c), stateful(false), receiverTrackingDisabled(false)
 {
     QPID_LOG(debug, "SessionState::SessionState " << id << ": " << this);
 }
