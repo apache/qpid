@@ -286,7 +286,7 @@ class Broker(Popen):
             self.name = "broker%d" % Broker._broker_count
             Broker._broker_count += 1
         self.find_log()
-        cmd += ["--log-to-file", self.log, "--log-prefix", self.name]
+        cmd += ["--log-to-file", self.log]
         cmd += ["--log-to-stderr=no"]
         if log_level != None:
             cmd += ["--log-enable=%s" % log_level] 
