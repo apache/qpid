@@ -205,7 +205,7 @@ void SessionHandler::handleDetach() {
 void SessionHandler::requestTimeout(uint32_t t) {
     checkAttached();
     getState()->setTimeout(t);
-    peer.timeout(t);
+    peer.timeout(getState()->getTimeout());
 }
 
 void SessionHandler::timeout(uint32_t t) {

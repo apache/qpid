@@ -380,6 +380,11 @@ void SessionState::readyToSend() {
 
 Broker& SessionState::getBroker() { return broker; }
 
+// Session resume is not fully implemented so it is useless to set a
+// non-0 timeout. Moreover it creates problems in a cluster because
+// dead sessions are kept and interfere with failover.
+void SessionState::setTimeout(uint32_t) { }
+
 framing::AMQP_ClientProxy& SessionState::getClusterOrderProxy() {
     return handler->getClusterOrderProxy();
 }

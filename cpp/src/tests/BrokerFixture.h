@@ -122,10 +122,10 @@ struct ClientT {
     qpid::client::LocalQueue lq;
     std::string name;
 
-    ClientT(uint16_t port, const std::string& name_=std::string())
-        : connection(port), session(connection.newSession(name_)), subs(session), name(name_) {}
-    ClientT(const qpid::client::ConnectionSettings& settings, const std::string& name_=std::string())
-        : connection(settings), session(connection.newSession(name_)), subs(session), name(name_) {}
+    ClientT(uint16_t port, const std::string& name_=std::string(), int timeout=0)
+        : connection(port), session(connection.newSession(name_,timeout)), subs(session), name(name_) {}
+    ClientT(const qpid::client::ConnectionSettings& settings, const std::string& name_=std::string(), int timeout=0)
+        : connection(settings), session(connection.newSession(name_, timeout)), subs(session), name(name_) {}
 
     ~ClientT() { close(); }
     void close() { session.close(); connection.close(); }

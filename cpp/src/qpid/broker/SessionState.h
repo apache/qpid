@@ -92,6 +92,8 @@ class SessionState : public qpid::SessionState,
 
     Broker& getBroker();
 
+    void setTimeout(uint32_t seconds);
+
     /** OutputControl **/
     void abort();
     void activateOutput();
