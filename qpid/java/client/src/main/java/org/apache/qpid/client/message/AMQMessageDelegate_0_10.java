@@ -734,6 +734,8 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     
     public void setObjectProperty(String propertyName, Object object) throws JMSException
     {
+        checkPropertyName(propertyName);
+        checkWritableProperties();
         if (object == null)
         {
             throw new MessageFormatException(AMQPInvalidClassException.INVALID_OBJECT_MSG + "null");
@@ -742,8 +744,6 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             throw new MessageFormatException(AMQPInvalidClassException.INVALID_OBJECT_MSG + object.getClass());
         }
-        checkPropertyName(propertyName);
-        checkWritableProperties();
         setApplicationHeader(propertyName, object);
     }
 
