@@ -92,8 +92,8 @@ class SessionState {
 
     const SessionId& getId() const { return id; }
 
-    uint32_t getTimeout() const { return timeout; }
-    void setTimeout(uint32_t seconds) { timeout = seconds; }
+    QPID_COMMON_EXTERN virtual uint32_t getTimeout() const;
+    QPID_COMMON_EXTERN virtual void setTimeout(uint32_t seconds);
 
     bool operator==(const SessionId& other) const { return id == other; }
     bool operator==(const SessionState& other) const { return id == other.id; }

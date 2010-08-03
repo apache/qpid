@@ -89,7 +89,7 @@ class ClusterFixture : public vector<uint16_t>  {
     /** Kill a forked broker with sig, or shutdown localBroker. */
     void kill(size_t n, int sig=SIGINT);
 
-    /** Kill a broker and suppressing errors from closing connection c. */
+    /** Kill a broker and suppress errors from closing connection c. */
     void killWithSilencer(size_t n, client::Connection& c, int sig=SIGINT);
 
   private:
