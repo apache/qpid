@@ -523,6 +523,9 @@ AC_CONFIG_FILES([
   examples/qmf-console/Makefile
   examples/tradedemo/Makefile
   examples/messaging/Makefile
+  bindings/qpid/Makefile
+  bindings/qpid/ruby/Makefile
+  bindings/qpid/python/Makefile
   bindings/qmf/Makefile
   bindings/qmf/ruby/Makefile
   bindings/qmf/python/Makefile
