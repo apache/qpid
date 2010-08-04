@@ -23,7 +23,7 @@ from qpid import datatypes, messaging
 from qpid.brokertest import *
 from qpid.harness import Skipped
 from qpid.messaging import Message
-from threading import Thread
+from threading import Thread, Lock
 from logging import getLogger
 from itertools import chain
 
@@ -251,7 +251,6 @@ class LongTests(BrokerTest):
     def test_management(self):
         """Stress test: Run management clients and other clients concurrently."""
 
-        # TODO aconway 2010-03-03: move to brokertest framework
         class ClientLoop(StoppableThread):
             """Run a client executable in a loop."""
             def __init__(self, broker, cmd):
@@ -301,8 +300,8 @@ class LongTests(BrokerTest):
             def stop(self):
                 """Stop the running client and wait for it to exit"""
                 self.lock.acquire()
-                if self.stopped: return
                 try:
+                    if self.stopped: return
                     self.stopped = True
                     if self.process:
                         try: self.process.kill() # Kill the client.
