@@ -48,13 +48,7 @@ qpid::types::Variant::List& decodeList(const qpid::messaging::Message& msg) {
 
 %}
 
-
-%include <qpid/types/ImportExport.h>
 %include <qpid/messaging/ImportExport.h>
-%include <qpid/types/Exception.h>
-%include <qpid/messaging/exceptions.h>
-%include <qpid/types/Uuid.h>
-%include <qpid/types/Variant.h>
 %include <qpid/messaging/Address.h>
 %include <qpid/messaging/Duration.h>
 %include <qpid/messaging/Message.h>

@@ -30,7 +30,7 @@
         switch (TYPE(value)) {
         case T_FLOAT:   return qpid::types::Variant(NUM2DBL(value));
         case T_STRING:  return qpid::types::Variant(StringValuePtr(value));
-        case T_FIXNUM:  return qpid::types::Variant(FIX2LONG(value));
+        case T_FIXNUM:  return qpid::types::Variant((int64_t) FIX2LONG(value));
         case T_BIGNUM:  return qpid::types::Variant((int64_t) NUM2LL(value));
         case T_TRUE:    return qpid::types::Variant(true);
         case T_FALSE:   return qpid::types::Variant(false);
