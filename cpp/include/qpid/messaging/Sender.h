@@ -31,7 +31,9 @@
 namespace qpid {
 namespace messaging {
 
+#ifndef SWIG
 template <class> class PrivateImplRef;
+#endif
 class Message;
 class SenderImpl;
 class Session;
@@ -87,8 +89,10 @@ class Sender : public qpid::messaging::Handle<SenderImpl>
      * Returns a handle to the session associated with this sender.
      */
     QPID_MESSAGING_EXTERN Session getSession() const;
+#ifndef SWIG
   private:
   friend class qpid::messaging::PrivateImplRef<Sender>;
+#endif
 };
 }} // namespace qpid::messaging
 
