@@ -19,6 +19,13 @@
 
 %wrapper %{
 
+#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
+typedef int Py_ssize_t;
+#define PY_SSIZE_T_MAX INT_MAX
+#define PY_SSIZE_T_MIN INT_MIN
+#endif
+
+
     PyObject* MapToPy(const qpid::types::Variant::Map*);
     PyObject* ListToPy(const qpid::types::Variant::List*);
     void PyToMap(PyObject*, qpid::types::Variant::Map*);
@@ -27,7 +34,7 @@
     qpid::types::Variant PyToVariant(PyObject* value) {
         if (PyFloat_Check(value))  return qpid::types::Variant(PyFloat_AS_DOUBLE(value));
         if (PyString_Check(value)) return qpid::types::Variant(std::string(PyString_AS_STRING(value)));
-        if (PyInt_Check(value))    return qpid::types::Variant(PyInt_AS_LONG(value));
+        if (PyInt_Check(value))    return qpid::types::Variant(int64_t(PyInt_AS_LONG(value)));
         if (PyLong_Check(value))   return qpid::types::Variant(int64_t(PyLong_AsLongLong(value)));
         if (PyBool_Check(value))   return qpid::types::Variant(PyInt_AS_LONG(value) ? true : false);
         if (PyDict_Check(value)) {
