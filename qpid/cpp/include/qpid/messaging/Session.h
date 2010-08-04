@@ -32,7 +32,9 @@
 namespace qpid {
 namespace messaging {
 
+#ifndef SWIG
 template <class> class PrivateImplRef;
+#endif
 class Address;
 class Connection;
 class Message;
@@ -161,8 +163,10 @@ class Session : public qpid::messaging::Handle<SessionImpl>
     QPID_MESSAGING_EXTERN bool hasError();
     QPID_MESSAGING_EXTERN void checkError();
 
+#ifndef SWIG
   private:
   friend class qpid::messaging::PrivateImplRef<Session>;
+#endif
 };
 }} // namespace qpid::messaging
 
