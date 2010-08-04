@@ -32,7 +32,9 @@
 namespace qpid {
 namespace messaging {
 
+#ifndef SWIG
 template <class> class PrivateImplRef;
+#endif
 class ConnectionImpl;
 class Session;
 
@@ -99,9 +101,11 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
 
     QPID_MESSAGING_EXTERN Session getSession(const std::string& name) const;
     QPID_MESSAGING_EXTERN std::string getAuthenticatedUsername();
+
+#ifndef SWIG
   private:
   friend class qpid::messaging::PrivateImplRef<Connection>;
-
+#endif
 };
 
 }} // namespace qpid::messaging

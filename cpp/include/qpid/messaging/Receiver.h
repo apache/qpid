@@ -30,7 +30,9 @@
 namespace qpid {
 namespace messaging {
 
+#ifndef SWIG
 template <class> class PrivateImplRef;
+#endif
 
 class Message;
 class ReceiverImpl;
@@ -132,8 +134,10 @@ class Receiver : public qpid::messaging::Handle<ReceiverImpl>
      */
     QPID_MESSAGING_EXTERN Session getSession() const;
 
+#ifndef SWIG
   private:
   friend class qpid::messaging::PrivateImplRef<Receiver>;
+#endif
 };
 }} // namespace qpid::messaging
 
