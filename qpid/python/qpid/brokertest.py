@@ -148,6 +148,7 @@ class Popen(popen2.Popen3):
         drain  - if true (default) drain stdout/stderr to files.
         """
         self._clean = False
+        self._clean_lock = Lock()
         assert find_exe(cmd[0]), "executable not found: "+cmd[0]
         if type(cmd) is type(""): cmd = [cmd] # Make it a list.
         self.cmd  = [ str(x) for x in cmd ]
@@ -174,12 +175,15 @@ class Popen(popen2.Popen3):
 
     def _cleanup(self):
         """Close pipes to sub-process"""
-        if self._clean: return
-        self._clean = True
-        self.stdin.close()
-        self.drain()                    # Drain output pipes.
-        self.stdout.thread.join()       # Drain thread closes pipe.
-        self.stderr.thread.join()
+        self._clean_lock.acquire()
+        try:
+            if self._clean: return
+            self._clean = True
+            self.stdin.close()
+            self.drain()                    # Drain output pipes.
+            self.stdout.thread.join()       # Drain thread closes pipe.
+            self.stderr.thread.join()
+        finally: self._clean_lock.release()
 
     def unexpected(self,msg):
         self._cleanup()
