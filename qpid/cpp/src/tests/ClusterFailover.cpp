@@ -50,9 +50,15 @@ using boost::shared_ptr;
 // Timeout for tests that wait for messages
 const sys::Duration TIMEOUT=sys::TIME_SEC/4;
 
-ClusterFixture::Args getArgs() {
+ClusterFixture::Args getArgs(bool durable=std::getenv("STORE_LIB"))
+{
     ClusterFixture::Args args;
-    args += "--auth", "no", "--no-module-dir", "--load-module", getLibPath("CLUSTER_LIB");
+    args += "--auth", "no", "--no-module-dir",
+        "--load-module", getLibPath("CLUSTER_LIB");
+    if (durable)
+        args += "--load-module", getLibPath("STORE_LIB"), "TMP_DATA_DIR";
+    else
+        args += "--no-data-dir";
     return args;
 }
 
@@ -87,7 +93,7 @@ QPID_AUTO_TEST_CASE(testReconnectExclusiveQueue) {
 
     // Regression: core dump on exit if unacked messages were left in
     // a session with a timeout.
-    cluster.kill(0);
+    cluster.killWithSilencer(0, c0.connection);
 
     // Regression: session timeouts prevented re-connecting to
     // exclusive queue.

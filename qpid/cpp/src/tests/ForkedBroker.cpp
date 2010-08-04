@@ -42,6 +42,7 @@ namespace tests {
 
 ForkedBroker::ForkedBroker(const Args& constArgs) : running(false), exitStatus(0) {
     Args args(constArgs);
+    // Substitute the special value "TMP_DATA_DIR" with a temporary data dir.
     Args::iterator i = find(args.begin(), args.end(), string("TMP_DATA_DIR"));
     if (i != args.end()) {
         args.erase(i);
@@ -52,6 +53,11 @@ ForkedBroker::ForkedBroker(const Args& constArgs) : running(false), exitStatus(0
         args.push_back("--data-dir");
         args.push_back(dataDir);
     }
+    // Never use the default data directory, set --no-data-dir if no other data-dir arg.
+    Args::iterator j = find(args.begin(), args.end(), string("--data-dir"));    
+    Args::iterator k = find(args.begin(), args.end(), string("--no-data-dir"));
+    if (j == args.end() && k == args.end())
+        args.push_back("--no-data-dir");
     init(args);
 }
 
