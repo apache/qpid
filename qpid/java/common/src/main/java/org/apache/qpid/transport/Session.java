@@ -237,7 +237,7 @@ public class Session extends SessionInvoker
     {
         initReceiver();
         sessionAttach(name.getBytes());
-        sessionRequestTimeout(expiry);
+        sessionRequestTimeout(0);//use expiry here only if/when session resume is supported
     }
 
     void resume()
