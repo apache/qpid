@@ -106,20 +106,8 @@ public class AMQTopic extends AMQDestination implements Topic
     public static AMQTopic createDurable010Topic(AMQTopic topic, String subscriptionName, AMQConnection connection)
             throws JMSException
     {
-        if (topic.getDestSyntax() == AMQDestination.DestSyntax.BURL)
-        {
-            return new AMQTopic(topic.getExchangeName(), ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topic.getRoutingKey(), true, false,
-              getDurableTopicQueueName(subscriptionName, connection), true);
-        }
-        else
-        {
-            return new AMQTopic(new AMQShortString(topic.getAddressName()), 
-                                ExchangeDefaults.TOPIC_EXCHANGE_CLASS, 
-                                new AMQShortString(topic.getSubject()), 
-                                true,
-                                false,
-                                getDurableTopicQueueName(subscriptionName, connection), true);
-        }
+        return new AMQTopic(topic.getExchangeName(), ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topic.getRoutingKey(), true, false,
+                getDurableTopicQueueName(subscriptionName, connection), true);
     }
 
     public static AMQShortString getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException
@@ -129,12 +117,39 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public String getTopicName() throws JMSException
     {
-        return super.getRoutingKey().toString();
+        if (super.getRoutingKey() == null && super.getSubject() != null)
+        {
+            return super.getSubject();
+        }
+        else
+        {
+            return super.getRoutingKey().toString();
+        }
+    }
+    
+    @Override
+    public AMQShortString getExchangeName()
+    {
+        if (super.getExchangeName() == null && super.getAddressName() != null)
+        {
+            return new AMQShortString(super.getAddressName());
+        }
+        else
+        {
+            return _exchangeName;
+        }
     }
 
     public AMQShortString getRoutingKey()
     {
-        return super.getRoutingKey();
+        if (super.getRoutingKey() == null && super.getSubject() != null)
+        {
+            return new AMQShortString(super.getSubject());
+        }
+        else
+        {
+            return super.getRoutingKey();
+        }
     }
 
     public boolean isNameRequired()
@@ -160,7 +175,6 @@ public class AMQTopic extends AMQDestination implements Topic
         return (o instanceof AMQTopic)
                && ((AMQTopic)o).getExchangeName().equals(getExchangeName())
                && ((AMQTopic)o).getRoutingKey().equals(getRoutingKey());
-
     }
 
     public int hashCode()
