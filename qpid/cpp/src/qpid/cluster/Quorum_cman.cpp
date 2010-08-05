@@ -47,6 +47,7 @@ Quorum::Quorum(boost::function<void()> err) : enable(false), cman(0), cmanFd(0) 
 }
 
 Quorum::~Quorum() {
+    if (dispatchHandle.get()) dispatchHandle->stopWatch();
     dispatchHandle.reset();
     if (cman) cman_finish(cman);
 }
@@ -68,6 +69,7 @@ void Quorum::start(boost::shared_ptr<sys::Poller> p) {
 
 void Quorum::watch(int fd) {
     cmanFd = fd;
+    if (dispatchHandle.get()) dispatchHandle->stopWatch();
     dispatchHandle.reset(
         new sys::DispatchHandleRef(
             sys::PosixIOHandle(cmanFd),
