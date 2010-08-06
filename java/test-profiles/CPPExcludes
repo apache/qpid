@@ -73,6 +73,16 @@ org.apache.qpid.server.AlertingTest#*
 // The C++ server has a totally different persistence mechanism
 org.apache.qpid.server.store.PersistentStoreTest#*
 
+// These tests are for the Java broker persistent store modules
+org.apache.qpid.server.store.MessageStoreTest#testMessagePersistence
+org.apache.qpid.server.store.MessageStoreTest#testMessageRemoval
+org.apache.qpid.server.store.MessageStoreTest#testBindingPersistence
+org.apache.qpid.server.store.MessageStoreTest#testDurableBindingRemoval
+org.apache.qpid.server.store.MessageStoreTest#testQueuePersistence
+org.apache.qpid.server.store.MessageStoreTest#testDurableQueueRemoval
+org.apache.qpid.server.store.MessageStoreTest#testExchangePersistence
+org.apache.qpid.server.store.MessageStoreTest#testDurableExchangeRemoval
+
 // CPP Broker does not follow the same Logging convention as the Java broker
 org.apache.qpid.server.BrokerStartupTest#*
 org.apache.qpid.server.logging.*
