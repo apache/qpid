@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 public class QpidTestCase extends TestCase
 {
     protected static final Logger _logger = Logger.getLogger(QpidTestCase.class);
-    
+
     /**
      * Some tests are excluded when the property test.excludes is set to true.
      * An exclusion list is either a file (prop test.excludesfile) which contains one test name
@@ -91,8 +91,21 @@ public class QpidTestCase extends TestCase
         }
     }
     
+    protected static final String MS_CLASS_NAME_KEY = "messagestore.class.name";
+    protected static final String MEMORY_STORE_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStore";
+    
     private static List<String> _exclusionList;
     
+    public QpidTestCase()
+    {
+        this("QpidTestCase");
+    }
+
+    public QpidTestCase(String name)
+    {
+        super(name);
+    }
+
     public void run(TestResult testResult)
     {
         if (_exclusionList != null && (_exclusionList.contains(getClass().getPackage().getName() + ".*") ||
@@ -107,14 +120,11 @@ public class QpidTestCase extends TestCase
             super.run(testResult);
         }
     }
-    
-    public QpidTestCase(String name)
+
+    public String getTestProfileMessageStoreClassName()
     {
-        super(name);
-    }
-    
-    public QpidTestCase()
-    {
-        this("QpidTestCase");
+        String storeClass = System.getProperty(MS_CLASS_NAME_KEY);
+        
+        return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
     }
 }
