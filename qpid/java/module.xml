@@ -324,6 +324,7 @@
       <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="broker.stopped" value="${broker.stopped}" />
       <sysproperty key="broker.config" value="${broker.config}" />
+      <sysproperty key="messagestore.class.name" value="${messagestore.class.name}" />
       <sysproperty key="test.output" value="${module.results}"/>
       <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>
 

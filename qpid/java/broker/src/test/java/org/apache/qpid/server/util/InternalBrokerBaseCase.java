@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.util;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
@@ -44,10 +43,11 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.MockChannel;
 
 
-public class InternalBrokerBaseCase extends TestCase
+public class InternalBrokerBaseCase extends QpidTestCase
 {
     protected IApplicationRegistry _registry;
     protected MessageStore _messageStore;
