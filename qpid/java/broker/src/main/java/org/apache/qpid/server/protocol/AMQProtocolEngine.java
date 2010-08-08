@@ -280,7 +280,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         }
         else
         {
-            throw new UnknnownMessageTypeException(message);
+            throw new AMQException("Unknown message type: " + message.getClass().getName() + ": " + message);
         }
     }
 
