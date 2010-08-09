@@ -205,7 +205,7 @@ public class FirewallConfigTest extends QpidBrokerTestCase
             {
                 try
                 {
-                    reloadBroker();
+                    reloadBrokerSecurityConfig();
                 } catch (Exception e)
                 {
                     fail(e.getMessage());
@@ -222,7 +222,7 @@ public class FirewallConfigTest extends QpidBrokerTestCase
             {
                 try
                 {
-                    reloadBroker();
+                    reloadBrokerSecurityConfig();
                 } catch (Exception e)
                 {
                     fail(e.getMessage());
@@ -240,7 +240,7 @@ public class FirewallConfigTest extends QpidBrokerTestCase
             {
                 try
                 {
-                    reloadBroker();
+                    reloadBrokerSecurityConfig();
                 } catch (Exception e)
                 {
                    fail(e.getMessage());
@@ -283,7 +283,8 @@ public class FirewallConfigTest extends QpidBrokerTestCase
             return;
         }
         
-        writeFirewallFile(initial, inVhost);        
+        writeFirewallFile(initial, inVhost);
+        setConfigurationProperty("management.enabled", String.valueOf(true));
         super.setUp();
 
         assertEquals("Initial connection check failed", initial, checkConnection());

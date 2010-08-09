@@ -17,10 +17,8 @@
  */
 package org.apache.qpid.test.utils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,30 +32,27 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.Session;
-import javax.jms.BytesMessage;
-import javax.jms.MapMessage;
-import javax.jms.TextMessage;
-import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
+import javax.jms.TextMessage;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
-import junit.framework.TestCase;
-import junit.framework.TestResult;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
@@ -66,6 +61,7 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
@@ -1305,37 +1301,32 @@ public class QpidBrokerTestCase extends QpidTestCase
         return null;
     }
 
-    public void reloadBroker() throws ConfigurationException, IOException
-    {
-        reloadBroker(0);
-    }
-
-    public void reloadBroker(int port) throws ConfigurationException, IOException
+    /**
+     * Reloads the broker security configuration using the ApplicationRegistry (InVM brokers) or the
+     * ConfigurationManagementMBean via the JMX interface (Standalone brokers, management must be 
+     * enabled before calling the method).
+     */
+    public void reloadBrokerSecurityConfig() throws Exception
     {
         if (_broker.equals(VM))
         {
             ApplicationRegistry.getInstance().getConfiguration().reparseConfigFileSecuritySections();
         }
-        else // FIXME: should really use the JMX interface to do this
+        else
         {
-            /*
-             * Sigh, this is going to get messy. grep for BRKR and the port number
-             */
-            String osName = System.getProperty("os.name");
-            boolean osx = osName.equals("Mac OS X");
+            JMXTestUtils jmxu = new JMXTestUtils(this, "admin" , "admin");
+            jmxu.open();
             
-            String cmd = osx ? "/usr/sbin/lsof -i TCP:%d -Fp" : "/usr/bin/pgrep -f %d";            
-            Process p = Runtime.getRuntime().exec(String.format(cmd, getPort(port)));
-            BufferedReader reader = new BufferedReader (new InputStreamReader(p.getInputStream()));
-            String pid = reader.readLine();
-            while (reader.ready())
+            try
             {
-                pid = reader.readLine();
+                ConfigurationManagement configMBean = jmxu.getConfigurationManagement();
+                configMBean.reloadSecurityConfiguration();
+            }
+            finally
+            {
+                jmxu.close();
             }
             
-            cmd = "/bin/kill -SIGHUP " + (osx ? pid.substring(1) : pid);
-            p = Runtime.getRuntime().exec(cmd);
-
             LogMonitor _monitor = new LogMonitor(_outputFile);
             assertTrue("The expected server security configuration reload did not occur",
                     _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
