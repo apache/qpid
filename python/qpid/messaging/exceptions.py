@@ -63,6 +63,9 @@ class AuthenticationFailure(ConnectError):
 class ConnectionClosed(ConnectionError):
   pass
 
+class HeartbeatTimeout(ConnectionError):
+  pass
+
 ## Session Errors
 
 class SessionError(MessagingError):
