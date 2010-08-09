@@ -34,6 +34,7 @@ extern "C" {
 namespace qpid {
 namespace sys {
 class Poller;
+class PosixIOHandle;
 }
 
 namespace cluster {
@@ -51,9 +52,9 @@ class Quorum {
     int getFd();
     void watch(int fd);
     
-    bool enable;
     cman_handle_t cman;
     int cmanFd;
+    std::auto_ptr<sys::PosixIOHandle> ioHandle;
     std::auto_ptr<sys::DispatchHandleRef> dispatchHandle;
     boost::shared_ptr<sys::Poller> poller;
 };
