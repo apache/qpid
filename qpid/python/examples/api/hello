@@ -48,5 +48,5 @@ try:
 
 except MessagingError,m:
   print m
-finally:
-  connection.close()
+
+connection.close()
