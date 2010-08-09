@@ -21,18 +21,12 @@
 
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.message.ServerMessage;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 
 public class ConflationQueueList extends SimpleQueueEntryList
 {
@@ -45,6 +39,11 @@ public class ConflationQueueList extends SimpleQueueEntryList
     {
         super(queue);
         _conflationKey = conflationKey;
+    }
+
+    public String getConflationKey()
+    {
+        return _conflationKey;
     }
 
     @Override
