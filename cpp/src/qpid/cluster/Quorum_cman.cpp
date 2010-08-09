@@ -42,7 +42,7 @@ void cmanCallbackFn(cman_handle_t handle, void */*privdata*/, int reason, int /*
 }
 }
 
-Quorum::Quorum(boost::function<void()> err) : enable(false), cman(0), cmanFd(0) {
+Quorum::Quorum(boost::function<void()> err) : cman(0), cmanFd(0) {
     errorFn = err;
 }
 
@@ -54,7 +54,6 @@ Quorum::~Quorum() {
 
 void Quorum::start(boost::shared_ptr<sys::Poller> p) {
     poller = p;
-    enable = true;
     QPID_LOG(debug, "Connecting to quorum service.");
     cman = cman_init(0);
     if (cman == 0) throw ErrnoException("Can't connect to cman service");
@@ -70,9 +69,10 @@ void Quorum::start(boost::shared_ptr<sys::Poller> p) {
 void Quorum::watch(int fd) {
     cmanFd = fd;
     if (dispatchHandle.get()) dispatchHandle->stopWatch();
+    ioHandle.reset(new sys::PosixIOHandle(cmanFd));
     dispatchHandle.reset(
         new sys::DispatchHandleRef(
-            sys::PosixIOHandle(cmanFd),
+            *ioHandle,      // This must outlive the dispatchHandleRef
             boost::bind(&Quorum::dispatch, this, _1), // read
             0, // write
             boost::bind(&Quorum::disconnect, this, _1)  // disconnect
