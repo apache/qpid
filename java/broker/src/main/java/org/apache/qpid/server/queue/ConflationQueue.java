@@ -39,5 +39,9 @@ public class ConflationQueue extends SimpleAMQQueue
         super(name, durable, owner, autoDelete, exclusive, virtualHost, new ConflationQueueList.Factory(conflationKey), args);
     }
 
+    public String getConflationKey()
+    {
+        return ((ConflationQueueList) _entries).getConflationKey();
+    }
 
 }
