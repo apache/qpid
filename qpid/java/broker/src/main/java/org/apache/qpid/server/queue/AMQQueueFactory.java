@@ -33,10 +33,9 @@ import java.util.HashMap;
 public class AMQQueueFactory
 {
     public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
-
-    private static final String QPID_LVQ_KEY = "qpid.LVQ_key";
-    private static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
-    private static final String QPID_LAST_VALUE_QUEUE_KEY = "qpid.last_value_queue_key";
+    public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
+    public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
+    public static final String QPID_LAST_VALUE_QUEUE_KEY = "qpid.last_value_queue_key";
 
     private abstract static class QueueProperty
     {
