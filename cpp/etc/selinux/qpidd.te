@@ -19,4 +19,6 @@ allow ccs_t initrc_t:shm rw_shm_perms;
 allow ccs_t self:capability ipc_owner;
 allow aisexec_t initrc_t:sem rw_sem_perms;
 allow aisexec_t initrc_t:shm rw_shm_perms;
+allow aisexec_t initrc_t:sem destroy;
+allow aisexec_t initrc_t:shm destroy;
 allow aisexec_t self:capability { ipc_owner dac_override };
