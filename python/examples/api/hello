@@ -21,8 +21,15 @@
 import sys
 from qpid.messaging import *
 
-broker =  "localhost:5672" if len(sys.argv)<2 else sys.argv[1]
-address = "amq.topic" if len(sys.argv)<3 else sys.argv[2]
+if len(sys.argv)<2:
+  broker =  "localhost:5672" 
+else:
+  broker = sys.argv[1]
+
+if len(sys.argv)<3: 
+  address = "amq.topic" 
+else:
+  address = sys.argv[2]
 
 connection = Connection(broker)
 
