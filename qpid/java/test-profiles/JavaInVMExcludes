@@ -2,6 +2,9 @@
 //Exclude the following tests when running the InVM default test profile
 //======================================================================
 
+// The FirewallPlugin only operates for TCP connections, the tests NO-OP when run InVM
+org.apache.qpid.server.security.firewall.FirewallConfigTest#*
+
 // This test requires a broker capable of 0-8/9 and 0-10
 org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 
