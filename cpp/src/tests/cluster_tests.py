@@ -259,7 +259,6 @@ class LongTests(BrokerTest):
                 self.cmd = cmd          # Client command.
                 self.lock = Lock()
                 self.process = None     # Client process.
-                self._expect_fail = False
                 self.start()
 
             def run(self):
@@ -284,19 +283,13 @@ class LongTests(BrokerTest):
                         try:
                             # Quit and ignore errors if stopped or expecting failure.
                             if self.stopped: break
-                            if not self._expect_fail and exit != 0:
+                            if exit != 0:
                                 self.process.unexpected(
                                     "client of %s exit code %s"%(self.broker.name, exit))
                         finally: self.lock.release()
                 except Exception, e:
                     self.error = RethrownException("Error in ClientLoop.run")
 
-            def expect_fail(self):
-                """Ignore exit status of the currently running client."""
-                self.lock.acquire()
-                self._expect_fail = True
-                self.lock.release()
-                
             def stop(self):
                 """Stop the running client and wait for it to exit"""
                 self.lock.acquire()
@@ -342,12 +335,13 @@ class LongTests(BrokerTest):
             time.sleep(max(5,self.duration()/4))
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker, expect the clients to fail. 
-            for c in clients[alive] + mclients: c.expect_fail()
             b = cluster[alive]
             b.expect = EXPECT_EXIT_FAIL
             b.kill()
-            # Stop the brokers clients and all the mclients.
-            for c in clients[alive] + mclients: c.stop()
+            # Stop the brokers clients and all the mclients. 
+            for c in clients[alive] + mclients:
+                try: c.stop()
+                except: pass            # Ignore expected errors due to broker shutdown.
             clients[alive] = []
             mclients = []
             # Start another broker and clients
