@@ -186,7 +186,6 @@ class Popen(popen2.Popen3):
         finally: self._clean_lock.release()
 
     def unexpected(self,msg):
-        self._cleanup()
         err = error_line(self.outfile("err")) or error_line(self.outfile("out"))
         raise BadProcessStatus("%s %s%s" % (self.pname, msg, err))
     
@@ -210,7 +209,7 @@ class Popen(popen2.Popen3):
                 elif self.expect == EXPECT_EXIT_FAIL and self.returncode == 0:
                     self.unexpected("expected error")
         finally:
-            self._cleanup()
+            self.wait()                 # Clean up the process.
                
     def communicate(self, input=None):
         if input:
@@ -227,26 +226,27 @@ class Popen(popen2.Popen3):
         if not self.is_running(): self.unexpected("Exit code %d" % self.returncode)
 
     def poll(self):
-        if self.returncode is not None: return self.returncode
-        self.returncode = popen2.Popen3.poll(self)
-        if (self.returncode == -1): self.returncode = None
-        if self.returncode is not None: self._cleanup()
+        if self.returncode is None:
+            ret = popen2.Popen3.poll(self)
+            if (ret != -1):
+                self.returncode = ret
+                self._cleanup()
         return self.returncode
 
     def wait(self):
-        if self.returncode is not None: return self.returncode
-        self.drain()
-        try: self.returncode = popen2.Popen3.wait(self)
-        except OSError,e: raise OSError("Wait failed %s: %s"%(self.pname, e))
-        self._cleanup()
+        if self.returncode is None:
+            self.drain()
+            try: self.returncode = popen2.Popen3.wait(self)
+            except OSError,e: raise OSError("Wait failed %s: %s"%(self.pname, e))
+            self._cleanup()
         return self.returncode
 
     def send_signal(self, sig):
         try: os.kill(self.pid,sig)
         except OSError,e: raise OSError("Kill failed %s: %s"%(self.pname, e))
 
-    def terminate(self): self.send_signal(signal.SIGTERM); self._cleanup()
-    def kill(self): self.send_signal(signal.SIGKILL); self._cleanup()
+    def terminate(self): self.send_signal(signal.SIGTERM) 
+    def kill(self): self.send_signal(signal.SIGKILL)
 
     def cmd_str(self): return " ".join([str(s) for s in self.cmd])
 
