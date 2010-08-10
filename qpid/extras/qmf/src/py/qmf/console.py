@@ -2227,7 +2227,7 @@ class Broker(Thread):
       self.amqpSession.message_subscribe(queue=self.topicName, destination="tdest",
                                          accept_mode=self.amqpSession.accept_mode.none,
                                          acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
-      self.amqpSession.incoming("tdest").listen(self._v1Cb)
+      self.amqpSession.incoming("tdest").listen(self._v1Cb, self._exceptionCb)
       self.amqpSession.message_set_flow_mode(destination="tdest", flow_mode=self.amqpSession.flow_mode.window)
       self.amqpSession.message_flow(destination="tdest", unit=self.amqpSession.credit_unit.byte, value=0xFFFFFFFFL)
       self.amqpSession.message_flow(destination="tdest", unit=self.amqpSession.credit_unit.message, value=200)
