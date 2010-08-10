@@ -277,7 +277,7 @@ class Broker(Popen):
     def get_log(self):
         return os.path.abspath(self.log)
 
-    def __init__(self, test, args=[], name=None, expect=EXPECT_RUNNING, port=0, log_level=None):
+    def __init__(self, test, args=[], name=None, expect=EXPECT_RUNNING, port=0, log_level=None, wait=None):
         """Start a broker daemon. name determines the data-dir and log
         file names."""
 
@@ -285,6 +285,8 @@ class Broker(Popen):
         self._port=port
         cmd = [BrokerTest.qpidd_exec, "--port", port, "--no-module-dir"] + args
         if not "--auth" in args: cmd.append("--auth=no")
+        if wait != None:
+            cmd += ["--wait", str(wait)]
         if name: self.name = name
         else:
             self.name = "broker%d" % Broker._broker_count
