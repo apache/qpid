@@ -177,8 +177,7 @@ class Client(Delegate):
         self.sasl.setAttr("username", str(username))
       if password and len(password) > 0:
         self.sasl.setAttr("password", str(password))
-      if "service" in kwargs:
-        self.sasl.setAttr("service", str(kwargs["service"]))
+      self.sasl.setAttr("service", str(kwargs.get("service", "qpidd")))
       if "host" in kwargs:
         self.sasl.setAttr("host", str(kwargs["host"]))
       if "min_ssf" in kwargs:
