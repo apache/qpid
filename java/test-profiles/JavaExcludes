@@ -26,3 +26,7 @@ org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWith
 org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithSyncConsumer
 
 org.apache.qpid.test.client.queue.LVQTest#*
+
+// Session resume is not supported in the Java client
+org.apache.qpid.transport.ConnectionTest#testResumeNonemptyReplayBuffer
+
