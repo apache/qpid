@@ -691,7 +691,10 @@ class Engine:
       mechs = [m for m in start.mechanisms if m in permitted]
     else:
       mechs = start.mechanisms
-    mech, initial = self._sasl.start(" ".join(mechs))
+    try:
+      mech, initial = self._sasl.start(" ".join(mechs))
+    except sasl.SASLError, e:
+      raise AuthenticationFailure(text=str(e))
     self.write_op(ConnectionStartOk(client_properties=CLIENT_PROPERTIES,
                                     mechanism=mech, response=initial))
 
