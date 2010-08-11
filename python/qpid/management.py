@@ -376,22 +376,23 @@ class managementClient:
   def replyCb (self, ch, msg):
     """ Receive messages via the reply queue of a particular channel. """
     codec = Codec (msg.body)
-    hdr   = self.checkHeader (codec)
-    if hdr == None:
-      return
+    while True:
+      hdr   = self.checkHeader (codec)
+      if hdr == None:
+        return
 
-    if   hdr[0] == 'm':
-      self.handleMethodReply (ch, codec, hdr[1])
-    elif hdr[0] == 'z':
-      self.handleCommandComplete (ch, codec, hdr[1])
-    elif hdr[0] == 'b':
-      self.handleBrokerResponse (ch, codec)
-    elif hdr[0] == 'p':
-      self.handlePackageInd (ch, codec)
-    elif hdr[0] == 'q':
-      self.handleClassInd (ch, codec)
-    else:
-      self.parse (ch, codec, hdr[0], hdr[1])
+      if   hdr[0] == 'm':
+        self.handleMethodReply (ch, codec, hdr[1])
+      elif hdr[0] == 'z':
+        self.handleCommandComplete (ch, codec, hdr[1])
+      elif hdr[0] == 'b':
+        self.handleBrokerResponse (ch, codec)
+      elif hdr[0] == 'p':
+        self.handlePackageInd (ch, codec)
+      elif hdr[0] == 'q':
+        self.handleClassInd (ch, codec)
+      else:
+        self.parse (ch, codec, hdr[0], hdr[1])
 
   def exceptCb (self, ch, data):
     if self.closeCb != None:
