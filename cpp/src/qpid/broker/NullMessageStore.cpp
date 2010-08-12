@@ -48,9 +48,7 @@ public:
     }
 };
 
-NullMessageStore::NullMessageStore() : nextPersistenceId(1) {
-    QPID_LOG(info, "No message store configured, persistence is disabled.");
-}
+NullMessageStore::NullMessageStore() : nextPersistenceId(1) {}
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
 
