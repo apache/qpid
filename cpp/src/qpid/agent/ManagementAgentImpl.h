@@ -181,6 +181,10 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     uint32_t          assignedAgentBank;
     uint16_t          bootSequence;
 
+    // Maximum # of objects allowed in a single V2 response
+    // message.
+    uint32_t maxV2ReplyObjs;
+
     static const uint8_t DEBUG_OFF     = 0;
     static const uint8_t DEBUG_CONN    = 1;
     static const uint8_t DEBUG_PROTO   = 2;
