@@ -271,33 +271,33 @@ QPID_AUTO_TEST_CASE(testSizeConversionsUint)
     BOOST_CHECK_EQUAL((int64_t) 66000, value.asInt64());
 
     //uint64 (more than 31 bits) to other uints, ints
-    value = (uint64_t) 3000000000;
+    value = (uint64_t) 3000000000ul;
     BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
-    BOOST_CHECK_EQUAL((uint32_t) 3000000000, value.asUint32());
-    BOOST_CHECK_EQUAL((uint64_t) 3000000000, value.asUint64());
+    BOOST_CHECK_EQUAL((uint32_t) 3000000000ul, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 3000000000ul, value.asUint64());
     BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((int64_t) 3000000000, value.asInt64());
+    BOOST_CHECK_EQUAL((int64_t) 3000000000ul, value.asInt64());
 
     //uint64 (more than 32 bits) to other uints, ints
-    value = (uint64_t) 7000000000;
+    value = (uint64_t) 7000000000ull;
     BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((uint64_t) 7000000000, value.asUint64());
+    BOOST_CHECK_EQUAL((uint64_t) 7000000000ull, value.asUint64());
     BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((int64_t) 7000000000, value.asInt64());
+    BOOST_CHECK_EQUAL((int64_t) 7000000000ull, value.asInt64());
 
     //uint64 (more than 63 bits) to other uints, ints
-    value = (uint64_t) 0x8000000000000000;
+    value = (uint64_t) 0x8000000000000000ull;
     BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((uint64_t) 0x8000000000000000, value.asUint64());
+    BOOST_CHECK_EQUAL((uint64_t) 0x8000000000000000ull, value.asUint64());
     BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
@@ -513,26 +513,26 @@ QPID_AUTO_TEST_CASE(testSizeConversionsInt)
     BOOST_CHECK_EQUAL((int64_t) 40000, value.asInt64());
 
     //int64 (positive in more than 31 bits)
-    value = (int64_t) 3000000000;
+    value = (int64_t) 3000000000ll;
     BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
-    BOOST_CHECK_EQUAL((uint32_t) 3000000000, value.asUint32());
-    BOOST_CHECK_EQUAL((uint64_t) 3000000000, value.asUint64());
+    BOOST_CHECK_EQUAL((uint32_t) 3000000000ll, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 3000000000ll, value.asUint64());
     BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((int64_t) 3000000000, value.asInt64());
+    BOOST_CHECK_EQUAL((int64_t) 3000000000ll, value.asInt64());
 
     //int64 (positive in more than 32 bits)
-    value = (int64_t) 5000000000;
+    value = (int64_t) 5000000000ll;
     BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((uint64_t) 5000000000, value.asUint64());
+    BOOST_CHECK_EQUAL((uint64_t) 5000000000ll, value.asUint64());
     BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((int64_t) 5000000000, value.asInt64());
+    BOOST_CHECK_EQUAL((int64_t) 5000000000ll, value.asInt64());
 
     //int64 (negative in 7 bits)
     value = (int64_t) -100;
@@ -568,7 +568,7 @@ QPID_AUTO_TEST_CASE(testSizeConversionsInt)
     BOOST_CHECK_EQUAL((int64_t) -40000, value.asInt64());
 
     //int64 (negative in more than 31 bits)
-    value = (int64_t) -3000000000;
+    value = (int64_t) -3000000000ll;
     BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
@@ -576,7 +576,7 @@ QPID_AUTO_TEST_CASE(testSizeConversionsInt)
     BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
     BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
-    BOOST_CHECK_EQUAL((int64_t) -3000000000, value.asInt64());
+    BOOST_CHECK_EQUAL((int64_t) -3000000000ll, value.asInt64());
 }
 
 QPID_AUTO_TEST_CASE(testAssignment)
