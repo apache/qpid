@@ -19,28 +19,26 @@
 
 if HAVE_PYTHON_DEVEL
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src/qmf -I$(top_srcdir)/src -I$(top_builddir)/src
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src $(QMF_INCLUDES)
 
 generated_file_list = \
-	cqpid.cpp \
-	cqpid.py
+	cqmf2.cpp \
+	cqmf2.py
 
 EXTRA_DIST = python.i
 BUILT_SOURCES = $(generated_file_list)
 
-$(generated_file_list): $(srcdir)/python.i $(srcdir)/../qpid.i $(srcdir)/../../swig_python_typemaps.i
-	swig -c++ -python -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o cqpid.cpp $(srcdir)/python.i
+$(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmf2.i $(srcdir)/../../swig_python_typemaps.i
+	swig -c++ -python -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqmf2.cpp $(srcdir)/python.i
 
 pylibdir = $(PYTHON_LIB)
 
-lib_LTLIBRARIES = _cqpid.la
+lib_LTLIBRARIES = _cqmf2.la
 
-#_cqpid_la_LDFLAGS = -avoid-version -module -shrext "$(PYTHON_SO)"
-#_cqpid_la_LDFLAGS = -avoid-version -module -shrext ".so"
-_cqpid_la_LDFLAGS = -avoid-version -module -shared
-_cqpid_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes $(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
-_cqpid_la_CXXFLAGS = $(INCLUDES) -I$(PYTHON_INC)
-nodist__cqpid_la_SOURCES = cqpid.cpp
+_cqmf2_la_LDFLAGS = -avoid-version -module -shared
+_cqmf2_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs $(top_builddir)/src/libqmf2.la
+_cqmf2_la_CXXFLAGS = $(INCLUDES) -I$(srcdir)/qmf -I$(PYTHON_INC)
+nodist__cqmf2_la_SOURCES = cqmf2.cpp
 
 CLEANFILES = $(generated_file_list)
 

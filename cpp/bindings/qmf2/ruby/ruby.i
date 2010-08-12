@@ -17,7 +17,7 @@
  * under the License.
  */
 
-%module cqpid
+%module qmf2
 %include "std_string.i"
 %include "../../swig_ruby_typemaps.i"
 
@@ -26,11 +26,10 @@
     try {
         $action
     }
-    catch (qpid::messaging::MessagingException& mex) {
-        static VALUE merror = rb_define_class("MessagingError", rb_eStandardError);
-        rb_raise(merror, mex.what());
+    catch (qpid::types::Exception& mex) {
+        static VALUE qmferror = rb_define_class("QmfError", rb_eStandardError);
+        rb_raise(qmferror, mex.what());
     }
 }
 
-%include "../qpid.i"
-
+%include "../qmf2.i"

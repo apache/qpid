@@ -17,20 +17,22 @@
  * under the License.
  */
 
-%module cqpid
+%module cqmf2
 %include "std_string.i"
-%include "../../swig_ruby_typemaps.i"
+%include "../../swig_python_typemaps.i"
 
 /* Define the general-purpose exception handling */
 %exception {
     try {
+        Py_BEGIN_ALLOW_THREADS
         $action
+        Py_END_ALLOW_THREADS
     }
-    catch (qpid::messaging::MessagingException& mex) {
-        static VALUE merror = rb_define_class("MessagingError", rb_eStandardError);
-        rb_raise(merror, mex.what());
+    catch (qpid::types::Exception& ex) {
+        PyErr_SetString(PyExc_RuntimeError, ex.what());
+        return NULL;
     }
 }
 
-%include "../qpid.i"
+%include "../qmf2.i"
 

@@ -22,22 +22,22 @@ if HAVE_RUBY_DEVEL
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
 
 EXTRA_DIST = ruby.i
-BUILT_SOURCES = qpidw.cpp
+BUILT_SOURCES = cqpid.cpp
 
 rubylibdir = $(RUBY_LIB)
 
-qpidw.cpp: $(srcdir)/ruby.i $(srcdir)/../qpid.i $(srcdir)/../../swig_ruby_typemaps.i
-	$(SWIG) -ruby -c++ -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o qpidw.cpp $(srcdir)/ruby.i
+cqpid.cpp: $(srcdir)/ruby.i $(srcdir)/../qpid.i $(srcdir)/../../swig_ruby_typemaps.i
+	$(SWIG) -ruby -c++ -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqpid.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)
-rubylibarch_LTLIBRARIES = qpidw.la
+rubylibarch_LTLIBRARIES = cqpid.la
 
-qpidw_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
-qpidw_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes \
+cqpid_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
+cqpid_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes \
 	$(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
-qpidw_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
-nodist_qpidw_la_SOURCES = qpidw.cpp
+cqpid_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
+nodist_cqpid_la_SOURCES = cqpid.cpp
 
-CLEANFILES = qpidw.cpp
+CLEANFILES = cqpid.cpp
 
 endif # HAVE_RUBY_DEVEL
