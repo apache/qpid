@@ -41,15 +41,23 @@ opslog = getLogger("qpid.messaging.io.ops")
 
 def addr2reply_to(addr):
   name, subject, options = address.parse(addr)
-  return ReplyTo(name, subject)
+  if options:
+    type = options.get("node", {}).get("type")
+  else:
+    type = None
+
+  if type == "topic":
+    return ReplyTo(name, subject)
+  else:
+    return ReplyTo(None, name)
 
 def reply_to2addr(reply_to):
-  if reply_to.routing_key is None:
-    return reply_to.exchange
-  elif reply_to.exchange in (None, ""):
+  if reply_to.exchange in (None, ""):
     return reply_to.routing_key
+  elif reply_to.routing_key is None:
+    return "%s; {node: {type: topic}}" % reply_to.exchange
   else:
-    return "%s/%s" % (reply_to.exchange, reply_to.routing_key)
+    return "%s/%s; {node: {type: topic}}" % (reply_to.exchange, reply_to.routing_key)
 
 class Attachment:
 
