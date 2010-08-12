@@ -58,7 +58,6 @@ QPID_AUTO_TEST_CASE(testConversions)
     BOOST_CHECK_EQUAL((uint32_t) 7, value.asUint32());
     BOOST_CHECK_EQUAL((uint64_t) 7, value.asUint64());
     BOOST_CHECK_EQUAL(std::string("7"), value.asString());
-    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
 
     value = (uint16_t) 8;
     BOOST_CHECK_EQUAL(std::string("8"), value.asString());
@@ -72,7 +71,6 @@ QPID_AUTO_TEST_CASE(testConversions)
     BOOST_CHECK_EQUAL(std::string("9999999"), value.asString());
     BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
     BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
-    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
 
     value = "true";
     BOOST_CHECK(value.asBool());
@@ -84,6 +82,501 @@ QPID_AUTO_TEST_CASE(testConversions)
     BOOST_CHECK(!value.asBool());
     value = "other";
     BOOST_CHECK_THROW(value.asBool(), InvalidConversion);
+}
+
+QPID_AUTO_TEST_CASE(testSizeConversionsUint)
+{
+    Variant value;
+
+    //uint8 (in 7 bits) to other uints, ints
+    value = (uint8_t) 7;
+    BOOST_CHECK_EQUAL((uint8_t) 7, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 7, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 7, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 7, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 7, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 7, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 7, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 7, value.asInt64());
+
+    //uint8 (in 8 bits) to other uints, ints
+    value = (uint8_t) 200;
+    BOOST_CHECK_EQUAL((uint8_t) 200, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 200, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 200, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 200, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 200, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 200, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 200, value.asInt64());
+
+
+
+    //uint16 (in 7 bits) to other uints, ints
+    value = (uint16_t) 120;
+    BOOST_CHECK_EQUAL((uint8_t) 120, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 120, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 120, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 120, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 120, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 120, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 120, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 120, value.asInt64());
+
+    //uint16 (more than 7 bits) to other uints, ints
+    value = (uint16_t) 240;
+    BOOST_CHECK_EQUAL((uint8_t) 240, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 240, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 240, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 240, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 240, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 240, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 240, value.asInt64());
+
+    //uint16 (more than 8 bits) to other uints, ints
+    value = (uint16_t) 1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 1000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 1000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 1000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 1000, value.asInt64());
+
+    //uint16 (more than 15 bits) to other uints, ints
+    value = (uint16_t) 32770;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 32770, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 32770, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 32770, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) 32770, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 32770, value.asInt64());
+
+
+
+    //uint32 (in 7 bits) to other uints, ints
+    value = (uint32_t) 120;
+    BOOST_CHECK_EQUAL((uint8_t) 120, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 120, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 120, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 120, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 120, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 120, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 120, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 120, value.asInt64());
+
+    //uint32 (more than 7 bits) to other uints, ints
+    value = (uint32_t) 240;
+    BOOST_CHECK_EQUAL((uint8_t) 240, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 240, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 240, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 240, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 240, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 240, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 240, value.asInt64());
+
+    //uint32 (more than 8 bits) to other uints, ints
+    value = (uint32_t) 1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 1000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 1000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 1000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 1000, value.asInt64());
+
+    //uint32 (more than 15 bits) to other uints, ints
+    value = (uint32_t) 32770;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 32770, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 32770, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 32770, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) 32770, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 32770, value.asInt64());
+
+    //uint32 (more than 16 bits) to other uints, ints
+    value = (uint32_t) 66000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint32_t) 66000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 66000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) 66000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 66000, value.asInt64());
+
+
+
+    //uint64 (in 7 bits) to other uints, ints
+    value = (uint64_t) 120;
+    BOOST_CHECK_EQUAL((uint8_t) 120, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 120, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 120, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 120, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 120, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 120, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 120, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 120, value.asInt64());
+
+    //uint64 (more than 7 bits) to other uints, ints
+    value = (uint64_t) 240;
+    BOOST_CHECK_EQUAL((uint8_t) 240, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 240, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 240, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 240, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 240, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 240, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 240, value.asInt64());
+
+    //uint64 (more than 8 bits) to other uints, ints
+    value = (uint64_t) 1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 1000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 1000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 1000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 1000, value.asInt64());
+
+    //uint64 (more than 15 bits) to other uints, ints
+    value = (uint64_t) 32770;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 32770, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 32770, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 32770, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) 32770, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 32770, value.asInt64());
+
+    //uint64 (more than 16 bits) to other uints, ints
+    value = (uint64_t) 66000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint32_t) 66000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 66000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) 66000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 66000, value.asInt64());
+
+    //uint64 (more than 31 bits) to other uints, ints
+    value = (uint64_t) 3000000000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint32_t) 3000000000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 3000000000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int64_t) 3000000000, value.asInt64());
+
+    //uint64 (more than 32 bits) to other uints, ints
+    value = (uint64_t) 7000000000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint64_t) 7000000000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int64_t) 7000000000, value.asInt64());
+
+    //uint64 (more than 63 bits) to other uints, ints
+    value = (uint64_t) 0x8000000000000000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint64_t) 0x8000000000000000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt64(), InvalidConversion);
+}
+
+QPID_AUTO_TEST_CASE(testSizeConversionsInt)
+{
+    Variant value;
+
+    //int8 (positive in 7 bits)
+    value = (int8_t) 100;
+    BOOST_CHECK_EQUAL((uint8_t) 100, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 100, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 100, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 100, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 100, value.asInt64());
+
+    //int8 (negative)
+    value = (int8_t) -100;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int8_t) -100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) -100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) -100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -100, value.asInt64());
+
+
+
+    //int16 (positive in 7 bits)
+    value = (int16_t) 100;
+    BOOST_CHECK_EQUAL((uint8_t) 100, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 100, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 100, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 100, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 100, value.asInt64());
+
+    //int16 (positive in 8 bits)
+    value = (int16_t) 200;
+    BOOST_CHECK_EQUAL((uint8_t) 200, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 200, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 200, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 200, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 200, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 200, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 200, value.asInt64());
+
+    //int16 (positive in more than 8 bits)
+    value = (int16_t) 1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 1000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 1000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 1000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 1000, value.asInt64());
+
+    //int16 (negative in 7 bits)
+    value = (int16_t) -100;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int8_t) -100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) -100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) -100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -100, value.asInt64());
+
+    //int16 (negative in more than 7 bits)
+    value = (int16_t) -1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) -1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) -1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -1000, value.asInt64());
+
+
+
+    //int32 (positive in 7 bits)
+    value = (int32_t) 100;
+    BOOST_CHECK_EQUAL((uint8_t) 100, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 100, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 100, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 100, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 100, value.asInt64());
+
+    //int32 (positive in 8 bits)
+    value = (int32_t) 200;
+    BOOST_CHECK_EQUAL((uint8_t) 200, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 200, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 200, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 200, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 200, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 200, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 200, value.asInt64());
+
+    //int32 (positive in more than 8 bits)
+    value = (int32_t) 1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 1000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 1000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 1000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 1000, value.asInt64());
+
+    //int32 (positive in more than 15 bits)
+    value = (int32_t) 40000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 40000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 40000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 40000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) 40000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 40000, value.asInt64());
+
+    //int32 (negative in 7 bits)
+    value = (int32_t) -100;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int8_t) -100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) -100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) -100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -100, value.asInt64());
+
+    //int32 (negative in more than 7 bits)
+    value = (int32_t) -1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) -1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) -1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -1000, value.asInt64());
+
+    //int32 (negative in more than 15 bits)
+    value = (int32_t) -40000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) -40000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -40000, value.asInt64());
+
+
+
+    //int64 (positive in 7 bits)
+    value = (int64_t) 100;
+    BOOST_CHECK_EQUAL((uint8_t) 100, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 100, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 100, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 100, value.asUint64());
+    BOOST_CHECK_EQUAL((int8_t) 100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) 100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 100, value.asInt64());
+
+    //int64 (positive in 8 bits)
+    value = (int64_t) 200;
+    BOOST_CHECK_EQUAL((uint8_t) 200, value.asUint8());
+    BOOST_CHECK_EQUAL((uint16_t) 200, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 200, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 200, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 200, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 200, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 200, value.asInt64());
+
+    //int64 (positive in more than 8 bits)
+    value = (int64_t) 1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 1000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 1000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 1000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) 1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) 1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 1000, value.asInt64());
+
+    //int64 (positive in more than 15 bits)
+    value = (int64_t) 40000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint16_t) 40000, value.asUint16());
+    BOOST_CHECK_EQUAL((uint32_t) 40000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 40000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) 40000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) 40000, value.asInt64());
+
+    //int64 (positive in more than 31 bits)
+    value = (int64_t) 3000000000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint32_t) 3000000000, value.asUint32());
+    BOOST_CHECK_EQUAL((uint64_t) 3000000000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int64_t) 3000000000, value.asInt64());
+
+    //int64 (positive in more than 32 bits)
+    value = (int64_t) 5000000000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((uint64_t) 5000000000, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int64_t) 5000000000, value.asInt64());
+
+    //int64 (negative in 7 bits)
+    value = (int64_t) -100;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int8_t) -100, value.asInt8());
+    BOOST_CHECK_EQUAL((int16_t) -100, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) -100, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -100, value.asInt64());
+
+    //int64 (negative in more than 7 bits)
+    value = (int64_t) -1000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int16_t) -1000, value.asInt16());
+    BOOST_CHECK_EQUAL((int32_t) -1000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -1000, value.asInt64());
+
+    //int64 (negative in more than 15 bits)
+    value = (int64_t) -40000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int32_t) -40000, value.asInt32());
+    BOOST_CHECK_EQUAL((int64_t) -40000, value.asInt64());
+
+    //int64 (negative in more than 31 bits)
+    value = (int64_t) -3000000000;
+    BOOST_CHECK_THROW(value.asUint8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt8(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+    BOOST_CHECK_EQUAL((int64_t) -3000000000, value.asInt64());
 }
 
 QPID_AUTO_TEST_CASE(testAssignment)
