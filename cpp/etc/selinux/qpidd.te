@@ -6,19 +6,25 @@
 # To install the compiled qpidd.pp
 #   sudo semodule -i qpidd.pp
 
-policy_module(qpidd, 1.1)
-require {
+policy_module(qpidd, 1.2)
+
+gen_require(`
         type initrc_t;
         type ccs_t;
-	type aisexec_t;
-}
-#============= ccs_t ==============
+	class sem { write unix_read unix_write associate read destroy };
+	class shm { unix_read write unix_write associate read destroy };
+')
+
 fs_rw_tmpfs_files(ccs_t)
-allow ccs_t initrc_t:sem rw_sem_perms;
-allow ccs_t initrc_t:shm rw_shm_perms;
-allow ccs_t self:capability ipc_owner;
-allow aisexec_t initrc_t:sem rw_sem_perms;
-allow aisexec_t initrc_t:shm rw_shm_perms;
-allow aisexec_t initrc_t:sem destroy;
-allow aisexec_t initrc_t:shm destroy;
-allow aisexec_t self:capability { ipc_owner dac_override };
+allow ccs_t initrc_t:sem { read write unix_read unix_write associate destroy };
+allow ccs_t initrc_t:shm { read write unix_read unix_write associate destroy };
+allow ccs_t self:capability { ipc_owner dac_override };
+
+optional_policy(`
+	gen_require(`
+		type aisexec_t;
+	')
+	allow aisexec_t initrc_t:sem { read write unix_read unix_write associate destroy };
+	allow aisexec_t initrc_t:shm { read write unix_read unix_write associate destroy };
+	allow aisexec_t self:capability { sys_admin ipc_owner dac_override };
+')
