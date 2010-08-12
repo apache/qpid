@@ -36,7 +36,7 @@ typedef int Py_ssize_t;
         if (PyString_Check(value)) return qpid::types::Variant(std::string(PyString_AS_STRING(value)));
         if (PyInt_Check(value))    return qpid::types::Variant(int64_t(PyInt_AS_LONG(value)));
         if (PyLong_Check(value))   return qpid::types::Variant(int64_t(PyLong_AsLongLong(value)));
-        if (PyBool_Check(value))   return qpid::types::Variant(PyInt_AS_LONG(value) ? true : false);
+        if (PyBool_Check(value))   return qpid::types::Variant(bool(PyInt_AS_LONG(value) ? true : false));
         if (PyDict_Check(value)) {
             qpid::types::Variant::Map map;
             PyToMap(value, &map);
@@ -342,6 +342,9 @@ typedef int Py_ssize_t;
     $1 = (PyFloat_Check($input)  ||
           PyString_Check($input) ||
           PyInt_Check($input)    ||
+          PyLong_Check($input)   ||
+          PyDict_Check($input)   ||
+          PyList_Check($input)   ||
           PyBool_Check($input)) ? 1 : 0;
 }
 
