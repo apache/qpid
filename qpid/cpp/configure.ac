@@ -530,6 +530,9 @@ AC_CONFIG_FILES([
   bindings/qmf/ruby/Makefile
   bindings/qmf/python/Makefile
   bindings/qmf/tests/Makefile
+  bindings/qmf2/Makefile
+  bindings/qmf2/ruby/Makefile
+  bindings/qmf2/python/Makefile
   managementgen/Makefile
   etc/Makefile
   src/Makefile
