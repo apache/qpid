@@ -4,11 +4,13 @@
 POLICIES = qpidd.pp qpiddevel.pp
 SOURCES = $(POLICIES:.pp=.te)
 
-install: $(POLICIES)
-	for p in $(POLICIES); do /usr/sbin/semodule -i $$p; done
+all: $(POLICIES)
 
 $(POLICIES): $(SOURCES)
 	make -f /usr/share/selinux/devel/Makefile
+
+install: $(POLICIES)
+	for p in $(POLICIES); do /usr/sbin/semodule -i $$p; done
 
 clean:
 	rm -rf *~ *.pp *.fc *.if tmp
