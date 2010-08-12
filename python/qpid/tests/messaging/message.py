@@ -117,3 +117,27 @@ class MessageEchoTests(Base):
 
   def testTextPlainEmpty(self):
     self.check(Message(content_type="text/plain"))
+
+  def check_rt(self, addr, expected=None):
+    if expected is None:
+      expected = addr
+    msg = Message(reply_to=addr)
+    self.snd.send(msg)
+    echo = self.rcv.fetch(0)
+    assert echo.reply_to == expected, echo.reply_to
+    self.ssn.acknowledge(echo)
+
+  def testReplyTo(self):
+    self.check_rt("name")
+
+  def testReplyToQueue(self):
+    self.check_rt("name; {node: {type: queue}}", "name")
+
+  def testReplyToQueueSubject(self):
+    self.check_rt("name/subject; {node: {type: queue}}", "name")
+
+  def testReplyToTopic(self):
+    self.check_rt("name; {node: {type: topic}}")
+
+  def testReplyToTopicSubject(self):
+    self.check_rt("name/subject; {node: {type: topic}}")
