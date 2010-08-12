@@ -216,10 +216,35 @@ uint8_t VariantImpl::asUint8() const
 {
     switch(type) {
       case VAR_UINT8: return value.ui8;
-      case VAR_STRING: return convertFromString<uint8_t>();
+      case VAR_UINT16:
+          if (value.ui16 <= 0x00ff)
+              return uint8_t(value.ui16);
+          break;
+      case VAR_UINT32:
+          if (value.ui32 <= 0x000000ff)
+              return uint8_t(value.ui32);
+          break;
+      case VAR_UINT64:
+          if (value.ui64 <= 0x00000000000000ff)
+              return uint8_t(value.ui64);
+          break;
+      case VAR_INT8:
+          if (value.i8 >= 0)
+              return uint8_t(value.i8);
+          break;
+      case VAR_INT16:
+          if (value.i16 >= 0 && value.i16 <= 0x00ff)
+              return uint8_t(value.i16);
+          break;
+      case VAR_INT32:
+          if (value.i32 >= 0 && value.i32 <= 0x000000ff)
+              return uint8_t(value.i32);
+          break;
       case VAR_INT64:
           if (value.i64 >= 0 && value.i64 <= 0x00000000000000ff)
               return uint8_t(value.i64);
+          break;
+      case VAR_STRING: return convertFromString<uint8_t>();
       default: break;
     }
     throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT8)));
@@ -229,9 +254,30 @@ uint16_t VariantImpl::asUint16() const
     switch(type) {
       case VAR_UINT8: return value.ui8;
       case VAR_UINT16: return value.ui16;
+      case VAR_UINT32:
+          if (value.ui32 <= 0x0000ffff)
+              return uint16_t(value.ui32);
+          break;
+      case VAR_UINT64:
+          if (value.ui64 <= 0x000000000000ffff)
+              return uint16_t(value.ui64);
+          break;
+      case VAR_INT8:
+          if (value.i8 >= 0)
+              return uint16_t(value.i8);
+          break;
+      case VAR_INT16:
+          if (value.i16 >= 0)
+              return uint16_t(value.i16);
+          break;
+      case VAR_INT32:
+          if (value.i32 >= 0 && value.i32 <= 0x0000ffff)
+              return uint16_t(value.i32);
+          break;
       case VAR_INT64:
           if (value.i64 >= 0 && value.i64 <= 0x000000000000ffff)
               return uint16_t(value.i64);
+          break;
       case VAR_STRING: return convertFromString<uint16_t>();
       default: break;
     }
@@ -243,9 +289,26 @@ uint32_t VariantImpl::asUint32() const
       case VAR_UINT8: return value.ui8;
       case VAR_UINT16: return value.ui16;
       case VAR_UINT32: return value.ui32;
+      case VAR_UINT64:
+          if (value.ui64 <= 0x00000000ffffffff)
+              return uint32_t(value.ui64);
+          break;
+      case VAR_INT8:
+          if (value.i8 >= 0)
+              return uint32_t(value.i8);
+          break;
+      case VAR_INT16:
+          if (value.i16 >= 0)
+              return uint32_t(value.i16);
+          break;
+      case VAR_INT32:
+          if (value.i32 >= 0)
+              return uint32_t(value.i32);
+          break;
       case VAR_INT64:
           if (value.i64 >= 0 && value.i64 <= 0x00000000ffffffff)
               return uint32_t(value.i64);
+          break;
       case VAR_STRING: return convertFromString<uint32_t>();
       default: break;
     }
@@ -258,17 +321,67 @@ uint64_t VariantImpl::asUint64() const
       case VAR_UINT16: return value.ui16;
       case VAR_UINT32: return value.ui32;
       case VAR_UINT64: return value.ui64;
+      case VAR_INT8:
+          if (value.i8 >= 0)
+              return uint64_t(value.i8);
+          break;
+      case VAR_INT16:
+          if (value.i16 >= 0)
+              return uint64_t(value.i16);
+          break;
+      case VAR_INT32:
+          if (value.i32 >= 0)
+              return uint64_t(value.i32);
+          break;
+      case VAR_INT64:
+          if (value.i64 >= 0)
+              return uint64_t(value.i64);
+          break;
       case VAR_STRING: return convertFromString<uint64_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT64)));
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT64)));
 }
+
+#define I8_MIN   -128
+#define I8_MAX    127
+#define I16_MIN  -32768
+#define I16_MAX   32767
+#define I32_MIN  -2147483648
+#define I32_MAX   2147483647
+
 int8_t VariantImpl::asInt8() const
 {
     switch(type) {
       case VAR_INT8: return value.i8;
+      case VAR_INT16:
+          if ((value.i16 >= I8_MIN) && (value.i16 <= I8_MAX))
+              return int8_t(value.i16);
+          break;
+      case VAR_INT32:
+          if ((value.i32 >= I8_MIN) && (value.i32 <= I8_MAX))
+              return int8_t(value.i32);
+          break;
       case VAR_INT64:
-          if (value.i64 <= 0x000000000000007f)
+          if ((value.i64 >= I8_MIN) && (value.i64 <= I8_MAX))
               return int8_t(value.i64);
+          break;
+      case VAR_UINT8:
+          if (value.ui8 <= I8_MAX)
+              return int8_t(value.ui8);
+          break;
+      case VAR_UINT16:
+          if (value.ui16 <= I8_MAX)
+              return int8_t(value.ui16);
+          break;
+      case VAR_UINT32:
+          if (value.ui32 <= I8_MAX)
+              return int8_t(value.ui32);
+          break;
+      case VAR_UINT64:
+          if (value.ui64 <= I8_MAX)
+              return int8_t(value.ui64);
+          break;
       case VAR_STRING: return convertFromString<int8_t>();
       default: break;
     }
@@ -279,9 +392,27 @@ int16_t VariantImpl::asInt16() const
     switch(type) {
       case VAR_INT8: return value.i8;
       case VAR_INT16: return value.i16;
+      case VAR_INT32:
+          if ((value.i32 >= I16_MIN) && (value.i32 <= I16_MAX))
+              return int16_t(value.i32);
+          break;
       case VAR_INT64:
-          if (value.i64 <= 0x0000000000007fff)
+          if ((value.i64 >= I16_MIN) && (value.i64 <= I16_MAX))
               return int16_t(value.i64);
+          break;
+      case VAR_UINT8:  return int16_t(value.ui8);
+      case VAR_UINT16:
+          if (value.ui16 <= I16_MAX)
+              return int16_t(value.ui16);
+          break;
+      case VAR_UINT32:
+          if (value.ui32 <= I16_MAX)
+              return int16_t(value.ui32);
+          break;
+      case VAR_UINT64:
+          if (value.ui64 <= I16_MAX)
+              return int16_t(value.ui64);
+          break;
       case VAR_STRING: return convertFromString<int16_t>();
       default: break;
     }
@@ -294,8 +425,19 @@ int32_t VariantImpl::asInt32() const
       case VAR_INT16: return value.i16;
       case VAR_INT32: return value.i32;
       case VAR_INT64:
-          if (value.i64 <= 0x000000007fffffff)
+          if ((value.i64 >= I32_MIN) && (value.i64 <= I32_MAX))
               return int32_t(value.i64);
+          break;
+      case VAR_UINT8:  return int32_t(value.ui8);
+      case VAR_UINT16: return int32_t(value.ui16);
+      case VAR_UINT32:
+          if (value.ui32 <= I32_MAX)
+              return int32_t(value.ui32);
+          break;
+      case VAR_UINT64:
+          if (value.ui64 <= I32_MAX)
+              return int32_t(value.ui64);
+          break;
       case VAR_STRING: return convertFromString<int32_t>();
       default: break;
     }
@@ -308,9 +450,17 @@ int64_t VariantImpl::asInt64() const
       case VAR_INT16: return value.i16;
       case VAR_INT32: return value.i32;
       case VAR_INT64: return value.i64;
+      case VAR_UINT8: return int64_t(value.ui8);
+      case VAR_UINT16: return int64_t(value.ui16);
+      case VAR_UINT32: return int64_t(value.ui32);
+      case VAR_UINT64:
+          if (value.ui64 <= 0x7fffffffffffffff)
+              return int64_t(value.ui64);
+          break;
       case VAR_STRING: return convertFromString<int64_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT64)));
+      default: break;
     }
+    throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT64)));
 }
 float VariantImpl::asFloat() const
 {
