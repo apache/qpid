@@ -17,14 +17,16 @@
  * under the License.
  */
 
-%module qpidw
+%module cqpid
 %include "std_string.i"
 %include "../../swig_python_typemaps.i"
 
 /* Define the general-purpose exception handling */
 %exception {
     try {
+        Py_BEGIN_ALLOW_THREADS
         $action
+        Py_END_ALLOW_THREADS
     }
     catch (qpid::messaging::MessagingException& mex) {
         PyErr_SetString(PyExc_RuntimeError, mex.what());

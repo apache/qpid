@@ -17,19 +17,26 @@
 # under the License.
 #
 
-LIBTOOL_DEPS = @LIBTOOL_DEPS@
+if HAVE_RUBY_DEVEL
 
-AUTOMAKE_OPTIONS = 1.9.2 foreign
-ACLOCAL_AMFLAGS = -I m4
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src $(QMF_INCLUDES)
 
-EXTRA_DIST = \
-  LICENSE NOTICE README.txt SSL RELEASE_NOTES DESIGN \
-  xml/cluster.xml INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake \
-  packaging/NSIS QPID_VERSION.txt bindings/swig_python_typemaps.i \
-  bindings/swig_ruby_typemaps.i
+EXTRA_DIST = ruby.i
+BUILT_SOURCES = qmf2.cpp
 
-SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf bindings/qpid bindings/qmf2
+rubylibdir = $(RUBY_LIB)
 
-# Update libtool, if needed.
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status --recheck
+qmf2.cpp: $(srcdir)/ruby.i $(srcdir)/../qmf2.i $(srcdir)/../../swig_ruby_typemaps.i
+	$(SWIG) -ruby -c++ -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o qmf2.cpp $(srcdir)/ruby.i
+
+rubylibarchdir = $(RUBY_LIB_ARCH)
+rubylibarch_LTLIBRARIES = qmf2.la
+
+qmf2_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
+qmf2_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqmf2 $(top_builddir)/src/libqmf2.la
+qmf2_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
+nodist_qmf2_la_SOURCES = qmf2.cpp
+
+CLEANFILES = qmf2.cpp
+
+endif # HAVE_RUBY_DEVEL
