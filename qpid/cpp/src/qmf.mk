@@ -22,7 +22,8 @@
 # 
 lib_LTLIBRARIES +=	\
   libqmf.la		\
-  libqmfengine.la
+  libqmfengine.la	\
+  libqmf2.la
 
 #
 # Public headers for the QMF API
@@ -30,6 +31,29 @@ lib_LTLIBRARIES +=	\
 QMF_API =					\
   ../include/qpid/agent/ManagementAgent.h	\
   ../include/qpid/agent/QmfAgentImportExport.h
+
+#
+# Public headers for the QMF2 API
+#
+QMF2_API =				\
+  ../include/qmf/AgentEvent.h		\
+  ../include/qmf/Agent.h		\
+  ../include/qmf/AgentSession.h		\
+  ../include/qmf/ConsoleEvent.h		\
+  ../include/qmf/ConsoleSession.h	\
+  ../include/qmf/DataAddr.h		\
+  ../include/qmf/Data.h			\
+  ../include/qmf/exceptions.h		\
+  ../include/qmf/Handle.h		\
+  ../include/qmf/ImportExport.h		\
+  ../include/qmf/Query.h		\
+  ../include/qmf/Schema.h		\
+  ../include/qmf/SchemaId.h		\
+  ../include/qmf/SchemaMethod.h		\
+  ../include/qmf/SchemaProperty.h	\
+  ../include/qmf/SchemaTypes.h
+
+
 #
 # Public headers for the QMF Engine API
 #
@@ -51,12 +75,44 @@ QMF_ENGINE_API =				\
 # Public header files
 nobase_include_HEADERS +=	\
   $(QMF_API)			\
-  $(QMF_ENGINE_API)
+  $(QMF_ENGINE_API)		\
+  $(QMF2_API)
 
 libqmf_la_SOURCES =			\
   $(QMF_API)				\
   qpid/agent/ManagementAgentImpl.cpp	\
   qpid/agent/ManagementAgentImpl.h
+
+libqmf2_la_SOURCES = 		\
+  $(QMF2_API)			\
+  qmf/Agent.cpp			\
+  qmf/AgentEvent.cpp		\
+  qmf/AgentEventImpl.h		\
+  qmf/AgentImpl.h		\
+  qmf/AgentSession.cpp		\
+  qmf/ConsoleEvent.cpp		\
+  qmf/ConsoleEventImpl.h	\
+  qmf/ConsoleSession.cpp	\
+  qmf/ConsoleSessionImpl.h	\
+  qmf/DataAddr.cpp		\
+  qmf/DataAddrImpl.h		\
+  qmf/Data.cpp			\
+  qmf/DataImpl.h		\
+  qmf/exceptions.cpp		\
+  qmf/Hash.cpp			\
+  qmf/Hash.h			\
+  qmf/PrivateImplRef.h		\
+  qmf/Query.cpp			\
+  qmf/Schema.cpp		\
+  qmf/SchemaCache.cpp		\
+  qmf/SchemaCache.h		\
+  qmf/SchemaId.cpp		\
+  qmf/SchemaIdImpl.h		\
+  qmf/SchemaImpl.h		\
+  qmf/SchemaMethod.cpp		\
+  qmf/SchemaMethodImpl.h	\
+  qmf/SchemaProperty.cpp	\
+  qmf/SchemaPropertyImpl.h
 
 libqmfengine_la_SOURCES =			\
   $(QMF_ENGINE_API)				\
@@ -88,10 +144,13 @@ libqmfengine_la_SOURCES =			\
   qmf/engine/ValueImpl.h
 
 libqmf_la_LIBADD = libqmfengine.la
+libqmf2_la_LIBADD = libqpidmessaging.la libqpidtypes.la
 libqmfengine_la_LIBADD = libqpidclient.la
 
 QMF_VERSION_INFO = 1:0:0
+QMF2_VERSION_INFO = 1:0:0
 QMFENGINE_VERSION_INFO  = 1:1:0
 
 libqmf_la_LDFLAGS = -version-info $(QMF_VERSION_INFO)
+libqmf2_la_LDFLAGS = -version-info $(QMF2_VERSION_INFO)
 libqmfengine_la_LDFLAGS = -version-info $(QMFENGINE_VERSION_INFO)
