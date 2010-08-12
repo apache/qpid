@@ -24,6 +24,7 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
+#include <limits>
 #include <sstream>
 
 namespace qpid {
@@ -343,43 +344,36 @@ uint64_t VariantImpl::asUint64() const
     throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT64)));
 }
 
-#define I8_MIN   -128
-#define I8_MAX    127
-#define I16_MIN  -32768
-#define I16_MAX   32767
-#define I32_MIN  -2147483648
-#define I32_MAX   2147483647
-
 int8_t VariantImpl::asInt8() const
 {
     switch(type) {
       case VAR_INT8: return value.i8;
       case VAR_INT16:
-          if ((value.i16 >= I8_MIN) && (value.i16 <= I8_MAX))
+          if ((value.i16 >= std::numeric_limits<int8_t>::min()) && (value.i16 <= std::numeric_limits<int8_t>::max()))
               return int8_t(value.i16);
           break;
       case VAR_INT32:
-          if ((value.i32 >= I8_MIN) && (value.i32 <= I8_MAX))
+          if ((value.i32 >= std::numeric_limits<int8_t>::min()) && (value.i32 <= std::numeric_limits<int8_t>::max()))
               return int8_t(value.i32);
           break;
       case VAR_INT64:
-          if ((value.i64 >= I8_MIN) && (value.i64 <= I8_MAX))
+          if ((value.i64 >= std::numeric_limits<int8_t>::min()) && (value.i64 <= std::numeric_limits<int8_t>::max()))
               return int8_t(value.i64);
           break;
       case VAR_UINT8:
-          if (value.ui8 <= I8_MAX)
+          if (value.ui8 <= std::numeric_limits<int8_t>::max())
               return int8_t(value.ui8);
           break;
       case VAR_UINT16:
-          if (value.ui16 <= I8_MAX)
+          if (value.ui16 <= std::numeric_limits<int8_t>::max())
               return int8_t(value.ui16);
           break;
       case VAR_UINT32:
-          if (value.ui32 <= I8_MAX)
+          if (value.ui32 <= (uint) std::numeric_limits<int8_t>::max())
               return int8_t(value.ui32);
           break;
       case VAR_UINT64:
-          if (value.ui64 <= I8_MAX)
+          if (value.ui64 <= (uint) std::numeric_limits<int8_t>::max())
               return int8_t(value.ui64);
           break;
       case VAR_STRING: return convertFromString<int8_t>();
@@ -393,24 +387,24 @@ int16_t VariantImpl::asInt16() const
       case VAR_INT8: return value.i8;
       case VAR_INT16: return value.i16;
       case VAR_INT32:
-          if ((value.i32 >= I16_MIN) && (value.i32 <= I16_MAX))
+          if ((value.i32 >= std::numeric_limits<int16_t>::min()) && (value.i32 <= std::numeric_limits<int16_t>::max()))
               return int16_t(value.i32);
           break;
       case VAR_INT64:
-          if ((value.i64 >= I16_MIN) && (value.i64 <= I16_MAX))
+          if ((value.i64 >= std::numeric_limits<int16_t>::min()) && (value.i64 <= std::numeric_limits<int16_t>::max()))
               return int16_t(value.i64);
           break;
       case VAR_UINT8:  return int16_t(value.ui8);
       case VAR_UINT16:
-          if (value.ui16 <= I16_MAX)
+          if (value.ui16 <= std::numeric_limits<int16_t>::max())
               return int16_t(value.ui16);
           break;
       case VAR_UINT32:
-          if (value.ui32 <= I16_MAX)
+          if (value.ui32 <= (uint) std::numeric_limits<int16_t>::max())
               return int16_t(value.ui32);
           break;
       case VAR_UINT64:
-          if (value.ui64 <= I16_MAX)
+          if (value.ui64 <= (uint) std::numeric_limits<int16_t>::max())
               return int16_t(value.ui64);
           break;
       case VAR_STRING: return convertFromString<int16_t>();
@@ -425,17 +419,17 @@ int32_t VariantImpl::asInt32() const
       case VAR_INT16: return value.i16;
       case VAR_INT32: return value.i32;
       case VAR_INT64:
-          if ((value.i64 >= I32_MIN) && (value.i64 <= I32_MAX))
+          if ((value.i64 >= std::numeric_limits<int32_t>::min()) && (value.i64 <= std::numeric_limits<int32_t>::max()))
               return int32_t(value.i64);
           break;
       case VAR_UINT8:  return int32_t(value.ui8);
       case VAR_UINT16: return int32_t(value.ui16);
       case VAR_UINT32:
-          if (value.ui32 <= I32_MAX)
+        if (value.ui32 <= (uint32_t) std::numeric_limits<int32_t>::max())
               return int32_t(value.ui32);
           break;
       case VAR_UINT64:
-          if (value.ui64 <= I32_MAX)
+        if (value.ui64 <= (uint32_t) std::numeric_limits<int32_t>::max())
               return int32_t(value.ui64);
           break;
       case VAR_STRING: return convertFromString<int32_t>();
@@ -454,7 +448,7 @@ int64_t VariantImpl::asInt64() const
       case VAR_UINT16: return int64_t(value.ui16);
       case VAR_UINT32: return int64_t(value.ui32);
       case VAR_UINT64:
-          if (value.ui64 <= 0x7fffffffffffffff)
+        if (value.ui64 <= (uint64_t) std::numeric_limits<int64_t>::max())
               return int64_t(value.ui64);
           break;
       case VAR_STRING: return convertFromString<int64_t>();
