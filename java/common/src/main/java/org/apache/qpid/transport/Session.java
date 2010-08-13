@@ -85,6 +85,7 @@ public class Session extends SessionInvoker
     private Connection connection;
     private Binary name;
     private long expiry;
+    private boolean closing;
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
@@ -127,6 +128,7 @@ public class Session extends SessionInvoker
         this.delegate = delegate;
         this.name = name;
         this.expiry = expiry;
+        this.closing = false;
         initReceiver();
     }
 
@@ -143,6 +145,11 @@ public class Session extends SessionInvoker
     void setExpiry(long expiry)
     {
         this.expiry = expiry;
+    }
+
+    void setClose(boolean close)
+    {
+        this.closing = close;
     }
 
     public int getChannel()
@@ -599,7 +606,7 @@ public class Session extends SessionInvoker
                             }
                             catch (SenderException e)
                             {
-                                if (expiry > 0)
+                                if (!closing)
                                 {
                                     // if expiry is > 0 then this will
                                     // happen again on resume
@@ -637,7 +644,7 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if ((expiry > 0 && !m.isUnreliable()) || m.hasCompletionListener())
+                if ((!closing && !m.isUnreliable()) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();
@@ -654,9 +661,9 @@ public class Session extends SessionInvoker
                 }
                 catch (SenderException e)
                 {
-                    if (expiry > 0)
+                    if (!closing)
                     {
-                        // if expiry is > 0 then this will happen
+                        // if we are not closing then this will happen
                         // again on resume
                         log.error(e, "error sending command");
                     }
@@ -680,7 +687,7 @@ public class Session extends SessionInvoker
                     }
                     catch (SenderException e)
                     {
-                        if (expiry > 0)
+                        if (!closing)
                         {
                             // if expiry is > 0 then this will happen
                             // again on resume
@@ -890,13 +897,10 @@ public class Session extends SessionInvoker
         synchronized (commands)
         {
             state = CLOSING;
-            // XXX: we manually set the expiry to zero here to
-            // simulate full session recovery in brokers that don't
-            // support it, we should remove this line when there is
-            // broker support for full session resume:
-            expiry = 0;
+            setClose(true);
             sessionRequestTimeout(0);
             sessionDetach(name.getBytes());
+
             Waiter w = new Waiter(commands, timeout);
             while (w.hasTime() && state != CLOSED)
             {
@@ -907,9 +911,9 @@ public class Session extends SessionInvoker
             {
                 throw new SessionException("close() timed out");
             }
+ 
+            connection.removeSession(this);
         }
-
-        connection.removeSession(this);
     }
 
     public void exception(Throwable t)
@@ -921,7 +925,7 @@ public class Session extends SessionInvoker
     {
         synchronized (commands)
         {
-            if (expiry == 0 || getException() != null)
+            if (closing || getException() != null)
             {
                 state = CLOSED;
             }

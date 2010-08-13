@@ -85,8 +85,8 @@ public abstract class ConnectionDelegate
     @Override public void sessionDetach(Connection conn, SessionDetach dtc)
     {
         Session ssn = conn.getSession(dtc.getChannel());
-        conn.unmap(ssn);
         ssn.sessionDetached(dtc.getName(), SessionDetachCode.NORMAL);
+        conn.unmap(ssn);
         ssn.closed();
     }
 
