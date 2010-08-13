@@ -17,17 +17,10 @@
 # under the License.
 #
 
-if HAVE_SWIG
+INCLUDE = -I$(top_srcdir)/include
 
-EXTRA_DIST = qmf2.i
-SUBDIRS = examples/cpp
+AM_CPPFLAGS = $(INCLUDE)
 
-if HAVE_RUBY_DEVEL
-SUBDIRS += ruby
-endif
-
-if HAVE_PYTHON_DEVEL
-SUBDIRS += python
-endif
-
-endif
+noinst_PROGRAMS=agent
+agent_SOURCES=agent.cpp
+agent_LDADD=$(top_builddir)/src/libqmf2.la
