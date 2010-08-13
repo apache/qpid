@@ -39,27 +39,14 @@ import org.apache.qpid.ssl.SSLContextFactory;
 public class TestNetworkDriver implements NetworkDriver
 {
     private final ConcurrentMap attributes = new ConcurrentHashMap();
-    private String _remoteAddress = "127.0.0.1";
-    private String _localAddress = "127.0.0.1";
+    private String _remoteHost = "127.0.0.1";
+    private String _localHost = "127.0.0.1";
     private int _port = 1;
+    private SocketAddress _localAddress = null;
+    private SocketAddress _remoteAddress = null;
 
     public TestNetworkDriver()
     {
-    }
-
-    public void setRemoteAddress(String string)
-    {
-        this._remoteAddress = string;
-    }
-
-    public void setPort(int _port)
-    {
-        this._port = _port;
-    }
-
-    public int getPort()
-    {
-        return _port;
     }
 
     public void bind(int port, InetAddress[] addresses, ProtocolEngineFactory protocolFactory,
@@ -70,12 +57,12 @@ public class TestNetworkDriver implements NetworkDriver
 
     public SocketAddress getLocalAddress()
     {
-        return new InetSocketAddress(_localAddress, _port);
+        return (_localAddress != null) ? _localAddress : new InetSocketAddress(_localHost, _port);
     }
 
     public SocketAddress getRemoteAddress()
     {
-        return new InetSocketAddress(_remoteAddress, _port);
+        return (_remoteAddress != null) ? _remoteAddress : new InetSocketAddress(_remoteHost, _port);
     }
 
     public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkDriverConfiguration config,
@@ -114,9 +101,33 @@ public class TestNetworkDriver implements NetworkDriver
         
     }
 
-    public void setLocalAddress(String localAddress)
+    public void setPort(int port)
     {
-        _localAddress = localAddress;
+        _port = port;
     }
 
+    public int getPort()
+    {
+        return _port;
+    }
+
+    public void setLocalHost(String host)
+    {
+        _localHost = host;
+    }
+
+    public void setRemoteHost(String host)
+    {
+        _remoteHost = host;
+    }
+
+    public void setLocalAddress(SocketAddress address)
+    {
+        _localAddress = address;
+    }
+
+    public void setRemoteAddress(SocketAddress address)
+    {
+        _remoteAddress = address;
+    }
 }
