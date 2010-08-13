@@ -63,7 +63,7 @@ public class SessionDelegate
         {
             ssn.setClose(true);
         }
-        ssn.sessionTimeout(t.getTimeout());
+        ssn.sessionTimeout(0); // Always report back an expiry of 0 until it is implemented
     }
 
     @Override public void sessionAttached(Session ssn, SessionAttached atc)
@@ -73,7 +73,7 @@ public class SessionDelegate
 
     @Override public void sessionTimeout(Session ssn, SessionTimeout t)
     {
-        ssn.setExpiry(t.getTimeout());
+        // Setting of expiry is not implemented
     }
 
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
