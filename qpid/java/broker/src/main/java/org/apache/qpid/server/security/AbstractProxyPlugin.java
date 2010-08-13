@@ -83,11 +83,6 @@ public abstract class AbstractProxyPlugin extends AbstractPlugin
         return getDefault();
     }
     
-    public Result accessBroker(Object instance)
-    {
-        return getDefault();
-    }
-    
     public Result accessVirtualhost(Object instance)
     {
         return getDefault();
