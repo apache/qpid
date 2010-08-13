@@ -47,7 +47,7 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
-import org.apache.qpid.client.message.FiledTableSupport;
+import org.apache.qpid.client.message.FieldTableSupport;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
@@ -320,7 +320,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         if (destination.getDestSyntax() == DestSyntax.BURL)
         {
-            Map args = FiledTableSupport.convertToMap(arguments);
+            Map args = FieldTableSupport.convertToMap(arguments);
             // this is there only because the broker may expect a value for x-match
             if( ! args.containsKey("x-match") )
             {

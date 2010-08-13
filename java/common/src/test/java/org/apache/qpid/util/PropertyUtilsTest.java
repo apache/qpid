@@ -18,15 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration;
+package org.apache.qpid.util;
 
 import org.apache.qpid.configuration.PropertyException;
 import org.apache.qpid.configuration.PropertyUtils;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-// TODO: This belongs in the "common" module.
-public class TestPropertyUtils extends TestCase
+public class PropertyUtilsTest extends QpidTestCase
 {
     public void testSimpleExpansion() throws PropertyException
     {
@@ -45,6 +43,6 @@ public class TestPropertyUtils extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new junit.framework.TestSuite(TestPropertyUtils.class);
+        return new junit.framework.TestSuite(PropertyUtilsTest.class);
     }
 }
