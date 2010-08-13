@@ -20,13 +20,18 @@
  */
 package org.apache.qpid.test.unit.client.protocol;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
+
+import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.TestNetworkDriver;
-import org.apache.qpid.transport.NetworkDriver;
 
 public class AMQProtocolSessionTest extends QpidBrokerTestCase
 {
@@ -49,14 +54,6 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
         }
     }
 
-    //private Strings for test values and expected results
-    private String _brokenAddress = "tcp://myAddress;:";;
-    private String _generatedAddress;
-    private String _emptyAddress;
-    private String _generatedAddress_2;
-    private String _validAddress;
-    private String _generatedAddress_3;
-    private int _port;
     private AMQProtSession _testSession;
 
     protected void setUp() throws Exception
@@ -66,58 +63,44 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQProtocolHandler protocolHandler = new AMQProtocolHandler(con);
         protocolHandler.setNetworkDriver(new TestNetworkDriver());
+        
         //don't care about the values set here apart from the dummy IoSession
         _testSession = new AMQProtSession(protocolHandler , con);
-
-        //initialise addresses for test and expected results
-        _port = 123;
-        _brokenAddress = "tcp://myAddress;:";
-        _generatedAddress = "tmp_tcpmyAddress123_1";
-        _emptyAddress = "";
-        _generatedAddress_2 = "tmp_localhost127.0.0.1123_2";
-        _validAddress = "abc";
-        _generatedAddress_3 = "tmp_abc123_3";
     }
-
-    public void testGenerateQueueName()
+    
+    public void testTemporaryQueueWildcard() throws UnknownHostException
     {
-        AMQShortString testAddress;
-
-        //test address with / and ; chars which generateQueueName should removeKey
-        _testSession.getNetworkDriver().setLocalAddress(_brokenAddress);
-        _testSession.getNetworkDriver().setPort(_port);
-
-        testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue exchange from an address with special chars",_generatedAddress,testAddress.toString());
-
-        //test empty address
-        _testSession.getNetworkDriver().setLocalAddress(_emptyAddress);
-
-        testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue exchange from an empty address",_generatedAddress_2,testAddress.toString());
-
-        //test address with no special chars
-        _testSession.getNetworkDriver().setLocalAddress(_validAddress);
-
-        testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue exchange from an address with no special chars",_generatedAddress_3,testAddress.toString());
-
+        checkTempQueueName(new InetSocketAddress(1234), "tmp_0_0_0_0_0_0_0_0_1234_1");
     }
-
-    protected void tearDown() throws Exception
+    
+    public void testTemporaryQueueLocalhostAddr() throws UnknownHostException
     {
-        _testSession = null;
-        _brokenAddress = null;
-        _generatedAddress = null;
-        _emptyAddress = null;
-        _generatedAddress_2 = null;
-        _validAddress = null;
-        _generatedAddress_3 = null;
-        super.tearDown();
+        checkTempQueueName(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 1234), "tmp_127_0_0_1_1234_1");
     }
-
-    public static junit.framework.Test suite()
+    
+    public void testTemporaryQueueLocalhostName() throws UnknownHostException
     {
-        return new junit.framework.TestSuite(AMQProtocolSessionTest.class);
+        checkTempQueueName(new InetSocketAddress(InetAddress.getByName("localhost"), 1234), "tmp_localhost_127_0_0_1_1234_1");
+    }
+    
+    public void testTemporaryQueueInet4() throws UnknownHostException
+    {
+        checkTempQueueName(new InetSocketAddress(InetAddress.getByName("192.168.1.2"), 1234), "tmp_192_168_1_2_1234_1");
+    }
+    
+    public void testTemporaryQueueInet6() throws UnknownHostException
+    {
+        checkTempQueueName(new InetSocketAddress(InetAddress.getByName("1080:0:0:0:8:800:200C:417A"), 1234), "tmp_1080_0_0_0_8_800_200c_417a_1234_1");
+    }
+    
+    public void testTemporaryQueuePipe() throws UnknownHostException
+    {
+        checkTempQueueName(new VmPipeAddress(1), "tmp_vm_1_1");
+    }
+    
+    private void checkTempQueueName(SocketAddress address, String queueName)
+    {
+        _testSession.getNetworkDriver().setLocalAddress(address);
+        assertEquals("Wrong queue name", queueName, _testSession.genQueueName().asString());
     }
 }
