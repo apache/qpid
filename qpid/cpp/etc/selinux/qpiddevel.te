@@ -11,6 +11,7 @@ policy_module(qpiddevel, 1.1)
 
 gen_require(`
 	type unconfined_t;
+	type unconfined_execmem_t;
 	type ccs_t;
 	class capability sys_admin;
 	class sem { write unix_read unix_write associate read destroy };
@@ -28,4 +29,7 @@ optional_policy(`
 	allow aisexec_t self:capability sys_admin;
 	allow aisexec_t unconfined_t:sem { read write unix_read unix_write associate destroy };
 	allow aisexec_t unconfined_t:shm { read write unix_read unix_write associate destroy };
+	allow aisexec_t unconfined_execmem_t:sem { write unix_read unix_write associate read destroy };
+	allow aisexec_t unconfined_execmem_t:shm { write unix_read unix_write associate read destroy };
+
 ')
