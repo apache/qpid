@@ -20,15 +20,13 @@ package org.apache.qpid.client.message;
  * 
  */
 
-
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
-public class FiledTableSupport
+public class FieldTableSupport
 {
   public static FieldTable convertToFieldTable(Map<String,?> props)
   {
