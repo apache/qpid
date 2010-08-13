@@ -94,7 +94,7 @@ class ExampleAgent(AgentHandler):
     package = "com.profitron.bntor"
 
     ##
-    ## Declare a schema for a structure exception that can be used in failed
+    ## Declare a schema for a structured exception that can be used in failed
     ## method invocations.
     ##
     self.sch_exception = Schema(SCHEMA_TYPE_DATA, package, "exception")
