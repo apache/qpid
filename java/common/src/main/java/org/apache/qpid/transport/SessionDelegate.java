@@ -59,7 +59,10 @@ public class SessionDelegate
 
     @Override public void sessionRequestTimeout(Session ssn, SessionRequestTimeout t)
     {
-        ssn.setExpiry(t.getTimeout());
+        if (t.getTimeout() == 0)
+        {
+            ssn.setClose(true);
+        }
         ssn.sessionTimeout(t.getTimeout());
     }
 
