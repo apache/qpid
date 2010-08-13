@@ -22,12 +22,11 @@ package org.apache.qpid.transport;
 
 import org.apache.mina.util.AvailablePortFinder;
 
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoAcceptor;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
-
-import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +41,7 @@ import static org.apache.qpid.transport.Option.*;
  * ConnectionTest
  */
 
-public class ConnectionTest extends TestCase implements SessionListener
+public class ConnectionTest extends QpidTestCase implements SessionListener
 {
 
     private static final Logger log = Logger.get(ConnectionTest.class);
