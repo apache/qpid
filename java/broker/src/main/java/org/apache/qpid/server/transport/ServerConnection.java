@@ -105,11 +105,19 @@ public class ServerConnection extends Connection implements AMQConnectionModel
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
         ExecutionException ex = new ExecutionException();
-        ex.setErrorCode(ExecutionErrorCode.get(cause.getCode()));
+        ExecutionErrorCode code = ExecutionErrorCode.INTERNAL_ERROR;
+        try
+        {
+	        code = ExecutionErrorCode.get(cause.getCode());
+        }
+        catch (IllegalArgumentException iae)
+        {
+            // Ignore, already set to INTERNAL_ERROR
+        }
+        ex.setErrorCode(code);
         ex.setDescription(message);
         ((ServerSession)session).invoke(ex);
 
         ((ServerSession)session).close();
     }
-   
 }

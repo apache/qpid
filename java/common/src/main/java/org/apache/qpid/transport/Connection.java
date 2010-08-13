@@ -56,7 +56,7 @@ public class Connection extends ConnectionInvoker
     implements Receiver<ProtocolEvent>, Sender<ProtocolEvent>
 {
 
-    private static final Logger log = Logger.get(Connection.class);
+    protected static final Logger log = Logger.get(Connection.class);
 
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }

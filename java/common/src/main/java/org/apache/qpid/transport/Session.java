@@ -280,7 +280,7 @@ public class Session extends SessionInvoker
             {
                 if (m != null)
                 {
-                    System.out.println(m);
+                    log.debug("%s", m);
                 }
             }
         }
@@ -732,8 +732,7 @@ public class Session extends SessionInvoker
             Waiter w = new Waiter(commands, timeout);
             while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
-                log.debug("%s   waiting for[%d]: %d, %s", this, point,
-                          maxComplete, commands);
+                log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, commands);
                 w.await();
             }
 
@@ -741,16 +740,23 @@ public class Session extends SessionInvoker
             {
                 if (state != CLOSED)
                 {
-                    throw new SessionException
-                        (String.format
-                         ("timed out waiting for sync: complete = %s, point = %s", maxComplete, point));
+                    throw new SessionException(
+		                    String.format("timed out waiting for sync: complete = %s, point = %s",
+		                            maxComplete, point));
+                }
+                else
+                {
+                    ExecutionException ee = getException();
+                    if (ee != null)
+                    {
+                        throw new SessionException(ee);
+                    }
                 }
             }
         }
     }
 
-    private Map<Integer,ResultFuture<?>> results =
-        new HashMap<Integer,ResultFuture<?>>();
+    private Map<Integer,ResultFuture<?>> results = new HashMap<Integer,ResultFuture<?>>();
     private ExecutionException exception = null;
 
     void result(int command, Struct result)
@@ -769,9 +775,8 @@ public class Session extends SessionInvoker
         {
             if (exception != null)
             {
-                throw new IllegalStateException
-                    (String.format
-                     ("too many exceptions: %s, %s", exception, exc));
+                throw new IllegalStateException(
+                        String.format("too many exceptions: %s, %s", exception, exc));
             }
             exception = exc;
         }
@@ -849,8 +854,8 @@ public class Session extends SessionInvoker
             }
             else
             {
-                throw new SessionException
-                    (String.format("%s timed out waiting for result: %s",
+                throw new SessionException(
+                        String.format("%s timed out waiting for result: %s",
                                    Session.this, this));
             }
         }
@@ -961,5 +966,4 @@ public class Session extends SessionInvoker
     {
         return String.format("ssn:%s", name);
     }
-
 }
