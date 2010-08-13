@@ -33,11 +33,15 @@ public class SessionDelegate
     extends MethodDelegate<Session>
     implements ProtocolDelegate<Session>
 {
-    private static final Logger log = Logger.get(SessionDelegate.class);
+    protected static final Logger log = Logger.get(SessionDelegate.class);
 
-    public void init(Session ssn, ProtocolHeader hdr) { }
+    public void init(Session ssn, ProtocolHeader hdr)
+    {
+        log.warn("INIT: [%s] %s", ssn, hdr);
+    }
 
-    public void control(Session ssn, Method method) {
+    public void control(Session ssn, Method method)
+    {
         method.dispatch(ssn, this);
     }
 
@@ -50,7 +54,10 @@ public class SessionDelegate
         }
     }
 
-    public void error(Session ssn, ProtocolError error) { }
+    public void error(Session ssn, ProtocolError error)
+    {
+        log.warn("ERROR: [%s] %s", ssn, error);
+    }
 
     public void handle(Session ssn, Method method)
     {
@@ -195,9 +202,11 @@ public class SessionDelegate
 
     public void closed(Session session)
     {
+        log.warn("CLOSED: [%s]", session);
     }
 
     public void detached(Session session)
-    {        
+    {
+        log.warn("DETACHED: [%s]", session);
     }
 }

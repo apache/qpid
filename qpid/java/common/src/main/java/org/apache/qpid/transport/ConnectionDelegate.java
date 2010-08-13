@@ -99,5 +99,4 @@ public abstract class ConnectionDelegate
             ssn.closed();
         }
     }
-
 }

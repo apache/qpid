@@ -168,16 +168,26 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      */
     @Override void sendCancel() throws AMQException
     {
-        ((AMQSession_0_10) getSession()).getQpidSession().messageCancel(getConsumerTagString());
-        ((AMQSession_0_10) getSession()).getQpidSession().sync();
-        // confirm cancel
-        getSession().confirmConsumerCancelled(getConsumerTag());
-        ((AMQSession_0_10) getSession()).getCurrentException();
+        _0_10session.getQpidSession().messageCancel(getConsumerTagString());
+        try
+        {
+            _0_10session.getQpidSession().sync();
+            getSession().confirmConsumerCancelled(getConsumerTag()); // confirm cancel
+        }
+        catch (SessionException se)
+        {
+            _0_10session.setCurrentException(se);
+        }
+
+        AMQException amqe = _0_10session.getCurrentException();
+        if (amqe != null)
+        {
+            throw amqe;
+        }
     }
 
     @Override void notifyMessage(UnprocessedMessage_0_10 messageFrame)
     {
-
         super.notifyMessage(messageFrame);
     }
 
@@ -285,7 +295,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             _0_10session.messageAcknowledge
                 (ranges,
                  _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
-            _0_10session.getCurrentException();
+
+            AMQException amqe = _0_10session.getCurrentException();
+            if (amqe != null)
+            {
+                throw amqe;
+            }
         }
     }
 
@@ -302,7 +317,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             RangeSet ranges = new RangeSet();
             ranges.add((int) message.getDeliveryTag());
             _0_10session.getQpidSession().messageRelease(ranges);
-            _0_10session.getCurrentException();
+            _0_10session.sync();
         }
     }
 
