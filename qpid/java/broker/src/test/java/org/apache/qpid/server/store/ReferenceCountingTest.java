@@ -20,28 +20,26 @@
  */
 package org.apache.qpid.server.store;
 
-import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Tests that reference counting works correctly with AMQMessage and the message store
  */
-public class TestReferenceCounting extends TestCase
+public class ReferenceCountingTest extends QpidTestCase
 {
     private TestMemoryMessageStore _store;
 
 
     protected void setUp() throws Exception
     {
-        super.setUp();
         _store = new TestMemoryMessageStore();
-
     }
 
     /**
@@ -96,7 +94,7 @@ public class TestReferenceCounting extends TestCase
 
         assertEquals(1, _store.getMessageCount());
         message.decrementReference();
-        assertEquals(1, _store.getMessageCount());
+        assertEquals(0, _store.getMessageCount());
     }
 
     private ContentHeaderBody createPersistentContentHeader()
@@ -152,8 +150,6 @@ public class TestReferenceCounting extends TestCase
         // we call routing complete to set up the handle
      //   message.routingComplete(_store, _storeContext, new MessageHandleFactory());
 
-
-
         assertEquals(1, _store.getMessageCount());
         message = message.takeReference();
         message.decrementReference();
@@ -162,6 +158,6 @@ public class TestReferenceCounting extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new junit.framework.TestSuite(TestReferenceCounting.class);
+        return new junit.framework.TestSuite(ReferenceCountingTest.class);
     }
 }

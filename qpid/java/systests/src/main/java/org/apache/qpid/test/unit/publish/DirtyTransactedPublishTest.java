@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * and asynchronous message delivery paths we receive the expected exceptions at
  * the expected time.
  */
-public class DirtyTrasactedPubilshTest extends FailoverBaseCase implements ConnectionListener
+public class DirtyTransactedPublishTest extends FailoverBaseCase implements ConnectionListener
 {
     protected CountDownLatch _failoverCompleted = new CountDownLatch(1);
 
