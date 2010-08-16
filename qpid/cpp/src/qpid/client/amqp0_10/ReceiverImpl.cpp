@@ -173,8 +173,13 @@ bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging:
     if (getImpl(message, timeout)) {
         return true;
     } else {
-        if (state == CANCELLED) return false; // Might have been closed during get.
-        sync(session).messageFlush(destination);
+        qpid::client::Session s;
+        {
+            sys::Mutex::ScopedLock l(lock);
+            if (state == CANCELLED) return false; // Might have been closed during get.
+            s = sync(session);
+        }
+        s.messageFlush(destination);
         {
             sys::Mutex::ScopedLock l(lock);
             startFlow(l); //reallocate credit
