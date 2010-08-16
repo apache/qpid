@@ -928,12 +928,12 @@ class Session:
         pass
 
   def addAgentFilter(self, vendor, product=None):
-    """Deprecate - use heartbeat filter instead"""
+    """ Deprecate - use bindAgent() instead
+    """
     self.addHeartbeatFilter(vendor=vendor, product=product)
 
   def addHeartbeatFilter(self, **kwargs):
-    """ Listen for heartbeat messages only for those agent(s) that match the
-    vendor and, optionally, the product strings.
+    """ Deprecate - use bindAgent() instead.
     """
     vendor = kwargs.get("vendor")
     product = kwargs.get("product")
@@ -974,6 +974,8 @@ class Session:
         v1KeyList.append("console.#")
         v2KeyList.append("agent.ind.#")
       else:
+        # need heartbeats for V2 newAgent()/delAgent()
+        v2KeyList.append("agent.ind.heartbeat.#")
         if self.rcvObjects:
           v1KeyList.append("console.obj.#")
           v2KeyList.append("agent.ind.data.#")
@@ -986,9 +988,6 @@ class Session:
           v1KeyList.append("console.event.*.*.org.apache.qpid.broker.agent")
         if self.rcvHeartbeats:
           v1KeyList.append("console.heartbeat.#")
-          v2KeyList.append("agent.ind.heartbeat.#")
-        else:
-          v2KeyList.append("agent.ind.heartbeat.org_apache.qpidd.#")
     else:
       # mandatory bindings
       v1KeyList.append("console.obj.*.*.org.apache.qpid.broker.agent")
@@ -1105,7 +1104,7 @@ class Session:
 
     agent = broker.getAgent(brokerBank, agentBank)
     timestamp = codec.read_uint64()
-    if self.console != None and agent != None:
+    if self.rcvHeartbeats and self.console != None and agent != None:
       self.console.heartbeat(agent, timestamp)
 
 
@@ -1165,7 +1164,7 @@ class Session:
       broker._addAgent(agentName, agent)
     else:
       agent.touch()
-    if self.console and agent:
+    if self.rcvHeartbeats and self.console and agent:
       self.console.heartbeat(agent, timestamp)
     agent.update_schema_timestamp(values.get("schema_timestamp", 0))
 
