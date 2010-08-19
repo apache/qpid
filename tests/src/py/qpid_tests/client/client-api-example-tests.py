@@ -92,25 +92,48 @@ out, err  = popen.communicate()
 os.environ["CLASSPATH"] = java_examples_path + ":" + re.sub("\\n", ":", out)
 logging.debug("Java CLASSPATH = " + os.environ["CLASSPATH"])
 
+java_invoke =  "java " + "-Dlog4j.configuration=log4j.conf "
+
 ############################################################################################
 
-# Paths to programs
-hello_world = cpp_examples_path + "hello_world" + " "  + qpid_broker
-cpp_drain = cpp_examples_path + "drain" + " -b " + qpid_broker
-cpp_spout = cpp_examples_path + "spout" + " -b " + qpid_broker
-python_drain = python_examples_path + "drain" + " -b " + qpid_broker
-python_spout = python_examples_path + "spout" + " -b " + qpid_broker
-java_drain = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Drain " + "-b guest:guest@" + qpid_broker
-java_spout = "java " + "-Dlog4j.configuration=log4j.conf " + "org.apache.qpid.example.Spout " + "-b guest:guest@" + qpid_broker
 
-# cpp_map_send = cpp_examples_path + "map_sender"
-# cpp_map_receive = cpp_examples_path + "map_receiver"
-# cpp_client = cpp_examples_path + "map_sender"
-# cpp_server = cpp_examples_path + "map_receiver"
+drains = [ 
+    {'lang': 'CPP', 'command': cpp_examples_path + "drain" }, 
+    {'lang': 'PYTHON', 'command': python_examples_path + "drain"}, 
+    {'lang': 'JAVA', 'command': java_invoke + "org.apache.qpid.example.Drain"} 
+    ]
 
-CPP = object()
-PYTHON = object()
-JAVA = object()
+spouts =  [ 
+    {'lang': 'CPP', 'command': cpp_examples_path + "spout" }, 
+    {'lang': 'PYTHON', 'command': python_examples_path + "spout"}, 
+    {'lang': 'JAVA', 'command': java_invoke +  "org.apache.qpid.example.Spout"} 
+    ]
+
+mapSenders = [ 
+    {'lang': 'CPP', 'command': cpp_examples_path + "map_sender" }, 
+    {'lang': 'JAVA', 'command': java_invoke + "org.apache.qpid.example.MapSender"} 
+    ]
+
+mapReceivers =  [ 
+    {'lang': 'CPP', 'command': cpp_examples_path + "map_receiver" }, 
+    {'lang': 'JAVA', 'command': java_invoke +  "org.apache.qpid.example.MapReceiver"} 
+    ]
+
+
+hellos =   [ 
+    {'lang': 'CPP', 'command': cpp_examples_path + "hello_world" }, 
+    {'lang': 'PYTHON', 'command': python_examples_path + "hello" }, 
+    {'lang': 'JAVA', 'command': java_invoke + "org.apache.qpid.example.Hello"} 
+    ]
+
+wockyClients = [ 
+    {'lang': 'CPP', 'command': cpp_examples_path + "client" }, 
+    ]
+
+wockyServers =  [ 
+    {'lang': 'CPP', 'command': cpp_examples_path + "server" }, 
+    ]
+
 
 shortWait = 0.5
 longWait = 3   # use sparingly!
@@ -147,19 +170,21 @@ class TestDrainSpout(unittest.TestCase):
 
     # Send / receive methods in various languages
 
-    def send(self, lang=CPP, content="", destination="amq.topic", create=1, wait=0):
+    def send(self, spout=spouts[0], content="", destination="amq.topic", create=1, wait=0):
         if wait:
             sleep(wait)
 
         createS = ";{create:always}" if create else ""
         addressS = "'" + destination + createS + "'"
-        if lang==CPP:
+        brokerS = "-b " + qpid_broker
+        if spout['lang']=='CPP':
             contentS = " ".join(['--content',"'"+content+"'"]) if content else ""
-            commandS = " ".join([cpp_spout, contentS, addressS])
-        elif lang==PYTHON:
-            commandS = " ".join([python_spout, addressS, content])
-        elif lang==JAVA:
-            commandS = " ".join([java_spout, "--content="+"'"+content+"'", addressS])            
+            commandS = " ".join([spout['command'], brokerS, contentS, addressS])
+        elif spout['lang']=='PYTHON':
+            commandS = " ".join([spout['command'], brokerS, addressS, content])
+        elif spout['lang']=='JAVA':
+            brokerS = "-b guest:guest@" + qpid_broker
+            commandS = " ".join([spout['command'], brokerS, "--content="+"'"+content+"'", addressS])            
         else:  
             raise "Ain't no such language ...."
         logging.debug("send(): " + commandS)
@@ -169,15 +194,18 @@ class TestDrainSpout(unittest.TestCase):
         logging.debug("send() - out=" + str(out) + ", err=" + str(err))
 
 
-    def receive(self, lang=CPP, destination="amq.topic", delete=1):
+    def receive(self, drain=drains[0], destination="amq.topic", delete=1):
         deleteS = ";{delete:always}" if delete else ""
         addressS = "'" + destination + deleteS + "'"
-        if lang==CPP:
-            commandS = " ".join([cpp_drain, addressS])
-        elif lang==PYTHON:
-            commandS = " ".join([python_drain, addressS])
-        elif lang==JAVA:
-            commandS = " ".join([java_drain, addressS])
+        brokerS = "-b " + qpid_broker
+        optionS = "-c 1 -t 30"
+        if drain['lang']=='CPP':
+            commandS = " ".join([drain['command'], optionS, brokerS, optionS, addressS])
+        elif drain['lang']=='PYTHON':
+            commandS = " ".join([drain['command'], brokerS, optionS, addressS])
+        elif drain['lang']=='JAVA':
+            brokerS = "-b guest:guest@" + qpid_broker
+            commandS = " ".join([drain['command'], brokerS, optionS, addressS])
         else:  
             raise "Ain't no such language ...."
         logging.debug("receive() " + commandS)
@@ -187,15 +215,17 @@ class TestDrainSpout(unittest.TestCase):
         logging.debug("receive() - out=" + str(out) + ", err=" + str(err))
         return out
 
-    def subscribe(self, lang=CPP, destination="amq.topic", create=0):
-        time = "-t 10"
-        if lang==CPP:
-            commandS = " ".join([cpp_drain, time, destination])
-        elif lang==PYTHON:
-            commandS = " ".join([python_drain, time, destination])
-        elif lang==JAVA:
+    def subscribe(self, drain=drains[0], destination="amq.topic", create=0):
+        optionS = "-t 30 -c 1"
+        brokerS = "-b " + qpid_broker
+        if drain['lang']=='CPP':
+            commandS = " ".join([drain['command'], brokerS, optionS, destination])
+        elif drain['lang']=='PYTHON':
+            commandS = " ".join([drain['command'], brokerS, optionS, destination])
+        elif drain['lang']=='JAVA':
             logging.debug("Java working directory: ")
-            commandS = " ".join([java_drain, time, destination])
+            brokerS = "-b guest:guest@" + qpid_broker
+            commandS = " ".join([drain['command'], brokerS, optionS, destination])
         else:
             logging.debug("subscribe() - no such language!")  
             raise "Ain't no such language ...."
@@ -217,212 +247,90 @@ class TestDrainSpout(unittest.TestCase):
     # Hello world!
  
     def test_hello_world(self):
-        args = shlex.split(hello_world)
-        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
-        out = popen.communicate()[0]
-        logging.debug(out)
-        self.assertTrue(out.find("world!") > 0)
+        for hello_world in hellos:
+            args = shlex.split(hello_world['command'])
+            popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+            out = popen.communicate()[0]
+            logging.debug(out)
+            self.assertTrue(out.find("world!") > 0)
 
-    # Make sure qpid-config is working
+    def test_jabberwocky(self):
+        for i, s in enumerate(wockyServers):
+            for j, c in enumerate(wockyClients):
+                args = shlex.split(s['command'])
+                server = subprocess.Popen(args, stdout=subprocess.PIPE)
+                args = shlex.split(c['command'])
+                client = subprocess.Popen(args, stdout=subprocess.PIPE)
+                out = client.communicate()[0]
+                logging.debug(out)
+                self.assertTrue(out.find("BRILLIG") >= 0)
+                server.terminate()
 
-    def test_qpid_config(self):
-        self.qpid_config("add exchange topic weather")
-        self.qpid_config("del exchange weather")
+    def test_maps(self):
+        for s in mapSenders:
+            for r in mapReceivers:
+                args = shlex.split(s['command'])
+                sender = subprocess.Popen(args, stdout=subprocess.PIPE)
+                args = shlex.split(r['command'])
+                receiver = subprocess.Popen(args, stdout=subprocess.PIPE)
+                out = receiver.communicate()[0]
+                logging.debug(out)
+                sender.terminate()
 
-    # Simple queue tests
+    def test_queues(self):
+        for i, s in enumerate(spouts):
+            for j, d in enumerate(drains):
+                content = self.tcaseName()  + ": " + s['lang'] + str(i) + " => " + d['lang'] + str(j)
+                self.send(s, content=content, destination="hello_world", create=1)
+                out = self.receive(d, destination="hello_world", delete=1)
+                self.assertTrue(out.find(content) >= 0)
 
-    ## send / receive
+    def test_direct_exchange(self):
+        for i, s in enumerate(spouts):
+            for j, d in enumerate(drains):
+                content = self.tcaseName() + ": " + s['lang'] + str(i) + " => " + d['lang'] + str(j)
+                popen1 = self.subscribe(d, destination="amq.direct/subject")
+                popen2 = self.subscribe(d, destination="amq.direct/subject")                
+                self.send(s, content=content, destination="amq.direct/subject", create=0, wait=2)
+                out1 = self.listen(popen1)
+                out2 = self.listen(popen2)
+                self.assertTrue(out1.find(self.tcaseName()) >= 0)
+                self.assertTrue(out2.find(self.tcaseName()) >= 0)
 
-    def test_queue_cpp2cpp(self):
-        self.send(lang=CPP, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=CPP, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_queue_cpp2python(self):
-        self.send(lang=CPP, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) > 0)
-
-    def test_queue_python2cpp(self):
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=CPP, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_queue_python2python(self):
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_queue_java2java(self):
-        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=JAVA, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_queue_java2python(self):
-        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=PYTHON, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_queue_java2cpp(self):
-        self.send(lang=JAVA, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=CPP, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_queue_cpp2java(self):
-        self.send(lang=CPP, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=JAVA, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_queue_python2java(self):
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="hello-world", create=1)
-        out = self.receive(lang=JAVA, destination="hello-world", delete=1)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-
-    # Direct Exchange
-
-    ## send / receive
-
-    def test_amqdirect_cpp2cpp(self):
-        popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_python2cpp(self):
-        popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_cpp2python(self):
-        popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_python2python(self):
-        popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_java2java(self):
-        popen = self.subscribe(lang=JAVA, destination="amq.direct/subject")
-        self.send(lang=JAVA, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_java2python(self):
-        popen = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
-        self.send(lang=JAVA, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_java2cpp(self):
-        popen = self.subscribe(lang=CPP, destination="amq.direct/subject")
-        self.send(lang=JAVA, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_cpp2java(self):
-        popen = self.subscribe(lang=JAVA, destination="amq.direct/subject")
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=longWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_python2java(self):
-        popen = self.subscribe(lang=JAVA, destination="amq.direct/subject")
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=longWait)
-        out = self.listen(popen)
-        self.assertTrue(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_cpp2cpp_tworeceivers(self):
-        popen1 = self.subscribe(lang=CPP, destination="amq.direct/subject")
-        popen2 = self.subscribe(lang=PYTHON, destination="amq.direct/subject")
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0, wait=shortWait)
-        out1 = self.listen(popen1)
-        out2 = self.listen(popen2)
-        self.assertTrue(out1.find(self.tcaseName()) >= 0)
-        self.assertTrue(out2.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_cpp2cpp_nosubscription(self):
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
-        out = self.receive(lang=CPP, destination="amq.direct/subject", delete=0)
-        self.assertFalse(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_cpp2python_nosubscription(self):
-        self.send(lang=CPP, content=self.tcaseName(), destination="amq.direct/subject", create=0)
-        out = self.receive(lang=PYTHON, destination="amq.direct/subject", delete=0)
-        self.assertFalse(out.find(self.tcaseName()) > 0)
-
-    def test_amqdirect_python2cpp_nosubscription(self):
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
-        out = self.receive(lang=CPP, destination="amq.direct/subject", delete=0)
-        self.assertFalse(out.find(self.tcaseName()) >= 0)
-
-    def test_amqdirect_python2python_nosubscription(self):
-        self.send(lang=PYTHON, content=self.tcaseName(), destination="amq.direct/subject", create=0)
-        out = self.receive(lang=PYTHON, destination="amq.direct/subject", delete=0)
-        self.assertFalse(out.find(self.tcaseName()) >= 0)
+    def test_fanout_exchange(self):
+        for i, s in enumerate(spouts):
+            for j, d in enumerate(drains):
+                content = self.tcaseName() + ": " + s['lang'] + str(i) + " => " + d['lang'] + str(j)
+                popen1 = self.subscribe(d, destination="amq.fanout")
+                popen2 = self.subscribe(d, destination="amq.fanout")                
+                self.send(s, content=content, destination="amq.fanout", create=0, wait=2)
+                out1 = self.listen(popen1)
+                out2 = self.listen(popen2)
+                self.assertTrue(out1.find(self.tcaseName()) >= 0)
+                self.assertTrue(out2.find(self.tcaseName()) >= 0)
 
 
-    #  Request / Response
-
-    def test_jabberwocky_cpp(self):
-        args = shlex.split(cpp_examples_path + 'server')
-        server = subprocess.Popen(args, stdout=subprocess.PIPE)
-        args = shlex.split(cpp_examples_path + 'client')
-        client = subprocess.Popen(args, stdout=subprocess.PIPE)
-        out = client.communicate()[0]
-        logging.debug(out)
-        self.assertTrue(out.find("BRILLIG") >= 0)
-        server.terminate()
-
-    def test_topic_news_sports_weather(self):
-        news = self.subscribe(lang=CPP, destination="amq.topic/*.news")
-        deepnews = self.subscribe(lang=PYTHON, destination="amq.topic/#.news")
-        weather = self.subscribe(lang=JAVA, destination="amq.topic/*.weather")
-        sports = self.subscribe(lang=CPP, destination="amq.topic/*.sports")
-        usa = self.subscribe(lang=PYTHON, destination="amq.topic/usa.*")
-        europe = self.subscribe(lang=JAVA, destination="amq.topic/europe.*")
-        self.send(lang=CPP, content="usa.news", destination="amq.topic/usa.news", create=0, wait=longWait)
-        self.send(lang=PYTHON, content="usa.news", destination="amq.topic/usa.faux.news", create=0)
-        self.send(lang=JAVA, content="europe.news", destination="amq.topic/europe.news", create=0)
-        self.send(lang=CPP, content="usa.weather", destination="amq.topic/usa.weather", create=0)
-        self.send(lang=PYTHON, content="europe.weather", destination="amq.topic/europe.weather", create=0)
-        self.send(lang=JAVA, content="usa.sports", destination="amq.topic/usa.sports", create=0) 
-        self.send(lang=CPP, content="europe.sports", destination="amq.topic/europe.sports", create=0)
-        out = self.listen(news)
-        self.assertTrue(out.find("usa.news") >= 0)        
-        self.assertTrue(out.find("europe.news") >= 0)        
-        self.assertTrue(out.find("usa.news") >= 0)        
-        self.assertFalse(out.find("usa.faux.news") >= 0)        
-        out = self.listen(weather)
-        self.assertTrue(out.find("usa.weather") >= 0)        
-        self.assertTrue(out.find("europe.weather") >= 0) 
-        out = self.listen(sports)
-        self.assertTrue(out.find("usa.sports") >= 0)        
-        self.assertTrue(out.find("europe.sports") >= 0)        
-        out = self.listen(usa)
-        self.assertTrue(out.find("usa.news") >= 0)        
-        self.assertTrue(out.find("usa.sports") >= 0)        
-        self.assertTrue(out.find("usa.weather") >= 0)        
-        out = self.listen(europe)
-        self.assertTrue(out.find("europe.news") >= 0)        
-        self.assertTrue(out.find("europe.sports") >= 0)        
-        self.assertTrue(out.find("europe.weather") >= 0)        
-        out = self.listen(deepnews)
-        self.assertTrue(out.find("usa.news") >= 0)        
-        self.assertTrue(out.find("europe.news") >= 0)        
-        self.assertTrue(out.find("usa.news") >= 0)        
-        self.assertTrue(out.find("usa.faux.news") >= 0)        
-        news.wait()
-        weather.wait()
-        sports.wait()
-        usa.wait()
-        europe.wait()
-        deepnews.wait()
+    def test_topic_exchange(self):
+        for i, s in enumerate(spouts):
+            for j, d in enumerate(drains):
+                content = self.tcaseName() + ": " + s['lang'] + str(i) + " => " + d['lang'] + str(j)
+                popen1 = self.subscribe(d, destination="amq.topic"   + "/" + s['lang'] + "." + d['lang'])
+                popen2 = self.subscribe(d, destination="amq.topic"   + "/" + "*"       + "." + d['lang'])                
+                popen3 = self.subscribe(d, destination="amq.topic"   + "/" + s['lang'] + "." + "*")
+                popen4 = self.subscribe(d, destination="amq.topic"   + "/" + "#"       + "." + d['lang']) 
+                self.send(s, content=content, destination="amq.topic"+ "/" + s['lang'] + "." + d['lang'], create=0, wait=4)
+                out1 = self.listen(popen1)
+                out2 = self.listen(popen2)
+                out3 = self.listen(popen3)
+                out4 = self.listen(popen4)
+                logging.debug("out1:"+out1)
+                logging.debug("out2:"+out2)
+                logging.debug("out3:"+out3)
+                logging.debug("out4:"+out4)
+                self.assertTrue(out1.find(self.tcaseName()) >= 0)
+                self.assertTrue(out2.find(self.tcaseName()) >= 0)
+                self.assertTrue(out3.find(self.tcaseName()) >= 0)
+                self.assertTrue(out4.find(self.tcaseName()) >= 0)
 
 
 if __name__ == '__main__':
