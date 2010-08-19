@@ -40,12 +40,21 @@ public class Drain extends OptionParser
             null,
             Boolean.class);
 
+    static final Option COUNT = new Option ("c",
+            "count",
+            "read c messages, then exit",
+            "COUNT",
+            "0",
+            Integer.class);
+                                                
+
     static 
     {        
         optDefs.add(BROKER);
         optDefs.add(HELP);
         optDefs.add(TIMEOUT);
         optDefs.add(FOREVER);
+        optDefs.add(COUNT);
         optDefs.add(CON_OPTIONS);
         optDefs.add(BROKER_OPTIONS);
     }
@@ -62,14 +71,24 @@ public class Drain extends OptionParser
         Message msg;
         
         long timeout = -1;        
+        int count = 0;
+        int i = 0;
+        
         if (containsOp(TIMEOUT)) { timeout = Integer.parseInt(getOp(TIMEOUT))*1000; }
         if (containsOp(FOREVER)) { timeout = 0; }
+        if (containsOp(COUNT)) { count = Integer.parseInt(getOp(COUNT)); }
         
         while ((msg = consumer.receive(timeout)) != null)
         {
             System.out.println("\n------------- Msg -------------");
             System.out.println(msg);
             System.out.println("-------------------------------\n");
+
+            if (count > 0) {
+                if (++i == count) {
+                    break;                    
+                }               
+            }            
         }
         
         ssn.close();
