@@ -191,8 +191,12 @@ class QmfData(Console):
     self.cli = cli
 
   def close(self):
-    self.closing = True
-    self.session.delBroker(self.broker)
+    try:
+      self.closing = True
+      if self.session and self.broker:
+        self.session.delBroker(self.broker)
+    except:
+      pass   # we're shutting down - ignore any errors
 
   def classCompletions(self, text):
     pass
@@ -645,4 +649,8 @@ try:
 except KeyboardInterrupt:
   print
   print "Exiting..."
-  data.close()
+except Exception, e:
+  print "Failed: %s - %s" % (e.__class__.__name__, e)
+
+# alway attempt to cleanup broker resources
+data.close()

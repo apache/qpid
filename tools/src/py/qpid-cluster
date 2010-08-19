@@ -90,6 +90,7 @@ class BrokerManager:
         self.brokerName = None
         self.qmf        = None
         self.broker     = None
+        self.brokers    = []
 
     def SetBroker(self, brokerUrl):
         self.url = brokerUrl
@@ -101,8 +102,18 @@ class BrokerManager:
                 self.brokerAgent = a
 
     def Disconnect(self):
-        if self.broker:
-            self.qmf.delBroker(self.broker)
+        """ Release any allocated brokers.  Ignore any failures as the tool is
+        shutting down.
+        """
+        try:
+            if self.broker:
+                self.qmf.delBroker(self.broker)
+                self.broker = None
+            while len(self.brokers):
+                b = self.brokers.pop()
+                self.qmf.delBroker(b)
+        except:
+            pass
 
     def _getClusters(self):
         packages = self.qmf.getPackages()
@@ -195,7 +206,6 @@ class BrokerManager:
         hostList = self._getHostList(memberList)
         self.qmf.delBroker(self.broker)
         self.broker = None
-        self.brokers = []
 
         idx = 0
         for host in hostList:
@@ -238,9 +248,9 @@ class BrokerManager:
         if self.config._delConn and not found:
             print "Client connection '%s' not found" % self.config._delConn
 
-        for broker in self.brokers:
+        while len(self.brokers):
+            broker = self.brokers.pop()
             self.qmf.delBroker(broker)
-
 
 def main(argv=None):
     if argv is None: argv = sys.argv
@@ -322,6 +332,7 @@ def main(argv=None):
         except KeyboardInterrupt:
             print
         except Exception,e:
+            bm.Disconnect()   # try to deallocate brokers - ignores errors
             if str(e).find("connection aborted") > 0:
                 # we expect this when asking the connected broker to shut down
                 return 0

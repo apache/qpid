@@ -71,6 +71,7 @@ _connTimeout = 10
 
 class RouteManager:
     def __init__(self, localBroker):
+        self.brokerList = {}
         self.local = BrokerURL(localBroker)
         self.remote  = None
         self.qmf = Session()
@@ -79,7 +80,16 @@ class RouteManager:
         self.agent = self.broker.getBrokerAgent()
 
     def disconnect(self):
-        self.qmf.delBroker(self.broker)
+        try:
+            if self.broker:
+                self.qmf.delBroker(self.broker)
+                self.broker = None
+            while len(self.brokerList):
+                b = self.brokerList.popitem()
+                if b[0] != self.local.name():
+                    self.qmf.delBroker(b[1])
+        except:
+            pass  # ignore errors while shutting down
 
     def getLink(self):
         links = self.agent.getObjects(_class="link")
@@ -135,8 +145,7 @@ class RouteManager:
         print
         print "Finding Linked Brokers:"
 
-        brokerList = {}
-        brokerList[self.local.name()] = self.broker
+        self.brokerList[self.local.name()] = self.broker
         print "    %s... Ok" % self.local
 
         added = True
@@ -145,11 +154,11 @@ class RouteManager:
             links = self.qmf.getObjects(_class="link")
             for link in links:
                 url = BrokerURL("%s:%d" % (link.host, link.port))
-                if url.name() not in brokerList:
+                if url.name() not in self.brokerList:
                     print "    %s..." % url.name(),
                     try:
                         b = self.qmf.addBroker("%s:%d" % (link.host, link.port), _connTimeout)
-                        brokerList[url.name()] = b
+                        self.brokerList[url.name()] = b
                         added = True
                         print "Ok"
                     except Exception, e:
@@ -217,10 +226,10 @@ class RouteManager:
                     (toUrl, leftType, left, arrow, fromUrl, rightType, right, bridge.key)
         print
 
-        for broker in brokerList:
-            if broker != self.local.name():
-                self.qmf.delBroker(brokerList[broker])
-
+        while len(self.brokerList):
+            b = self.brokerList.popitem()
+            if b[0] != self.local.name():
+                self.qmf.delBroker(b[1])
 
     def addRoute(self, remoteBroker, exchange, routingKey, tag, excludes, dynamic=False):
         if dynamic and _srclocal:
@@ -463,6 +472,7 @@ else:
 group = cargs[0]
 cmd   = cargs[1]
 
+rm = None
 try:
     rm = RouteManager(localBroker)
     if group == "link":
@@ -528,6 +538,8 @@ try:
             Usage()
 
 except Exception,e:
+    if rm:
+        rm.disconnect()  # try to release broker resources
     print "Failed: %s - %s" % (e.__class__.__name__, e)
     sys.exit(1)
 
