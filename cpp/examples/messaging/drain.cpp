@@ -38,23 +38,31 @@ struct Options : OptionParser
     std::string connectionOptions;
     int timeout;
     bool forever;
+    int count;
 
     Options()
         : OptionParser("Usage: drain [OPTIONS] ADDRESS", "Drains messages from the specified address"),
           url("127.0.0.1"),
           timeout(0),
-          forever(false)
+          forever(false),
+          count(1)
     {
         add("broker,b", url, "url of broker to connect to");
         add("timeout,t", timeout, "timeout in seconds to wait before exiting");
         add("forever,f", forever, "ignore timeout and wait forever");
         add("connection-options", connectionOptions, "connection options string in the form {name1=value1, name2=value2}");
+        add("count,c", count, "number of messages to read before exiting");
     }
 
     Duration getTimeout()
     {
         if (forever) return Duration::FOREVER;
         else return timeout*Duration::SECOND;
+    }
+
+    int getCount()
+    {
+        return count;
     }
     
     bool checkAddress()
@@ -79,7 +87,10 @@ int main(int argc, char** argv)
             Session session = connection.createSession();
             Receiver receiver = session.createReceiver(options.address);
             Duration timeout = options.getTimeout();
+            int count = options.getCount();
             Message message;
+            int i = 0;
+            
             while (receiver.fetch(message, timeout)) {
                 std::cout << "Message(properties=" << message.getProperties() << ", content='" ;
                 if (message.getContentType() == "amqp/map") {
@@ -91,6 +102,8 @@ int main(int argc, char** argv)
                 }
                 std::cout  << "')" << std::endl;
                 session.acknowledge();
+                if (count and ++i == count)
+                    break;
             }
             receiver.close();
             session.close();            
