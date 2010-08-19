@@ -59,18 +59,20 @@ ex: localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost
   console = EventConsole()
   session = Session(console, rcvObjects=False, rcvHeartbeats=False, manageConnections=True)
   brokers = []
-  for host in arguments:
-    brokers.append(session.addBroker(host))
-
   try:
-    while (True):
-      sleep(10)
-  except KeyboardInterrupt:
-    for broker in brokers:
-      session.delBroker(broker)
-    print
-    sys.exit(0)
- 
+    for host in arguments:
+      brokers.append(session.addBroker(host))
+    try:
+      while (True):
+        sleep(10)
+    except KeyboardInterrupt:
+      print
+      sys.exit(0)
+  finally:
+    while len(brokers):
+      b = brokers.pop()
+      session.delBroker(b)
+
 if __name__ == '__main__':
   main()
 
