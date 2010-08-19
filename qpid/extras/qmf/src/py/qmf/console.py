@@ -586,6 +586,20 @@ class Session:
     if self.userBindings and not self.rcvObjects:
       raise Exception("userBindings can't be set unless rcvObjects is set and a console is provided")
 
+  def close(self):
+    """ Releases all resources held by the session.  Must be called by the
+    application when it is done with the Session object.
+    """
+    self.cv.acquire()
+    try:
+      while len(self.brokers):
+        b = self.brokers.pop()
+        try:
+          b._shutdown()
+        except:
+          pass
+    finally:
+      self.cv.release()
 
   def _getBrokerForAgentAddr(self, agent_addr):
     try:
@@ -616,23 +630,23 @@ class Session:
 
 
   def addBroker(self, target="localhost", timeout=None, mechanisms=None):
-    """ Connect to a Qpid broker.  Returns an object of type Broker. """
+    """ Connect to a Qpid broker.  Returns an object of type Broker.
+    Will raise an exception if the session is not managing the connection and
+    the connection setup to the broker fails.
+    """
     url = BrokerURL(target)
     broker = Broker(self, url.host, url.port, mechanisms, url.authName, url.authPass,
                     ssl = url.scheme == URL.AMQPS, connTimeout=timeout)
 
     self.brokers.append(broker)
-    if not self.manageConnections:
-      broker._waitForStable()
-      agent = broker.getBrokerAgent()
-      if agent:
-        agent.getObjects(_class="agent")
     return broker
 
 
   def delBroker(self, broker):
-    """ Disconnect from a broker.  The 'broker' argument is the object
-    returned from the addBroker call """
+    """ Disconnect from a broker, and deallocate the broker proxy object.  The
+    'broker' argument is the object returned from the addBroker call.  Errors
+    are ignored.
+    """
     if self.console:
       for agent in broker.getAgents():
         self.console.delAgent(agent)
@@ -2053,6 +2067,13 @@ class Broker(Thread):
       self.data = data
 
   def __init__(self, session, host, port, authMechs, authUser, authPass, ssl=False, connTimeout=None):
+    """ Create a broker proxy and setup a connection to the broker.  Will raise
+    an exception if the connection fails and the session is not configured to
+    retry connection setup (manageConnections = False).
+
+    Spawns a thread to manage the broker connection.  Call _shutdown() to
+    shutdown the thread when releasing the broker.
+    """
     Thread.__init__(self)
     self.session  = session
     self.host = host
@@ -2071,6 +2092,8 @@ class Broker(Thread):
     self.brokerAgent = None
     self.brokerSupportsV2 = None
     self.rcv_queue = Queue() # for msg received on session
+    self.conn = None
+    self.amqpSession = None
     self.amqpSessionId = "%s.%d.%d" % (platform.uname()[1], os.getpid(), Broker.nextSeq)
     Broker.nextSeq += 1
     self.last_age_check = time()
@@ -2083,10 +2106,20 @@ class Broker(Thread):
     self.start()
     if not self.session.manageConnections:
       # wait for connection setup to complete in subthread.
-      # On failure, propagate exeception to caller
+      # On failure, propagate exception to caller
       self.ready.acquire()
       if self.conn_exc:
+        self._shutdown()   # wait for the subthread to clean up...
         raise self.conn_exc
+      # connection up - wait for stable...
+      try:
+        self._waitForStable()
+        agent = self.getBrokerAgent()
+        if agent:
+          agent.getObjects(_class="agent")
+      except:
+        self._shutdown()   # wait for the subthread to clean up...
+        raise
 
 
   def isConnected(self):
@@ -2173,6 +2206,10 @@ class Broker(Thread):
       self.cv.release()
 
   def _tryToConnect(self):
+    """ Connect to the broker.  Returns True if connection setup completes
+    successfully, otherwise returns False and sets self.error/self.conn_exc
+    with error info.  Does not raise exceptions.
+    """
     self.error = None
     self.conn_exc = None
     try:
@@ -2187,6 +2224,20 @@ class Broker(Thread):
       self.syncRequest = 0
       self.syncResult = None
       self.reqsOutstanding = 1
+
+      try:
+        if self.amqpSession:
+          self.amqpSession.close()
+      except:
+        pass
+      self.amqpSession = None
+
+      try:
+        if self.conn:
+          self.conn.close()
+      except:
+        pass
+      self.conn = None
 
       sock = connect(self.host, self.port)
       sock.settimeout(5)
@@ -2426,22 +2477,27 @@ class Broker(Thread):
     self.amqpSession.message_transfer(destination=dest, message=msg)
 
   def _shutdown(self, _timeout=10):
+    """ Disconnect from a broker, and release its resources.   Errors are
+    ignored.
+    """
     if self.isAlive():
       # kick the thread
       self.canceled = True
       self.rcv_queue.put(Broker._q_item(Broker._q_item.type_wakeup, None))
       self.join(_timeout)
-    if self.connected:
-      self.amqpSession.incoming("rdest").stop()
-      if self.session.console != None:
-        self.amqpSession.incoming("tdest").stop()
-      if self.brokerSupportsV2:
-        self.amqpSession.incoming("v2dest").stop()
-        self.amqpSession.incoming("v2TopicUI").stop()
-        self.amqpSession.incoming("v2TopicHB").stop()
-      self.amqpSession.close()
-      self.conn.close()
-      self.connected = False
+    try:
+      if self.amqpSession:
+        self.amqpSession.close();
+    except:
+      pass
+    self.amqpSession = None
+    try:
+      if self.conn:
+        self.conn.close()
+    except:
+      pass
+    self.conn = None
+    self.connected = False
 
   def _waitForStable(self):
     try:
