@@ -52,6 +52,26 @@ void StateManager::waitFor(std::set<int> desired)
     }
 }
 
+bool StateManager::waitFor(int desired, qpid::sys::Duration timeout)
+{
+    AbsTime end(now(), timeout);
+    Monitor::ScopedLock l(stateLock);
+    while (state != desired && now() < end) {
+        stateLock.wait(end);
+    }
+    return state == desired;
+}
+
+bool StateManager::waitFor(std::set<int> desired, qpid::sys::Duration timeout)
+{
+    AbsTime end(now(), timeout);
+    Monitor::ScopedLock l(stateLock);
+    while (desired.find(state) == desired.end() && now() < end) {
+        stateLock.wait(end);
+    }
+    return desired.find(state) != desired.end();
+}
+
 
 void StateManager::setState(int s)
 {
