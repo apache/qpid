@@ -102,7 +102,7 @@ int main(int argc, char** argv)
                 }
                 std::cout  << "')" << std::endl;
                 session.acknowledge();
-                if (count && ++i == count)
+                if (count && (++i == count))
                     break;
             }
             receiver.close();
@@ -116,5 +116,3 @@ int main(int argc, char** argv)
     }
     return 1;   
 }
-
-
