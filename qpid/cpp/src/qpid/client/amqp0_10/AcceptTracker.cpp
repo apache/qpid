@@ -30,6 +30,14 @@ void AcceptTracker::State::accept()
     unaccepted.clear();
 }
 
+void AcceptTracker::State::accept(qpid::framing::SequenceNumber id)
+{
+    if (unaccepted.contains(id)) {
+        unaccepted.remove(id);
+        unconfirmed.add(id);
+    }
+}
+
 void AcceptTracker::State::release()
 {
     unaccepted.clear();
@@ -61,6 +69,18 @@ void AcceptTracker::accept(qpid::client::AsyncSession& session)
     record.accepted = aggregateState.unaccepted;
     pending.push_back(record);
     aggregateState.accept();
+}
+
+void AcceptTracker::accept(qpid::framing::SequenceNumber id, qpid::client::AsyncSession& session)
+{
+    for (StateMap::iterator i = destinationState.begin(); i != destinationState.end(); ++i) {
+        i->second.accept(id);
+    }
+    Record record;
+    record.accepted.add(id);
+    record.status = session.messageAccept(record.accepted);
+    pending.push_back(record);
+    aggregateState.accept(id);
 }
 
 void AcceptTracker::release(qpid::client::AsyncSession& session)

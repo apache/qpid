@@ -42,6 +42,7 @@ class AcceptTracker
   public:
     void delivered(const std::string& destination, const qpid::framing::SequenceNumber& id);
     void accept(qpid::client::AsyncSession&);
+    void accept(qpid::framing::SequenceNumber, qpid::client::AsyncSession&);
     void release(qpid::client::AsyncSession&);
     uint32_t acceptsPending();
     uint32_t acceptsPending(const std::string& destination);
@@ -55,12 +56,13 @@ class AcceptTracker
          */
         qpid::framing::SequenceSet unaccepted;
         /**
-         * ids of messages for which an accpet has been issued but not
+         * ids of messages for which an accept has been issued but not
          * yet confirmed as completed
          */
         qpid::framing::SequenceSet unconfirmed;
 
         void accept();
+        void accept(qpid::framing::SequenceNumber);
         void release();
         uint32_t acceptsPending();
         void completed(qpid::framing::SequenceSet&);
