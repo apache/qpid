@@ -50,7 +50,7 @@ MACRO (install_pdb theLibrary theComponent)
                 ${library_pdb}
                 DESTINATION ${QPID_INSTALL_LIBDIR}/ReleasePDB
                 COMPONENT ${theComponent}
-				OPTIONAL
+                OPTIONAL
                 CONFIGURATIONS Release|MinSizeRel)
         install (PROGRAMS
                 ${library_pdb}
@@ -1080,9 +1080,9 @@ set (qmfengine_SOURCES
      qmf/engine/ValueImpl.h
     )
 if (NOT WIN32)
-	list(APPEND qmfengine_SOURCES qmf/engine/ResilientConnection.cpp)
+    list(APPEND qmfengine_SOURCES qmf/engine/ResilientConnection.cpp)
 endif (NOT WIN32)
-add_msvc_version_full (qmfengine library dll 1 0 0 1 1 0 0 1)
+add_msvc_version (qmfengine library dll)
 
 add_library (qmfengine SHARED ${qmfengine_SOURCES})
 target_link_libraries (qmfengine qpidclient)
