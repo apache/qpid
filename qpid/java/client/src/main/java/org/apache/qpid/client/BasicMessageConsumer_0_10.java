@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
@@ -113,6 +114,16 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         else if (getSession().prefetch())
         {
             capacity = _0_10session.getAMQConnection().getMaxPrefetch();
+        }
+        
+        if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType()) 
+        {
+            
+            if (destination.getLink() == null || destination.getLink().getName() == null)
+            {
+                _destination = destination.copyDestination();
+                _destination.setQueueName(null);
+            }
         }
         
     }
