@@ -120,9 +120,9 @@ namespace Messaging {
 	}
 
 
-    // Create from received message
-    Message::Message(::qpid::messaging::Message * msgp) :
-        messagep(msgp)
+	// unmanaged clone
+    Message::Message(const ::qpid::messaging::Message & msgp) :
+        messagep(new ::qpid::messaging::Message(msgp))
     {
     }
 
