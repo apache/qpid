@@ -157,7 +157,14 @@ void ConnectionHandler::close()
       case OPEN:
         if (setState(CLOSING, OPEN)) {
             proxy.close(200, OK);
-            waitFor(FINISHED);//FINISHED = CLOSED or FAILED
+            if (ConnectionSettings::heartbeat) {
+                //heartbeat timer is turned off at this stage, so don't wait indefinately
+                if (!waitFor(FINISHED, qpid::sys::Duration(ConnectionSettings::heartbeat * qpid::sys::TIME_SEC))) {
+                    QPID_LOG(warning, "Connection close timed out");
+                }
+            } else {
+                waitFor(FINISHED);//FINISHED = CLOSED or FAILED
+            }
         }
         //else, state was changed from open after we checked, can only
         //change to failed or closed, so nothing to do
