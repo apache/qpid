@@ -76,6 +76,10 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      */
     QPID_MESSAGING_EXTERN void acknowledge(bool sync=false);
     /**
+     * Acknowledges the specified message.
+     */
+    QPID_MESSAGING_EXTERN void acknowledge(Message&, bool sync=false);
+    /**
      * Rejects the specified message. This will prevent the message
      * being redelivered. This must be called before the message is
      * acknowledged.
