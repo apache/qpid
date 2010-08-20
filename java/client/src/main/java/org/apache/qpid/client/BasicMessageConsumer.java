@@ -58,7 +58,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     private final boolean _noLocal;
 
-    private final AMQDestination _destination;
+    protected AMQDestination _destination;
 
     /**
      * When true indicates that a blocking receive call is in progress
