@@ -63,6 +63,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void acknowledge(bool sync);
     void reject(qpid::messaging::Message&);
     void release(qpid::messaging::Message&);
+    void acknowledge(qpid::messaging::Message& msg);
     void close();
     void sync(bool block);
     qpid::messaging::Sender createSender(const qpid::messaging::Address& address);
@@ -137,6 +138,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void commitImpl();
     void rollbackImpl();
     void acknowledgeImpl();
+    void acknowledgeImpl(qpid::messaging::Message&);
     void rejectImpl(qpid::messaging::Message&);
     void releaseImpl(qpid::messaging::Message&);
     void closeImpl();
@@ -199,6 +201,14 @@ class SessionImpl : public qpid::messaging::SessionImpl
 
         Release(SessionImpl& i, qpid::messaging::Message& m) : Command(i), message(m) {}
         void operator()() { impl.releaseImpl(message); }
+    };
+
+    struct Acknowledge1 : Command
+    {
+        qpid::messaging::Message& message;
+        
+        Acknowledge1(SessionImpl& i, qpid::messaging::Message& m) : Command(i), message(m) {}
+        void operator()() { impl.acknowledgeImpl(message); }
     };
     
     struct CreateSender;
