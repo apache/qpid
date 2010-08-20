@@ -41,6 +41,8 @@ public:
     void waitForStateChange(int current);
     void waitFor(std::set<int> states);
     void waitFor(int state);
+    bool waitFor(std::set<int> states, qpid::sys::Duration);
+    bool waitFor(int state, qpid::sys::Duration);
 };
 
 }}
