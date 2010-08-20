@@ -69,14 +69,14 @@ namespace Messaging {
         // Create from byte array slice
 		Message(array<System::Byte> ^ bytes, int offset, int size);
 
-        // Create from received message
-        Message(::qpid::messaging::Message * msgp);
-
         ~Message();
         !Message();
 
         // Copy constructor
         Message(const Message ^ message);
+
+	    // unmanaged clone
+        Message(const ::qpid::messaging::Message & msgp);
 
         // assignment operator
         Message % operator=(const Message % rhs)
@@ -87,7 +87,8 @@ namespace Messaging {
             }
             else
             {
-                delete messagep;
+                if (NULL != messagep)
+                    delete messagep;
                 messagep = new ::qpid::messaging::Message(
                     *(const_cast<Message %>(rhs).NativeMessage) );
             }
@@ -117,7 +118,7 @@ namespace Messaging {
                 const ::qpid::messaging::Address & addrp =
                     messagep->::qpid::messaging::Message::getReplyTo();
 
-                return gcnew Address(const_cast<::qpid::messaging::Address *>(&addrp));
+                return gcnew Address(addrp);
             }
         }
 
@@ -298,6 +299,7 @@ namespace Messaging {
                     System::String^, System::Object^> ^ dict =
                     gcnew System::Collections::Generic::Dictionary<
                               System::String^, System::Object^> ;
+
 
                 TypeTranslator::NativeToManaged(map, dict);
 

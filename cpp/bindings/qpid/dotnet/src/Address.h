@@ -68,9 +68,8 @@ namespace Messaging {
         // copy constructor
         Address(const Address ^ address);
 
-        // Create from received address
-        // The new Address object consumes the unmanaged pointer
-        Address(::qpid::messaging::Address * addrp);
+        // unmanaged clone
+        Address(const ::qpid::messaging::Address & addrp);
 
         ~Address();
         !Address();
@@ -84,7 +83,8 @@ namespace Messaging {
             }
             else
             {
-                delete addressp;
+                if (NULL != addressp)
+                    delete addressp;
                 addressp = new ::qpid::messaging::Address(
                     *(const_cast<Address %>(rhs).NativeAddress) );
             }

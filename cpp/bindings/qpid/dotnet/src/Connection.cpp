@@ -132,16 +132,13 @@ namespace Messaging {
     Session ^ Connection::CreateTransactionalSession(System::String ^ name)
     {
         System::Exception          ^ newException = nullptr;
-        ::qpid::messaging::Session * sessionp     = NULL;
         Session                    ^ newSession   = nullptr;
 
         try
         {
-            // allocate native session
-            sessionp = new ::qpid::messaging::Session ;
-
             // create native session
-            *sessionp = connectionp->createTransactionalSession(QpidMarshal::ToNative(name));
+            ::qpid::messaging::Session sessionp = 
+				connectionp->createTransactionalSession(QpidMarshal::ToNative(name));
 
             // create managed session
             newSession = gcnew Session(sessionp, this);
@@ -159,13 +156,6 @@ namespace Messaging {
                 if (newSession != nullptr)
 				{
 					delete newSession;
-				}
-				else
-				{
-	                if (sessionp != NULL)
-		            {
-			            delete sessionp;
-				    }
 				}
             }
         }
@@ -191,16 +181,13 @@ namespace Messaging {
     Session ^ Connection::CreateSession(System::String ^ name)
     {
         System::Exception          ^ newException = nullptr;
-        ::qpid::messaging::Session * sessionp     = NULL;
         Session                    ^ newSession   = nullptr;
 
         try
         {
-            // allocate native session
-            sessionp = new ::qpid::messaging::Session ;
-
             // create native session
-            *sessionp = connectionp->createSession(QpidMarshal::ToNative(name));
+            ::qpid::messaging::Session sessionp = 
+				connectionp->createSession(QpidMarshal::ToNative(name));
 
             // create managed session
             newSession = gcnew Session(sessionp, this);
@@ -219,13 +206,6 @@ namespace Messaging {
 				{
 					delete newSession;
 				}
-				else
-				{
-					if (sessionp != NULL)
-					{
-						delete sessionp;
-					}
-				}
             }
         }
 
@@ -241,14 +221,14 @@ namespace Messaging {
     Session ^ Connection::GetSession(System::String ^ name)
     {
         System::Exception          ^ newException = nullptr;
-        ::qpid::messaging::Session * sess         = NULL;
         Session                    ^ newSession   = nullptr;
       
         try
         {
             const std::string n = QpidMarshal::ToNative(name);
 
-            *sess = connectionp->::qpid::messaging::Connection::getSession(n);
+            ::qpid::messaging::Session sess = 
+				connectionp->::qpid::messaging::Connection::getSession(n);
             
             newSession = gcnew Session(sess, this);
         }
@@ -265,13 +245,6 @@ namespace Messaging {
 				if (newSession != nullptr)
 				{
 					delete newSession;
-				}
-				else
-				{
-					if (sess != NULL)
-					{
-						delete sess;
-					}
 				}
             }
         }

@@ -35,8 +35,11 @@ namespace Org.Apache.Qpid.Messaging.examples
         static void Main(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
+            string address = "message_queue; {create: always}";
             if (args.Length > 0)
                 url = args[0];
+            if (args.Length > 1)
+                address = args[1];
 
             //
             // Create and open an AMQP connection to the broker URL
@@ -49,7 +52,7 @@ namespace Org.Apache.Qpid.Messaging.examples
             // routing key "map_example".
             //
             Session session = connection.CreateSession();
-            Receiver receiver = session.CreateReceiver("amq.direct/map_example");
+            Receiver receiver = session.CreateReceiver(address);
 
             //
             // Fetch the message from the broker
@@ -61,7 +64,7 @@ namespace Org.Apache.Qpid.Messaging.examples
             //
             Dictionary<string, object> content = new Dictionary<string, object>();
             message.GetContent(content);
-            Console.WriteLine("Received: {0}", message.AsString(content));
+            Console.WriteLine("{0}", message.AsString(content));
 
             //
             // Acknowledge the receipt of all received messages.

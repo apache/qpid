@@ -39,8 +39,11 @@ namespace Org.Apache.Qpid.Messaging.examples
         static void Main(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
+            string address = "message_queue; {create: always}";
             if (args.Length > 0)
                 url = args[0];
+            if (args.Length > 1)
+                address = args[1];
 
             //
             // Create and open an AMQP connection to the broker URL
@@ -49,11 +52,10 @@ namespace Org.Apache.Qpid.Messaging.examples
             connection.Open();
 
             //
-            // Create a session and a sender to the direct exchange using the
-            // routing key "map_example".
+            // Create a session and a sender to the direct exchange
             //
             Session session = connection.CreateSession();
-            Sender sender = session.CreateSender("amq.direct/map_example");
+            Sender sender = session.CreateSender(address);
 
             //
             // Create structured content for the message.  This example builds a

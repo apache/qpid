@@ -59,7 +59,8 @@ namespace Messaging {
         void Cleanup();
 
     public:
-        Sender(::qpid::messaging::Sender * s,
+        // unmanaged clone
+        Sender(const ::qpid::messaging::Sender & s,
             Session ^ sessRef);
         
         // copy constructor
@@ -77,7 +78,8 @@ namespace Messaging {
             }
             else
             {
-                delete senderp;
+                if (NULL != senderp)
+                    delete senderp;
                 senderp = new ::qpid::messaging::Sender(
                     *(const_cast<Sender %>(rhs).NativeSender));
                 parentSession = rhs.parentSession;

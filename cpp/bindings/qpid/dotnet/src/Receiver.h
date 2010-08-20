@@ -61,11 +61,16 @@ namespace Messaging {
         ::qpid::messaging::Receiver * receiverp;
 
     public:
-        Receiver(::qpid::messaging::Receiver * r,
+
+        // unmanaged clone
+        Receiver(const ::qpid::messaging::Receiver & r,
             Session ^ sessRef);
 
         // copy constructor
         Receiver(const Receiver ^ receiver);
+
+        // unmanaged clone
+        // undefined
 
         ~Receiver();
         !Receiver();
@@ -79,7 +84,8 @@ namespace Messaging {
             }
             else
             {
-                delete receiverp;
+                if (NULL != receiverp)
+                    delete receiverp;
                 receiverp = new ::qpid::messaging::Receiver(
                     *(const_cast<Receiver %>(rhs).NativeReceiver));
                 parentSession = rhs.parentSession;
@@ -93,16 +99,18 @@ namespace Messaging {
         }
 
         // Get(message)
-        bool Get(Message ^ mmsgp);
-        bool Get(Message ^ mmsgp, Duration ^ durationp);
+        // TBD
+        //bool Get(Message ^ mmsgp);
+        //bool Get(Message ^ mmsgp, Duration ^ durationp);
 
         // message = Get()
         Message ^ Get();
         Message ^ Get(Duration ^ durationp);
 
         // Fetch(message)
-        bool Fetch(Message ^ mmsgp);
-        bool Fetch(Message ^ mmsgp, Duration ^ duration);
+        // TBD
+        //bool Fetch(Message ^ mmsgp);
+        //bool Fetch(Message ^ mmsgp, Duration ^ duration);
 
         // message = Fetch()
         Message ^ Fetch();

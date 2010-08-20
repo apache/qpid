@@ -45,10 +45,10 @@ namespace Messaging {
     /// Session is a managed wrapper for a ::qpid::messaging::Session
     /// </summary>
 
-    // constructor
-    Session::Session(::qpid::messaging::Session * sp, 
+    // unmanaged clone
+    Session::Session(const ::qpid::messaging::Session & session, 
                      Org::Apache::Qpid::Messaging::Connection ^ connRef) :
-        sessionp(sp),
+        sessionp(new ::qpid::messaging::Session (session)),
         parentConnectionp(connRef)
     {
     }
@@ -180,11 +180,10 @@ namespace Messaging {
         try
         {
             ::qpid::messaging::Duration dur(timeout->Milliseconds);
-            ::qpid::messaging::Receiver * rcvr = new ::qpid::messaging::Receiver;
 
-            *rcvr = sessionp->::qpid::messaging::Session::nextReceiver(dur);
+            ::qpid::messaging::Receiver receiver = sessionp->::qpid::messaging::Session::nextReceiver(dur);
 
-            Receiver ^ newRcvr = gcnew Receiver(rcvr, this);
+            Receiver ^ newRcvr = gcnew Receiver(receiver, this);
 
             return newRcvr;
         } 
@@ -210,19 +209,16 @@ namespace Messaging {
     Sender ^ Session::CreateSender  (System::String ^ address)
     {
         System::Exception          ^ newException = nullptr;
-        ::qpid::messaging::Sender  * senderp      = NULL;
         Sender                     ^ newSender    = nullptr;
 
         try
         {
-            // allocate a native sender
-            ::qpid::messaging::Sender * senderp = new ::qpid::messaging::Sender ;
-
             // create the sender
-            *senderp = sessionp->::qpid::messaging::Session::createSender(QpidMarshal::ToNative(address));
+            ::qpid::messaging::Sender sender = 
+				sessionp->::qpid::messaging::Session::createSender(QpidMarshal::ToNative(address));
 
             // create a managed sender
-            newSender = gcnew Sender(senderp, this);
+            newSender = gcnew Sender(sender, this);
         } 
         catch (const ::qpid::types::Exception & error) 
         {
@@ -236,13 +232,6 @@ namespace Messaging {
 				if (newSender != nullptr)
 				{
 					delete newSender;
-				}
-				else
-				{
-					if (senderp != NULL)
-					{
-						delete senderp;
-					}
 				}
             }
         }
@@ -258,19 +247,16 @@ namespace Messaging {
     Sender ^ Session::CreateSender  (Address ^ address)
     {
         System::Exception          ^ newException = nullptr;
-        ::qpid::messaging::Sender  * senderp         = NULL;
-        Sender                     ^ newSender       = nullptr;
+        Sender                     ^ newSender    = nullptr;
 
         try
         {
             // allocate a native sender
-            ::qpid::messaging::Sender * senderp = new ::qpid::messaging::Sender ;
-
-            // create the sender
-            *senderp = sessionp->::qpid::messaging::Session::createSender(*(address->NativeAddress));
+            ::qpid::messaging::Sender sender = 
+				sessionp->::qpid::messaging::Session::createSender(*(address->NativeAddress));
 
             // create a managed sender
-            newSender = gcnew Sender(senderp, this);
+            newSender = gcnew Sender(sender, this);
         } 
         catch (const ::qpid::types::Exception & error) 
         {
@@ -284,13 +270,6 @@ namespace Messaging {
 				if (newSender != nullptr)
 				{
 					delete newSender;
-				}
-				else
-				{
-					if (senderp != NULL)
-					{
-						delete senderp;
-					}
 				}
             }
         }
@@ -306,19 +285,16 @@ namespace Messaging {
 	Receiver ^ Session::CreateReceiver(System::String ^ address)
     {
         System::Exception           ^ newException = nullptr;
-        ::qpid::messaging::Receiver * receiverp    = NULL;
         Receiver                    ^ newReceiver  = nullptr;
 
         try 
 		{
-            // allocate a native receiver
-            receiverp = new ::qpid::messaging::Receiver;
-
             // create the receiver
-            *receiverp = sessionp->createReceiver(QpidMarshal::ToNative(address));
+            ::qpid::messaging::Receiver receiver = 
+				sessionp->createReceiver(QpidMarshal::ToNative(address));
 
             // create a managed receiver
-            newReceiver = gcnew Receiver(receiverp, this);
+            newReceiver = gcnew Receiver(receiver, this);
         } 
         catch (const ::qpid::types::Exception & error) 
 		{
@@ -332,13 +308,6 @@ namespace Messaging {
 				if (newReceiver != nullptr)
 				{
 					delete newReceiver;
-				}
-				else
-				{
-					if (receiverp != NULL)
-					{
-						delete receiverp;
-					}
 				}
             }
         }
@@ -354,19 +323,16 @@ namespace Messaging {
 	Receiver ^ Session::CreateReceiver(Address ^ address)
     {
         System::Exception           ^ newException = nullptr;
-        ::qpid::messaging::Receiver * receiverp    = NULL;
         Receiver                    ^ newReceiver  = nullptr;
 
         try 
 		{
-            // allocate a native receiver
-            receiverp = new ::qpid::messaging::Receiver;
-
             // create the receiver
-            *receiverp = sessionp->createReceiver(*(address->NativeAddress));
+            ::qpid::messaging::Receiver receiver =
+				sessionp->createReceiver(*(address->NativeAddress));
 
             // create a managed receiver
-            newReceiver = gcnew Receiver(receiverp, this);
+            newReceiver = gcnew Receiver(receiver, this);
         } 
         catch (const ::qpid::types::Exception & error) 
 		{
@@ -380,58 +346,6 @@ namespace Messaging {
 				if (newReceiver != nullptr)
 				{
 					delete newReceiver;
-				}
-				else
-				{
-					if (receiverp != NULL)
-					{
-						delete receiverp;
-					}
-				}
-            }
-        }
-        if (newException != nullptr) 
-		{
-	        throw newException;
-		}
-
-        return newReceiver;
-    }
-
-
-    Receiver ^ Session::CreateReceiver()
-    {
-        System::Exception           ^ newException = nullptr;
-        ::qpid::messaging::Receiver * receiverp    = NULL;
-        Receiver                    ^ newReceiver  = nullptr;
-
-        try
-        {
-            // allocate a native receiver
-            receiverp = new ::qpid::messaging::Receiver;
-
-            // create a managed receiver
-            newReceiver = gcnew Receiver(receiverp, this);
-        } 
-        catch (const ::qpid::types::Exception & error) 
-        {
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        }
-        finally 
-		{
-            if (newException != nullptr)
-			{
-				if (newReceiver != nullptr)
-				{
-					delete newReceiver;
-				}
-				else
-				{
-					if (receiverp != NULL)
-					{
-						delete receiverp;
-					}
 				}
             }
         }
@@ -447,14 +361,12 @@ namespace Messaging {
     Sender ^ Session::GetSender(System::String ^ name)
     {
         System::Exception           ^ newException = nullptr;
-        ::qpid::messaging::Sender   * senderp      = NULL;
         Sender                      ^ newSender    = nullptr;
 
         try
         {
-            senderp = new ::qpid::messaging::Sender;
-
-            *senderp = sessionp->::qpid::messaging::Session::getSender(QpidMarshal::ToNative(name));
+            ::qpid::messaging::Sender senderp = 
+				sessionp->::qpid::messaging::Session::getSender(QpidMarshal::ToNative(name));
 
             newSender = gcnew Sender(senderp, this);
         } 
@@ -470,13 +382,6 @@ namespace Messaging {
 				if (newSender != nullptr)
 				{
 					delete newSender;
-				}
-				else
-				{
-					if (senderp != NULL)
-					{
-						delete senderp;
-					}
 				}
             }
         }
@@ -493,16 +398,14 @@ namespace Messaging {
     Receiver ^ Session::GetReceiver(System::String ^ name)
     {
         System::Exception           ^ newException = nullptr;
-        ::qpid::messaging::Receiver * receiverp    = NULL;
         Receiver                    ^ newReceiver  = nullptr;
 
         try
         {
-            receiverp = new ::qpid::messaging::Receiver;
+            ::qpid::messaging::Receiver receiver = 
+                sessionp->::qpid::messaging::Session::getReceiver(QpidMarshal::ToNative(name));
 
-            *receiverp = sessionp->::qpid::messaging::Session::getReceiver(QpidMarshal::ToNative(name));
-
-            newReceiver = gcnew Receiver(receiverp, this);
+            newReceiver = gcnew Receiver(receiver, this);
         } 
         catch (const ::qpid::types::Exception & error) 
         {
@@ -516,13 +419,6 @@ namespace Messaging {
 				if (newReceiver != nullptr)
 				{
 					delete newReceiver;
-				}
-				else
-				{
-					if (receiverp != NULL)
-					{
-						delete receiverp;
-					}
 				}
             }
         }

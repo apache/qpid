@@ -60,6 +60,9 @@ namespace Messaging {
         // copy constructor
         Connection(const Connection ^ connection);
 
+		// unmanaged clone
+		// not defined
+
         ~Connection();
         !Connection();
 
@@ -72,7 +75,8 @@ namespace Messaging {
             }
             else
             {
-                delete connectionp;
+                if (NULL != connectionp)
+                    delete connectionp;
                 connectionp = new ::qpid::messaging::Connection(
                     *(const_cast<Connection %>(rhs).NativeConnection) );
             }
@@ -82,15 +86,6 @@ namespace Messaging {
         property ::qpid::messaging::Connection * NativeConnection
         {
             ::qpid::messaging::Connection * get () { return connectionp; }
-        }
-
-        property System::String ^ NPAddress
-        {
-            System::String ^ get () 
-            {
-                System::IntPtr i((void *)connectionp);
-                return gcnew System::String(i.ToString());
-            }
         }
 
         void SetOption(System::String ^ name, System::Object ^ value);
