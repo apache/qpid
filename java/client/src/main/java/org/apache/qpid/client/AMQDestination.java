@@ -62,6 +62,8 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected boolean _isAutoDelete;
 
     private boolean _browseOnly;
+    
+    private boolean _isAddressResolved;
 
     private AMQShortString _queueName;
 
@@ -310,6 +312,11 @@ public abstract class AMQDestination implements Destination, Referenceable
     public DestSyntax getDestSyntax() 
     {
         return _destSyntax;
+    }
+    
+    protected void setDestSyntax(DestSyntax syntax)
+    {
+        _destSyntax = syntax;
     }
     
     public AMQShortString getEncodedName()
@@ -736,6 +743,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         return _address;
     }
     
+    protected void setAddress(Address addr) {
+        _address = addr;
+    }
+    
     public int getAddressType(){
         return _addressType;
     }
@@ -746,6 +757,10 @@ public abstract class AMQDestination implements Destination, Referenceable
     
     public String getAddressName() {
         return _name;
+    }
+    
+    public void setAddressName(String name){
+        _name = name;
     }
 
     public String getSubject() {
@@ -763,15 +778,23 @@ public abstract class AMQDestination implements Destination, Referenceable
     public void setCreate(AddressOption option) {
         _create = option;
     }
-
+   
     public AddressOption getAssert() {
         return _assert;
     }
 
+    public void setAssert(AddressOption option) {
+        _assert = option;
+    }
+    
     public AddressOption getDelete() {
         return _delete;
     }
-    
+
+    public void setDelete(AddressOption option) {
+        _delete = option;
+    }
+
     public Node getTargetNode()
     {
         return _targetNode;
@@ -817,6 +840,16 @@ public abstract class AMQDestination implements Destination, Referenceable
         this._routingKey = rk;
     }
     
+    public boolean isAddressResolved()
+    {
+        return _isAddressResolved;
+    }
+
+    public void setAddressResolved(boolean addressResolved)
+    {
+        _isAddressResolved = addressResolved;
+    }
+    
     private static Address createAddressFromString(String str)
     {
         return Address.parse(str);
@@ -860,5 +893,39 @@ public abstract class AMQDestination implements Destination, Referenceable
     public boolean isBrowseOnly()
     {
         return _browseOnly;
+    }
+    
+    public void setBrowseOnly(boolean b)
+    {
+        _browseOnly = b;
+    }
+    
+    public AMQDestination copyDestination()
+    {
+        AMQDestination dest = 
+            new AMQAnyDestination(_exchangeName,
+                                  _exchangeClass,
+                                  _routingKey,
+                                  _isExclusive, 
+                                  _isAutoDelete,
+                                  _queueName, 
+                                  _isDurable,
+                                  _bindingKeys
+                                  );
+        
+        dest.setDestSyntax(_destSyntax);
+        dest.setAddress(_address);
+        dest.setAddressName(_name);
+        dest.setSubject(_subject);
+        dest.setCreate(_create); 
+        dest.setAssert(_assert); 
+        dest.setDelete(_create); 
+        dest.setBrowseOnly(_browseOnly);
+        dest.setAddressType(_addressType);
+        dest.setTargetNode(_targetNode);
+        dest.setSourceNode(_sourceNode);
+        dest.setLink(_link);
+        dest.setAddressResolved(_isAddressResolved);
+        return dest;        
     }
 }

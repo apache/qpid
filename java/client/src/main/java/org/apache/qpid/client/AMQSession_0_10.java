@@ -592,7 +592,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                              (isTopic || consumer.getMessageSelector() == null || 
                               consumer.getMessageSelector().equals(""));
             }
-
+            
             getQpidSession().messageSubscribe
                 (queueName.toString(), String.valueOf(tag),
                  getAcknowledgeMode() == NO_ACKNOWLEDGE ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
@@ -1168,62 +1168,80 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                                               boolean isConsumer,
                                               boolean noWait) throws AMQException
     {
-        boolean assertNode = (dest.getAssert() == AddressOption.ALWAYS) || 
-                             (isConsumer && dest.getAssert() == AddressOption.RECEIVER) ||
-                             (!isConsumer && dest.getAssert() == AddressOption.SENDER);
-        
-        boolean createNode = (dest.getCreate() == AddressOption.ALWAYS) ||
-                             (isConsumer && dest.getCreate() == AddressOption.RECEIVER) ||
-                             (!isConsumer && dest.getCreate() == AddressOption.SENDER);
-                    
-        
-        
-        int type = resolveAddressType(dest);
-        
-        switch (type)
+        if (dest.isAddressResolved())
+        {           
+            if (isConsumer && AMQDestination.TOPIC_TYPE == dest.getAddressType()) 
+            {
+                createSubscriptionQueue(dest);
+            }
+        }
+        else
         {
-            case AMQDestination.QUEUE_TYPE: 
+            boolean assertNode = (dest.getAssert() == AddressOption.ALWAYS) || 
+                                 (isConsumer && dest.getAssert() == AddressOption.RECEIVER) ||
+                                 (!isConsumer && dest.getAssert() == AddressOption.SENDER);
+            
+            boolean createNode = (dest.getCreate() == AddressOption.ALWAYS) ||
+                                 (isConsumer && dest.getCreate() == AddressOption.RECEIVER) ||
+                                 (!isConsumer && dest.getCreate() == AddressOption.SENDER);
+                        
+            
+            
+            int type = resolveAddressType(dest);
+            
+            switch (type)
             {
-                if (isQueueExist(dest,(QueueNode)dest.getSourceNode(),assertNode))
+                case AMQDestination.QUEUE_TYPE: 
                 {
-                    setLegacyFiledsForQueueType(dest);
-                    break;
+                    if (isQueueExist(dest,(QueueNode)dest.getSourceNode(),assertNode))
+                    {
+                        setLegacyFiledsForQueueType(dest);
+                        break;
+                    }
+                    else if(createNode)
+                    {
+                        setLegacyFiledsForQueueType(dest);
+                        send0_10QueueDeclare(dest,null,false,noWait);
+                        break;
+                    }                
                 }
-                else if(createNode)
+                
+                case AMQDestination.TOPIC_TYPE: 
                 {
-                    setLegacyFiledsForQueueType(dest);
-                    send0_10QueueDeclare(dest,null,false,noWait);
-                    break;
-                }                
+                    if (isExchangeExist(dest,(ExchangeNode)dest.getTargetNode(),assertNode))
+                    {                    
+                        setLegacyFiledsForTopicType(dest);
+                        verifySubject(dest);
+                        if (isConsumer && !isQueueExist(dest,(QueueNode)dest.getSourceNode(),true)) 
+                        {  
+                            createSubscriptionQueue(dest);
+                        }
+                        break;
+                    }
+                    else if(createNode)
+                    {                    
+                        setLegacyFiledsForTopicType(dest);
+                        verifySubject(dest);
+                        sendExchangeDeclare(dest.getAddressName(), 
+                                dest.getExchangeClass().asString(),
+                                dest.getTargetNode().getAlternateExchange(),
+                                dest.getTargetNode().getDeclareArgs(),
+                                false);        
+                        if (isConsumer && !isQueueExist(dest,(QueueNode)dest.getSourceNode(),true)) 
+                        {
+                            createSubscriptionQueue(dest);
+                        }
+                        break;
+                    }
+                }
+                
+                default:
+                    throw new AMQException(
+                            "The name '" + dest.getAddressName() +
+                            "' supplied in the address doesn't resolve to an exchange or a queue");
             }
             
-            case AMQDestination.TOPIC_TYPE: 
-            {
-                if (isExchangeExist(dest,(ExchangeNode)dest.getTargetNode(),assertNode))
-                {                    
-                    setLegacyFiledsForTopicType(dest);
-                    verifySubject(dest);
-                    if (isConsumer) {createSubscriptionQueue(dest);}
-                    break;
-                }
-                else if(createNode)
-                {                    
-                    setLegacyFiledsForTopicType(dest);
-                    verifySubject(dest);
-                    sendExchangeDeclare(dest.getAddressName(), 
-                            dest.getExchangeClass().asString(),
-                            dest.getTargetNode().getAlternateExchange(),
-                            dest.getTargetNode().getDeclareArgs(),
-                            false);        
-                    if (isConsumer) {createSubscriptionQueue(dest);}
-                    break;
-                }
-            }
-            
-            default:
-                throw new AMQException(
-                        "The name '" + dest.getAddressName() +
-                        "' supplied in the address doesn't resolve to an exchange or a queue");
+            dest.setAddressResolved(true);
         }
     }
     
@@ -1251,6 +1269,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 //both a queue and exchange exist for that name
                 throw new AMQException("Ambiguous address, please specify queue or topic as node type");
             }
+            dest.setAddressType(type);
             dest.rebuildTargetAndSourceNodes(type);
             return type;
         }        
@@ -1277,7 +1296,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private void createSubscriptionQueue(AMQDestination dest) throws AMQException
     {
         QueueNode node = (QueueNode)dest.getSourceNode();  // source node is never null
-        if (dest.getQueueName() == null || !isQueueExist(dest,node,true))
+                
+        if (dest.getQueueName() == null)
         {
             if (dest.getLink() != null && dest.getLink().getName() != null) 
             {
