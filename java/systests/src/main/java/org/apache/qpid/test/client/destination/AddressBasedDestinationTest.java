@@ -440,6 +440,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         Session jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
         
         AMQDestination topic1 = new AMQAnyDestination("ADDR:amq.topic/topic1; {link:{name: queue1}}");
+        
         MessageProducer prod = jmsSession.createProducer(topic1);
         
         Message m = jmsSession.createTextMessage("Hello");
@@ -675,4 +676,39 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         
         assertNull("Should not receive anymore messages",browseCons.receive(500));
     }
+    
+    /**
+     * Test Goal : Verify that unique subscription queues are created when consumers are
+     *             created using the same destination except when the subscription queue
+     *             has a name.
+     */
+    public void testSubscriptionForSameDestination() throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);        
+        Destination dest = ssn.createTopic("ADDR:amq.topic/foo");
+        MessageConsumer consumer1 = ssn.createConsumer(dest);
+        MessageConsumer consumer2 = ssn.createConsumer(dest);
+        MessageProducer prod = ssn.createProducer(dest);
+        
+        prod.send(ssn.createTextMessage("A"));
+        TextMessage m = (TextMessage)consumer1.receive(1000);
+        assertEquals("Consumer1 should recieve message A",m.getText(),"A");
+        m = (TextMessage)consumer2.receive(1000);
+        assertEquals("Consumer2 should recieve message A",m.getText(),"A");
+        
+        consumer1.close();
+        consumer2.close();
+        
+        dest = ssn.createTopic("ADDR:amq.topic/foo; { link: {name: my-queue}}");
+        consumer1 = ssn.createConsumer(dest);
+        try
+        {
+            consumer2 = ssn.createConsumer(dest);
+            fail("An exception should be thrown as 'my-queue' already have an exclusive subscriber");
+        }
+        catch(Exception e)
+        {            
+        }
+    }
+    
 }
