@@ -802,6 +802,7 @@ set_target_properties (qpidtypes PROPERTIES VERSION ${qpidc_version})
 install(TARGETS qpidtypes
   DESTINATION ${QPID_INSTALL_LIBDIR}
   COMPONENT ${QPID_COMPONENT_COMMON})
+install_pdb (qpidtypes ${QPID_COMPONENT_COMMON})
 
 set (qpidclient_SOURCES
      ${rgen_client_srcs}
