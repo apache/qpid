@@ -39,9 +39,10 @@ namespace Messaging {
     /// Sender a managed wrapper for a ::qpid::messaging::Sender 
     /// </summary>
 
-    Sender::Sender(::qpid::messaging::Sender * s,
+    // unmanaged clone
+    Sender::Sender(const ::qpid::messaging::Sender & s,
                      Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-        senderp(s),
+		senderp(new ::qpid::messaging::Sender (s)),
         parentSession(sessRef)
     {
     }

@@ -67,13 +67,15 @@ namespace Org.Apache.Qpid.Messaging.SessionReceiver
         /// </summary>
         public void Open()
         {
-            Receiver rcvr = session.CreateReceiver();
+            Receiver rcvr;
             Message  msg;
 
             keepRunning = true;
             while (keepRunning)
             {
-                if (session.NextReceiver(rcvr, DurationConstants.SECOND))
+                rcvr = session.NextReceiver(DurationConstants.SECOND);
+
+                if (null != rcvr)
                 {
                     if (keepRunning)
                     {

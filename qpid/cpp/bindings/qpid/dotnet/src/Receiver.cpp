@@ -43,13 +43,16 @@ namespace Messaging {
     /// Receiver is a managed wrapper for a ::qpid::messaging::Receiver
     /// </summary>
 
-    Receiver::Receiver(::qpid::messaging::Receiver * r,
+    // unmanaged clone
+    Receiver::Receiver(const ::qpid::messaging::Receiver & r,
                        Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-        receiverp(r),
+        receiverp(new ::qpid::messaging::Receiver (r)),
         parentSession(sessRef)
     {
     }
 
+    // unmanaged clone
+    // undefined
 
     // Destructor
     Receiver::~Receiver()
@@ -88,17 +91,24 @@ namespace Messaging {
     //
     // Get(message)
     //
-    bool Receiver::Get(Message ^ mmsgp)
-    {
-        return Get(mmsgp, DurationConstants::FORVER);
-    }
-
-    bool Receiver::Get(Message ^ mmsgp, Duration ^ durationp)
-    {
-        ::qpid::messaging::Duration dur((*durationp).Milliseconds);
-
-        return receiverp->Receiver::get(*(mmsgp->NativeMessage), dur);
-    }
+    // TBD
+    //bool Receiver::Get(Message ^ mmsgp)
+    //{
+    //    return Get(mmsgp, DurationConstants::FORVER);
+    //}
+    //
+    //bool Receiver::Get(Message ^ mmsgp, Duration ^ durationp)
+    //{
+    //    ::qpid::messaging::Duration dur((*durationp).Milliseconds);
+    //
+    //    ::qpid::messaging::Message tmpMsg;
+    //
+    //    bool result = receiverp->Receiver::get(tmpMsg, dur);
+    //
+    //    mmsgp = gcnew Message(tmpMsg);
+    //
+    //    return result;
+    //}
 
     //
     // message = Get()
@@ -112,22 +122,19 @@ namespace Messaging {
     Message ^ Receiver::Get(Duration ^ durationp)
     {
         System::Exception          ^ newException = nullptr;
-        ::qpid::messaging::Message * msgp         = NULL;
         Message                    ^ newMessage   = nullptr;
 
         try
         {
-            // allocate a message
-            msgp = new ::qpid::messaging::Message;
-
             // translate the duration
             ::qpid::messaging::Duration dur((*durationp).Milliseconds);
 
             // get the message
-            *msgp = receiverp->::qpid::messaging::Receiver::get(dur);
+            ::qpid::messaging::Message msg = 
+                receiverp->::qpid::messaging::Receiver::get(dur);
 
             // create new managed message with received message embedded in it
-            newMessage = gcnew Message(msgp);
+            newMessage = gcnew Message(msg);
         } 
         catch (const ::qpid::types::Exception & error) 
         {
@@ -138,10 +145,6 @@ namespace Messaging {
         {
             if (newException != nullptr)
             {
-                if (msgp != NULL)
-                {
-                    delete msgp;
-                }
 				if (newMessage != nullptr)
 				{
 					delete newMessage;
@@ -159,17 +162,24 @@ namespace Messaging {
     //
     // Fetch(message)
     //
-    bool Receiver::Fetch(Message ^ mmsgp)
-    {
-        return Fetch(mmsgp, DurationConstants::FORVER);
-    }
-
-    bool Receiver::Fetch(Message ^ mmsgp, Duration ^ durationp)
-    {
-        ::qpid::messaging::Duration dur((*durationp).Milliseconds);
-
-        return receiverp->::qpid::messaging::Receiver::fetch(*((*mmsgp).NativeMessage), dur);
-    }
+    // TBD
+    //bool Receiver::Fetch(Message ^ mmsgp)
+    //{
+    //    return Fetch(mmsgp, DurationConstants::FORVER);
+    //}
+    //
+    //bool Receiver::Fetch(Message ^ mmsgp, Duration ^ durationp)
+    //{
+    //    ::qpid::messaging::Duration dur((*durationp).Milliseconds);
+    //
+    //    ::qpid::messaging::Message tmpMsg;
+    //
+    //    bool result = receiverp->Receiver::fetch(tmpMsg, dur);
+    //
+    //    mmsgp = gcnew Message(tmpMsg);
+    //
+    //    return result;
+    //}
     
 
     //
@@ -183,23 +193,20 @@ namespace Messaging {
 
     Message ^ Receiver::Fetch(Duration ^ durationp)
     {
-        System::Exception          ^ newException = nullptr;
-        ::qpid::messaging::Message * msgp         = NULL;
-         Message                   ^ newMessage   = nullptr;
+        System::Exception         ^ newException = nullptr;
+        Message                   ^ newMessage   = nullptr;
 
         try
         {
-            // allocate a message
-            ::qpid::messaging::Message * msgp = new ::qpid::messaging::Message;
-
             // translate the duration
             ::qpid::messaging::Duration dur((*durationp).Milliseconds);
 
             // get the message
-            *msgp = receiverp->::qpid::messaging::Receiver::fetch(dur);
+            ::qpid::messaging::Message msg =
+                receiverp->::qpid::messaging::Receiver::fetch(dur);
 
             // create new managed message with received message embedded in it
-            newMessage = gcnew Message(msgp);
+            newMessage = gcnew Message(msg);
         } 
         catch (const ::qpid::types::Exception & error) 
         {
@@ -210,10 +217,6 @@ namespace Messaging {
         {
             if (newException != nullptr)
             {
-                if (msgp != NULL)
-                {
-                    delete msgp;
-                }
 				if (newMessage != nullptr)
 				{
 					delete newMessage;

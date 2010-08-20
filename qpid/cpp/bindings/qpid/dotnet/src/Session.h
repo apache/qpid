@@ -65,7 +65,9 @@ namespace Messaging {
         void Cleanup();
 
     public:
-        Session(::qpid::messaging::Session * sessionp,
+
+        // unmanaged clone
+        Session(const ::qpid::messaging::Session & sessionp,
             Connection ^ connRef);
 
         // copy constructor
@@ -83,9 +85,11 @@ namespace Messaging {
             }
             else
             {
-                delete sessionp;
+                if (NULL != sessionp)
+                    delete sessionp;
                 sessionp = new ::qpid::messaging::Session(
                     *(const_cast<Session %>(rhs).NativeSession) );
+                parentConnectionp = rhs.parentConnectionp;
             }
             return *this;
         }
@@ -129,7 +133,6 @@ namespace Messaging {
 
         Receiver ^ CreateReceiver(System::String ^ address);
 		Receiver ^ CreateReceiver(Address ^ address);
-        Receiver ^ CreateReceiver();
 
         Sender   ^ GetSender(System::String ^ name);
         Receiver ^ GetReceiver(System::String ^ name);
