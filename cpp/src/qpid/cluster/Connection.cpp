@@ -257,7 +257,7 @@ void Connection::closed() {
             close();
             cluster.updateInClosed();
         }
-        else if (catchUp) {
+        else if (catchUp && cluster.isExpectingUpdate()) {
             QPID_LOG(critical, cluster << " catch-up connection closed prematurely " << *this);
             cluster.leave();
         }
@@ -304,6 +304,10 @@ size_t Connection::decode(const char* data, size_t size) {
     const char* ptr = data;
     const char* end = data + size;
     if (catchUp) {              // Handle catch-up locally.
+        if (!cluster.isExpectingUpdate()) {
+            QPID_LOG(error, "Rejecting unexpected catch-up connection.");
+            abort();            // Cluster is not expecting catch-up connections.
+        }
         bool wasOpen = connection->isOpen();
         Buffer buf(const_cast<char*>(ptr), size);
         ptr += size;

@@ -908,6 +908,11 @@ void Cluster::updateInRetracted() {
     checkUpdateIn(l);
 }
 
+bool Cluster::isExpectingUpdate() {
+    Lock l(lock);
+    return state <= UPDATEE;
+}
+
 void Cluster::checkUpdateIn(Lock& l) {
     if (state != UPDATEE) return; // Wait till we reach the stall point.
     if (!updateClosed) return;  // Wait till update connection closes.
