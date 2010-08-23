@@ -104,7 +104,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void updateInClosed();
     void updateInDone(const ClusterMap&);
     void updateInRetracted();
-
+    // True if we are expecting to receive catch-up connections.
+    bool isExpectingUpdate();
+    
     MemberId getId() const;
     broker::Broker& getBroker() const;
     Multicaster& getMulticast() { return mcast; }
