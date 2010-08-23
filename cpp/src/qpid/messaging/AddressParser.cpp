@@ -134,7 +134,7 @@ bool AddressParser::readKeyValuePair(Variant::Map& map)
 
 bool AddressParser::readKey(std::string& key)
 {
-    return readWord(key);
+    return readWord(key) || readQuotedString(key);
 }
 
 bool AddressParser::readValue(Variant& value)
