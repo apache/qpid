@@ -63,7 +63,7 @@ struct ClusterOptions : public Options {
         addOptions()
             ("cluster-name", optValue(settings.name, "NAME"), "Name of cluster to join")
             ("cluster-url", optValue(settings.url,"URL"),
-             "URL of this broker, advertized to the cluster.\n"
+             "Set URL of this individual broker, to be advertized to clients.\n"
              "Defaults to a URL listing all the local IP addresses\n")
             ("cluster-username", optValue(settings.username, ""), "Username for connections between brokers")
             ("cluster-password", optValue(settings.password, ""), "Password for connections between brokers")
