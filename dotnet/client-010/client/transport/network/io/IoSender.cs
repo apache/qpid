@@ -27,6 +27,7 @@ namespace org.apache.qpid.transport.network.io
     public sealed class IoSender : IIoSender<MemoryStream>
     {
         private static readonly Logger log = Logger.Get(typeof (IoReceiver));
+        private readonly IIoTransport ioTransport;
         private readonly Stream bufStream;
         private bool closed;
         private readonly Mutex mutClosed = new Mutex();
@@ -37,6 +38,7 @@ namespace org.apache.qpid.transport.network.io
         public IoSender(IIoTransport transport, int queueSize, int timeout)
         {
             this.timeout = timeout;
+            ioTransport = transport;
             bufStream = transport.Stream;
             queue = new CircularBuffer<byte[]>(queueSize);
             thread = new Thread(Go);
@@ -71,7 +73,7 @@ namespace org.apache.qpid.transport.network.io
             int length = (int)_tobeSent.Position;
             byte[] buf = new byte[length];
             _tobeSent.Seek(0, SeekOrigin.Begin);
-            _tobeSent.Read(buf, 0, length);           
+            _tobeSent.Read(buf, 0, length);
             queue.Enqueue(buf);
            // bufStream.Write(buf, 0, length);
           //  _tobeSent = new MemoryStream();
@@ -125,7 +127,8 @@ namespace org.apache.qpid.transport.network.io
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e);
+                        closed = true;
+                        ioTransport.Connection.On_ReceivedException(this, new ExceptionArgs(e));
                     }
                 }
             }
