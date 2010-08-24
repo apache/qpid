@@ -22,7 +22,10 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
+
 using org.apache.qpid.transport.util;
+using org.apache.qpid.client;
 
 namespace org.apache.qpid.transport.network.io
 {
@@ -41,16 +44,48 @@ namespace org.apache.qpid.transport.network.io
         private Connection m_con;
         private readonly bool _rejectUntrusted;
 
-        public static Connection Connect(String host, int port, string serverName, string certPath, bool rejectUntrusted,  ConnectionDelegate conndel)
-        {            
-            IIoTransport transport = new IoSSLTransport(host, port, serverName, certPath, rejectUntrusted, conndel);
-            return transport.Connection;
+        public static Connection Connect(String host, int port, String mechanism, X509Certificate certificate, bool rejectUntrusted, Client client)
+        {
+            ClientConnectionDelegate connectionDelegate = new ClientConnectionDelegate(client, string.Empty, string.Empty, mechanism);
+            ManualResetEvent negotiationComplete = new ManualResetEvent(true);
+            connectionDelegate.SetCondition(negotiationComplete);
+            connectionDelegate.VirtualHost = string.Empty;
+
+            IIoTransport transport = new IoSSLTransport(host, port, certificate, rejectUntrusted, connectionDelegate);
+
+            Connection _conn = transport.Connection;
+            _conn.Send(new ProtocolHeader(1, 0, 10));
+            negotiationComplete.WaitOne();
+
+            if (connectionDelegate.Exception != null)
+                throw connectionDelegate.Exception;
+
+            connectionDelegate.SetCondition(null);
+
+            return _conn;
         }
 
-        public IoSSLTransport(String host, int port, string serverName, string certPath, bool rejectUntrusted, ConnectionDelegate conndel)
+        public static Connection Connect(String host, int port, String virtualHost, String mechanism, string serverName, string certPath, String certPass, bool rejectUntrusted, Client client)
+        {
+            // create certificate object based on whether or not password is null
+            X509Certificate cert;
+            if (certPass != null)
+            {
+                cert = new X509Certificate2(certPath, certPass);
+            }
+            else
+            {
+                cert = X509Certificate.CreateFromCertFile(certPath);
+            }
+
+            return Connect(host, port, mechanism, cert, rejectUntrusted, client);
+        }
+
+        public IoSSLTransport(String host, int port, X509Certificate certificate, bool rejectUntrusted, ConnectionDelegate conndel)
         {
             _rejectUntrusted = rejectUntrusted;
-            CreateSocket(host, port, serverName, certPath);
+            CreateSocket(host, port);
+            CreateSSLStream(host, Socket, certificate);
             Sender = new IoSender(this, QUEUE_SIZE, TIMEOUT);
             Receiver = new IoReceiver(Stream, Socket.ReceiveBufferSize*2, TIMEOUT);
             Assembler assembler = new Assembler();
@@ -101,7 +136,7 @@ namespace org.apache.qpid.transport.network.io
 
         #region Private Support Functions
 
-        private void CreateSocket(String host, int port, string serverName, string certPath)
+        private void CreateSocket(String host, int port)
         {
             TcpClient socket;
             try
@@ -128,23 +163,21 @@ namespace org.apache.qpid.transport.network.io
             }
             catch (Exception e)
             {
-                throw new TransportException("Error connecting to broker", e);
+                throw new TransportException(string.Format("Error connecting to broker: {0}", e.Message));
             }
+        }
+
+        private void CreateSSLStream(String host, TcpClient socket, X509Certificate certificate)
+        {
             try
             { 
                 //Initializes a new instance of the SslStream class using the specified Stream, stream closure behavior, certificate validation delegate and certificate selection delegate
-                SslStream sslStream = new SslStream(socket.GetStream(), false, ValidateServerCertificate, LocalCertificateSelection);                   
-                if (certPath != null)
-                {
-                    X509CertificateCollection col = new X509CertificateCollection();
-                    X509Certificate cert = X509Certificate.CreateFromCertFile(certPath);
-                    col.Add(cert);
-                    sslStream.AuthenticateAsClient(serverName, col, SslProtocols.Default, true);
-                }
-                else
-                {
-                    sslStream.AuthenticateAsClient(serverName);
-                }
+                SslStream sslStream = new SslStream(socket.GetStream(), false, ValidateServerCertificate, LocalCertificateSelection);
+
+                X509CertificateCollection certCol = new X509CertificateCollection();
+                certCol.Add(certificate);
+
+                sslStream.AuthenticateAsClient(host, certCol, SslProtocols.Default, true);
                 Stream = sslStream;
             }
             catch (AuthenticationException e)
@@ -153,9 +186,10 @@ namespace org.apache.qpid.transport.network.io
                 if (e.InnerException != null)
                 {
                     log.Warn("Inner exception: {0}", e.InnerException.Message);
+                    e = new AuthenticationException(e.InnerException.Message, e.InnerException);
                 }
                 socket.Close();
-                throw new TransportException("Authentication failed - closing the connection.");
+                throw new TransportException(string.Format("Authentication failed, closing connection to broker: {0}", e.Message));
             }
         }
 
@@ -184,7 +218,8 @@ namespace org.apache.qpid.transport.network.io
             string[] acceptableIssuers
             )
         {
-            return remoteCertificate;
+            // used to be return null; in the original version
+            return localCertificates[0];
         }
 
         #endregion

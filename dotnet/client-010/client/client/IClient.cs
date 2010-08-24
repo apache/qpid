@@ -33,7 +33,8 @@ namespace org.apache.qpid.client
         /// <param name="virtualHost">virtualHost the virtual host name</param>
         /// <param name="username"> username user name</param>
         /// <param name="passwor">password password</param>
-        void Connect(String host, int port, String virtualHost, String username, String passwor);
+        void Connect(String host, int port, String virtualHost, String username, String password, String mechanism);
+        void Connect(String host, int port, String virtualHost, String username, String password);
 
         /// <summary>        
         /// Close this client
@@ -76,6 +77,6 @@ namespace org.apache.qpid.client
         /// <param name="serverName">Name of the SSL server</param>
         /// <param name="certPath">Path to the X509 certificate to be used for client authentication</param>
         /// <param name="rejectUntrusted">If true connection will not be established if the broker is not trusted</param>
-        void ConnectSSL(String host, int port, String virtualHost, String username, String password, string serverName, string certPath, bool rejectUntrusted);
+        void ConnectSSL(String host, int port, String virtualHost, String username, String password, String mechanism, string serverName, string certPath, String certPass, bool rejectUntrusted);
     }
 }
