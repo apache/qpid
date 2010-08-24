@@ -22,6 +22,7 @@ using System.Threading;
 using org.apache.qpid.transport;
 using org.apache.qpid.transport.network.io;
 using org.apache.qpid.transport.util;
+using System.Security.Cryptography.X509Certificates;
 
 namespace org.apache.qpid.client
 {
@@ -35,6 +36,7 @@ namespace org.apache.qpid.client
         private IClosedListener _closedListner;
 
         public event EventHandler<ExceptionArgs> ExceptionRaised;
+        public event EventHandler ConnectionOpenOK;
         public event EventHandler ConnectionLost;
 
         public bool IsClosed
@@ -61,6 +63,11 @@ namespace org.apache.qpid.client
 
         #region Interface IClient
         
+        public void Connect(String host, int port, String virtualHost, String username, String password)
+        {
+            Connect(host, port, virtualHost, username, password, "PLAIN");
+        }
+
         /// <summary>
         /// Establishes a connection with a broker using the provided user auths 
         /// 
@@ -70,11 +77,12 @@ namespace org.apache.qpid.client
         /// <param name="virtualHost">virtual host name</param>
         /// <param name="username">User Name</param>
         /// <param name="password">Password</param>
-        public void Connect(String host, int port, String virtualHost, String username, String password)
+        /// <param name="mechanism">SASL authentication mechanism, possible values: PLAIN, EXTERNAL, DIGEST-MD5, ANONYMOUS</param>
+        public void Connect(String host, int port, String virtualHost, String username, String password, String mechanism)
         {
-            _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
-                                     port, virtualHost, username));
-            ClientConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
+            _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}; mechanism {4}",
+                                     host, port, virtualHost, username, mechanism));
+            ClientConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password, mechanism);
             ManualResetEvent negotiationComplete = new ManualResetEvent(false);
             connectionDelegate.SetCondition(negotiationComplete);
             connectionDelegate.VirtualHost = virtualHost;
@@ -99,27 +107,36 @@ namespace org.apache.qpid.client
         /// <param name="virtualHost">virtual host name</param>
         /// <param name="username">User Name</param>
         /// <param name="password">Password</param>
+        /// <param name="mechanism">SASL authentication mechanism, possible values: PLAIN, EXTERNAL, DIGEST-MD5, ANONYMOUS</param>
         /// <param name="serverName">Name of the SSL server</param>
         /// <param name="certPath">Path to the X509 certificate to be used for client authentication</param>
+        /// <param name="certPass">Password to certificate file, pass null if no password is required</param>
         /// <param name="rejectUntrusted">If true connection will not be established if the broker is not trusted</param>
-        public void ConnectSSL(String host, int port, String virtualHost, String username, String password, string serverName, string certPath, bool rejectUntrusted)
+        public void ConnectSSL(String host, int port, String virtualHost, String username, String password, String mechanism, string serverName, string certPath, String certPass, bool rejectUntrusted)
         {
-            _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
-                                     port, virtualHost, username));
-            _log.Debug(String.Format("SSL paramters: serverName: {0}; certPath: {1}; rejectUntrusted: {2}", serverName, certPath, rejectUntrusted));
-            ClientConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
-            ManualResetEvent negotiationComplete = new ManualResetEvent(false);
-            connectionDelegate.SetCondition(negotiationComplete);
-            connectionDelegate.VirtualHost = virtualHost;
-            _conn = IoSSLTransport.Connect(host, port, serverName, certPath, rejectUntrusted, connectionDelegate);
+            _log.Debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}; mechanism {4}",
+                                     host, port, virtualHost, username, mechanism));
+            _log.Debug(String.Format("SSL parameters: serverName: {0}; certPath: {1}; rejectUntrusted: {2}", serverName, certPath, rejectUntrusted));
+            _conn = IoSSLTransport.Connect(host, port, virtualHost, mechanism, serverName, certPath, certPass, rejectUntrusted, this);
+        }
 
-            _conn.Send(new ProtocolHeader(1, 0, 10));
-            negotiationComplete.WaitOne();
+        /// <summary>
+        /// Establishes a connection with a broker using SSL
+        ///
+        /// </summary>
+        /// <param name="host">Host name on which a broker is deployed</param>
+        /// <param name="port">Broker port </param>
+        /// <param name="mechanism">SASL authentication mechanism, possible values: PLAIN, EXTERNAL, DIGEST-MD5, ANONYMOUS</param>
+        /// <param name="certificate">X509 certificate to be used for client authentication</param>
+        /// <param name="rejectUntrusted">If true connection will not be established if the broker is not trusted</param>
+        public void ConnectSSL(String host, int port, String mechanism, X509Certificate certificate, bool rejectUntrusted)
+        {
+            _log.Debug(String.Format("Client Connecting to host {0}; port {1}; mechanism {2}",
+                                     host, port, mechanism));
+            _log.Debug(String.Format("SSL parameters: certSubject: {0}; rejectUntrusted: {1}",
+                                     certificate.Subject, rejectUntrusted));
 
-            if (connectionDelegate.Exception != null)
-                throw connectionDelegate.Exception;
-
-            connectionDelegate.SetCondition(null);
+            _conn = IoSSLTransport.Connect(host, port, mechanism, certificate, rejectUntrusted, this);
         }
 
         public void Close()
@@ -165,6 +182,14 @@ namespace org.apache.qpid.client
         {
             if (ExceptionRaised != null)
                 ExceptionRaised(this, new ExceptionArgs(exception));
+        }
+
+        internal void ConnectionOpenOk(Channel context, ConnectionOpenOk mstruct)
+        {
+            if (ConnectionOpenOK != null)
+            {
+                ConnectionOpenOK(this, new EventArgs());
+            }
         }
     }
 }

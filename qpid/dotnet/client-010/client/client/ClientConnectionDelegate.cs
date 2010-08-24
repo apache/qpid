@@ -33,6 +33,9 @@ namespace org.apache.qpid.client
         private readonly Client _client;
         private string _username;
         private string _password;
+
+        // PLAIN SASL mechanism by default
+        private string _mechanism = "PLAIN";
         private Exception _exception;
 
         public ClientConnectionDelegate(Client client, string username, string pasword)
@@ -40,6 +43,12 @@ namespace org.apache.qpid.client
             _client = client;
             _username = username;
             _password = pasword;
+        }
+
+        public ClientConnectionDelegate(Client client, string username, string pasword, string mechanism)
+            : this(client, username, pasword)
+        {
+            _mechanism = mechanism;
         }
 
         public Exception Exception
@@ -64,16 +73,27 @@ namespace org.apache.qpid.client
 
         public override void ConnectionStart(Channel context, ConnectionStart mystruct)
         {
-            const string mechanism = "PLAIN";          
             MemoryStream stResponse = new MemoryStream();
-            byte[] part = Encoding.UTF8.GetBytes(_username);
-            stResponse.WriteByte(0);
-            stResponse.Write(part, 0, part.Length);
-            stResponse.WriteByte(0);
-            part = Encoding.UTF8.GetBytes(_password);
-            stResponse.Write(part, 0, part.Length);            
+
+            // do not send username and password for EXTERNAL mechanism,
+            // because they are inside a certificate file
+            if (_mechanism != "EXTERNAL")
+            {
+                byte[] part = Encoding.UTF8.GetBytes(_username);
+                stResponse.WriteByte(0);
+                stResponse.Write(part, 0, part.Length);
+                stResponse.WriteByte(0);
+                part = Encoding.UTF8.GetBytes(_password);
+                stResponse.Write(part, 0, part.Length);
+            }
             Dictionary<String, Object> props = new Dictionary<String, Object>();
-            context.ConnectionStartOk(props, mechanism, stResponse.ToArray(), "utf8");
+            context.ConnectionStartOk(props, _mechanism, stResponse.ToArray(), "utf8");
+        }
+
+        public override void ConnectionOpenOk(Channel context, ConnectionOpenOk mstruct)
+        {
+            base.ConnectionOpenOk(context, mstruct);
+            _client.ConnectionOpenOk(context, mstruct);
         }
 
         public override void Closed()
