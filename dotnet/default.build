@@ -141,16 +141,16 @@
                                                            project.Properties["build.version.minor"],
                                                            project.Properties["build.version.build"],
                                                            project.Properties["build.version.revision"]);
-                        contents = Regex.Replace(contents, @"\[assembly: AssemblyVersion\("".*""\)\]", replacement);
+                        contents = System.Text.RegularExpressions.Regex.Replace(contents, @"\[assembly: AssemblyVersion\("".*""\)\]", replacement);
 
                         // Substitute the company name and copyright.
                         replacement = string.Format("[assembly: AssemblyCompany(\"{0}\")]",
                                                     project.Properties["build.company"]);
-                        contents = Regex.Replace(contents, @"\[assembly: AssemblyCompany\("".*""\)\]", replacement);
+                        contents = System.Text.RegularExpressions.Regex.Replace(contents, @"\[assembly: AssemblyCompany\("".*""\)\]", replacement);
 
                         replacement = string.Format("[assembly: AssemblyCopyright(\"{0}\")]",
                                                     project.Properties["build.copyright"]);
-                        contents = Regex.Replace(contents, @"\[assembly: AssemblyCopyright\("".*""\)\]", replacement);
+                        contents = System.Text.RegularExpressions.Regex.Replace(contents, @"\[assembly: AssemblyCopyright\("".*""\)\]", replacement);
 
                         // Update the description.
                         //replacement = string.Format("[assembly: AssemblyDescription(\"{0} {1}\")]",
@@ -158,7 +158,7 @@
                         //                            project.Properties["build.svnversion"]);
                         replacement = string.Format("[assembly: AssemblyDescription(\"{0}\")]",
                                                     project.Properties["build.description"]);
-                        contents = Regex.Replace(contents, @"\[assembly: AssemblyDescription\("".*""\)\]", replacement);
+                        contents = System.Text.RegularExpressions.Regex.Replace(contents, @"\[assembly: AssemblyDescription\("".*""\)\]", replacement);
 
                         // Write out the file with the substituted version.
                         StreamWriter writer = new StreamWriter(project.Properties["filename"], false);
