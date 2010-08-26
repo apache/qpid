@@ -18,14 +18,11 @@
  *
  * 
  */
-package org.apache.qpid.server.logging.rawloggers;
+package org.apache.qpid.server.logging;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.AbstractRootMessageLogger;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.LogSubject;
 
 public class Log4jMessageLogger extends AbstractRootMessageLogger
 {
