@@ -154,7 +154,7 @@ class HeartbeatTask : public TimerTask {
 
 public:
     HeartbeatTask(Duration p, TimeoutHandler& t) :
-        TimerTask(p),
+        TimerTask(p,"Heartbeat"),
         timeout(t)
     {}
 };

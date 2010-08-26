@@ -39,7 +39,7 @@ void QueueCleaner::start(qpid::sys::Duration p)
     timer.add(task);
 }
 
-QueueCleaner::Task::Task(QueueCleaner& p, qpid::sys::Duration d) : sys::TimerTask(d), parent(p) {}
+QueueCleaner::Task::Task(QueueCleaner& p, qpid::sys::Duration d) : sys::TimerTask(d,"QueueCleaner"), parent(p) {}
 
 void QueueCleaner::Task::fire()
 {

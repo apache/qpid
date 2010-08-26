@@ -64,7 +64,7 @@ LinkRegistry::~LinkRegistry()
 }
 
 LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
-    TimerTask (Duration (LINK_MAINT_INTERVAL * TIME_SEC)), links(_links) {}
+    TimerTask (Duration (LINK_MAINT_INTERVAL * TIME_SEC),"LinkRegistry"), links(_links) {}
 
 void LinkRegistry::Periodic::fire ()
 {

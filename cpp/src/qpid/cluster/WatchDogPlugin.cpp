@@ -76,7 +76,7 @@ struct WatchDogTask : public sys::TimerTask {
     int interval;
 
     WatchDogTask(int pid_, sys::Timer& t, int _interval)
-        : TimerTask(_interval*sys::TIME_SEC/2), pid(pid_), timer(t), interval(_interval) {}
+        : TimerTask(_interval*sys::TIME_SEC/2,"WatchDog"), pid(pid_), timer(t), interval(_interval) {}
 
     void fire() {
         timer.add (new WatchDogTask(pid, timer, interval));
