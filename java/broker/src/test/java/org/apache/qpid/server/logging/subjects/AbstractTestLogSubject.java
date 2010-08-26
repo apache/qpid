@@ -31,9 +31,9 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.AbstractRootMessageLogger;
+import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -84,18 +84,20 @@ public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
         }
 
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        UnitTestMessageLogger logger = new UnitTestMessageLogger(serverConfig);
 
-        UnitTestMessageLogger logger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, logger);
-
-        LogActor actor = new TestLogActor(rootLogger);
+        LogActor actor = new TestLogActor(logger);
 
         actor.message(_subject, new LogMessage()
         {
             public String toString()
             {
                 return "<Log Message>";
+            }
+
+            public String getLogHierarchy()
+            {
+                return "test.hierarchy";
             }
         });
 

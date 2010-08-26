@@ -63,7 +63,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
                 protected void createBroker() throws Exception
                 {
                     _started = true;
-                    CurrentActor.set(new TestLogActor(new StartupRootMessageLogger()));
+                    CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
 
                     // Prevent the InVM broker from logging and spoiling tests.
                     _serverConfiguration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "off");

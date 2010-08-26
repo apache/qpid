@@ -18,18 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.rawloggers;
+package org.apache.qpid.server.logging;
 
-import org.apache.qpid.server.logging.RawMessageLogger;
 
-public class SystemOutMessageLogger implements RawMessageLogger
+public class SystemOutMessageLogger extends AbstractRootMessageLogger
 {
-    public void rawMessage(String message)
+    @Override
+    public boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHeirarchy)
     {
-        rawMessage(message, null);
+        return true;
     }
 
-    public void rawMessage(String message, Throwable throwable)
+    @Override
+    public boolean isMessageEnabled(LogActor actor, String logHierarchy)
+    {
+        return true;
+    }
+
+    public void rawMessage(String message, String logHierarchy)
+    {
+        rawMessage(message, null, logHierarchy);
+    }
+
+    public void rawMessage(String message, Throwable throwable, String logHierarchy)
     {
         System.out.println(message);
         if (throwable != null)

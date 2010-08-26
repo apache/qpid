@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
+import java.util.List;
+
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.subscription.MockSubscription;
-import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.AMQException;
-
-import java.util.List;
 
 /**
  * Test : AMQPConnectionActorTest
@@ -63,22 +60,7 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
      */
     public void testSubscription()
     {
-        final String message = "test logging";
-
-        _amqpActor.message(new LogSubject()
-        {
-            public String toString()
-            {
-                return "[AMQPActorTest]";
-            }
-
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
-        });
+        final String message = sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 

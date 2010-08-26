@@ -103,6 +103,12 @@
         <priority value="warn"/>
     </category>
 
+    <!-- Enable info messages for the status-logging hierarchy -->
+    <logger additivity="true" name="qpid.message">
+      <level value="info"/>
+    </logger>
+
+
 
     <!-- Examples of additional logging settings -->
     <!-- Used to generate extra debug. See debug.log4j.xml -->
@@ -112,9 +118,9 @@
     </category-->
 
     <!-- Set the commons logging that the XML parser uses to WARN, it is very chatty at debug -->
-        <logger name="org.apache.commons">
-          <level value="WARN"/>
-        </logger>
+    <logger name="org.apache.commons">
+        <level value="WARN"/>
+    </logger>
 
     <!-- Log all info events to file -->
     <root>

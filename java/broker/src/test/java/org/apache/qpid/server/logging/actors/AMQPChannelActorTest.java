@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.AMQChannel;
-
 import java.util.List;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.LogSubject;
 
 /**
  * Test : AMQPChannelActorTest
@@ -78,7 +73,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
 
         startBrokerNow();
 
-        final String message = sendTestMessage();
+        final String message = sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -105,31 +100,6 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     }
 
     /**
-     * Log a message using the test Actor
-     * @return the logged message
-     */
-    private String sendTestMessage()
-    {
-        final String message = "test logging";
-
-        _amqpActor.message(new LogSubject()
-        {
-            public String toString()
-            {
-                return "[AMQPActorTest]";
-            }
-
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
-        });
-        return message;
-    }
-
-    /**
      * Test that if logging is configured to be off in the configuration that
      * no logging is presented
      * @throws ConfigurationException
@@ -139,13 +109,10 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {
         _configXml.setProperty("status-updates", "OFF");
 
-        _rawLogger = new UnitTestMessageLogger();
-
         // Start the broker now.
         startBrokerNow();
 
-
-        sendTestMessage();
+        sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -163,11 +130,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {
         _configXml.setProperty("status-updates", "OfF");
 
-        _rawLogger = new UnitTestMessageLogger();
-
         startBrokerNow();
 
-        sendTestMessage();
+        sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -185,11 +150,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {
         _configXml.setProperty("status-updates", "Off");
 
-        _rawLogger = new UnitTestMessageLogger();
-
         startBrokerNow();
 
-        sendTestMessage();
+        sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -207,11 +170,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {
         _configXml.setProperty("status-updates", "ofF");
 
-        _rawLogger = new UnitTestMessageLogger();
-
         startBrokerNow();
 
-        sendTestMessage();
+        sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -229,11 +190,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {
         _configXml.setProperty("status-updates", "off");
 
-        _rawLogger = new UnitTestMessageLogger();
-
         startBrokerNow();
 
-        sendTestMessage();
+        sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -251,11 +210,9 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {        
         _configXml.setProperty("status-updates", "oFf");
 
-        _rawLogger = new UnitTestMessageLogger();
-
         startBrokerNow();
 
-        sendTestMessage();
+        sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 

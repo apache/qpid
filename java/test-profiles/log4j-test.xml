@@ -39,6 +39,10 @@
     <level value="${amqj.logging.level}"/>
   </logger>
 
+  <logger name="qpid.message">
+    <level value="INFO"/>
+  </logger>
+
   <logger name="qpid.protocol">
     <level value="${amqj.protocol.logging.level}"/>
   </logger>
