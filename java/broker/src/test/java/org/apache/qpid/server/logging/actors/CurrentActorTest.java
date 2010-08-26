@@ -23,10 +23,7 @@ package org.apache.qpid.server.logging.actors;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 /**
  * Test : CurrentActorTest
@@ -92,20 +89,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
         CurrentActor.set(connectionActor);
 
         //Use the Actor to send a simple message
-        CurrentActor.get().message(new LogSubject()
-        {
-            public String toString()
-            {
-                return "[CurrentActorTest] ";
-            }
-
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return "Connection Log Msg";
-            }
-        });
+        sendTestLogMessage(CurrentActor.get());
 
         // Verify it was the same actor as we set earlier
         assertEquals("Retrieved actor is not as expected ",
@@ -128,20 +112,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
         CurrentActor.set(channelActor);
 
         //Use the Actor to send a simple message
-        CurrentActor.get().message(new LogSubject()
-        {
-            public String toString()
-            {
-                return "[CurrentActorTest] ";
-            }
-
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return "Channel Log Msg";
-            }
-        });
+        sendTestLogMessage(CurrentActor.get());
 
         // Verify it was the same actor as we set earlier
         assertEquals("Retrieved actor is not as expected ",
@@ -263,20 +234,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
                 CurrentActor.set(actor);
 
                 //Use the Actor to send a simple message
-                CurrentActor.get().message(new LogSubject()
-                {
-                    public String toString()
-                    {
-                        return "[CurrentActorTest] ";
-                    }
-
-                }, new LogMessage()
-                {
-                    public String toString()
-                    {
-                        return "Running Thread:" + count;
-                    }
-                });
+                sendTestLogMessage(CurrentActor.get());
 
                 // Verify it was the same actor as we set earlier
                 assertEquals("Retrieved actor is not as expected ",

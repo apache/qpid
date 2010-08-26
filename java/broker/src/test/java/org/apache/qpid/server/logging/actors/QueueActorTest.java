@@ -48,22 +48,7 @@ public class QueueActorTest extends BaseConnectionActorTestCase
      */
     public void testQueueActor()
     {
-        final String message = "test logging";
-
-        _amqpActor.message(new LogSubject()
-        {
-            public String toString()
-            {
-                return "[AMQPActorTest]";
-            }
-
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
-        });
+        final String message = sendTestLogMessage(_amqpActor);
 
         List<Object> logs = _rawLogger.getLogMessages();
 

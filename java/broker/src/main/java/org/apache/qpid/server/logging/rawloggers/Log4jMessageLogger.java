@@ -22,35 +22,56 @@ package org.apache.qpid.server.logging.rawloggers;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.RawMessageLogger;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.AbstractRootMessageLogger;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogSubject;
 
-public class Log4jMessageLogger implements RawMessageLogger
+public class Log4jMessageLogger extends AbstractRootMessageLogger
 {
-    public static final String DEFAULT_LEVEL = "INFO";
-    public static final String DEFAULT_LOGGER = "qpid.message";
-    private Level _level;
-    private Logger _rawMessageLogger;
-
+    public static final Level LEVEL = Level.toLevel("INFO");
+    
     public Log4jMessageLogger()
     {
-        this(DEFAULT_LEVEL, DEFAULT_LOGGER);
+        super();
     }
 
-    public Log4jMessageLogger(String level, String logger)
+    public Log4jMessageLogger(ServerConfiguration config)
     {
-        _level = Level.toLevel(level);
-
-        _rawMessageLogger = Logger.getLogger(logger);
-        _rawMessageLogger.setLevel(_level);
+        super(config);
+    }
+    
+    @Override
+    public boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHierarchy)
+    {
+        return isMessageEnabled(actor, logHierarchy);
     }
 
-    public void rawMessage(String message)
+    @Override
+    public boolean isMessageEnabled(LogActor actor, String logHierarchy)
     {
-        rawMessage(message, null);
+        if(isEnabled())
+        {
+            Logger logger = Logger.getLogger(logHierarchy);
+            return logger.isEnabledFor(LEVEL);
+        }
+        else
+        {
+            return false;
+        }
     }
 
-    public void rawMessage(String message, Throwable throwable)
+    @Override
+    public void rawMessage(String message, String logHierarchy)
     {
-        _rawMessageLogger.log(_level, message, throwable);
+        rawMessage(message, null, logHierarchy);
+    }
+
+    @Override
+    public void rawMessage(String message, Throwable throwable, String logHierarchy)
+    {
+        Logger logger = Logger.getLogger(logHierarchy);
+        
+        logger.log(LEVEL, message, throwable);
     }
 }

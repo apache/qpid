@@ -20,38 +20,53 @@
  */
 package org.apache.qpid.server.logging;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.AbstractRootMessageLogger;
 
-public class RootMessageLoggerImpl implements RootMessageLogger
+public class UnitTestMessageLogger extends AbstractRootMessageLogger
 {
-    private boolean _enabled;
-
-    RawMessageLogger _rawLogger;
-    private static final String MESSAGE = "MESSAGE ";
-
-    public RootMessageLoggerImpl(ServerConfiguration configuration, RawMessageLogger rawLogger)
+    List<Object> _log;
+    
     {
-        _enabled = configuration.getStatusUpdatesEnabled();
-        _rawLogger = rawLogger;
+        _log = new LinkedList<Object>();
+    }
+    
+    public UnitTestMessageLogger()
+    {
+
     }
 
-    public boolean isMessageEnabled(LogActor actor, LogSubject subject)
+    public UnitTestMessageLogger(ServerConfiguration config)
     {
-        return _enabled;
+        super(config);
     }
 
-    public boolean isMessageEnabled(LogActor actor)
+    public void rawMessage(String message, String logHierarchy)
     {
-        return _enabled;
+        _log.add(message);
     }
 
-    public void rawMessage(String message)
+    public void rawMessage(String message, Throwable throwable, String logHierarchy)
     {
-        _rawLogger.rawMessage(MESSAGE + message);
+        _log.add(message);
+
+        if(throwable != null)
+        {
+            _log.add(throwable);
+        }
     }
 
-    public void rawMessage(String message, Throwable throwable)
+
+    public List<Object> getLogMessages()
     {
-        _rawLogger.rawMessage(MESSAGE + message, throwable);
+        return _log;
+    }
+
+    public void clearLogMessages()
+    {
+        _log.clear();
     }
 }

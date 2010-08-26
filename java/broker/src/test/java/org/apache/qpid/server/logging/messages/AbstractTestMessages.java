@@ -20,22 +20,17 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import junit.framework.TestCase;
+import java.util.List;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
-
-import java.util.List;
 
 public abstract class AbstractTestMessages extends InternalBrokerBaseCase
 {
@@ -50,15 +45,9 @@ public abstract class AbstractTestMessages extends InternalBrokerBaseCase
     {
         super.setUp();
 
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-
-        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
-
         _logger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _logger);
 
-        _actor = new TestLogActor(rootLogger);
+        _actor = new TestLogActor(_logger);
     }
 
     protected List<Object> performLog()
@@ -84,6 +73,7 @@ public abstract class AbstractTestMessages extends InternalBrokerBaseCase
      */
     protected void validateLogMessage(List<Object> logs, String tag, String[] expected)
     {
+System.out.println("===============" + logs.get(0));
         assertEquals("Log has incorrect message count", 1, logs.size());
 
         //We trim() here as we don't care about extra white space at the end of the log message
