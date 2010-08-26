@@ -20,23 +20,21 @@
  */
 package org.apache.qpid.server.logging;
 
-import junit.framework.TestCase;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
-import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
-
-import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import junit.framework.TestCase;
+
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+
 /** Test that the Log4jMessageLogger defaults behave as expected */
 public class Log4jMessageLoggerTest extends TestCase
 {
-    private File _lodgfile;
-
     Level _rootLevel;
     Log4jTestAppender _appender;
 
@@ -75,68 +73,102 @@ public class Log4jMessageLoggerTest extends TestCase
     }
 
     /**
-     * Verify that the default configuraion of Log4jMessageLogger will
-     * log a message.
-     *
+     * Verify that the Log4jMessageLogger successfully logs a message.
      */
-    public void testDefaultLogsMessage()
+    public void testLoggedMessage()
     {
-        // Create a logger to test
-        Log4jMessageLogger logger = new Log4jMessageLogger();
+        Log4jMessageLogger msgLogger = new Log4jMessageLogger();
+        assertTrue("Expected message logger to be enabled", msgLogger.isEnabled());
+        
+        testLoggedMessage(msgLogger, true, getName());
+    }
 
+    /**
+     * Verify that for the given Log4jMessageLogger, after generating a message for the given
+     * log hierarchy that the outcome is as expected.
+     */
+    private String testLoggedMessage(Log4jMessageLogger logger, boolean logExpected, String hierarchy)
+    {
         //Create Message for test
         String message = "testDefaults";
 
         // Log the message
-        logger.rawMessage(message, null, null);
+        logger.rawMessage(message, hierarchy);
 
-        verifyLogPresent(message);
+        if(logExpected)
+        {
+            verifyLogPresent(message);
+        }
+        else
+        {
+            verifyNoLog(message);
+        }
+        
+        return message;
     }
 
     /**
-     * This test verifies that the Log4jMessageLogger does not inherit a logging
-     * level from the RootLogger. The Log4jMessageLogger default of INFO
-     * will result in logging being presented.
-     *
-     */
-    public void testLoggerDoesNotInheritRootLevel()
-    {
-        //Set default logger level to off
-        Logger.getRootLogger().setLevel(Level.OFF);
-
-        testDefaultLogsMessage();
-    }
-
-    //TODO: use 2 different loggers rather than the default which isnt used anymore
-    /**
-     * Test that changing the logger works.
+     * Test that specifying different log hierarchies to be used works as expected.
      * <p/>
-     * Test this by setting the default logger level to off which has been
-     * verified to work by test 'testDefaultsLevelObeyed'
-     *
+     * Test this by using one hierarchy and verifying it succeeds, then disabling it and 
+     * confirming this takes effect, and finally that using another hierarchy still succeeds.
      */
-    public void testDefaultLoggerAdjustment()
+    public void testMultipleHierarchyUsage()
     {
-        String loggerName = "TestLogger";
-        // Create a logger to test
-        Log4jMessageLogger logger = new Log4jMessageLogger();
+        String loggerName1 = getName() + ".TestLogger1";
+        String loggerName2 = getName() + ".TestLogger2";
 
-        //Create Message for test
-        String message = "testDefaults";
+        // Create a message logger to test
+        Log4jMessageLogger msgLogger = new Log4jMessageLogger();
+        assertTrue("Expected message logger to be enabled", msgLogger.isEnabled());
+        
+        //verify that using this hierarchy the message gets logged ok
+        String message = testLoggedMessage(msgLogger, true, loggerName1);
 
-        //Disable the default Log4jMessageLogger logger
-        Level originalLevel = Logger.getLogger(Log4jMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX).getLevel();
-        Logger.getLogger(Log4jMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX).setLevel(Level.OFF);
-
-        // Log the message
-        logger.rawMessage(message, null, loggerName);
-
-        verifyLogPresent(message);
-
-        // Restore the logging level
-        Logger.getLogger(Log4jMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX).setLevel(originalLevel);
+        //now disable that hierarchy in log4j
+        Logger.getLogger(loggerName1).setLevel(Level.OFF);
+        
+        //clear the previous message from the test appender
+        _appender.close();
+        verifyNoLog(message);
+        
+        //verify that the hierarchy disabling took effect
+        testLoggedMessage(msgLogger, false, loggerName1);
+        
+        //now ensure that using a new hierarchy results in the message being output
+        testLoggedMessage(msgLogger, true, loggerName2);
     }
 
+    /**
+     * Test that log4j can be used to manipulate on a per-hierarchy(and thus message) basis 
+     * whether a particular status message is enabled.
+     * <p/>
+     * Test this by using two hierarchies, setting one off and one on (info) via log4j directly, 
+     * then confirming this gives the expected isMessageEnabled() result. Then reverse the log4j
+     * Levels for the Logger's and ensure the results change as expected.
+     */
+    public void testEnablingAndDisablingMessages()
+    {
+        String loggerName1 = getName() + ".TestLogger1";
+        String loggerName2 = getName() + ".TestLogger2";
+
+        Logger.getLogger(loggerName1).setLevel(Level.INFO);
+        Logger.getLogger(loggerName2).setLevel(Level.OFF);
+        
+        Log4jMessageLogger msgLogger = new Log4jMessageLogger();
+        BrokerActor actor = new BrokerActor(msgLogger);
+        
+        assertTrue("Expected message logger to be enabled", msgLogger.isEnabled());
+        
+        assertTrue("Message should be enabled", msgLogger.isMessageEnabled(actor, loggerName1));
+        assertFalse("Message should be disabled", msgLogger.isMessageEnabled(actor, loggerName2));
+        
+        Logger.getLogger(loggerName1).setLevel(Level.WARN);
+        Logger.getLogger(loggerName2).setLevel(Level.INFO);
+        
+        assertFalse("Message should be disabled", msgLogger.isMessageEnabled(actor, loggerName1));
+        assertTrue("Message should be enabled", msgLogger.isMessageEnabled(actor, loggerName2));
+    }
 
     /**
      * Check that the Log Message reached log4j
@@ -175,7 +207,7 @@ public class Log4jMessageLoggerTest extends TestCase
             }
         }
 
-        assertEquals("No messages expected.", 0, results.size());
+        assertEquals("No message was expected.", 0, results.size());
     }
 
     /**
