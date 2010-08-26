@@ -21,10 +21,11 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.UnitTestMessageLogger;
 
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
@@ -45,10 +46,8 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
     {
         super.createBroker();
 
-        _rawLogger = new UnitTestMessageLogger();
-
-        _rootLogger =
-                new RootMessageLoggerImpl(_configuration, _rawLogger);
+        _rawLogger = new UnitTestMessageLogger(_configuration);
+        _rootLogger = _rawLogger;
     }
 
     public void tearDown() throws Exception
@@ -56,6 +55,37 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
         _rawLogger.clearLogMessages();
 
         super.tearDown();
+    }
+
+    public String sendTestLogMessage(LogActor actor)
+    {
+        String message = "Test logging: " + getName();
+        sendTestLogMessage(actor, message);
+        
+        return message;
+    }
+    
+    public void sendTestLogMessage(LogActor actor, final String message)
+    {
+        actor.message(new LogSubject()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+        }, new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return "test.hierarchy";
+            }
+        });
     }
 
 }

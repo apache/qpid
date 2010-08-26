@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.rawloggers;
+package org.apache.qpid.server.logging;
 
 import junit.framework.TestCase;
 
@@ -27,16 +27,17 @@ import java.util.List;
 /**
  * Test: UnitTestMessageLoggerTest
  *
- * This test verifies that UnitTestMessageLogger adhears to its interface.
+ * This test verifies that UnitTestMessageLogger adheres to its interface.
  *
  * Messages are logged, and Throwables recorded in an array that can be
- * retreived and cleared.
+ * retrieved and cleared.
  *
  */
 public class UnitTestMessageLoggerTest extends TestCase
 {
     private static final String TEST_MESSAGE = "Test";
     private static final String TEST_THROWABLE = "Test Throwable";
+    private static final String TEST_HIERARCHY = "test.hierarchy";
 
     public void testRawMessage()
     {
@@ -46,7 +47,7 @@ public class UnitTestMessageLoggerTest extends TestCase
                      logger.getLogMessages().size());
 
         // Log a message
-        logger.rawMessage(TEST_MESSAGE);
+        logger.rawMessage(TEST_MESSAGE, TEST_HIERARCHY);
 
         List<Object> messages = logger.getLogMessages();
 
@@ -66,7 +67,7 @@ public class UnitTestMessageLoggerTest extends TestCase
         // Log a message
         Throwable throwable = new Throwable(TEST_THROWABLE);
 
-        logger.rawMessage(TEST_MESSAGE, throwable);
+        logger.rawMessage(TEST_MESSAGE, throwable, TEST_HIERARCHY);
 
         List<Object> messages = logger.getLogMessages();
 
@@ -88,7 +89,7 @@ public class UnitTestMessageLoggerTest extends TestCase
                      logger.getLogMessages().size());
 
         // Log a message
-        logger.rawMessage(TEST_MESSAGE);
+        logger.rawMessage(TEST_MESSAGE, null, TEST_HIERARCHY);
 
         assertEquals("Expected to have 1 messages logged",
                      1, logger.getLogMessages().size());

@@ -28,30 +28,40 @@ package org.apache.qpid.server.logging;
 public interface RootMessageLogger
 {
     /**
+     * Determine whether the MessageLogger is enabled
+     * 
+     * @return boolean true if enabled.
+     */
+    boolean isEnabled();
+    
+    /**
      * Determine if the LogSubject and the LogActor should be
      * generating log messages.
-     *
-     * @param subject The subject of this log request
      * @param actor   The actor requesting the logging
+     * @param subject The subject of this log request
+     * @param logHierarchy The log hierarchy for this request
+     *
      * @return boolean true if the message should be logged.
      */
-    boolean isMessageEnabled(LogActor actor, LogSubject subject);
+    boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHierarchy);
 
     /**
      * Determine if  the LogActor should be generating log messages.
      *
      * @param actor   The actor requesting the logging
+     * @param logHierarchy The log hierarchy for this request
      *
      * @return boolean true if the message should be logged.
      */
-    boolean isMessageEnabled(LogActor actor);
+    boolean isMessageEnabled(LogActor actor, String logHierarchy);
 
     /**
      * Log the raw message to the configured logger.
      *
      * @param message   The message to log
+     * @param logHierarchy The log hierarchy for this request
      */
-    public void rawMessage(String message);
+    public void rawMessage(String message, String logHierarchy);
 
     /**
      * Log the raw message to the configured logger.
@@ -59,6 +69,7 @@ public interface RootMessageLogger
      *
      * @param message   The message to log
      * @param throwable Optional Throwable that should provide stact trace
+     * @param logHierarchy The log hierarchy for this request
      */
-    void rawMessage(String message, Throwable throwable);
+    void rawMessage(String message, Throwable throwable, String logHierarchy);
 }

@@ -46,7 +46,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.information.management.ServerInformationMBean;
-import org.apache.qpid.server.logging.StartupRootMessageLogger;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
@@ -223,7 +223,7 @@ public class Main
         {
             try
             {
-                CurrentActor.set(new BrokerActor(new StartupRootMessageLogger()));
+                CurrentActor.set(new BrokerActor(new SystemOutMessageLogger()));
                 startup();
                 CurrentActor.remove();
             }

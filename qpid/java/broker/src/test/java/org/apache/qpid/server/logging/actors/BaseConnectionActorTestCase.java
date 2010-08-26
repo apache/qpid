@@ -30,6 +30,4 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
 
         _amqpActor = new AMQPConnectionActor(_session, _rootLogger);
     }
-
-
 }

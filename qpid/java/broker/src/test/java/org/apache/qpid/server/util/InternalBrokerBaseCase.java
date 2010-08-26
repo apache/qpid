@@ -30,7 +30,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.logging.StartupRootMessageLogger;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -76,7 +76,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
     protected void createBroker() throws Exception
     {
         _started = true;
-        CurrentActor.set(new TestLogActor(new StartupRootMessageLogger()));
+        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
 
         _configuration = new ServerConfiguration(_configXml);
 

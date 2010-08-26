@@ -18,13 +18,14 @@
  *
  * 
  */
-package org.apache.qpid.server.logging.rawloggers;
+package org.apache.qpid.server.logging;
 
 import junit.framework.TestCase;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -87,7 +88,7 @@ public class Log4jMessageLoggerTest extends TestCase
         String message = "testDefaults";
 
         // Log the message
-        logger.rawMessage(message);
+        logger.rawMessage(message, null, null);
 
         verifyLogPresent(message);
     }
@@ -106,6 +107,7 @@ public class Log4jMessageLoggerTest extends TestCase
         testDefaultLogsMessage();
     }
 
+    //TODO: use 2 different loggers rather than the default which isnt used anymore
     /**
      * Test that changing the logger works.
      * <p/>
@@ -117,22 +119,22 @@ public class Log4jMessageLoggerTest extends TestCase
     {
         String loggerName = "TestLogger";
         // Create a logger to test
-        Log4jMessageLogger logger = new Log4jMessageLogger(Log4jMessageLogger.DEFAULT_LEVEL, loggerName);
+        Log4jMessageLogger logger = new Log4jMessageLogger();
 
         //Create Message for test
         String message = "testDefaults";
 
         //Disable the default Log4jMessageLogger logger
-        Level originalLevel = Logger.getLogger(Log4jMessageLogger.DEFAULT_LOGGER).getLevel();
-        Logger.getLogger(Log4jMessageLogger.DEFAULT_LOGGER).setLevel(Level.OFF);
+        Level originalLevel = Logger.getLogger(Log4jMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX).getLevel();
+        Logger.getLogger(Log4jMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX).setLevel(Level.OFF);
 
         // Log the message
-        logger.rawMessage(message);
+        logger.rawMessage(message, null, loggerName);
 
         verifyLogPresent(message);
 
         // Restore the logging level
-        Logger.getLogger(Log4jMessageLogger.DEFAULT_LOGGER).setLevel(originalLevel);
+        Logger.getLogger(Log4jMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX).setLevel(originalLevel);
     }
 
 
@@ -163,7 +165,6 @@ public class Log4jMessageLoggerTest extends TestCase
     {
         List<String> results = findMessageInLog(message);
 
-        //Validate we only got one message
         if (results.size() > 0)
         {
             System.err.println("Unexpected Log messages");

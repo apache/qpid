@@ -124,6 +124,11 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
             {
                 return message;
             }
+
+            public String getLogHierarchy()
+            {
+                return "test.hieracrchy";
+            }
         });
         return message;
     }

@@ -39,7 +39,7 @@ import org.apache.qpid.server.configuration.SystemConfig;
 import org.apache.qpid.server.configuration.SystemConfigImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.AbstractRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -249,7 +249,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void initialise(int instanceID) throws Exception
     {
-        _rootMessageLogger = new RootMessageLoggerImpl(_configuration, new Log4jMessageLogger());
+        _rootMessageLogger = new Log4jMessageLogger(_configuration);
         _registryName = String.valueOf(instanceID);
 
         // Set the Actor for current log messages

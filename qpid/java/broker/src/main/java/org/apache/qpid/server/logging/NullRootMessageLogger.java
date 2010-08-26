@@ -20,41 +20,28 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-
-public class NullRootMessageLogger extends RootMessageLoggerImpl
+public class NullRootMessageLogger extends AbstractRootMessageLogger
 {
 
-    public NullRootMessageLogger() throws ConfigurationException
-    {
-        super(new ServerConfiguration(new PropertiesConfiguration()), new NullMessageLogger());
-    }
-
     @Override
-    public boolean isMessageEnabled(LogActor actor, LogSubject subject)
+    public boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHeirarchy)
     {
         return false;
     }
 
     @Override
-    public boolean isMessageEnabled(LogActor actor)
+    public boolean isMessageEnabled(LogActor actor, String logHierarchy)
     {
         return false;
     }
 
-    public static class NullMessageLogger implements RawMessageLogger
+    public void rawMessage(String message, String logHierarchy)
     {
-        public void rawMessage(String message)
-        {
-            // drop message
-        }
-
-        public void rawMessage(String message, Throwable throwable)
-        {
-            // drop message
-        }
+        // drop message
     }
 
+    public void rawMessage(String message, Throwable throwable, String logHierarchy)
+    {
+        // drop message
+    }
 }

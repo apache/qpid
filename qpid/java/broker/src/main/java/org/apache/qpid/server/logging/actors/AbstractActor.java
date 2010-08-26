@@ -27,6 +27,8 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 
 public abstract class AbstractActor implements LogActor
 {
+    public static final String DEFAULT_MSG_PREFIX = "MESSAGE ";
+
     protected RootMessageLogger _rootLogger;
 
     public AbstractActor(RootMessageLogger rootLogger)
@@ -40,17 +42,17 @@ public abstract class AbstractActor implements LogActor
 
     public void message(LogSubject subject, LogMessage message)
     {
-        if (_rootLogger.isMessageEnabled(this, subject))
+        if (_rootLogger.isMessageEnabled(this, subject, message.getLogHierarchy()))
         {
-            _rootLogger.rawMessage(getLogMessage() + String.valueOf(subject) + message);
+            _rootLogger.rawMessage(DEFAULT_MSG_PREFIX + getLogMessage() + String.valueOf(subject) + message, message.getLogHierarchy());
         }
     }
 
     public void message(LogMessage message)
     {
-        if (_rootLogger.isMessageEnabled(this))
+        if (_rootLogger.isMessageEnabled(this, message.getLogHierarchy()))
         {
-            _rootLogger.rawMessage(getLogMessage() + message);
+            _rootLogger.rawMessage(DEFAULT_MSG_PREFIX + getLogMessage() + message, message.getLogHierarchy());
         }
     }
 

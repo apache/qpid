@@ -362,7 +362,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
 
         if (CurrentActor.get().getRootMessageLogger().
-                isMessageEnabled(CurrentActor.get(), _logSubject))
+                isMessageEnabled(CurrentActor.get(), _logSubject, SubscriptionMessages.CREATE_LOG_HIERARCHY))
         {
             // Get the string value of the filters
             String filterLogString = null;
