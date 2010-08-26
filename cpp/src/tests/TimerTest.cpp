@@ -60,7 +60,7 @@ class TestTask : public TimerTask
 
   public:
     TestTask(Duration timeout, Counter& _counter)
-        : TimerTask(timeout), start(now()), expected(timeout), end(start), fired(false), counter(_counter) {}
+        : TimerTask(timeout, "Test"), start(now()), expected(timeout), end(start), fired(false), counter(_counter) {}
 
     void fire()
     {

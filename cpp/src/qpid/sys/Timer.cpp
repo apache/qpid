@@ -63,7 +63,7 @@ void TimerTask::setupNextFire() {
         nextFireTime = max(AbsTime::now(), AbsTime(nextFireTime, period));
         cancelled = false;
     } else {
-        QPID_LOG(error, "Couldn't setup next timer firing: " << Duration(nextFireTime, AbsTime::now()) << "[" << period << "]");
+        QPID_LOG(error, name << " couldn't setup next timer firing: " << Duration(nextFireTime, AbsTime::now()) << "[" << period << "]");
     }
 }
 
@@ -109,7 +109,7 @@ void Timer::run()
             if (t->cancelled) {
                 drop(t);
                 if (delay > lateCancel) {
-                    QPID_LOG(debug, "cancelled Timer woken up " << delay / TIME_MSEC
+                    QPID_LOG(debug, t->name << " cancelled timer woken up " << delay / TIME_MSEC
                              << "ms late");
                 }
                 continue;
@@ -126,19 +126,19 @@ void Timer::run()
                 }
                 if (delay > late) {
                     if (overrun > overran) {
-                        QPID_LOG(warning,
-                                 "Timer woken up " << delay / TIME_MSEC <<
+                        QPID_LOG(warning, t->name <<
+                                 " timer woken up " << delay / TIME_MSEC <<
                                  "ms late, overrunning by " <<
                                  overrun / TIME_MSEC << "ms [taking " <<
                                  Duration(start, end) << "]");
                     } else {
-                        QPID_LOG(warning,
-                                 "Timer woken up " << delay / TIME_MSEC <<
+                        QPID_LOG(warning, t->name <<
+                                 " timer woken up " << delay / TIME_MSEC <<
                                  "ms late");
                     }
                 } else if (overrun > overran) {
-                    QPID_LOG(warning,
-                             "Timer callback overran by " <<
+                    QPID_LOG(warning,t->name <<
+                             " timer callback overran by " <<
                              overrun / TIME_MSEC <<
                              "ms [taking " << Duration(start, end) << "]");
                 }
