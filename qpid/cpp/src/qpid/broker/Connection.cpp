@@ -59,7 +59,7 @@ struct ConnectionTimeoutTask : public sys::TimerTask {
     Connection& connection;
 
     ConnectionTimeoutTask(uint16_t hb, sys::Timer& t, Connection& c) :
-        TimerTask(Duration(hb*2*TIME_SEC)),
+        TimerTask(Duration(hb*2*TIME_SEC),"ConnectionTimeout"),
         timer(t),
         connection(c)
     {}
@@ -365,7 +365,7 @@ struct ConnectionHeartbeatTask : public sys::TimerTask {
     sys::Timer& timer;
     Connection& connection;
     ConnectionHeartbeatTask(uint16_t hb, sys::Timer& t, Connection& c) :
-        TimerTask(Duration(hb*TIME_SEC)),
+        TimerTask(Duration(hb*TIME_SEC), "ConnectionHeartbeat"),
         timer(t),
         connection(c)
     {}

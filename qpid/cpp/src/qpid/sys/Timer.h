@@ -53,8 +53,8 @@ class TimerTask : public RefCounted {
     void fireTask();
 
   public:
-    QPID_COMMON_EXTERN TimerTask(Duration period, const std::string& name=std::string());
-    QPID_COMMON_EXTERN TimerTask(AbsTime fireTime, const std::string& name=std::string());
+    QPID_COMMON_EXTERN TimerTask(Duration period, const std::string& name);
+    QPID_COMMON_EXTERN TimerTask(AbsTime fireTime, const std::string& name);
     QPID_COMMON_EXTERN virtual ~TimerTask();
 
     QPID_COMMON_EXTERN void setupNextFire();

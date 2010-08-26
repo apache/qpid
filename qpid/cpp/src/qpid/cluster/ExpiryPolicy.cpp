@@ -35,7 +35,7 @@ ExpiryPolicy::ExpiryPolicy(Multicaster& m, const MemberId& id, sys::Timer& t)
 
 struct ExpiryTask : public sys::TimerTask {
     ExpiryTask(const boost::intrusive_ptr<ExpiryPolicy>& policy, uint64_t id, sys::AbsTime when)
-        : TimerTask(when), expiryPolicy(policy), expiryId(id) {}
+        : TimerTask(when,"ExpiryPolicy"), expiryPolicy(policy), expiryId(id) {}
     void fire() { expiryPolicy->sendExpire(expiryId); }
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     const uint64_t expiryId;

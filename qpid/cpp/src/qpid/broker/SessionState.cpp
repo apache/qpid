@@ -213,7 +213,7 @@ struct ScheduledCreditTask : public sys::TimerTask {
     SessionState& sessionState;
     ScheduledCreditTask(const qpid::sys::Duration& d, sys::Timer& t,
                         SessionState& s) :
-        TimerTask(d),
+        TimerTask(d,"ScheduledCredit"),
         timer(t),
         sessionState(s)
     {}
