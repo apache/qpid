@@ -47,6 +47,7 @@ import javax.management.ReflectionException;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
@@ -502,10 +503,20 @@ public class MBeanUtility
      * Retrieves all the MBeans from mbean server for a given domain
      * @return list of ManagedBeans
      */
-    public static List<ManagedBean> getManagedObjectsForDomain(ManagedServer server, String domain) throws Exception
+    public static List<ManagedBean> getManagedObjectsForDomain(ManagedServer server, String domain) throws MalformedObjectNameException, NullPointerException, IOException
+    {
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+        return getManagedObjectsForDomain(server,serverRegistry, domain);
+    }
+
+    /**
+     * Retrieves all the MBeans from mbean server for a given domain
+     * @return list of ManagedBeans
+     */
+    public static List<ManagedBean> getManagedObjectsForDomain(ManagedServer server, JMXServerRegistry serverRegistry, String domain) throws MalformedObjectNameException, NullPointerException, IOException
     {
         List<ManagedBean> mbeans = new ArrayList<ManagedBean>();
-        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+
         MBeanServerConnection mbsc = serverRegistry.getServerConnection();
         ObjectName objName = new ObjectName(domain + ":*"); 
         Set objectInstances = mbsc.queryMBeans(objName, null);
@@ -559,32 +570,35 @@ public class MBeanUtility
         
         //Detect the value of the 'version' key property on the UserManagement MBean ObjectName.
         //If present, we have a v1.2 API server. If null, we have a v1.1 API server.
-        //Use an ObjectName pattern (the ?) to match the 'type' and allow this to work for non-admin users
-        objName = new ObjectName(server.getDomain() + ":type="+ "UserManagemen?" + ",*");
-        objectInstances = mbsc.queryNames(objName, null);
-        
-        if(objectInstances.size() != 0)
+        ObjectName umMBeanObjectName = null;
+        List<ManagedBean> mbeans = getManagedObjectsForDomain(server, serverRegistry, Constants.DEFAULT_DOMAIN);
+        for(ManagedBean mbean: mbeans)
         {
-            for (Iterator<ObjectName> itr = objectInstances.iterator(); itr.hasNext();)
+            if("UserManagement".equalsIgnoreCase(mbean.getType()))
             {
-                ObjectName instance = (ObjectName)itr.next();
-                String version = instance.getKeyProperty("version");
-                
-                if(version != null)
-                {
-                    serverRegistry.setManagementApiVersion(new ApiVersion(1, 2));
-                }
-                else
-                {
-                    serverRegistry.setManagementApiVersion(new ApiVersion(1, 1));
-                }
+                umMBeanObjectName = ((JMXManagedObject) mbean).getObjectName();
+                break;
             }
         }
-        else
+        
+        if(umMBeanObjectName != null)
         {
-            //UserManagement MBean wasnt present, connected to an old server: classify as v1.0 API
-            serverRegistry.setManagementApiVersion(new ApiVersion(1, 0));
+            //UserManagement MBean was present, determine if it has a version key
+            if(umMBeanObjectName.getKeyProperty("version") != null)
+            {
+                serverRegistry.setManagementApiVersion(new ApiVersion(1, 2));
+            }
+            else
+            {
+                //no version key, 
+                serverRegistry.setManagementApiVersion(new ApiVersion(1, 1));
+            }
+            
+            return;
         }
+
+        //UserManagement MBean was not present, connected to an old server: classify as v1.0 API
+        serverRegistry.setManagementApiVersion(new ApiVersion(1, 0));
     }
     
     public static void printOutput(String statement)
