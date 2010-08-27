@@ -84,7 +84,7 @@ if test -d $PYTHON_DIR; then
     $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add queue test-queue
     $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add queue control-queue
     $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add exchange replication REPLICATION_EXCHANGE
-    $PYTHON_COMMANDS/qpid-route queue add localhost:$DR2 localhost:$PRIMARY2 REPLICATION_EXCHANGE REPLICATION_QUEUE
+    $PYTHON_COMMANDS/qpid-route queue add localhost:$DR2 localhost:$PRIMARY2 REPLICATION_EXCHANGE REPLICATION_QUEUE || fail "Could not add route."
 
     #send more messages to primary
     for i in `seq 11 20`; do echo Message$i; done | ./sender --port $PRIMARY1 --send-eos 1
