@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin.policies;
+package org.apache.qpid.server.virtualhost.plugins.policies;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;

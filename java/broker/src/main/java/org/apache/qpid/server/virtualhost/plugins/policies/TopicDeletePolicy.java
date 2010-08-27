@@ -18,20 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin.policies;
+package org.apache.qpid.server.virtualhost.plugins.policies;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionPolicyConfiguration;
+import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionPolicyConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.plugin.logging.TopicDeletePolicyMessages;
+import org.apache.qpid.server.virtualhost.plugins.logging.TopicDeletePolicyMessages;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 

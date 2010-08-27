@@ -18,12 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin;
+package org.apache.qpid.server.virtualhost.plugins;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
+import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionConfiguration;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import java.util.concurrent.TimeUnit;

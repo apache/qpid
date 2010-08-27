@@ -29,7 +29,7 @@ public interface ConfiguredObject<T extends ConfigObjectType<T,C>, C extends Con
 
     public T getConfigType();
 
-    public ConfiguredObject getParent();
+    public ConfiguredObject<T,C> getParent();
 
     public boolean isDurable();
 

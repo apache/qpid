@@ -17,21 +17,21 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhost.plugin;
+package org.apache.qpid.server.virtualhost.plugins;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionConfiguration;
-import org.apache.qpid.server.configuration.plugin.SlowConsumerDetectionQueueConfiguration;
+import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionConfiguration;
+import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.plugin.logging.SlowConsumerDetectionMessages;
+import org.apache.qpid.server.virtualhost.plugins.logging.SlowConsumerDetectionMessages;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
