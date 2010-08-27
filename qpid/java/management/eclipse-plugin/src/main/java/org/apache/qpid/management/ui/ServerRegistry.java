@@ -32,6 +32,8 @@ import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 
+import java.util.Collections;
+
 public abstract class ServerRegistry
 {
     private ManagedServer _managedServer = null;
@@ -95,22 +97,34 @@ public abstract class ServerRegistry
     protected void addConnectionMBean(ManagedBean mbean)
     {
         String vHost = mbean.getVirtualHostName();
-        _connections.putIfAbsent(vHost, new ArrayList<ManagedBean>());
-        _connections.get(vHost).add(mbean);
+        List<ManagedBean> vhostConnections = getVhostSubList(vHost, _connections);
+        vhostConnections.add(mbean);
     }
     
     protected void addExchangeMBean(ManagedBean mbean)
     {
         String vHost = mbean.getVirtualHostName();
-        _exchanges.putIfAbsent(vHost, new ArrayList<ManagedBean>());
-        _exchanges.get(vHost).add(mbean);
+        List<ManagedBean> vhostExchanges = getVhostSubList(vHost, _exchanges);
+        vhostExchanges.add(mbean);
     }
     
     protected void addQueueMBean(ManagedBean mbean)
     {
         String vHost = mbean.getVirtualHostName();
-        _queues.putIfAbsent(vHost, new ArrayList<ManagedBean>());
-        _queues.get(vHost).add(mbean);
+        List<ManagedBean> vhostQueues = getVhostSubList(vHost, _queues);
+        vhostQueues.add(mbean);
+    }
+    
+    private List<ManagedBean> getVhostSubList(String vHost, ConcurrentMap<String,List<ManagedBean>> parentList)
+    {
+        //add an empty sublist for the vhost if required
+        if (!parentList.containsKey(vHost))
+        {
+            List<ManagedBean> subList = Collections.synchronizedList(new ArrayList<ManagedBean>());
+            parentList.putIfAbsent(vHost, subList);
+        }
+        
+        return parentList.get(vHost);
     }
     
     protected void addVirtualHostManagerMBean(ManagedBean mbean)
@@ -146,17 +160,32 @@ public abstract class ServerRegistry
     
     public List<ManagedBean> getConnections(String virtualHost)
     {
-        return _connections.get(virtualHost);
+        return getVhostObjects(virtualHost, _connections);
     }
     
     public List<ManagedBean> getExchanges(String virtualHost)
     {
-        return _exchanges.get(virtualHost);
+        return getVhostObjects(virtualHost, _exchanges);
     }
     
     public List<ManagedBean> getQueues(String virtualHost)
     {
-        return _queues.get(virtualHost);
+        return getVhostObjects(virtualHost, _queues);
+    }
+    
+    public List<ManagedBean> getVhostObjects(String virtualHost, ConcurrentMap<String,List<ManagedBean>> parentList)
+    {
+        List<ManagedBean> objects = parentList.get(virtualHost);
+        
+        if(objects == null)
+        {
+            return new ArrayList<ManagedBean>();
+        }
+        
+        synchronized (objects)
+        {
+            return new ArrayList<ManagedBean>(objects);
+        }
     }
     
     //returns the requested ManagedBean, or null if it cant be found
