@@ -700,13 +700,37 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         
         ArrayList<ManagedBean> selectedMBeans = new ArrayList<ManagedBean>();
 
+        boolean allSucceded = true;
         //the entries are created from an List<Object> with the attribute values (name first)
         for(int index = 0; index < selectedIndices.length ; index++)
         {
             List<Object> queueEntry = (List<Object>) _table.getItem(selectedIndices[index]).getData();
             String queueName = (String) queueEntry.get(0);
-            selectedMBeans.add(_serverRegistry.getQueue(queueName, _virtualHost));
+            
+            ManagedBean queueMBean = _serverRegistry.getQueue(queueName, _virtualHost);
+            
+            //check queue had not already been unregistered before trying to add it
+            if(queueMBean != null)
+            {
+                selectedMBeans.add(queueMBean);
+            }
+            else
+            {
+                allSucceded = false;
+            }
         }
+
+        if(allSucceded)
+        {
+            //ensure the status bar is cleared of any previous failures added by the below
+            ViewUtility.clearStatusBar();
+        }
+        else
+        {
+            ViewUtility.operationFailedStatusBarMessage("A selected queue could not be added as it was no longer registered");
+            refresh();
+        }
+        
 
         IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
         NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);

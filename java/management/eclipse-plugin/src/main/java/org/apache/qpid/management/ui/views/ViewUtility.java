@@ -1002,6 +1002,14 @@ public class ViewUtility
             _mbeanView.populateStatusBar(icon, failureMessage);            
         }
     }
+    
+    public static void clearStatusBar()
+    {
+        if(_mbeanView != null)
+        {
+            _mbeanView.clearStatusBar();            
+        }
+    }
 
     public static void centerChildInParentShell(Shell parent, Shell child)
     {

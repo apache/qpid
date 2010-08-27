@@ -475,7 +475,7 @@ public class MBeanView extends ViewPart
         }
         
         _form.setText(APPLICATION_NAME);
-        populateStatusBar("");
+        clearStatusBar();
     }
     
     public void mbeanUnregistered(ManagedBean mbean)
@@ -555,6 +555,11 @@ public class MBeanView extends ViewPart
     {
         IActionBars bars = getViewSite().getActionBars();
         bars.getStatusLineManager().setMessage(message);
+    }
+    
+    public void clearStatusBar()
+    {
+        populateStatusBar("");
     }
 
     public void back() throws Exception
