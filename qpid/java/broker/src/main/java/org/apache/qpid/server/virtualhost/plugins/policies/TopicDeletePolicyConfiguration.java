@@ -18,23 +18,28 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration.plugin;
+package org.apache.qpid.server.virtualhost.plugins.policies;
+
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
-import java.util.Arrays;
-import java.util.List;
-
-public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugin
+public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
 {
-    public static class SlowConsumerDetectionPolicyConfigurationFactory implements ConfigurationPluginFactory
+
+    public static class TopicDeletePolicyConfigurationFactory
+            implements ConfigurationPluginFactory
     {
-        public ConfigurationPlugin newInstance(String path, Configuration config) throws ConfigurationException
+        public ConfigurationPlugin newInstance(String path,
+                                               Configuration config)
+                throws ConfigurationException
         {
-            SlowConsumerDetectionPolicyConfiguration slowConsumerConfig = new SlowConsumerDetectionPolicyConfiguration();
+            TopicDeletePolicyConfiguration slowConsumerConfig =
+                    new TopicDeletePolicyConfiguration();
             slowConsumerConfig.setConfiguration(path, config);
             return slowConsumerConfig;
         }
@@ -42,35 +47,35 @@ public class SlowConsumerDetectionPolicyConfiguration extends ConfigurationPlugi
         public List<String> getParentPaths()
         {
             return Arrays.asList(
-                    "virtualhosts.virtualhost.queues.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.topics.slow-consumer-detection.policy",
-                    "virtualhosts.virtualhost.topics.topic.slow-consumer-detection.policy");
+                    "virtualhosts.virtualhost.queues.slow-consumer-detection.policy.topicDelete",
+                    "virtualhosts.virtualhost.queues.queue.slow-consumer-detection.policy.topicDelete",
+                    "virtualhosts.virtualhost.topics.slow-consumer-detection.policy.topicDelete",
+                    "virtualhosts.virtualhost.topics.topic.slow-consumer-detection.policy.topicDelete");
         }
     }
 
     public String[] getElementsProcessed()
     {
-        return new String[]{"name"};
-    }
-
-    public String getPolicyName()
-    {
-        return getStringValue("name");
+        return new String[]{"delete-persistent"};
     }
 
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        if (getPolicyName() == null)
-        {
-            throw new ConfigurationException("No Slow consumer policy defined.");
-        }
+        // No validation required.
+    }
+
+    public boolean deletePersistent()
+    {
+        // If we don't have configuration then we don't deletePersistent Queues 
+        return (hasConfiguration() && contains("delete-persistent"));
     }
 
     @Override
     public String formatToString()
     {
-        return "Policy:"+getPolicyName();
+        return (deletePersistent()?"delete-durable":"");
     }
+
+
 }
