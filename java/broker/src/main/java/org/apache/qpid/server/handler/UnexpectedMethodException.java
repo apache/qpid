@@ -26,6 +26,9 @@ import org.apache.qpid.AMQException;
 
 public class UnexpectedMethodException extends AMQException
 {
+    
+    private static final long serialVersionUID = -255921574946294892L;
+
     public UnexpectedMethodException(AMQMethodBody body)
     {
         super("Unexpected method recevied: " + body.getClass().getName());
