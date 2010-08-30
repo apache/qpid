@@ -34,7 +34,7 @@ import java.text.MessageFormat;
 public abstract class AbstractLogSubject implements LogSubject
 {
     /**
-     * The logString that will be returned via toString
+     * The logString that will be returned via toLogString
      */
     protected String _logString;
 
@@ -50,13 +50,12 @@ public abstract class AbstractLogSubject implements LogSubject
     }
 
     /**
-     * ToString is how the Logging infrastructure will get the text for this
+     * toLogString is how the Logging infrastructure will get the text for this
      * LogSubject
      *
      * @return String representing this LogSubject
      */
-    @Override
-    public String toString()
+    public String toLogString()
     {
         return _logString;
     }
