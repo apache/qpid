@@ -73,7 +73,6 @@ public abstract class AbstractTestMessages extends InternalBrokerBaseCase
      */
     protected void validateLogMessage(List<Object> logs, String tag, String[] expected)
     {
-System.out.println("===============" + logs.get(0));
         assertEquals("Log has incorrect message count", 1, logs.size());
 
         //We trim() here as we don't care about extra white space at the end of the log message
