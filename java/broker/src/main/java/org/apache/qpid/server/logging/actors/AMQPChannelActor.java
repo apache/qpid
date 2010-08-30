@@ -58,7 +58,7 @@ public class AMQPChannelActor extends AbstractActor
 
     public String getLogMessage()
     {
-        return _logString.toString();
+        return _logString.toLogString();
     }
 }
 

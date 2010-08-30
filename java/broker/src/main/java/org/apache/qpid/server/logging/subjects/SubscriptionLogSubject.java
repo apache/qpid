@@ -29,8 +29,8 @@ public class SubscriptionLogSubject extends AbstractLogSubject
 
     /**
      * LOG FORMAT for the SubscriptionLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Uses a MessageFormat call to insert the required values according to
+     * these indices:
      *
      * 0 - Subscription ID
      */
@@ -47,7 +47,7 @@ public class SubscriptionLogSubject extends AbstractLogSubject
         // log string format is:
         // [ sub:<id>(vh(<vhost>)/qu(<queue>)) ]
 
-        String queueString = new QueueLogSubject(subscription.getQueue()).toString();
+        String queueString = new QueueLogSubject(subscription.getQueue()).toLogString();
 
         _logString = "[" + MessageFormat.format(SubscriptionLogSubject.SUBSCRIPTION_FORMAT,
                                                 subscription.getSubscriptionID())

@@ -575,7 +575,14 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
 
     public LogSubject getLogSubject()
     {
-        return null;
+        return new LogSubject()
+        {
+            public String toLogString()
+            {
+                return "[ ]";
+            }
+
+        };
     }
 
 }

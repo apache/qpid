@@ -24,14 +24,13 @@ package org.apache.qpid.server.logging;
  * Each LogSubject that wishes to be logged will implement this to provide their
  * own display representation.
  *
- * The display representation is retrieved through the toString() method.
  */
 public interface LogSubject 
 {
     /**
-     * Logs the message as provided by String.valueOf(message).
+     * Provides the log message as as String.
      *
      * @returns String the display representation of this LogSubject
      */
-    public String toString();
+    public String toLogString();
 }

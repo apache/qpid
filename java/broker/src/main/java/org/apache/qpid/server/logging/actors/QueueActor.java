@@ -49,7 +49,7 @@ public class QueueActor extends AbstractActor
 
     public String getLogMessage()
     {
-        return _logSubject.toString();
+        return _logSubject.toLogString();
     }
 }
     

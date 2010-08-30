@@ -44,7 +44,7 @@ public abstract class AbstractActor implements LogActor
     {
         if (_rootLogger.isMessageEnabled(this, subject, message.getLogHierarchy()))
         {
-            _rootLogger.rawMessage(DEFAULT_MSG_PREFIX + getLogMessage() + String.valueOf(subject) + message, message.getLogHierarchy());
+            _rootLogger.rawMessage(DEFAULT_MSG_PREFIX + getLogMessage() + subject.toLogString() + message, message.getLogHierarchy());
         }
     }
 

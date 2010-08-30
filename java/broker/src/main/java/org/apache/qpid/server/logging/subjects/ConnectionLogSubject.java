@@ -128,10 +128,9 @@ public class ConnectionLogSubject extends AbstractLogSubject
         }
     }
 
-    @Override
-    public String toString()
+    public String toLogString()
     {
         updateLogString();
-        return super.toString();
+        return super.toLogString();
     }
 }
