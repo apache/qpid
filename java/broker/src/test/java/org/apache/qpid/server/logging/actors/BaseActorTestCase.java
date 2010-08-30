@@ -69,7 +69,7 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
     {
         actor.message(new LogSubject()
         {
-            public String toString()
+            public String toLogString()
             {
                 return message;
             }

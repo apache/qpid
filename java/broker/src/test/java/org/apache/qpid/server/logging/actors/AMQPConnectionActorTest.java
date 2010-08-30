@@ -113,7 +113,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 
         _amqpActor.message(new LogSubject()
         {
-            public String toString()
+            public String toLogString()
             {
                 return "[AMQPActorTest]";
             }

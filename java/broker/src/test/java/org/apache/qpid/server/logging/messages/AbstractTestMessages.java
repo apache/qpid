@@ -83,7 +83,7 @@ public abstract class AbstractTestMessages extends InternalBrokerBaseCase
         // Simple switch to print out all the logged messages 
         //System.err.println(log);
 
-        int msgIndex = log.indexOf(_logSubject.toString())+_logSubject.toString().length();
+        int msgIndex = log.indexOf(_logSubject.toLogString())+_logSubject.toLogString().length();
 
         assertTrue("Unable to locate Subject:" + log, msgIndex != -1);
 

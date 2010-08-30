@@ -91,7 +91,14 @@ public class MockAMQQueue implements AMQQueue
 
     public LogSubject getLogSubject()
     {
-        return null; 
+       return new LogSubject()
+        {
+            public String toLogString()
+            {
+                return "[MockAMQQueue]";
+            }
+
+        }; 
     }
 
     public ConfigStore getConfigStore()
