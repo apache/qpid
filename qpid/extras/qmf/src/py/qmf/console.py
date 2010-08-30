@@ -762,12 +762,22 @@ class Session:
     """
     if not self.userBindings:
       raise Exception("Session not configured for binding specific agents.")
-    self.agent_filter.append((vendor, product, instance))
     if product is not None:
       v2key = "agent.ind.heartbeat.%s.%s.#" % (vendor.replace(".", "_"), product.replace(".", "_"))
     else:
       v2key = "agent.ind.heartbeat.%s.#" % vendor.replace(".", "_")
     self.v2BindingKeyList.append(v2key)
+
+    # allow wildcards - only add filter if a non-wildcarded component is given
+    if vendor == "*":
+      vendor = None
+    if product == "*":
+      product = None
+    if instance == "*":
+      instance = None
+    if vendor or product or instance:
+      self.agent_filter.append((vendor, product, instance))
+
     for broker in self.brokers:
       if broker.isConnected():
         if broker.brokerSupportsV2:
