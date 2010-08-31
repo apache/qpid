@@ -19,7 +19,7 @@
  - under the License.
  -
  -->
-VisualStudioProject
+<VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="messaging_map_receiver"
