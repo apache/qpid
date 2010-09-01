@@ -78,18 +78,18 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         super.setUp();
 
-        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches(MESSAGES_STORE_PREFIX);
 
         // Validation
 
         assertTrue("MST messages not logged", results.size() > 0);
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
         //1
         assertEquals("MST-1001 is not the first MST message", "MST-1001", getMessageID(fromMessage(log)));
 
         //Validate each vhost logs a creation
-        results = _monitor.waitAndFindMatches("MST-1001", DEFAULT_LOG_WAIT);
+        results = waitAndFindMatches("MST-1001");
 
         // Load VirtualHost list from file.
         List<String> vhosts = Arrays.asList(_serverConfiguration.getVirtualHosts());
@@ -98,7 +98,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
         for (int index = 0; index < results.size(); index++)
         {
-            String result = getLog(results.get(index));
+            String result = getLogMessage(results, index);
 
             // getSlice will return extract the vhost from vh(/test) -> '/test'
             // so remove the '/' to get the name
@@ -145,7 +145,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         //Stop the broker so we get the close messages.
         stopBroker();
 
-        List<String> results = _monitor.waitAndFindMatches(MESSAGES_STORE_PREFIX, DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches(MESSAGES_STORE_PREFIX);
 
         // Validation
 
@@ -157,13 +157,13 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         List<String> vhosts = Arrays.asList(configuration.getVirtualHosts());
 
         //Validate each vhost logs a creation
-        results = _monitor.waitAndFindMatches("MST-1003", DEFAULT_LOG_WAIT);
+        results = waitAndFindMatches("MST-1003");
 
         assertEquals("Each vhost did not close its store.", vhosts.size(), results.size());
 
         for (int index = 0; index < results.size(); index++)
         {
-            String result = getLog(results.get(index));
+            String result = getLogMessage(results, index);
 
             // getSlice will return extract the vhost from vh(/test) -> '/test'
             // so remove the '/' to get the name

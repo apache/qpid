@@ -93,11 +93,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testJMXManagementConsoleConnection() throws IOException
     {
-        List<String> results = _monitor.waitAndFindMatches("MNG-1007", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("MNG-1007");
 
         assertEquals("Unexpected Management Connection count", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         validateMessageID("MNG-1007", log);
 
@@ -106,14 +106,14 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         //  MESSAGE [mng:1(rmi://169.24.29.116)] MNG-1007 : Open : User admin
         int connectionID = Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + "");
 
-        results = _monitor.findMatches("MNG-1008");
+        results = findMatches("MNG-1008");
 
         assertEquals("Unexpected Management Connection close count", 0, results.size());
 
         _jmxUtils.close();
         _closed  = true;
         
-        results = _monitor.waitAndFindMatches("MNG-1008", DEFAULT_LOG_WAIT);
+        results = waitAndFindMatches("MNG-1008");
 
         assertEquals("Unexpected Management Connection count", 1, results.size());
 
@@ -174,7 +174,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
                    exceptionReceived.await(2, TimeUnit.SECONDS));
 
         //Validate results
-        List<String> results = _monitor.waitAndFindMatches("CON-1002", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("CON-1002");
 
         assertEquals("Unexpected Connection Close count", 1, results.size());
     }
@@ -209,11 +209,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         // Validate
 
         //1 - ID is correct
-        List<String> results = _monitor.waitAndFindMatches("EXH-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("EXH-1001");
 
         assertEquals("More than one exchange creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct exchange name
         assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
@@ -233,11 +233,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         // Validate
 
         //1 - ID is correct
-        List<String> results = _monitor.waitAndFindMatches("EXH-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("EXH-1001");
 
         assertEquals("More than one exchange creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct exchange name
         assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
@@ -258,11 +258,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         // Validate
 
         //1 - ID is correct
-        List<String> results = _monitor.waitAndFindMatches("EXH-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("EXH-1001");
 
         assertEquals("More than one exchange creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct exchange name
         assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
@@ -283,11 +283,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         // Validate
 
         //1 - ID is correct
-        List<String> results = _monitor.waitAndFindMatches("EXH-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("EXH-1001");
 
         assertEquals("More than one exchange creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct exchange name
         assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
@@ -326,11 +326,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         // Validate
 
-        List<String> results = _monitor.waitAndFindMatches("QUE-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("QUE-1001");
 
         assertEquals("More than one queue creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct queue name
         String subject = fromSubject(log);
@@ -371,7 +371,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         managedBroker.deleteQueue(getName());
 
-        List<String> results = _monitor.waitAndFindMatches("QUE-1002", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("QUE-1002");
 
         assertEquals("More than one queue deletion found", 1, results.size());
 
@@ -417,11 +417,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         managedExchange.createNewBinding(getName(), getName());
 
-        List<String> results = _monitor.waitAndFindMatches("BND-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("BND-1001");
 
         assertEquals("More than one bind creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct binding
         String subject = fromSubject(log);
@@ -444,11 +444,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         managedExchange.createNewBinding(getName(), getName());
 
-        List<String> results = _monitor.waitAndFindMatches("BND-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("BND-1001");
 
         assertEquals("More than one bind creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct binding
         String subject = fromSubject(log);
@@ -471,11 +471,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         managedExchange.createNewBinding(getName(), getName());
 
-        List<String> results = _monitor.waitAndFindMatches("BND-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("BND-1001");
 
         assertEquals("More than one bind creation found", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Validate correct binding
         String subject = fromSubject(log);
@@ -518,7 +518,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         managedBroker.unregisterExchange(getName());
 
-        List<String> results = _monitor.waitAndFindMatches("EXH-1002", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("EXH-1002");
 
         assertEquals("More than one exchange deletion found", 1, results.size());
 

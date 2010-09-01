@@ -21,7 +21,6 @@
 package org.apache.qpid.server.logging;
 
 import javax.jms.Connection;
-import java.io.File;
 import java.util.List;
 import java.util.HashMap;
 import java.util.TreeSet;
@@ -55,7 +54,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 
         Connection connection = getConnection();
 
-        List<String> results = _monitor.waitAndFindMatches(CONNECTION_PREFIX, DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches(CONNECTION_PREFIX);
 
         assertTrue("No CON messages logged", results.size() > 0);        
 
@@ -84,43 +83,45 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // open and close messages from the failed 0-10 negotiation 
         assertTrue("CON messages not logged:" + results.size(), results.size() >= 3);
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
         //1 & 2
         validateMessageID("CON-1001",log);
 
-        //We get the size so that we can validate the last three CON- messages
-        int resultsSize = results.size();
-        // This is because when running externally we will also have logged the failed
-        // 0-10 negotiation messages
+        // validate the last three CON- messages.
+        // This is because when running externally we may also have logged the failed
+        // 0-10 negotiation messages if using 0-8/0-9 on the broker.
 
         // 3 - Assert the options are correct
-        log = getLog(results.get(resultsSize - 1));
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
-        validateMessageID("CON-1001",log);
-        assertTrue("Client ID option is not present", fromMessage(log).contains("Client ID :"));
-        assertTrue("Client ID value is not present", fromMessage(log).contains(connection.getClientID()));
+        validateConnectionOpen(results, 0, true, true, connection.getClientID());
 
-        assertTrue("Protocol Version option is not present", fromMessage(log).contains("Protocol Version :"));
-        //fixme there is no way currently to find out the negotiated protocol version
-        // The delegate is the versioned class ((AMQConnection)connection)._delegate
-
-        log = getLog(results.get(resultsSize - 2));
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
-        validateMessageID("CON-1001",log);
-        assertTrue("Protocol Version option is not present", fromMessage(log).contains("Protocol Version :"));
-        //fixme agani we should check the version
-        // Check that client ID is not present in log
-        assertTrue("Client ID option is present", !fromMessage(log).contains("Client ID :"));
+        validateConnectionOpen(results, 1, true, false, null);
 
-        log = getLog(results.get(resultsSize - 3));
-        validateMessageID("CON-1001",log);
-        // Check that PV is not present in log
-        assertTrue("Protocol Version option is present", !fromMessage(log).contains("Protocol Version :"));
-        // Check that client ID is not present in log
-        assertTrue("Client ID option is present", !fromMessage(log).contains("Client ID :"));
+        validateConnectionOpen(results, 2, false, false, null);
 
         connection.close();
+    }
+    
+    private void validateConnectionOpen(List<String> results, int positionFromEnd,
+                 boolean protocolVersionPresent, boolean clientIdOptionPresent, String clientIdValue)
+    {
+        String log = getLogMessageFromEnd(results, positionFromEnd);
+        
+        validateMessageID("CON-1001",log);
+        
+        assertEquals("unexpected Client ID option state", clientIdOptionPresent, fromMessage(log).contains("Client ID :"));
+        
+        if(clientIdOptionPresent && clientIdValue != null)
+        {
+            assertTrue("Client ID value is not present", fromMessage(log).contains(clientIdValue));
+        }
+        
+        assertEquals("unexpected Protocol Version option state", 
+                protocolVersionPresent, fromMessage(log).contains("Protocol Version :"));
+        //fixme there is no way currently to find out the negotiated protocol version
+        // The delegate is the versioned class ((AMQConnection)connection)._delegate
     }
 
     /**
@@ -147,20 +148,17 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         getConnection().close();
 
         // Wait to ensure that the desired message is logged
-        _monitor.waitForMessage("CON-1002", DEFAULT_LOG_WAIT);
+        waitForMessage("CON-1002");
 
-        List<String> results = _monitor.findMatches(CONNECTION_PREFIX);
+        List<String> results = findMatches(CONNECTION_PREFIX);
 
         // Validation
 
         // We should have at least four messages
         assertTrue("CON messages not logged:" + results.size(), results.size() >= 4);
 
-        //We get the size so that we can validate the last set of CON- messages
-        int resultsSize = results.size();
-
         // Validate Close message occurs
-        String log = getLog(results.get(resultsSize - 1));
+        String log = getLogMessageFromEnd(results, 0);
         validateMessageID("CON-1002",log);
         assertTrue("Message does not end with close:" + log, log.endsWith("Close"));
 
@@ -168,7 +166,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         int connectionID = getConnectionID(log);
 
         //Previous log message should be the open
-        log = getLog(results.get(resultsSize - 2));
+        log = getLogMessageFromEnd(results, 1);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
         validateMessageID("CON-1001",log);
         assertEquals("Connection IDs do not match", connectionID, getConnectionID(fromActor(log)));

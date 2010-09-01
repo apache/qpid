@@ -33,12 +33,18 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.LogMonitor;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Abstract superclass for logging test set up and utility methods.
+ *
+ * So named to prevent it being selected itself as a test to run by the test suite.
+ */
 public class AbstractTestLogging extends QpidBrokerTestCase
 {
     public static final long DEFAULT_LOG_WAIT = 2000;
@@ -131,7 +137,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     {
         // Ensure the alert has not occured yet
         assertEquals("Message has already occured:" + log, 0,
-                     _monitor.findMatches(log).size());
+                     findMatches(log).size());
     }
 
     protected void validateMessageID(String id, String log)
@@ -321,6 +327,56 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         int start = rawLog.indexOf("MESSAGE");
         return rawLog.substring(start);
     }
+    
+    /**
+     * Extract the log entry from the result set. Positions are 0-based.
+     * 
+     * @param results list of log message results to extract from
+     * @param position position in the list of the message to extract
+     * @return the message string
+     */
+    protected String getLogMessage(List<String> results, int position)
+    {
+        return getLog(results.get(position));
+    }
+    
+    /**
+     * Extract the nth-from-last log entry from the result set.
+     * 
+     * @param results list of log message results to extract from
+     * @param positionFromEnd position from end of the message list to extract (eg 0 for last)
+     * @return the message string
+     */
+    protected String getLogMessageFromEnd(List<String> results, int positionFromEnd)
+    {
+        int resultSize = results.size();
+        return getLogMessage(results, resultSize - 1 - positionFromEnd);
+    }
+    
+    protected List<String> findMatches(String toFind) throws IOException
+    {
+        return _monitor.findMatches(toFind);
+    }
+    
+    protected List<String> waitAndFindMatches(String toFind) throws IOException
+    {
+        return waitAndFindMatches(toFind, DEFAULT_LOG_WAIT);
+    }
+
+    protected List<String> waitAndFindMatches(String toFind, long wait) throws IOException
+    {
+        return _monitor.waitAndFindMatches(toFind, wait);
+    }
+
+    public boolean waitForMessage(String message) throws FileNotFoundException, IOException
+    {
+        return waitForMessage(message, DEFAULT_LOG_WAIT);
+    }
+
+    public boolean waitForMessage(String message, long wait) throws FileNotFoundException, IOException
+    {
+        return _monitor.waitForMessage(message, wait, true);
+    }
 
     /**
      * Given a list of messages that have been pulled out of a log file
@@ -389,4 +445,30 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         return filteredResults;
     }
 
+    /**
+     * Dump the log results.
+     */
+    protected void dumpLogs(List<String> results) throws IOException  
+    {
+        dumpLogs(results, null);
+    }
+    
+    /**
+     * Dump the log results or if there are none, the contents of the 
+     * monitored log file if the monitor is non-null.
+     */
+    protected void dumpLogs(List<String> results, LogMonitor monitor) throws IOException   
+    {
+        System.err.println("Log Dump:");
+        for (String log : results)
+        {
+            System.err.println(log);
+        }
+
+        if (results.size() == 0 && monitor != null)
+        {
+            System.err.println("Monitored file contents:");
+            System.err.println(monitor.readFile());
+        }
+    }
 }

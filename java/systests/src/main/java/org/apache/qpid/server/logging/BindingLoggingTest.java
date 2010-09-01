@@ -65,15 +65,15 @@ public class BindingLoggingTest extends AbstractTestLogging
         _topic = (Topic) getInitialContext().lookup(TOPIC);
     }
 
-    private void validateLogMessage(String log, String messageID, String exchange, String message)
+    private void validateLogMessage(String log, String messageID, String message, String exchange, String rkey, String queueName)
     {
         validateMessageID(messageID, log);
 
         String subject = fromSubject(log);
 
-        assertEquals("Queue not correct.", getName(),
+        assertEquals("Queue not correct.", queueName,
                      AbstractTestLogSubject.getSlice("qu", subject));
-        assertEquals("Routing Key not correct.", getName(),
+        assertEquals("Routing Key not correct.", rkey,
                      AbstractTestLogSubject.getSlice("rk", subject));
         assertEquals("Virtualhost not correct.", "/test",
                      AbstractTestLogSubject.getSlice("vh", subject));
@@ -104,7 +104,7 @@ public class BindingLoggingTest extends AbstractTestLogging
     {
         _session.createConsumer(_queue).close();
 
-        List<String> results = _monitor.waitAndFindMatches(BND_PREFIX, DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches(BND_PREFIX);
 
         // We will have two binds as we bind all queues to the default exchange
         assertEquals("Result set larger than expected.", 2, results.size());
@@ -112,11 +112,12 @@ public class BindingLoggingTest extends AbstractTestLogging
         String exchange = "direct/<<default>>";
         String messageID = "BND-1001";
         String message = "Create";
+        String queueName = _queue.getQueueName();
 
-        validateLogMessage(getLog(results.get(0)), messageID, exchange, message);
+        validateLogMessage(getLogMessage(results, 0), messageID, message, exchange, queueName, queueName);
 
         exchange = "direct/amq.direct";
-        validateLogMessage(getLog(results.get(1)), messageID, exchange, message);
+        validateLogMessage(getLogMessage(results, 1), messageID, message, exchange, queueName, queueName);
     }
 
     /**
@@ -141,49 +142,26 @@ public class BindingLoggingTest extends AbstractTestLogging
 
         _session.createDurableSubscriber(_topic, getName(), SELECTOR, false).close();
 
-        List<String> results = _monitor.waitAndFindMatches(BND_PREFIX, DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches(BND_PREFIX);
 
         // We will have two binds as we bind all queues to the default exchange
         assertEquals("Result set larger than expected.", 2, results.size());
 
-        String log = getLog(results.get(0));
-
-        //Verify the first entry is the default binding
-        validateMessageID("BND-1001", log);
-
-        String subject = fromSubject(log);
-
-        assertEquals("Queue not correct.", "clientid:" + getName(),
-                     AbstractTestLogSubject.getSlice("qu", subject));
-        // NOTE default binding is the queue name
-        assertEquals("Routing Key not correct.", "clientid:" + getName(),
-                     AbstractTestLogSubject.getSlice("rk", subject));
-        assertEquals("Virtualhost not correct.", "/test",
-                     AbstractTestLogSubject.getSlice("vh", subject));
-        assertEquals("Exchange not correct.", "direct/<<default>>",
-                     AbstractTestLogSubject.getSlice("ex", fromSubject(log)));
-
-        String message = getMessageString(log);
+        //Verify the first entry is the default binding       
+        String messageID = "BND-1001";
+        String message = "Create";
+        
+        validateLogMessage(getLogMessage(results, 0), messageID, message, 
+                "direct/<<default>>", "clientid:" + getName(), "clientid:" + getName());
 
         //Default binding will be without the selector
         assertTrue("JMSSelector identified in binding:"+message, !message.contains("jms-selector"));
 
         // Perform full testing on the second non default binding
-        log = getLog(results.get(1));
-        validateMessageID("BND-1001", log);
-
-        subject = fromSubject(log);
-
-        assertEquals("Queue not correct.", "clientid:" + getName(),
-                     AbstractTestLogSubject.getSlice("qu", subject));
-        assertEquals("Routing Key not correct.", "topic",
-                     AbstractTestLogSubject.getSlice("rk", subject));
-        assertEquals("Virtualhost not correct.", "/test",
-                     AbstractTestLogSubject.getSlice("vh", subject));
-        assertEquals("Exchange not correct.", "topic/amq.topic",
-                     AbstractTestLogSubject.getSlice("ex", subject));
-
-        message = getMessageString(log);
+        message = getMessageString(fromMessage(getLogMessage(results, 1)));
+        
+        validateLogMessage(getLogMessage(results, 1), messageID, message, 
+                "topic/amq.topic", "topic", "clientid:" + getName());
 
         assertTrue("JMSSelector not identified in binding:"+message, message.contains("jms-selector"));
         assertTrue("Selector not part of binding.:"+message, message.contains(SELECTOR));
@@ -212,7 +190,7 @@ public class BindingLoggingTest extends AbstractTestLogging
         // and so unbind.
         _session.createConsumer(_session.createTemporaryQueue()).close();
 
-        List<String> results = _monitor.waitAndFindMatches(BND_PREFIX, DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches(BND_PREFIX);
 
         // We will have two binds as we bind all queues to the default exchange
         assertEquals("Result not as expected." + results, 4, results.size());
@@ -221,11 +199,11 @@ public class BindingLoggingTest extends AbstractTestLogging
         String messageID = "BND-1001";
         String message = "Create";
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
         validateMessageID(messageID, log);
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
-        log = getLog(results.get(1));
+        log = getLogMessage(results, 1);
         validateMessageID(messageID, log);
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
@@ -236,32 +214,26 @@ public class BindingLoggingTest extends AbstractTestLogging
         messageID = "BND-1002";
         message = "Deleted";
 
-        log = getLog(results.get(2));
+        log = getLogMessage(results, 2);
         validateMessageID(messageID, log);
 
         String subject = fromSubject(log);
-
-        assertTrue("Routing Key does not start with TempQueue:"+AbstractTestLogSubject.getSlice("rk", subject),
-                     AbstractTestLogSubject.getSlice("rk", subject).startsWith("TempQueue"));
-        assertEquals("Virtualhost not correct.", "/test",
-                     AbstractTestLogSubject.getSlice("vh", subject));
+        
+        validateBindingDeleteArguments(subject, "/test");
 
         boolean defaultFirst = DEFAULT.equals(AbstractTestLogSubject.getSlice("ex", subject));
         boolean directFirst = DIRECT.equals(AbstractTestLogSubject.getSlice("ex", subject));
 
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
-        log = getLog(results.get(3));
+        log = getLogMessage(results, 3);
 
         validateMessageID(messageID, log);
 
         subject = fromSubject(log);
 
-        assertTrue("Routing Key does not start with TempQueue:"+AbstractTestLogSubject.getSlice("rk", subject),
-                     AbstractTestLogSubject.getSlice("rk", subject).startsWith("TempQueue"));
-        assertEquals("Virtualhost not correct.", "/test",
-                     AbstractTestLogSubject.getSlice("vh", subject));
-
+        validateBindingDeleteArguments(subject, "/test");
+        
         if (!defaultFirst)
         {
             assertEquals(DEFAULT, AbstractTestLogSubject.getSlice("ex", subject));
@@ -274,6 +246,15 @@ public class BindingLoggingTest extends AbstractTestLogging
         }
 
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
-
+    }
+    
+    private void validateBindingDeleteArguments(String subject, String vhostName)
+    {
+        String routingKey = AbstractTestLogSubject.getSlice("rk", subject);
+        
+        assertTrue("Routing Key does not start with TempQueue:"+routingKey,
+                routingKey.startsWith("TempQueue"));
+        assertEquals("Virtualhost not correct.", vhostName,
+                AbstractTestLogSubject.getSlice("vh", subject));
     }
 }

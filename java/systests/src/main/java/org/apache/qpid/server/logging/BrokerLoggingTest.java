@@ -96,22 +96,22 @@ public class BrokerLoggingTest extends AbstractTestLogging
             String configFilePath = _configFile.toString();
 
             // Ensure we wait for TESTID to be logged
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            List<String> results = waitAndFindMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
 
                 assertTrue("BRKer message not logged", results.size() > 0);
 
-                String log = getLog(results.get(0));
+                String log = getLogMessage(results, 0);
 
                 //1
                 validateMessageID(TESTID, log);
 
                 //2
-                results = _monitor.findMatches(TESTID);
+                results = findMatches(TESTID);
                 assertEquals("More than one configuration message found.",
                              1, results.size());
 
@@ -121,11 +121,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
+
                 throw afe;
             }
         }
@@ -178,9 +175,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
             getConnection();
 
             // Ensure we wait for TESTID to be logged
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            List<String> results = waitAndFindMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -210,7 +207,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //2
                     assertEquals("More than one log4j configuration message found.",
-                                 1, _monitor.findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     //3
                     String defaultLog4j = _configFile.getParent() + "/" + Main.DEFAULT_LOG_CONFIG_FILENAME;
@@ -224,17 +221,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
-
-                if (results.size() == 0)
-                {
-                    System.err.println("Monitored file contents:");
-                    System.err.println(_monitor.readFile());
-                }
+                dumpLogs(results, _monitor);
 
                 throw afe;
             }
@@ -279,9 +266,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
             getConnection();
 
             // Ensure we wait for TESTID to be logged
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            List<String> results = waitAndFindMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -310,7 +297,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //2
                     assertEquals("More than one log4j configuration message found.",
-                                 1, _monitor.findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     //3
                     assertTrue("Log4j file details not correctly logged:" + getMessageString(log),
@@ -323,17 +310,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
-
-                if (results.size() == 0)
-                {
-                    System.err.println("Monitored file contents:");
-                    System.err.println(_monitor.readFile());
-                }
+                dumpLogs(results, _monitor);
 
                 throw afe;
             }
@@ -368,11 +345,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             _monitor = new LogMonitor(_outputFile);
             
             // Ensure we wait for TESTID to be logged
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
             // Retrieve all BRK- log messages so we can check for an erroneous
             // BRK-1002 message.
-            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
+            List<String> results = findMatches(BRK_LOG_PREFIX);
 
             try
             {
@@ -402,7 +379,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //2
                     assertEquals("More than one startup message found.",
-                                 1, _monitor.findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     validation = true;
                 }
@@ -411,11 +388,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
+                
                 throw afe;
             }
         }
@@ -457,11 +431,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             getConnection();
 
             // Ensure we wait for TESTID to be logged
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
             // Retrieve all BRK- log messages so we can check for an erroneous
             // BRK-1002 message.
-            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
+            List<String> results = findMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -491,7 +465,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //2
                     assertEquals("More than one listen message found.",
-                                 1, _monitor.findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     //3
                     String message = getMessageString(log);
@@ -505,11 +479,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
+                
                 throw afe;
             }
         }
@@ -562,11 +533,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             getConnection();
 
             // Ensure we wait for TESTID to be logged
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
             // Retrieve all BRK- log messages so we can check for an erroneous
             // BRK-1002 message.
-            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
+            List<String> results = findMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -595,7 +566,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
-                    List<String> listenMessages  = _monitor.findMatches(TESTID);
+                    List<String> listenMessages  = findMatches(TESTID);
                     assertEquals("Two listen messages should be found.",
                                  2, listenMessages .size());
 
@@ -620,11 +591,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
+
                 throw afe;
             }
         }
@@ -660,11 +628,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
             //Ensure the broker has fully started up.
             getConnection();
             // Ensure we wait for TESTID to be logged
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
             // Retrieve all BRK- log messages so we can check for an erroneous
             // BRK-1001 message.
-            List<String> results = _monitor.findMatches(BRK_LOG_PREFIX);
+            List<String> results = findMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -695,7 +663,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //2
                     assertEquals("More than one ready message found.",
-                                 1, _monitor.findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     //3
                     assertEquals("Ready message not present", "Ready", getMessageString(log));
@@ -707,11 +675,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
+
                 throw afe;
             }
         }
@@ -753,7 +718,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             //Give broker time to shutdown and flush log
             checkSocketClosed(getPort());
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            List<String> results = waitAndFindMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -783,7 +748,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //2
                     assertEquals("More than one listen message found.",
-                                 1, _monitor.findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     //3
                     String message = getMessageString(log);
@@ -800,11 +765,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
+
                 throw afe;
             }
         }
@@ -861,7 +823,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             //Give broker time to shutdown and flush log
             checkSocketClosed(getPort());
 
-            List<String> results = _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            List<String> results = waitAndFindMatches(TESTID);
             try
             {
                 // Validation
@@ -874,7 +836,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                 validateMessageID(TESTID, log);
 
                 //2
-                List<String> listenMessages = _monitor.findMatches(TESTID);
+                List<String> listenMessages = findMatches(TESTID);
                 assertEquals("Two shutdown messages should be found.",
                              2, listenMessages.size());
 
@@ -896,11 +858,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
+
                 throw afe;
             }
         }
@@ -943,9 +902,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
             // Ensure the broker has shutdown before retreving results
             checkSocketClosed(getPort());
 
-            _monitor.waitAndFindMatches(TESTID, DEFAULT_LOG_WAIT);
+            waitAndFindMatches(TESTID);
 
-            List<String> results = _monitor.waitAndFindMatches(BRK_LOG_PREFIX, DEFAULT_LOG_WAIT);
+            List<String> results = waitAndFindMatches(BRK_LOG_PREFIX);
             try
             {
                 // Validation
@@ -969,7 +928,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                     //2
                     assertEquals("More than one ready message found.",
-                                 1, _monitor.findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     //3
                     assertEquals("Stopped message not present", "Stopped", getMessageString(log));
@@ -981,14 +940,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
-
-                System.err.println("Monitored file contents:");
-                System.err.println(_monitor.readFile());
+                dumpLogs(results, _monitor);
 
                 throw afe;
             }

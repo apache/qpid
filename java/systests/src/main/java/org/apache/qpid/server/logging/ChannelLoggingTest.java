@@ -65,21 +65,21 @@ public class ChannelLoggingTest extends AbstractTestLogging
         ((AMQConnection)connection).createSession(false, Session.AUTO_ACKNOWLEDGE,PREFETCH);
 
         // Wait to ensure that the CHN-1004 message is logged
-        _monitor.waitForMessage("CHN-1004", DEFAULT_LOG_WAIT);
+        waitForMessage("CHN-1004");
 
-        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
+        List<String> results = findMatches(CHANNEL_PREFIX);
 
         // Validation
 
         assertEquals("CHN messages not logged", 2, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
         //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1001 : Create
         //1 & 2
         validateMessageID("CHN-1001", log);
         assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
 
-        log = getLog(results.get(1));
+        log = getLogMessage(results, 1);
         //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1004 : Prefetch Size (bytes) {0,number} : Count {1,number}
         //1 & 2
         validateMessageID("CHN-1004", log);
@@ -123,9 +123,9 @@ public class ChannelLoggingTest extends AbstractTestLogging
         connection.start();
 
         // Wait to ensure that the CHN-1002 message is logged
-        _monitor.waitForMessage("CHN-1002", DEFAULT_LOG_WAIT);
+        waitForMessage("CHN-1002");
 
-        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
+        List<String> results = findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
@@ -133,13 +133,17 @@ public class ChannelLoggingTest extends AbstractTestLogging
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow Stopped
 
-        // Verify
-        int resultSize = results.size();
-        String log = getLog(results.get(resultSize - 1));
+        // Verify the last channel message is stopped
+        validateChannelStart(results, false);
+    }
 
+    private void validateChannelStart(List<String> results, boolean flowStarted)
+    {
+        String log = getLogMessageFromEnd(results, 0);
+
+        String flow = flowStarted ? "Started" : "Stopped";
         validateMessageID("CHN-1002", log);
-        assertEquals("Message should be Flow Stopped", "Flow Stopped", getMessageString(fromMessage(log)));
-
+        assertEquals("Message should be Flow " + flow, "Flow " + flow, getMessageString(fromMessage(log)));
     }
 
     /**
@@ -185,9 +189,9 @@ public class ChannelLoggingTest extends AbstractTestLogging
         _monitor.waitForMessage(CHANNEL_PREFIX, 2000);
 
         // Wait to ensure that the CHN-1002 message is logged
-        _monitor.waitForMessage("CHN-1002", DEFAULT_LOG_WAIT);
+        waitForMessage("CHN-1002");
 
-        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
+        List<String> results = findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
@@ -196,13 +200,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // INFO [qpid.message] MESSAGE [con:1(guest@/127.0.0.1:49869/test)/ch:1] [con:1(guest@/127.0.0.1:49869/test)/ch:1] CHN-1002 : Flow Stopped
         // INFO [qpid.message] MESSAGE [con:1(guest@/127.0.0.1:49869/test)/ch:1] [con:1(guest@/127.0.0.1:49869/test)/ch:1] CHN-1002 : Flow Started
 
-
         // Verify the last channel msg is Started.
-        int resultSize = results.size();
-        String log = getLog(results.get(resultSize - 1));
-
-        validateMessageID("CHN-1002", log);
-        assertEquals("Message should be Flow Started", "Flow Started", getMessageString(fromMessage(log)));
+        validateChannelStart(results, true);
     }
 
     /**
@@ -237,9 +236,9 @@ public class ChannelLoggingTest extends AbstractTestLogging
         connection.close();
 
         // Wait to ensure that the CHN-1003 message is logged
-        _monitor.waitForMessage("CHN-1003", DEFAULT_LOG_WAIT);
+        waitForMessage("CHN-1003");
 
-        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
+        List<String> results = findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
@@ -248,14 +247,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
 
         // Verify
-
-        int resultSize = results.size();
-        String log = getLog(results.get(resultSize - 1));
-
-        validateMessageID("CHN-1003", log);
-        assertEquals("Message should be Close", "Close",getMessageString(fromMessage(log)));
-        assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromActor(log)));
-        assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromSubject(log)));
+        validateChannelClose(results);
     }
 
     /**
@@ -287,20 +279,23 @@ public class ChannelLoggingTest extends AbstractTestLogging
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
 
         // Wait to ensure that the CHN-1003 message is logged
-        _monitor.waitForMessage("CHN-1003", DEFAULT_LOG_WAIT);
+        waitForMessage("CHN-1003");
 
-        List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
+        List<String> results = findMatches(CHANNEL_PREFIX);
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
         // Verify
-        int resultSize = results.size();
-        String log = getLog(results.get(resultSize - 1));
+        validateChannelClose(results);
+    }
+
+    private void validateChannelClose(List<String> results)
+    {
+        String log = getLogMessageFromEnd(results, 0);
 
         validateMessageID("CHN-1003", log);
         assertEquals("Message should be Close", "Close",getMessageString(fromMessage(log)));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromActor(log)));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromSubject(log)));
     }
-
 }
