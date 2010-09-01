@@ -452,7 +452,12 @@ void ManagementAgentImpl::sendHeartbeat()
 
     getHeartbeatContent(map);
     MapCodec::encode(map, content);
-    connThreadBody.sendBuffer(content, "", headers, topicExchange, addr_key.str());
+
+    // Set TTL (in msecs) on outgoing heartbeat indications based on the interval
+    // time to prevent stale heartbeats from getting to the consoles.
+
+    connThreadBody.sendBuffer(content, "", headers, topicExchange, addr_key.str(),
+                              "amqp/map", interval * 2 * 1000);
 
     QPID_LOG(trace, "SENT AgentHeartbeat name=" << name_address);
 }
@@ -1213,7 +1218,8 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
                                                        const Variant::Map headers,
                                                        const string& exchange,
                                                        const string& routingKey,
-                                                       const string& contentType)
+                                                       const string& contentType,
+                                                       uint64_t ttl_msec)
 {
     Message msg;
     Variant::Map::const_iterator i;
@@ -1223,6 +1229,10 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(const string& data,
 
     if (!contentType.empty())
         msg.getMessageProperties().setContentType(contentType);
+
+    if (ttl_msec)
+        msg.getDeliveryProperties().setTtl(ttl_msec);
+
     for (i = headers.begin(); i != headers.end(); ++i) {
         msg.getHeaders().setString(i->first, i->second.asString());
     }
