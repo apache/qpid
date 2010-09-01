@@ -27,7 +27,6 @@ import java.util.List;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
  * Virtualhost Test Cases
@@ -62,10 +61,10 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
     public void testVirtualhostCreation() throws Exception
     {
         //Wait for the correct VHT message to arrive.                                 
-        _monitor.waitForMessage(VHT_PREFIX + "1001", DEFAULT_LOG_WAIT);
+        waitForMessage(VHT_PREFIX + "1001");
         
         //Validate each vhost logs a creation
-        List<String> results = _monitor.findMatches(VHT_PREFIX + "1001");
+        List<String> results = findMatches(VHT_PREFIX + "1001");
         
         try
         {
@@ -76,7 +75,7 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
             for (int index = 0; index < results.size(); index++)
             {
                 // Retrieve the vhostname from the log entry message 'Created : <vhostname>'
-                String result = getLog(results.get(index));
+                String result = getLogMessage(results, index);
                 String vhostName = getMessageString(fromMessage(result)).split(" ")[2];
 
                 assertTrue("Virtualhost named in log not found in config file:" + vhostName + ":" + vhosts, vhosts.contains(vhostName));
@@ -84,11 +83,8 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         }
         catch (AssertionFailedError afe)
         {
-            System.err.println("Log Dump:");
-            for (String log : results)
-            {
-                System.err.println(log);
-            }
+            dumpLogs(results, _monitor);
+
             throw afe;
         }
     }
@@ -113,10 +109,10 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         stopBroker();
 
         // Wait for the correct VHT message to arrive.                                 
-        _monitor.waitForMessage(VHT_PREFIX + "1002", DEFAULT_LOG_WAIT);
+        waitForMessage(VHT_PREFIX + "1002");
         
         // Validate each vhost logs a closure
-        List<String> results = _monitor.findMatches(VHT_PREFIX + "1002");
+        List<String> results = findMatches(VHT_PREFIX + "1002");
         
         try
         {
@@ -129,11 +125,8 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         }
         catch (AssertionFailedError afe)
         {
-            System.err.println("Log Dump:");
-            for (String log : results)
-            {
-                System.err.println(log);
-            }
+            dumpLogs(results, _monitor);
+
             throw afe;
         }
     }

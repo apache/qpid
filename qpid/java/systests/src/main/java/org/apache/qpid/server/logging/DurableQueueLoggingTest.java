@@ -45,7 +45,6 @@ import java.util.Map;
  */
 public class DurableQueueLoggingTest extends AbstractTestLogging
 {
-
     protected String DURABLE = "Durable";
     protected String TRANSIENT = "Transient";
     protected boolean _durable;
@@ -53,6 +52,7 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
     protected Connection _connection;
     protected Session _session;
     private static final String QUEUE_PREFIX = "QUE-";
+    private static int PRIORITIES = 6;
 
     public void setUp() throws Exception
     {
@@ -93,29 +93,12 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
 
         _session.createConsumer(queue);
 
-        // Validation
-        // Ensure we have received the QUE log msg.
-        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitForMesssage();
 
-        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
-
-        // Only 1 Queue message should hav been logged
-        assertEquals("Result set size not as expected", 1, results.size());
-
-        String log = getLog(results.get(0));
-
-        // Message Should be a QUE-1001
-        validateMessageID("QUE-1001", log);
-
-        // Queue is Durable
-        assertEquals(DURABLE + " keyword not correct in log entry",
-                     _durable, fromMessage(log).contains(DURABLE));
-
-        assertEquals(TRANSIENT + " keyword not correct in log entry.",
-                     !_durable, fromMessage(log).contains(TRANSIENT));
-
-        assertTrue("Queue does not have correct owner value:" + fromMessage(log),
-                   fromMessage(log).contains("Owner: " + _connection.getClientID()));
+        String clientID = _connection.getClientID();
+        assertNotNull("clientID should not be null", clientID);
+        
+        validateQueueProperties(results, false, false, clientID);
     }
 
     /**
@@ -147,29 +130,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
 
         _session.createConsumer(queue);
 
-        // Validation
-        // Ensure we have received the QUE log msg.
-        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitForMesssage();
 
-        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
-
-        // Only 1 Queue message should hav been logged
-        assertEquals("Result set size not as expected", 1, results.size());
-
-        String log = getLog(results.get(0));
-
-        // Message Should be a QUE-1001
-        validateMessageID("QUE-1001", log);
-
-        // Queue is Durable
-        assertEquals(DURABLE + " keyword not correct in log entry",
-                     _durable, fromMessage(log).contains(DURABLE));
-
-        assertEquals(TRANSIENT + " keyword not correct in log entry.",
-                     !_durable, fromMessage(log).contains(TRANSIENT));
-
-        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
-                   fromMessage(log).contains("Owner"));
+        validateQueueProperties(results, false, false, null);
     }
 
     /**
@@ -201,33 +164,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
 
         _session.createConsumer(queue);
 
-        // Validation
-        // Ensure we have received the QUE log msg.
-        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+        List<String> results = waitForMesssage();
 
-        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
-
-        // Only 1 Queue message should hav been logged
-        assertEquals("Result set size not as expected", 1, results.size());
-
-        String log = getLog(results.get(0));
-
-        // Message Should be a QUE-1001
-        validateMessageID("QUE-1001", log);
-
-        // Queue is Durable
-        assertEquals(DURABLE + " keyword not correct in log entry",
-                     _durable, fromMessage(log).contains(DURABLE));
-
-        assertEquals(TRANSIENT + " keyword not correct in log entry.",
-                     !_durable, fromMessage(log).contains(TRANSIENT));
-
-        // Queue is AutoDelete
-        assertTrue("Queue does not have the AutoDelete keyword in log:" + fromMessage(log),
-                   fromMessage(log).contains("AutoDelete"));
-
-        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
-                   fromMessage(log).contains("Owner"));
+        validateQueueProperties(results, false, true, null);
     }
 
     /**
@@ -254,7 +193,6 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
     public void testCreateQueuePersistentPriority() throws NamingException, JMSException, IOException, AMQException
     {
         // To Create a Priority queue we need to use AMQSession specific code
-        int PRIORITIES = 6;
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-priorities", PRIORITIES);
         // Need to create a queue that does not exist so use test name
@@ -268,33 +206,12 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         // as the above Create is Asynchronous
         _session.createConsumer(queue);
 
-        // Validation
-        // Ensure we have received the QUE log msg.
-        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
-
-        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
+        List<String> results = waitForMesssage();
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());
 
-        String log = getLog(results.get(0));
-
-        // Message Should be a QUE-1001
-        validateMessageID("QUE-1001", log);
-
-        // Queue is Durable
-        assertEquals(DURABLE + " keyword not correct in log entry",
-                     _durable, fromMessage(log).contains(DURABLE));
-
-        assertEquals(TRANSIENT + " keyword not correct in log entry.",
-                     !_durable, fromMessage(log).contains(TRANSIENT));
-
-        // Queue is AutoDelete
-        assertTrue("Queue does not have the right Priority value keyword in log:" + fromMessage(log),
-                   fromMessage(log).contains("Priority: " + PRIORITIES));
-
-        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
-                   fromMessage(log).contains("Owner"));
+        validateQueueProperties(results, true, false, null);
     }
 
     /**
@@ -322,7 +239,6 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
     public void testCreateQueuePersistentAutoDeletePriority() throws NamingException, JMSException, IOException, AMQException
     {
         // To Create a Priority queue we need to use AMQSession specific code
-        int PRIORITIES = 6;
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-priorities", PRIORITIES);
         // Need to create a queue that does not exist so use test name
@@ -336,37 +252,56 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         // as the above Create is Asynchronous
         _session.createConsumer(queue);
 
+        List<String> results = waitForMesssage();
+
+        validateQueueProperties(results, true, true, null);
+    }
+    
+    private List<String> waitForMesssage() throws IOException
+    {
         // Validation
         // Ensure we have received the QUE log msg.
-        _monitor.waitForMessage("QUE-1001", DEFAULT_LOG_WAIT);
+        waitForMessage("QUE-1001");
 
-        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
+        List<String> results = findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 1, results.size());
+        
+        return results;
+    }
 
-        String log = getLog(results.get(0));
-
+    public void validateQueueProperties(List<String> results, boolean hasPriority, boolean hasAutodelete, String clientID)
+    {
+        String log = getLogMessage(results, 0);
+        
         // Message Should be a QUE-1001
         validateMessageID("QUE-1001", log);
 
         // Queue is Durable
         assertEquals(DURABLE + " keyword not correct in log entry",
-                     _durable, fromMessage(log).contains(DURABLE));
+                _durable, fromMessage(log).contains(DURABLE));
 
         assertEquals(TRANSIENT + " keyword not correct in log entry.",
-                     !_durable, fromMessage(log).contains(TRANSIENT));
+                !_durable, fromMessage(log).contains(TRANSIENT));
+
+        // Queue is Priority
+        assertEquals("Unexpected priority status:" + fromMessage(log), hasPriority,
+                fromMessage(log).contains("Priority: " + PRIORITIES));
 
         // Queue is AutoDelete
-        assertTrue("Queue does not have the right Priority value keyword in log:" + fromMessage(log),
-                   fromMessage(log).contains("Priority: " + PRIORITIES));
+        assertEquals("Unexpected AutoDelete status:" + fromMessage(log), hasAutodelete, 
+                fromMessage(log).contains("AutoDelete"));
 
-        // Queue is AutoDelete
-        assertTrue("Queue does not have the AutoDelete keyword in log:" + fromMessage(log),
-                   fromMessage(log).contains("AutoDelete"));
-
-        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
-                   fromMessage(log).contains("Owner"));
+        if(clientID != null)
+        {
+            assertTrue("Queue does not have correct owner value:" + fromMessage(log),
+                    fromMessage(log).contains("Owner: " + clientID));
+        }
+        else
+        {
+            assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
+                    fromMessage(log).contains("Owner"));
+        }
     }
-
 }

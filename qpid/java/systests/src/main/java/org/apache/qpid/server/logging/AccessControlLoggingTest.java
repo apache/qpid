@@ -80,7 +80,7 @@ public class AccessControlLoggingTest extends AbstractTestLogging
         conn.start();
         ((AMQSession<?, ?>) sess).createQueue(new AMQShortString("allow"), false, false, false);
         
-        List<String> matches = _monitor.findMatches(ACL_LOG_PREFIX);
+        List<String> matches = findMatches(ACL_LOG_PREFIX);
         
         assertTrue("Should be no ACL log messages", matches.isEmpty());
     }
@@ -95,11 +95,11 @@ public class AccessControlLoggingTest extends AbstractTestLogging
         conn.start();
         ((AMQSession<?, ?>) sess).createQueue(new AMQShortString("allow-log"), false, false, false);
         
-        List<String> matches = _monitor.findMatches(ACL_LOG_PREFIX);
+        List<String> matches = findMatches(ACL_LOG_PREFIX);
         
         assertEquals("Should only be one ACL log message", 1, matches.size());
         
-        String log = getLog(matches.get(0));
+        String log = getLogMessage(matches, 0);
         String actor = fromActor(log);
         String subject = fromSubject(log);
         String message = getMessageString(fromMessage(log));
@@ -131,11 +131,11 @@ public class AccessControlLoggingTest extends AbstractTestLogging
             assertEquals("Expected ACCESS_REFUSED error code", AMQConstant.ACCESS_REFUSED, amqe.getErrorCode());
         }
         
-        List<String> matches = _monitor.findMatches(ACL_LOG_PREFIX);
+        List<String> matches = findMatches(ACL_LOG_PREFIX);
         
         assertEquals("Should only be one ACL log message", 1, matches.size());
         
-        String log = getLog(matches.get(0));
+        String log = getLogMessage(matches, 0);;
         String actor = fromActor(log);
         String subject = fromSubject(log);
         String message = getMessageString(fromMessage(log));
@@ -167,7 +167,7 @@ public class AccessControlLoggingTest extends AbstractTestLogging
             assertEquals("Expected ACCESS_REFUSED error code", AMQConstant.ACCESS_REFUSED, amqe.getErrorCode());
         }
         
-        List<String> matches = _monitor.findMatches(ACL_LOG_PREFIX);
+        List<String> matches = findMatches(ACL_LOG_PREFIX);
         
         assertTrue("Should be no ACL log messages", matches.isEmpty());
     }

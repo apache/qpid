@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging;
 
 import junit.framework.AssertionFailedError;
+
 import org.apache.qpid.util.LogMonitor;
 
 import java.util.List;
@@ -77,18 +78,12 @@ public class ManagementLoggingTest extends AbstractTestLogging
         // Management is disabled on InVM brokers.
         if (isJavaBroker() && isExternalBroker())
         {
-            //Ensure management is on
-            setConfigurationProperty("management.enabled", "true");
-
-            startBroker();
-
-            // Now we can create the monitor as _outputFile will now be defined
-            _monitor = new LogMonitor(_outputFile);
+            startBrokerAndCreateMonitor(true, false);
 
             // Ensure we have received the MNG log msg.
-            _monitor.waitForMessage("MNG-1001", DEFAULT_LOG_WAIT);
+            waitForMessage("MNG-1001");
 
-            List<String> results = _monitor.findMatches(MNG_PREFIX);
+            List<String> results = findMatches(MNG_PREFIX);
             
             try
             {
@@ -96,13 +91,13 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
                 assertTrue("MNGer message not logged", results.size() > 0);
 
-                String log = getLog(results.get(0));
+                String log = getLogMessage(results, 0);
 
                 //1
                 validateMessageID("MNG-1001", log);
 
                 //2
-                results = _monitor.findMatches("MNG-1001");
+                results = findMatches("MNG-1001");
                 assertEquals("More than one startup message found.",
                              1, results.size());
 
@@ -112,11 +107,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
                 throw afe;
             }
         }
@@ -140,15 +131,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
         // Management is disabled on InVM brokers.
         if (isJavaBroker() && isExternalBroker())
         {
-            //Ensure management is off
-            setConfigurationProperty("management.enabled", "false");
+            startBrokerAndCreateMonitor(false, false);
 
-            startBroker();
-
-            // Now we can create the monitor as _outputFile will now be defined
-            _monitor = new LogMonitor(_outputFile);
-
-            List<String> results = _monitor.findMatches(MNG_PREFIX);
+            List<String> results = findMatches(MNG_PREFIX);
             try
             {
                 // Validation
@@ -157,11 +142,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
                 throw afe;
             }
         }
@@ -211,28 +192,22 @@ public class ManagementLoggingTest extends AbstractTestLogging
         // Management is disabled on InVM brokers.
         if (isJavaBroker() && isExternalBroker())
         {
-            //Ensure management is on
-            setConfigurationProperty("management.enabled", "true");
-
-            startBroker();
-
-            // Now we can create the monitor as _outputFile will now be defined
-            _monitor = new LogMonitor(_outputFile);
-
-            List<String> results = _monitor.waitAndFindMatches("MNG-1002", DEFAULT_LOG_WAIT);
+            startBrokerAndCreateMonitor(true, false);
+            
+            List<String> results = waitAndFindMatches("MNG-1002");
             try
             {
                 // Validation
 
                 assertEquals("MNGer message not logged expected message", 2, results.size());
 
-                String log = getLog(results.get(0));
+                String log = getLogMessage(results, 0);
 
                 //1
                 validateMessageID("MNG-1002", log);
 
                 // Validate we only have one MNG-1002
-                results = _monitor.findMatches("MNG-1002");
+                results = findMatches("MNG-1002");
                 assertEquals("More than two RMI entries found.",
                              2, results.size());
 
@@ -242,7 +217,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
                 assertTrue("RMI Registry port not as expected(" + mPort + ").:" + getMessageString(log),
                            getMessageString(log).endsWith(String.valueOf(mPort)));
 
-                log = getLog(results.get(1));
+                log = getLogMessage(results, 1);
 
                 //1
                 validateMessageID("MNG-1002", log);
@@ -255,15 +230,12 @@ public class ManagementLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
                 throw afe;
             }
         }
     }
+
     /**
      * Description:
      * Using the default configuration with SSL enabled for the management port the SSL Keystore path should be reported via MNG-1006
@@ -284,30 +256,22 @@ public class ManagementLoggingTest extends AbstractTestLogging
         // Management is disabled on InVM brokers.
         if (isJavaBroker() && isExternalBroker())
         {
-            //Ensure management is on
-            setConfigurationProperty("management.enabled", "true");
-            // This test requires we have an ssl connection
-            setConfigurationProperty("management.ssl.enabled", "true");
+            startBrokerAndCreateMonitor(true, true);
 
-            startBroker();
-
-            // Now we can create the monitor as _outputFile will now be defined
-            _monitor = new LogMonitor(_outputFile);
-
-            List<String> results = _monitor.waitAndFindMatches("MNG-1006", DEFAULT_LOG_WAIT);
+            List<String> results = waitAndFindMatches("MNG-1006");
             try
             {
                 // Validation
 
                 assertTrue("MNGer message not logged", results.size() > 0);
 
-                String log = getLog(results.get(0));
+                String log = getLogMessage(results, 0);
 
                 //1
                 validateMessageID("MNG-1006", log);
 
                 // Validate we only have one MNG-1002
-                results = _monitor.findMatches("MNG-1006");
+                results = findMatches("MNG-1006");
                 assertEquals("More than one SSL Keystore entry found.",
                              1, results.size());
 
@@ -318,14 +282,27 @@ public class ManagementLoggingTest extends AbstractTestLogging
             }
             catch (AssertionFailedError afe)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
+                dumpLogs(results, _monitor);
                 throw afe;
             }
         }
 
+    }
+    
+    private void startBrokerAndCreateMonitor(boolean managementEnabled, boolean useManagementSSL) throws Exception
+    {
+        //Ensure management is on
+        setConfigurationProperty("management.enabled", String.valueOf(managementEnabled));
+
+        if(useManagementSSL)
+        {
+            // This test requires we have an ssl connection
+            setConfigurationProperty("management.ssl.enabled", "true");
+        }
+
+        startBroker();
+
+        // Now we can create the monitor as _outputFile will now be defined
+        _monitor = new LogMonitor(_outputFile);
     }
 }

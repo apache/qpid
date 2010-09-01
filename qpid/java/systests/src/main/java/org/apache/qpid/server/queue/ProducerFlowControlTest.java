@@ -39,12 +39,9 @@ import java.io.IOException;
 
 public class ProducerFlowControlTest extends AbstractTestLogging
 {
-    private static final int TIMEOUT = 1500;
-
+    private static final int TIMEOUT = 10000;
 
     private static final Logger _logger = Logger.getLogger(ProducerFlowControlTest.class);
-
-    private static final int MSG_COUNT = 50;
 
     private Connection producerConnection;
     private MessageProducer producer;
@@ -159,7 +156,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         sendMessagesAsync(producer, producerSession, 5, 50L);
 
         Thread.sleep(5000);
-        List<String> results = _monitor.waitAndFindMatches("QUE-1003", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("QUE-1003");
 
         assertEquals("Did not find correct number of QUE-1003 queue overfull messages", 1, results.size());
 
@@ -169,7 +166,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
 
         while(consumer.receive(1000) != null);
 
-        results = _monitor.waitAndFindMatches("QUE-1004", DEFAULT_LOG_WAIT);
+        results = waitAndFindMatches("QUE-1004");
 
         assertEquals("Did not find correct number of UNDERFULL queue underfull messages", 1, results.size());
 
@@ -203,10 +200,10 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         // try to send 5 messages (should block after 4)
         MessageSender sender = sendMessagesAsync(producer, producerSession, 5, 50L);
 
-        Thread.sleep(10000);
-        List<String> results = _monitor.waitAndFindMatches("Message send delayed by", 10000);
+        Thread.sleep(TIMEOUT);
+        List<String> results = waitAndFindMatches("Message send delayed by", TIMEOUT);
         assertTrue("No delay messages logged by client",results.size()!=0);
-        results = _monitor.findMatches("Message send failed due to timeout waiting on broker enforced flow control");
+        results = findMatches("Message send failed due to timeout waiting on broker enforced flow control");
         assertEquals("Incorrect number of send failure messages logged by client",1,results.size());
 
 
