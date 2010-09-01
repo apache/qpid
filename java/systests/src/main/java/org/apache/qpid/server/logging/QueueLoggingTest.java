@@ -95,21 +95,21 @@ public class QueueLoggingTest extends AbstractTestLogging
 
         // Validation
         //Ensure that we wait for the QUE log message
-        _monitor.waitAndFindMatches("QUE-1002", DEFAULT_LOG_WAIT);
+        waitAndFindMatches("QUE-1002");
 
-        List<String> results = _monitor.findMatches(QUEUE_PREFIX);
+        List<String> results = findMatches(QUEUE_PREFIX);
 
         // Only 1 Queue message should hav been logged
         assertEquals("Result set size not as expected", 2, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         // Message Should be a QUE-1001
         validateMessageID("QUE-1001", log);        
 
         String createdQueueName = AbstractTestLogSubject.getSlice("qu",  fromSubject(log));
 
-        log = getLog(results.get(1));
+        log = getLogMessage(results, 1);
         // Message Should be a QUE-1002
         validateMessageID("QUE-1002", log);
 
@@ -149,21 +149,21 @@ public class QueueLoggingTest extends AbstractTestLogging
 
            // Validation
            //Ensure that we wait for the QUE log message
-           _monitor.waitAndFindMatches("QUE-1002", DEFAULT_LOG_WAIT);
+           waitAndFindMatches("QUE-1002");
 
-           List<String> results = _monitor.findMatches(QUEUE_PREFIX);
+           List<String> results = findMatches(QUEUE_PREFIX);
 
            // Only 1 Queue message should hav been logged
            assertEquals("Result set size not as expected", 2, results.size());
 
-           String log = getLog(results.get(0));
+           String log = getLogMessage(results, 0);
 
            // Message Should be a QUE-1001
            validateMessageID("QUE-1001", log);
 
            String createdQueueName = AbstractTestLogSubject.getSlice("qu",  fromSubject(log));
 
-           log = getLog(results.get(1));
+           log = getLogMessage(results, 1);
            // Message Should be a QUE-1002
            validateMessageID("QUE-1002", log);
 

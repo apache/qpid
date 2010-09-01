@@ -99,7 +99,7 @@ public class AlertingTest extends AbstractTestLogging
      */
     private void wasAlertFired() throws Exception
     {
-        if (!_monitor.waitForMessage(MESSAGE_COUNT_ALERT, ALERT_LOG_WAIT_PERIOD))
+        if (!waitForMessage(MESSAGE_COUNT_ALERT, ALERT_LOG_WAIT_PERIOD))
         {
             StringBuffer message = new StringBuffer("Could not find 'MESSAGE_COUNT_ALERT' in log file: " + _monitor.getMonitoredFile().getAbsolutePath());
             message.append("\n");

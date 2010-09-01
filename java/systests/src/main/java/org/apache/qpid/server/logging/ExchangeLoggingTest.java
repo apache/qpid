@@ -95,23 +95,13 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         // They should all be durable
 
         // Ensure we have received the EXH log msg.
-        _monitor.waitForMessage("EXH-1001", DEFAULT_LOG_WAIT);
+        waitForMessage("EXH-1001");
 
-        List<String> results = _monitor.findMatches(EXH_PREFIX);
+        List<String> results = findMatches(EXH_PREFIX);
 
         assertTrue("No Results found for Exchange.", results.size()>0);
 
-        String log = getLog(results.get(0));
-
-        validateMessageID("EXH-1001", log);
-
-        String message = getMessageString(fromMessage(log));
-        assertTrue("Log Message does not start with create:" + message,
-                   message.startsWith("Create"));
-
-        assertTrue("Log Message does not contain Durable:" + message,
-                   message.contains("Durable"));
-
+        validateExchangeCreate(results, true, false);
     }
 
     /**
@@ -135,23 +125,35 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
         _session.createConsumer(_queue);
         // Ensure we have received the EXH log msg.
-        _monitor.waitForMessage("EXH-1001", DEFAULT_LOG_WAIT);
+        waitForMessage("EXH-1001");
 
-        List<String> results = _monitor.findMatches(EXH_PREFIX);
+        List<String> results = findMatches(EXH_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
-        String log = getLog(results.get(0));
+        validateExchangeCreate(results, false, true);
+    }
 
-        validateMessageID("EXH-1001", log);
-
+    private void validateExchangeCreate(List<String> results, boolean durable, boolean checkNameAndType)
+    {
+        String log = getLogMessage(results, 0);
         String message = getMessageString(fromMessage(log));
+        
+        validateMessageID("EXH-1001", log);
+        
         assertTrue("Log Message does not start with create:" + message,
                    message.startsWith("Create"));
-        assertTrue("Log Message does not contain Type:" + message,
-                   message.contains("Type: " + _type));
-        assertTrue("Log Message does not contain Name:" + message,
-                   message.contains("Name: " + _name));
+
+        assertEquals("Unexpected Durable state:" + message, durable,
+                message.contains("Durable"));
+        
+        if(checkNameAndType)
+        {
+            assertTrue("Log Message does not contain Type:" + message,
+                    message.contains("Type: " + _type));
+            assertTrue("Log Message does not contain Name:" + message,
+                    message.contains("Name: " + _name));
+        }
     }
 
     /**
@@ -186,24 +188,18 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeleteOkBody.class);
 
         //Wait and ensure we get our last EXH-1002 msg
-        _monitor.waitForMessage("EXH-1002", DEFAULT_LOG_WAIT);
+        waitForMessage("EXH-1002");
 
-        List<String> results = _monitor.findMatches(EXH_PREFIX);
+        List<String> results = findMatches(EXH_PREFIX);
 
         assertEquals("Result set larger than expected.", 2, results.size());
 
-        String log = getLog(results.get(0));
+        validateExchangeCreate(results, false, false);
 
-        validateMessageID("EXH-1001", log);
-
-        String message = getMessageString(fromMessage(log));
-        assertTrue("Log Message does start with Create",
-                   message.startsWith("Create"));
-
-        log = getLog(results.get(1));
+        String log = getLogMessage(results, 1);
         validateMessageID("EXH-1002", log);
 
-        message = getMessageString(fromMessage(log));
+        String message = getMessageString(fromMessage(log));
         assertEquals("Log Message not as expected", "Deleted", message);
 
     }

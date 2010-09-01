@@ -92,13 +92,13 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         //Validate
 
         //Ensure that we wait for the SUB log message
-        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+        waitAndFindMatches("SUB-1001");
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         validateMessageID("SUB-1001", log);
 
@@ -130,13 +130,13 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
         //Ensure that we wait for the SUB log message
-        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+        waitAndFindMatches("SUB-1001");
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = findMatches(SUB_PREFIX);
 
         assertEquals("Result set not as expected.", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         validateMessageID("SUB-1001", log);
 
@@ -169,13 +169,13 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
         //Ensure that we wait for the SUB log message
-        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+        waitAndFindMatches("SUB-1001");
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 2, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         validateMessageID("SUB-1001", log);
 
@@ -185,7 +185,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         // Beacause it is an auto close and we have no messages on the queue we
         // will get a close message
-        log = getLog(results.get(1));
+        log = getLogMessage(results, 1);
         validateMessageID("SUB-1002", log);
 
     }
@@ -216,13 +216,13 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         //Validate
 
         //Ensure that we wait for the SUB log message
-        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+        waitAndFindMatches("SUB-1001");
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         validateMessageID("SUB-1001", log);
 
@@ -257,13 +257,13 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         //Validate
 
         //Ensure that we wait for the SUB log message
-        _monitor.waitAndFindMatches("SUB-1001", DEFAULT_LOG_WAIT);
+        waitAndFindMatches("SUB-1001");
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = findMatches(SUB_PREFIX);
 
         assertEquals("Result set larger than expected.", 1, results.size());
 
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
 
         validateMessageID("SUB-1001", log);
 
@@ -298,18 +298,18 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Validate
         //Ensure that we wait for the SUB log message
-        _monitor.waitAndFindMatches("SUB-1002", DEFAULT_LOG_WAIT);
+        waitAndFindMatches("SUB-1002");
 
-        List<String> results = _monitor.findMatches(SUB_PREFIX);
+        List<String> results = findMatches(SUB_PREFIX);
 
         //3
         assertEquals("Result set larger than expected.", 2, results.size());
 
         // 2
-        String log = getLog(results.get(0));
+        String log = getLogMessage(results, 0);
         validateMessageID("SUB-1001", log);
         // 1
-        log = getLog(results.get(1));
+        log = getLogMessage(results, 1);
         validateMessageID("SUB-1002", log);
 
         String message = getMessageString(fromMessage(log));
@@ -386,7 +386,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.commit();
 
         //Validate
-        List<String> results = _monitor.waitAndFindMatches("SUB-1003", DEFAULT_LOG_WAIT);
+        List<String> results = waitAndFindMatches("SUB-1003");
 
         try
         {
@@ -403,17 +403,17 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
             // Validate Initial Suspension
             String expectedState = "SUSPENDED";
-            String log = getLog(results.get(0));
+            String log = getLogMessage(results, 0);
             validateSubscriptionState(log, expectedState);
 
             // After being suspended the subscription should become active.
             expectedState = "ACTIVE";
-            log = getLog(results.get(1));
+            log = getLogMessage(results, 1);
             validateSubscriptionState(log, expectedState);
 
             // Validate that it was re-suspended
             expectedState = "SUSPENDED";
-            log = getLog(results.get(2));
+            log = getLogMessage(results, 2);
             validateSubscriptionState(log, expectedState);
             // We only need validate the state.
         }
