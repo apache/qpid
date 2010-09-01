@@ -556,7 +556,8 @@ void ManagementAgent::sendBufferLH(const string& data,
                                    const Variant::Map& headers,
                                    const string& content_type,
                                    qpid::broker::Exchange::shared_ptr exchange,
-                                   const string& routingKey)
+                                   const string& routingKey,
+                                   uint64_t ttl_msec)
 {
     Variant::Map::const_iterator i;
 
@@ -595,6 +596,8 @@ void ManagementAgent::sendBufferLH(const string& data,
     DeliveryProperties* dp =
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
     dp->setRoutingKey(routingKey);
+    if (ttl_msec)
+        dp->setTtl(ttl_msec);
 
     msg->getFrames().append(content);
 
@@ -843,7 +846,10 @@ void ManagementAgent::periodicProcessing (void)
 
         string content;
         MapCodec::encode(map, content);
-        sendBufferLH(content, "", headers, "amqp/map", v2Topic, addr_key.str());
+
+        // Set TTL (in msecs) on outgoing heartbeat indications based on the interval
+        // time to prevent stale heartbeats from getting to the consoles.
+        sendBufferLH(content, "", headers, "amqp/map", v2Topic, addr_key.str(), interval * 2 * 1000);
 
         QPID_LOG(trace, "SENT AgentHeartbeat name=" << name_address);
     }

@@ -312,7 +312,8 @@ private:
                       const qpid::types::Variant::Map& headers,
                       const std::string&     content_type,
                       qpid::broker::Exchange::shared_ptr exchange,
-                      const std::string& routingKey);
+                      const std::string& routingKey,
+                      uint64_t ttl_msec = 0);
     void moveNewObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
