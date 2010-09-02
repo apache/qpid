@@ -156,16 +156,6 @@ public class BrokerLoggingTest extends AbstractTestLogging
             //Remove test Log4j config from the commandline
             _broker = _broker.substring(0, _broker.indexOf("-l"));
 
-            // As a result of removing the test log4j config
-            // we will pick up the broker default and will write
-            // data to the standard qpid.log file. Which means that the start
-            // broker process will not be monitoring the right file for startup
-            // messages. Therefore:
-
-            // Set the broker.ready string to check for the _log4j default that
-            // is still present on standard out. 
-            setTestClientSystemProperty(BROKER_READY, "Qpid Broker Ready");
-
             startBroker();
 
             // Now we can create the monitor as _outputFile will now be defined
@@ -206,7 +196,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
-                    assertEquals("More than one log4j configuration message found.",
+                    //There will be 1 copy of this startup message (via SystemOut)
+                    assertEquals("Unexpected log4j configuration message count.",
                                  1, findMatches(TESTID).size());
 
                     //3
@@ -296,7 +287,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
-                    assertEquals("More than one log4j configuration message found.",
+                    //There will be 1 copy of this startup message (via SystemOut)
+                    assertEquals("Unexpected log4j configuration message count.",
                                  1, findMatches(TESTID).size());
 
                     //3
@@ -378,8 +370,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
-                    assertEquals("More than one startup message found.",
-                                 1, findMatches(TESTID).size());
+                    //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
+                    assertEquals("Unexpected startup message count",
+                                 2, findMatches(TESTID).size());
 
                     validation = true;
                 }
@@ -464,8 +457,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
-                    assertEquals("More than one listen message found.",
-                                 1, findMatches(TESTID).size());
+                    //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
+                    assertEquals("Unexpected listen message count",
+                                 2, findMatches(TESTID).size());
 
                     //3
                     String message = getMessageString(log);
@@ -566,17 +560,19 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
+                    //There will be 4 copies of the startup message (two via SystemOut, and two via Log4J)
                     List<String> listenMessages  = findMatches(TESTID);
-                    assertEquals("Two listen messages should be found.",
-                                 2, listenMessages .size());
+                    assertEquals("Four listen messages should be found.",
+                                 4, listenMessages .size());
 
                     //3
+                    //Check the first
                     String message = getMessageString(getLog(listenMessages .get(0)));
                     assertTrue("Expected Listen log not correct" + message,
                                message.endsWith("Listening on TCP port " + getPort()));
 
-                    // Check second, ssl, listen.
-                    message = getMessageString(getLog(listenMessages .get(1)));
+                    // Check the third, ssl listen.
+                    message = getMessageString(getLog(listenMessages .get(2)));
                     assertTrue("Expected Listen log not correct" + message,
                                message.endsWith("Listening on TCP/SSL port " + sslPort));
 
@@ -639,11 +635,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
                 assertTrue("BRKer message not logged", results.size() > 0);
 
-                boolean validation = false;
+                boolean validationComplete = false;
                 boolean foundBRK1001 = false;
-                for (String rawLog : results)
+                
+                for (int i=0; i < results.size(); i++)
                 {
-                    assertFalse("More broker log statements present after ready message", validation);
+                    String rawLog = results.get(i);
                     String log = getLog(rawLog);
 
                     // Ensure we do not have a BRK-1001 message
@@ -662,16 +659,18 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
-                    assertEquals("More than one ready message found.",
-                                 1, findMatches(TESTID).size());
-
-                    //3
                     assertEquals("Ready message not present", "Ready", getMessageString(log));
+                    
+                    //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
+                    assertEquals("Unexpected ready message count",
+                                 2, findMatches(TESTID).size());
+                    assertEquals("The ready messages should have been the last 2 messages", results.size() - 2, i);
 
-                    validation = true;
+                    validationComplete = true;
+                    break;
                 }
 
-                assertTrue("Validation not performed: " + TESTID + " not logged", validation);
+                assertTrue("Validation not performed: " + TESTID + " not logged", validationComplete);
             }
             catch (AssertionFailedError afe)
             {

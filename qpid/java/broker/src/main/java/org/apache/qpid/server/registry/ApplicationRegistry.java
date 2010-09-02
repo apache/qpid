@@ -38,9 +38,11 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.SystemConfig;
 import org.apache.qpid.server.configuration.SystemConfigImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.AbstractRootMessageLogger;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -90,6 +92,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     protected ConfigurationManager _configurationManager;
 
     protected RootMessageLogger _rootMessageLogger;
+
+    protected CompositeStartupMessageLogger _startupMessageLogger;
 
     protected UUID _brokerId = UUID.randomUUID();
 
@@ -249,36 +253,53 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void initialise(int instanceID) throws Exception
     {
+        //Create the RootLogger to be used during broker operation
         _rootMessageLogger = new Log4jMessageLogger(_configuration);
         _registryName = String.valueOf(instanceID);
 
-        // Set the Actor for current log messages
-        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
+        //Create the composite (log4j+SystemOut MessageLogger to be used during startup
+        RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
+        _startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
+        
+        CurrentActor.set(new BrokerActor(_startupMessageLogger));
 
-        configure();
+        try
+        {
+            configure();
 
-        _qmfService = new QMFService(getConfigStore(), this);
+            _qmfService = new QMFService(getConfigStore(), this);
 
-        CurrentActor.get().message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+            CurrentActor.get().message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
 
-        initialiseManagedObjectRegistry();
+            initialiseManagedObjectRegistry();
 
-        _virtualHostRegistry = new VirtualHostRegistry(this);
+            _virtualHostRegistry = new VirtualHostRegistry(this);
 
-        _securityManager = new SecurityManager(_configuration, _pluginManager);
+            _securityManager = new SecurityManager(_configuration, _pluginManager);
 
-        createDatabaseManager(_configuration);
+            createDatabaseManager(_configuration);
 
-        _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
+            _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
-        _databaseManager.initialiseManagement(_configuration);
+            _databaseManager.initialiseManagement(_configuration);
 
-        _managedObjectRegistry.start();
+            _managedObjectRegistry.start();
+        }
+        finally
+        {
+            CurrentActor.remove();
+        }
 
-        initialiseVirtualHosts();
-
-        // Startup complete, so pop the current actor
-        CurrentActor.remove();
+        CurrentActor.set(new BrokerActor(_rootMessageLogger));
+        try
+        {
+            initialiseVirtualHosts();
+        }
+        finally
+        {
+            // Startup complete, so pop the current actor
+            CurrentActor.remove();
+        }
     }
 
     protected void createDatabaseManager(ServerConfiguration configuration) throws Exception
@@ -443,6 +464,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public RootMessageLogger getRootMessageLogger()
     {
         return _rootMessageLogger;
+    }
+    
+    public RootMessageLogger getCompositeStartupMessageLogger()
+    {
+        return _startupMessageLogger;
     }
 
     public UUID getBrokerId()
