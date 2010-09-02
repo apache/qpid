@@ -38,6 +38,7 @@ public abstract class Node
     protected boolean _isAutoDelete;
     protected String _alternateExchange;
     protected List<Binding> _bindings = new ArrayList<Binding>();
+    protected Map<String,Object> _declareArgs = Collections.emptyMap();
     
     public int getType()
     {
@@ -88,7 +89,15 @@ public abstract class Node
         this._bindings.add(binding);
     }
     
-    public abstract Map<String,Object> getDeclareArgs();
+    public Map<String,Object> getDeclareArgs()
+    {
+        return _declareArgs;
+    }
+    
+    public void setDeclareArgs(Map<String,Object> options)
+    {
+        _declareArgs = options;
+    }   
     
     public static class QueueNode extends Node 
     {
@@ -108,17 +117,7 @@ public abstract class Node
        public void setExclusive(boolean exclusive)
        {
            _isExclusive = exclusive;
-       }
-      
-       public Map<String,Object> getDeclareArgs()
-       {
-           return _queueOptions;
-       }       
-
-       public void setDeclareArgs(QpidQueueOptions options)
-       {
-           _queueOptions = options;
-       }       
+       }  
     }
     
     public static class ExchangeNode extends Node 
@@ -140,23 +139,10 @@ public abstract class Node
        {
            _exchangeType = exchangeType;
        }
-       
-       public Map<String,Object> getDeclareArgs()
-       {
-           return _exchangeOptions;
-       }
-       
-       public void setDeclareArgs(QpidExchangeOptions options)
-       {
-           _exchangeOptions = options;
-       }       
+    
     }
     
     public static class UnknownNodeType extends Node 
     {
-        public Map<String,Object> getDeclareArgs()
-        {
-            return Collections.emptyMap();
-        } 
     }
 }
