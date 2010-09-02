@@ -122,69 +122,6 @@ public class AddressHelper
         return mode != null && mode.equals(BROWSE) ? true : false;
     }
 
-    public QpidQueueOptions getQpidQueueOptions(MapAccessor args)
-    {
-        QpidQueueOptions options = new QpidQueueOptions();
-        if (args.getInt(QpidQueueOptions.QPID_MAX_COUNT) != null)
-        {
-            options.setMaxCount(args.getInt(QpidQueueOptions.QPID_MAX_COUNT));
-        }
-
-        if (args.getInt(QpidQueueOptions.QPID_MAX_SIZE) != null)
-        {
-            options.setMaxSize(args.getInt(QpidQueueOptions.QPID_MAX_SIZE));
-        }
-
-        if (args.getString(QpidQueueOptions.QPID_POLICY_TYPE) != null)
-        {
-            options.setPolicyType(args
-                    .getString(QpidQueueOptions.QPID_POLICY_TYPE));
-        }
-
-        if (args.getInt(QpidQueueOptions.QPID_PERSIST_LAST_NODE) != null)
-        {
-            options.setPersistLastNode();
-        }
-
-        if (args.getString(QpidQueueOptions.QPID_LAST_VALUE_QUEUE) != null)
-        {
-            options.setOrderingPolicy(QpidQueueOptions.QPID_LAST_VALUE_QUEUE);
-        } else if (args
-                .getString(QpidQueueOptions.QPID_LAST_VALUE_QUEUE_NO_BROWSE) != null)
-        {
-            options
-                    .setOrderingPolicy(QpidQueueOptions.QPID_LAST_VALUE_QUEUE_NO_BROWSE);
-        }
-
-        if (args.getString(QpidQueueOptions.QPID_QUEUE_EVENT_GENERATION) != null)
-        {
-            options.setQueueEvents(args
-                    .getString(QpidQueueOptions.QPID_QUEUE_EVENT_GENERATION));
-        }
-
-        return options;
-    }
-
-    public QpidExchangeOptions getQpidExchangeOptions(MapAccessor args)
-    {
-        QpidExchangeOptions options = new QpidExchangeOptions();
-        if (args.getInt(QpidExchangeOptions.QPID_EXCLUSIVE_BINDING) != null)
-        {
-            options.setExclusiveBinding();
-        }
-
-        if (args.getInt(QpidExchangeOptions.QPID_INITIAL_VALUE_EXCHANGE) != null)
-        {
-            options.setInitialValueExchange();
-        }
-
-        if (args.getInt(QpidExchangeOptions.QPID_MSG_SEQUENCE) != null)
-        {
-            options.setMessageSequencing();
-        }
-        return options;
-    }
-
     @SuppressWarnings("unchecked")
     public List<Binding> getBindings(Map props)
     {
@@ -209,9 +146,10 @@ public class AddressHelper
 
     public Map getDeclareArgs(Map props)
     {
-        if (props != null)
+        if (props != null && props.get(X_DECLARE) != null)
         {
             return (Map) props.get(X_DECLARE);
+            
         } else
         {
             return Collections.EMPTY_MAP;
@@ -260,7 +198,6 @@ public class AddressHelper
         ExchangeNode node = new ExchangeNode();
         node.setExchangeType(argsMap.getString(TYPE) == null ? null : argsMap
                 .getString(TYPE));
-        node.setDeclareArgs(getQpidExchangeOptions(argsMap));
         fillInCommonNodeArgs(node, parent, argsMap);
         return node;
     }
@@ -273,7 +210,6 @@ public class AddressHelper
         node.setAlternateExchange(argsMap.getString(ALT_EXCHANGE));
         node.setExclusive(argsMap.getBoolean(EXCLUSIVE) == null ? false
                 : argsMap.getBoolean(EXCLUSIVE));
-        node.setDeclareArgs(getQpidQueueOptions(argsMap));
         fillInCommonNodeArgs(node, parent, argsMap);
 
         return node;
@@ -290,6 +226,10 @@ public class AddressHelper
                 : argsMap.getBoolean(AUTO_DELETE));
         node.setAlternateExchange(argsMap.getString(ALT_EXCHANGE));
         node.setBindings(getBindings(parent));
+        if (getDeclareArgs(parent).containsKey(ARGUMENTS))
+        {
+            node.setDeclareArgs((Map<String,Object>)getDeclareArgs(parent).get(ARGUMENTS));
+        }
     }
 
     /**
