@@ -26,6 +26,7 @@ import socket
 from cmd         import Cmd
 from shlex       import split
 from threading   import Lock
+from time        import strftime, gmtime
 from qpid.disp   import Display
 from qpid.peer   import Closed
 from qmf.console import Session, Console, SchemaClass, ObjectId
@@ -398,7 +399,7 @@ class QmfData(Console):
           if dtime == 0:
             dtimestr = "-"
           if dtime == 0 or (dtime > 0 and show_deleted):
-            row = (dispId, self.disp.timestamp(ctime), dtimestr, obj.getIndex())
+            row = (dispId, self.disp.timestamp(ctime), dtimestr, self.objectIndex(obj))
             rows.append(row)
     finally:
       self.lock.release()
@@ -416,10 +417,10 @@ class QmfData(Console):
         obj = self.objects[dispId]
         caption = "Object of type: %r" % obj.getClassKey()
         for prop in obj.getProperties():
-          row = (prop[0].name, "%r" % prop[1])
+          row = (prop[0].name, self.valueByType(prop[0].type, prop[1]))
           rows.append(row)
         for stat in obj.getStatistics():
-          row = (stat[0].name, "%r" % stat[1])
+          row = (stat[0].name, self.valueByType(stat[0].type, stat[1]))
           rows.append(row)
       else:
         print "No object found with ID %d" % dispId
@@ -481,6 +482,51 @@ class QmfData(Console):
     else:
       raise ValueError ("Invalid type code: %s" % str(typecode))
 
+  def valueByType(self, typecode, val):
+    if   typecode == 1:  return "%d" % val
+    elif typecode == 2:  return "%d" % val
+    elif typecode == 3:  return "%d" % val
+    elif typecode == 4:  return "%d" % val
+    elif typecode == 6:  return val
+    elif typecode == 7:  return val
+    elif typecode == 8:  return strftime("%c", gmtime(val / 1000000000))
+    elif typecode == 9:
+      if val < 0: val = 0
+      sec = val / 1000000000
+      min = sec / 60
+      hour = min / 60
+      day = hour / 24
+      result = ""
+      if day > 0:
+        result = "%dd " % day
+      if hour > 0 or result != "":
+        result += "%dh " % (hour % 24)
+      if min > 0 or result != "":
+        result += "%dm " % (min % 60)
+      result += "%ds" % (sec % 60)
+      return result
+
+    elif typecode == 10: return str(self.idRegistry.displayId(val))
+    elif typecode == 11:
+      if val:
+        return "True"
+      else:
+        return "False"
+
+    elif typecode == 12: return "%f" % val
+    elif typecode == 13: return "%f" % val
+    elif typecode == 14: return "%r" % val
+    elif typecode == 15: return "%r" % val
+    elif typecode == 16: return "%d" % val
+    elif typecode == 17: return "%d" % val
+    elif typecode == 18: return "%d" % val
+    elif typecode == 19: return "%d" % val
+    elif typecode == 20: return "%r" % val
+    elif typecode == 21: return "%r" % val
+    elif typecode == 22: return "%r" % val
+    else:
+      raise ValueError ("Invalid type code: %s" % str(typecode))
+
   def accessName (self, code):
     """ Convert element access codes to printable strings """
     if   code == '1': return "ReadCreate"
@@ -494,6 +540,18 @@ class QmfData(Console):
       return ""
     else:
       return text
+
+  def objectIndex(self, obj):
+    result = ""
+    first = True
+    props = obj.getProperties()
+    for prop in props:
+      if prop[0].index:
+        if not first:
+          result += "."
+        result += self.valueByType(prop[0].type, prop[1])
+        first = None
+    return result
 
 
   #=====================
