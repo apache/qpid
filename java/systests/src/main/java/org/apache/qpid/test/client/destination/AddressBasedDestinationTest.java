@@ -203,8 +203,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                                  "x-declare: " +
                                  "{" + 
                                      "auto-delete: true," +
-                                     "'qpid.max_size': 1000," +
-                                     "'qpid.max_count': 100" +
+                                     "arguments: {" +  
+                                        "'qpid.max_size': 1000," +
+                                        "'qpid.max_count': 100" +
+                                     "}" + 
                                   "}, " +   
                                   "x-bindings: [{exchange : 'amq.direct', key : test}, " + 
                                                "{exchange : 'amq.fanout'}," +
@@ -260,8 +262,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                              "{ " + 
                                  "type:direct, " + 
                                  "auto-delete: true, " +
-                                 "'qpid.msg_sequence': 1, " +
-                                 "'qpid.ive': 1" + 
+                                 "arguments: {" +  
+                                   "'qpid.msg_sequence': 1, " +
+                                   "'qpid.ive': 1" +
+                                 "}" +
                              "}" +
                         "}" +
                       "}";
@@ -293,7 +297,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                                "x-declare: " + 
                                "{ " + 
                                      "auto-delete: true," +
-                                     "'qpid.max_count': 100" +
+                                     "arguments: {'qpid.max_count': 100}" +
                                "}, " +
                                "x-bindings: [{exchange : 'amq.direct', key : test}, " +
                                             "{exchange : 'amq.topic', key : 'a.#'}," + 
@@ -391,7 +395,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     {
         Hashtable<String,String> map = new Hashtable<String,String>();        
         map.put("destination.myQueue1", "ADDR:my-queue/hello; {create: always, node: " + 
-                "{x-declare: {auto-delete: true,'qpid.max_size': 1000}}}");
+                "{x-declare: {auto-delete: true, arguments : {'qpid.max_size': 1000}}}}");
         
         map.put("destination.myQueue2", "ADDR:my-queue2; { create: receiver }");
 
@@ -469,7 +473,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         String addr = "ADDR:amq.direct/x512; {create: receiver, " +
                       "link : {name : 'MY.RESP.QUEUE', " + 
                       "x-declare : { auto-delete: true, exclusive: true, " +
-                                   "'qpid.max_size': 1000, 'qpid.policy_type': ring } } }";
+                                   "arguments : {'qpid.max_size': 1000, 'qpid.policy_type': ring }} } }";
         
         Destination replyTo = new AMQAnyDestination(addr);
         Destination dest =new AMQAnyDestination("ADDR:amq.direct/Hello");
@@ -527,7 +531,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         String addr = "ADDR:amq.direct/x512; {create: receiver, " +
         "link : {name : 'MY.RESP.QUEUE', " + 
         "x-declare : { auto-delete: true, exclusive: true, " +
-                     "'qpid.max_size': 1000, 'qpid.policy_type': ring } } }";
+                     "arguments : {'qpid.max_size': 1000, 'qpid.policy_type': ring} } } }";
         queue = ssn.createQueue(addr);
         
         prod = ssn.createProducer(queue); 
@@ -574,8 +578,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                "{ " + 
                    "type:direct, " + 
                    "auto-delete: true, " +
-                   "'qpid.msg_sequence': 1, " +
-                   "'qpid.ive': 1" + 
+                   "arguments: {" +  
+                       "'qpid.msg_sequence': 1, " +
+                       "'qpid.ive': 1" + 
+                   "}" +
                "}" +
           "}, " +
           "link: {name : my-topic, " +
@@ -649,7 +655,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         
         String addr = "ADDR:my-ring-queue; {create: always, mode: browse, " +
             "node: {x-bindings: [{exchange : 'amq.direct', key : test}], " +
-                   "x-declare:{'qpid.policy_type':ring, 'qpid.max_count':2}}}";
+                   "x-declare:{arguments : {'qpid.policy_type':ring, 'qpid.max_count':2}}}}";
         
         Destination dest = ssn.createQueue(addr);
         MessageConsumer browseCons = ssn.createConsumer(dest);
