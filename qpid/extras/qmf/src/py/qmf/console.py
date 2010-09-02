@@ -2945,6 +2945,7 @@ class Agent:
     for seq in copy:
       context = copy[seq]
       context.cancel("Agent disconnected")
+      self.seqMgr._release(seq)
 
 
   def __repr__(self):
@@ -3052,7 +3053,10 @@ class Agent:
   def _clearContext(self, sequence):
     try:
       self.lock.acquire()
-      self.contextMap.pop(sequence)
+      try:
+        self.contextMap.pop(sequence)
+      except KeyError:
+        pass   # @todo - shouldn't happen, log a warning.
     finally:
       self.lock.release()
 
