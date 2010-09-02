@@ -68,7 +68,6 @@ import org.apache.qpid.transport.network.mina.MINANetworkDriver;
 public class Main
 {
     private static Logger _logger;
-    private static Logger _brokerLogger;
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
@@ -230,13 +229,11 @@ public class Main
             catch (InitException e)
             {
                 System.out.println("Initialisation Error : " + e.getMessage());
-                _brokerLogger.error("Initialisation Error : " + e.getMessage());
                 shutdown(1);
             }
             catch (Throwable e)
             {
                 System.out.println("Error initialising message broker: " + e);
-                _brokerLogger.error("Error initialising message broker: " + e);
                 e.printStackTrace();
                 shutdown(1);
             }
@@ -308,9 +305,9 @@ public class Main
         // the configuration.
         BrokerMessages.reload();
 
-        // AR.initialise() sets its own actor so we now need to set the actor
-        // for the remainder of the startup
-        CurrentActor.set(new BrokerActor(config.getRootMessageLogger()));
+        // AR.initialise() sets and removes its own actor so we now need to set the actor
+        // for the remainder of the startup, and the default actor if the stack is empty
+        CurrentActor.set(new BrokerActor(config.getCompositeStartupMessageLogger()));
         CurrentActor.setDefault(new BrokerActor(config.getRootMessageLogger()));
 
         try
@@ -323,13 +320,6 @@ public class Main
             ServerInformationMBean sysInfoMBean =
                     new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
             sysInfoMBean.register();
-
-            //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
-            // that are causing the broker build to pick up the wrong properties file and hence say
-            // Starting Qpid Client
-            _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
-                               + " build: " + QpidProperties.getBuildVersion());
-
 
 
             String[] portStr = commandLine.getOptionValues("p");
@@ -443,10 +433,6 @@ public class Main
                 CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", serverConfig.getSSLPort()));
             }
 
-            //fixme  qpid.AMQP should be using qpidproperties to get value
-            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
-                    + " build: " + QpidProperties.getBuildVersion());
-
             CurrentActor.get().message(BrokerMessages.READY());
 
         }
@@ -530,7 +516,6 @@ public class Main
 
         //now that the override status is know, we can instantiate the Loggers
         _logger = Logger.getLogger(Main.class);
-        _brokerLogger = Logger.getLogger("Qpid.Broker");
 
         new Main(args);
     }
@@ -568,7 +553,7 @@ public class Main
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
             CurrentActor.get().message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
-            System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
+
             if (logWatchTime > 0)
             {
                 System.out.println("log file " + logConfigFile.getAbsolutePath() + " will be checked for changes every "

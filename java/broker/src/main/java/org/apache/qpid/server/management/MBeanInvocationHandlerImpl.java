@@ -74,7 +74,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         final Class<?>[] interfaces = new Class[] { MBeanServerForwarder.class };
 
 
-        _logActor = new ManagementActor(CurrentActor.get().getRootMessageLogger());
+        _logActor = new ManagementActor(ApplicationRegistry.getInstance().getRootMessageLogger());
 
         Object proxy = Proxy.newProxyInstance(MBeanServerForwarder.class.getClassLoader(), interfaces, handler);
         return MBeanServerForwarder.class.cast(proxy);

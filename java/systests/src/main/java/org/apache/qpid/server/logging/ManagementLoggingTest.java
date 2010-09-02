@@ -97,9 +97,10 @@ public class ManagementLoggingTest extends AbstractTestLogging
                 validateMessageID("MNG-1001", log);
 
                 //2
+                //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
                 results = findMatches("MNG-1001");
-                assertEquals("More than one startup message found.",
-                             1, results.size());
+                assertEquals("Unexpected startup message count.",
+                             2, results.size());
 
                 //3
                 assertEquals("Startup log message is not 'Startup'.", "Startup",
@@ -199,31 +200,26 @@ public class ManagementLoggingTest extends AbstractTestLogging
             {
                 // Validation
 
-                assertEquals("MNGer message not logged expected message", 2, results.size());
+                //There will be 4 startup messages (two via SystemOut, and two via Log4J)
+                assertEquals("Unexpected MNG-1002 message count", 4, results.size());
 
                 String log = getLogMessage(results, 0);
 
                 //1
                 validateMessageID("MNG-1002", log);
 
-                // Validate we only have one MNG-1002
-                results = findMatches("MNG-1002");
-                assertEquals("More than two RMI entries found.",
-                             2, results.size());
-
-                // We expect the RMI Server port to be 100 higher than
-                // the RMIConnector Server Port                
+                //Check the RMI Registry port is as expected
                 int mPort = getPort() + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT);
                 assertTrue("RMI Registry port not as expected(" + mPort + ").:" + getMessageString(log),
                            getMessageString(log).endsWith(String.valueOf(mPort)));
 
-                log = getLogMessage(results, 1);
+                log = getLogMessage(results, 2);
 
                 //1
                 validateMessageID("MNG-1002", log);
 
-                // We expect the RMIConnector Server port to be 100 higher than
-                // the RMI Server Port
+                // We expect the RMI Registry port (the defined 'management port') to be
+                // 100 lower than the RMIConnector Server Port (the actual JMX server)
                 mPort = getPort() + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT) + 100;
                 assertTrue("RMI ConnectorServer port not as expected(" + mPort + ").:" + getMessageString(log),
                            getMessageString(log).endsWith(String.valueOf(mPort)));
@@ -270,13 +266,12 @@ public class ManagementLoggingTest extends AbstractTestLogging
                 //1
                 validateMessageID("MNG-1006", log);
 
-                // Validate we only have one MNG-1002
+                // Validate we only have two MNG-1002 (one via stdout, one via log4j)
                 results = findMatches("MNG-1006");
-                assertEquals("More than one SSL Keystore entry found.",
-                             1, results.size());
+                assertEquals("Upexpected SSL Keystore message count",
+                             2, results.size());
 
-                // We expect the RMIConnector Server port to be 100 higher than
-                // the RMI Server Port
+                // Validate the keystore path is as expected
                 assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
                            getMessageString(log).endsWith(new File(getConfigurationStringProperty("management.ssl.keyStorePath")).getName()));
             }
