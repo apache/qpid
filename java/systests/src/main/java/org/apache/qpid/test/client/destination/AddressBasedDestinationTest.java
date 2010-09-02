@@ -716,5 +716,40 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         {            
         }
     }
-    
+ 
+    public void testXBindingsWithoutExchangeName() throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        String addr = "ADDR:MRKT; " +
+        		"{" +
+        		    "create: receiver," + 
+        		    "node : {type: topic, x-declare: {type: topic} },"  +
+        		    "link:{" +
+        		         "name: my-topic," +
+        		         "x-bindings:[{key:'NYSE.#'},{key:'NASDAQ.#'},{key:'CNTL.#'}]" +
+        		         "}" +
+        		"}";
+        
+        // Using the ADDR method to create a more complicated topic
+        MessageConsumer  cons = ssn.createConsumer(new AMQAnyDestination(addr));
+        
+        assertTrue("The queue was not bound to MRKT exchange using NYSE.# as the binding key",(
+                (AMQSession_0_10)ssn).isQueueBound("MRKT", 
+                    "my-topic","NYSE.#", null));
+        
+        assertTrue("The queue was not bound to MRKT exchange using NASDAQ.# as the binding key",(
+                (AMQSession_0_10)ssn).isQueueBound("MRKT", 
+                    "my-topic","NASDAQ.#", null));
+        
+        assertTrue("The queue was not bound to MRKT exchange using CNTL.# as the binding key",(
+                (AMQSession_0_10)ssn).isQueueBound("MRKT", 
+                    "my-topic","CNTL.#", null));
+        
+        MessageProducer prod = ssn.createProducer(ssn.createTopic(addr));
+        Message msg = ssn.createTextMessage("test");
+        msg.setStringProperty("qpid.subject", "NASDAQ.ABCD");
+        prod.send(msg);
+        assertNotNull("consumer should receive a message",cons.receive(1000));
+        cons.close();
+    }
 }
