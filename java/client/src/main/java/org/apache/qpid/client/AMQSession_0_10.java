@@ -343,16 +343,25 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             List<Binding> bindings = new ArrayList<Binding>();
             bindings.addAll(destination.getSourceNode().getBindings());
             bindings.addAll(destination.getTargetNode().getBindings());
+            
+            String defaultExchange = destination.getAddressType() == AMQDestination.TOPIC_TYPE ?
+                                     destination.getAddressName(): "amq.topic";
+            
             for (Binding binding: bindings)
             {
                 String queue = binding.getQueue() == null?
                                    queueName.asString(): binding.getQueue();
+                                   
+               String exchange = binding.getExchange() == null ? 
+                                 defaultExchange :
+                                 binding.getExchange();
+                        
                 _logger.debug("Binding queue : " + queue + 
-                              " exchange: " + binding.getExchange() + 
+                              " exchange: " + exchange + 
                               " using binding key " + binding.getBindingKey() + 
                               " with args " + printMap(binding.getArgs()));
                 getQpidSession().exchangeBind(queue, 
-                                              binding.getExchange(),
+                                              exchange,
                                               binding.getBindingKey(),
                                               binding.getArgs()); 
             }
