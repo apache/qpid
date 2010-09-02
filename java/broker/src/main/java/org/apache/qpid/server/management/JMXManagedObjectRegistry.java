@@ -73,7 +73,6 @@ import java.util.Map;
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {
     private static final Logger _log = Logger.getLogger(JMXManagedObjectRegistry.class);
-    private static final Logger _startupLog = Logger.getLogger("Qpid.Broker");
     
     public static final String MANAGEMENT_PORT_CONFIG_PATH = "management.jmxport";
     public static final int MANAGEMENT_PORT_DEFAULT = 8999;
@@ -108,7 +107,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         if (areOutOfTheBoxJMXOptionsSet())
         {
             _log.warn("JMX: Using the out of the box JMX Agent");
-            _startupLog.warn("JMX: Using the out of the box JMX Agent");
             return;
         }
 
@@ -170,9 +168,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                                                     + ksf +  ". Check permissions.");
                 }
                 
-                _log.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
-                _startupLog.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
-
                 CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(ksf.getAbsolutePath()));
             }
 
@@ -196,13 +191,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             csf = new SslRMIClientSocketFactory();
             ssf = new SslRMIServerSocketFactory();
 
-            _log.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
-                     (port +PORT_EXPORT_OFFSET) + ") with SSL");
-            _startupLog.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
-                     (port +PORT_EXPORT_OFFSET) + ") with SSL");
-
-            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("SSL RMI Registry", port));
-            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("SSL RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", port));
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("SSL JMX RMIConnectorServer", port + PORT_EXPORT_OFFSET));
 
         }
         else
@@ -211,10 +201,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             csf = null;
             ssf = null;
 
-            _log.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
-            _startupLog.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
             CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", port));
-            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
+            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("JMX RMIConnectorServer", port + PORT_EXPORT_OFFSET));
         }
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server

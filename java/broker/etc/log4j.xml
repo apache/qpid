@@ -82,17 +82,10 @@
     </appender>
 
     <appender class="org.apache.log4j.ConsoleAppender" name="STDOUT">
-
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
         </layout>
     </appender>
-
-    <!-- Qpid.Broker log is a special log category used to log only useful broker startup details -->
-    <category additivity="true" name="Qpid.Broker">
-        <priority value="debug"/>
-        <appender-ref ref="STDOUT"/>
-    </category>
 
     <category additivity="true" name="org.apache.qpid.server.queue.AMQQueueMBean">
         <priority value="info"/>
