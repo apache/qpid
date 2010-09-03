@@ -37,7 +37,7 @@ public class LVQTest extends QpidBrokerTestCase
     {
         String addr = "ADDR:my-lvq-queue; {create: always, " +
         "node: {x-bindings: [{exchange : 'amq.direct', key : test}], " +
-        "x-declare:{'qpid.last_value_queue':1}}}";
+        "x-declare:{arguments : {'qpid.last_value_queue':1}}}}";
                 
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
