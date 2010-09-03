@@ -190,19 +190,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
             ssf = new SslRMIServerSocketFactory();
-
-            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", port));
-            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("SSL JMX RMIConnectorServer", port + PORT_EXPORT_OFFSET));
-
         }
         else
         {
             //Do not specify any specific RMI socket factories, resulting in use of the defaults.
             csf = null;
             ssf = null;
-
-            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", port));
-            CurrentActor.get().message(ManagementConsoleMessages.LISTENING("JMX RMIConnectorServer", port + PORT_EXPORT_OFFSET));
         }
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
@@ -224,6 +217,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         {
             _rmiRegistry = LocateRegistry.createRegistry(port, null, null);
         }
+        
+        CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", port));
 
         /*
          * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls 
@@ -316,6 +311,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         _cs.start();
 
+        String connectorServer = (sslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
+        CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, port + PORT_EXPORT_OFFSET));
 
         CurrentActor.get().message(ManagementConsoleMessages.READY());
     }
@@ -398,7 +395,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             // Stopping the JMX ConnectorServer
             try
             {
-                CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI ConnectorServer", _cs.getAddress().getPort()));
+                CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("JMX RMIConnectorServer", _cs.getAddress().getPort()));
                 _cs.stop();
             }
             catch (IOException e)
