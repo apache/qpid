@@ -106,7 +106,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         //check if system properties are set to use the JVM's out-of-the-box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
         {
-            _log.warn("JMX: Using the out of the box JMX Agent");
+            CurrentActor.get().message(ManagementConsoleMessages.READY("Using the platform JMX Agent", true));
             return;
         }
 
@@ -314,7 +314,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         String connectorServer = (sslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
         CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, port + PORT_EXPORT_OFFSET));
 
-        CurrentActor.get().message(ManagementConsoleMessages.READY());
+        CurrentActor.get().message(ManagementConsoleMessages.READY("", false));
     }
 
     /*

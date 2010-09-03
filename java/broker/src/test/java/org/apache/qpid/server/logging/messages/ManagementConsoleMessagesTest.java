@@ -65,10 +65,19 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 
     public void testManagementReady()
     {
-        _logMessage = ManagementConsoleMessages.READY();
+        _logMessage = ManagementConsoleMessages.READY("",false);
         List<Object> log = performLog();
 
         String[] expected = {"Ready"};
+
+        validateLogMessage(log, "MNG-1004", expected);
+        
+        _logger.clearLogMessages();
+        
+        _logMessage = ManagementConsoleMessages.READY("Info",true);
+        log = performLog();
+
+        expected = new String[]{"Ready : Info"};
 
         validateLogMessage(log, "MNG-1004", expected);
     }

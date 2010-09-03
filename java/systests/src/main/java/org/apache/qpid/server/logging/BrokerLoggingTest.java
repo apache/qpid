@@ -601,7 +601,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
      * No input, all successful broker startups will show BRK-1004 messages.
      * Output:
      *
-     * 2009-07-09 15:50:20 +0100 MESSAGE BRK-1004 : Ready
+     * 2009-07-09 15:50:20 +0100 MESSAGE BRK-1004 : Qpid Broker Ready
      *
      * Validation Steps:
      *
@@ -659,7 +659,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     validateMessageID(TESTID, log);
 
                     //2
-                    assertEquals("Ready message not present", "Ready", getMessageString(log));
+                    assertEquals("Ready message not present", "Qpid Broker Ready", getMessageString(log));
                     
                     //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
                     assertEquals("Unexpected ready message count",
