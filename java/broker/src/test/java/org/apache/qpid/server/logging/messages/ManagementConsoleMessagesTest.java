@@ -58,7 +58,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         _logMessage = ManagementConsoleMessages.SHUTTING_DOWN(transport, port);
         List<Object> log = performLog();
 
-        String[] expected = {"Shuting down :", transport, ": port", String.valueOf(port)};
+        String[] expected = {"Shutting down :", transport, ": port", String.valueOf(port)};
 
         validateLogMessage(log, "MNG-1003", expected);
     }
