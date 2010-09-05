@@ -94,7 +94,7 @@ public class BindingLoggingTest extends AbstractTestLogging
      * 2. New Client requests that a Queue is bound to a new exchange.
      * Output:
      *
-     * <date> BND-1001 : Create
+     * <date> BND-1001 : Create :  Arguments : {x-filter-jms-selector=}
      *
      * Validation Steps:
      * 3. The BND ID is correct
@@ -117,6 +117,7 @@ public class BindingLoggingTest extends AbstractTestLogging
         validateLogMessage(getLogMessage(results, 0), messageID, message, exchange, queueName, queueName);
 
         exchange = "direct/amq.direct";
+        message = "Create : Arguments : {x-filter-jms-selector=}";
         validateLogMessage(getLogMessage(results, 1), messageID, message, exchange, queueName, queueName);
     }
 
@@ -129,7 +130,7 @@ public class BindingLoggingTest extends AbstractTestLogging
      * 2. Java Client consumes from a topic with a JMS selector.
      * Output:
      *
-     * <date> BND-1001 : Create : Arguments : <key=value>
+     * <date> BND-1001 : Create : Arguments : {x-filter-jms-selector=<value>}
      *
      * Validation Steps:
      * 3. The BND ID is correct

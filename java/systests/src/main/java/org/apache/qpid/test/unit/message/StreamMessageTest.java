@@ -75,6 +75,7 @@ public class StreamMessageTest extends QpidBrokerTestCase
                     ExchangeDefaults.HEADERS_EXCHANGE_CLASS + "://" + ExchangeDefaults.HEADERS_EXCHANGE_NAME
                     + "/test/queue1?" + BindingURL.OPTION_ROUTING_KEY + "='F0000=1'"));
         FieldTable ft = new FieldTable();
+        ft.setString("x-match", "any");
         ft.setString("F1000", "1");
         MessageConsumer consumer =
             consumerSession.createConsumer(queue, Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), Integer.parseInt(ClientProperties.MAX_PREFETCH_DEFAULT), false, false, (String) null, ft);

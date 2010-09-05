@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,7 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
@@ -1066,10 +1068,21 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 }
                 else
                 {
-                    // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
+                    Map<String,Object> args = new HashMap<String,Object>();
+                    
+                    // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a 
+                    // durable topic subscription that the broker arguments don't match any more. This is because it is not otherwise
+                    // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
+                    // argument, as specifying null for the arguments when querying means they should not be checked at all
+                    args.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
+                    
+                    // if the queue is bound to the exchange but NOT for this topic and selector, then the JMS spec
                     // says we must trash the subscription.
-                    if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
-                            && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
+                    boolean isQueueBound = isQueueBound(dest.getExchangeName(), dest.getAMQQueueName());
+                    boolean isQueueBoundForTopicAndSelector = 
+                                isQueueBound(dest.getExchangeName().asString(), dest.getAMQQueueName().asString(), topicName.asString(), args);
+
+                    if (isQueueBound && !isQueueBoundForTopicAndSelector)
                     {
                         deleteQueue(dest.getAMQQueueName());
                     }
@@ -1089,6 +1102,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 {
                     unsubscribe(name, true);
                 }
+
             }
 
             _subscriberAccess.lock();
@@ -1957,10 +1971,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                             ft.addAll(rawSelector);
                         }
 
-                        if (messageSelector != null)
-                        {
-                            ft.put(new AMQShortString("x-filter-jms-selector"), messageSelector);
-                        }
+                        // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a 
+                        // durable topic subscription that the broker arguments don't match any more. This is because it is not otherwise
+                        // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
+                        // argument, as specifying null for the arguments when querying means they should not be checked at all
+                        ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
 
                         C consumer = createMessageConsumer(amqd, prefetchHigh, prefetchLow,
                                                                               noLocal, exclusive, messageSelector, ft, noConsume, autoClose);
@@ -2091,6 +2106,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throws JMSException;
 
     public abstract boolean isQueueBound(final AMQDestination destination) throws JMSException;
+    
+    public abstract boolean isQueueBound(String exchangeName, String queueName, String bindingKey, Map<String,Object> args) throws JMSException;
 
     /**
      * Called to mark the session as being closed. Useful when the session needs to be made invalid, e.g. after failover
