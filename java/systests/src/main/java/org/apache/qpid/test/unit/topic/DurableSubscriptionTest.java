@@ -23,16 +23,6 @@ package org.apache.qpid.test.unit.topic;
 import java.io.IOException;
 import java.util.Set;
 
-import org.apache.qpid.management.common.JMXConnnectionFactory;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQTopic;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.jms.Connection;
 import javax.jms.InvalidDestinationException;
 import javax.jms.InvalidSelectorException;
@@ -47,6 +37,15 @@ import javax.jms.TopicSubscriber;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.management.common.JMXConnnectionFactory;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @todo Code to check that a consumer gets only one particular method could be factored into a re-usable method (as
@@ -118,11 +117,11 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         _logger.info("Producer sending message A");
         producer.send(session1.createTextMessage("A"));
         
-        ((AMQSession)session1).sync();
+        ((AMQSession<?, ?>) session1).sync();
         
         //check the dur sub's underlying queue now has msg count 1
         AMQQueue subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "MySubscription");
-        assertEquals("Msg count should be 1", 1, ((AMQSession)session1).getQueueDepth(subQueue));
+        assertEquals("Msg count should be 1", 1, ((AMQSession<?, ?>) session1).getQueueDepth(subQueue));
 
         Message msg;
         _logger.info("Receive message on consumer 1:expecting A");
@@ -141,16 +140,16 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         _logger.info("Receive message on consumer 1 :expecting null");
         assertEquals(null, msg);
         
-        ((AMQSession)session2).sync();
+        ((AMQSession<?, ?>) session2).sync();
         
         //check the dur sub's underlying queue now has msg count 0
-        assertEquals("Msg count should be 0", 0, ((AMQSession)session2).getQueueDepth(subQueue));
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session2).getQueueDepth(subQueue));
 
         consumer2.close();
         _logger.info("Unsubscribe session2/consumer2");
         session2.unsubscribe("MySubscription");
         
-        ((AMQSession)session2).sync();
+        ((AMQSession<?, ?>) session2).sync();
         
         if(isJavaBroker() && isExternalBroker())
         {
@@ -435,7 +434,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         con3.close();
     }
 
-    /***
+    /**
      * This tests the fix for QPID-1085
      * Creates a durable subscriber with an invalid selector, checks that the
      * exception is thrown correctly and that the subscription is not created. 
@@ -472,7 +471,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         session.unsubscribe("testDurableWithInvalidSelectorSub");
     }
     
-    /***
+    /**
      * This tests the fix for QPID-1085
      * Creates a durable subscriber with an invalid destination, checks that the
      * exception is thrown correctly and that the subscription is not created. 
@@ -509,9 +508,9 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
     }
     
     /**
-     * Tests QPID-1202
      * Creates a durable subscription with a selector, then changes that selector on resubscription
-     * @throws Exception 
+     * <p>
+     * QPID-1202, QPID-2418
      */
     public void testResubscribeWithChangedSelector() throws Exception
     {
@@ -544,8 +543,14 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         // Reconnect with new selector that matches B
         TopicSubscriber subB = session.createDurableSubscriber(topic, 
                 "testResubscribeWithChangedSelector","Match = False", false);
-        
-        // Check messages are received properly
+
+        //verify no messages are now present as changing selector should have issued
+        //an unsubscribe and thus deleted the previous backing queue for the subscription.
+        rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
+        assertNull("Should not have received message as the queue underlying the " +
+                 "subscription should have been cleared/deleted when the selector was changed", rMsg);
+
+        // Check that new messages are received properly
         sendMatchingAndNonMatchingMessage(session, producer);
         rMsg = subB.receive(POSITIVE_RECEIVE_TIMEOUT);
 
@@ -594,9 +599,226 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         msg.setBooleanProperty("Match", false);
         producer.send(msg);
     }
-    
-    public static junit.framework.Test suite()
+
+
+    /**
+     * create and register a durable subscriber with a message selector and then close it
+     * create a publisher and send  5 right messages and 5 wrong messages
+     * create another durable subscriber with the same selector and name
+     * check messages are still there
+     * <p>
+     * QPID-2418
+     */
+    public void testDurSubSameMessageSelector() throws Exception
+    {        
+        Connection conn = getConnection();
+        conn.start();
+        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        AMQTopic topic = new AMQTopic((AMQConnection) conn, "sameMessageSelector");
+                
+        //create and register a durable subscriber with a message selector and then close it
+        TopicSubscriber subOne = session.createDurableSubscriber(topic, "sameMessageSelector", "testprop = TRUE", false);
+        subOne.close();
+
+        MessageProducer producer = session.createProducer(topic);
+        for (int i = 0; i < 5; i++)
+        {
+            Message message = session.createMessage();
+            message.setBooleanProperty("testprop", true);
+            producer.send(message);
+            message = session.createMessage();
+            message.setBooleanProperty("testprop", false);
+            producer.send(message);
+        }
+        producer.close();
+
+        // now recreate the durable subscriber and check the received messages
+        TopicSubscriber subTwo = session.createDurableSubscriber(topic, "sameMessageSelector", "testprop = TRUE", false);
+
+        // should be 5 messages on queue now
+        AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "sameMessageSelector");
+        assertEquals("Queue depth is wrong", 5, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        
+        for (int i = 0; i < 5; i++)
+        {
+            Message message = subTwo.receive(1000);
+            if (message == null)
+            {
+                fail("sameMessageSelector test failed. no message was returned");
+            }
+            else
+            {
+                assertEquals("sameMessageSelector test failed. message selector not reset",
+                        "true", message.getStringProperty("testprop"));
+            }
+        }
+        
+        // Check queue has no messages
+        assertEquals("Queue should be empty", 0, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        
+        // Unsubscribe
+        session.unsubscribe("sameMessageSelector");
+        
+        conn.close();
+    }
+
+    /**
+     * <ul>
+     * <li>create and register a durable subscriber with a message selector
+     * <li>create another durable subscriber with a different selector and same name
+     * <li>check first subscriber is now closed
+     * <li>create a publisher and send messages
+     * <li>check messages are recieved correctly
+     * </ul>
+     * <p>
+     * QPID-2418
+     */
+    public void testResubscribeWithChangedSelectorNoClose() throws Exception
     {
-        return new junit.framework.TestSuite(DurableSubscriptionTest.class);
-    }  
+        Connection conn = getConnection();
+        conn.start();
+        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        AMQTopic topic = new AMQTopic((AMQConnection) conn, "testResubscribeWithChangedSelectorNoClose");
+        
+        // Create durable subscriber that matches A
+        TopicSubscriber subA = session.createDurableSubscriber(topic, 
+                "testResubscribeWithChangedSelectorNoClose",
+                "Match = True", false);
+        
+        // Reconnect with new selector that matches B
+        TopicSubscriber subB = session.createDurableSubscriber(topic, 
+                "testResubscribeWithChangedSelectorNoClose",
+                "Match = false", false);
+        
+        // First subscription has been closed
+        try
+        {
+            subA.receive(1000);
+            fail("First subscription was not closed");
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        // Send 1 matching message and 1 non-matching message
+        MessageProducer producer = session.createProducer(topic);
+        TextMessage msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart1");
+        msg.setBooleanProperty("Match", true);
+        producer.send(msg);
+        msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart2");
+        msg.setBooleanProperty("Match", false);
+        producer.send(msg);
+
+        // should be 1 message on queue now
+        AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorNoClose");
+        assertEquals("Queue depth is wrong", 1, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        
+        Message rMsg = subB.receive(1000);
+        assertNotNull(rMsg);
+        assertEquals("Content was wrong", 
+                     "testResubscribeWithChangedSelectorAndRestart2",
+                     ((TextMessage) rMsg).getText());
+        
+        rMsg = subB.receive(1000);
+        assertNull(rMsg);
+        
+        // Check queue has no messages
+        assertEquals("Queue should be empty", 0, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        
+        conn.close();
+    }
+
+    /**
+     * <ul>
+     * <li>create and register a durable subscriber with no message selector
+     * <li>create another durable subscriber with a selector and same name
+     * <li>check first subscriber is now closed
+     * <li>create a publisher and send  messages
+     * <li>check messages are recieved correctly
+     * </ul>
+     * <p>
+     * QPID-2418
+     */
+    public void testDurSubAddMessageSelectorNoClose() throws Exception
+    {        
+        Connection conn = getConnection();
+        conn.start();
+        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        AMQTopic topic = new AMQTopic((AMQConnection) conn, "subscriptionName");
+                
+        // create and register a durable subscriber with no message selector
+        TopicSubscriber subOne = session.createDurableSubscriber(topic, "subscriptionName", null, false);
+
+        // now create a durable subscriber with a selector
+        TopicSubscriber subTwo = session.createDurableSubscriber(topic, "subscriptionName", "testprop = TRUE", false);
+
+        // First subscription has been closed
+        try
+        {
+            subOne.receive(1000);
+            fail("First subscription was not closed");
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        // Send 1 matching message and 1 non-matching message
+        MessageProducer producer = session.createProducer(topic);
+        TextMessage msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart1");
+        msg.setBooleanProperty("testprop", true);
+        producer.send(msg);
+        msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart2");
+        msg.setBooleanProperty("testprop", false);
+        producer.send(msg);
+
+        // should be 1 message on queue now
+        AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "subscriptionName");
+        assertEquals("Queue depth is wrong", 1, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        
+        Message rMsg = subTwo.receive(1000);
+        assertNotNull(rMsg);
+        assertEquals("Content was wrong", 
+                     "testResubscribeWithChangedSelectorAndRestart1",
+                     ((TextMessage) rMsg).getText());
+        
+        rMsg = subTwo.receive(1000);
+        assertNull(rMsg);
+        
+        // Check queue has no messages
+        assertEquals("Queue should be empty", 0, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        
+        conn.close();
+    }
+
+    /**
+     * <ul>
+     * <li>create and register a durable subscriber with no message selector
+     * <li>try to create another durable with the same name, should fail
+     * </ul>
+     * <p>
+     * QPID-2418
+     */
+    public void testDurSubNoSelectorResubscribeNoClose() throws Exception
+    {        
+        Connection conn = getConnection();
+        conn.start();
+        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        AMQTopic topic = new AMQTopic((AMQConnection) conn, "subscriptionName");
+                
+        // create and register a durable subscriber with no message selector
+        session.createDurableSubscriber(topic, "subscriptionName", null, false);
+
+        // try to recreate the durable subscriber
+        try
+        {
+            session.createDurableSubscriber(topic, "subscriptionName", null, false);
+            fail("Subscription should not have been created");
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
 }
