@@ -544,23 +544,22 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         TopicSubscriber subB = session.createDurableSubscriber(topic, 
                 "testResubscribeWithChangedSelector","Match = False", false);
 
-        //verify no messages are now present as changing selector should have issued
-        //an unsubscribe and thus deleted the previous backing queue for the subscription.
+        //verify no messages are now recieved.
         rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
-        assertNull("Should not have received message as the queue underlying the " +
-                 "subscription should have been cleared/deleted when the selector was changed", rMsg);
+        assertNull("Should not have received message as the selector was changed", rMsg);
 
         // Check that new messages are received properly
         sendMatchingAndNonMatchingMessage(session, producer);
         rMsg = subB.receive(POSITIVE_RECEIVE_TIMEOUT);
 
-        assertNotNull("Message should not be received", rMsg);
+        assertNotNull("Message should have been received", rMsg);
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelector2",
                      ((TextMessage) rMsg).getText());
         
+        
         rMsg = subB.receive(NEGATIVE_RECEIVE_TIMEOUT);
-        assertNull("Message should be received",rMsg);
+        assertNull("Message should not have been received",rMsg);
         session.unsubscribe("testResubscribeWithChangedSelector");
     }
 
@@ -613,7 +612,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
     {        
         Connection conn = getConnection();
         conn.start();
-        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session session = conn.createSession(true, Session.SESSION_TRANSACTED);
         AMQTopic topic = new AMQTopic((AMQConnection) conn, "sameMessageSelector");
                 
         //create and register a durable subscriber with a message selector and then close it
@@ -630,15 +629,17 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
             message.setBooleanProperty("testprop", false);
             producer.send(message);
         }
+        session.commit();
         producer.close();
+
+        // should be 5 or 10 messages on queue now
+        // (5 for the java broker due to use of server side selectors, and 10 for the cpp broker due to client side selectors only)
+        AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "sameMessageSelector");
+        assertEquals("Queue depth is wrong", isJavaBroker() ? 5 : 10, ((AMQSession<?, ?>) session).getQueueDepth(queue));
 
         // now recreate the durable subscriber and check the received messages
         TopicSubscriber subTwo = session.createDurableSubscriber(topic, "sameMessageSelector", "testprop = TRUE", false);
 
-        // should be 5 messages on queue now
-        AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "sameMessageSelector");
-        assertEquals("Queue depth is wrong", 5, ((AMQSession<?, ?>) session).getQueueDepth(queue));
-        
         for (int i = 0; i < 5; i++)
         {
             Message message = subTwo.receive(1000);
@@ -652,6 +653,8 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
                         "true", message.getStringProperty("testprop"));
             }
         }
+        
+        session.commit();
         
         // Check queue has no messages
         assertEquals("Queue should be empty", 0, ((AMQSession<?, ?>) session).getQueueDepth(queue));
@@ -710,10 +713,11 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         msg.setBooleanProperty("Match", false);
         producer.send(msg);
 
-        // should be 1 message on queue now
+        // should be 1 or 2 messages on queue now
+        // (1 for the java broker due to use of server side selectors, and 2 for the cpp broker due to client side selectors only)
         AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorNoClose");
-        assertEquals("Queue depth is wrong", 1, ((AMQSession<?, ?>) session).getQueueDepth(queue));
-        
+        assertEquals("Queue depth is wrong", isJavaBroker() ? 1 : 2, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+
         Message rMsg = subB.receive(1000);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
@@ -773,9 +777,10 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         msg.setBooleanProperty("testprop", false);
         producer.send(msg);
 
-        // should be 1 message on queue now
+        // should be 1 or 2 messages on queue now
+        // (1 for the java broker due to use of server side selectors, and 2 for the cpp broker due to client side selectors only)
         AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "subscriptionName");
-        assertEquals("Queue depth is wrong", 1, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        assertEquals("Queue depth is wrong", isJavaBroker() ? 1 : 2, ((AMQSession<?, ?>) session).getQueueDepth(queue));
         
         Message rMsg = subTwo.receive(1000);
         assertNotNull(rMsg);

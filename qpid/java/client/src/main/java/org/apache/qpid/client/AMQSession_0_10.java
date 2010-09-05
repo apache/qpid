@@ -318,11 +318,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         if (destination.getDestSyntax() == DestSyntax.BURL)
         {
             Map args = FieldTableSupport.convertToMap(arguments);
-            // this is there only because the broker may expect a value for x-match
-            if( ! args.containsKey("x-match") )
-            {
-                args.put("x-match", "any");
-            }
     
             for (AMQShortString rk: destination.getBindingKeys())
             {

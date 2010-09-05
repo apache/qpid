@@ -62,10 +62,3 @@ org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
 org.apache.qpid.test.unit.basic.LargeMessageTest#*
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode
-
-//QPID-2418 : Not yet implemented on 0-10
-org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testResubscribeWithChangedSelector
-org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubSameMessageSelector
-org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testResubscribeWithChangedSelectorNoClose
-org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubAddMessageSelectorNoClose
-org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubNoSelectorResubscribeNoClose
