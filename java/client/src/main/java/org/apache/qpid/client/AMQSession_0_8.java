@@ -566,4 +566,12 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     {
         
     }
+
+    public boolean isQueueBound(String exchangeName, String queueName,
+            String bindingKey, Map<String, Object> args) throws JMSException
+    {
+        return isQueueBound(exchangeName == null ? null : new AMQShortString(exchangeName),
+                            queueName == null ? null : new AMQShortString(queueName),
+                            bindingKey == null ? null : new AMQShortString(bindingKey));
+    }
 }

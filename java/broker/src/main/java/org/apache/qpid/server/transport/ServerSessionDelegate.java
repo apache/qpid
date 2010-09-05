@@ -756,7 +756,9 @@ public class ServerSessionDelegate extends SessionDelegate
 
                     if(method.hasArguments())
                     {
-                        // TODO
+                        FieldTable args = FieldTable.convertToFieldTable(method.getArguments());
+                        
+                        result.setArgsNotMatched(!exchange.isBound(new AMQShortString(method.getBindingKey()), args, queue));
                     }
                     if(queueMatched)
                     {

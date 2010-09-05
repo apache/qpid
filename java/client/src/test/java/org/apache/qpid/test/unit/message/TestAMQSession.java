@@ -29,6 +29,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 
 import javax.jms.*;
+
 import java.util.Map;
 
 public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMessageProducer_0_8>
@@ -187,5 +188,11 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     @Override
     protected void flushAcknowledgments()
     {      
+    }
+
+    public boolean isQueueBound(String exchangeName, String queueName,
+            String bindingKey, Map<String, Object> args) throws JMSException
+    {
+        return false;
     }
 }
