@@ -34,10 +34,7 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 import javax.jms.Destination;
-import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
-import javax.jms.Topic;
-import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination.AddressOption;
@@ -914,72 +911,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         return send0_10QueueDeclare(amqd, protocolHandler, noLocal, nowait);
                     }
                 }, _connection).execute();
-    }
-
-    public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
-    {
-
-        checkNotClosed();
-        AMQTopic origTopic=checkValidTopic(topic, true);
-        AMQTopic dest=AMQTopic.createDurable010Topic(origTopic, name, _connection);
-
-        TopicSubscriberAdaptor<BasicMessageConsumer_0_10> subscriber=_subscriptions.get(name);
-        if (subscriber != null)
-        {
-            if (subscriber.getTopic().equals(topic))
-            {
-                throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange "
-                        + name);
-            }
-            else
-            {
-                unsubscribe(name);
-            }
-        }
-        else
-        {
-            AMQShortString topicName;
-            if (topic instanceof AMQTopic)
-            {
-                topicName=((AMQTopic) topic).getBindingKeys()[0];
-            }
-            else
-            {
-                topicName=new AMQShortString(topic.getTopicName());
-            }
-
-            if (_strictAMQP)
-            {
-                if (_strictAMQPFATAL)
-                {
-                    throw new UnsupportedOperationException("JMS Durable not currently supported by AMQP.");
-                }
-                else
-                {
-                    _logger.warn("Unable to determine if subscription already exists for '" + topicName + "' "
-                            + "for creation durableSubscriber. Requesting queue deletion regardless.");
-                }
-
-                deleteQueue(dest.getAMQQueueName());
-            }
-            else
-            {
-                // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
-                // says we must trash the subscription.
-                if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
-                        && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
-                {
-                    deleteQueue(dest.getAMQQueueName());
-                }
-            }
-        }
-
-        subscriber=new TopicSubscriberAdaptor(dest, createExclusiveConsumer(dest));
-
-        _subscriptions.put(name, subscriber);
-        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
-
-        return subscriber;
     }
 
     protected Long requestQueueDepth(AMQDestination amqd)

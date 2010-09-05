@@ -17,7 +17,17 @@
  */
 package org.apache.qpid.test.unit.ct;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
@@ -75,7 +85,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
             }
             catch (Exception e)
             {
-                System.out.println("problems shutting down arjuna-ms");
+                _logger.error("problems restarting broker: " + e);
                 throw e;
             }
             //now recreate the durable subscriber and check the received messages
@@ -102,7 +112,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
      * create and register a durable subscriber with a message selector and then close it
      * crash the broker
      * create a publisher and send  5 right messages and 5 wrong messages
-     * recreate the durable subscriber and check the received the 5 expected messages
+     * recreate the durable subscriber and check we receive the 5 expected messages
      */
     public void testDurSubRestoresMessageSelector() throws Exception
     {
@@ -125,7 +135,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
             }
             catch (Exception e)
             {
-                System.out.println("problems shutting down arjuna-ms");
+                _logger.error("problems restarting broker: " + e);
                 throw e;
             }
             topic = (Topic) getInitialContext().lookup(_topicName);
@@ -148,7 +158,7 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
             //now recreate the durable subscriber and check the received messages
             TopicConnection durConnection2 = factory.createTopicConnection("guest", "guest");
             TopicSession durSession2 = durConnection2.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-            TopicSubscriber durSub2 = durSession2.createDurableSubscriber(topic, "dursub");
+            TopicSubscriber durSub2 = durSession2.createDurableSubscriber(topic, "dursub", "testprop='true'", false);
             durConnection2.start();
             for (int i = 0; i < 5; i++)
             {
@@ -385,6 +395,10 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelectorAndRestart1",
                      ((TextMessage) rMsg).getText());
+
+        // Queue has no messages left
+        AMQQueue subQueueTmp = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueueTmp));
         
         rMsg = subA.receive(1000);
         assertNull(rMsg);
@@ -403,14 +417,14 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
         
         // Reconnect with new selector that matches B
         TopicSubscriber subB = session.createDurableSubscriber(topic, 
-                "testResubscribeWithChangedSelectorAndRestart","Match = False", false);
+                "testResubscribeWithChangedSelectorAndRestart",
+                "Match = false", false);
         
         //verify no messages are now present on the queue as changing selector should have issued
         //an unsubscribe and thus deleted the previous durable backing queue for the subscription.
-        //check the dur sub's underlying queue now has msg count 1
-        AMQQueue subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelector");
-        assertEquals("Msg count should be 0", 0, ((AMQSession)session).getQueueDepth(subQueue));
-        
+        //check the dur sub's underlying queue now has msg count 0
+        AMQQueue subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
         
         // Check that new messages are received properly
         msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart1");
@@ -429,6 +443,10 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
         rMsg = subB.receive(1000);
         assertNull(rMsg);
 
+        //check the dur sub's underlying queue now has msg count 0
+        subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
+
         //now restart the server
         try
         {
@@ -440,28 +458,49 @@ public class DurableSubscriberTest extends QpidBrokerTestCase
             throw e;
         }
         
-        // Check that new messages are still received properly
+        // Reconnect to broker
+        Connection connection = getConnectionFactory().createConnection("guest", "guest");
+        connection.start();
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        topic = new AMQTopic((AMQConnection) connection, "testResubscribeWithChangedSelectorAndRestart");
+        producer = session.createProducer(topic);
+
+        //verify no messages now present on the queue after we restart the broker
+        //check the dur sub's underlying queue now has msg count 0
+        subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
+        assertEquals("Msg count should be 0", 0, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
+
+        // Reconnect with new selector that matches B
+        TopicSubscriber subC = session.createDurableSubscriber(topic, 
+                "testResubscribeWithChangedSelectorAndRestart",
+                "Match = False", false);
+        
+        // Check that new messages are still sent and recieved properly
         msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart1");
         msg.setBooleanProperty("Match", true);
         producer.send(msg);
         msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart2");
         msg.setBooleanProperty("Match", false);
         producer.send(msg);
+
+        //check the dur sub's underlying queue now has msg count 1
+        subQueue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorAndRestart");
+        assertEquals("Msg count should be 1", 1, ((AMQSession<?, ?>) session).getQueueDepth(subQueue));
         
-        rMsg = subB.receive(1000);
+        rMsg = subC.receive(1000);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelectorAndRestart2",
                      ((TextMessage) rMsg).getText());
         
-        rMsg = subB.receive(1000);
+        rMsg = subC.receive(1000);
         assertNull(rMsg);
         
         session.unsubscribe("testResubscribeWithChangedSelectorAndRestart");
-        subB.close();
+        
+        subC.close();
         session.close();
-        conn.close();
+        connection.close();
     }
-
 }
 

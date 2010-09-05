@@ -46,11 +46,6 @@ public class AMQTopic extends AMQDestination implements Topic
         super(binding);
     }
 
-//    public AMQTopic(String exchangeName, String routingKey)
-//    {
-//        this(new AMQShortString(exchangeName), new AMQShortString(routingKey));
-//    }
-
     public AMQTopic(AMQShortString exchange, AMQShortString routingKey, AMQShortString queueName)
     {
         super(exchange, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, routingKey, true, true, queueName, false);
@@ -79,8 +74,7 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQTopic(AMQShortString exchangeName, AMQShortString name, boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
     {
-        super(exchangeName, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete,
-              queueName, isDurable);
+        super(exchangeName, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete, queueName, isDurable);
     }
 
     protected AMQTopic(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
@@ -101,13 +95,6 @@ public class AMQTopic extends AMQDestination implements Topic
         return new AMQTopic(topic.getExchangeName(), topic.getRoutingKey(), false,
                             getDurableTopicQueueName(subscriptionName, connection),
                             true);
-    }
-
-    public static AMQTopic createDurable010Topic(AMQTopic topic, String subscriptionName, AMQConnection connection)
-            throws JMSException
-    {
-        return new AMQTopic(topic.getExchangeName(), ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topic.getRoutingKey(), true, false,
-                getDurableTopicQueueName(subscriptionName, connection), true);
     }
 
     public static AMQShortString getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException

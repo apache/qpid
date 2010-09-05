@@ -21,6 +21,9 @@
 
 package org.apache.qpid.server.queue;
 
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -35,13 +38,10 @@ import junit.framework.Assert;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.Condition;
 
 public class TimeToLiveTest extends QpidBrokerTestCase
 {
@@ -253,7 +253,7 @@ public class TimeToLiveTest extends QpidBrokerTestCase
         producerSession.commit();
         
         //resubscribe
-        durableSubscriber = clientSession.createDurableSubscriber(topic, getTestQueueName());
+        durableSubscriber = clientSession.createDurableSubscriber(topic, getTestQueueName(),"testprop='TimeToLiveTest'", false);
 
         // Ensure we sleep the required amount of time.
         ReentrantLock waitLock = new ReentrantLock();
