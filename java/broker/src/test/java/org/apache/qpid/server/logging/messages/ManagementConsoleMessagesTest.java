@@ -65,7 +65,7 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 
     public void testManagementReady()
     {
-        _logMessage = ManagementConsoleMessages.READY("",false);
+        _logMessage = ManagementConsoleMessages.READY(false);
         List<Object> log = performLog();
 
         String[] expected = {"Ready"};
@@ -74,10 +74,10 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         
         _logger.clearLogMessages();
         
-        _logMessage = ManagementConsoleMessages.READY("Info",true);
+        _logMessage = ManagementConsoleMessages.READY(true);
         log = performLog();
 
-        expected = new String[]{"Ready : Info"};
+        expected = new String[]{"Ready : Using the platform JMX Agent"};
 
         validateLogMessage(log, "MNG-1004", expected);
     }
