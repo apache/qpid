@@ -196,6 +196,7 @@ void ManagementAgentImpl::init(const string& brokerHost,
     settings.username = uid;
     settings.password = pwd;
     settings.mechanism = mech;
+    settings.heartbeat = 10;
     init(settings, intervalSeconds, useExternalThread, _storeFile);
 }
 
