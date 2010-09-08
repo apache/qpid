@@ -54,7 +54,7 @@ class RdmaIOHandler : public OutputControl {
     void write(const framing::ProtocolInitiation&);
 
   public:
-    RdmaIOHandler(Rdma::Connection::intrusive_ptr& c, ConnectionCodec::Factory* f);
+    RdmaIOHandler(Rdma::Connection::intrusive_ptr c, ConnectionCodec::Factory* f);
     ~RdmaIOHandler();
     void init(Rdma::AsynchIO* a);
     void start(Poller::shared_ptr poller) {aio->start(poller);}
@@ -77,7 +77,7 @@ class RdmaIOHandler : public OutputControl {
     void drained(Rdma::AsynchIO& aio);
 };
 
-RdmaIOHandler::RdmaIOHandler(Rdma::Connection::intrusive_ptr& c, qpid::sys::ConnectionCodec::Factory* f) :
+RdmaIOHandler::RdmaIOHandler(Rdma::Connection::intrusive_ptr c, qpid::sys::ConnectionCodec::Factory* f) :
     connection(c),
     identifier(c->getPeerName()),
     factory(f),
@@ -223,12 +223,12 @@ class RdmaIOProtocolFactory : public ProtocolFactory {
     string getHost() const;
 
   private:
-    bool request(Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&, ConnectionCodec::Factory*);
-    void established(Poller::shared_ptr, Rdma::Connection::intrusive_ptr&);
-    void connected(Poller::shared_ptr, Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&, ConnectionCodec::Factory*);
-    void connectionError(Rdma::Connection::intrusive_ptr&, Rdma::ErrorType);
-    void disconnected(Rdma::Connection::intrusive_ptr&);
-    void rejected(Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&, ConnectFailedCallback);
+    bool request(Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams&, ConnectionCodec::Factory*);
+    void established(Poller::shared_ptr, Rdma::Connection::intrusive_ptr);
+    void connected(Poller::shared_ptr, Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams&, ConnectionCodec::Factory*);
+    void connectionError(Rdma::Connection::intrusive_ptr, Rdma::ErrorType);
+    void disconnected(Rdma::Connection::intrusive_ptr);
+    void rejected(Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams&, ConnectFailedCallback);
 };
 
 // Static instance to initialise plugin
@@ -258,12 +258,12 @@ RdmaIOProtocolFactory::RdmaIOProtocolFactory(int16_t port, int /*backlog*/) :
     listeningPort(port)
 {}
 
-void RdmaIOProtocolFactory::established(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci) {
+void RdmaIOProtocolFactory::established(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr ci) {
     RdmaIOHandler* async = ci->getContext<RdmaIOHandler>();
     async->start(poller);
 }
 
-bool RdmaIOProtocolFactory::request(Rdma::Connection::intrusive_ptr& ci, const Rdma::ConnectionParams& cp,
+bool RdmaIOProtocolFactory::request(Rdma::Connection::intrusive_ptr ci, const Rdma::ConnectionParams& cp,
         ConnectionCodec::Factory* f) {
     try {
         RdmaIOHandler* async = new RdmaIOHandler(ci, f);
@@ -289,10 +289,10 @@ bool RdmaIOProtocolFactory::request(Rdma::Connection::intrusive_ptr& ci, const R
     return false;
 }
 
-void RdmaIOProtocolFactory::connectionError(Rdma::Connection::intrusive_ptr&, Rdma::ErrorType) {
+void RdmaIOProtocolFactory::connectionError(Rdma::Connection::intrusive_ptr, Rdma::ErrorType) {
 }
 
-void RdmaIOProtocolFactory::disconnected(Rdma::Connection::intrusive_ptr& ci) {
+void RdmaIOProtocolFactory::disconnected(Rdma::Connection::intrusive_ptr ci) {
     // If we've got a connection already tear it down, otherwise ignore
     RdmaIOHandler* async =  ci->getContext<RdmaIOHandler>();
     if (async) {
@@ -330,12 +330,12 @@ void RdmaIOProtocolFactory::accept(Poller::shared_ptr poller, ConnectionCodec::F
 }
 
 // Only used for outgoing connections (in federation)
-void RdmaIOProtocolFactory::rejected(Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&, ConnectFailedCallback failed) {
+void RdmaIOProtocolFactory::rejected(Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams&, ConnectFailedCallback failed) {
     failed(-1, "Connection rejected");
 }
 
 // Do the same as connection request and established but mark a client too
-void RdmaIOProtocolFactory::connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci, const Rdma::ConnectionParams& cp,
+void RdmaIOProtocolFactory::connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr ci, const Rdma::ConnectionParams& cp,
         ConnectionCodec::Factory* f) {
     (void) request(ci, cp, f);
     established(poller, ci);

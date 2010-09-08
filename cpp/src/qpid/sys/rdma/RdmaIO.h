@@ -149,8 +149,8 @@ namespace Rdma {
         UNKNOWN
     };
 
-    typedef boost::function2<void, Rdma::Connection::intrusive_ptr&, ErrorType> ErrorCallback;
-    typedef boost::function1<void, Rdma::Connection::intrusive_ptr&> DisconnectedCallback;
+    typedef boost::function2<void, Rdma::Connection::intrusive_ptr, ErrorType> ErrorCallback;
+    typedef boost::function1<void, Rdma::Connection::intrusive_ptr> DisconnectedCallback;
 
     class ConnectionManager {
         Connection::intrusive_ptr ci;
@@ -177,8 +177,8 @@ namespace Rdma {
         virtual void connectionEvent(Connection::intrusive_ptr ci) = 0;
     };
 
-    typedef boost::function2<bool, Rdma::Connection::intrusive_ptr&, const ConnectionParams&> ConnectionRequestCallback;
-    typedef boost::function1<void, Rdma::Connection::intrusive_ptr&> EstablishedCallback;
+    typedef boost::function2<bool, Rdma::Connection::intrusive_ptr, const ConnectionParams&> ConnectionRequestCallback;
+    typedef boost::function1<void, Rdma::Connection::intrusive_ptr> EstablishedCallback;
 
     class Listener : public ConnectionManager
     {
@@ -200,8 +200,8 @@ namespace Rdma {
         void connectionEvent(Connection::intrusive_ptr ci);
     };
 
-    typedef boost::function2<void, Rdma::Connection::intrusive_ptr&, const ConnectionParams&> RejectedCallback;
-    typedef boost::function2<void, Rdma::Connection::intrusive_ptr&, const ConnectionParams&> ConnectedCallback;
+    typedef boost::function2<void, Rdma::Connection::intrusive_ptr, const ConnectionParams&> RejectedCallback;
+    typedef boost::function2<void, Rdma::Connection::intrusive_ptr, const ConnectionParams&> ConnectedCallback;
 
     class Connector : public ConnectionManager
     {
