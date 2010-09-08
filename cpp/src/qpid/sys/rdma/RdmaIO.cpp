@@ -254,9 +254,8 @@ namespace Rdma {
                 return;
             case EXIT:
                 // If we just processed completions we might need to delete ourselves
-                if (notifyCallback && outstandingWrites == 0) {
-                    doStoppedCallback();
-                }
+                // TODO: XXX: can we delete ourselves correctly in notifyPendingWrite()?
+                checkDrainedStopped();
                 return;
             }
         } while (true);
@@ -321,20 +320,8 @@ namespace Rdma {
             } while (!state.boolCompareAndSwap(oldState, newState));
         }
 
-        // If we've got all the write confirmations and we're draining
-        // We might get deleted in the drained callback so return immediately
-        if (draining) {
-            if (outstandingWrites == 0) {
-                 draining = false;
-                 doDrainedCallback();
-            }
-            return;
-        }
-
-        // We might need to delete ourselves
-        if (notifyCallback && outstandingWrites == 0) {
-            doStoppedCallback();
-        }
+        // We might delete ourselves in here so return immediately
+	checkDrainedStopped();
     }
 
     void AsynchIO::processCompletions() {
@@ -445,6 +432,23 @@ namespace Rdma {
                 QPID_LOG(debug, "RDMA: qp=" << qp << ": Called for data, but got none: xmitCredit=" << xmitCredit);
                 return;
             }
+        }
+    }
+
+    void AsynchIO::checkDrainedStopped() {
+        // If we've got all the write confirmations and we're draining
+        // We might get deleted in the drained callback so return immediately
+        if (draining) {
+            if (outstandingWrites == 0) {
+                 draining = false;
+                 doDrainedCallback();
+            }
+            return;
+        }
+
+        // We might need to delete ourselves
+        if (notifyCallback && outstandingWrites == 0) {
+            doStoppedCallback();
         }
     }
 
