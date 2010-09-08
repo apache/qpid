@@ -101,6 +101,7 @@ namespace Rdma {
         void dataEvent();
         void processCompletions();
         void doWriteCallback();
+        void checkDrainedStopped();
         void doStoppedCallback();
         void doDrainedCallback();
     };
