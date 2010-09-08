@@ -47,6 +47,8 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
     public void setUp() throws Exception
     {
+        setLogMessagePrefix();
+
         // We either do this here or have a null check in tearDown.
         // As when this test is run against profiles other than java it will NPE
         _monitor = new LogMonitor(_outputFile);

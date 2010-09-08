@@ -48,6 +48,7 @@ import java.util.List;
 public class AbstractTestLogging extends QpidBrokerTestCase
 {
     public static final long DEFAULT_LOG_WAIT = 2000;
+    public static final String TEST_LOG_PREFIX = "MESSAGE";
     protected LogMonitor _monitor;
     ServerConfiguration _serverConfiguration;
 
@@ -56,6 +57,8 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
+        setLogMessagePrefix();
+        
         super.setUp();
         _monitor = new LogMonitor(_outputFile);
 
@@ -113,6 +116,12 @@ public class AbstractTestLogging extends QpidBrokerTestCase
             _serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
         }
 
+    }
+
+    protected void setLogMessagePrefix()
+    {
+        //set the message prefix to facilitate scraping from the munged test output.
+        setSystemProperty("qpid.logging.prefix", TEST_LOG_PREFIX);
     }
 
     @Override
@@ -324,7 +333,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
      */
     protected String getLog(String rawLog)
     {
-        int start = rawLog.indexOf("MESSAGE");
+        int start = rawLog.indexOf(TEST_LOG_PREFIX);
         return rawLog.substring(start);
     }
     
