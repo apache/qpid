@@ -58,7 +58,7 @@ namespace Rdma {
 
     private:
         Buffer(uint32_t lkey, char* bytes, const int32_t byteCount);
-        const int32_t bufferSize;
+        int32_t bufferSize;
         ::ibv_sge sge;
     };
 
@@ -124,9 +124,10 @@ namespace Rdma {
         boost::shared_ptr< ::ibv_qp > qp;
         int outstandingSendEvents;
         int outstandingRecvEvents;
-        boost::ptr_deque<Buffer> buffers;
-        qpid::sys::Mutex bufferQueueLock;
-        std::vector<Buffer*> bufferQueue;
+        std::vector<Buffer> sendBuffers;
+        std::vector<Buffer> recvBuffers;
+        qpid::sys::Mutex bufferLock;
+        std::vector<int> freeBuffers;
 
         QueuePair(boost::shared_ptr< ::rdma_cm_id > id);
         ~QueuePair();
