@@ -28,6 +28,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/InitiationHandler.h"
 #include "qpid/sys/rdma/RdmaIO.h"
+#include "qpid/sys/rdma/rdma_exception.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/SecurityLayer.h"
@@ -189,20 +190,34 @@ void RdmaConnector::connect(const std::string& host, int port){
 
 // The following only gets run when connected
 void RdmaConnector::connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr ci, const Rdma::ConnectionParams& cp) {
-    Rdma::QueuePair::intrusive_ptr q = ci->getQueuePair();
+    try {
+        Rdma::QueuePair::intrusive_ptr q = ci->getQueuePair();
 
-    aio = new Rdma::AsynchIO(ci->getQueuePair(),
-        cp.maxRecvBufferSize, cp.initialXmitCredit , Rdma::DEFAULT_WR_ENTRIES,
-        boost::bind(&RdmaConnector::readbuff, this, _1, _2),
-        boost::bind(&RdmaConnector::writebuff, this, _1),
-        0, // write buffers full
-        boost::bind(&RdmaConnector::dataError, this, _1));
+        aio = new Rdma::AsynchIO(ci->getQueuePair(),
+            cp.maxRecvBufferSize, cp.initialXmitCredit , Rdma::DEFAULT_WR_ENTRIES,
+            boost::bind(&RdmaConnector::readbuff, this, _1, _2),
+            boost::bind(&RdmaConnector::writebuff, this, _1),
+            0, // write buffers full
+            boost::bind(&RdmaConnector::dataError, this, _1));
 
-    identifier = str(format("[%1% %2%]") % ci->getLocalName() % ci->getPeerName());
-    ProtocolInitiation init(version);
-    writeDataBlock(init);
+        identifier = str(format("[%1% %2%]") % ci->getLocalName() % ci->getPeerName());
+        ProtocolInitiation init(version);
+        writeDataBlock(init);
 
-    aio->start(poller);
+        aio->start(poller);
+        return;
+    } catch (const Rdma::Exception& e) {
+        QPID_LOG(error, "Rdma: Cannot create new connection (Rdma exception): " << e.what());
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Rdma: Cannot create new connection (unknown exception): " << e.what());
+    }
+    {
+    Mutex::ScopedLock l(pollingLock);
+    // If we're closed already then we'll get to drain() anyway
+    if (!polling) return;
+    polling = false;
+    }
+    stopped();
 }
 
 void RdmaConnector::connectionError(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr, Rdma::ErrorType) {
