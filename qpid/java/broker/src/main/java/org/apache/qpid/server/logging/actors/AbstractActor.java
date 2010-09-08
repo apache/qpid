@@ -27,7 +27,7 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 
 public abstract class AbstractActor implements LogActor
 {
-    public static final String DEFAULT_MSG_PREFIX = "MESSAGE ";
+    public static final String DEFAULT_MSG_PREFIX = System.getProperty("qpid.logging.prefix","");
 
     protected RootMessageLogger _rootLogger;
 
