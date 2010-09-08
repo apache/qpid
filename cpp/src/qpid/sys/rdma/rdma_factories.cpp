@@ -42,6 +42,10 @@ namespace Rdma {
         if (p) (void) ::ibv_dealloc_pd(p);
     }
 
+    void deregMr(::ibv_mr* mr) throw () {
+        if (mr) (void) ::ibv_dereg_mr(mr);
+    }
+
     void destroyCChannel(::ibv_comp_channel* c) throw () {
         if (c) (void) ::ibv_destroy_comp_channel(c);
     }
@@ -79,8 +83,13 @@ namespace Rdma {
     }
 
     boost::shared_ptr< ::ibv_pd > allocPd(::ibv_context* c) {
-        ::ibv_pd* pd = CHECK_NULL(ibv_alloc_pd(c));
+        ::ibv_pd* pd = CHECK_NULL(::ibv_alloc_pd(c));
         return boost::shared_ptr< ::ibv_pd >(pd, deallocPd);
+    }
+
+    boost::shared_ptr< ::ibv_mr > regMr(::ibv_pd* pd, void* addr, size_t length, int access) {
+        ::ibv_mr* mr = CHECK_NULL(::ibv_reg_mr(pd, addr, length, access));
+        return boost::shared_ptr< ::ibv_mr >(mr, deregMr);
     }
 
     boost::shared_ptr< ::ibv_comp_channel > mkCChannel(::ibv_context* c) {
@@ -90,7 +99,7 @@ namespace Rdma {
 
     boost::shared_ptr< ::ibv_cq >
     mkCq(::ibv_context* c, int cqe, void* context, ::ibv_comp_channel* cc) {
-        ::ibv_cq* cq = CHECK_NULL(ibv_create_cq(c, cqe, context, cc, 0));
+        ::ibv_cq* cq = CHECK_NULL(::ibv_create_cq(c, cqe, context, cc, 0));
         return boost::shared_ptr< ::ibv_cq >(cq, destroyCq);
     }
 }

@@ -60,12 +60,8 @@ namespace Rdma {
         qp->notifyRecv();
         qp->notifySend();
 
-        // Prepost some recv buffers before we go any further
-        for (int i = 0; i<recvBufferCount; ++i) {
-            // Allocate recv buffer
-            Buffer* b = qp->createBuffer(bufferSize);
-            qp->postRecv(b);
-        }
+        // Prepost recv buffers before we go any further
+        qp->allocateRecvBuffers(recvBufferCount, bufferSize);
 
         for (int i = 0; i<xmitBufferCount; ++i) {
             // Allocate xmit buffer
