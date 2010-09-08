@@ -32,7 +32,7 @@ namespace Rdma {
     boost::shared_ptr< ::rdma_cm_event > mkEvent(::rdma_cm_event* e);
     boost::shared_ptr< ::ibv_qp > mkQp(::ibv_qp* qp);
     boost::shared_ptr< ::ibv_pd > allocPd(::ibv_context* c);
-    boost::shared_ptr< ::ibv_mr > regMr(::ibv_pd* pd, void* addr, size_t length, int access);
+    boost::shared_ptr< ::ibv_mr > regMr(::ibv_pd* pd, void* addr, size_t length, ::ibv_access_flags access);
     boost::shared_ptr< ::ibv_comp_channel > mkCChannel(::ibv_context* c);
     boost::shared_ptr< ::ibv_cq > mkCq(::ibv_context* c, int cqe, void* context, ::ibv_comp_channel* cc);
 }
