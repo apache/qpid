@@ -139,13 +139,16 @@ namespace Rdma {
     }
 
     QueuePair::~QueuePair() {
+        // Reset back pointer in case someone else has the qp
+        qp->qp_context = 0;
+
+        // Dispose queue pair before we ack events
+        qp.reset();
+
         if (outstandingSendEvents > 0)
             ::ibv_ack_cq_events(scq.get(), outstandingSendEvents);
         if (outstandingRecvEvents > 0)
             ::ibv_ack_cq_events(rcq.get(), outstandingRecvEvents);
-
-        // Reset back pointer in case someone else has the qp
-        qp->qp_context = 0;
 
         // Deallocate recv buffer memory
         if (rmr) delete [] static_cast<char*>(rmr->addr);
