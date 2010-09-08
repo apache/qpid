@@ -114,6 +114,20 @@ namespace Rdma {
         nc(*this);
     }
 
+    namespace {
+        void requestedCall(AsynchIO* aio, AsynchIO::RequestCallback callback) {
+            assert(callback);
+            callback(*aio);
+        }
+    }
+
+    void AsynchIO::requestCallback(RequestCallback callback) {
+        // TODO creating a function object every time isn't all that
+        // efficient - if this becomes heavily used do something better (what?)
+        assert(callback);
+        dataHandle.call(boost::bind(&requestedCall, this, callback));
+    }
+
     // Mark writing closed (so we don't accept any more writes or make any idle callbacks)
     void AsynchIO::drainWriteQueue(NotifyCallback nc) {
         State oldState;

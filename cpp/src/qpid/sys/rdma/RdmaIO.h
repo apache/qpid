@@ -65,6 +65,8 @@ namespace Rdma {
         NotifyCallback notifyCallback;
 
     public:
+        typedef boost::function1<void, AsynchIO&> RequestCallback;
+
         // TODO: Instead of specifying a buffer size specify the amount of memory the AsynchIO class can use
         // for buffers both read and write (allocate half to each up front) and fail if we cannot allocate that much
         // locked memory
@@ -87,6 +89,7 @@ namespace Rdma {
         void notifyPendingWrite();
         void drainWriteQueue(NotifyCallback);
         void stop(NotifyCallback);
+        void requestCallback(RequestCallback);
         int incompletedWrites() const;
         Buffer* getBuffer();
         void returnBuffer(Buffer*);
