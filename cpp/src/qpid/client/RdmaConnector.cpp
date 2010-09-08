@@ -52,9 +52,6 @@ using boost::str;
 
 class RdmaConnector : public Connector, public sys::Codec
 {
-    struct Buff;
-
-    typedef Rdma::Buffer BufferBase;
     typedef std::deque<framing::AMQFrame> Frames;
 
     const uint16_t maxFrameSize;
@@ -341,11 +338,11 @@ void RdmaConnector::writebuff(Rdma::AsynchIO&) {
 
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
     if (codec->canEncode()) {
-        std::auto_ptr<BufferBase> buffer = std::auto_ptr<BufferBase>(aio->getBuffer());
+        Rdma::Buffer* buffer = aio->getBuffer();
         size_t encoded = codec->encode(buffer->bytes(), buffer->byteCount());
 
         buffer->dataCount(encoded);
-        aio->queueWrite(buffer.release());
+        aio->queueWrite(buffer);
     }
 }
 
