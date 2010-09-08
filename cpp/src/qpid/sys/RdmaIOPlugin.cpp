@@ -44,15 +44,16 @@ namespace qpid {
 namespace sys {
 
 class RdmaIOHandler : public OutputControl {
-    Rdma::Connection::intrusive_ptr connection;
     std::string identifier;
-    Rdma::AsynchIO* aio;
     ConnectionCodec::Factory* factory;
     ConnectionCodec* codec;
     bool readError;
 
     sys::Mutex pollingLock;
     bool polling;
+
+    Rdma::AsynchIO* aio;
+    Rdma::Connection::intrusive_ptr connection;
 
     void write(const framing::ProtocolInitiation&);
 
@@ -82,12 +83,12 @@ class RdmaIOHandler : public OutputControl {
 };
 
 RdmaIOHandler::RdmaIOHandler(Rdma::Connection::intrusive_ptr c, qpid::sys::ConnectionCodec::Factory* f) :
-    connection(c),
     identifier(c->getPeerName()),
     factory(f),
     codec(0),
     readError(false),
-    polling(false)
+    polling(false),
+    connection(c)
 {
 }
 
