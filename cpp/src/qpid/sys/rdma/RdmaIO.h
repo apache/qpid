@@ -32,7 +32,6 @@
 #include <netinet/in.h>
 
 #include <boost/function.hpp>
-#include <deque>
 
 namespace Rdma {
 
@@ -56,8 +55,6 @@ namespace Rdma {
         enum State { IDLE, DATA, PENDING_DATA, NOTIFY_WRITE, PENDING_NOTIFY, DRAINED, SHUTDOWN };
         qpid::sys::AtomicValue<State> state;
         //qpid::sys::Mutex stateLock;
-        std::deque<Buffer*> bufferQueue;
-        qpid::sys::Mutex bufferQueueLock;
         QueuePair::intrusive_ptr qp;
         qpid::sys::DispatchHandleRef dataHandle;
 
@@ -126,8 +123,17 @@ namespace Rdma {
     }
 
     inline bool AsynchIO::bufferAvailable() const {
-        return !bufferQueue.empty();
+        return qp->bufferAvailable();
     }
+
+    inline Buffer* AsynchIO::getBuffer() {
+        return qp->getBuffer();
+    }
+
+    inline void AsynchIO::returnBuffer(Buffer* b) {
+        qp->returnBuffer(b);
+    }
+
     // These are the parameters necessary to start the conversation
     // * Each peer HAS to allocate buffers of the size of the maximum receive from its peer
     // * Each peer HAS to know the initial "credit" it has for transmitting to its peer 
