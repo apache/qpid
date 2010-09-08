@@ -179,6 +179,7 @@ namespace Rdma {
         virtual ~ConnectionManager();
 
         void start(qpid::sys::Poller::shared_ptr poller, const qpid::sys::SocketAddress& addr);
+        void stop();
 
     private:
         void event(qpid::sys::DispatchHandle& handle);

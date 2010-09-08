@@ -518,6 +518,10 @@ namespace Rdma {
         handle.startWatch(poller);
     }
 
+    void ConnectionManager::stop() {
+        handle.stopWatch();
+    }
+
     void ConnectionManager::event(DispatchHandle&) {
         connectionEvent(ci);
     }
