@@ -87,7 +87,7 @@ namespace Rdma {
         return boost::shared_ptr< ::ibv_pd >(pd, deallocPd);
     }
 
-    boost::shared_ptr< ::ibv_mr > regMr(::ibv_pd* pd, void* addr, size_t length, int access) {
+    boost::shared_ptr< ::ibv_mr > regMr(::ibv_pd* pd, void* addr, size_t length, ::ibv_access_flags access) {
         ::ibv_mr* mr = CHECK_NULL(::ibv_reg_mr(pd, addr, length, access));
         return boost::shared_ptr< ::ibv_mr >(mr, deregMr);
     }
