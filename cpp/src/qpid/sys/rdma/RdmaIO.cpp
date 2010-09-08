@@ -64,14 +64,12 @@ namespace Rdma {
         for (int i = 0; i<recvBufferCount; ++i) {
             // Allocate recv buffer
             Buffer* b = qp->createBuffer(bufferSize);
-            buffers.push_front(b);
             qp->postRecv(b);
         }
 
         for (int i = 0; i<xmitBufferCount; ++i) {
             // Allocate xmit buffer
             Buffer* b = qp->createBuffer(bufferSize);
-            buffers.push_front(b);
             bufferQueue.push_front(b);
         }
     }
@@ -86,8 +84,6 @@ namespace Rdma {
             QPID_LOG(error, "RDMA: qp=" << qp << ": Deleting queue whilst not shutdown");
             dataHandle.stopWatch();
         }
-
-        // The buffers ptr_deque automatically deletes all the buffers we've allocated
         // TODO: It might turn out to be more efficient in high connection loads to reuse the
         // buffers rather than having to reregister them all the time (this would be straightforward if all 
         // connections haver the same buffer size and harder otherwise)

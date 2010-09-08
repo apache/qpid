@@ -28,6 +28,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/ptr_container/ptr_deque.hpp>
 
 namespace qpid {
 namespace sys {
@@ -121,6 +122,7 @@ namespace Rdma {
         boost::shared_ptr< ::ibv_qp > qp;
         int outstandingSendEvents;
         int outstandingRecvEvents;
+        boost::ptr_deque<Buffer> buffers;
 
         QueuePair(boost::shared_ptr< ::rdma_cm_id > id);
         ~QueuePair();
