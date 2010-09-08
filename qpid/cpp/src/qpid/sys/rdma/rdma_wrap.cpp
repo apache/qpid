@@ -153,7 +153,7 @@ namespace Rdma {
         // Deallocate recv buffer memory
         if (smr) delete [] static_cast<char*>(smr->addr);
 
-        // The buffers ptr_deque automatically deletes all the buffers we've allocated
+        // The buffers vectors automatically deletes all the buffers we've allocated
     }
 
     // Create buffers to use for writing
@@ -167,29 +167,32 @@ namespace Rdma {
         // Allocate memory block for all receive buffers
         char* mem = new char [sendBufferCount * bufferSize];
         smr = regMr(pd.get(), mem, sendBufferCount * bufferSize, ::IBV_ACCESS_LOCAL_WRITE);
+        sendBuffers.reserve(sendBufferCount);
+        freeBuffers.reserve(sendBufferCount);
         for (int i = 0; i<sendBufferCount; ++i) {
             // Allocate xmit buffer
-            Buffer* b = new Buffer(smr->lkey, &mem[i*bufferSize], bufferSize);
-            buffers.push_front(b);
-            bufferQueue.push_back(b);
+            sendBuffers.push_back(Buffer(smr->lkey, &mem[i*bufferSize], bufferSize));
+            freeBuffers.push_back(i);
         }
     }
 
     Buffer* QueuePair::getBuffer() {
-        qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferQueueLock);
-        assert(!bufferQueue.empty());
-        Buffer* b = bufferQueue.back();
-        bufferQueue.pop_back();
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferLock);
+        assert(!freeBuffers.empty());
+        Buffer* b = &sendBuffers[freeBuffers.back()];
+        freeBuffers.pop_back();
         return b;
     }
 
     void QueuePair::returnBuffer(Buffer* b) {
-        qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferQueueLock);
-        bufferQueue.push_back(b);
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferLock);
+        int i = b - &sendBuffers[0];
+        assert(i >= 0 && i < int(sendBuffers.size()));
+        freeBuffers.push_back(i);
     }
 
     bool QueuePair::bufferAvailable() const {
-        return !bufferQueue.empty();
+        return !freeBuffers.empty();
     }
 
     void QueuePair::allocateRecvBuffers(int recvBufferCount, int bufferSize)
@@ -202,11 +205,11 @@ namespace Rdma {
         // Allocate memory block for all receive buffers
         char* mem = new char [recvBufferCount * bufferSize];
         rmr = regMr(pd.get(), mem, recvBufferCount * bufferSize, ::IBV_ACCESS_LOCAL_WRITE);
+        recvBuffers.reserve(recvBufferCount);
         for (int i = 0; i<recvBufferCount; ++i) {
             // Allocate recv buffer
-            Buffer* b = new Buffer(rmr->lkey, &mem[i*bufferSize], bufferSize);
-            buffers.push_front(b);
-            postRecv(b);
+            recvBuffers.push_back(Buffer(rmr->lkey, &mem[i*bufferSize], bufferSize));
+            postRecv(&recvBuffers[i]);
         }
     }
 
