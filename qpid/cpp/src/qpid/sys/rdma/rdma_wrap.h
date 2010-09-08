@@ -57,6 +57,7 @@ namespace Rdma {
         ~Buffer();
 
     private:
+        Buffer(uint32_t lkey, char* bytes, const int32_t byteCount);
         const int32_t bufferSize;
         ::ibv_mr* mr;
         ::ibv_sge sge;
@@ -116,6 +117,7 @@ namespace Rdma {
         friend class Connection;
 
         boost::shared_ptr< ::ibv_pd > pd;
+        boost::shared_ptr< ::ibv_mr > rmr;
         boost::shared_ptr< ::ibv_comp_channel > cchannel;
         boost::shared_ptr< ::ibv_cq > scq;
         boost::shared_ptr< ::ibv_cq > rcq;
@@ -132,6 +134,9 @@ namespace Rdma {
 
         // Create a buffer to use for writing
         Buffer* createBuffer(int s);
+
+        // Create and post recv buffers
+        void allocateRecvBuffers(int recvBufferCount, int bufferSize);
 
         // Make channel non-blocking by making
         // associated fd nonblocking
