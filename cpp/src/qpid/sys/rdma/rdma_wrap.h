@@ -25,10 +25,13 @@
 
 #include "qpid/RefCounted.h"
 #include "qpid/sys/IOHandle.h"
+#include "qpid/sys/Mutex.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/ptr_container/ptr_deque.hpp>
+
+#include <vector>
 
 namespace qpid {
 namespace sys {
@@ -53,13 +56,9 @@ namespace Rdma {
         int32_t dataCount() const;
         void dataCount(int32_t);
 
-        Buffer(::ibv_pd* pd, const int32_t s);
-        ~Buffer();
-
     private:
         Buffer(uint32_t lkey, char* bytes, const int32_t byteCount);
         const int32_t bufferSize;
-        ::ibv_mr* mr;
         ::ibv_sge sge;
     };
 
@@ -117,6 +116,7 @@ namespace Rdma {
         friend class Connection;
 
         boost::shared_ptr< ::ibv_pd > pd;
+        boost::shared_ptr< ::ibv_mr > smr;
         boost::shared_ptr< ::ibv_mr > rmr;
         boost::shared_ptr< ::ibv_comp_channel > cchannel;
         boost::shared_ptr< ::ibv_cq > scq;
@@ -125,6 +125,8 @@ namespace Rdma {
         int outstandingSendEvents;
         int outstandingRecvEvents;
         boost::ptr_deque<Buffer> buffers;
+        qpid::sys::Mutex bufferQueueLock;
+        std::vector<Buffer*> bufferQueue;
 
         QueuePair(boost::shared_ptr< ::rdma_cm_id > id);
         ~QueuePair();
@@ -132,8 +134,17 @@ namespace Rdma {
     public:
         typedef boost::intrusive_ptr<QueuePair> intrusive_ptr;
 
-        // Create a buffer to use for writing
-        Buffer* createBuffer(int s);
+        // Create a buffers to use for writing
+        void createSendBuffers(int sendBufferCount, int bufferSize);
+
+        // Get a send buffer
+        Buffer* getBuffer();
+
+        // Return buffer to pool after use
+        void returnBuffer(Buffer* b);
+
+        // Check whether any buffers are available
+        bool bufferAvailable() const;
 
         // Create and post recv buffers
         void allocateRecvBuffers(int recvBufferCount, int bufferSize);

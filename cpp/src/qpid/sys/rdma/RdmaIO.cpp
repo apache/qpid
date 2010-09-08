@@ -63,11 +63,8 @@ namespace Rdma {
         // Prepost recv buffers before we go any further
         qp->allocateRecvBuffers(recvBufferCount, bufferSize);
 
-        for (int i = 0; i<xmitBufferCount; ++i) {
-            // Allocate xmit buffer
-            Buffer* b = qp->createBuffer(bufferSize);
-            bufferQueue.push_front(b);
-        }
+        // Create xmit buffers
+        qp->createSendBuffers(xmitBufferCount, bufferSize);
     }
 
     AsynchIO::~AsynchIO() {
@@ -427,10 +424,7 @@ namespace Rdma {
                 }
             } else {
                 ++sendEvents;
-                {
-                qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferQueueLock);
-                bufferQueue.push_front(b);
-                }
+                returnBuffer(b);
                 --outstandingWrites;
             }
         } while (true);
@@ -478,19 +472,6 @@ namespace Rdma {
             oldState = state.get();
         } while (!state.boolCompareAndSwap(oldState, SHUTDOWN));
         nc(*this);
-    }
-
-    Buffer* AsynchIO::getBuffer() {
-        qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferQueueLock);
-        assert(!bufferQueue.empty());
-        Buffer* b = bufferQueue.front();
-        bufferQueue.pop_front();
-        return b;
-    }
-
-    void AsynchIO::returnBuffer(Buffer* b) {
-        qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferQueueLock);
-        bufferQueue.push_front(b);
     }
 
     ConnectionManager::ConnectionManager(
