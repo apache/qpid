@@ -465,7 +465,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
             System.err.println(log);
         }
 
-        if (results.size() == 0 && monitor != null)
+        if (results.isEmpty() && monitor != null)
         {
             System.err.println("Monitored file contents:");
             System.err.println(monitor.readFile());
