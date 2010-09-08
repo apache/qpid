@@ -219,10 +219,10 @@ public class ManagementLoggingTest extends AbstractTestLogging
                 validateMessageID("MNG-1002", log);
 
                 // We expect the RMI Registry port (the defined 'management port') to be
-                // 100 lower than the RMIConnector Server Port (the actual JMX server)
-                mPort = getPort() + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT) + 100;
-                assertTrue("RMI ConnectorServer port not as expected(" + mPort + ").:" + getMessageString(log),
-                           getMessageString(log).endsWith(String.valueOf(mPort)));
+                // 100 lower than the JMX RMIConnector Server Port (the actual JMX server)
+                int jmxPort = mPort + 100;
+                assertTrue("JMX RMIConnectorServer port not as expected(" + jmxPort + ").:" + getMessageString(log),
+                           getMessageString(log).endsWith(String.valueOf(jmxPort)));
             }
             catch (AssertionFailedError afe)
             {
