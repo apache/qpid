@@ -452,7 +452,7 @@ namespace Rdma {
         }
 
         // We might need to delete ourselves
-        if (notifyCallback && outstandingWrites == 0) {
+        if (notifyCallback) {
             doStoppedCallback();
         }
     }
@@ -464,6 +464,7 @@ namespace Rdma {
         State oldState;
         do {
             oldState = state.get();
+            assert(oldState==IDLE);
         } while (!state.boolCompareAndSwap(oldState, DRAINED));
         nc(*this);
     }
@@ -475,6 +476,7 @@ namespace Rdma {
         State oldState;
         do {
             oldState = state.get();
+            assert(oldState==IDLE);
         } while (!state.boolCompareAndSwap(oldState, SHUTDOWN));
         nc(*this);
     }
