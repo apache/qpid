@@ -123,15 +123,20 @@ namespace Rdma {
         do {
             newState = oldState = state.get();
             doReturn = true;
-            if (oldState == IDLE)  {
-                doReturn = false;
+            switch (oldState) {
+            case IDLE:
                 if (outstandingWrites == 0) {
+                    doReturn = false;
                     newState = DRAINED;
+                    break;
                 }
+                /*FALLTHRU*/
+            default:
+                draining = true;
+                break;
             }
         } while (!state.boolCompareAndSwap(oldState, newState));
         if (doReturn) {
-            draining = true;
             notifyCallback = nc;
             return;
         }
