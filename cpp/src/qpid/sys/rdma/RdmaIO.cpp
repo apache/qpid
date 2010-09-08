@@ -94,14 +94,11 @@ namespace Rdma {
         //qpid::sys::ScopedLock<qpid::sys::Mutex> l(stateLock);
         do {
             newState = oldState = state.get();
-            doReturn = false;
-            if (oldState != IDLE && oldState != DRAINED) {
-                doReturn = true;
-                break;
+            doReturn = true;
+            if (oldState == IDLE || oldState == DRAINED) {
+                doReturn = false;
+                newState = SHUTDOWN;
             }
-
-            newState = SHUTDOWN;
-
         } while (!state.boolCompareAndSwap(oldState, newState));
         
         // Ensure we can't get any more callbacks (except for the stopped callback)
@@ -125,14 +122,12 @@ namespace Rdma {
         //qpid::sys::ScopedLock<qpid::sys::Mutex> l(stateLock);
         do {
             newState = oldState = state.get();
-            doReturn = false;
-            if (oldState != IDLE)  {
-                doReturn = true;
-                break;
-            }
-
-            if (outstandingWrites == 0) {
-                newState = DRAINED;
+            doReturn = true;
+            if (oldState == IDLE)  {
+                doReturn = false;
+                if (outstandingWrites == 0) {
+                    newState = DRAINED;
+                }
             }
         } while (!state.boolCompareAndSwap(oldState, newState));
         if (doReturn) {
