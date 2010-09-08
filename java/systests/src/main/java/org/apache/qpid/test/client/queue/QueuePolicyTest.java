@@ -45,7 +45,7 @@ public class QueuePolicyTest extends QpidBrokerTestCase
         MessageConsumer consumer = ssn.createConsumer(dest);
         MessageProducer prod = ssn.createProducer(ssn.createQueue("ADDR:amq.direct/test"));
         
-        for (int i=0; i<50; i++)
+        for (int i=0; i<6; i++)
         {
             prod.send(ssn.createMessage());
         }
@@ -54,6 +54,7 @@ public class QueuePolicyTest extends QpidBrokerTestCase
         {   
             prod.send(ssn.createMessage());
             ((AMQSession)ssn).sync();
+            fail("The client did not receive an exception after exceeding the queue limit");
         }
         catch (AMQException e)
         {
