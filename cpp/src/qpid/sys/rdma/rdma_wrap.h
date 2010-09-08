@@ -225,6 +225,10 @@ namespace Rdma {
                 context = c;
         }
 
+        void removeContext() {
+            context = 0;
+        }
+
         template <typename T>
         T* getContext() {
             return static_cast<T*>(context);

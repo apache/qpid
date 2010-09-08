@@ -123,9 +123,6 @@ void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
 }
 
 void RdmaIOHandler::close() {
-    Mutex::ScopedLock l(pollingLock);
-    if (!polling) return;
-    polling = false;
     aio->drainWriteQueue(boost::bind(&RdmaIOHandler::drained, this));
 }
 
@@ -167,6 +164,12 @@ void RdmaIOHandler::error(Rdma::AsynchIO&) {
     disconnected();
 }
 
+namespace {
+    void stopped(RdmaIOHandler* async) {
+        delete async;
+    }
+}
+
 void RdmaIOHandler::disconnected() {
     {
     Mutex::ScopedLock l(pollingLock);
@@ -174,18 +177,13 @@ void RdmaIOHandler::disconnected() {
     if (!polling) return;
     polling = false;
     }
-    drained();
-}
-
-namespace {
-    void stopped(RdmaIOHandler* async) {
-        delete async;
-    }
+    aio->stop(boost::bind(&stopped, this));
 }
 
 void RdmaIOHandler::drained() {
-    assert(!polling);
-    aio->stop(boost::bind(&stopped, this));
+    // We know we've drained the write queue now, but we don't have to do anything
+    // because we can rely on the client to disconnect to trigger the connection
+    // cleanup.
 }
 
 void RdmaIOHandler::full(Rdma::AsynchIO&) {
@@ -325,6 +323,8 @@ void RdmaIOProtocolFactory::disconnected(Rdma::Connection::intrusive_ptr ci) {
     // If we've got a connection already tear it down, otherwise ignore
     RdmaIOHandler* async =  ci->getContext<RdmaIOHandler>();
     if (async) {
+        // Make sure we don't disconnect more than once
+        ci->removeContext();
         async->disconnected();
     }
 }
