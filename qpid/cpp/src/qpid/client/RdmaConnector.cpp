@@ -210,7 +210,7 @@ void RdmaConnector::connected(Poller::shared_ptr poller, Rdma::Connection::intru
     }
     {
     Mutex::ScopedLock l(pollingLock);
-    // If we're closed already then we'll get to drain() anyway
+    // If we're closed already then we'll get to stopped() anyway
     if (!polling) return;
     polling = false;
     }
@@ -221,7 +221,7 @@ void RdmaConnector::connectionError(sys::Poller::shared_ptr, Rdma::Connection::i
     QPID_LOG(debug, "Connection Error " << identifier);
     {
     Mutex::ScopedLock l(pollingLock);
-    // If we're closed already then we'll get to drain() anyway
+    // If we're closed already then we'll get to stopped() anyway
     if (!polling) return;
     polling = false;
     }
@@ -232,7 +232,7 @@ void RdmaConnector::disconnected(sys::Poller::shared_ptr, Rdma::Connection::intr
     QPID_LOG(debug, "Connection disconnected " << identifier);
     {
     Mutex::ScopedLock l(pollingLock);
-    // If we're closed already then we'll get to drain() anyway
+    // If we're closed already then we'll get to drained() anyway
     if (!polling) return;
     polling = false;
     }
@@ -243,7 +243,7 @@ void RdmaConnector::rejected(sys::Poller::shared_ptr, Rdma::Connection::intrusiv
     QPID_LOG(debug, "Connection Rejected " << identifier << ": " << cp.maxRecvBufferSize);
     {
     Mutex::ScopedLock l(pollingLock);
-    // If we're closed already then we'll get to drain() anyway
+    // If we're closed already then we'll get to stopped() anyway
     if (!polling) return;
     polling = false;
     }
@@ -254,7 +254,7 @@ void RdmaConnector::dataError(Rdma::AsynchIO&) {
     QPID_LOG(debug, "Data Error " << identifier);
     {
     Mutex::ScopedLock l(pollingLock);
-    // If we're closed already then we'll get to drain() anyway
+    // If we're closed already then we'll get to drained() anyway
     if (!polling) return;
     polling = false;
     }
