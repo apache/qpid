@@ -82,10 +82,10 @@ class RdmaConnector : public Connector, public sys::Codec
     ~RdmaConnector();
 
     // Callbacks
-    void connected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&);
-    void connectionError(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&, Rdma::ErrorType);
-    void disconnected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&);
-    void rejected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&);
+    void connected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams&);
+    void connectionError(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr, Rdma::ErrorType);
+    void disconnected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr);
+    void rejected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams&);
 
     void readbuff(Rdma::AsynchIO&, Rdma::Buffer*);
     void writebuff(Rdma::AsynchIO&);
@@ -188,7 +188,7 @@ void RdmaConnector::connect(const std::string& host, int port){
 }
 
 // The following only gets run when connected
-void RdmaConnector::connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci, const Rdma::ConnectionParams& cp) {
+void RdmaConnector::connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr ci, const Rdma::ConnectionParams& cp) {
     Rdma::QueuePair::intrusive_ptr q = ci->getQueuePair();
 
     aio = new Rdma::AsynchIO(ci->getQueuePair(),
@@ -205,7 +205,7 @@ void RdmaConnector::connected(Poller::shared_ptr poller, Rdma::Connection::intru
     aio->start(poller);
 }
 
-void RdmaConnector::connectionError(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&, Rdma::ErrorType) {
+void RdmaConnector::connectionError(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr, Rdma::ErrorType) {
     QPID_LOG(debug, "Connection Error " << identifier);
     {
     Mutex::ScopedLock l(pollingLock);
@@ -216,7 +216,7 @@ void RdmaConnector::connectionError(sys::Poller::shared_ptr, Rdma::Connection::i
     stopped();
 }
 
-void RdmaConnector::disconnected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&) {
+void RdmaConnector::disconnected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr) {
     QPID_LOG(debug, "Connection disconnected " << identifier);
     {
     Mutex::ScopedLock l(pollingLock);
@@ -227,7 +227,7 @@ void RdmaConnector::disconnected(sys::Poller::shared_ptr, Rdma::Connection::intr
     drained();
 }
 
-void RdmaConnector::rejected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams& cp) {
+void RdmaConnector::rejected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams& cp) {
     QPID_LOG(debug, "Connection Rejected " << identifier << ": " << cp.maxRecvBufferSize);
     {
     Mutex::ScopedLock l(pollingLock);
