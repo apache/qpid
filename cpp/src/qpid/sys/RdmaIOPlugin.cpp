@@ -56,6 +56,7 @@ class RdmaIOHandler : public OutputControl {
     Rdma::Connection::intrusive_ptr connection;
 
     void write(const framing::ProtocolInitiation&);
+    void disconnectAction();
 
   public:
     RdmaIOHandler(Rdma::Connection::intrusive_ptr c, ConnectionCodec::Factory* f);
@@ -170,7 +171,7 @@ namespace {
     }
 }
 
-void RdmaIOHandler::disconnected() {
+void RdmaIOHandler::disconnectAction() {
     {
     Mutex::ScopedLock l(pollingLock);
     // If we're closed already then we'll get to drained() anyway
@@ -178,6 +179,10 @@ void RdmaIOHandler::disconnected() {
     polling = false;
     }
     aio->stop(boost::bind(&stopped, this));
+}
+
+void RdmaIOHandler::disconnected() {
+    aio->requestCallback(boost::bind(&RdmaIOHandler::disconnectAction, this));
 }
 
 void RdmaIOHandler::drained() {
