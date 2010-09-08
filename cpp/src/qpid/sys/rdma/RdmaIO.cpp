@@ -327,10 +327,11 @@ namespace Rdma {
         }
 
         // If we've got all the write confirmations and we're draining
+        // We might get deleted in the drained callback so return immediately
         if (draining) {
             if (outstandingWrites == 0) {
-                 doDrainedCallback();
                  draining = false;
+                 doDrainedCallback();
             }
             return;
         }

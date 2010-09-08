@@ -277,8 +277,9 @@ void RdmaConnector::drained() {
     QPID_LOG(debug, "RdmaConnector::drained " << identifier);
     assert(!polling);
     if (aio) {
-        aio->stop(boost::bind(&RdmaConnector::stopped, this, aio));
+        Rdma::AsynchIO* a = aio;
         aio = 0;
+        a->stop(boost::bind(&RdmaConnector::stopped, this, a));
     }
 }
 
