@@ -154,11 +154,15 @@ namespace Rdma {
 
         // Reset back pointer in case someone else has the qp
         qp->qp_context = 0;
+
+        // The buffers ptr_deque automatically deletes all the buffers we've allocated
     }
 
     // Create a buffer to use for writing
     Buffer* QueuePair::createBuffer(int s) {
-        return new Buffer(pd.get(), s);
+        Buffer* b = new Buffer(pd.get(), s);
+        buffers.push_front(b);
+        return b;
     }
 
     // Make channel non-blocking by making

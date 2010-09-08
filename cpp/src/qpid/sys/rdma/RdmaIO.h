@@ -32,7 +32,6 @@
 #include <netinet/in.h>
 
 #include <boost/function.hpp>
-#include <boost/ptr_container/ptr_deque.hpp>
 #include <deque>
 
 namespace Rdma {
@@ -59,9 +58,6 @@ namespace Rdma {
         //qpid::sys::Mutex stateLock;
         std::deque<Buffer*> bufferQueue;
         qpid::sys::Mutex bufferQueueLock;
-        boost::ptr_deque<Buffer> buffers;
-        // The QueuePair must be after the buffers so that the connection is destroyed before the buffers
-        // are deallocated so that the hardware doesn't write into memory that's been given back.
         QueuePair::intrusive_ptr qp;
         qpid::sys::DispatchHandleRef dataHandle;
 
