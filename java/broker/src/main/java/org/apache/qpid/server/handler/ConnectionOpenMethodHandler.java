@@ -83,7 +83,6 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             }
 
             session.setVirtualHost(virtualHost);
-            _logger.error(session.getPrincipal().getName());
 
             // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
             if (session.getContextKey() == null)
