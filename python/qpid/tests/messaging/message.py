@@ -86,6 +86,8 @@ class MessageEchoTests(Base):
               "key7": ["one", 2, 3.14],
               "key8": [],
               "key9": {"sub-key0": 3},
+              "key10": True,
+              "key11": False,
               "x-amqp-0-10.app-id": "test-app-id",
               "x-amqp-0-10.content-encoding": "test-content-encoding"}
 
@@ -141,3 +143,13 @@ class MessageEchoTests(Base):
 
   def testReplyToTopicSubject(self):
     self.check_rt("name/subject; {node: {type: topic}}")
+
+  def testBooleanEncoding(self):
+    msg = Message({"true": True, "false": False})
+    self.snd.send(msg)
+    echo = self.rcv.fetch(0)
+    self.assertEcho(msg, echo)
+    t = echo.content["true"]
+    f = echo.content["false"]
+    assert isinstance(t, bool), t
+    assert isinstance(f, bool), f
