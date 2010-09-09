@@ -36,6 +36,7 @@ def map_str(s):
 class Codec(Packer):
 
   ENCODINGS = {
+    bool: direct("boolean"),
     unicode: direct("str16"),
     str: map_str,
     buffer: direct("vbin32"),
