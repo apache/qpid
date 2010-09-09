@@ -107,16 +107,19 @@ void Timer::run()
             {
             ScopedLock<Mutex> l(t->callbackLock);
             if (t->cancelled) {
-                drop(t);
+                {
+                    Monitor::ScopedUnlock u(monitor);
+                    drop(t);
+                }
                 if (delay > lateCancel) {
-                    QPID_LOG(debug, t->name << " cancelled timer woken up " << delay / TIME_MSEC
-                             << "ms late");
+                    QPID_LOG(debug, t->name << " cancelled timer woken up " <<
+                             delay / TIME_MSEC << "ms late");
                 }
                 continue;
             } else if(Duration(t->nextFireTime, start) >= 0) {
                 {
-                Monitor::ScopedUnlock u(monitor);
-                fire(t);
+                    Monitor::ScopedUnlock u(monitor);
+                    fire(t);
                 }
                 // Warn if callback overran next timer's start.
                 AbsTime end(AbsTime::now());
