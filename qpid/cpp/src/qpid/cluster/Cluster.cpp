@@ -1126,7 +1126,6 @@ void Cluster::timerDrop(const MemberId& , const std::string& name, Lock&) {
 }
 
 bool Cluster::isElder() const {
-    Monitor::ScopedLock l(lock);
     return elder;
 }
 
