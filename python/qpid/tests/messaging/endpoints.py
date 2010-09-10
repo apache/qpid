@@ -710,7 +710,7 @@ class ReceiverTests(Base):
 
   def fetchFromConcurrentCloseTest(self, entry):
     def closer():
-      time.sleep(self.delay())
+      self.sleep()
       entry.close()
     t = Thread(target=closer)
     t.start()
