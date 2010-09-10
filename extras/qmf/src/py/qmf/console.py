@@ -1356,7 +1356,7 @@ class Session:
     elif typecode == 11: return False
     elif typecode == 12: return 0.0
     elif typecode == 13: return 0.0
-    elif typecode == 14: return UUID([0 for i in range(16)])
+    elif typecode == 14: return UUID(bytes=[0 for i in range(16)])
     elif typecode == 15: return {}
     elif typecode == 16: return 0
     elif typecode == 17: return 0
@@ -1651,7 +1651,7 @@ class ClassKey:
         h3 = int(hexValues[3], 16)
         h4 = int(hexValues[4][0:4], 16)
         h5 = int(hexValues[4][4:12], 16)
-        self.hash = UUID(struct.pack("!LHHHHL", h0, h1, h2, h3, h4, h5))
+        self.hash = UUID(bytes=struct.pack("!LHHHHL", h0, h1, h2, h3, h4, h5))
       except:
         raise Exception("Invalid ClassKey format")
     elif constructor.__class__ == dict:
@@ -1668,7 +1668,7 @@ class ClassKey:
       codec = constructor
       self.pname = str(codec.read_str8())
       self.cname = str(codec.read_str8())
-      self.hash  = UUID(codec.read_bin128())
+      self.hash  = UUID(bytes=codec.read_bin128())
       # old V1 codec did not include "type"
       self.type = None
 
