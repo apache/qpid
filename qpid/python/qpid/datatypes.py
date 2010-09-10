@@ -286,10 +286,35 @@ class Future:
     return self._set.isSet()
 
 try:
-  import uuid
-  def random_uuid():
-    return uuid.uuid4().get_bytes()
+  from uuid import uuid4
+  from uuid import UUID
 except ImportError:
+  class UUID:
+    def __init__(self, hex=None, bytes=None):
+      if [hex, bytes].count(None) != 1:
+        raise TypeErrror("need one of hex or bytes")
+      if bytes is not None:
+        self.bytes = bytes
+      elif hex is not None:
+        fields=hex.split("-")
+        fields[4:5] = [fields[4][:4], fields[4][4:]]
+        self.bytes = struct.pack("!LHHHHL", *[int(x,16) for x in fields])
+
+    def __cmp__(self, other):
+      if isinstance(other, UUID):
+        return cmp(self.bytes, other.bytes)
+      else:
+        return -1
+
+    def __str__(self):
+      return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack("!LHHHHL", self.bytes)
+
+    def __repr__(self):
+      return "UUID(%r)" % str(self)
+
+    def __hash__(self):
+      return self.bytes.__hash__()
+
   import os, random, socket, time
   rand = random.Random()
   rand.seed((os.getpid(), time.time(), socket.gethostname()))
@@ -305,32 +330,11 @@ except ImportError:
     bytes[8] |= 0x80
     return "".join(map(chr, bytes))
 
-def uuid4():
-  return UUID(random_uuid())
+  def uuid4():
+    return UUID(bytes=random_uuid())
 
 def parseUUID(str):
-  fields=str.split("-")
-  fields[4:5] = [fields[4][:4], fields[4][4:]]
-  return UUID(struct.pack("!LHHHHL", *[int(x,16) for x in fields]))
-
-class UUID:
-  def __init__(self, bytes):
-    self.bytes = bytes
-
-  def __cmp__(self, other):
-    if isinstance(other, UUID):
-      return cmp(self.bytes, other.bytes)
-    else:
-      return -1
-
-  def __str__(self):
-    return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack("!LHHHHL", self.bytes)
-
-  def __repr__(self):
-    return "UUID(%r)" % str(self)
-
-  def __hash__(self):
-    return self.bytes.__hash__()
+  return UUID(hex=str)
 
 class timestamp(float):
 

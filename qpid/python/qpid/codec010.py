@@ -357,7 +357,7 @@ class Codec(Packer):
       getattr(self, attr)(n)
 
   def read_uuid(self):
-    return UUID(self.unpack("16s"))
+    return UUID(bytes=self.unpack("16s"))
   def write_uuid(self, s):
     if isinstance(s, UUID):
       s = s.bytes
