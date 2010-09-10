@@ -784,6 +784,10 @@ class Engine:
     if sf.completed:
       sst.write_op(SessionCompleted(sst.executed))
 
+  def do_session_request_timeout(self, rt):
+    sst = self.get_sst(rt)
+    sst.write_op(SessionTimeout(timeout=0))
+
   def do_execution_result(self, er):
     sst = self.get_sst(er)
     sst.results[er.command_id] = er.value
