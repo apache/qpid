@@ -1029,6 +1029,7 @@ class AddressTests(Base):
     snd.send("asdf")
     try:
       snd.close()
+      assert False, "successfully deleted amq.topic"
     except SessionError, e:
       assert "Cannot delete default exchange" in str(e)
     # XXX: need to figure out close after error
