@@ -56,7 +56,7 @@ class Base(Test):
       self.conn = None
 
   def teardown_connection(self, conn):
-    conn.close()
+    conn.close(timeout=self.timeout())
 
   def content(self, base, count = None):
     if count is None:
@@ -158,6 +158,9 @@ class Base(Test):
 
   def delay(self):
     return float(self.config.defines.get("delay", "2"))
+
+  def timeout(self):
+    return float(self.config.defines.get("timeout", "60"))
 
   def get_bool(self, name):
     return self.config.defines.get(name, "false").lower() in ("true", "yes", "1")

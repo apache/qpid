@@ -261,6 +261,7 @@ class Connection(Endpoint):
   def _unlinked(self):
     return [l
             for ssn in self.sessions.values()
+            if not (ssn.error or ssn.closed)
             for l in ssn.senders + ssn.receivers
             if not (l.linked or l.error or l.closed)]
 
