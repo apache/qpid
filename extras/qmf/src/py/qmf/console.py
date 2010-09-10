@@ -993,10 +993,15 @@ class Session:
     v1KeyList = []
     v2KeyList = []
     v1KeyList.append("schema.#")
+    # note well: any binding that starts with 'agent.ind.heartbeat' will be
+    # bound to the heartbeat queue, otherwise it will be bound to the
+    # unsolicited indication queue.  See _decOutstanding() for the binding.
     if not self.userBindings:
       if self.rcvObjects and self.rcvEvents and self.rcvHeartbeats:
         v1KeyList.append("console.#")
-        v2KeyList.append("agent.ind.#")
+        v2KeyList.append("agent.ind.data.#")
+        v2KeyList.append("agent.ind.event.#")
+        v2KeyList.append("agent.ind.heartbeat.#")
       else:
         # need heartbeats for V2 newAgent()/delAgent()
         v2KeyList.append("agent.ind.heartbeat.#")
