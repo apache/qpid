@@ -569,9 +569,17 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             Exchange exchange = getExchange(session, method.getExchange());
 
-            if(exchange != null && exchange.hasReferrers())
+            if(exchange == null)
+            {
+                exception(session, method, ExecutionErrorCode.NOT_FOUND, "No such exchange '" + method.getExchange() + "'");
+            }
+            else if(exchange.hasReferrers())
             {
                 exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Exchange in use as an alternate exchange");
+            }
+            else if(isStandardExchange(exchange, virtualHost.getExchangeFactory().getRegisteredTypes()))
+            {
+                exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Exchange '"+method.getExchange()+"' cannot be deleted");
             }
             else
             {
@@ -592,6 +600,18 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, e, "Cannot delete exchange '" + method.getExchange() );
         }
+    }
+
+    private boolean isStandardExchange(Exchange exchange, Collection<ExchangeType<? extends Exchange>> registeredTypes)
+    {
+        for(ExchangeType type : registeredTypes)
+        {
+            if(type.getDefaultExchangeName().toString().equals( exchange.getName() ))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
