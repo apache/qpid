@@ -76,18 +76,18 @@ public class FailoverTest extends FrameworkBaseCase
     public void testTxP2PFailover() throws Exception
     {
         // Set up the test properties to match the test cases requirements.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
-        testProps.setProperty(ACK_MODE_PROPNAME, Session.AUTO_ACKNOWLEDGE);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
+        getTestProps().setProperty(ACK_MODE_PROPNAME, Session.AUTO_ACKNOWLEDGE);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // MessagingTestConfigProperties props = this.getTestParameters();
 
         // Create the test circuit from the test configuration parameters.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         // Create an assertion that all messages are received.
-        Assertion allMessagesReceived = testCircuit.getReceiver().allMessagesReceivedAssertion(testProps);
+        Assertion allMessagesReceived = testCircuit.getReceiver().allMessagesReceivedAssertion(getTestProps());
 
         // This test case assumes it is using a local circuit.
         LocalCircuitImpl localCircuit = (LocalCircuitImpl) testCircuit;
@@ -105,7 +105,7 @@ public class FailoverTest extends FrameworkBaseCase
             // Cause a failover.
             if (i == 50)
             {
-                failureMechanism.causeFailure();
+                getFailureMechanism().causeFailure();
             }
 
             // Wait for the reconnection to complete.

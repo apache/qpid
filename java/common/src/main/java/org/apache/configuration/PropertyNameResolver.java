@@ -99,7 +99,7 @@ public class PropertyNameResolver
        return properties.get(propName).get(klass);
    }
    
-   class QpidProperty
+   static class QpidProperty
    {
        private Object defValue;
        private String[] names;

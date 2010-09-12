@@ -160,14 +160,14 @@ public class CommandLineParser
         }
 
         // Concatenate all the parsing errors together.
-        String result = "";
+        StringBuilder result = new StringBuilder();
 
         for (String s : parsingErrors)
         {
-            result += s;
+            result.append(s);
         }
 
-        return result;
+        return result.toString();
     }
 
     /**
@@ -184,14 +184,17 @@ public class CommandLineParser
         }
 
         // List all the properties.
-        String result = "Options in force:\n";
+        StringBuilder result = new StringBuilder("Options in force:\n");
 
         for (Map.Entry<Object, Object> property : parsedProperties.entrySet())
         {
-            result += property.getKey() + " = " + property.getValue() + "\n";
+            result.append(property.getKey())
+                    .append(" = ")
+                    .append(property.getValue())
+                    .append('\n');
         }
 
-        return result;
+        return result.toString();
     }
 
     /**
@@ -257,7 +260,7 @@ public class CommandLineParser
         boolean ignore = false;
 
         // Create the regular expression matcher for the command line options.
-        String regexp = "^(";
+        StringBuilder regexp = new StringBuilder("^(");
         int optionsAdded = 0;
 
         for (Iterator<String> i = optionMap.keySet().iterator(); i.hasNext();)
@@ -279,15 +282,18 @@ public class CommandLineParser
             // Add the option to the regular expression matcher if it is not a free argument definition.
             if (notFree)
             {
-                regexp += nextOption + (i.hasNext() ? "|" : "");
+                regexp.append(nextOption)
+                        .append(i.hasNext() ? "|" : "");
                 optionsAdded++;
             }
         }
 
         // There has to be more that one option in the regular expression or else the compiler complains that the close
         // cannot be nullable if the '?' token is used to make the matched option string optional.
-        regexp += ")" + ((optionsAdded > 0) ? "?" : "") + "(.*)";
-        Pattern pattern = Pattern.compile(regexp);
+        regexp.append(')')
+                .append(((optionsAdded > 0) ? "?" : ""))
+                .append("(.*)");
+        Pattern pattern = Pattern.compile(regexp.toString());
 
         // Loop through all the command line arguments.
         for (int i = 0; i < args.length; i++)
@@ -645,7 +651,7 @@ public class CommandLineParser
      * <tr><td> Hold details of a command line option.
      * </table>
      */
-    protected class CommandLineOption
+    protected static class CommandLineOption
     {
         /** Holds the text for the flag to match this argument with. */
         public String option = null;

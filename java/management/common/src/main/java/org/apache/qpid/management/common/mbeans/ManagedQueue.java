@@ -21,6 +21,7 @@
 package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
+import java.util.*;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -54,45 +55,48 @@ public interface ManagedQueue
     String[] VIEW_MSG_CONTENT_COMPOSITE_ITEM_DESCRIPTIONS = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
     
     //Individual attribute name constants
-    String ATTR_NAME = "Name";
-    String ATTR_OWNER = "Owner";
-    String ATTR_MAX_MSG_AGE = "MaximumMessageAge";
-    String ATTR_MAX_MSG_COUNT = "MaximumMessageCount";
-    String ATTR_MAX_QUEUE_DEPTH = "MaximumQueueDepth";
-    String ATTR_MAX_MSG_SIZE = "MaximumMessageSize";
-    String ATTR_DURABLE = "Durable";
-    String ATTR_AUTODELETE = "AutoDelete";
-    String ATTR_CONSUMER_COUNT = "ConsumerCount";
-    String ATTR_ACTIVE_CONSUMER_COUNT = "ActiveConsumerCount";
-    String ATTR_MSG_COUNT = "MessageCount";
-    String ATTR_QUEUE_DEPTH = "QueueDepth";
-    String ATTR_RCVD_MSG_COUNT = "ReceivedMessageCount";
-    String ATTR_CAPACITY = "Capacity";
-    String ATTR_FLOW_OVERFULL = "FlowOverfull";
-    String ATTR_FLOW_RESUME_CAPACITY = "FlowResumeCapacity";
-    String ATTR_EXCLUSIVE = "Exclusive";
+    static final String ATTR_NAME = "Name";
+    static final String ATTR_OWNER = "Owner";
+    static final String ATTR_MAX_MSG_AGE = "MaximumMessageAge";
+    static final String ATTR_MAX_MSG_COUNT = "MaximumMessageCount";
+    static final String ATTR_MAX_QUEUE_DEPTH = "MaximumQueueDepth";
+    static final String ATTR_MAX_MSG_SIZE = "MaximumMessageSize";
+    static final String ATTR_DURABLE = "Durable";
+    static final String ATTR_AUTODELETE = "AutoDelete";
+    static final String ATTR_CONSUMER_COUNT = "ConsumerCount";
+    static final String ATTR_ACTIVE_CONSUMER_COUNT = "ActiveConsumerCount";
+    static final String ATTR_MSG_COUNT = "MessageCount";
+    static final String ATTR_QUEUE_DEPTH = "QueueDepth";
+    static final String ATTR_RCVD_MSG_COUNT = "ReceivedMessageCount";
+    static final String ATTR_CAPACITY = "Capacity";
+    static final String ATTR_FLOW_OVERFULL = "FlowOverfull";
+    static final String ATTR_FLOW_RESUME_CAPACITY = "FlowResumeCapacity";
+    static final String ATTR_EXCLUSIVE = "Exclusive";
     
     //All attribute names constant
-    String[] QUEUE_ATTRIBUTES = new String[]{
-            ATTR_NAME,
-            ATTR_OWNER,
-            ATTR_MAX_MSG_AGE,
-            ATTR_MAX_MSG_COUNT,
-            ATTR_MAX_QUEUE_DEPTH,
-            ATTR_MAX_MSG_SIZE,
-            ATTR_DURABLE,
-            ATTR_AUTODELETE,
-            ATTR_CONSUMER_COUNT,
-            ATTR_ACTIVE_CONSUMER_COUNT,
-            ATTR_MSG_COUNT,
-            ATTR_QUEUE_DEPTH,
-            ATTR_RCVD_MSG_COUNT,
-            ATTR_CAPACITY,
-            ATTR_FLOW_OVERFULL,
-            ATTR_FLOW_RESUME_CAPACITY,
-            ATTR_EXCLUSIVE
-    };
-    
+    static final List<String> QUEUE_ATTRIBUTES
+            = Collections.unmodifiableList(
+                new ArrayList<String>(
+                        new HashSet<String>(
+                                Arrays.asList(
+                                    ATTR_NAME,
+                                    ATTR_OWNER,
+                                    ATTR_MAX_MSG_AGE,
+                                    ATTR_MAX_MSG_COUNT,
+                                    ATTR_MAX_QUEUE_DEPTH,
+                                    ATTR_MAX_MSG_SIZE,
+                                    ATTR_DURABLE,
+                                    ATTR_AUTODELETE,
+                                    ATTR_CONSUMER_COUNT,
+                                    ATTR_ACTIVE_CONSUMER_COUNT,
+                                    ATTR_MSG_COUNT,
+                                    ATTR_QUEUE_DEPTH,
+                                    ATTR_RCVD_MSG_COUNT,
+                                    ATTR_CAPACITY,
+                                    ATTR_FLOW_OVERFULL,
+                                    ATTR_FLOW_RESUME_CAPACITY,
+                                    ATTR_EXCLUSIVE))));
+
     /**
      * Returns the Name of the ManagedQueue.
      * @return the name of the managedQueue.

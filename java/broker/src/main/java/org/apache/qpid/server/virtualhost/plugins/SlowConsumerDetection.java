@@ -19,7 +19,6 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -32,8 +31,6 @@ import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.plugins.logging.SlowConsumerDetectionMessages;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostHouseKeepingPlugin;
-import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
 public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
 {
@@ -67,10 +64,10 @@ public class SlowConsumerDetection extends VirtualHostHouseKeepingPlugin
     public void configure(ConfigurationPlugin config)
     {        
         _config = (SlowConsumerDetectionConfiguration) config;
-        _listener = new ConfiguredQueueBindingListener(_virtualhost.getName());
-        for (AMQShortString exchangeName : _virtualhost.getExchangeRegistry().getExchangeNames())
+        _listener = new ConfiguredQueueBindingListener(getVirtualHost().getName());
+        for (AMQShortString exchangeName : getVirtualHost().getExchangeRegistry().getExchangeNames())
         {
-            _virtualhost.getExchangeRegistry().getExchange(exchangeName).addBindingListener(_listener);
+            getVirtualHost().getExchangeRegistry().getExchange(exchangeName).addBindingListener(_listener);
         }
     }
     

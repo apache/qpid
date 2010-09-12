@@ -138,10 +138,9 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
 
                 final String locales = new String(body.getLocales(), "utf8");
                 final StringTokenizer tokenizer = new StringTokenizer(locales, " ");
-                String selectedLocale = null;
                 if (tokenizer.hasMoreTokens())
                 {
-                    selectedLocale = tokenizer.nextToken();
+                    tokenizer.nextToken();
                 }
                 else
                 {

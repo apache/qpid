@@ -425,6 +425,8 @@ public class HeadersParser
 
         public boolean equals(Object o)
         {
+            assert o != null;
+            assert o instanceof KeyValuePair;
             KeyValuePair other = (KeyValuePair)o;
             return (_key == other._key) && (_value == null ? other._value == null : _value.equals(other._value));
         }

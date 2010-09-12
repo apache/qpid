@@ -29,15 +29,15 @@ public abstract class HouseKeepingTask implements Runnable
 {
     Logger _logger = Logger.getLogger(this.getClass());
 
-    protected VirtualHost _virtualhost;
+    private VirtualHost _virtualHost;
 
     private String _name;
 
     private RootMessageLogger _rootLogger;
     public HouseKeepingTask(VirtualHost vhost)
     {
-        _virtualhost = vhost;
-        _name = _virtualhost.getName() + ":" + this.getClass().getSimpleName();
+        _virtualHost = vhost;
+        _name = _virtualHost.getName() + ":" + this.getClass().getSimpleName();
         _rootLogger = CurrentActor.get().getRootMessageLogger();
     }
 
@@ -65,6 +65,10 @@ public abstract class HouseKeepingTask implements Runnable
         }
     }
 
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
 
     /** Execute the plugin. */
     public abstract void execute();

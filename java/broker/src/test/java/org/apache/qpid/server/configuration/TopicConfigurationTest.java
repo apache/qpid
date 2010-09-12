@@ -40,12 +40,12 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
     @Override
     public void configure()
     {
-        _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic.name", "stocks.nyse.appl");
+        getConfigXml().addProperty("virtualhosts.virtualhost.test.topics.topic.name", "stocks.nyse.appl");
 
-        _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic(1).subscriptionName", getName()+":stockSubscription");
+        getConfigXml().addProperty("virtualhosts.virtualhost.test.topics.topic(1).subscriptionName", getName()+":stockSubscription");
 
-        _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic(2).name", "stocks.nyse.orcl");
-        _configXml.addProperty("virtualhosts.virtualhost.test.topics.topic(2).subscriptionName", getName()+":stockSubscription");
+        getConfigXml().addProperty("virtualhosts.virtualhost.test.topics.topic(2).name", "stocks.nyse.orcl");
+        getConfigXml().addProperty("virtualhosts.virtualhost.test.topics.topic(2).subscriptionName", getName()+":stockSubscription");
    }
 
     /**
@@ -57,10 +57,10 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
      */
     public void testTopicCreation() throws ConfigurationException, AMQSecurityException, AMQInternalException
     {
-        Exchange topicExchange = _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
-        _virtualHost.getBindingFactory().addBinding("stocks.nyse.appl", _queue, topicExchange, null);
+        Exchange topicExchange = getVirtualHost().getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
+        getVirtualHost().getBindingFactory().addBinding("stocks.nyse.appl", getQueue(), topicExchange, null);
 
-        TopicConfig config = _queue.getConfiguration().getConfiguration(TopicConfig.class.getName());
+        TopicConfig config = getQueue().getConfiguration().getConfiguration(TopicConfig.class.getName());
 
         assertNotNull("Queue should have topic configuration bound to it.", config);
         assertEquals("Configuration name not correct", "stocks.nyse.appl", config.getName());
@@ -77,15 +77,15 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
     {
 
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()+":stockSubscription"), false, new AMQShortString("testowner"),
-                                                    false, false, _virtualHost, null);
+                                                    false, false, getVirtualHost(), null);
 
-        _virtualHost.getQueueRegistry().registerQueue(queue);
-        Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
-        _virtualHost.getBindingFactory().addBinding(getName(), queue, defaultExchange, null);
+        getVirtualHost().getQueueRegistry().registerQueue(queue);
+        Exchange defaultExchange = getVirtualHost().getExchangeRegistry().getDefaultExchange();
+        getVirtualHost().getBindingFactory().addBinding(getName(), queue, defaultExchange, null);
 
 
-        Exchange topicExchange = _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
-        _virtualHost.getBindingFactory().addBinding("stocks.nyse.orcl", queue, topicExchange, null);
+        Exchange topicExchange = getVirtualHost().getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
+        getVirtualHost().getBindingFactory().addBinding("stocks.nyse.orcl", queue, topicExchange, null);
 
         TopicConfig config = queue.getConfiguration().getConfiguration(TopicConfig.class.getName());
 
@@ -107,15 +107,15 @@ public class TopicConfigurationTest extends InternalBrokerBaseCase
     {
 
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(getName()+":stockSubscription"), false, new AMQShortString("testowner"),
-                                                    false, false, _virtualHost, null);
+                                                    false, false, getVirtualHost(), null);
 
-        _virtualHost.getQueueRegistry().registerQueue(queue);
-        Exchange defaultExchange = _virtualHost.getExchangeRegistry().getDefaultExchange();
-        _virtualHost.getBindingFactory().addBinding(getName(), queue, defaultExchange, null);
+        getVirtualHost().getQueueRegistry().registerQueue(queue);
+        Exchange defaultExchange = getVirtualHost().getExchangeRegistry().getDefaultExchange();
+        getVirtualHost().getBindingFactory().addBinding(getName(), queue, defaultExchange, null);
 
 
-        Exchange topicExchange = _virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
-        _virtualHost.getBindingFactory().addBinding("stocks.nyse.ibm", queue, topicExchange, null);
+        Exchange topicExchange = getVirtualHost().getExchangeRegistry().getExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME);
+        getVirtualHost().getBindingFactory().addBinding("stocks.nyse.ibm", queue, topicExchange, null);
 
         TopicConfig config = queue.getConfiguration().getConfiguration(TopicConfig.class.getName());
 

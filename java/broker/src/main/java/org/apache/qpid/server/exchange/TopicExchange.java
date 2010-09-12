@@ -251,7 +251,7 @@ public class TopicExchange extends AbstractExchange
     {
         for(Binding b : _bindings.keySet())
         {
-            if(b.getBindingKey().equals(routingKey))
+            if(b.getBindingKey().equals(routingKey.toString()))
             {
                 return true;
             }

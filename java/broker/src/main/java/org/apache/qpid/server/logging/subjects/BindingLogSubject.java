@@ -37,7 +37,7 @@ public class BindingLogSubject extends AbstractLogSubject
      * 3 - Queue Name
      * 4 - Binding RoutingKey
      */
-    protected static String BINDING_FORMAT = "vh(/{0})/ex({1}/{2})/qu({3})/rk({4})";
+    protected static final String BINDING_FORMAT = "vh(/{0})/ex({1}/{2})/qu({3})/rk({4})";
 
     /**
      * Create a BindingLogSubject that Logs in the following format.

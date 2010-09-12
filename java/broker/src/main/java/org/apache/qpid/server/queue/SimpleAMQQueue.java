@@ -162,7 +162,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
 
     private final AtomicLong _stateChangeCount = new AtomicLong(Long.MIN_VALUE);
-    private AtomicReference _asynchronousRunner = new AtomicReference(null);
+    private AtomicReference<Runnable> _asynchronousRunner = new AtomicReference<Runnable>(null);
     private final Executor _asyncDelivery;
     private AtomicInteger _deliveredMessages = new AtomicInteger();
     private AtomicBoolean _stopped = new AtomicBoolean(false);
@@ -1085,23 +1085,22 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
      */
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition)
     {
-        List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
-        {
-            private long position = 0;
+        return getMessagesOnTheQueue(new QueueEntryFilter()
+                                        {
+                                            private long position = 0;
 
-            public boolean accept(QueueEntry entry)
-            {
-                position++;
-                return (position >= fromPosition) && (position <= toPosition);
-            }
+                                            public boolean accept(QueueEntry entry)
+                                            {
+                                                position++;
+                                                return (position >= fromPosition) && (position <= toPosition);
+                                            }
 
-            public boolean filterComplete()
-            {
-                return position >= toPosition;
-            }
-        });
+                                            public boolean filterComplete()
+                                            {
+                                                return position >= toPosition;
+                                            }
+                                        });
 
-        return entries;
     }
 
     public void moveMessagesToAnotherQueue(final long fromMessageId,
@@ -1410,7 +1409,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     adapter.setEntry(entry);
                     final List<? extends BaseQueue> rerouteQueues = _alternateExchange.route(adapter);
                     final ServerMessage message = entry.getMessage();
-                    if(rerouteQueues != null & rerouteQueues.size() != 0)
+                    if(rerouteQueues != null && rerouteQueues.size() != 0)
                     {
                         txn.enqueue(rerouteQueues, entry.getMessage(),
                                     new ServerTransaction.Action()
@@ -1801,7 +1800,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         boolean deliveryIncomplete = true;
 
         int extraLoops = 1;
-        Long iterations = new Long(MAX_ASYNC_DELIVERIES);
+        long iterations = MAX_ASYNC_DELIVERIES;
 
         _asynchronousRunner.compareAndSet(runner, null);
 
@@ -1823,7 +1822,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             previousStateChangeCount = stateChangeCount;
             deliveryIncomplete = _subscriptionList.size() != 0;
-            boolean done = true;
+            boolean done;
 
             SubscriptionList.SubscriptionNodeIterator subscriptionIter = _subscriptionList.iterator();
             //iterate over the subscribers and try to advance their pointer
@@ -1833,10 +1832,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 sub.getSendLock();
                 try
                 {
-                    if (sub != null)
-                    {
-                        done = attemptDelivery(sub);
-                    }
+
+                    done = attemptDelivery(sub);
+
                     if (done)
                     {
                         if (extraLoops == 0)
@@ -2050,6 +2048,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         public boolean equals(Object o)
         {
+            assert o != null;
+            assert o instanceof QueueEntryListener;
             return _sub == ((QueueEntryListener) o)._sub;
         }
 

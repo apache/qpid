@@ -27,7 +27,7 @@ import org.apache.qpid.AMQException;
 public class HeartbeatBody implements AMQBody
 {
     public static final byte TYPE = 8;
-    public static AMQFrame FRAME = new HeartbeatBody().toFrame();
+    public static final AMQFrame FRAME = new HeartbeatBody().toFrame();
 
     public HeartbeatBody()
     {

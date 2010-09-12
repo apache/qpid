@@ -24,8 +24,6 @@ import java.util.List;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogSubject;
 
 /**
  * Test : AMQPChannelActorTest
@@ -56,7 +54,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
     {
         super.createBroker();
 
-        _amqpActor = new AMQPChannelActor(_channel, _rootLogger);
+        _amqpActor = new AMQPChannelActor(getChannel(), _rootLogger);
     }
 
 
@@ -69,7 +67,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannel() throws Exception
     {
-        _configXml.setProperty("status-updates", "ON");
+        getConfigXml().setProperty("status-updates", "ON");
 
         startBrokerNow();
 
@@ -107,7 +105,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingOFF() throws Exception, AMQException
     {
-        _configXml.setProperty("status-updates", "OFF");
+        getConfigXml().setProperty("status-updates", "OFF");
 
         // Start the broker now.
         startBrokerNow();
@@ -128,7 +126,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingOfF() throws Exception, AMQException
     {
-        _configXml.setProperty("status-updates", "OfF");
+        getConfigXml().setProperty("status-updates", "OfF");
 
         startBrokerNow();
 
@@ -148,7 +146,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingOff() throws Exception, AMQException
     {
-        _configXml.setProperty("status-updates", "Off");
+        getConfigXml().setProperty("status-updates", "Off");
 
         startBrokerNow();
 
@@ -168,7 +166,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingofF() throws Exception, AMQException
     {
-        _configXml.setProperty("status-updates", "ofF");
+        getConfigXml().setProperty("status-updates", "ofF");
 
         startBrokerNow();
 
@@ -188,7 +186,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingoff() throws Exception, AMQException
     {
-        _configXml.setProperty("status-updates", "off");
+        getConfigXml().setProperty("status-updates", "off");
 
         startBrokerNow();
 
@@ -208,7 +206,7 @@ public class AMQPChannelActorTest extends BaseConnectionActorTestCase
      */
     public void testChannelLoggingoFf() throws Exception, AMQException
     {        
-        _configXml.setProperty("status-updates", "oFf");
+        getConfigXml().setProperty("status-updates", "oFf");
 
         startBrokerNow();
 

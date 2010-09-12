@@ -383,11 +383,6 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void setDeliveredToSubscription()
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
                 public void release()
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
@@ -443,12 +438,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void requeue()
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public void requeue(Subscription subscription)
+                public void requeue(Subscription subscription) 
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
@@ -459,11 +449,6 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                 }
 
                 public void dispose()
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public void restoreCredit()
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }

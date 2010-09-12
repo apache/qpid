@@ -39,29 +39,29 @@ public class QueueBrowserUsesNoAckTest extends InternalBrokerBaseCase
         checkStoreContents(0);
 
         //Send required messsages to the queue
-        publishMessages(_session, _channel, sendMessageCount);
+        publishMessages(getSession(), getChannel(), sendMessageCount);
 
         //Ensure they are stored
         checkStoreContents(sendMessageCount);
 
         //Check that there are no unacked messages
         assertEquals("Channel should have no unacked msgs ", 0,
-                     _channel.getUnacknowledgedMessageMap().size());
+                     getChannel().getUnacknowledgedMessageMap().size());
 
         //Set the prefetch on the session to be less than the sent messages
-        _channel.setCredit(0, prefetch);
+        getChannel().setCredit(0, prefetch);
 
         //browse the queue
-        AMQShortString browser = browse(_channel, _queue);
+        AMQShortString browser = browse(getChannel(), getQueue());
 
-        _queue.deliverAsync();
+        getQueue().deliverAsync();
 
         //Wait for messages to fill the prefetch
-        _session.awaitDelivery(prefetch);
+        getSession().awaitDelivery(prefetch);
 
         //Get those messages
         List<InternalTestProtocolSession.DeliveryPair> messages =
-                _session.getDelivers(_channel.getChannelId(), browser,
+                getSession().getDelivers(getChannel().getChannelId(), browser,
                                      prefetch);
 
         //Ensure we recevied the prefetched messages
@@ -70,7 +70,7 @@ public class QueueBrowserUsesNoAckTest extends InternalBrokerBaseCase
         //Check the process didn't suspend the subscription as this would
         // indicate we are using the prefetch credit. i.e. using acks not No-Ack
         assertTrue("The subscription has been suspended",
-                   !_channel.getSubscription(browser).getState()
+                   !getChannel().getSubscription(browser).getState()
                            .equals(Subscription.State.SUSPENDED));       
     }
 

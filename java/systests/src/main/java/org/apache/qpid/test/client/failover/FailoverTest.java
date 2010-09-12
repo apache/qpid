@@ -306,7 +306,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         //Start the connection
         connection.start();
 
-        long FAILOVER_DELAY = (RETRIES * DELAY);
+        long FAILOVER_DELAY = ((long)RETRIES * (long)DELAY);
 
         // Use Nano seconds as it is more accurate for comparision.
         long failTime = System.nanoTime() + FAILOVER_DELAY * 1000000;

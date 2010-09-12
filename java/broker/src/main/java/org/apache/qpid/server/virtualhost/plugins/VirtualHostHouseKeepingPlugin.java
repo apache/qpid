@@ -30,18 +30,11 @@ public abstract class VirtualHostHouseKeepingPlugin extends HouseKeepingTask imp
 {
     protected final Logger _logger = Logger.getLogger(getClass());
 
-    protected VirtualHost _virtualhost;
-    
     public VirtualHostHouseKeepingPlugin(VirtualHost vhost)
     {
         super(vhost);
-        setVirtualHost(vhost);
     }
 
-    public void setVirtualHost(VirtualHost vhost)
-    {
-        _virtualhost = vhost;
-    }
 
     /**
      * Long value representing the delay between repeats

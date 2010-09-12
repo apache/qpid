@@ -650,7 +650,6 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     private class QueueLabelProviderImpl extends LabelProvider implements ITableLabelProvider
     {
         @SuppressWarnings("unchecked")
-        @Override
         public String getColumnText(Object element, int columnIndex)
         {
             List<Object> attributes = (List<Object>) element;
@@ -677,8 +676,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
                     return String.valueOf(attributes.get(columnIndex));
             }
         }
-        
-        @Override
+
         public Image getColumnImage(Object element, int columnIndex)
         {
             return null;

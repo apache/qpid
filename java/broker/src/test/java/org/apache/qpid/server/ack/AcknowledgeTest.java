@@ -33,19 +33,19 @@ public class AcknowledgeTest extends InternalBrokerBaseCase
 
     public void testTransactionalSingleAck() throws AMQException
     {
-        _channel.setLocalTransactional();
+        getChannel().setLocalTransactional();
         runMessageAck(1, 1, 1, false, 0);
     }
 
     public void testTransactionalMultiAck() throws AMQException
     {
-        _channel.setLocalTransactional();
+        getChannel().setLocalTransactional();
         runMessageAck(10, 1, 5, true, 5);
     }
 
     public void testTransactionalAckAll() throws AMQException
     {
-        _channel.setLocalTransactional();
+        getChannel().setLocalTransactional();
         runMessageAck(10, 1, 0, true, 0);
     }
 
@@ -70,31 +70,31 @@ public class AcknowledgeTest extends InternalBrokerBaseCase
         checkStoreContents(0);
 
         //Send required messsages to the queue
-        publishMessages(_session, _channel, sendMessageCount);
+        publishMessages(getSession(), getChannel(), sendMessageCount);
 
-        if (_channel.isTransactional())
+        if (getChannel().isTransactional())
         {
-            _channel.commit();
+            getChannel().commit();
         }
 
         //Ensure they are stored
         checkStoreContents(sendMessageCount);
 
         //Check that there are no unacked messages
-        assertEquals("Channel should have no unacked msgs ", 0, _channel.getUnacknowledgedMessageMap().size());
+        assertEquals("Channel should have no unacked msgs ", 0, getChannel().getUnacknowledgedMessageMap().size());
 
         //Subscribe to the queue
-        AMQShortString subscriber = subscribe(_session, _channel, _queue);
+        AMQShortString subscriber = subscribe(getSession(), getChannel(), getQueue());
 
-        _queue.deliverAsync();
+        getQueue().deliverAsync();
 
         //Wait for the messages to be delivered
-        _session.awaitDelivery(sendMessageCount);
+        getSession().awaitDelivery(sendMessageCount);
 
         //Check that they are all waiting to be acknoledged
-        assertEquals("Channel should have unacked msgs", sendMessageCount, _channel.getUnacknowledgedMessageMap().size());
+        assertEquals("Channel should have unacked msgs", sendMessageCount, getChannel().getUnacknowledgedMessageMap().size());
 
-        List<InternalTestProtocolSession.DeliveryPair> messages = _session.getDelivers(_channel.getChannelId(), subscriber, sendMessageCount);
+        List<InternalTestProtocolSession.DeliveryPair> messages = getSession().getDelivers(getChannel().getChannelId(), subscriber, sendMessageCount);
 
         //Double check we received the right number of messages
         assertEquals(sendMessageCount, messages.size());
@@ -103,15 +103,15 @@ public class AcknowledgeTest extends InternalBrokerBaseCase
         assertEquals("First message does not have expected deliveryTag", firstDeliveryTag, messages.get(0).getDeliveryTag());
 
         //Send required Acknowledgement
-        _channel.acknowledgeMessage(acknowledgeDeliveryTag, acknowldegeMultiple);
+        getChannel().acknowledgeMessage(acknowledgeDeliveryTag, acknowldegeMultiple);
 
-        if (_channel.isTransactional())
+        if (getChannel().isTransactional())
         {
-            _channel.commit();
+            getChannel().commit();
         }
 
         // Check Remaining Acknowledgements
-        assertEquals("Channel unacked msgs count incorrect", remainingUnackedMessages, _channel.getUnacknowledgedMessageMap().size());
+        assertEquals("Channel unacked msgs count incorrect", remainingUnackedMessages, getChannel().getUnacknowledgedMessageMap().size());
 
         //Check store contents are also correct.
         checkStoreContents(remainingUnackedMessages);

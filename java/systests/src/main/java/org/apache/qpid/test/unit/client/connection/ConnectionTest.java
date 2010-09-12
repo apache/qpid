@@ -61,7 +61,10 @@ public class ConnectionTest extends QpidBrokerTestCase
         }
         finally
         {
-            conn.close();
+            if(conn != null)
+            {
+                conn.close();
+            }
         }
     }
 

@@ -127,7 +127,7 @@ public class Dump extends Show
                 addShowInformation(hex, ascii, msg, null, false, false, true);
             }
 
-            // Add Content Body seciont
+            // Add Content Body section
             hex.add("Content Body");
             ascii.add("");
             hex.add(Console.ROW_DIVIDER);
@@ -182,12 +182,12 @@ public class Dump extends Show
                             String encStr = new String(encoded, 0, bufsize * 2, DEFAULT_ENCODING);
                             String hexLine = "";
 
-                            int strKength = encStr.length();
-                            for (int c = 0; c < strKength; c++)
+                            int strLength = encStr.length();
+                            for (int c = 0; c < strLength; c++)
                             {
                                 hexLine += encStr.charAt(c);
 
-                                if (c % 2 == 1 && SPACE_BYTES)
+                                if ((c & 1) == 1 && SPACE_BYTES)
                                 {
                                     hexLine += BYTE_SPACER;
                                 }

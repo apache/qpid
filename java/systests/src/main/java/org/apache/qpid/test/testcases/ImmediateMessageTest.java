@@ -78,226 +78,226 @@ public class ImmediateMessageTest extends FrameworkBaseCase
     public void test_QPID_517_ImmediateOkNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // Run the default test sequence over the test circuit checking for no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion(testProps))));
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message is committed succesfully in a transaction when a consumer is connected. */
     public void test_QPID_517_ImmediateOkTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // Send one message with no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion(testProps))));
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
     public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // Disconnect the consumer.
-        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no consumers code, in a transaction, when a consumer is disconnected. */
     public void test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P() throws Exception
     {
         // Ensure transactional sessions are on.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // Disconnect the consumer.
-        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(),  testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no route code, not using transactions, when no outgoing route is connected. */
     public void test_QPID_517_ImmediateFailsNoRouteNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no route code, upon transaction commit, when no outgoing route is connected. */
     public void test_QPID_517_ImmediateFailsNoRouteTxP2P() throws Exception
     {
         // Ensure transactional sessions are on.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message is sent succesfully not using transactions when a consumer is connected. */
     public void test_QPID_517_ImmediateOkNoTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
+        getTestProps().setProperty(PUBSUB_PROPNAME, true);
 
         // Send one message with no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noExceptionsAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noExceptionsAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message is committed succesfully in a transaction when a consumer is connected. */
     public void test_QPID_517_ImmediateOkTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
+        getTestProps().setProperty(PUBSUB_PROPNAME, true);
 
         // Send one message with no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noExceptionsAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noExceptionsAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
     public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
+        getTestProps().setProperty(PUBSUB_PROPNAME, true);
 
         // Use durable subscriptions, so that the route remains open with no subscribers.
-        testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
+        getTestProps().setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
 
         // Disconnect the consumer.
-        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no consumers code, in a transaction, when a consumer is disconnected. */
     public void test_QPID_517_ImmediateFailsConsumerDisconnectedTxPubSub() throws Exception
     {
         // Ensure transactional sessions are on.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
+        getTestProps().setProperty(PUBSUB_PROPNAME, true);
 
         // Use durable subscriptions, so that the route remains open with no subscribers.
-        testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
+        getTestProps().setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
 
         // Disconnect the consumer.
-        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noConsumersAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no route code, not using transactions, when no outgoing route is connected. */
     public void test_QPID_517_ImmediateFailsNoRouteNoTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
+        getTestProps().setProperty(PUBSUB_PROPNAME, true);
 
         // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(getTestProps()))));
     }
 
     /** Check that an immediate message results in no route code, upon transaction commit, when no outgoing route is connected. */
     public void test_QPID_517_ImmediateFailsNoRouteTxPubSub() throws Exception
     {
         // Ensure transactional sessions are on.
-        testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
+        getTestProps().setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
+        getTestProps().setProperty(PUBSUB_PROPNAME, true);
 
         // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+        getTestProps().setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         assertNoFailures(testCircuit.test(1,
-                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));
+                assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(getTestProps()))));
     }
 
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
+        setTestProps(TestContextProperties.getInstance(MessagingTestConfigProperties.defaults));
 
         /** All these tests should have the immediate flag on. */
-        testProps.setProperty(IMMEDIATE_PROPNAME, true);
-        testProps.setProperty(MANDATORY_PROPNAME, false);
+        getTestProps().setProperty(IMMEDIATE_PROPNAME, true);
+        getTestProps().setProperty(MANDATORY_PROPNAME, false);
 
         /** Bind the receivers consumer by default. */
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, true);
-        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, true);
+        getTestProps().setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, true);
+        getTestProps().setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, true);
     }
 }

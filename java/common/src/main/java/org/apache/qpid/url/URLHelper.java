@@ -25,9 +25,9 @@ import java.util.Map;
 
 public class URLHelper
 {
-    public static char DEFAULT_OPTION_SEPERATOR = '&';
-    public static char ALTERNATIVE_OPTION_SEPARATOR = ',';
-    public static char BROKER_SEPARATOR = ';';
+    public static final char DEFAULT_OPTION_SEPERATOR = '&';
+    public static final char ALTERNATIVE_OPTION_SEPARATOR = ',';
+    public static final char BROKER_SEPARATOR = ';';
 
     public static void parseOptions(Map<String, String> optionMap, String options) throws URLSyntaxException
     {

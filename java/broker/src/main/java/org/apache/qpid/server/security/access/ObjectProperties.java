@@ -21,6 +21,7 @@ package org.apache.qpid.server.security.access;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.qpid.framing.AMQShortString;
@@ -288,9 +289,11 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
             return false;
         }
         
-        for (Property key : properties.keySet())
+        for (Map.Entry<Property,String> entry : properties.entrySet())
         {
-            String ruleValue = properties.get(key);
+            Property key = entry.getKey();
+            String ruleValue = entry.getValue();
+            
             String thisValue = get(key);
 
             if (!valueMatches(thisValue, ruleValue)) 

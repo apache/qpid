@@ -299,11 +299,13 @@ public class VirtualHostImpl implements VirtualHost
 
             if (plugins != null)
             {
-                for (String pluginName : plugins.keySet())
+                for (Map.Entry<String, VirtualHostPluginFactory> entry : plugins.entrySet())
                 {
+                    String pluginName = entry.getKey();
+                    VirtualHostPluginFactory factory = entry.getValue();
                     try
                     {
-                        VirtualHostPlugin plugin = plugins.get(pluginName).newInstance(this);
+                        VirtualHostPlugin plugin = factory.newInstance(this);
 
                         // If we had configuration for the plugin the schedule it.
                         if (plugin != null)
@@ -636,8 +638,10 @@ public class VirtualHostImpl implements VirtualHost
                                        final String password)
     {
         BrokerLink blink = new BrokerLink(this, transport, host, port, vhost, durable, authMechanism, username, password);
-        _links.putIfAbsent(blink,blink);
-        getConfigStore().addConfiguredObject(blink);
+        if(_links.putIfAbsent(blink,blink) != null)
+        {
+            getConfigStore().addConfiguredObject(blink);
+        }
     }
 
     public void removeBrokerConnection(final String transport,
@@ -671,7 +675,7 @@ public class VirtualHostImpl implements VirtualHost
      * This is so we can replay the creation of queues/exchanges in to the real _RT after it has been loaded.
      * This should be removed after the _RT has been fully split from the the TL
      */
-    private class StartupRoutingTable implements DurableConfigurationStore
+    private static class StartupRoutingTable implements DurableConfigurationStore
     {
         public List<Exchange> exchange = new LinkedList<Exchange>();
         public List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
@@ -740,7 +744,7 @@ public class VirtualHostImpl implements VirtualHost
         }
 
 
-        private class CreateQueueTuple
+        private static class CreateQueueTuple
         {
             public AMQQueue queue;
             public FieldTable arguments;
@@ -752,7 +756,7 @@ public class VirtualHostImpl implements VirtualHost
             }
         }
 
-        private class CreateBindingTuple
+        private static class CreateBindingTuple
         {
             public AMQQueue queue;
             public FieldTable arguments;

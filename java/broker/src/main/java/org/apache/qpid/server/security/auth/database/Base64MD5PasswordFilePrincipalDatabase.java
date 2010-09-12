@@ -250,10 +250,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             }
             finally
             {
-                if (_userUpdate.isHeldByCurrentThread())
-                {
-                    _userUpdate.unlock();
-                }
+                _userUpdate.unlock();
             }
         }
         catch (Exception e)
@@ -300,10 +297,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
-                _userUpdate.unlock();
-            }
+            _userUpdate.unlock();
         }
     }
 
@@ -335,10 +329,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
-                _userUpdate.unlock();
-            }
+            _userUpdate.unlock();
         }
 
         return true;
@@ -420,10 +411,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
-                _userUpdate.unlock();
-            }
+            _userUpdate.unlock();
         }
     }
 
@@ -567,10 +555,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
-                _userUpdate.unlock();
-            }
+            _userUpdate.unlock();
         }
     }
 

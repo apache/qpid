@@ -82,13 +82,13 @@ public abstract class Type
     @Override
     public boolean equals (Object obj)
     {
-        return getClass() == obj.getClass();
+        return (obj instanceof Type) && getJavaType() == ((Type)obj).getJavaType();
     }
     
     @Override
     public int hashCode ()
     {
-        return getClass().hashCode();
+        return getJavaType().hashCode();
     }
 
     /**

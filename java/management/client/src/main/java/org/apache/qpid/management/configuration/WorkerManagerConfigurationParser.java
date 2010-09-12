@@ -71,6 +71,7 @@ class WorkerManagerConfigurationParser implements IParser
             case MAX_POOL_CAPACITY : 
             {
             	_maxPoolSizeAsString = _currentValue;
+                break;
             }
             case KEEP_ALIVE_TIME: 
             {

@@ -84,7 +84,7 @@ public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
         assertTrue("No new SASL mechanisms added by initialisation.", additions.size() != 0 );
 
         //Close the registry which will perform the close the AuthenticationManager
-        _registry.close();
+        getRegistry().close();
 
         //Validate that the SASL plugFins have been removed.
         Provider[] providersAfterClose = Security.getProviders();

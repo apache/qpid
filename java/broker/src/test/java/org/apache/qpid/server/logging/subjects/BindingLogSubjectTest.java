@@ -33,10 +33,10 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class BindingLogSubjectTest extends AbstractTestLogSubject
 {
 
-    AMQQueue _queue;
-    AMQShortString _routingKey;
-    Exchange _exchange;
-    VirtualHost _testVhost;
+    private AMQQueue _queue;
+    private AMQShortString _routingKey;
+    private Exchange _exchange;
+    private VirtualHost _testVhost;
 
     public void setUp() throws Exception
     {

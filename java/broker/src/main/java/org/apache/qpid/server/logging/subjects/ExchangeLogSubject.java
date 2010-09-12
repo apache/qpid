@@ -35,7 +35,7 @@ public class ExchangeLogSubject extends AbstractLogSubject
      * 1 - Exchange Type
      * 2 - Exchange Name
      */
-    protected static String BINDING_FORMAT = "vh(/{0})/ex({1}/{2})";
+    protected static final String BINDING_FORMAT = "vh(/{0})/ex({1}/{2})";
 
     /** Create an ExchangeLogSubject that Logs in the following format. */
     public ExchangeLogSubject(Exchange exchange, VirtualHost vhost)

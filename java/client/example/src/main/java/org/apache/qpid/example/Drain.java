@@ -100,6 +100,6 @@ public class Drain extends OptionParser
         String u = "Usage: drain [OPTIONS] 'ADDRESS'";
         String d = "Drains messages from the specified address."; 
             
-        Drain drain = new Drain(args,u,d);        
+        new Drain(args,u,d);        
     }
 }

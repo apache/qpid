@@ -26,7 +26,6 @@ import java.util.List;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -101,8 +100,8 @@ public class Receiver extends Client implements MessageListener
     {
     	super(con);
     	reliability = reliability.getReliability(System.getProperty("reliability","exactly_once"));
-    	ssn = con.createSession(transacted,ack_mode);
-    	consumer = ssn.createConsumer(dest);
+    	setSsn(con.createSession(isTransacted(), getAck_mode()));
+    	consumer = getSsn().createConsumer(dest);
     	if (!sync_rcv)
     	{
     		consumer.setMessageListener(this);
@@ -126,8 +125,8 @@ public class Receiver extends Client implements MessageListener
     			Message msg = consumer.receive();
     			handleMessage(msg);
     		}
-    		Thread.sleep(reportFrequency);
-    		System.out.println(df.format(System.currentTimeMillis())
+    		Thread.sleep(getReportFrequency());
+    		System.out.println(getDf().format(System.currentTimeMillis())
     				+ " - messages received : " + msg_count);
     	}
     }
@@ -138,12 +137,12 @@ public class Receiver extends Client implements MessageListener
         {   
             if (m instanceof TextMessage && ((TextMessage) m).getText().equals("End"))
             {
-                MessageProducer temp = ssn.createProducer(m.getJMSReplyTo());
-                Message controlMsg = ssn.createTextMessage();
+                MessageProducer temp = getSsn().createProducer(m.getJMSReplyTo());
+                Message controlMsg = getSsn().createTextMessage();
                 temp.send(controlMsg);
-                if (transacted)
+                if (isTransacted())
                 {
-                    ssn.commit();
+                    getSsn().commit();
                 }
                 temp.close();
             }
@@ -182,9 +181,9 @@ public class Receiver extends Client implements MessageListener
             	}
                 // Please note that this test case doesn't expect duplicates
                 // When testing for transactions.
-            	if (transacted && msg_count % txSize == 0)
+            	if (isTransacted() && msg_count % getTxSize() == 0)
             	{
-            		ssn.commit();
+            		getSsn().commit();
             	}
             }
         }

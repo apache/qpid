@@ -30,7 +30,7 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
     {
         super.setUp();
 
-        _subject = new ConnectionLogSubject(_session);
+        _subject = new ConnectionLogSubject(getSession());
     }
 
     /**
@@ -40,7 +40,7 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
      */
     protected void validateLogStatement(String message)
     {
-        verifyConnection(_session.getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
+        verifyConnection(getSession().getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
     }
 
 }

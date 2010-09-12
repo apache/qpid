@@ -33,7 +33,7 @@ public class QueueLogSubject extends AbstractLogSubject
      * 0 - Virtualhost name
      * 1 - queue name
      */
-    public static String LOG_FORMAT = "vh(/{0})/qu({1})";
+    public static final String LOG_FORMAT = "vh(/{0})/qu({1})";
 
     /** Create an QueueLogSubject that Logs in the following format. */
     public QueueLogSubject(AMQQueue queue)

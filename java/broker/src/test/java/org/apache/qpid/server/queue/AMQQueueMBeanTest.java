@@ -34,7 +34,6 @@ import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -145,7 +144,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
     private void verifyBrokerState()
     {
 
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore)_virtualHost.getMessageStore();
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) getVirtualHost().getMessageStore();
 
         // Unlike MessageReturnTest there is no need for a delay as there this thread does the clean up.
 
@@ -155,19 +154,19 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
     public void testConsumerCount() throws AMQException
     {
 
-        assertTrue(_queue.getActiveConsumerCount() == 0);
+        assertTrue(getQueue().getActiveConsumerCount() == 0);
         assertTrue(_queueMBean.getActiveConsumerCount() == 0);
 
 
-        InternalTestProtocolSession protocolSession = new InternalTestProtocolSession(_virtualHost);
+        InternalTestProtocolSession protocolSession = new InternalTestProtocolSession(getVirtualHost());
 
-        AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore);
+        AMQChannel channel = new AMQChannel(protocolSession, 1, getMessageStore());
         protocolSession.addChannel(channel);
 
         Subscription subscription =
                 SUBSCRIPTION_FACTORY.createSubscription(channel.getChannelId(), protocolSession, new AMQShortString("test"), false, null, false, channel.getCreditManager());
 
-        _queue.registerSubscription(subscription, false);
+        getQueue().registerSubscription(subscription, false);
         assertEquals(1,(int)_queueMBean.getActiveConsumerCount());
 
 
@@ -187,8 +186,8 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
                                                                  null,
                                                                  true,
                 channel.getCreditManager());
-        _queue.registerSubscription(s1,false);
-        _queue.registerSubscription(s2,false);
+        getQueue().registerSubscription(s1,false);
+        getQueue().registerSubscription(s2,false);
         assertTrue(_queueMBean.getActiveConsumerCount() == 3);
         assertTrue(_queueMBean.getConsumerCount() == 3);
 
@@ -215,10 +214,10 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         //set+get exclusivity using the mbean, and also verify it is actually updated in the queue
         _queueMBean.setExclusive(true);
         assertTrue("Exclusive property should be true.",_queueMBean.isExclusive());
-        assertTrue("Exclusive property should be true.",_queue.isExclusive());
+        assertTrue("Exclusive property should be true.", getQueue().isExclusive());
         _queueMBean.setExclusive(false);
         assertFalse("Exclusive property should be false.",_queueMBean.isExclusive());
-        assertFalse("Exclusive property should be false.",_queue.isExclusive());
+        assertFalse("Exclusive property should be false.", getQueue().isExclusive());
     }
 
     public void testExceptions() throws Exception
@@ -266,12 +265,12 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         }
 
         IncomingMessage msg = message(false, false);
-        _queue.clearQueue();
+        getQueue().clearQueue();
         ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
-        qs.add(_queue);
+        qs.add(getQueue());
         msg.enqueue(qs);
         MessageMetaData mmd = msg.headersReceived();
-        msg.setStoredMessage(_messageStore.addMessage(mmd));
+        msg.setStoredMessage(getMessageStore().addMessage(mmd));
         long id = msg.getMessageNumber();
 
         msg.addContentBodyFrame(new ContentChunk()
@@ -356,8 +355,8 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         }
         
         //create a channel and use it to exercise the capacity check mechanism
-        AMQChannel channel = new AMQChannel(_session, 1, _messageStore);
-        _queue.checkCapacity(channel);
+        AMQChannel channel = new AMQChannel(getSession(), 1, getMessageStore());
+        getQueue().checkCapacity(channel);
         
         assertTrue(_queueMBean.isFlowOverfull());
         assertTrue(channel.getBlocking());
@@ -416,7 +415,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
     {
         super.setUp();
 
-        _queueMBean = new AMQQueueMBean(_queue);
+        _queueMBean = new AMQQueueMBean(getQueue());
     }
 
     public void tearDown()
@@ -430,16 +429,16 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         {
             IncomingMessage currentMessage = message(false, persistent);
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
-            qs.add(_queue);
+            qs.add(getQueue());
             currentMessage.enqueue(qs);
 
             // route header
             MessageMetaData mmd = currentMessage.headersReceived();
-            currentMessage.setStoredMessage(_messageStore.addMessage(mmd));
+            currentMessage.setStoredMessage(getMessageStore().addMessage(mmd));
 
             // Add the body so we have somthing to test later
             currentMessage.addContentBodyFrame(
-                    _session.getMethodRegistry()
+                    getSession().getMethodRegistry()
                                                        .getProtocolVersionMethodConverter()
                                                        .convertToContentChunk(
                                                        new ContentBody(ByteBuffer.allocate((int) MESSAGE_SIZE),

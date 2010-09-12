@@ -236,7 +236,7 @@ public final class JMSHeaderAdapter
             }
             else
             {
-                f = Float.valueOf(null);
+                throw new NullPointerException("No such property: " + string);
             }
 
         }

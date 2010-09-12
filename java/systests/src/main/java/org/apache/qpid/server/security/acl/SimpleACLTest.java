@@ -46,7 +46,7 @@ import org.apache.qpid.url.URLSyntaxException;
  * 
  * These tests require an access control security plugin to be configured in the broker, and carry out various broker
  * operations that will succeed or fail depending on the user and virtual host. See the {@code config-systests-acl-setup.xml}
- * configuration file for the {@link SimpleXML} version of the ACLs used by the Java broker only, or the various {@code .txt}
+ * configuration file for the SimpleXML version of the ACLs used by the Java broker only, or the various {@code .txt}
  * files in the system tests directory for the external version 3 ACL files used by both the Java and C++ brokers.
  * <p>
  * This class can be extended and the {@link #getConfig()} method overridden to run the same tests with a different type

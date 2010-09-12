@@ -56,10 +56,8 @@ public class Commandviewcontent extends CommandImpl
 
     public void viewcontent()
     {
-        Set set = null;
-        Object temp[] = { null };
         objname.setQueryString(getObject(), getName(), getVirtualhost());
-        set = objname.returnObjects();
+        Set set = objname.returnObjects();
         String temp_header = "", header = "", message_data = "", encoding = null;
 
         if (objname.getSet().size() != 0)

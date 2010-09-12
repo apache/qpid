@@ -70,9 +70,9 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
         return FACTORY_INSTANCE;
     }
 
-	public static int CLASS_ID =  $clazz.ClassId; 
+    public static final int CLASS_ID =  $clazz.ClassId; 
     
-    public static int METHOD_ID = $method.MethodId; 
+    public static final int METHOD_ID = $method.MethodId; 
     
 
 	
@@ -196,7 +196,11 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
         StringBuilder buf = new StringBuilder("[$javaClassName: ");
 #foreach( $field in $method.FieldList )
         buf.append( "$field.Name=" );
-		buf.append( get#toUpperCamel( $field.Name )() );
+#if( $field.NativeType == "byte[]" )
+		buf.append(  get#toUpperCamel( $field.Name )() == null  ? "null" : java.util.Arrays.toString( get#toUpperCamel( $field.Name )() ) );
+#else
+		buf.append(  get#toUpperCamel( $field.Name )() );
+#end
 #if( $velocityCount	!= $method.FieldList.size() )
 		buf.append( ", " );		
 #end		

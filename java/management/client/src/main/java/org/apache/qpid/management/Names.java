@@ -28,39 +28,39 @@ import javax.xml.namespace.QName;
  */
 public abstract class Names
 {
-    public static String MANAGEMENT_EXCHANGE = "qpid.management";    
-    public static String MANAGEMENT_ROUTING_KEY = "console.#";
+    public static final String MANAGEMENT_EXCHANGE = "qpid.management";
+    public static final String MANAGEMENT_ROUTING_KEY = "console.#";
    
-    public static String MANAGEMENT_QUEUE_PREFIX = "management.";
-    public static String METHOD_REPLY_QUEUE_PREFIX = "reply.";
+    public static final String MANAGEMENT_QUEUE_PREFIX = "management.";
+    public static final String METHOD_REPLY_QUEUE_PREFIX = "reply.";
    
-    public static String AMQ_DIRECT_QUEUE = "amq.direct";
-    public static String AGENT_ROUTING_KEY_PREFIX = "agent.";
-    public static String AGENT_ROUTING_KEY = AGENT_ROUTING_KEY_PREFIX+"1.0";
+    public static final String AMQ_DIRECT_QUEUE = "amq.direct";
+    public static final String AGENT_ROUTING_KEY_PREFIX = "agent.";
+    public static final String AGENT_ROUTING_KEY = AGENT_ROUTING_KEY_PREFIX+"1.0";
 
-    public static String APPLICATION_NAME ="Q-Man";
+    public static final String APPLICATION_NAME ="Q-Man";
     
     // Attributes
-    public static String PACKAGE = "package";
-    public static String CLASS = "class";
-    public static String EVENT = "event";
-    public static String OBJECT_ID="objectId";    
-    public static String BROKER_ID = "brokerId";
-    public static String DOMAIN_NAME = "Q-MAN";
+    public static final String PACKAGE = "package";
+    public static final String CLASS = "class";
+    public static final String EVENT = "event";
+    public static final String OBJECT_ID="objectId";
+    public static final String BROKER_ID = "brokerId";
+    public static final String DOMAIN_NAME = "Q-MAN";
         
-    public static String ARG_COUNT_PARAM_NAME = "argCount";
-    public static String DEFAULT_PARAM_NAME ="default";
+    public static final String ARG_COUNT_PARAM_NAME = "argCount";
+    public static final String DEFAULT_PARAM_NAME ="default";
     
-    public static String NUMBER_VALIDATOR = "org.apache.qpid.management.domain.model.QpidProperty$NumberValidator";
-    public static String STRING_VALIDATOR = "org.apache.qpid.management.domain.model.QpidProperty$StringValidator";
+    public static final String NUMBER_VALIDATOR = "org.apache.qpid.management.domain.model.QpidProperty$NumberValidator";
+    public static final String STRING_VALIDATOR = "org.apache.qpid.management.domain.model.QpidProperty$StringValidator";
     
-    public static String QMAN_CONFIG_OPTION_NAME = "qman-config";
+    public static final String QMAN_CONFIG_OPTION_NAME = "qman-config";
     
-    public static String ADD_BROKER_OPERATION_NAME = "addBroker";
+    public static final String ADD_BROKER_OPERATION_NAME = "addBroker";
     
-    public static String NOT_AVAILABLE = "N.A.";
+    public static final String NOT_AVAILABLE = "N.A.";
     
-    public static ObjectName QPID_EMULATOR_OBJECT_NAME;
+    public static final ObjectName QPID_EMULATOR_OBJECT_NAME;
     static 
     {
 	    try 
@@ -77,7 +77,7 @@ public abstract class Names
 	    }
     }    
     
-    public static ObjectName QMAN_OBJECT_NAME;
+    public static final ObjectName QMAN_OBJECT_NAME;
     static 
     {
 	    try 
@@ -95,11 +95,11 @@ public abstract class Names
     }
     
     // WSDM Stuff
-    public static String NAMESPACE_URI = "http://amqp.apache.org/qpid/management/qman";
+    public static final String NAMESPACE_URI = "http://amqp.apache.org/qpid/management/qman";
     public final static String PREFIX = "qman";
 
-    public static String ADDRESSING_URI = "http://amqp.apache.org/qpid/management/qman/addressing";
-    public static String ADDRESSING_PREFIX = "qman-wsa";
+    public static final String ADDRESSING_URI = "http://amqp.apache.org/qpid/management/qman/addressing";
+    public static final String ADDRESSING_PREFIX = "qman-wsa";
     
     public static final QName RESOURCE_ID_QNAME = new QName(
     		ADDRESSING_URI, 

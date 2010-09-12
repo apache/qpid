@@ -20,11 +20,7 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 
@@ -64,7 +60,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
      */
     public void testConnection() throws Exception
     {
-        _configXml.setProperty("status-updates", "ON");
+        getConfigXml().setProperty("status-updates", "ON");
 
         super.createBroker();
 
@@ -94,7 +90,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
 
     public void testConnectionLoggingOff() throws Exception, AMQException
     {
-        _configXml.setProperty("status-updates", "OFF");
+        getConfigXml().setProperty("status-updates", "OFF");
 
         // Start the broker now.
         super.createBroker();

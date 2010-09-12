@@ -69,7 +69,7 @@ public class OptionParser
     
     
     protected Map<String,Object> optMap = new HashMap<String,Object>();
-    protected static List<Option> optDefs = new ArrayList<Option>();
+    protected static final List<Option> optDefs = new ArrayList<Option>();
     
     protected String usage;
     protected String desc;

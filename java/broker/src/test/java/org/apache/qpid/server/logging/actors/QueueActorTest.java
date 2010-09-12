@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.AMQException;
-
 import java.util.List;
 
 public class QueueActorTest extends BaseConnectionActorTestCase
@@ -35,7 +29,7 @@ public class QueueActorTest extends BaseConnectionActorTestCase
     public void createBroker() throws Exception
     {
         super.createBroker();
-        _amqpActor = new QueueActor(_queue, _rootLogger);
+        _amqpActor = new QueueActor(getQueue(), _rootLogger);
     }
 
     /**

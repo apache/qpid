@@ -361,19 +361,21 @@ class MBeanIntrospector {
      */
     private static MBeanConstructorInfo getMBeanConstructorInfo(Constructor cons)
     {
-        String desc = null;
+        String desc = _defaultConstructorDescription;
         Annotation anno = cons.getAnnotation(MBeanConstructor.class);
         if (anno != null && MBeanConstructor.class.isInstance(anno))
         {
             desc = MBeanConstructor.class.cast(anno).value();
+            if(desc == null)
+            {
+                desc = _defaultConstructorDescription;
+            }
         }
 
         //MBeanParameterInfo[] paramsInfo = getParametersInfo(cons.getParameterAnnotations(),
         //                                                    cons.getParameterTypes());
 
-        return new MBeanConstructorInfo(cons.getName(),
-                                        desc != null ? _defaultConstructorDescription : desc ,
-                                        null);
+        return new MBeanConstructorInfo(cons.getName(), desc, null);
     }
 
     /**

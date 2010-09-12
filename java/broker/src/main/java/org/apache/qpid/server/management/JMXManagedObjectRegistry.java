@@ -326,7 +326,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
      * made using the object reference will not be affected and continue to operate normally.
      */
     
-    private class CustomRMIServerSocketFactory implements RMIServerSocketFactory
+    private static class CustomRMIServerSocketFactory implements RMIServerSocketFactory
     {
 
         public ServerSocket createServerSocket(int port) throws IOException
@@ -334,7 +334,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             return new NoLocalAddressServerSocket(port);
         }
 
-        private class NoLocalAddressServerSocket extends ServerSocket
+        private static class NoLocalAddressServerSocket extends ServerSocket
         {
             NoLocalAddressServerSocket(int port) throws IOException
             {
@@ -350,7 +350,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
         }
 
-        private class NoLocalAddressSocket extends Socket
+        private static class NoLocalAddressSocket extends Socket
         {
             @Override
             public InetAddress getInetAddress()

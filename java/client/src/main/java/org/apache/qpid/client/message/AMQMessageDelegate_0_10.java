@@ -579,7 +579,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
         else
         {
-            return Float.valueOf(null);
+            throw new NullPointerException("No such property: " + propertyName);
         }
 
     }

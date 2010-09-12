@@ -382,7 +382,7 @@ private static final byte[] AMQP_0_9_1_HEADER =
                 {
                     _networkDriver.send(ByteBuffer.wrap(newestSupported));
 
-                    newDelegate = new ClosedDelegateProtocolEngine();
+                    _delegate = new ClosedDelegateProtocolEngine();
                 }
                 else
                 {
