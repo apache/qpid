@@ -61,8 +61,6 @@ public class TransportBuilder
     
     public void buildReceiverPipe(Receiver<ProtocolEvent> delegate)
     {
-        ConnectionSettings settings = con.getConnectionSettings();
-        
         Receiver<ByteBuffer> receiver = new InputHandler(new Assembler(delegate));
         
         // Security layer 

@@ -48,12 +48,8 @@ public class ManagedQueueTest extends TestCase
         {
             StandardMBean mbean = new StandardMBean(impl, ManagedQueue.class);
             
-            List<String> attributeList = new ArrayList<String>();
-            for(String attr : ManagedQueue.QUEUE_ATTRIBUTES)
-            {
-                attributeList.add(attr);
-            }
-            
+            List<String> attributeList = ManagedQueue.QUEUE_ATTRIBUTES;
+
             //retrieve the attributes from the constructed MBeanInfo
             MBeanAttributeInfo[] attributes = mbean.getMBeanInfo().getAttributes();
 

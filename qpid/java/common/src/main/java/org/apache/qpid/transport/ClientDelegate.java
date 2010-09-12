@@ -52,14 +52,21 @@ public class ClientDelegate extends ConnectionDelegate
     private static final Logger log = Logger.get(ClientDelegate.class);
 
     private static final String KRB5_OID_STR = "1.2.840.113554.1.2.2";
-    protected static Oid KRB5_OID;
+    protected static final Oid KRB5_OID;
 
     static
     {
+        Oid oid;
         try
         {
-            KRB5_OID = new Oid(KRB5_OID_STR);
-        } catch (GSSException ignore) {}
+            oid = new Oid(KRB5_OID_STR);
+        }
+        catch (GSSException ignore)
+        {
+            oid = null;
+        }
+
+        KRB5_OID = oid;
     }
 
     private List<String> clientMechs;

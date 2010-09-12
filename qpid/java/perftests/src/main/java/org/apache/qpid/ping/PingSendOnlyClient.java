@@ -67,7 +67,7 @@ public class PingSendOnlyClient extends PingDurableClient
             // pingProducer.getConnection().setExceptionListener(pingProducer);
 
             // Run the test procedure.
-            int sent = pingProducer.send();
+            pingProducer.send();
             pingProducer.waitForUser("Press return to close connection and quit.");
             pingProducer.closeConnection();
 

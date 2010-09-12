@@ -59,20 +59,12 @@ public abstract class AbstractTestLogSubject extends InternalBrokerBaseCase
     protected Configuration _config = new PropertiesConfiguration();
     protected LogSubject _subject = null;
 
-    AMQProtocolSession _session;
-
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
         _config.setProperty(ServerConfiguration.STATUS_UPDATES, "ON");
-
-        VirtualHost virtualHost = ApplicationRegistry.getInstance().
-                getVirtualHostRegistry().getVirtualHosts().iterator().next();
-
-        // Create a single session for this test.
-        _session = new InternalTestProtocolSession(virtualHost);
     }
 
 

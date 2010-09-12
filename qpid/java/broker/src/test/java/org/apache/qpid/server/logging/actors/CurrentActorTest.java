@@ -77,7 +77,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
         // we remove the session actor and so all is good.
         stopBroker();
         
-        AMQPConnectionActor connectionActor = new AMQPConnectionActor(_session,
+        AMQPConnectionActor connectionActor = new AMQPConnectionActor(getSession(),
                                                                       new NullRootMessageLogger());
 
         /*
@@ -104,7 +104,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
          *
          */
 
-        AMQChannel channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
+        AMQChannel channel = new AMQChannel(getSession(), 1, getSession().getVirtualHost().getMessageStore());
 
         AMQPChannelActor channelActor = new AMQPChannelActor(channel,
                                                              new NullRootMessageLogger());
@@ -228,7 +228,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
             try
             {
 
-                AMQPConnectionActor actor = new AMQPConnectionActor(_session,
+                AMQPConnectionActor actor = new AMQPConnectionActor(getSession(),
                                                                     new NullRootMessageLogger());
 
                 CurrentActor.set(actor);

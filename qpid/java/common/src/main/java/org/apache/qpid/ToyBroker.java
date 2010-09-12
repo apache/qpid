@@ -107,6 +107,7 @@ class ToyBroker extends SessionDelegate
         {
             System.out.println("received headers routing_key " + props.getRoutingKey());
         }
+
         MessageProperties mp = header.get(MessageProperties.class);
         System.out.println("MP: " + mp);
         if (mp != null)
@@ -114,7 +115,7 @@ class ToyBroker extends SessionDelegate
             System.out.println(mp.getApplicationHeaders());
         }
 
-        if (exchange.route(dest,props.getRoutingKey(),xfr))
+        if (exchange.route(dest,props == null ? null : props.getRoutingKey(),xfr))
         {
             System.out.println("queued " + xfr);
             dispatchMessages(ssn);
@@ -165,10 +166,19 @@ class ToyBroker extends SessionDelegate
     // ugly, but who cares :)
     // assumes unit is always no of messages, not bytes
     // assumes it's credit mode and not window
-    private class Consumer
+    private static class Consumer
     {
         long _credit;
         String _queueName;
+    }
+
+    private static final class ToyBrokerSession extends Session
+    {
+
+        public ToyBrokerSession(Connection connection, Binary name, long expiry, ToyExchange exchange)
+        {
+            super(connection, new ToyBroker(exchange), name, expiry);
+        }
     }
 
     public static final void main(String[] args) throws IOException
@@ -176,10 +186,20 @@ class ToyBroker extends SessionDelegate
         final ToyExchange exchange = new ToyExchange();
         ConnectionDelegate delegate = new ServerDelegate()
         {
-            public SessionDelegate getSessionDelegate()
+            @Override
+            public void init(Connection conn, ProtocolHeader hdr)
             {
-                return new ToyBroker(exchange);
+                conn.setSessionFactory(new Connection.SessionFactory()
+                {
+                    public Session newSession(Connection conn, Binary name, long expiry)
+                    {
+                        return new ToyBrokerSession(conn, name, expiry, exchange);
+                    }
+                });
+
+                super.init(conn, hdr);    //To change body of overridden methods use File | Settings | File Templates.
             }
+
         };
 
         MinaHandler.accept("0.0.0.0", 5672, delegate);

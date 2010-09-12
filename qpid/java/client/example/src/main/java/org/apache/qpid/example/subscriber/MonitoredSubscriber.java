@@ -33,7 +33,7 @@ public class MonitoredSubscriber extends Subscriber
 
     private static final Logger _logger = LoggerFactory.getLogger(MonitoredSubscriber.class);
 
-    private static MessageConsumer _monitorConsumer;
+    private MessageConsumer _monitorConsumer;
 
     public MonitoredSubscriber()
     {
@@ -107,7 +107,7 @@ public class MonitoredSubscriber extends Subscriber
 
             MonitoredSubscriber._logger.info("Starting monitored subscription ...");
 
-            MonitoredSubscriber._connection.start();
+            _connection.start();
 
             //and now start ordinary consumption too
             subscribe();

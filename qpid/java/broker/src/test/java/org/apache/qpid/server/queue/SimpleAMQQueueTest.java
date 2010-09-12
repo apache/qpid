@@ -236,7 +236,6 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
            ex = e;
         }
         assertNotNull(ex);
-        assertTrue(ex instanceof AMQException);
 
         // Check we cannot add an exclusive subscriber to a queue with an
         // existing subscription

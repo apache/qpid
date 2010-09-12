@@ -93,10 +93,10 @@ public class Sender extends Client
        this.msg_count = Integer.getInteger("msg_count", 10);
        this.iterations = Integer.getInteger("iterations", -1);
        this.sleep_time = Long.getLong("sleep_time", 1000);
-       this.ssn = con.createSession(transacted,Session.AUTO_ACKNOWLEDGE);
+       this.setSsn(con.createSession(isTransacted(),Session.AUTO_ACKNOWLEDGE));
        this.dest = dest;
-       this.producer = ssn.createProducer(dest);
-       this.replyTo = ssn.createTemporaryQueue();
+       this.producer = getSsn().createProducer(dest);
+       this.replyTo = getSsn().createTemporaryQueue();
        
        System.out.println("Sending messages to : " + dest);
     }
@@ -108,11 +108,11 @@ public class Sender extends Client
     protected Message getNextMessage() throws Exception
     {
         int s =  msg_size == -1 ? 500 + gen.nextInt(1000) : msg_size;
-        Message msg = (contentType.equals("text/plain")) ?
-                MessageFactory.createTextMessage(ssn, s):
-                MessageFactory.createBytesMessage(ssn, s);
+        Message msg = (getContentType().equals("text/plain")) ?
+                MessageFactory.createTextMessage(getSsn(), s):
+                MessageFactory.createBytesMessage(getSsn(), s);
                 
-       msg.setJMSDeliveryMode((durable) ? DeliveryMode.PERSISTENT
+       msg.setJMSDeliveryMode((isDurable()) ? DeliveryMode.PERSISTENT
 				: DeliveryMode.NON_PERSISTENT);
        return msg;
     }
@@ -125,10 +125,10 @@ public class Sender extends Client
 			for (int x=0; infinite || x < iterations; x++)
 			{
 				long now = System.currentTimeMillis();
-			    if (now - startTime >= reportFrequency)
+			    if (now - getStartTime() >= getReportFrequency())
 			    {
 			    	System.out.println(df.format(now) + " - iterations : " + x);
-			    	startTime = now;
+			    	setStartTime(now);
 			    }
 			    
 			    for (int i = 0; i < msg_count; i++)
@@ -136,26 +136,26 @@ public class Sender extends Client
 			        Message msg = getNextMessage();
 			        msg.setIntProperty("sequence",i);
 			        producer.send(msg);
-			        if (transacted && msg_count % txSize == 0)
+			        if (isTransacted() && msg_count % getTxSize() == 0)
 			        {
-			        	ssn.commit();
+			        	getSsn().commit();
 			        }
 			    }
-			    TextMessage m = ssn.createTextMessage("End");
+			    TextMessage m = getSsn().createTextMessage("End");
 			    m.setJMSReplyTo(replyTo);
 			    producer.send(m);
 
-			    if (transacted)
+			    if (isTransacted())
 			    {
-			        ssn.commit();
+			        getSsn().commit();
 			    }
 
-			    MessageConsumer feedbackConsumer = ssn.createConsumer(replyTo);
+			    MessageConsumer feedbackConsumer = getSsn().createConsumer(replyTo);
 			    feedbackConsumer.receive();
 			    feedbackConsumer.close();
-			    if (transacted)
+			    if (isTransacted())
 			    {
-			        ssn.commit();
+			        getSsn().commit();
 			    }
 			    Thread.sleep(sleep_time);
 			}

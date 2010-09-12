@@ -185,7 +185,7 @@ public class QMFMessage implements ServerMessage, InboundMessage, AMQMessageHead
         return len;
     }
 
-    private class QMFMessageReference extends MessageReference<QMFMessage>
+    private static class QMFMessageReference extends MessageReference<QMFMessage>
     {
         public QMFMessageReference(QMFMessage message)
         {

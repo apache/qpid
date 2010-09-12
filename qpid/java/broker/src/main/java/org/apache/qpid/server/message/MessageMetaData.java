@@ -110,7 +110,6 @@ public class MessageMetaData implements StorableMessageMetaData
 
     public int getStorableSize()
     {
-        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) (_contentHeaderBody.properties);
         int size = _contentHeaderBody.getSize();
         size += 4;
         size += EncodingUtils.encodedShortStringLength(_messagePublishInfo.getExchange());

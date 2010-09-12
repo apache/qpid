@@ -71,8 +71,15 @@ final class QpidPackage
         @Override
         public boolean equals (Object obj)
         {
-            QpidClassIdentity identity = (QpidClassIdentity) obj;
-            return name.equals(identity.name) && hash.equals(identity.hash);
+            if(obj instanceof QpidClassIdentity)
+            {
+                QpidClassIdentity identity = (QpidClassIdentity) obj;
+                return name.equals(identity.name) && hash.equals(identity.hash);
+            }
+            else
+            {
+                return false;
+            }
         }
     }
     

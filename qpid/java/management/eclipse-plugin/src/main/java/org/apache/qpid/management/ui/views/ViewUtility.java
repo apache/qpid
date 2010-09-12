@@ -271,7 +271,7 @@ public class ViewUtility
         List objectData = (List)compositeHolder.getData();
         if (objectData == null || objectData.isEmpty())
         {
-            //          TODO
+           //          TODO
         }
 
         // Get the index of record to be shown.

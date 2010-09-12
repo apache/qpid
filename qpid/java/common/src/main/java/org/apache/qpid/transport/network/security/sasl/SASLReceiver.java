@@ -41,20 +41,18 @@ public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> 
         this.delegate = delegate;
     }
     
-    @Override
     public void closed() 
     {
         delegate.closed();
     }
 
-    @Override
+
     public void exception(Throwable t) 
     {
-        delegate.equals(t);
+        delegate.exception(t);
     }
 
-    @Override
-    public void received(ByteBuffer buf) 
+    public void received(ByteBuffer buf)
     {
         if (isSecurityLayerEstablished())
         {

@@ -87,12 +87,12 @@ public class TTLTest extends FrameworkBaseCase
         List<Message> receivedMessages = new LinkedList<Message>();
 
         // Set up the test properties to match the test case requirements.
-        testProps.setProperty(ACK_MODE_PROPNAME, Session.AUTO_ACKNOWLEDGE);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
+        getTestProps().setProperty(ACK_MODE_PROPNAME, Session.AUTO_ACKNOWLEDGE);
+        getTestProps().setProperty(PUBSUB_PROPNAME, false);
 
         // Create the test circuit from the test configuration parameters.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), getTestProps());
 
         // This test case assumes it is using a local circuit.
         LocalCircuitImpl localCircuit = (LocalCircuitImpl) testCircuit;
@@ -122,9 +122,12 @@ public class TTLTest extends FrameworkBaseCase
         // those received should have avoided being purged by the TTL.
         boolean timedOut = false;
 
-        while (!timedOut)
+
+        Message testMessage = null;
+
+        do
         {
-            Message testMessage = consumer.receive(1000);
+            testMessage = consumer.receive(1000);
 
             long ttl = testMessage.getLongProperty("testTTL");
             long timeStamp = testMessage.getJMSTimestamp();
@@ -140,7 +143,7 @@ public class TTLTest extends FrameworkBaseCase
             {
                 receivedMessages.add(testMessage);
             }*/
-        }
+        } while (!timedOut && testMessage != null);
 
         // Check that the queue and message store on the broker are empty.
         // assertTrue("Message store is not empty.", messageStoreEmpty.apply());

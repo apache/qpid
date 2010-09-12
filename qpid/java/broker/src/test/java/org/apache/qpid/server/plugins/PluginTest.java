@@ -34,13 +34,13 @@ public class PluginTest extends InternalBrokerBaseCase
     @Override
     public void configure()
     {
-        _configuration.getConfig().addProperty("plugin-directory", PLUGIN_DIRECTORY);
-        _configuration.getConfig().addProperty("cache-directory", CACHE_DIRECTORY);
+        getConfiguration().getConfig().addProperty("plugin-directory", PLUGIN_DIRECTORY);
+        getConfiguration().getConfig().addProperty("cache-directory", CACHE_DIRECTORY);
     }
 
     public void disabled_testLoadExchanges() throws Exception
     {
-        PluginManager manager = _registry.getPluginManager();
+        PluginManager manager = getRegistry().getPluginManager();
         Map<String, ExchangeType<?>> exchanges = manager.getExchanges();
         assertNotNull("No exchanges found in " + PLUGIN_DIRECTORY, exchanges);
         assertEquals("Wrong number of exchanges found in " + PLUGIN_DIRECTORY, 2, exchanges.size());

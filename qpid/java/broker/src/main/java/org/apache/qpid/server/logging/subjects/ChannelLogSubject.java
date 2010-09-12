@@ -36,7 +36,7 @@ public class ChannelLogSubject extends AbstractLogSubject
      * 3 - Virtualhost
      * 4 - Channel ID
      */
-    public static String CHANNEL_FORMAT = ConnectionLogSubject.CONNECTION_FORMAT
+    public static final String CHANNEL_FORMAT = ConnectionLogSubject.CONNECTION_FORMAT
                                              + "/ch:{4}";
 
     public ChannelLogSubject(AMQChannel channel)

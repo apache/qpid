@@ -55,14 +55,14 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
      */
     public void testMessageCountAlert() throws Exception
     {
-        _session = new InternalTestProtocolSession(_virtualHost);
-        AMQChannel channel = new AMQChannel(_session, 2, _messageStore);
-        _session.addChannel(channel);
+        setSession(new InternalTestProtocolSession(getVirtualHost()));
+        AMQChannel channel = new AMQChannel(getSession(), 2, getMessageStore());
+        getSession().addChannel(channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue1"), false, new AMQShortString("AMQueueAlertTest"),
+        setQueue(AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue1"), false, new AMQShortString("AMQueueAlertTest"),
                               false, false,
-                              _virtualHost, null);
-        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
+                getVirtualHost(), null));
+        _queueMBean = (AMQQueueMBean) getQueue().getManagedObject();
 
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
 
@@ -83,14 +83,14 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
      */
     public void testMessageSizeAlert() throws Exception
     {
-        _session = new InternalTestProtocolSession(_virtualHost);
-        AMQChannel channel = new AMQChannel(_session, 2, _messageStore);
-        _session.addChannel(channel);
+        setSession(new InternalTestProtocolSession(getVirtualHost()));
+        AMQChannel channel = new AMQChannel(getSession(), 2, getMessageStore());
+        getSession().addChannel(channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue2"), false, new AMQShortString("AMQueueAlertTest"),
+        setQueue(AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue2"), false, new AMQShortString("AMQueueAlertTest"),
                               false, false,
-                              _virtualHost, null);
-        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
+                getVirtualHost(), null));
+        _queueMBean = (AMQQueueMBean) getQueue().getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageSize(MAX_MESSAGE_SIZE);
 
@@ -113,18 +113,18 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
      */
     public void testQueueDepthAlertNoSubscriber() throws Exception
     {
-        _session = new InternalTestProtocolSession(_virtualHost);
-        AMQChannel channel = new AMQChannel(_session, 2, _messageStore);
-        _session.addChannel(channel);
+        setSession(new InternalTestProtocolSession(getVirtualHost()));
+        AMQChannel channel = new AMQChannel(getSession(), 2, getMessageStore());
+        getSession().addChannel(channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue3"), false, new AMQShortString("AMQueueAlertTest"),
+        setQueue(AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue3"), false, new AMQShortString("AMQueueAlertTest"),
                               false, false,
-                              _virtualHost, null);
-        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
+                getVirtualHost(), null));
+        _queueMBean = (AMQQueueMBean) getQueue().getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
 
-        while (_queue.getQueueDepth() < MAX_QUEUE_DEPTH)
+        while (getQueue().getQueueDepth() < MAX_QUEUE_DEPTH)
         {
             sendMessages(channel, 1, MAX_MESSAGE_SIZE);
         }
@@ -146,14 +146,14 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
      */
     public void testMessageAgeAlert() throws Exception
     {
-        _session = new InternalTestProtocolSession(_virtualHost);
-        AMQChannel channel = new AMQChannel(_session, 2, _messageStore);
-        _session.addChannel(channel);
+        setSession(new InternalTestProtocolSession(getVirtualHost()));
+        AMQChannel channel = new AMQChannel(getSession(), 2, getMessageStore());
+        getSession().addChannel(channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue4"), false, new AMQShortString("AMQueueAlertTest"),
+        setQueue(AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue4"), false, new AMQShortString("AMQueueAlertTest"),
                               false, false,
-                              _virtualHost, null);
-        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
+                getVirtualHost(), null));
+        _queueMBean = (AMQQueueMBean) getQueue().getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageAge(MAX_MESSAGE_AGE);
 
@@ -179,18 +179,18 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
     */
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
-        AMQChannel channel = new AMQChannel(_session, 2, _messageStore);
-        _session.addChannel(channel);
+        AMQChannel channel = new AMQChannel(getSession(), 2, getMessageStore());
+        getSession().addChannel(channel);
 
         // Create queue
-        _queue = getNewQueue();
+        setQueue(getNewQueue());
         Subscription subscription =
-                SUBSCRIPTION_FACTORY.createSubscription(channel.getChannelId(), _session, new AMQShortString("consumer_tag"), true, null, false, channel.getCreditManager());
+                SUBSCRIPTION_FACTORY.createSubscription(channel.getChannelId(), getSession(), new AMQShortString("consumer_tag"), true, null, false, channel.getCreditManager());
 
-        _queue.registerSubscription(
+        getQueue().registerSubscription(
                 subscription, false);
 
-        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
+        _queueMBean = (AMQQueueMBean) getQueue().getManagedObject();
         _queueMBean.setMaximumMessageCount(9999l);   // Set a high value, because this is not being tested
         _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
 
@@ -207,7 +207,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
 
         // Kill the subscriber and check for the queue depth values.
         // Messages are unacknowledged, so those should get requeued. All messages should be on the Queue
-        _queue.unregisterSubscription(subscription);
+        getQueue().unregisterSubscription(subscription);
         channel.requeue();
 
         assertEquals(new Long(totalSize), new Long(_queueMBean.getQueueDepth()));
@@ -220,12 +220,12 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
         // Connect a consumer again and check QueueDepth values. The queue should get emptied.
         // Messages will get delivered but still are unacknowledged.
         Subscription subscription2 =
-                SUBSCRIPTION_FACTORY.createSubscription(channel.getChannelId(), _session, new AMQShortString("consumer_tag"), true, null, false, channel.getCreditManager());
+                SUBSCRIPTION_FACTORY.createSubscription(channel.getChannelId(), getSession(), new AMQShortString("consumer_tag"), true, null, false, channel.getCreditManager());
 
-        _queue.registerSubscription(
+        getQueue().registerSubscription(
                 subscription2, false);
 
-        while (_queue.getUndeliveredMessageCount()!= 0)
+        while (getQueue().getUndeliveredMessageCount()!= 0)
         {
             Thread.sleep(100);
         }
@@ -233,11 +233,11 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
 
         // Kill the subscriber again. Now those messages should get requeued again. Check if the queue depth
         // value is correct.
-        _queue.unregisterSubscription(subscription2);
+        getQueue().unregisterSubscription(subscription2);
         channel.requeue();
 
         assertEquals(new Long(totalSize), new Long(_queueMBean.getQueueDepth()));
-        _session.closeSession();
+        getSession().closeSession();
 
         // Check the clear queue
         _queueMBean.clearQueue();
@@ -289,7 +289,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
     protected void configure()
     {
         // Increase Alert Check period
-        _configuration.setHousekeepingExpiredMessageCheckPeriod(200);
+        getConfiguration().setHousekeepingExpiredMessageCheckPeriod(200);
     }
 
     private void sendMessages(AMQChannel channel, long messageCount, final long size) throws AMQException
@@ -300,9 +300,9 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
         {
             messages[i] = message(false, size);
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
-            qs.add(_queue);
+            qs.add(getQueue());
             metaData[i] = messages[i].headersReceived();
-            messages[i].setStoredMessage(_messageStore.addMessage(metaData[i]));
+            messages[i].setStoredMessage(getMessageStore().addMessage(metaData[i]));
 
             messages[i].enqueue(qs);
 
@@ -334,7 +334,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
                 }
             });
 
-            _queue.enqueue(new AMQMessage(messages[i].getStoredMessage()));
+            getQueue().enqueue(new AMQMessage(messages[i].getStoredMessage()));
 
         }
     }
@@ -345,6 +345,6 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
                             false,
                             new AMQShortString("AMQueueAlertTest"),
                             false,
-                            false, _virtualHost, null);
+                            false, getVirtualHost(), null);
     }
 }

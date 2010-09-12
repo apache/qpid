@@ -106,15 +106,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public List<String> retrieveQueueAttributeNames() throws IOException
     {
-        List<String> attributeList = new ArrayList<String>();
-        for(String attr : ManagedQueue.QUEUE_ATTRIBUTES)
-        {
-            attributeList.add(attr);
-        }
-
-        Collections.sort(attributeList);
-
-        return attributeList;
+        return ManagedQueue.QUEUE_ATTRIBUTES;
     }
 
     /**
@@ -153,7 +145,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 }
                 catch (Exception e)
                 {
-                    attributeValues.add(new String("-"));
+                    attributeValues.add("-");
                 }
             }
 

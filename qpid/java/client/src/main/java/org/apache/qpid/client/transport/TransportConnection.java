@@ -193,11 +193,14 @@ public class TransportConnection
 
     public static void createVMBroker(int port) throws AMQVMBrokerCreationException
     {
-        if (_acceptor == null)
+        synchronized(TransportConnection.class)
         {
-            _acceptor = new VmPipeAcceptor();
+            if (_acceptor == null)
+            {
+                _acceptor = new VmPipeAcceptor();
 
-            IoServiceConfig config = _acceptor.getDefaultConfig();
+                IoServiceConfig config = _acceptor.getDefaultConfig();
+            }
         }
         synchronized (_inVmPipeAddress)
         {
@@ -313,15 +316,18 @@ public class TransportConnection
     public static void killAllVMBrokers()
     {
         _logger.info("Killing all VM Brokers");
-        if (_acceptor != null)
+        synchronized(TransportConnection.class)
         {
-            _acceptor.unbindAll();
+            if (_acceptor != null)
+            {
+                _acceptor.unbindAll();
+            }
+            synchronized (_inVmPipeAddress)
+            {
+                _inVmPipeAddress.clear();
+            }
+            _acceptor = null;
         }
-        synchronized (_inVmPipeAddress)
-        {
-            _inVmPipeAddress.clear();
-        }
-        _acceptor = null;
         _currentInstance = -1;
         _currentVMPort = -1;
     }

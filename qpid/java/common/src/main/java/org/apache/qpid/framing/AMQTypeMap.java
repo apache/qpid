@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class AMQTypeMap
 {
-    public static Map<Byte, AMQType> _reverseTypeMap = new HashMap<Byte, AMQType>();
+    public static final Map<Byte, AMQType> _reverseTypeMap = new HashMap<Byte, AMQType>();
 
     static
     {

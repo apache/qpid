@@ -170,9 +170,9 @@ public class AMQQueueFactory
                     conflationKey = QPID_LVQ_KEY;
                 }
             }
-            else if(arguments.containsKey(X_QPID_PRIORITIES))
+            else if(arguments.containsKey(X_QPID_PRIORITIES.toString()))
             {
-                Object prioritiesObj = arguments.get(X_QPID_PRIORITIES);
+                Object prioritiesObj = arguments.get(X_QPID_PRIORITIES.toString());
                 if(prioritiesObj instanceof Number)
                 {
                     priorities = ((Number)prioritiesObj).intValue();
@@ -202,9 +202,9 @@ public class AMQQueueFactory
         {
             for(QueueProperty p : DECLAREABLE_PROPERTIES)
             {
-                if(arguments.containsKey(p.getArgumentName()))
+                if(arguments.containsKey(p.getArgumentName().toString()))
                 {
-                    p.setPropertyValue(q, arguments.get(p.getArgumentName()));
+                    p.setPropertyValue(q, arguments.get(p.getArgumentName().toString()));
                 }
             }
         }
@@ -225,10 +225,8 @@ public class AMQQueueFactory
         Map<String,Object> arguments = null;
         if(config.isLVQ() || config.getLVQKey() != null)
         {
-            if(arguments == null)
-            {
-                arguments = new HashMap<String,Object>();
-            }
+
+            arguments = new HashMap<String,Object>();
             arguments.put(QPID_LAST_VALUE_QUEUE, 1);
             arguments.put(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
         }
@@ -238,10 +236,7 @@ public class AMQQueueFactory
             int priorities = config.getPriorities();
             if(priority || priorities > 0)
             {
-                if(arguments == null)
-                {
-                    arguments = new HashMap<String,Object>();
-                }
+                arguments = new HashMap<String,Object>();
                 if (priorities < 0)
                 {
                     priorities = 10;

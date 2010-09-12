@@ -48,7 +48,7 @@ public class ReportGenerator implements Runnable
             generatereport();
             try
             {
-                Thread.sleep(this.interval * 60000);
+                Thread.sleep((long)this.interval * 60000L);
             }
             catch (Exception ex)
             {

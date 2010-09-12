@@ -143,6 +143,6 @@ public class Spout extends OptionParser
         String u = "Usage: spout [OPTIONS] 'ADDRESS'";
         String d = "Send messages to the specified address."; 
             
-        Spout drain = new Spout(args,u,d);        
+        new Spout(args,u,d);        
     }
 }

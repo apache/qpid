@@ -123,7 +123,7 @@ public abstract class AMQDestination implements Destination, Referenceable
       }
     }
     
-    protected static DestSyntax defaultDestSyntax;
+    protected final static DestSyntax defaultDestSyntax;
     
     protected DestSyntax _destSyntax;
 

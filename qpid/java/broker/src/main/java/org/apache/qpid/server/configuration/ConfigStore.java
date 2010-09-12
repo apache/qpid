@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConfigStore
 {
@@ -36,14 +37,14 @@ public class ConfigStore
     private ConcurrentHashMap<ConfigObjectType, CopyOnWriteArrayList<ConfigEventListener>> _listenerMap =
             new ConcurrentHashMap<ConfigObjectType, CopyOnWriteArrayList<ConfigEventListener>>();
 
-    private SystemConfig _root;
+    private AtomicReference<SystemConfig> _root = new AtomicReference<SystemConfig>(null);
 
     private final AtomicLong _objectIdSource = new AtomicLong(0l);
 
 
     public enum Event
     {
-        CREATED, DELETED;
+        CREATED, DELETED
     }
 
     public interface ConfigEventListener<T extends ConfigObjectType<T,C>, C extends ConfiguredObject<T, C>>
@@ -151,11 +152,10 @@ public class ConfigStore
         }
     }
 
-    public synchronized boolean setRoot(SystemConfig object)
+    public boolean setRoot(SystemConfig object)
     {
-        if(_root == null)
+        if(_root.compareAndSet(null,object))
         {
-            _root = object;
             addConfiguredObject(object);
             return true;
         }
@@ -173,7 +173,7 @@ public class ConfigStore
 
     public SystemConfig getRoot()
     {
-        return _root;
+        return _root.get();
     }
 
     public static ConfigStore newInstance()

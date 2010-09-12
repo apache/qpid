@@ -34,7 +34,7 @@ public class MessageStoreLogSubject extends AbstractLogSubject
      * 0 - Virtualhost Name
      * 1 - Message Store Type
      */
-    protected static String BINDING_FORMAT = "vh(/{0})/ms({1})";
+    protected static final String BINDING_FORMAT = "vh(/{0})/ms({1})";
 
     /** Create an ExchangeLogSubject that Logs in the following format. */
     public MessageStoreLogSubject(VirtualHost vhost, MessageStore store)

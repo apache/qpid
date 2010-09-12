@@ -38,7 +38,7 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
     @Override
     public void configure()
     {
-        _configuration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
+        getConfiguration().getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
     }
 
     @Override
@@ -46,7 +46,7 @@ public class BaseActorTestCase extends InternalBrokerBaseCase
     {
         super.createBroker();
 
-        _rawLogger = new UnitTestMessageLogger(_configuration);
+        _rawLogger = new UnitTestMessageLogger(getConfiguration());
         _rootLogger = _rawLogger;
     }
 

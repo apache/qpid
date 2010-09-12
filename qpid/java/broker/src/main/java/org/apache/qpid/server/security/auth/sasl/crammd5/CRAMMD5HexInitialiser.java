@@ -55,7 +55,7 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
 
     }
 
-    private class HexifyPrincipalDatabase implements PrincipalDatabase
+    private static class HexifyPrincipalDatabase implements PrincipalDatabase
     {
         private PrincipalDatabase _realPricipalDatabase;
 

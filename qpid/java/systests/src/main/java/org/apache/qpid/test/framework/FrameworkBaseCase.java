@@ -53,20 +53,15 @@ public class FrameworkBaseCase extends QpidBrokerTestCase implements FrameworkTe
     /** Used for debugging purposes. */
     private static final Logger log = Logger.getLogger(FrameworkBaseCase.class);
 
-    /** Holds the test sequencer to create and run test circuits with. */
-    protected CircuitFactory circuitFactory = new LocalAMQPCircuitFactory();
+    private CircuitFactory circuitFactory = new LocalAMQPCircuitFactory();
 
-    /** Used to read the tests configurable properties through. */
-    protected ParsedProperties testProps;
+    private ParsedProperties testProps;
 
-    /** A default setup task processor to delegate setup tasks to. */
-    protected SetupTaskHandler taskHandler = new SetupTaskHandler();
+    private SetupTaskHandler taskHandler = new SetupTaskHandler();
 
-    /** Flag used to track whether the test is in-vm or not. */
-    protected boolean isUsingInVM;
+    private boolean isUsingInVM;
 
-    /** Holds the failure mechanism. */
-    protected CauseFailure failureMechanism = new CauseFailureUserPrompt();
+    private CauseFailure failureMechanism = new CauseFailureUserPrompt();
 
     /**
      * Creates a new test case with the specified name.
@@ -78,7 +73,7 @@ public class FrameworkBaseCase extends QpidBrokerTestCase implements FrameworkTe
         super(name);
     }
 
-    /**
+    /** Holds the test sequencer to create and run test circuits with. */ /**
      * Returns the test case sequencer that provides test circuit, and test sequence implementations. The sequencer
      * that this base case returns by default is suitable for running a test circuit with both circuit ends colocated
      * on the same JVM.
@@ -282,5 +277,25 @@ public class FrameworkBaseCase extends QpidBrokerTestCase implements FrameworkTe
     public void setFailureMechanism(CauseFailure failureMechanism)
     {
         this.failureMechanism = failureMechanism;
+    }
+
+    protected ParsedProperties getTestProps()
+    {
+        return testProps;
+    }
+
+    protected void setTestProps(ParsedProperties testProps)
+    {
+        this.testProps = testProps;
+    }
+
+    protected SetupTaskHandler getTaskHandler()
+    {
+        return taskHandler;
+    }
+
+    protected CauseFailure getFailureMechanism()
+    {
+        return failureMechanism;
     }
 }

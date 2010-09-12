@@ -49,16 +49,16 @@ import org.apache.qpid.util.MockChannel;
 
 public class InternalBrokerBaseCase extends QpidTestCase
 {
-    protected IApplicationRegistry _registry;
-    protected MessageStore _messageStore;
-    protected MockChannel _channel;
-    protected InternalTestProtocolSession _session;
-    protected VirtualHost _virtualHost;
-    protected AMQQueue _queue;
-    protected AMQShortString QUEUE_NAME;
-    protected ServerConfiguration _configuration;
-    protected XMLConfiguration _configXml = new XMLConfiguration();
-    protected boolean _started = false;
+    private IApplicationRegistry _registry;
+    private MessageStore _messageStore;
+    private MockChannel _channel;
+    private InternalTestProtocolSession _session;
+    private VirtualHost _virtualHost;
+    private AMQQueue _queue;
+    private AMQShortString QUEUE_NAME;
+    private ServerConfiguration _configuration;
+    private XMLConfiguration _configXml = new XMLConfiguration();
+    private boolean _started = false;
 
     public void setUp() throws Exception
     {
@@ -266,4 +266,103 @@ public class InternalBrokerBaseCase extends QpidTestCase
         }
     }
 
+    public IApplicationRegistry getRegistry()
+    {
+        return _registry;
+    }
+
+    public void setRegistry(IApplicationRegistry registry)
+    {
+        _registry = registry;
+    }
+
+    public MessageStore getMessageStore()
+    {
+        return _messageStore;
+    }
+
+    public void setMessageStore(MessageStore messageStore)
+    {
+        _messageStore = messageStore;
+    }
+
+    public MockChannel getChannel()
+    {
+        return _channel;
+    }
+
+    public void setChannel(MockChannel channel)
+    {
+        _channel = channel;
+    }
+
+    public InternalTestProtocolSession getSession()
+    {
+        return _session;
+    }
+
+    public void setSession(InternalTestProtocolSession session)
+    {
+        _session = session;
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    public void setVirtualHost(VirtualHost virtualHost)
+    {
+        _virtualHost = virtualHost;
+    }
+
+    public AMQQueue getQueue()
+    {
+        return _queue;
+    }
+
+    public void setQueue(AMQQueue queue)
+    {
+        _queue = queue;
+    }
+
+    public AMQShortString getQUEUE_NAME()
+    {
+        return QUEUE_NAME;
+    }
+
+    public void setQUEUE_NAME(AMQShortString QUEUE_NAME)
+    {
+        this.QUEUE_NAME = QUEUE_NAME;
+    }
+
+    public ServerConfiguration getConfiguration()
+    {
+        return _configuration;
+    }
+
+    public void setConfiguration(ServerConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
+    public XMLConfiguration getConfigXml()
+    {
+        return _configXml;
+    }
+
+    public void setConfigXml(XMLConfiguration configXml)
+    {
+        _configXml = configXml;
+    }
+
+    public boolean isStarted()
+    {
+        return _started;
+    }
+
+    public void setStarted(boolean started)
+    {
+        _started = started;
+    }
 }

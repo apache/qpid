@@ -339,7 +339,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
                 locale = new Locale(parts[0], parts[1]);
                 break;
             default:
-                String variant = parts[2];
+                StringBuilder variant = new StringBuilder(parts[2]);
                 // If we have a variant such as the Java doc suggests for Spanish
                 // Traditional_WIN we may end up with more than 3 parts on a
                 // split with '_'. So we should recombine the variant.
@@ -347,11 +347,11 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
                 {
                     for (int index = 3; index < parts.length; index++)
                     {
-                        variant = variant + "_" + parts[index];
+                        variant.append('_').append(parts[index]);
                     }
                 }
 
-                locale = new Locale(parts[0], parts[1], variant);
+                locale = new Locale(parts[0], parts[1], variant.toString());
         }
 
         return locale;

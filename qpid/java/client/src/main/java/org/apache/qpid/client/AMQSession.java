@@ -150,7 +150,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 oldVal = _slowAccessConsumers.put(id, consumer);
             }
 
-            return consumer;
+            return oldVal;
 
         }
 
@@ -1959,7 +1959,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
                         AMQDestination amqd = (AMQDestination) destination;
 
-                        final AMQProtocolHandler protocolHandler = getProtocolHandler();
                         // TODO: Define selectors in AMQP
                         // TODO: construct the rawSelector from the selector string if rawSelector == null
                         final FieldTable ft = FieldTableFactory.newFieldTable();

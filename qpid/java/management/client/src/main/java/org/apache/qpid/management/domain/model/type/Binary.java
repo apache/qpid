@@ -102,11 +102,18 @@ public final class Binary implements Serializable
     @Override
     public boolean equals (Object obj)
     {
-        try
+        if(obj instanceof Binary)
         {
-            Binary binary = (Binary)obj;
-            return Arrays.equals(_bytes, binary._bytes);
-        } catch (Exception exception)
+            try
+            {
+                Binary binary = (Binary)obj;
+                return Arrays.equals(_bytes, binary._bytes);
+            } catch (Exception exception)
+            {
+                return false;
+            }
+        }
+        else
         {
             return false;
         }

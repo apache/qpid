@@ -32,7 +32,7 @@ public class ConnectionLogSubject extends AbstractLogSubject
      * 0 - Connection ID
      * 1 - Remote Address
      */
-    public static String SOCKET_FORMAT = "con:{0}({1})";
+    public static final String SOCKET_FORMAT = "con:{0}({1})";
 
     /**
      * LOG FORMAT for the ConnectionLogSubject,

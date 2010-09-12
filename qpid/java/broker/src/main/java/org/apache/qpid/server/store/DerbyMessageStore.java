@@ -22,6 +22,7 @@ package org.apache.qpid.server.store;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.sql.Blob;
@@ -277,14 +278,25 @@ public class DerbyMessageStore implements MessageStore
         if(!tableExists(DB_VERSION_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-
-            stmt.execute(CREATE_DB_VERSION_TABLE);
-            stmt.close();
+            try
+            {
+                stmt.execute(CREATE_DB_VERSION_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
 
             PreparedStatement pstmt = conn.prepareStatement(INSERT_INTO_DB_VERSION);
-            pstmt.setInt(1, DB_VERSION);
-            pstmt.execute();
-            pstmt.close();
+            try
+            {
+                pstmt.setInt(1, DB_VERSION);
+                pstmt.execute();
+            }
+            finally
+            {
+                pstmt.close();
+            }
         }
 
     }
@@ -295,9 +307,14 @@ public class DerbyMessageStore implements MessageStore
         if(!tableExists(EXCHANGE_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-
-            stmt.execute(CREATE_EXCHANGE_TABLE);
-            stmt.close();
+            try
+            {
+                stmt.execute(CREATE_EXCHANGE_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
     }
 
@@ -306,8 +323,14 @@ public class DerbyMessageStore implements MessageStore
         if(!tableExists(QUEUE_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_QUEUE_TABLE);
-            stmt.close();
+            try
+            {
+                stmt.execute(CREATE_QUEUE_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
     }
 
@@ -316,9 +339,14 @@ public class DerbyMessageStore implements MessageStore
         if(!tableExists(BINDINGS_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_BINDINGS_TABLE);
-
-            stmt.close();
+            try
+            {
+                stmt.execute(CREATE_BINDINGS_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
 
     }
@@ -328,9 +356,14 @@ public class DerbyMessageStore implements MessageStore
         if(!tableExists(QUEUE_ENTRY_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_QUEUE_ENTRY_TABLE);
-
-            stmt.close();
+            try
+            {
+                stmt.execute(CREATE_QUEUE_ENTRY_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
 
     }
@@ -340,9 +373,14 @@ public class DerbyMessageStore implements MessageStore
         if(!tableExists(META_DATA_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_META_DATA_TABLE);
-
-            stmt.close();
+            try
+            {
+                stmt.execute(CREATE_META_DATA_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
 
     }
@@ -353,9 +391,14 @@ public class DerbyMessageStore implements MessageStore
         if(!tableExists(MESSAGE_CONTENT_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
+            try
+            {
             stmt.execute(CREATE_MESSAGE_CONTENT_TABLE);
-
-            stmt.close();
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
 
     }
@@ -365,12 +408,24 @@ public class DerbyMessageStore implements MessageStore
     private boolean tableExists(final String tableName, final Connection conn) throws SQLException
     {
         PreparedStatement stmt = conn.prepareStatement(TABLE_EXISTANCE_QUERY);
-        stmt.setString(1, tableName);
-        ResultSet rs = stmt.executeQuery();
-        boolean exists = rs.next();
-        rs.close();
-        stmt.close();
-        return exists;
+        try
+        {
+            stmt.setString(1, tableName);
+            ResultSet rs = stmt.executeQuery();
+            try
+            {
+                return rs.next();
+            }
+            finally
+            {
+                rs.close();
+            }
+        }
+        finally
+        {
+            stmt.close();
+        }
+
     }
 
     public void recover(ConfigurationRecoveryHandler recoveryHandler) throws AMQException
@@ -382,7 +437,7 @@ public class DerbyMessageStore implements MessageStore
         try
         {
             ConfigurationRecoveryHandler.QueueRecoveryHandler qrh = recoveryHandler.begin(this);
-            List<String> queues = loadQueues(qrh);
+            loadQueues(qrh);
 
             ConfigurationRecoveryHandler.ExchangeRecoveryHandler erh = qrh.completeQueueRecovery();
             List<String> exchanges = loadExchanges(erh);
@@ -399,42 +454,57 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    private List<String> loadQueues(ConfigurationRecoveryHandler.QueueRecoveryHandler qrh) throws SQLException
+    private void loadQueues(ConfigurationRecoveryHandler.QueueRecoveryHandler qrh) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
-
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE);
-        List<String> queues = new ArrayList<String>();
-
-        while(rs.next())
+        try
         {
-            String queueName = rs.getString(1);
-            String owner = rs.getString(2);
-            boolean exclusive = rs.getBoolean(3);
-            Blob argumentsAsBlob = rs.getBlob(4);
-
-            byte[] dataAsBytes = argumentsAsBlob.getBytes(1,(int) argumentsAsBlob.length());
-            FieldTable arguments;
-            if(dataAsBytes.length > 0)
+            Statement stmt = conn.createStatement();
+            try
             {
-                org.apache.mina.common.ByteBuffer buffer = org.apache.mina.common.ByteBuffer.wrap(dataAsBytes);
+                ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE);
+                try
+                {
 
-                arguments = new FieldTable(buffer,buffer.limit());                
+                    while(rs.next())
+                    {
+                        String queueName = rs.getString(1);
+                        String owner = rs.getString(2);
+                        boolean exclusive = rs.getBoolean(3);
+                        Blob argumentsAsBlob = rs.getBlob(4);
+
+                        byte[] dataAsBytes = argumentsAsBlob.getBytes(1,(int) argumentsAsBlob.length());
+                        FieldTable arguments;
+                        if(dataAsBytes.length > 0)
+                        {
+                            org.apache.mina.common.ByteBuffer buffer = org.apache.mina.common.ByteBuffer.wrap(dataAsBytes);
+
+                            arguments = new FieldTable(buffer,buffer.limit());
+                        }
+                        else
+                        {
+                            arguments = null;
+                        }
+
+                        qrh.queue(queueName, owner, exclusive, arguments);
+
+                    }
+
+                }
+                finally
+                {
+                    rs.close();
+                }
             }
-            else
+            finally
             {
-                arguments = null;
+                stmt.close();
             }
-
-            qrh.queue(queueName, owner, exclusive, arguments); 
-
-            queues.add(queueName);
         }
-        
-        conn.close();
-        
-        return queues;
+        finally
+        {
+            conn.close();
+        }
     }
 
 
@@ -448,21 +518,33 @@ public class DerbyMessageStore implements MessageStore
             conn = newAutoCommitConnection();
 
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(SELECT_FROM_EXCHANGE);
-
-            while(rs.next())
+            try
             {
-                String exchangeName = rs.getString(1);
-                String type = rs.getString(2);
-                boolean autoDelete = rs.getShort(3) != 0;
+                ResultSet rs = stmt.executeQuery(SELECT_FROM_EXCHANGE);
+                try
+                {
+                    while(rs.next())
+                    {
+                        String exchangeName = rs.getString(1);
+                        String type = rs.getString(2);
+                        boolean autoDelete = rs.getShort(3) != 0;
 
-                exchanges.add(exchangeName);
+                        exchanges.add(exchangeName);
 
-                erh.exchange(exchangeName, type, autoDelete);
+                        erh.exchange(exchangeName, type, autoDelete);
 
+                    }
+                    return exchanges;
+                }
+                finally
+                {
+                    rs.close();
+                }
             }
-            return exchanges;
-
+            finally
+            {
+                stmt.close();
+            }
         }
         finally
         {
@@ -485,31 +567,44 @@ public class DerbyMessageStore implements MessageStore
 
             PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_BINDINGS);
 
-            ResultSet rs = stmt.executeQuery();
-
-
-            while(rs.next())
+            try
             {
-                String exchangeName = rs.getString(1);
-                String queueName = rs.getString(2);
-                String bindingKey = rs.getString(3);
-                Blob arguments = rs.getBlob(4);
-                java.nio.ByteBuffer buf;
+                ResultSet rs = stmt.executeQuery();
 
-                if(arguments != null  && arguments.length() != 0)
+                try
                 {
-                    byte[] argumentBytes = arguments.getBytes(1, (int) arguments.length());
-                    buf = java.nio.ByteBuffer.wrap(argumentBytes);
-                }
-                else
-                {
-                    buf = null;
-                }
 
-                brh.binding(exchangeName, queueName, bindingKey, buf);
+                    while(rs.next())
+                    {
+                        String exchangeName = rs.getString(1);
+                        String queueName = rs.getString(2);
+                        String bindingKey = rs.getString(3);
+                        Blob arguments = rs.getBlob(4);
+                        java.nio.ByteBuffer buf;
+
+                        if(arguments != null  && arguments.length() != 0)
+                        {
+                            byte[] argumentBytes = arguments.getBytes(1, (int) arguments.length());
+                            buf = java.nio.ByteBuffer.wrap(argumentBytes);
+                        }
+                        else
+                        {
+                            buf = null;
+                        }
+
+                        brh.binding(exchangeName, queueName, bindingKey, buf);
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
             }
-            
-            stmt.close();
+            finally
+            {
+                stmt.close();
+            }
+
         }
         finally
         {
@@ -529,7 +624,10 @@ public class DerbyMessageStore implements MessageStore
 
         try
         {
-            DriverManager.getConnection(_connectionURL + ";shutdown=true");
+            Connection conn = DriverManager.getConnection(_connectionURL + ";shutdown=true");
+            // Shouldn't reach this point - shutdown=true should throw SQLException
+            conn.close();
+            _logger.error("Unable to shut down the store");
         }
         catch (SQLException e)
         { 
@@ -563,48 +661,59 @@ public class DerbyMessageStore implements MessageStore
 
     public void removeMessage(long messageId)
     {
-        Connection conn = null;
         try
         {
-            conn = newConnection();
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_META_DATA);
-            stmt.setLong(1,messageId);
-            int results = stmt.executeUpdate();
-            stmt.close();
-            
-            if (results == 0)
+            Connection conn = newConnection();
+            try
             {
-                throw new RuntimeException("Message metadata not found for message id " + messageId);
+                PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_META_DATA);
+                try
+                {
+                    stmt.setLong(1,messageId);
+                    int results = stmt.executeUpdate();
+                    stmt.close();
+
+                    if (results == 0)
+                    {
+                        throw new RuntimeException("Message metadata not found for message id " + messageId);
+                    }
+
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Deleted metadata for message " + messageId);
+                    }
+
+                    stmt = conn.prepareStatement(DELETE_FROM_MESSAGE_CONTENT);
+                    stmt.setLong(1,messageId);
+                    results = stmt.executeUpdate();
+                }
+                finally
+                {
+                    stmt.close();
+                }
+                conn.commit();
             }
-
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Deleted metadata for message " + messageId);
-            }
-
-            stmt = conn.prepareStatement(DELETE_FROM_MESSAGE_CONTENT);
-            stmt.setLong(1,messageId);
-            results = stmt.executeUpdate();
-            stmt.close();
-
-            conn.commit();
-            conn.close();
-        }
-        catch (SQLException e)
-        {
-            if ((conn != null))
+            catch(SQLException e)
             {
                 try
                 {
                     conn.rollback();
-                    conn.close();
                 }
-                catch (SQLException e1)
+                catch(SQLException t)
                 {
-
+                    // ignore - we are re-throwing underlying exception
                 }
-            }
 
+                throw e;
+
+            }
+            finally
+            {
+                conn.close();
+            }
+        }
+        catch (SQLException e)
+        {
             throw new RuntimeException("Error removing message with id " + messageId + " from database: " + e.getMessage(), e);
         }
 
@@ -616,37 +725,52 @@ public class DerbyMessageStore implements MessageStore
         {
             try
             {
-                Connection conn = null;
+                Connection conn = newAutoCommitConnection();
 
                 try
                 {
-                    conn = newAutoCommitConnection();
+
 
                     PreparedStatement stmt = conn.prepareStatement(FIND_EXCHANGE);
-                    stmt.setString(1, exchange.getNameShortString().toString());
-
-                    ResultSet rs = stmt.executeQuery();
-
-                    // If we don't have any data in the result set then we can add this exchange
-                    if (!rs.next())
+                    try
                     {
-                        stmt.close();
-                        
-                        stmt = conn.prepareStatement(INSERT_INTO_EXCHANGE);
-                        stmt.setString(1, exchange.getName().toString());
-                        stmt.setString(2, exchange.getTypeShortString().asString());
-                        stmt.setShort(3, exchange.isAutoDelete() ? (short) 1 : (short) 0);
-                        stmt.execute();
+                        stmt.setString(1, exchange.getNameShortString().toString());
+                        ResultSet rs = stmt.executeQuery();
+                        try
+                        {
+
+                            // If we don't have any data in the result set then we can add this exchange
+                            if (!rs.next())
+                            {
+
+                                PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_EXCHANGE);
+                                try
+                                {
+                                    insertStmt.setString(1, exchange.getName().toString());
+                                    insertStmt.setString(2, exchange.getTypeShortString().asString());
+                                    insertStmt.setShort(3, exchange.isAutoDelete() ? (short) 1 : (short) 0);
+                                    insertStmt.execute();
+                                }
+                                finally
+                                {
+                                    insertStmt.close();
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            rs.close();
+                        }
+                    }
+                    finally
+                    {
                         stmt.close();
                     }
 
                 }
                 finally
                 {
-                    if(conn != null)
-                    {
-                        conn.close();
-                    }
+                    conn.close();
                 }
             }
             catch (SQLException e)
@@ -659,38 +783,36 @@ public class DerbyMessageStore implements MessageStore
 
     public void removeExchange(Exchange exchange) throws AMQStoreException
     {
-        Connection conn = null;
 
         try
         {
-            conn = newAutoCommitConnection();
-            PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_EXCHANGE);
-            stmt.setString(1, exchange.getNameShortString().toString());
-            int results = stmt.executeUpdate();
-            stmt.close();
-            if(results == 0)
+            Connection conn = newAutoCommitConnection();
+            try
             {
-                throw new AMQStoreException("Exchange " + exchange.getNameShortString() + " not found");
+                PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_EXCHANGE);
+                try
+                {
+                    stmt.setString(1, exchange.getNameShortString().toString());
+                    int results = stmt.executeUpdate();
+                    stmt.close();
+                    if(results == 0)
+                    {
+                        throw new AMQStoreException("Exchange " + exchange.getNameShortString() + " not found");
+                    }
+                }
+                finally
+                {
+                    stmt.close();
+                }
+            }
+            finally
+            {
+                conn.close();
             }
         }
         catch (SQLException e)
         {
             throw new AMQStoreException("Error deleting Exchange with name " + exchange.getNameShortString() + " from database: " + e.getMessage(), e);
-        }
-        finally
-        {
-            if(conn != null)
-            {
-               try
-               {
-                   conn.close();
-               }
-               catch (SQLException e)
-               {
-                   _logger.error(e);
-               }
-            }
-
         }
     }
 
@@ -699,65 +821,75 @@ public class DerbyMessageStore implements MessageStore
     {
         if (_state != State.RECOVERING)
         {
-            Connection conn = null;
-
             try
             {
-                conn = newAutoCommitConnection();
+                Connection conn = newAutoCommitConnection();
 
-                PreparedStatement stmt = conn.prepareStatement(FIND_BINDING);
-                stmt.setString(1, exchange.getNameShortString().toString() );
-                stmt.setString(2, queue.getNameShortString().toString());
-                stmt.setString(3, routingKey == null ? null : routingKey.toString());
-
-                ResultSet rs = stmt.executeQuery();
-
-                // If this binding is not already in the store then create it.
-                if (!rs.next())
+                try
                 {
-                    stmt = conn.prepareStatement(INSERT_INTO_BINDINGS);
-                    stmt.setString(1, exchange.getNameShortString().toString() );
-                    stmt.setString(2, queue.getNameShortString().toString());
-                    stmt.setString(3, routingKey == null ? null : routingKey.toString());
-                    if(args != null)
-                    {
-                        /* This would be the Java 6 way of setting a Blob
-                        Blob blobArgs = conn.createBlob();
-                        blobArgs.setBytes(0, args.getDataAsBytes());
-                        stmt.setBlob(4, blobArgs);
-                        */
-                        byte[] bytes = args.getDataAsBytes();
-                        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                        stmt.setBinaryStream(4, bis, bytes.length);
-                    }
-                    else
-                    {
-                        stmt.setNull(4, Types.BLOB);
-                    }
 
-                    stmt.executeUpdate();
-                    stmt.close();
+                    PreparedStatement stmt = conn.prepareStatement(FIND_BINDING);
+                    try
+                    {
+                        stmt.setString(1, exchange.getNameShortString().toString() );
+                        stmt.setString(2, queue.getNameShortString().toString());
+                        stmt.setString(3, routingKey == null ? null : routingKey.toString());
+
+                        ResultSet rs = stmt.executeQuery();
+                        try
+                        {
+                            // If this binding is not already in the store then create it.
+                            if (!rs.next())
+                            {
+                                PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_BINDINGS);
+                                try
+                                {
+                                    insertStmt.setString(1, exchange.getNameShortString().toString() );
+                                    insertStmt.setString(2, queue.getNameShortString().toString());
+                                    insertStmt.setString(3, routingKey == null ? null : routingKey.toString());
+                                    if(args != null)
+                                    {
+                                        /* This would be the Java 6 way of setting a Blob
+                                        Blob blobArgs = conn.createBlob();
+                                        blobArgs.setBytes(0, args.getDataAsBytes());
+                                        stmt.setBlob(4, blobArgs);
+                                        */
+                                        byte[] bytes = args.getDataAsBytes();
+                                        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+                                        insertStmt.setBinaryStream(4, bis, bytes.length);
+                                    }
+                                    else
+                                    {
+                                        insertStmt.setNull(4, Types.BLOB);
+                                    }
+
+                                    insertStmt.executeUpdate();
+                                }
+                                finally
+                                {
+                                    insertStmt.close();
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            rs.close();
+                        }
+                    }
+                    finally
+                    {
+                        stmt.close();
+                    }
+                }
+                finally
+                {
+                    conn.close();
                 }
             }
             catch (SQLException e)
             {
                 throw new AMQStoreException("Error writing binding for AMQQueue with name " + queue.getNameShortString() + " to exchange "
                     + exchange.getNameShortString() + " to database: " + e.getMessage(), e);
-            }
-            finally
-            {
-                if(conn != null)
-                {
-                   try
-                   {
-                       conn.close();
-                   }
-                   catch (SQLException e)
-                   {
-                       _logger.error(e);
-                   }
-                }
-
             }
 
         }
@@ -828,39 +960,58 @@ public class DerbyMessageStore implements MessageStore
                 Connection conn = newAutoCommitConnection();
 
                 PreparedStatement stmt = conn.prepareStatement(FIND_QUEUE);
-                stmt.setString(1, queue.getNameShortString().toString());
-
-                ResultSet rs = stmt.executeQuery();
-
-                // If we don't have any data in the result set then we can add this queue
-                if (!rs.next())
+                try
                 {
-                    stmt = conn.prepareStatement(INSERT_INTO_QUEUE);
-
-                    String owner = queue.getOwner() == null ? null : queue.getOwner().toString();
-
                     stmt.setString(1, queue.getNameShortString().toString());
-                    stmt.setString(2, owner);
-                    stmt.setBoolean(3,queue.isExclusive());
-
-                    final byte[] underlying;
-                    if(arguments != null)
+                    ResultSet rs = stmt.executeQuery();
+                    try
                     {
-                        underlying = arguments.getDataAsBytes();
-                    }
-                    else
-                    {
-                        underlying = new byte[0];
-                    }
-                    
-                    ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
-                    stmt.setBinaryStream(4,bis,underlying.length);
-                    
-                    stmt.execute();
-                    stmt.close();
 
-                    conn.close();
+                        // If we don't have any data in the result set then we can add this queue
+                        if (!rs.next())
+                        {
+                            PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_QUEUE);
+
+                            try
+                            {
+                                String owner = queue.getOwner() == null ? null : queue.getOwner().toString();
+
+                                insertStmt.setString(1, queue.getNameShortString().toString());
+                                insertStmt.setString(2, owner);
+                                insertStmt.setBoolean(3,queue.isExclusive());
+
+                                final byte[] underlying;
+                                if(arguments != null)
+                                {
+                                    underlying = arguments.getDataAsBytes();
+                                }
+                                else
+                                {
+                                    underlying = new byte[0];
+                                }
+
+                                ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
+                                insertStmt.setBinaryStream(4,bis,underlying.length);
+
+                                insertStmt.execute();
+                            }
+                            finally
+                            {
+                                insertStmt.close();
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        rs.close();
+                    }
                 }
+                finally
+                {
+                    stmt.close();
+                }
+                conn.close();
+
             }
             catch (SQLException e)
             {
@@ -886,24 +1037,46 @@ public class DerbyMessageStore implements MessageStore
             {
                 Connection conn = newAutoCommitConnection();
 
-                PreparedStatement stmt = conn.prepareStatement(FIND_QUEUE);
-                stmt.setString(1, queue.getNameShortString().toString());
-
-                ResultSet rs = stmt.executeQuery();
-
-                if (rs.next())
+                try
                 {
-                    PreparedStatement stmt2 = conn.prepareStatement(UPDATE_QUEUE_EXCLUSIVITY);
-                    
-                    stmt2.setBoolean(1,queue.isExclusive());
-                    stmt2.setString(2, queue.getNameShortString().toString());
+                    PreparedStatement stmt = conn.prepareStatement(FIND_QUEUE);
+                    try
+                    {
+                        stmt.setString(1, queue.getNameShortString().toString());
 
-                    stmt2.execute();
-                    stmt2.close();
+                        ResultSet rs = stmt.executeQuery();
+                        try
+                        {
+                            if (rs.next())
+                            {
+                                PreparedStatement stmt2 = conn.prepareStatement(UPDATE_QUEUE_EXCLUSIVITY);
+                                try
+                                {
+                                    stmt2.setBoolean(1,queue.isExclusive());
+                                    stmt2.setString(2, queue.getNameShortString().toString());
+
+                                    stmt2.execute();
+                                }
+                                finally
+                                {
+                                    stmt2.close();
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            rs.close();
+                        }
+                    }
+                    finally
+                    {
+                        stmt.close();
+                    }
                 }
-                
-                stmt.close();
-                conn.close();
+                finally
+                {
+                    conn.close();
+                }
             }
             catch (SQLException e)
             {
@@ -920,7 +1093,22 @@ public class DerbyMessageStore implements MessageStore
     private Connection newAutoCommitConnection() throws SQLException
     {
         final Connection connection = newConnection();
-        connection.setAutoCommit(true);
+        try
+        {
+            connection.setAutoCommit(true);
+        }
+        catch (SQLException sqlEx)
+        {
+
+            try
+            {
+                connection.close();
+            }
+            finally
+            {
+                throw sqlEx;
+            }
+        }
         
         return connection;
     }
@@ -932,8 +1120,22 @@ public class DerbyMessageStore implements MessageStore
     private Connection newConnection() throws SQLException
     {
         final Connection connection = DriverManager.getConnection(_connectionURL);
-        connection.setAutoCommit(false);
-        connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        try
+        {
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        }
+        catch (SQLException sqlEx)
+        {
+            try
+            {
+                connection.close();
+            }
+            finally
+            {
+                throw sqlEx;
+            }
+        }
         return connection;
     }
 
@@ -999,10 +1201,16 @@ public class DerbyMessageStore implements MessageStore
             }
             
             PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_QUEUE_ENTRY);
-            stmt.setString(1,name);
-            stmt.setLong(2,messageId);
-            stmt.executeUpdate();
-            stmt.close();
+            try
+            {
+                stmt.setString(1,name);
+                stmt.setLong(2,messageId);
+                stmt.executeUpdate();
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
         catch (SQLException e)
         {
@@ -1024,19 +1232,27 @@ public class DerbyMessageStore implements MessageStore
         try
         {
             PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_QUEUE_ENTRY);
-            stmt.setString(1,name);
-            stmt.setLong(2,messageId);
-            int results = stmt.executeUpdate();
-            stmt.close();
-
-            if(results != 1)
+            try
             {
-                throw new AMQStoreException("Unable to find message with id " + messageId + " on queue " + name);
+                stmt.setString(1,name);
+                stmt.setLong(2,messageId);
+                int results = stmt.executeUpdate();
+
+
+
+                if(results != 1)
+                {
+                    throw new AMQStoreException("Unable to find message with id " + messageId + " on queue " + name);
+                }
+
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Dequeuing message " + messageId + " on queue " + name );//+ "[Connection" + conn + "]");
+                }
             }
-
-            if (_logger.isDebugEnabled())
+            finally
             {
-                _logger.debug("Dequeuing message " + messageId + " on queue " + name );//+ "[Connection" + conn + "]");
+                stmt.close();
             }
         }
         catch (SQLException e)
@@ -1147,25 +1363,48 @@ public class DerbyMessageStore implements MessageStore
         }
         
         PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_META_DATA);
-        stmt.setLong(1,messageId);
-
-        final int bodySize = 1 + metaData.getStorableSize();
-        byte[] underlying = new byte[bodySize];
-        underlying[0] = (byte) metaData.getType().ordinal();
-        java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(underlying);
-        buf.position(1);
-        buf = buf.slice();
-
-        metaData.writeToBuffer(0, buf);
-        ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
-        stmt.setBinaryStream(2,bis,underlying.length);
-        int result = stmt.executeUpdate();
-        stmt.close();
-        
-        if(result == 0)
+        try
         {
-            throw new RuntimeException("Unable to add meta data for message " +messageId);
+            stmt.setLong(1,messageId);
+
+            final int bodySize = 1 + metaData.getStorableSize();
+            byte[] underlying = new byte[bodySize];
+            underlying[0] = (byte) metaData.getType().ordinal();
+            java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(underlying);
+            buf.position(1);
+            buf = buf.slice();
+
+            metaData.writeToBuffer(0, buf);
+            ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
+            try
+            {
+                stmt.setBinaryStream(2,bis,underlying.length);
+                int result = stmt.executeUpdate();
+
+                if(result == 0)
+                {
+                    throw new RuntimeException("Unable to add meta data for message " +messageId);
+                }
+            }
+            finally
+            {
+                try
+                {
+                    bis.close();
+                }
+                catch (IOException e)
+                {
+
+                    throw new SQLException(e);
+                }
+            }
+
         }
+        finally
+        {
+            stmt.close();
+        }
+        
     }
 
 
@@ -1174,38 +1413,58 @@ public class DerbyMessageStore implements MessageStore
     private void recoverMessages(MessageStoreRecoveryHandler recoveryHandler) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
-
-        MessageStoreRecoveryHandler.StoredMessageRecoveryHandler messageHandler = recoveryHandler.begin();
-
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(SELECT_ALL_FROM_META_DATA);
-
-        long maxId = 0;
-
-        while(rs.next())
+        try
         {
+            MessageStoreRecoveryHandler.StoredMessageRecoveryHandler messageHandler = recoveryHandler.begin();
 
-            long messageId = rs.getLong(1);
-            Blob dataAsBlob = rs.getBlob(2);
-
-            if(messageId > maxId)
+            Statement stmt = conn.createStatement();
+            try
             {
-                maxId = messageId;
+                ResultSet rs = stmt.executeQuery(SELECT_ALL_FROM_META_DATA);
+                try
+                {
+
+                    long maxId = 0;
+
+                    while(rs.next())
+                    {
+
+                        long messageId = rs.getLong(1);
+                        Blob dataAsBlob = rs.getBlob(2);
+
+                        if(messageId > maxId)
+                        {
+                            maxId = messageId;
+                        }
+
+                        byte[] dataAsBytes = dataAsBlob.getBytes(1,(int) dataAsBlob.length());
+                        java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
+                        buf.position(1);
+                        buf = buf.slice();
+                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
+                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+                        StoredDerbyMessage message = new StoredDerbyMessage(messageId, metaData, false);
+                        messageHandler.message(message);
+                    }
+
+                    _messageId.set(maxId);
+
+                    messageHandler.completeMessageRecovery();
+                }
+                finally
+                {
+                    rs.close();
+                }
             }
-
-            byte[] dataAsBytes = dataAsBlob.getBytes(1,(int) dataAsBlob.length());
-            java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
-            buf.position(1);
-            buf = buf.slice();
-            MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-            StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
-            StoredDerbyMessage message = new StoredDerbyMessage(messageId, metaData, false);
-            messageHandler.message(message);
+            finally
+            {
+                stmt.close();
+            }
         }
-
-        _messageId.set(maxId);
-
-        messageHandler.completeMessageRecovery();
+        finally
+        {
+            conn.close();
+        }
     }
 
 
@@ -1213,23 +1472,40 @@ public class DerbyMessageStore implements MessageStore
     private void recoverQueueEntries(TransactionLogRecoveryHandler recoveryHandler) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
-
-        TransactionLogRecoveryHandler.QueueEntryRecoveryHandler queueEntryHandler = recoveryHandler.begin(this);
-
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE_ENTRY);
-
-        while(rs.next())
+        try
         {
+            TransactionLogRecoveryHandler.QueueEntryRecoveryHandler queueEntryHandler = recoveryHandler.begin(this);
 
-            String queueName = rs.getString(1);
-            long messageId = rs.getLong(2);
-            queueEntryHandler.queueEntry(queueName,messageId);
+            Statement stmt = conn.createStatement();
+            try
+            {
+                ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE_ENTRY);
+                try
+                {
+                    while(rs.next())
+                    {
+
+                        String queueName = rs.getString(1);
+                        long messageId = rs.getLong(2);
+                        queueEntryHandler.queueEntry(queueName,messageId);
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+            queueEntryHandler.completeQueueEntryRecovery();
         }
-        
-        stmt.close();
-
-        queueEntryHandler.completeQueueEntryRecovery();
+        finally
+        {
+            conn.close();
+        }
     }
 
     StorableMessageMetaData getMetaData(long messageId) throws SQLException
@@ -1239,31 +1515,40 @@ public class DerbyMessageStore implements MessageStore
         try
         {
             PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_META_DATA);
-            stmt.setLong(1,messageId);
-            ResultSet rs = stmt.executeQuery();
+            try
+            {
+                stmt.setLong(1,messageId);
+                ResultSet rs = stmt.executeQuery();
+                try
+                {
 
-            if(rs.next())
+                    if(rs.next())
+                    {
+                        Blob dataAsBlob = rs.getBlob(1);
+
+                        byte[] dataAsBytes = dataAsBlob.getBytes(1,(int) dataAsBlob.length());
+                        java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
+                        buf.position(1);
+                        buf = buf.slice();
+                        MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
+                        StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
+
+                        return metaData;
+                    }
+                    else
+                    {
+                        throw new RuntimeException("Meta data not found for message with id " + messageId);
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
             {
                 stmt.close();
-                
-                Blob dataAsBlob = rs.getBlob(1);
-
-                byte[] dataAsBytes = dataAsBlob.getBytes(1,(int) dataAsBlob.length());
-                java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(dataAsBytes);
-                buf.position(1);
-                buf = buf.slice();
-                MessageMetaDataType type = MessageMetaDataType.values()[dataAsBytes[0]];
-                StorableMessageMetaData metaData = type.getFactory().createMetaData(buf);
-
-                return metaData;
             }
-            else
-            {
-                stmt.close();
-                
-                throw new RuntimeException("Meta data not found for message with id " + messageId);
-            }
-
         }
         finally
         {

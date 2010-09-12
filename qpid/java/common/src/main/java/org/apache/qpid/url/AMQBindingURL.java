@@ -55,7 +55,8 @@ public class AMQBindingURL implements BindingURL
 
     private void parseBindingURL() throws URISyntaxException
     {
-        BindingURLParser parser = new BindingURLParser(_url,this);
+        BindingURLParser parser = new BindingURLParser();
+        parser.parse(_url,this);
         processOptions();
         _logger.debug("URL Parsed: " + this);
     }

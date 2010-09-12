@@ -20,8 +20,6 @@
 package org.apache.qpid.server.configuration;
 
 
-import org.apache.commons.configuration.XMLConfiguration;
-
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -38,12 +36,12 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
     {
         super.setUp();
         // Set the default configuration items
-        _configXml.clear();
-        _configXml.addProperty("virtualhosts.virtualhost(-1).name", "test");
-        _configXml.addProperty("virtualhosts.virtualhost(-1).test.store.class", TestableMemoryMessageStore.class.getName());
+        getConfigXml().clear();
+        getConfigXml().addProperty("virtualhosts.virtualhost(-1).name", "test");
+        getConfigXml().addProperty("virtualhosts.virtualhost(-1).test.store.class", TestableMemoryMessageStore.class.getName());
 
-        _configXml.addProperty("virtualhosts.virtualhost.name", getName());
-        _configXml.addProperty("virtualhosts.virtualhost."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
+        getConfigXml().addProperty("virtualhosts.virtualhost.name", getName());
+        getConfigXml().addProperty("virtualhosts.virtualhost."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
     }
 
     @Override
@@ -55,27 +53,27 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
     public void testQueuePriority() throws Exception
     {
         // Set up queue with 5 priorities
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
                               "atest");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.atest(-1).exchange",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.atest(-1).exchange",
                               "amq.direct");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.atest.priorities",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.atest.priorities",
                               "5");
 
         // Set up queue with JMS style priorities
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
                               "ptest");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ptest(-1).exchange",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ptest(-1).exchange",
                               "amq.direct");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ptest.priority",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ptest.priority",
                                "true");
 
         // Set up queue with no priorities
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues(-1).queue(-1).name(-1)",
                               "ntest");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ntest(-1).exchange",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ntest(-1).exchange",
                               "amq.direct");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ntest.priority",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueuePriority.queues.queue.ntest.priority",
                               "false");
 
         // Start the broker now.
@@ -102,18 +100,18 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
     public void testQueueAlerts() throws Exception
     {
         // Set up queue with 5 priorities
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.exchange", "amq.topic");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.maximumQueueDepth", "1");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.maximumMessageSize", "2");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.maximumMessageAge", "3");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.exchange", "amq.topic");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.maximumQueueDepth", "1");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.maximumMessageSize", "2");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.maximumMessageAge", "3");
 
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues(-1).queue(1).name(1)", "atest");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).exchange", "amq.direct");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumQueueDepth", "4");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumMessageSize", "5");
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumMessageAge", "6");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues(-1).queue(1).name(1)", "atest");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).exchange", "amq.direct");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumQueueDepth", "4");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumMessageSize", "5");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues.queue.atest(-1).maximumMessageAge", "6");
 
-        _configXml.addProperty("virtualhosts.virtualhost.testQueueAlerts.queues(-1).queue(-1).name(-1)", "btest");
+        getConfigXml().addProperty("virtualhosts.virtualhost.testQueueAlerts.queues(-1).queue(-1).name(-1)", "btest");
 
         // Start the broker now.
         super.createBroker();
@@ -143,7 +141,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
     {
         int initialPoolSize = 10;
 
-        _configXml.addProperty("virtualhosts.virtualhost.testHouseKeepingThreadCount.housekeeping.poolSize",
+        getConfigXml().addProperty("virtualhosts.virtualhost.testHouseKeepingThreadCount.housekeeping.poolSize",
                               initialPoolSize);
 
         // Start the broker now.
@@ -186,7 +184,7 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
      {
          int initialPoolSize = 10;
 
-         _configXml.addProperty("virtualhosts.virtualhost.testDynamicHouseKeepingPoolSizeChange.housekeeping.poolSize",
+         getConfigXml().addProperty("virtualhosts.virtualhost.testDynamicHouseKeepingPoolSizeChange.housekeeping.poolSize",
                                initialPoolSize);
 
          // Start the broker now.

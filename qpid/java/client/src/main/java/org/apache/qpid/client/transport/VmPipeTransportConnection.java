@@ -36,7 +36,7 @@ public class VmPipeTransportConnection implements ITransportConnection
 {
     private static final Logger _logger = LoggerFactory.getLogger(VmPipeTransportConnection.class);
 
-    private static int _port;
+    private int _port;
 
     private MINANetworkDriver _networkDriver;
 

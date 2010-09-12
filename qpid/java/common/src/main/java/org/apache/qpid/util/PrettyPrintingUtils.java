@@ -40,16 +40,16 @@ public class PrettyPrintingUtils
      */
     public static String printArray(int[] array)
     {
-        String result = "[";
+        StringBuilder result = new StringBuilder("[");
         for (int i = 0; i < array.length; i++)
         {
-            result += array[i];
-            result += (i < (array.length - 1)) ? ", " : "";
+            result.append(array[i])
+                  .append((i < (array.length - 1)) ? ", " : "");
         }
 
-        result += "]";
+        result.append(']');
 
-        return result;
+        return result.toString();
     }
 
     /**

@@ -178,7 +178,7 @@ public class Configuration
     }
 
 
-    public class InitException extends Exception
+    public static class InitException extends Exception
     {
         InitException(String msg, Throwable cause)
         {

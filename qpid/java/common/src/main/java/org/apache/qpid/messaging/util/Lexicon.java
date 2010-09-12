@@ -58,30 +58,30 @@ public class Lexicon
 
     public Lexer compile()
     {
-        String joined = "";
+        StringBuilder joined = new StringBuilder();
         for (Token.Type t : types)
         {
             if (joined.length() > 0)
             {
-                joined += "|";
+                joined.append('|');
             }
-            joined += "(" + t.getPattern() + ")";
+            joined.append('(').append(t.getPattern()).append(')');
         }
-        Pattern rexp = Pattern.compile(joined);
+        Pattern rexp = Pattern.compile(joined.toString());
         return new Lexer(new ArrayList<Token.Type>(types), eof, rexp);
     }
 
     public static final void main(String[] args)
     {
-        String input = "";
+        StringBuilder input = new StringBuilder();
         for (String a : args)
         {
             if (input.length() > 0)
             {
-                input += " ";
+                input.append(" ");
             }
 
-            input += a;
+            input.append(a);
         }
 
         Lexicon lxi = new Lexicon();
@@ -94,7 +94,7 @@ public class Lexicon
         lxi.eof("EOF");
         Lexer lx = lxi.compile();
 
-        for (Token t : lx.lex(input))
+        for (Token t : lx.lex(input.toString()))
         {
             System.out.println(t);
         }

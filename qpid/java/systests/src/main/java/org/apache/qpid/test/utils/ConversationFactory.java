@@ -278,10 +278,6 @@ public class ConversationFactory
             {
                 sendTo = sendDestination;
             }
-            else if (sendDestination != null)
-            {
-                sendTo = sendDestination;
-            }
             else
             {
                 throw new JMSException("The send destination was specified, and no most recent reply-to available to use.");
