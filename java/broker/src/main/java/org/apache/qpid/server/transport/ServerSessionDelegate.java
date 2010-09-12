@@ -29,11 +29,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeInUseException;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.HeadersExchange;
+import org.apache.qpid.server.exchange.*;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.flow.WindowCreditManager;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
@@ -193,18 +189,39 @@ public class ServerSessionDelegate extends SessionDelegate
                 QueueRegistry queueRegistry = getQueueRegistry(session);
 
 
-                AMQQueue queue = queueRegistry.getQueue(queueName);
+                final AMQQueue queue = queueRegistry.getQueue(queueName);
 
                 if(queue == null)
                 {
                     exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
                 }
-                else if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
+                if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
                 else
                 {
+
+                    if(queue.isExclusive())
+                    {
+                        if(queue.getPrincipalHolder() == null)
+                        {
+                            queue.setPrincipalHolder((ServerSession)session);
+                            ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
+                            {
+
+                                public void doTask(ServerSession session)
+                                {
+                                    if(queue.getPrincipalHolder() == session)
+                                    {
+                                        queue.setPrincipalHolder(null);
+                                    }
+                                }
+                            });
+                        }
+
+
+                    }
 
                     FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
 
@@ -349,7 +366,12 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
+            AMQQueue queue = sub.getQueue();
             ((ServerSession)session).unregister(sub);
+            if(!queue.isDeleted() && queue.isExclusive() && queue.getConsumerCount() == 0)
+            {
+                queue.setPrincipalHolder(null);
+            }
         }
     }
 
@@ -850,8 +872,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         queue = createQueue(queueName, method, virtualHost, (ServerSession)session);
                         if(method.getExclusive())
                         {
-                            queue.setPrincipalHolder((ServerSession)session);
-                            queue.setExclusiveOwningSession((AMQSessionModel) session);
+                            queue.setExclusive(true);
                         }
                         else if(method.getAutoDelete())
                         {
@@ -989,44 +1010,10 @@ public class ServerSessionDelegate extends SessionDelegate
                                    final ServerSession session)
             throws AMQException
     {
-        final QueueRegistry registry = virtualHost.getQueueRegistry();
-
         String owner = body.getExclusive() ? session.getClientID() : null;
 
         final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(),
                                                                   body.getExclusive(), virtualHost, body.getArguments());
-
-        if (body.getExclusive() && !body.getDurable())
-        {
-            final ServerSession.Task deleteQueueTask =
-                    new ServerSession.Task()
-	                {
-                        public void doTask(ServerSession session)
-                        {
-                            if (registry.getQueue(queueName) == queue)
-                            {
-                                try
-                                {
-                                    queue.delete();
-                                }
-                                catch (AMQException e)
-                                {
-                                    exception(session, body, e, "Cannot delete queue '" + body.getQueue());
-                                }
-                            }
-                        }
-                    };
-
-            session.addSessionCloseTask(deleteQueueTask);
-
-            queue.addQueueDeleteTask(new AMQQueue.Task()
-            {
-                public void doTask(AMQQueue queue)
-                {
-                    session.removeSessionCloseTask(deleteQueueTask);
-                }
-            });
-        }// if exclusive and not durable
 
         return queue;
     }
