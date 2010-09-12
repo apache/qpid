@@ -101,11 +101,14 @@ public class ServerSessionDelegate extends SessionDelegate
     public void command(Session session, Method method)
     {
         SecurityManager.setThreadPrincipal(session.getConnection().getAuthorizationID());
-        
-        super.command(session, method);
-        if (method.isSync())
+
+        if(!session.isClosing())
         {
-            session.flushProcessed();
+            super.command(session, method);
+            if (method.isSync())
+            {
+                session.flushProcessed();
+            }
         }
     }
 
@@ -1187,6 +1190,12 @@ public class ServerSessionDelegate extends SessionDelegate
             ((ServerSession)session).unregister(sub);
         }
         ((ServerSession)session).onClose();
+    }
+
+    @Override
+    public void detached(Session session)
+    {
+        closed(session);
     }
 
     public Collection<Subscription_0_10> getSubscriptions(Session session)

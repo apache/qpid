@@ -336,6 +336,12 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
 
     }
 
+    @Override
+    protected void awaitClose()
+    {
+        // Broker shouldn't block awaiting close - thus do override this method to do nothing
+    }
+
     public void acknowledge(final Subscription_0_10 sub, final QueueEntry entry)
     {
         _transaction.dequeue(entry.getQueue(), entry.getMessage(),
