@@ -543,7 +543,7 @@ public class Session extends SessionInvoker
                     }
                 }
 
-                if (state != OPEN && state != CLOSED)
+                if (state != OPEN && state != CLOSED && state != CLOSING)
                 {
                     Thread current = Thread.currentThread();
                     if (!current.equals(resumer))
@@ -568,6 +568,7 @@ public class Session extends SessionInvoker
                             ("timed out waiting for resume to finish");
                     }
                     break;
+                case CLOSING:
                 case CLOSED:
                     ExecutionException exc = getException();
                     if (exc != null)
@@ -906,18 +907,23 @@ public class Session extends SessionInvoker
             sessionRequestTimeout(0);
             sessionDetach(name.getBytes());
 
-            Waiter w = new Waiter(commands, timeout);
-            while (w.hasTime() && state != CLOSED)
-            {
-                w.await();
-            }
-
-            if (state != CLOSED)
-            {
-                throw new SessionException("close() timed out");
-            }
+            awaitClose();
  
-            connection.removeSession(this);
+
+        }
+    }
+
+    protected void awaitClose() 
+    {
+        Waiter w = new Waiter(commands, timeout);
+        while (w.hasTime() && state != CLOSED)
+        {
+            w.await();
+        }
+
+        if (state != CLOSED)
+        {
+            throw new SessionException("close() timed out");
         }
     }
 
@@ -960,6 +966,16 @@ public class Session extends SessionInvoker
                 delegate.detached(this);
             }
         }
+
+        if(state == CLOSED)
+        {
+            connection.removeSession(this);            
+        }
+    }
+
+    public boolean isClosing()
+    {
+        return state == CLOSED || state == CLOSING;
     }
 
     public String toString()
