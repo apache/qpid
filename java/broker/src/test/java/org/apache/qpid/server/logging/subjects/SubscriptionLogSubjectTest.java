@@ -37,10 +37,10 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
 {
 
-    AMQQueue _queue;
-    VirtualHost _testVhost;
+    private AMQQueue _queue;
+    private VirtualHost _testVhost;
     private int _channelID = 1;
-    Subscription _subscription;
+    private Subscription _subscription;
 
     public void setUp() throws Exception
     {
@@ -52,13 +52,13 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
         _queue = new MockAMQQueue("SubscriptionLogSubjectTest");
         ((MockAMQQueue) _queue).setVirtualHost(_testVhost);
 
-        AMQChannel channel = new AMQChannel(_session, _channelID, _session.getVirtualHost().getMessageStore());
+        AMQChannel channel = new AMQChannel(getSession(), _channelID, getSession().getVirtualHost().getMessageStore());
 
-        _session.addChannel(channel);
+        getSession().addChannel(channel);
 
         SubscriptionFactory factory = new SubscriptionFactoryImpl();
 
-        _subscription = factory.createSubscription(_channelID, _session, new AMQShortString("cTag"),
+        _subscription = factory.createSubscription(_channelID, getSession(), new AMQShortString("cTag"),
                                                    false, null, false,
                                                    new LimitlessCreditManager());
 

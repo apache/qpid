@@ -28,6 +28,6 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
     {
         super.createBroker();
 
-        _amqpActor = new AMQPConnectionActor(_session, _rootLogger);
+        _amqpActor = new AMQPConnectionActor(getSession(), _rootLogger);
     }
 }

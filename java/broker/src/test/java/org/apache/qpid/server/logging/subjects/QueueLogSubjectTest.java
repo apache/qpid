@@ -31,8 +31,8 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class QueueLogSubjectTest extends AbstractTestLogSubject
 {
 
-    AMQQueue _queue;
-    VirtualHost _testVhost;
+    private AMQQueue _queue;
+    private VirtualHost _testVhost;
 
     @Override
     public void setUp() throws Exception

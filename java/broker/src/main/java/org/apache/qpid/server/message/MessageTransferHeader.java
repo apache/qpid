@@ -56,7 +56,7 @@ class MessageTransferHeader implements AMQMessageHeader
 
     public long getExpiration()
     {
-        return _deliveryProps == null ? null : _deliveryProps.getExpiration();
+        return _deliveryProps == null ? 0L : _deliveryProps.getExpiration();
     }
 
     public String getMessageId()

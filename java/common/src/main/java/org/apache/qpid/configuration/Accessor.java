@@ -152,7 +152,15 @@ public interface Accessor
         {
             super(null);
             Properties props = new Properties();
-            props.load(new FileInputStream(fileName));
+            FileInputStream inStream = new FileInputStream(fileName);
+            try
+            {
+                props.load(inStream);
+            }
+            finally
+            {
+                inStream.close();
+            }
             source = props;
         }
     }

@@ -71,17 +71,17 @@ public class AbstractTestLogging extends QpidBrokerTestCase
                 @Override
                 protected void createBroker() throws Exception
                 {
-                    _started = true;
+                    setStarted(true);
                     CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
 
                     // Prevent the InVM broker from logging and spoiling tests.
                     _serverConfiguration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "off");
 
-                    _configuration = _serverConfiguration;
-                    _registry = new TestApplicationRegistry(_configuration)
+                    setConfiguration(_serverConfiguration);
+                    setRegistry(new TestApplicationRegistry(getConfiguration())
                     {
                         /**
-                         * Create a virtualhost with a {@link SkeletonMessageStore} instead
+                         * Create a virtualhost with a {@link org.apache.qpid.server.store.SkeletonMessageStore} instead
                          * of the configured one, but remember the original configuration.
                          */
                         @Override
@@ -93,8 +93,8 @@ public class AbstractTestLogging extends QpidBrokerTestCase
                             vhostConfig.setMessageStoreClass(oldClass);
                             return host;
                         }
-                    };
-                    ApplicationRegistry.initialise(_registry);
+                    });
+                    ApplicationRegistry.initialise(getRegistry());
 
                 }
 

@@ -24,12 +24,13 @@ import org.apache.qpid.AMQException;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
 {
 
     // TODO: generate these constants automatically from the xml protocol spec file
-    public static final byte[] AMQP_HEADER = new byte[]{(byte)'A',(byte)'M',(byte)'Q',(byte)'P'};
+    private static final byte[] AMQP_HEADER = new byte[]{(byte)'A',(byte)'M',(byte)'Q',(byte)'P'};
 
     private static final byte CURRENT_PROTOCOL_CLASS = 1;
     private static final byte TCP_PROTOCOL_INSTANCE = 1;
@@ -122,6 +123,17 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
                 _protocolInstance == pi._protocolInstance &&
                 _protocolMajor == pi._protocolMajor &&
                 _protocolMinor == pi._protocolMinor);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _protocolHeader != null ? Arrays.hashCode(_protocolHeader) : 0;
+        result = 31 * result + (int) _protocolClass;
+        result = 31 * result + (int) _protocolInstance;
+        result = 31 * result + (int) _protocolMajor;
+        result = 31 * result + (int) _protocolMinor;
+        return result;
     }
 
     public static class Decoder //implements MessageDecoder

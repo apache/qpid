@@ -32,11 +32,11 @@ public class MessageStoreShutdownTest extends InternalBrokerBaseCase
 
     public void test()
     {
-        subscribe(_session, _channel, _queue);
+        subscribe(getSession(), getChannel(), getQueue());
 
         try
         {
-            publishMessages(_session, _channel, 1);
+            publishMessages(getSession(), getChannel(), 1);
         }
         catch (AMQException e)
         {
@@ -46,7 +46,7 @@ public class MessageStoreShutdownTest extends InternalBrokerBaseCase
 
         try
         {
-            _registry.close();
+            getRegistry().close();
         }
         catch (Exception e)
         {
@@ -54,7 +54,7 @@ public class MessageStoreShutdownTest extends InternalBrokerBaseCase
             fail(e.getMessage());
         }
 
-        assertTrue("Session should now be closed", _session.isClosed());
+        assertTrue("Session should now be closed", getSession().isClosed());
 
 
         //Test attempting to modify the broker state after session has been closed.
@@ -62,14 +62,14 @@ public class MessageStoreShutdownTest extends InternalBrokerBaseCase
         //The Message should have been removed from the unacked list.
 
         //Ack Messages
-        List<InternalTestProtocolSession.DeliveryPair> list = _session.getDelivers(_channel.getChannelId(), new AMQShortString("sgen_1"), 1);
+        List<InternalTestProtocolSession.DeliveryPair> list = getSession().getDelivers(getChannel().getChannelId(), new AMQShortString("sgen_1"), 1);
 
         InternalTestProtocolSession.DeliveryPair pair = list.get(0);
 
         try
         {
             // The message should now be requeued and so unable to ack it.
-            _channel.acknowledgeMessage(pair.getDeliveryTag(), false);
+            getChannel().acknowledgeMessage(pair.getDeliveryTag(), false);
         }
         catch (AMQException e)
         {

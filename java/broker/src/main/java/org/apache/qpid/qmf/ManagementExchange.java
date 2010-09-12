@@ -90,7 +90,6 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
         public void enqueue(ServerMessage message) throws AMQException
         {
-            AMQMessageHeader h = message.getMessageHeader();
             long size = message.getSize();
 
             ByteBuffer buf = ByteBuffer.allocate((int) size);

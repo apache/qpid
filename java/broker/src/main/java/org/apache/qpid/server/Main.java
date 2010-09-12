@@ -592,9 +592,16 @@ public class Main
             }
             else
             {
-                Properties fallbackProps = new Properties();
-                fallbackProps.load(propsFile);
-                PropertyConfigurator.configure(fallbackProps);
+                try
+                {
+                    Properties fallbackProps = new Properties();
+                    fallbackProps.load(propsFile);
+                    PropertyConfigurator.configure(fallbackProps);
+                }
+                finally
+                {
+                    propsFile.close();
+                }
             }
         }
     }

@@ -37,8 +37,8 @@ public class InitialContextHelper
 {
 
     public static final String _defaultPropertiesName = "example.properties";
-    protected static Properties _fileProperties;
-    protected static InitialContext _initialContext;
+    protected Properties _fileProperties;
+    protected InitialContext _initialContext;
     protected static final Logger _log = LoggerFactory.getLogger(InitialContextHelper.class);
 
     public InitialContextHelper(String propertiesName) throws ContextException

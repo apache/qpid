@@ -58,10 +58,8 @@ public class Commandview extends CommandImpl
 
     public void viewmessages()
     {
-        Set set = null;
-        Object temp[] = { null };
         objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
-        set = objname.returnObjects();
+        Set set = objname.returnObjects();
         String header = "", temp_header = "", message_data = "", outline = "";
 
         if (objname.getSet().size() != 0)

@@ -75,7 +75,7 @@ public class LocalAMQPCircuitFactory extends LocalCircuitFactory
 
         MessageProducer producer =
             props.getPublisherProducerBind()
-            ? ((props.getImmediate() | props.getMandatory())
+            ? ((props.getImmediate() || props.getMandatory())
                 ? ((AMQSession) session).createProducer(destination, props.getMandatory(), props.getImmediate())
                 : session.createProducer(destination)) : null;
 

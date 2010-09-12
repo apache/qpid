@@ -110,19 +110,19 @@ public abstract class UnaryExpression implements Expression
         Class clazz = left.getClass();
         if (clazz == Integer.class)
         {
-            return new Integer(-left.intValue());
+            return -left.intValue();
         }
         else if (clazz == Long.class)
         {
-            return new Long(-left.longValue());
+            return -left.longValue();
         }
         else if (clazz == Float.class)
         {
-            return new Float(-left.floatValue());
+            return -left.floatValue();
         }
         else if (clazz == Double.class)
         {
-            return new Double(-left.doubleValue());
+            return -left.doubleValue();
         }
         else if (clazz == BigDecimal.class)
         {
@@ -135,7 +135,7 @@ public abstract class UnaryExpression implements Expression
 
             if (BD_LONG_MIN_VALUE.compareTo(bd) == 0)
             {
-                return new Long(Long.MIN_VALUE);
+                return Long.MIN_VALUE;
             }
 
             return bd;
@@ -186,14 +186,7 @@ public abstract class UnaryExpression implements Expression
      */
     public boolean equals(Object o)
     {
-
-        if ((o == null) || !this.getClass().equals(o.getClass()))
-        {
-            return false;
-        }
-
-        return toString().equals(o.toString());
-
+        return ((o != null) && this.getClass().equals(o.getClass())) && toString().equals(o.toString());
     }
 
     /**

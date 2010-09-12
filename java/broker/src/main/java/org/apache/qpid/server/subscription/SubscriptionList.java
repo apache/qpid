@@ -34,7 +34,6 @@ public class SubscriptionList
     private final SubscriptionNode _head = new SubscriptionNode();
 
     private AtomicReference<SubscriptionNode> _tail = new AtomicReference<SubscriptionNode>(_head);
-    private final AMQQueue _queue;
     private AtomicInteger _size = new AtomicInteger();
 
 
@@ -115,7 +114,6 @@ public class SubscriptionList
 
     public SubscriptionList(AMQQueue queue)
     {
-        _queue = queue;
     }
 
     private void advanceHead()
@@ -176,7 +174,7 @@ public class SubscriptionList
     }
 
 
-    public class SubscriptionNodeIterator
+    public static class SubscriptionNodeIterator
     {
 
         private SubscriptionNode _lastNode;

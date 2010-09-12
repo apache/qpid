@@ -192,10 +192,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
         finally
         {
-            if (_accessRightsUpdate.isHeldByCurrentThread())
-            {
-                _accessRightsUpdate.unlock();
-            }
+            _accessRightsUpdate.unlock();
         }
 
         return true;
@@ -256,10 +253,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 }
                 finally
                 {
-                    if (_accessRightsUpdate.isHeldByCurrentThread())
-                    {
-                        _accessRightsUpdate.unlock();
-                    }
+                    _accessRightsUpdate.unlock();
                 }
             }
         }
@@ -409,16 +403,22 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 _accessRightsUpdate.lock();
 
                 Properties accessRights = new Properties();
-                accessRights.load(new FileInputStream(_accessFile));
+                FileInputStream inStream = new FileInputStream(_accessFile);
+                try
+                {
+                    accessRights.load(inStream);
+                }
+                finally
+                {
+                    inStream.close();
+                }
+
                 checkAccessRights(accessRights);
                 setAccessRights(accessRights);
             }
             finally
             {
-                if (_accessRightsUpdate.isHeldByCurrentThread())
-                {
-                    _accessRightsUpdate.unlock();
-                }
+                _accessRightsUpdate.unlock();
             }
         }
         else
@@ -494,10 +494,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
         finally
         {
-            if (_accessRightsUpdate.isHeldByCurrentThread())
-            {
-                _accessRightsUpdate.unlock();
-            }
+            _accessRightsUpdate.unlock();
         }
         
     }

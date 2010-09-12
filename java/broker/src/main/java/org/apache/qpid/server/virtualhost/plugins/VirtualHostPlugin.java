@@ -27,8 +27,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public interface VirtualHostPlugin extends Runnable, Plugin
 {
-    public void setVirtualHost(VirtualHost vhost);
-    
     /**
      * Long value representing the delay between repeats
      *

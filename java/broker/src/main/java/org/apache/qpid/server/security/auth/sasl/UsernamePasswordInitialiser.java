@@ -46,7 +46,7 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
 
     private ServerCallbackHandler _callbackHandler;
 
-    private class ServerCallbackHandler implements CallbackHandler
+    private static class ServerCallbackHandler implements CallbackHandler
     {
         private final PrincipalDatabase _principalDatabase;
 

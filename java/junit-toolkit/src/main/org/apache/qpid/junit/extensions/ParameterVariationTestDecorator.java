@@ -138,24 +138,27 @@ public class ParameterVariationTestDecorator extends WrappedSuiteTestDecorator
         log.debug("params = " + ((params == null) ? null : MathUtils.printArray(params)));
         log.debug("repeat = " + repeat);
 
-        for (int n : params)
+        if(params != null)
         {
-            for (int j = 0; j < repeat; j++)
+            for (int n : params)
             {
-                log.debug("n = " + n);
-
-                // Set the integer parameter in the TKTestResult to be passed to the tests.
-                tkResult.setN(n);
-
-                if (tkResult.shouldStop())
+                for (int j = 0; j < repeat; j++)
                 {
-                    log.debug("tkResult.shouldStop = " + true);
+                    log.debug("n = " + n);
 
-                    break;
+                    // Set the integer parameter in the TKTestResult to be passed to the tests.
+                    tkResult.setN(n);
+
+                    if (tkResult.shouldStop())
+                    {
+                        log.debug("tkResult.shouldStop = " + true);
+
+                        break;
+                    }
+
+                    log.debug("Calling super#run");
+                    super.run(tkResult);
                 }
-
-                log.debug("Calling super#run");
-                super.run(tkResult);
             }
         }
     }

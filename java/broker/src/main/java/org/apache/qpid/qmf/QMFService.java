@@ -467,7 +467,7 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
 
         classObjectsById.put(object.getId(),qmfObject);
 
-        if(classObjects.putIfAbsent(object, qmfObject) == null);
+        if(classObjects.putIfAbsent(object, qmfObject) == null)
         {
             objectAdded(qmfObject);
         }

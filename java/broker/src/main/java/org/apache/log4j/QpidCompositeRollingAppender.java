@@ -106,9 +106,6 @@ public class QpidCompositeRollingAppender extends FileAppender
     /** Helper class to determine next rollover time */
     RollingCalendar rc = new RollingCalendar();
 
-    /** Current period for roll overs */
-    int checkPeriod = TOP_OF_TROUBLE;
-
     /** The default maximum file size is 10MB. */
     protected long maxFileSize = 10 * 1024 * 1024;
 
@@ -1037,23 +1034,32 @@ public class QpidCompositeRollingAppender extends FileAppender
         {
             // Create the GZIP output stream
             GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(target));
-
-            // Open the input file
-            FileInputStream in = new FileInputStream(from);
-
-            // Transfer bytes from the input file to the GZIP output stream
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = in.read(buf)) > 0)
+            try
             {
-                out.write(buf, 0, len);
+                // Open the input file
+                FileInputStream in = new FileInputStream(from);
+                try
+                {
+                    // Transfer bytes from the input file to the GZIP output stream
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = in.read(buf)) > 0)
+                    {
+                        out.write(buf, 0, len);
+                    }
+                }
+                finally
+                {
+                    in.close();
+                }
+
+                // Complete the GZIP file
+                out.finish();
             }
-
-            in.close();
-
-            // Complete the GZIP file
-            out.finish();
-            out.close();
+            finally
+            {
+                out.close();
+            }
             // Remove old file.
             from.delete();
         }
@@ -1068,7 +1074,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
     }
 
-    private class CompressJob
+    private static class CompressJob
     {
         File _from, _to;
 

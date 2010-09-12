@@ -477,7 +477,7 @@ public class Session
                 Object sClass = args.get("_schema");
                 Object oid = args.get("_objectID");
                 long[] hash = (long[]) args.get("_hash");
-                if ((className == null) && (oid == null) && (oid == null))
+                if ((className == null) && (oid == null))
                 {
                     throw new ConsoleException(
                             "No class supplied, use '_schema', '_key', '_class', or '_objectId' argument");

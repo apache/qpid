@@ -37,7 +37,7 @@ import java.util.ResourceBundle;
 public class GenerateLogMessages
 {
     private boolean DEBUG = false;
-    private static String _tmplDir;
+    private String _tmplDir;
     private String _outputDir;
     private List<String> _logMessages = new LinkedList<String>();
     private String _packageSource;
@@ -508,7 +508,7 @@ public class GenerateLogMessages
      * Just a inner exception to be able to identify when a type that is not
      * 'number' occurs in the message parameter text.
      */
-    private class InvalidTypeException extends Throwable
+    private static class InvalidTypeException extends Exception
     {
         public InvalidTypeException(String message)
         {

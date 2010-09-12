@@ -22,8 +22,6 @@ package org.apache.qpid.server.logging.actors;
 
 import java.util.List;
 
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.subscription.MockSubscription;
 
 /**
@@ -45,7 +43,7 @@ public class SubscriptionActorTest extends BaseConnectionActorTestCase
 
         MockSubscription mockSubscription = new MockSubscription();
 
-        mockSubscription.setQueue(_queue, false);
+        mockSubscription.setQueue(getQueue(), false);
 
         _amqpActor = new SubscriptionActor(_rootLogger, mockSubscription);
     }

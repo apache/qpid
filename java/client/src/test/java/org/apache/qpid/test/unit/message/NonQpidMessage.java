@@ -26,6 +26,7 @@ import java.util.Hashtable;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageFormatException;
 
 public class NonQpidMessage implements Message
 {
@@ -278,9 +279,17 @@ public class NonQpidMessage implements Message
             {
                 return (Float) o;
             }
+            else if(o instanceof String)
+            {
+                return Float.valueOf((String)o);
+            }
+            else if(o == null)
+            {
+                throw new NullPointerException("No such property: " + string);
+            }
             else
             {
-                return Float.valueOf(null);
+                throw new MessageFormatException("getFloatProperty(\""+string+"\") failed as value is not a float: " + o);
             }
         }
         else
@@ -300,7 +309,7 @@ public class NonQpidMessage implements Message
             }
             else
             {
-                return Double.valueOf(null);
+                return getFloatProperty(string);
             }
         }
         else

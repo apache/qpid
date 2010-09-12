@@ -662,6 +662,8 @@ public class Bridge implements BridgeConfig
 
         public void setSession(final Session session)
         {
+            assert session instanceof ServerSession;
+
             session.setSessionListener(this);
 
             ExchangeRegistry exchangeRegistry = getVirtualHost().getExchangeRegistry();
@@ -750,6 +752,8 @@ public class Bridge implements BridgeConfig
 
         public void setSession(final Session session)
         {
+            assert session instanceof ServerSession;
+
             session.setSessionListener(this);
 
             QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();

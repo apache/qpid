@@ -528,9 +528,10 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
 
             Map<String,String> levels = retrieveConfigFileLoggersLevels(_log4jConfigFileName);
 
-            for (String loggerName : levels.keySet())
+            for (Map.Entry<String,String> entry : levels.entrySet())
             {
-                String level = levels.get(loggerName);
+                String loggerName = entry.getKey();
+                String level = entry.getValue();
 
                 try
                 {

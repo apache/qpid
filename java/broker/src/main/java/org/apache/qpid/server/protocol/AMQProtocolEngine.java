@@ -652,7 +652,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         // InvalidArgument and if they then decide to close the session/connection then the there will be time
         // for that to occur i.e. a new close method be sent before the exeption handling can mark the session closed.
         //removeChannel(channelId);
-        _closingChannelsList.remove(new Integer(channelId));
+        _closingChannelsList.remove(channelId);
     }
 
     private void markChannelAwaitingCloseOk(int channelId)

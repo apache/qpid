@@ -198,7 +198,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
                 }
-                if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
+                else if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
@@ -1162,8 +1162,7 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, sfm, ExecutionErrorCode.NOT_FOUND, "not-found: destination '"+destination+"'");
         }
-
-        if(sub.isStopped())
+        else if(sub.isStopped())
         {
             sub.setFlowMode(sfm.getFlowMode());
         }
@@ -1180,8 +1179,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, stop, ExecutionErrorCode.NOT_FOUND, "not-found: destination '"+destination+"'");
         }
-
-        sub.stop();
+        else
+        {
+            sub.stop();
+        }
 
     }
 
@@ -1196,8 +1197,10 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, flow, ExecutionErrorCode.NOT_FOUND, "not-found: destination '"+destination+"'");
         }
-
-        sub.addCredit(flow.getUnit(), flow.getValue());
+        else
+        {
+            sub.addCredit(flow.getUnit(), flow.getValue());
+        }
 
     }
 

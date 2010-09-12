@@ -126,7 +126,7 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
     {
         NDC.push(getName());
 
-        testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
+        setTestProps(TestContextProperties.getInstance(MessagingTestConfigProperties.defaults));
     }
 
     /**
@@ -143,7 +143,7 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
     public void threadSetUp()
     {
         // Run the test setup tasks. This may create an in-vm broker, if a decorator has injected a task for this.
-        taskHandler.runSetupTasks();
+        getTaskHandler().runSetupTasks();
 
         // Get the test parameters, any overrides on the command line will have been applied.
         ParsedProperties testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
@@ -178,7 +178,7 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
     public void threadTearDown()
     {
         // Run the test teardown tasks. This may destroy the in-vm broker, if a decorator has injected a task for this.
-        taskHandler.runSetupTasks();
+        getTaskHandler().runSetupTasks();
     }
 
     /**

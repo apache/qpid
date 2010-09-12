@@ -61,7 +61,7 @@ public class Connection extends ConnectionInvoker
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
 
-    class DefaultConnectionListener implements ConnectionListener
+    static class DefaultConnectionListener implements ConnectionListener
     {
         public void opened(Connection conn) {}
         public void exception(Connection conn, ConnectionException exception)

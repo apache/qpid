@@ -88,10 +88,6 @@ public final class Configuration
         addTypeMappings();
     }
 
-    void clean()
-    {
-    	INSTANCE = new Configuration();
-    }
     
     /**
      * Returns the singleton instance.

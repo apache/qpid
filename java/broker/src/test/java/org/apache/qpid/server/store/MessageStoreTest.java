@@ -110,15 +110,15 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     protected void reloadVirtualHost()
     {
-        VirtualHost original = _virtualHost;
+        VirtualHost original = getVirtualHost();
 
-        if (_virtualHost != null)
+        if (getVirtualHost() != null)
         {
             try
             {
-                _virtualHost.close();
-                _virtualHost.getApplicationRegistry().
-                getVirtualHostRegistry().unregisterVirtualHost(_virtualHost);
+                getVirtualHost().close();
+                getVirtualHost().getApplicationRegistry().
+                getVirtualHostRegistry().unregisterVirtualHost(getVirtualHost());
             }
             catch (Exception e)
             {
@@ -128,7 +128,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            _virtualHost = ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config));
+            setVirtualHost(ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config)));
         }
         catch (Exception e)
         {
@@ -136,7 +136,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             fail(e.getMessage());
         }
 
-        assertTrue("Virtualhost has not changed, reload was not successful", original != _virtualHost);
+        assertTrue("Virtualhost has not changed, reload was not successful", original != getVirtualHost());
     }
 
     /**
@@ -145,7 +145,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
      */
     public void testQueueExchangeAndBindingCreation() throws Exception
     {
-        assertEquals("Should not be any existing queues", 0,  _virtualHost.getQueueRegistry().getQueues().size());
+        assertEquals("Should not be any existing queues", 0,  getVirtualHost().getQueueRegistry().getQueues().size());
 
         createAllQueues();
         createAllTopicQueues();
@@ -183,7 +183,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         validateMessageOnTopics(2, true);
 
         assertEquals("Not all queues correctly registered",
-                10, _virtualHost.getQueueRegistry().getQueues().size());
+                10, getVirtualHost().getQueueRegistry().getQueues().size());
     }
 
     /**
@@ -212,7 +212,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     {
         testMessagePersistence();
 
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         assertEquals("Incorrect number of queues registered after recovery", 
                 6,  queueRegistry.getQueues().size());
@@ -237,7 +237,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     public void testQueuePersistence() throws Exception
     {
         assertEquals("Should not be any existing queues",
-                0, _virtualHost.getQueueRegistry().getQueues().size());
+                0, getVirtualHost().getQueueRegistry().getQueues().size());
 
         //create durable and non durable queues/topics
         createAllQueues();
@@ -246,7 +246,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         //reload the virtual host, prompting recovery of the queues/topics
         reloadVirtualHost();
 
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         assertEquals("Incorrect number of queues registered after recovery", 
                 6,  queueRegistry.getQueues().size());
@@ -285,22 +285,22 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         //Register Durable Queue
         createQueue(durableQueueName, false, true, false, false);
 
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered before recovery",
                 1,  queueRegistry.getQueues().size());
 
         reloadVirtualHost();
         
-        queueRegistry = _virtualHost.getQueueRegistry();
+        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered after first recovery",
                 1,  queueRegistry.getQueues().size());
         
         //test that removing the queue means it is not recovered next time
-        _virtualHost.getDurableConfigurationStore().removeQueue(queueRegistry.getQueue(durableQueueName));
+        getVirtualHost().getDurableConfigurationStore().removeQueue(queueRegistry.getQueue(durableQueueName));
 
         reloadVirtualHost();
         
-        queueRegistry = _virtualHost.getQueueRegistry();
+        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of queues registered after second recovery",
                 0,  queueRegistry.getQueues().size());
         assertNull("Durable queue was not removed:" + durableQueueName, 
@@ -314,12 +314,12 @@ public class MessageStoreTest extends InternalBrokerBaseCase
      */
     public void testExchangePersistence() throws Exception
     {
-        int origExchangeCount = _virtualHost.getExchangeRegistry().getExchangeNames().size();
+        int origExchangeCount = getVirtualHost().getExchangeRegistry().getExchangeNames().size();
 
         Map<AMQShortString, Exchange> oldExchanges = createExchanges();
 
         assertEquals("Incorrect number of exchanges registered before recovery", 
-                origExchangeCount + 3, _virtualHost.getExchangeRegistry().getExchangeNames().size());
+                origExchangeCount + 3, getVirtualHost().getExchangeRegistry().getExchangeNames().size());
 
         reloadVirtualHost();
 
@@ -334,26 +334,26 @@ public class MessageStoreTest extends InternalBrokerBaseCase
      */
     public void testDurableExchangeRemoval() throws Exception
     {
-        int origExchangeCount = _virtualHost.getExchangeRegistry().getExchangeNames().size();
+        int origExchangeCount = getVirtualHost().getExchangeRegistry().getExchangeNames().size();
 
         createExchange(DirectExchange.TYPE, directExchangeName, true);
        
-        ExchangeRegistry exchangeRegistry = _virtualHost.getExchangeRegistry();
+        ExchangeRegistry exchangeRegistry = getVirtualHost().getExchangeRegistry();
         assertEquals("Incorrect number of exchanges registered before recovery", 
                 origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
 
         reloadVirtualHost();
         
-        exchangeRegistry = _virtualHost.getExchangeRegistry();
+        exchangeRegistry = getVirtualHost().getExchangeRegistry();
         assertEquals("Incorrect number of exchanges registered after first recovery", 
                 origExchangeCount + 1,  exchangeRegistry.getExchangeNames().size());
         
         //test that removing the exchange means it is not recovered next time
-        _virtualHost.getDurableConfigurationStore().removeExchange(exchangeRegistry.getExchange(directExchangeName));
+        getVirtualHost().getDurableConfigurationStore().removeExchange(exchangeRegistry.getExchange(directExchangeName));
 
         reloadVirtualHost();
         
-        exchangeRegistry = _virtualHost.getExchangeRegistry();
+        exchangeRegistry = getVirtualHost().getExchangeRegistry();
         assertEquals("Incorrect number of exchanges registered after second recovery", 
                 origExchangeCount,  exchangeRegistry.getExchangeNames().size());
         assertNull("Durable exchange was not removed:" + directExchangeName, 
@@ -368,7 +368,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
      */
     public void testBindingPersistence() throws Exception
     {
-        int origExchangeCount = _virtualHost.getExchangeRegistry().getExchangeNames().size();
+        int origExchangeCount = getVirtualHost().getExchangeRegistry().getExchangeNames().size();
 
         createAllQueues();
         createAllTopicQueues();
@@ -384,7 +384,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         bindAllTopicQueuesToExchange(topicExchange, topicRouting);
 
         assertEquals("Incorrect number of exchanges registered before recovery", 
-                origExchangeCount + 3, _virtualHost.getExchangeRegistry().getExchangeNames().size());
+                origExchangeCount + 3, getVirtualHost().getExchangeRegistry().getExchangeNames().size());
 
         reloadVirtualHost();
 
@@ -400,7 +400,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
      */
     public void testDurableBindingRemoval() throws Exception
     {
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         //create durable queue and exchange, bind them
         Exchange exch = createExchange(DirectExchange.TYPE, directExchangeName, true);
@@ -413,11 +413,11 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         //verify binding is actually normally recovered
         reloadVirtualHost();
 
-        queueRegistry = _virtualHost.getQueueRegistry();
+        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of bindings registered after first recovery", 
                 1, queueRegistry.getQueue(durableQueueName).getBindings().size());
 
-        ExchangeRegistry exchangeRegistry = _virtualHost.getExchangeRegistry();
+        ExchangeRegistry exchangeRegistry = getVirtualHost().getExchangeRegistry();
         exch = exchangeRegistry.getExchange(directExchangeName);
         assertNotNull("Exchange was not recovered", exch);
 
@@ -426,7 +426,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         reloadVirtualHost();
 
-        queueRegistry = _virtualHost.getQueueRegistry();
+        queueRegistry = getVirtualHost().getQueueRegistry();
         assertEquals("Incorrect number of bindings registered after second recovery", 
                 0, queueRegistry.getQueue(durableQueueName).getBindings().size());
     }
@@ -438,7 +438,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
      */
     private void validateExchanges(int originalNumExchanges, Map<AMQShortString, Exchange> oldExchanges)
     {
-        ExchangeRegistry registry = _virtualHost.getExchangeRegistry();
+        ExchangeRegistry registry = getVirtualHost().getExchangeRegistry();
 
         assertTrue(directExchangeName + " exchange NOT reloaded",
                 registry.getExchangeNames().contains(directExchangeName));
@@ -461,7 +461,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     /** Validates the Durable queues and their properties are as expected following recovery */
     private void validateBindingProperties()
     {
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         assertEquals("Incorrect number of (durable) queues following recovery", 6, queueRegistry.getQueues().size());
 
@@ -497,7 +497,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     private void setQueueExclusivity(boolean exclusive) throws AMQException
     {
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         AMQQueue queue = queueRegistry.getQueue(durableExclusiveQueueName);
 
@@ -506,7 +506,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     private void validateQueueExclusivityProperty(boolean expected)
     {
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         AMQQueue queue = queueRegistry.getQueue(durableExclusiveQueueName);
 
@@ -516,7 +516,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     private void validateDurableQueueProperties()
     {
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         validateQueueProperties(queueRegistry.getQueue(durablePriorityQueueName), true, true, false, false);
         validateQueueProperties(queueRegistry.getQueue(durablePriorityTopicQueueName), true, true, false, false);
@@ -603,7 +603,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         currentMessage.setExpiration();
 
         MessageMetaData mmd = currentMessage.headersReceived();
-        currentMessage.setStoredMessage(_virtualHost.getMessageStore().addMessage(mmd));
+        currentMessage.setStoredMessage(getVirtualHost().getMessageStore().addMessage(mmd));
         currentMessage.getStoredMessage().flushToStore();
         currentMessage.route();
 
@@ -611,7 +611,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         // check and deliver if header says body length is zero
         if (currentMessage.allContentReceived())
         {
-            ServerTransaction trans = new AutoCommitTransaction(_virtualHost.getMessageStore());
+            ServerTransaction trans = new AutoCommitTransaction(getVirtualHost().getMessageStore());
             final List<? extends BaseQueue> destinationQueues = currentMessage.getDestinationQueues();
             trans.enqueue(currentMessage.getDestinationQueues(), currentMessage, new ServerTransaction.Action() {
                 public void postCommit()
@@ -703,13 +703,13 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         try
         {
             queue = AMQQueueFactory.createAMQQueueImpl(queueName, durable, queueOwner, false, exclusive,
-                    _virtualHost, queueArguments);
+                    getVirtualHost(), queueArguments);
 
             validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
 
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _virtualHost.getMessageStore().createQueue(queue, queueArguments);
+                getVirtualHost().getMessageStore().createQueue(queue, queueArguments);
             }
         }
         catch (AMQException e)
@@ -717,7 +717,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             fail(e.getMessage());
         }
 
-        _virtualHost.getQueueRegistry().registerQueue(queue);
+        getVirtualHost().getQueueRegistry().registerQueue(queue);
 
     }
 
@@ -741,7 +741,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            exchange = type.newInstance(_virtualHost, name, durable, 0, false);
+            exchange = type.newInstance(getVirtualHost(), name, durable, 0, false);
         }
         catch (AMQException e)
         {
@@ -750,10 +750,10 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            _virtualHost.getExchangeRegistry().registerExchange(exchange);
+            getVirtualHost().getExchangeRegistry().registerExchange(exchange);
             if (durable)
             {
-                _virtualHost.getMessageStore().createExchange(exchange);
+                getVirtualHost().getMessageStore().createExchange(exchange);
             }
         }
         catch (AMQException e)
@@ -768,7 +768,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         FieldTable queueArguments = new FieldTable();
         queueArguments.put(AMQQueueFactory.X_QPID_PRIORITIES, DEFAULT_PRIORTY_LEVEL);
 
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durablePriorityQueueName), false, queueArguments);
         bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durableQueueName), false, null);
@@ -782,7 +782,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         FieldTable queueArguments = new FieldTable();
         queueArguments.put(AMQQueueFactory.X_QPID_PRIORITIES, DEFAULT_PRIORTY_LEVEL);
 
-        QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
+        QueueRegistry queueRegistry = getVirtualHost().getQueueRegistry();
 
         bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durablePriorityTopicQueueName), true, queueArguments);
         bindQueueToExchange(exchange, routingKey, queueRegistry.getQueue(durableTopicQueueName), true, null);
@@ -803,7 +803,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            _virtualHost.getBindingFactory().addBinding(String.valueOf(routingKey), queue, exchange, FieldTable.convertToMap(bindArguments));
+            getVirtualHost().getBindingFactory().addBinding(String.valueOf(routingKey), queue, exchange, FieldTable.convertToMap(bindArguments));
         }
         catch (Exception e)
         {
@@ -823,7 +823,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            _virtualHost.getBindingFactory().removeBinding(String.valueOf(routingKey), queue, exchange, FieldTable.convertToMap(bindArguments));
+            getVirtualHost().getBindingFactory().removeBinding(String.valueOf(routingKey), queue, exchange, FieldTable.convertToMap(bindArguments));
         }
         catch (Exception e)
         {
@@ -857,7 +857,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
     private void validateMessageOnQueue(AMQShortString queueName, long messageCount)
     {
-        AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(queueName);
+        AMQQueue queue = getVirtualHost().getQueueRegistry().getQueue(queueName);
 
         assertNotNull("Queue(" + queueName + ") not correctly registered:", queue);
 

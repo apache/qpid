@@ -215,23 +215,34 @@ public class FileUtils
     public static void copyCheckedEx(File src, File dst) throws IOException
     {
         InputStream in = new FileInputStream(src);
-        if (!dst.exists())
+        try
         {
-            dst.createNewFile();
+            if (!dst.exists())
+            {
+                dst.createNewFile();
+            }
+
+            OutputStream out = new FileOutputStream(dst);
+            
+            try
+            {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0)
+                {
+                    out.write(buf, 0, len);
+                }
+            }
+            finally
+            {
+                out.close();
+            }
         }
-
-        OutputStream out = new FileOutputStream(dst);
-
-        // Transfer bytes from in to out
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = in.read(buf)) > 0)
+        finally
         {
-            out.write(buf, 0, len);
+            in.close();
         }
-
-        in.close();
-        out.close();
     }
 
     /*

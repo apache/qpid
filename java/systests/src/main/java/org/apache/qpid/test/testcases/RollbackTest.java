@@ -42,7 +42,7 @@ import org.apache.qpid.junit.extensions.util.TestContextProperties;
 public class RollbackTest extends FrameworkBaseCase
 {
     /** Used to read the tests configurable properties through. */
-    ParsedProperties testProps;
+    private ParsedProperties testProps;
 
     /**
      * Creates a new test case with the specified name.

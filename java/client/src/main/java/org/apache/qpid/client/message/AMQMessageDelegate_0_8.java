@@ -70,7 +70,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         _contentHeaderProperties = properties;
         _deliveryTag = deliveryTag;
         _readableProperties = (_contentHeaderProperties != null);
-        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
+        _headerAdapter = new JMSHeaderAdapter(_readableProperties ? ((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders()
+                                                                  : (new BasicContentHeaderProperties()).getHeaders() );
     }
 
     // Used for the creation of new messages

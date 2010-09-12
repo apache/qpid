@@ -166,7 +166,7 @@ public class QpidLog4JConfigurator
 
         private static String constructMessage(final String msg, final SAXParseException ex)
         {
-            return new String(msg + ": Line " + ex.getLineNumber()+" column " +ex.getColumnNumber() + ": " + ex.getMessage());
+            return msg + ": Line " + ex.getLineNumber()+" column " +ex.getColumnNumber() + ": " + ex.getMessage();
         }
     }
     
@@ -252,10 +252,11 @@ public class QpidLog4JConfigurator
             loggersLevels.put("Root", rootLoggerlevelString);
             
 
-            for (String loggerName : loggersLevels.keySet())
+            for (Map.Entry<String, String> entry : loggersLevels.entrySet())
             {
-                String levelString = loggersLevels.get(loggerName);
-                
+                String loggerName = entry.getKey();
+                String levelString = entry.getValue();
+
                 //let log4j replace any properties in the string
                 String log4jConfiguredString = domConfig.subst(levelString);
                 

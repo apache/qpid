@@ -34,7 +34,7 @@ public class Commandget extends CommandImpl
 
     private String _attributeName;
     private String _value;
-    public static String COMMAND_NAME = "get";
+    public static final String COMMAND_NAME = "get";
 
     public Commandget(JMXinfo info)
     {

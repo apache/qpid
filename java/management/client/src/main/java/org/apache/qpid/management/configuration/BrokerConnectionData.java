@@ -251,16 +251,26 @@ public class BrokerConnectionData
     }
     
     @Override
-    public boolean equals(Object object) {
-    	try 
-    	{
-			BrokerConnectionData connectionData = (BrokerConnectionData) object;
-			return (_host.equals(connectionData._host) )
-					&& (_port == connectionData._port)
-					&& (_virtualHost.equals(connectionData._virtualHost));
-		} catch (Exception exception) {
-			return false;
-		}
+    public boolean equals(Object object)
+    {
+    	if(object instanceof BrokerConnectionData)
+        {
+            try
+            {
+                BrokerConnectionData connectionData = (BrokerConnectionData) object;
+                return (_host.equals(connectionData._host) )
+                        && (_port == connectionData._port)
+                        && (_virtualHost.equals(connectionData._virtualHost));
+            }
+            catch (Exception exception)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;    
+        }
     }
     
     @Override

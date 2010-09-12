@@ -82,9 +82,10 @@ public class SSLSender implements Sender<ByteBuffer>
                 throw new SenderException("Error closing SSL connection",e);
             }
 
-            while (!engine.isOutboundDone())
+
+            synchronized(engineState)
             {
-                synchronized(engineState)
+                while (!engine.isOutboundDone())
                 {
                     try
                     {
@@ -94,6 +95,7 @@ public class SSLSender implements Sender<ByteBuffer>
                     {
                         // pass
                     }
+
                 }
             }
             delegate.close();

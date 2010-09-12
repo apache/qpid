@@ -32,21 +32,21 @@ import javax.jms.Session;
 
 public abstract class Client
 {
-	protected Connection con;
-	protected Session ssn;
-    protected boolean durable = false;
-    protected boolean transacted = false;
-    protected int txSize = 10;
-    protected int ack_mode = Session.AUTO_ACKNOWLEDGE;
-    protected String contentType = "application/octet-stream";
-    protected Destination dest = null;
-        
-    protected long reportFrequency = 60000;  // every min
-    protected DateFormat df = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss");
-    protected NumberFormat nf = new DecimalFormat("##.00");
+	private Connection con;
+	private Session ssn;
+    private boolean durable = false;
+    private boolean transacted = false;
+    private int txSize = 10;
+    private int ack_mode = Session.AUTO_ACKNOWLEDGE;
+    private String contentType = "application/octet-stream";
 
-    protected long startTime = System.currentTimeMillis();
-    protected ErrorHandler errorHandler = null;
+    private long reportFrequency = 60000;  // every min
+
+    private DateFormat df = new SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss");
+    private NumberFormat nf = new DecimalFormat("##.00");
+
+    private long startTime = System.currentTimeMillis();
+    private ErrorHandler errorHandler = null;
     
     public Client(Connection con) throws Exception
     {
@@ -87,4 +87,60 @@ public abstract class Client
     		e.printStackTrace();
     	}
     }
+
+    protected Session getSsn()
+    {
+        return ssn;
+    }
+
+    protected void setSsn(Session ssn)
+    {
+        this.ssn = ssn;
+    }
+
+    protected boolean isDurable()
+    {
+        return durable;
+    }
+
+    protected boolean isTransacted()
+    {
+        return transacted;
+    }
+
+    protected int getTxSize()
+    {
+        return txSize;
+    }
+
+    protected int getAck_mode()
+    {
+        return ack_mode;
+    }
+
+    protected String getContentType()
+    {
+        return contentType;
+    }
+
+    protected long getReportFrequency()
+    {
+        return reportFrequency;
+    }
+
+    protected long getStartTime()
+    {
+        return startTime;
+    }
+
+    protected void setStartTime(long startTime)
+    {
+        this.startTime = startTime;
+    }
+
+    public DateFormat getDf()
+    {
+        return df;
+    }
+    
 }

@@ -55,7 +55,7 @@ public class AccessControlLoggingTest extends AbstractTestLogging
         super.setUp();
     }
 
-    /** FIXME This comes from {@link SimpleACLTest} and makes me suspicious. */
+    /** FIXME This comes from SimpleACLTest and makes me suspicious. */
     @Override
     public void tearDown() throws Exception
     {
@@ -135,7 +135,7 @@ public class AccessControlLoggingTest extends AbstractTestLogging
         
         assertEquals("Should only be one ACL log message", 1, matches.size());
         
-        String log = getLogMessage(matches, 0);;
+        String log = getLogMessage(matches, 0);
         String actor = fromActor(log);
         String subject = fromSubject(log);
         String message = getMessageString(fromMessage(log));

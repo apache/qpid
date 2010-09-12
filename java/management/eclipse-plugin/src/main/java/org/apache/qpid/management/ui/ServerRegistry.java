@@ -135,7 +135,7 @@ public abstract class ServerRegistry
     
     protected void removeVirtualHostManagerMBean(ManagedBean mbean)
     {
-        _vhostManagers.remove(mbean);
+        _vhostManagers.remove(mbean.getVirtualHostName());
     }
     
     public ManagedBean getVirtualHostManagerMBean(String virtualHost)

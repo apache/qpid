@@ -77,10 +77,6 @@ public class DispatcherTest extends QpidBrokerTestCase
     {
         super.setUp();
 
-        InitialContextFactory factory = new PropertiesFileInitialContextFactory();
-
-        Hashtable<String, String> env = new Hashtable<String, String>();
-
         // Create Client 1
         _clientConnection = getConnection();
 

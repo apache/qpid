@@ -56,7 +56,7 @@ public class MultiThreadSocketConnector extends SocketConnector
     private final Object lock = new Object();
     private final int id = nextId++;
     private final String threadName = "SocketConnector-" + id;
-    private SocketConnectorConfig defaultConfig = new SocketConnectorConfig();
+
     private final Queue connectQueue = new Queue();
     private final MultiThreadSocketIoProcessor[] ioProcessors;
     private final int processorCount;

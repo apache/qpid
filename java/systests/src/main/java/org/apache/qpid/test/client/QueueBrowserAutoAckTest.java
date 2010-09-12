@@ -265,8 +265,8 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     protected void checkOverlappingMultipleGetEnum(int expectedMessages, int browserEnumerationCount, String selector) throws JMSException
     {
         QueueBrowser queueBrowser = selector == null ?
-                                    _clientSession.createBrowser(_queue, selector) :
-                                    _clientSession.createBrowser(_queue);
+                                _clientSession.createBrowser(_queue) : _clientSession.createBrowser(_queue);
+//                _clientSession.createBrowser(_queue) : _clientSession.createBrowser(_queue, selector);
 
         Enumeration[] msgs = new Enumeration[browserEnumerationCount];
         int[] msgCount = new int[browserEnumerationCount];
