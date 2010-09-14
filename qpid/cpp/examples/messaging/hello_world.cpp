@@ -11,7 +11,9 @@ using namespace qpid::messaging;
 int main(int argc, char** argv) {
     std::string broker = argc > 1 ? argv[1] : "localhost:5672";
     std::string address = argc > 2 ? argv[2] : "amq.topic";
-    Connection connection(broker);
+    std::string connectionOptions = argc > 3 ? argv[3] : "";
+    
+    Connection connection(broker, connectionOptions);
     try {
         connection.open();
         Session session = connection.createSession();
