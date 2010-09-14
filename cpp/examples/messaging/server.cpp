@@ -39,8 +39,9 @@ using std::string;
 
 int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
-
-    Connection connection(url);
+    std::string connectionOptions = argc > 3 ? argv[3] : "";
+    
+    Connection connection(url, connectionOptions);
     try {
         connection.open();
         Session session = connection.createSession();
