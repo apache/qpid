@@ -12,6 +12,8 @@ using namespace qpid::messaging;
 
 int main(int argc, char** argv) {
   std::string broker = argc > 1 ? argv[1] : "localhost:5672";
+  std::string connectionOptions = argc > 2 ? argv[2] : "";
+
   std::string query = 
     "let $w := ./weather "
     "return $w/station = 'Raleigh-Durham International Airport (KRDU)' "
@@ -32,7 +34,7 @@ int main(int argc, char** argv) {
     " } "
     "}";
 
-  Connection connection(broker);
+  Connection connection(broker, connectionOptions);
   try {
     connection.open();
     Session session = connection.createSession();
