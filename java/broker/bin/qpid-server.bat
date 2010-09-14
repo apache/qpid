@@ -165,9 +165,7 @@ REM end parsing -run arguments
 
 set JAVA_VM=-server
 set JAVA_MEM=-Xmx1024m
-set JAVA_GC=-XX:+UseConcMarkSweepGC 
-rem removing the following vm arg from JAVA_GC  as it is supported on ly in Java 1.6
-rem -XX:+HeapDumpOnOutOfMemoryError"
+set JAVA_GC=-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError -XX:+ExplicitGCInvokesConcurrent
 
 REM Use QPID_JAVA_GC if set
 if "%QPID_JAVA_GC%" == "" goto noQpidJavaGC
