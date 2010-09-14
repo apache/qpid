@@ -121,19 +121,6 @@ ManagementAgentImpl::~ManagementAgentImpl()
     connThread.join();
     pubThread.join();
 
-    // Release the memory associated with stored management objects.
-    {
-        sys::Mutex::ScopedLock lock(agentLock);
-
-        moveNewObjectsLH();
-        for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-             iter != managementObjects.end ();
-             iter++) {
-            ManagementObject* object = iter->second;
-            delete object;
-        }
-        managementObjects.clear();
-    }
     if (pipeHandle) {
         delete pipeHandle;
         pipeHandle = 0;
@@ -294,7 +281,7 @@ ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
     objectId.setAgentName(name_address);
 
     object->setObjectId(objectId);
-    newManagementObjects[objectId] = object;
+    newManagementObjects[objectId] = boost::shared_ptr<ManagementObject>(object);
     return objectId;
 }
 
@@ -561,24 +548,31 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
                 inArgs = (mid->second).asMap();
             }
 
-            ManagementObjectMap::iterator iter = managementObjects.find(objId);
-            if (iter == managementObjects.end() || iter->second->isDeleted()) {
+            boost::shared_ptr<ManagementObject> oPtr;
+            {
+                sys::Mutex::ScopedLock lock(agentLock);
+                ObjectMap::iterator iter = managementObjects.find(objId);
+                if (iter != managementObjects.end() && !iter->second->isDeleted())
+                    oPtr = iter->second;
+            }
+
+            if (oPtr.get() == 0) {
                 sendException(replyTo, cid, Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT),
                               Manageable::STATUS_UNKNOWN_OBJECT);
                 failed = true;
             } else {
-                iter->second->doMethod(methodName, inArgs, callMap);
-            }
+                oPtr->doMethod(methodName, inArgs, callMap);
 
-            if (callMap["_status_code"].asUint32() == 0) {
-                outMap["_arguments"] = Variant::Map();
-                for (Variant::Map::const_iterator iter = callMap.begin();
-                     iter != callMap.end(); iter++)
-                    if (iter->first != "_status_code" && iter->first != "_status_text")
-                        outMap["_arguments"].asMap()[iter->first] = iter->second;
-            } else {
-                sendException(replyTo, cid, callMap["_status_text"], callMap["_status_code"]);
-                failed = true;
+                if (callMap["_status_code"].asUint32() == 0) {
+                    outMap["_arguments"] = Variant::Map();
+                    for (Variant::Map::const_iterator iter = callMap.begin();
+                         iter != callMap.end(); iter++)
+                        if (iter->first != "_status_code" && iter->first != "_status_text")
+                            outMap["_arguments"].asMap()[iter->first] = iter->second;
+                } else {
+                    sendException(replyTo, cid, callMap["_status_text"], callMap["_status_code"]);
+                    failed = true;
+                }
             }
 
         } catch(types::InvalidConversion& e) {
@@ -643,11 +637,16 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
         i = inMap.find("_object_id");
         if (i != inMap.end() && i->second.getType() == qpid::types::VAR_MAP) {
             ObjectId objId(i->second.asMap());
+            boost::shared_ptr<ManagementObject> object;
 
-            ManagementObjectMap::iterator iter = managementObjects.find(objId);
-            if (iter != managementObjects.end()) {
-                ManagementObject* object = iter->second;
+            {
+                sys::Mutex::ScopedLock lock(agentLock);
+                ObjectMap::iterator iter = managementObjects.find(objId); // XXX - Unprotected
+                if (iter != managementObjects.end())
+                    object = iter->second;
+            }
 
+            if (object.get() != 0) {
                 if (object->getConfigChanged() || object->getInstChanged())
                     object->setUpdateTime();
 
@@ -684,11 +683,24 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
                 if (s_iter != schemaIdMap.end() && s_iter->second.getType() == qpid::types::VAR_STRING)
                     packageName = s_iter->second.asString();
 
+                typedef list<boost::shared_ptr<ManagementObject> > StageList;
+                StageList staging;
+
+                {
+                    sys::Mutex::ScopedLock lock(agentLock);
+                    for (ObjectMap::iterator iter = managementObjects.begin();
+                         iter != managementObjects.end();
+                         iter++) {
+                        ManagementObject* object = iter->second.get();
+                        if (object->getClassName() == className &&
+                            (packageName.empty() || object->getPackageName() == packageName))
+                            staging.push_back(iter->second);
+                    }
+                }
+
                 unsigned int objCount = 0;
-                for (ManagementObjectMap::iterator iter = managementObjects.begin();
-                     iter != managementObjects.end();
-                     iter++) {
-                    ManagementObject* object = iter->second;
+                for (StageList::iterator iter = staging.begin(); iter != staging.end(); iter++) {
+                    ManagementObject* object = iter->get();
                     if (object->getClassName() == className &&
                         (packageName.empty() || object->getPackageName() == packageName)) {
 
@@ -700,7 +712,7 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
                             object->setUpdateTime();
 
                         object->mapEncodeValues(values, true, true); // write both stats and properties
-                        iter->first.mapEncode(oidMap);
+                        object->getObjectId().mapEncode(oidMap);
                         map_["_values"] = values;
                         map_["_object_id"] = oidMap;
                         object->writeTimestamps(map_);
@@ -922,7 +934,7 @@ ManagementAgentImpl::PackageMap::iterator ManagementAgentImpl::findOrAddPackage(
 void ManagementAgentImpl::moveNewObjectsLH()
 {
     sys::Mutex::ScopedLock lock(addLock);
-    for (ManagementObjectMap::iterator iter = newManagementObjects.begin();
+    for (ObjectMap::iterator iter = newManagementObjects.begin();
          iter != newManagementObjects.end();
          iter++)
         managementObjects[iter->first] = iter->second;
@@ -977,7 +989,7 @@ void ManagementAgentImpl::periodicProcessing()
 {
     string addr_key_base = "agent.ind.data.";
     sys::Mutex::ScopedLock lock(agentLock);
-    list<pair<ObjectId, ManagementObject*> > deleteList;
+    list<ObjectId> deleteList;
 
     if (!connected)
         return;
@@ -989,10 +1001,10 @@ void ManagementAgentImpl::periodicProcessing()
     //
     //  Clear the been-here flag on all objects in the map.
     //
-    for (ManagementObjectMap::iterator iter = managementObjects.begin();
+    for (ObjectMap::iterator iter = managementObjects.begin();
          iter != managementObjects.end();
          iter++) {
-        ManagementObject* object = iter->second;
+        ManagementObject* object = iter->second.get();
         object->setFlags(0);
         if (clientWasAdded) {
             object->setForcePublish(true);
@@ -1006,10 +1018,10 @@ void ManagementAgentImpl::periodicProcessing()
     //
     uint32_t v2Objs = 0;
 
-    for (ManagementObjectMap::iterator baseIter = managementObjects.begin();
+    for (ObjectMap::iterator baseIter = managementObjects.begin();
          baseIter != managementObjects.end();
          baseIter++) {
-        ManagementObject* baseObject = baseIter->second;
+        ManagementObject* baseObject = baseIter->second.get();
 
         //
         //  Skip until we find a base object requiring a sent message.
@@ -1041,10 +1053,10 @@ void ManagementAgentImpl::periodicProcessing()
         headers["qmf.content"] = "_data";
         headers["qmf.agent"] = name_address;
 
-        for (ManagementObjectMap::iterator iter = baseIter;
+        for (ObjectMap::iterator iter = baseIter;
              iter != managementObjects.end();
              iter++) {
-            ManagementObject* object = iter->second;
+            ManagementObject* object = iter->second.get();
             bool send_stats, send_props;
             if (baseObject->isSameClass(*object) && object->getFlags() == 0) {
                 object->setFlags(1);
@@ -1081,7 +1093,7 @@ void ManagementAgentImpl::periodicProcessing()
                 }
 
                 if (object->isDeleted())
-                    deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
+                    deleteList.push_back(iter->first);
                 object->setForcePublish(false);
             }
         }
@@ -1094,14 +1106,10 @@ void ManagementAgentImpl::periodicProcessing()
     }
 
     // Delete flagged objects
-    for (list<pair<ObjectId, ManagementObject*> >::reverse_iterator iter = deleteList.rbegin();
+    for (list<ObjectId>::reverse_iterator iter = deleteList.rbegin();
          iter != deleteList.rend();
-         iter++) {
-        delete iter->second;
-        managementObjects.erase(iter->first);
-    }
-
-    deleteList.clear();
+         iter++)
+        managementObjects.erase(*iter);
 }
 
 

@@ -142,9 +142,12 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     PackageMap                       packages;
     AgentAttachment                  attachment;
-    management::ManagementObjectMap  managementObjects;
-    management::ManagementObjectMap  newManagementObjects;
-    MethodQueue                      methodQueue;
+
+    typedef std::map<ObjectId, boost::shared_ptr<ManagementObject> > ObjectMap;
+
+    ObjectMap    managementObjects;
+    ObjectMap    newManagementObjects;
+    MethodQueue  methodQueue;
 
     void received (client::Message& msg);
 
