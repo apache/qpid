@@ -257,7 +257,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     void startProtocol();
     void storeData(bool requested=false);
-    void retrieveData();
+    void retrieveData(std::string& vendor, std::string& product, std::string& inst);
     PackageMap::iterator findOrAddPackage(const std::string& name);
     void moveNewObjectsLH();
     void addClassLocal (uint8_t               classKind,
