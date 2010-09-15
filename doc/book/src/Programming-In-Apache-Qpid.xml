@@ -1448,7 +1448,7 @@ options := map
 
     <para>The sender can be queried for the available space (i.e. the
     unused capacity), and for the current count of unsettled messages
-    (i.e. those held in the queue pending confirmation by the
+    (i.e. those held in the replay list pending confirmation by the
     server). When the unsettled count is zero, all messages on that
     sender have been successfully sent.</para>
 
