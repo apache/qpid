@@ -135,20 +135,12 @@ void ManagementAgentImpl::setName(const string& vendor, const string& product, c
     if (product.find(':') != product.npos) {
         throw Exception("product string cannot contain a ':' character.");
     }
+
     attrMap["_vendor"] = vendor;
     attrMap["_product"] = product;
-    string inst;
-    if (instance.empty()) {
-        inst = qpid::types::Uuid(true).str();
-    } else
-        inst = instance;
-
-   name_address = vendor + ":" + product + ":" + inst;
-   vendorNameKey = keyifyNameStr(vendor);
-   productNameKey = keyifyNameStr(product);
-   instanceNameKey = keyifyNameStr(inst);
-   attrMap["_instance"] = inst;
-   attrMap["_name"] = name_address;
+    if (!instance.empty()) {
+        attrMap["_instance"] = instance;
+    }
 }
 
 
@@ -192,13 +184,12 @@ void ManagementAgentImpl::init(const qpid::management::ConnectionSettings& setti
                                bool useExternalThread,
                                const string& _storeFile)
 {
+    std::string cfgVendor, cfgProduct, cfgInstance;
+
     interval     = intervalSeconds;
     extThread    = useExternalThread;
     storeFile    = _storeFile;
     nextObjectId = 1;
-
-    QPID_LOG(info, "QMF Agent Initialized: broker=" << settings.host << ":" << settings.port <<
-             " interval=" << intervalSeconds << " storeFile=" << _storeFile);
 
     //
     // Convert from management::ConnectionSettings to client::ConnectionSettings
@@ -220,14 +211,36 @@ void ManagementAgentImpl::init(const qpid::management::ConnectionSettings& setti
     connectionSettings.minSsf       = settings.minSsf;
     connectionSettings.maxSsf       = settings.maxSsf;
 
-    retrieveData();
+    retrieveData(cfgVendor, cfgProduct, cfgInstance);
+
     bootSequence++;
     if ((bootSequence & 0xF000) != 0)
         bootSequence = 1;
+
+    // setup the agent's name.  The name may be set via a call to setName().  If setName()
+    // has not been called, the name can be read from the configuration file.  If there is
+    // no name in the configuration file, a unique default name is provided.
+    if (attrMap.empty()) {
+        // setName() never called by application, so use names retrieved from config, otherwise defaults.
+        setName(cfgVendor.empty() ? defaultVendorName : cfgVendor,
+                cfgProduct.empty() ? defaultProductName : cfgProduct,
+                cfgInstance.empty() ? qpid::types::Uuid(true).str() : cfgInstance);
+    } else if (attrMap.find("_instance") == attrMap.end()) {
+        // setName() called, but instance was not specified, use config or generate a uuid
+        setName(attrMap["_vendor"].asString(), attrMap["_product"].asString(),
+                cfgInstance.empty() ? qpid::types::Uuid(true).str() : cfgInstance);
+    }
+
+    name_address = attrMap["_vendor"].asString() + ":" + attrMap["_product"].asString() + ":" + attrMap["_instance"].asString();
+    vendorNameKey = keyifyNameStr(attrMap["_vendor"].asString());
+    productNameKey = keyifyNameStr(attrMap["_product"].asString());
+    instanceNameKey = keyifyNameStr(attrMap["_instance"].asString());
+    attrMap["_name"] = name_address;
+
     storeData(true);
 
-    if (attrMap.empty())
-        setName(defaultVendorName, defaultProductName);
+    QPID_LOG(info, "QMF Agent Initialized: broker=" << settings.host << ":" << settings.port <<
+             " interval=" << intervalSeconds << " storeFile=" << _storeFile << " name=" << name_address);
 
     initialized = true;
 }
@@ -398,13 +411,25 @@ void ManagementAgentImpl::storeData(bool requested)
         if (outFile.good()) {
             outFile << storeMagicNumber << " " << brokerBankToWrite << " " <<
                 agentBankToWrite << " " << bootSequence << endl;
+
+            if (attrMap.find("_vendor") != attrMap.end())
+                outFile << "vendor=" << attrMap["_vendor"] << endl;
+            if (attrMap.find("_product") != attrMap.end())
+                outFile << "product=" << attrMap["_product"] << endl;
+            if (attrMap.find("_instance") != attrMap.end())
+                outFile << "instance=" << attrMap["_instance"] << endl;
+
             outFile.close();
         }
     }
 }
 
-void ManagementAgentImpl::retrieveData()
+void ManagementAgentImpl::retrieveData(std::string& vendor, std::string& product, std::string& inst)
 {
+    vendor.clear();
+    product.clear();
+    inst.clear();
+
     if (!storeFile.empty()) {
         ifstream inFile(storeFile.c_str());
         string   mn;
@@ -412,9 +437,25 @@ void ManagementAgentImpl::retrieveData()
         if (inFile.good()) {
             inFile >> mn;
             if (mn == storeMagicNumber) {
+                std::string inText;
+
                 inFile >> requestedBrokerBank;
                 inFile >> requestedAgentBank;
                 inFile >> bootSequence;
+
+                while (inFile.good()) {
+                    std::getline(inFile, inText);
+                    if (!inText.compare(0, 7, "vendor=")) {
+                        vendor = inText.substr(7);
+                        QPID_LOG(debug, "read vendor name [" << vendor << "] from configuration file.");
+                    } else if (!inText.compare(0, 8, "product=")) {
+                        product = inText.substr(8);
+                        QPID_LOG(debug, "read product name [" << product << "] from configuration file.");
+                    } else if (!inText.compare(0, 9, "instance=")) {
+                        inst = inText.substr(9);
+                        QPID_LOG(debug, "read instance name [" << inst << "] from configuration file.");
+                    }
+                }
             }
             inFile.close();
         }
