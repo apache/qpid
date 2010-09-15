@@ -1361,9 +1361,9 @@ WSPACE: [ \\n\\r\\t]+
     </formalpara>
 
     <programlisting><![CDATA[
-address := name [ "/" subject ] [ ";" options ]
+address := name [ SLASH subject ] [ ";" options ]
    name := ( part | quoted )+
-subject := ( part | quoted | "/" )*
+subject := ( part | quoted | SLASH )*
  quoted := STRING / ESC
    part := LBRACE / RBRACE / COLON / COMMA / NUMBER / ID / SYM
 options := map
