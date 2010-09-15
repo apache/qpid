@@ -641,7 +641,7 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
 
             {
                 sys::Mutex::ScopedLock lock(agentLock);
-                ObjectMap::iterator iter = managementObjects.find(objId); // XXX - Unprotected
+                ObjectMap::iterator iter = managementObjects.find(objId);
                 if (iter != managementObjects.end())
                     object = iter->second;
             }
