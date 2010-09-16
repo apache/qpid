@@ -94,7 +94,7 @@ bool AddressParser::readList(Variant& value)
 void AddressParser::readListItems(Variant::List& list)
 {
     Variant item;
-    while (readValue(item)) {
+    while (readValueIfExists(item)) {
         list.push_back(item);
         if (!readChar(',')) break;
     }
@@ -139,8 +139,13 @@ bool AddressParser::readKey(std::string& key)
 
 bool AddressParser::readValue(Variant& value)
 {
+    return readValueIfExists(value) || error("Expected value");
+}
+
+bool AddressParser::readValueIfExists(Variant& value)
+{
     return readSimpleValue(value) || readQuotedValue(value) || 
-        readMap(value)  || readList(value) || error("Expected value");
+        readMap(value)  || readList(value);
 }
 
 bool AddressParser::readString(std::string& value, char delimiter)
