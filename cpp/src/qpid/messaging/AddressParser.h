@@ -46,6 +46,7 @@ class AddressParser
     bool readSimpleValue(qpid::types::Variant& word);
     bool readKey(std::string& key);
     bool readValue(qpid::types::Variant& value);
+    bool readValueIfExists(qpid::types::Variant& value);
     bool readKeyValuePair(qpid::types::Variant::Map& map);
     bool readMap(qpid::types::Variant& value);
     bool readList(qpid::types::Variant& value);
