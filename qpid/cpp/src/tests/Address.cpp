@@ -87,6 +87,24 @@ QPID_AUTO_TEST_CASE(testParseOptionsWithList)
     BOOST_CHECK_EQUAL((uint16_t) 101, address.getOptions()["x"].asInt64());
 }
 
+QPID_AUTO_TEST_CASE(testParseOptionsWithEmptyList)
+{
+    Address address("my-topic; {a:[], x:101}");
+    BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
+    Variant::List& list = address.getOptions()["a"].asList();
+    BOOST_CHECK_EQUAL(list.size(), 0);
+    BOOST_CHECK_EQUAL((uint16_t) 101, address.getOptions()["x"].asInt64());
+}
+
+QPID_AUTO_TEST_CASE(testParseOptionsWithEmptyMap)
+{
+    Address address("my-topic; {a:{}, x:101}");
+    BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
+    Variant::Map& map = address.getOptions()["a"].asMap();
+    BOOST_CHECK_EQUAL(map.size(), 0);
+    BOOST_CHECK_EQUAL((uint16_t) 101, address.getOptions()["x"].asInt64());
+}
+
 QPID_AUTO_TEST_CASE(testParseQuotedNameAndSubject)
 {
     Address address("'my topic with / in it'/'my subject with ; in it'");
