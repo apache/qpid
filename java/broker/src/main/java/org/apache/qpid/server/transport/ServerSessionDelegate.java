@@ -30,6 +30,8 @@ import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.*;
+import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.flow.WindowCreditManager;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
@@ -228,7 +230,22 @@ public class ServerSessionDelegate extends SessionDelegate
 
                     FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
 
-                    // TODO filters
+                    FieldTable filters = new FieldTable();
+                    Map<String,Object> fields = method.getFields();
+                    for (String key: fields.keySet()) 
+                    {
+                        filters.setObject(key, fields.get(key));
+                    }
+                    FilterManager filterManager = null;
+                    try 
+                    {
+                        filterManager = FilterManagerFactory.createManager(filters);
+                    } 
+                    catch (AMQException amqe) 
+                    {
+                        exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "Exception Creating FilterManager");
+                        return;
+                    }
 
                     Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
                                                                   destination,
