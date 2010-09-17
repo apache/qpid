@@ -22,25 +22,15 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.EXCHANGE_FORMAT;
 
 public class ExchangeLogSubject extends AbstractLogSubject
 {
 
-    /**
-     * LOG FORMAT for the ExchangeLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
-     *
-     * 0 - Virtualhost Name
-     * 1 - Exchange Type
-     * 2 - Exchange Name
-     */
-    protected static final String BINDING_FORMAT = "vh(/{0})/ex({1}/{2})";
-
     /** Create an ExchangeLogSubject that Logs in the following format. */
     public ExchangeLogSubject(Exchange exchange, VirtualHost vhost)
     {
-        setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
+        setLogStringWithFormat(EXCHANGE_FORMAT, vhost.getName(),
                                exchange.getTypeShortString(), exchange.getNameShortString());
     }
 }

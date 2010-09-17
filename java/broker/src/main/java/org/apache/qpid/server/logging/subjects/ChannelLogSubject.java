@@ -22,22 +22,10 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
 
 public class ChannelLogSubject extends AbstractLogSubject
 {
-    /**
-     * LOG FORMAT for the ChannelLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
-     *
-     * 0 - Connection ID
-     * 1 - User ID
-     * 2 - IP
-     * 3 - Virtualhost
-     * 4 - Channel ID
-     */
-    public static final String CHANNEL_FORMAT = ConnectionLogSubject.CONNECTION_FORMAT
-                                             + "/ch:{4}";
 
     public ChannelLogSubject(AMQChannel channel)
     {
@@ -64,4 +52,5 @@ public class ChannelLogSubject extends AbstractLogSubject
                                session.getVirtualHost().getName(),
                                channel.getChannelId());
     }
+    
 }
