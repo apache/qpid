@@ -542,6 +542,8 @@ class QmfData(Console):
       return text
 
   def objectIndex(self, obj):
+    if obj._objectId.isV2:
+      return obj._objectId.getObject()
     result = ""
     first = True
     props = obj.getProperties()
