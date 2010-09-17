@@ -767,7 +767,17 @@ public class Session extends SessionInvoker
         {
             future = results.remove(command);
         }
-        future.set(result);
+        
+        if (future != null)
+        {
+            future.set(result);
+        }
+        else
+        {
+            log.warn("Broker sent a result in response to a command" +
+            		" that's no longer valid on the client side." +
+            		" [ command id : %s , result : %s ]",command, result);
+        }
     }
 
     void setException(ExecutionException exc)
