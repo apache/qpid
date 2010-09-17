@@ -22,24 +22,15 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.STORE_FORMAT;
 
 public class MessageStoreLogSubject extends AbstractLogSubject
 {
 
-    /**
-     * LOG FORMAT for the MessagesStoreLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
-     *
-     * 0 - Virtualhost Name
-     * 1 - Message Store Type
-     */
-    protected static final String BINDING_FORMAT = "vh(/{0})/ms({1})";
-
     /** Create an ExchangeLogSubject that Logs in the following format. */
     public MessageStoreLogSubject(VirtualHost vhost, MessageStore store)
     {
-        setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
+        setLogStringWithFormat(STORE_FORMAT, vhost.getName(),
                                store.getClass().getSimpleName());
     }
 }

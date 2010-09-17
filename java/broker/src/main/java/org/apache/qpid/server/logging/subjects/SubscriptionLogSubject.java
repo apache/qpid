@@ -24,17 +24,10 @@ import org.apache.qpid.server.subscription.Subscription;
 
 import java.text.MessageFormat;
 
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
+
 public class SubscriptionLogSubject extends AbstractLogSubject
 {
-
-    /**
-     * LOG FORMAT for the SubscriptionLogSubject,
-     * Uses a MessageFormat call to insert the required values according to
-     * these indices:
-     *
-     * 0 - Subscription ID
-     */
-    public static final String SUBSCRIPTION_FORMAT = "sub:{0}";
 
     /**
      * Create an QueueLogSubject that Logs in the following format.
@@ -49,7 +42,7 @@ public class SubscriptionLogSubject extends AbstractLogSubject
 
         String queueString = new QueueLogSubject(subscription.getQueue()).toLogString();
 
-        _logString = "[" + MessageFormat.format(SubscriptionLogSubject.SUBSCRIPTION_FORMAT,
+        _logString = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT,
                                                 subscription.getSubscriptionID())
                      + "("
                      // queueString is [vh(/{0})/qu({1}) ] so need to trim

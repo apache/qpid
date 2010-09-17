@@ -24,43 +24,17 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.text.MessageFormat;
 
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
+
 /** The Connection LogSubject */
 public class ConnectionLogSubject extends AbstractLogSubject
 {
 
-    /**
-     * 0 - Connection ID
-     * 1 - Remote Address
-     */
-    public static final String SOCKET_FORMAT = "con:{0}({1})";
-
-    /**
-     * LOG FORMAT for the ConnectionLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
-     *
-     * 0 - Connection ID
-     * 1 - User ID
-     * 2 - IP
-     */
-    public static final String USER_FORMAT = "con:{0}({1}@{2})";
-
-    /**
-     * LOG FORMAT for the ConnectionLogSubject,
-     * Uses a MessageFormat call to insert the required values according to
-     * these indices:
-     *
-     * 0 - Connection ID
-     * 1 - User ID
-     * 2 - IP
-     * 3 - Virtualhost
-     */
-    public static final String CONNECTION_FORMAT = "con:{0}({1}@{2}/{3})";
-
-
     public ConnectionLogSubject(AMQProtocolSession session)
     {
-        _session = session;        
+        _session = session;
     }
 
     // The Session this Actor is representing
@@ -71,9 +45,9 @@ public class ConnectionLogSubject extends AbstractLogSubject
 
     /**
      * Update the LogString as the Connection process proceeds.
-     *
+     * 
      * When the Session has an authorized ID add that to the string.
-     *
+     * 
      * When the Session then gains a Vhost add that to the string, at this point
      * we can set upToDate = true as the _logString will not need to be updated
      * from this point onwards.
@@ -90,40 +64,37 @@ public class ConnectionLogSubject extends AbstractLogSubject
                      * LOG FORMAT used by the AMQPConnectorActor follows
                      * ConnectionLogSubject.CONNECTION_FORMAT :
                      * con:{0}({1}@{2}/{3})
-                     *
-                     * Uses a MessageFormat call to insert the required values according to
-                     * these indices:
-                     *
-                     * 0 - Connection ID
-                     * 1 - User ID
-                     * 2 - IP
-                     * 3 - Virtualhost
+                     * 
+                     * Uses a MessageFormat call to insert the required values
+                     * according to these indices:
+                     * 
+                     * 0 - Connection ID 1 - User ID 2 - IP 3 - Virtualhost
                      */
-                    _logString = "[" + MessageFormat.format(ConnectionLogSubject.CONNECTION_FORMAT,
-                                                            _session.getSessionID(),
-                                                            _session.getPrincipal().getName(),
+                    _logString = "[" + MessageFormat.format(CONNECTION_FORMAT, 
+                                                            _session.getSessionID(), 
+                                                            _session.getPrincipal().getName(), 
                                                             _session.getRemoteAddress(),
-                                                            _session.getVirtualHost().getName())
+                                                            _session.getVirtualHost().getName()) 
                                  + "] ";
 
                     _upToDate = true;
-                }
+                } 
                 else
                 {
-                    _logString = "[" + MessageFormat.format(USER_FORMAT,
-                                                            _session.getSessionID(),
-                                                            _session.getPrincipal().getName(),
+                    _logString = "[" + MessageFormat.format(USER_FORMAT, 
+                                                            _session.getSessionID(), 
+                                                            _session.getPrincipal().getName(), 
                                                             _session.getRemoteAddress())
                                  + "] ";
 
                 }
-            }
+            } 
             else
             {
-                _logString = "[" + MessageFormat.format(SOCKET_FORMAT,
-                                                        _session.getSessionID(),
-                                                        _session.getRemoteAddress())
-                             + "] ";
+                    _logString = "[" + MessageFormat.format(SOCKET_FORMAT,
+                                                            _session.getSessionID(),
+                                                            _session.getRemoteAddress()) 
+                                 + "] ";
             }
         }
     }

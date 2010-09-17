@@ -21,24 +21,15 @@
 package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.QUEUE_FORMAT;
 
 public class QueueLogSubject extends AbstractLogSubject
 {
 
-    /**
-     * LOG FORMAT for the ExchangeLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
-     *
-     * 0 - Virtualhost name
-     * 1 - queue name
-     */
-    public static final String LOG_FORMAT = "vh(/{0})/qu({1})";
-
     /** Create an QueueLogSubject that Logs in the following format. */
     public QueueLogSubject(AMQQueue queue)
     {
-        setLogStringWithFormat(LOG_FORMAT,
+        setLogStringWithFormat(QUEUE_FORMAT,
                                queue.getVirtualHost().getName(),
                                queue.getName());
     }
