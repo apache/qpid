@@ -39,10 +39,10 @@ import org.slf4j.LoggerFactory;
 public class Session
 {
     private static Logger log = LoggerFactory.getLogger(Session.class);
-    public static int CONTEXT_SYNC = 1;
-    public static int CONTEXT_STARTUP = 2;
-    public static int CONTEXT_MULTIGET = 3;
-    public static int DEFAULT_GET_WAIT_TIME = 60000;
+    public static final int CONTEXT_SYNC = 1;
+    public static final int CONTEXT_STARTUP = 2;
+    public static final int CONTEXT_MULTIGET = 3;
+    public static final int DEFAULT_GET_WAIT_TIME = 60000;
     public boolean recieveObjects = true;
     public boolean recieveEvents = true;
     public boolean recieveHeartbeat = true;
@@ -79,12 +79,12 @@ public class Session
     {
         ArrayList<String> bindings = new ArrayList<String>();
         bindings.add("schema.#");
-        if (recieveObjects & recieveEvents & recieveHeartbeat & !userBindings)
+        if (recieveObjects && recieveEvents && recieveHeartbeat && !userBindings)
         {
             bindings.add("console.#");
         } else
         {
-            if (recieveObjects & !userBindings)
+            if (recieveObjects && !userBindings)
             {
                 bindings.add("console.obj.#");
             } else
@@ -675,7 +675,7 @@ public class Session
             broker.decrementOutstanding();
         } else
         {
-            if ((context.equals(CONTEXT_SYNC)) & broker.getSyncInFlight())
+            if ((context.equals(CONTEXT_SYNC)) && broker.getSyncInFlight())
             {
                 broker.setSyncInFlight(false);
             } else
