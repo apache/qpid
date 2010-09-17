@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.*;
@@ -234,7 +235,10 @@ public class ServerSessionDelegate extends SessionDelegate
                     Map<String,Object> fields = method.getFields();
                     for (String key: fields.keySet()) 
                     {
-                        filters.setObject(key, fields.get(key));
+                        if (key.equals(AMQPFilterTypes.JMS_SELECTOR.getValue().asString()))
+                        { 
+                            filters.setObject(key, fields.get(key));
+                        }
                     }
                     FilterManager filterManager = null;
                     try 
